@@ -32,12 +32,13 @@ import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
 import org.jdownloader.plugins.components.config.FreeDiscPlConfig.StreamDownloadMode;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -107,14 +108,28 @@ public class FreeDiscPl extends PluginForHost {
         }
     }
 
-    protected static Cookies    botSafeCookies                     = new Cookies();
-    private static final String TYPE_FILE                          = "https?://[^/]+/(?:#(?:!|%21))?([A-Za-z0-9\\-_]+,f-(\\d+)(,([\\w\\-]+))?)";
-    private static final String TYPE_EMBED                         = "https?://[^/]+/embed/(audio|video)/(\\d+)";
-    private static final String PROPERTY_AUDIO_STREAM_IS_AVAILABLE = "stream_is_available_audio";
-    private static final String PROPERTY_VIDEO_STREAM_IS_AVAILABLE = "stream_is_available_video";
-    private static final String PROPERTY_DIRECTURL                 = "directurl";
-    private static final String PROPERTY_DIRECTURL_ACCOUNT         = "directurl_account";
-    private static final String HAS_ATTEMPTED_STREAM_DOWNLOAD      = "isvideo";
+    private static final boolean PREFER_AVAILABLECHECK_VIA_AJAX_REQUEST = true;
+    protected static Cookies     botSafeCookies                         = new Cookies();
+    private static final String  TYPE_FILE                              = "https?://[^/]+/(?:#(?:!|%21))?([A-Za-z0-9\\-_]+,f-(\\d+)(,([\\w\\-]+))?)";
+    private static final String  TYPE_EMBED_ALL                         = "https?://[^/]+/embed/(audio|video)/(\\d+)";
+    private static final String  TYPE_EMBED_AUDIO                       = "https?://[^/]+/embed/audio/(\\d+)";
+    private static final String  TYPE_EMBED_VIDEO                       = "https?://[^/]+/embed/video/(\\d+)";
+    private static final String  PROPERTY_AUDIO_STREAM_IS_AVAILABLE     = "stream_is_available_audio";
+    private static final String  PROPERTY_VIDEO_STREAM_IS_AVAILABLE     = "stream_is_available_video";
+    private static final String  PROPERTY_DIRECTURL                     = "directurl";
+    private static final String  PROPERTY_DIRECTURL_ACCOUNT             = "directurl_account";
+    private static final String  PROPERTY_HAS_ATTEMPTED_STREAM_DOWNLOAD = "isvideo";
+    private static final String  PROPERTY_STREAMING_FILENAME            = "streaming_filename";
+    private static final String  PROPERTY_UPLOADER                      = "uploader";
+
+    private boolean preferAvailablecheckViaAjaxRequest(final DownloadLink link) {
+        final String username = getUploader(link);
+        if (PREFER_AVAILABLECHECK_VIA_AJAX_REQUEST && username != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -185,13 +200,26 @@ public class FreeDiscPl extends PluginForHost {
         }
     }
 
+    /** Returns name of the uploader. */
+    private String getUploader(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.hasProperty(PROPERTY_UPLOADER)) {
+            return link.getStringProperty(PROPERTY_UPLOADER);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_FILE)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_FILE).getMatch(0);
+        } else {
+            return null;
+        }
+    }
+
     private String getFID(final DownloadLink link) {
         if (link == null || link.getPluginPatternMatcher() == null) {
             return null;
         } else if (link.getPluginPatternMatcher().matches(TYPE_FILE)) {
             return new Regex(link.getPluginPatternMatcher(), TYPE_FILE).getMatch(1);
-        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
-            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(1);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED_ALL)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED_ALL).getMatch(1);
         } else {
             logger.warning("Developer mistake! URL with unknown pattern: " + link.getPluginPatternMatcher());
             return null;
@@ -208,8 +236,8 @@ public class FreeDiscPl extends PluginForHost {
             } else {
                 return titleWithExtHint;
             }
-        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
-            final Regex embed = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED_ALL)) {
+            final Regex embed = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED_ALL);
             final String type = embed.getMatch(0);
             final String fid = embed.getMatch(1);
             if (type.equalsIgnoreCase("audio")) {
@@ -224,6 +252,101 @@ public class FreeDiscPl extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        if (preferAvailablecheckViaAjaxRequest(link)) {
+            return requestFileInformationAJAX(link, account);
+        } else {
+            return this.requestFileInformationHTML(link, account);
+        }
+    }
+
+    private AvailableStatus requestFileInformationAJAX(final DownloadLink link, final Account account) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getWeakFilename(link));
+        }
+        if (account != null) {
+            this.login(account, false);
+        } else {
+            prepBR(this.br);
+        }
+        prepBRAjax(this.br);
+        final String username = this.getUploader(link);
+        final String fid = this.getFID(link);
+        if (fid == null || username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("https://" + this.getHost() + "/file/file_data/get/" + username + "/" + fid);
+        if (isBotBlocked(this.br)) {
+            logger.info("Cannot do linkcheck due to antiBot captcha");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        /* TODO: Make use of field "current_file_description" */
+        final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "response/data");
+        if ((Boolean) data.get("file_exists") == Boolean.FALSE) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if ((Boolean) data.get("file_abused") == Boolean.TRUE) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final boolean is_my_file = ((Boolean) data.get("is_my_file")).booleanValue();
+        final Map<String, Object> file_data = (Map<String, Object>) data.get("file_data");
+        final String filenameWithoutExt = file_data.get("fileName").toString();
+        final String fileExtension = (String) file_data.get("fileExtension");
+        final long filesize = Long.parseLong(file_data.get("fileSize").toString());
+        String streamingFilename = null;
+        Long streamingFilesize = null;
+        final Map<String, Object> file_interface_data = (Map<String, Object>) data.get("file_interface_data");
+        /* If no stream is available, this URL will simply lead to a image representing the file-type symbol. */
+        final String embedURL = (String) file_interface_data.get("content_link");
+        if (embedURL.matches(TYPE_EMBED_AUDIO)) {
+            link.setProperty(PROPERTY_AUDIO_STREAM_IS_AVAILABLE, true);
+            final Map<String, Object> streamingMetadata = (Map<String, Object>) file_interface_data.get("content_music");
+            streamingFilename = streamingMetadata.get("fileName").toString();
+            streamingFilesize = Long.parseLong(streamingMetadata.get("size").toString());
+        } else if (embedURL.matches(TYPE_EMBED_VIDEO)) {
+            link.setProperty(PROPERTY_VIDEO_STREAM_IS_AVAILABLE, true);
+        } else {
+            link.removeProperty(PROPERTY_AUDIO_STREAM_IS_AVAILABLE);
+            link.removeProperty(PROPERTY_VIDEO_STREAM_IS_AVAILABLE);
+        }
+        if (!StringUtils.isEmpty(streamingFilename)) {
+            link.setProperty(PROPERTY_STREAMING_FILENAME, streamingFilename);
+        }
+        final boolean userPrefersStreamDownloads = PluginJsonConfig.get(FreeDiscPlConfig.class).getStreamDownloadMode() == StreamDownloadMode.PREFER_STREAM;
+        if (userPrefersStreamDownloads && !StringUtils.isEmpty(streamingFilename) && streamingFilesize != null) {
+            link.setFinalFileName(streamingFilename);
+            link.setVerifiedFileSize(streamingFilesize.longValue());
+        } else if (userPrefersStreamDownloads && this.isStreamAvailable(link)) {
+            /* Set custom made streaming filename */
+            if (this.isAudioStreamAvailable(link)) {
+                link.setFinalFileName(filenameWithoutExt + ".mp3");
+            } else {
+                link.setFinalFileName(filenameWithoutExt + ".mp4");
+            }
+            link.setDownloadSize(filesize);
+        } else {
+            /* Set original filename */
+            if (!StringUtils.isEmpty(fileExtension)) {
+                link.setFinalFileName(filenameWithoutExt + "." + fileExtension);
+            } else {
+                /* Filename has no extension */
+                link.setFinalFileName(filenameWithoutExt);
+            }
+            link.setVerifiedFileSize(filesize);
+        }
+        /* File has been moved to trash by current owner. It is still downloadable but only for the owner. */
+        if (file_data.get("inTrash").toString().equals("1") && !is_my_file) {
+            throw new AccountRequiredException();
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    private AvailableStatus requestFileInformationHTML(final DownloadLink link, final Account account) throws Exception {
         if (!link.isNameSet()) {
             link.setName(this.getWeakFilename(link));
         }
@@ -249,12 +372,16 @@ public class FreeDiscPl extends PluginForHost {
         final String fid = this.getFID(link);
         final String fileURL = regexFileURL(br, fid);
         /* Special handling if embed URL is given. */
-        if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_EMBED_ALL)) {
             /* Find "real" URL for embed URL */
-            if (fileURL == null || !this.canHandle(fileURL)) {
+            final Regex fileURLRegex = new Regex(fileURL, TYPE_FILE);
+            if (!fileURLRegex.matches()) {
                 /* Assume that file is offline. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* Set name of uploader as property so next time ajax linkcheck can be used. */
+            final String uploader = fileURLRegex.getMatch(0);
+            link.setProperty(PROPERTY_UPLOADER, uploader);
             /* Access normal fileURL and resume linkcheck. */
             br.getPage(fileURL);
         }
@@ -333,7 +460,7 @@ public class FreeDiscPl extends PluginForHost {
 
     /** Returns true if the last download attempt of this item was stream-download. */
     private boolean hasAttemptedStreamDownload(final DownloadLink link) {
-        if (link.hasProperty(HAS_ATTEMPTED_STREAM_DOWNLOAD)) {
+        if (link.hasProperty(PROPERTY_HAS_ATTEMPTED_STREAM_DOWNLOAD)) {
             return true;
         } else {
             return false;
@@ -391,11 +518,11 @@ public class FreeDiscPl extends PluginForHost {
         prepBR(this.br);
         synchronized (botSafeCookies) {
             if (!attemptStoredDownloadurlDownload(link, account)) {
-                requestFileInformation(link);
+                requestFileInformation(link, account);
                 if (isBotBlocked(this.br)) {
                     this.handleAntiBot(this.br);
                     /* Important! Check status if we were blocked before! */
-                    requestFileInformation(link);
+                    requestFileInformation(link, account);
                 }
                 String dllink = null;
                 final StreamDownloadMode mode = PluginJsonConfig.get(FreeDiscPlConfig.class).getStreamDownloadMode();
@@ -459,7 +586,7 @@ public class FreeDiscPl extends PluginForHost {
                 }
                 if (dllink != null) {
                     /* Download original file */
-                    link.removeProperty(HAS_ATTEMPTED_STREAM_DOWNLOAD);
+                    link.removeProperty(PROPERTY_HAS_ATTEMPTED_STREAM_DOWNLOAD);
                 } else {
                     /* Download stream if possible */
                     if (!streamIsAvailable) {
@@ -477,7 +604,7 @@ public class FreeDiscPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     /* This will ensure that file-extension will be corrected later on downloadstart! */
-                    link.setProperty(HAS_ATTEMPTED_STREAM_DOWNLOAD, true);
+                    link.setProperty(PROPERTY_HAS_ATTEMPTED_STREAM_DOWNLOAD, true);
                     /* Important! Stream-filesize can be different than previously set verifiedFilesize! */
                     link.setVerifiedFileSize(-1);
                 }
@@ -505,22 +632,27 @@ public class FreeDiscPl extends PluginForHost {
             link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
         } else {
             /* Correct filename extension if needed. E.g. required if user downloads stream instead of original file. */
+            String newFilename = null;
             final String filename = link.getName();
-            String realFileExtension = this.getExtensionFromMimeType(dl.getConnection().getContentType());
-            /* Fallback if file-extension could not be determined by header. */
-            if (realFileExtension == null && this.hasAttemptedStreamDownload(link)) {
-                if (this.isAudioStreamAvailable(link)) {
-                    realFileExtension = "mp3";
-                } else {
-                    realFileExtension = "mp4";
+            if (link.hasProperty(PROPERTY_STREAMING_FILENAME)) {
+                newFilename = link.getStringProperty(PROPERTY_STREAMING_FILENAME);
+            } else {
+                String realFileExtension = this.getExtensionFromMimeType(dl.getConnection().getContentType());
+                /* Fallback if file-extension could not be determined by header. */
+                if (realFileExtension == null && this.hasAttemptedStreamDownload(link)) {
+                    if (this.isAudioStreamAvailable(link)) {
+                        realFileExtension = "mp3";
+                    } else {
+                        realFileExtension = "mp4";
+                    }
+                }
+                if (filename != null && realFileExtension != null) {
+                    newFilename = this.correctOrApplyFileNameExtension(filename, "." + realFileExtension);
                 }
             }
-            if (filename != null && realFileExtension != null) {
-                final String newFilename = this.correctOrApplyFileNameExtension(filename, "." + realFileExtension);
-                if (!newFilename.equals(filename)) {
-                    logger.info("Filename extension has changed. Old name: " + filename + " | New: " + newFilename);
-                    link.setFinalFileName(newFilename);
-                }
+            if (filename != null && newFilename != null && !newFilename.equals(filename)) {
+                logger.info("Filename (extension) has changed. Old name: " + filename + " | New: " + newFilename);
+                link.setFinalFileName(newFilename);
             }
         }
         dl.startDownload();
@@ -633,37 +765,6 @@ public class FreeDiscPl extends PluginForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                br2.getHeaders().put("Referer", "https://freedisc.pl/");
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                /* Do not check this directurl again! */
-                link.removeProperty(property);
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -766,7 +867,7 @@ public class FreeDiscPl extends PluginForHost {
         if (link != null) {
             link.removeProperty(PROPERTY_DIRECTURL);
             link.removeProperty(PROPERTY_DIRECTURL_ACCOUNT);
-            link.removeProperty(HAS_ATTEMPTED_STREAM_DOWNLOAD);
+            link.removeProperty(PROPERTY_HAS_ATTEMPTED_STREAM_DOWNLOAD);
         }
     }
 

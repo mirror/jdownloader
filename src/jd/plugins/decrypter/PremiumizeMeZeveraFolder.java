@@ -120,7 +120,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             return path;
         } else if (currentFolderName.equalsIgnoreCase("root")) {
             /* We've reached the end (root) */
-            return path;
+            return "root";
         } else {
             dupes.add(parent_id);
             if (path.length() == 0) {

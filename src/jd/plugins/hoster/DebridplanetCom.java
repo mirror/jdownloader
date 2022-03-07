@@ -36,6 +36,7 @@ import jd.nutils.JDHash;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -176,14 +177,9 @@ public class DebridplanetCom extends PluginForHost {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("user");
         final String accountType = (String) entries.get("account_type");
-        ai.setStatus("Premium account");
         if (accountType.equalsIgnoreCase("free")) {
             account.setType(AccountType.FREE);
-            /*
-             * 2020-12-08: Free Accounts can download from some hosts (see websites' host list) but we just won't allow free account
-             * downloads at all.
-             */
-            ai.setTrafficLeft(0);
+            ai.setExpired(true);
         } else {
             /* There are also accounts without expire-date! */
             final Object expireDateO = entries.get("expire");
@@ -200,9 +196,8 @@ public class DebridplanetCom extends PluginForHost {
         final List<Object> supportedHostsO = (List<Object>) entries.get("supportedhosts");
         for (final Object supportedHostO : supportedHostsO) {
             entries = (Map<String, Object>) supportedHostO;
-            final String domain = (String) entries.get("host");
-            final boolean currently_working = ((Boolean) entries.get("currently_working")).booleanValue();
-            if (!currently_working) {
+            final String domain = entries.get("host").toString();
+            if (!((Boolean) entries.get("currently_working")).booleanValue()) {
                 logger.info("Skipping offline host: " + domain);
                 continue;
             } else {
@@ -267,31 +262,37 @@ public class DebridplanetCom extends PluginForHost {
             handleErrorMap(account, (Map<String, Object>) jsonO);
         } catch (final JSonMapperException jme) {
             if (this.getDownloadLink() != null) {
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "API did not return json", 50, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "Bad API answer", 50, 5 * 60 * 1000l);
             } else {
-                throw Exceptions.addSuppressed(new AccountUnavailableException("API did not return json", 5 * 60 * 1000l), jme);
+                throw Exceptions.addSuppressed(new AccountUnavailableException("Bad API answer", 1 * 60 * 1000l), jme);
             }
         }
     }
 
     private void handleErrorMap(final Account account, final Map<String, Object> entries) throws PluginException, InterruptedException {
         final int success = ((Number) entries.get("success")).intValue();
-        if (success != 1) {
-            /* TODO: Add support for more error-cases */
-            /*
-             * TODO: E.g. {"success":0,"status":400,"message":"Error: You must be premium"} --> 2021-03-24: Seems like they've removed that
-             */
-            final int status = ((Number) entries.get("status")).intValue();
-            String message = (String) entries.get("message");
-            if (StringUtils.isEmpty(message)) {
-                message = "Unknown error";
-            }
+        if (success == 1) {
+            /* No error */
+            return;
+        }
+        /* TODO: Add support for more error-cases */
+        /*
+         * TODO: E.g. {"success":0,"status":400,"message":"Error: You must be premium"} --> 2021-03-24: Seems like they've removed that
+         */
+        /*
+         * 2022-03-05: Response doesn't always contain "status" field e.g.
+         * [{"success":0,"message":"Error 11a2 : Can't download file, please check your url again."}]
+         */
+        final Number statusO = ((Number) entries.get("status"));
+        final String message = entries.get("message").toString();
+        if (statusO != null) {
+            final int status = statusO.intValue();
             if (status == 401) {
                 /* Wrong auth token -> Session expired? */
                 throw new AccountUnavailableException(message, 5 * 60 * 1000l);
             } else if (status == 422) {
                 /* E.g. {"success":0,"status":422,"message":"Invalid Credential!"} */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException();
             } else {
                 /* Unknown error */
                 if (this.getDownloadLink() != null) {
@@ -299,6 +300,12 @@ public class DebridplanetCom extends PluginForHost {
                 } else {
                     throw new AccountUnavailableException("Unknown error happened: " + message, 5 * 60 * 1000l);
                 }
+            }
+        } else {
+            if (this.getDownloadLink() != null) {
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), message, 50, 1 * 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Unknown error happened: " + message, 5 * 60 * 1000l);
             }
         }
     }

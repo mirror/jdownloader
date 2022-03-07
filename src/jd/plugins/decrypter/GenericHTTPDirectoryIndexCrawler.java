@@ -21,6 +21,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -63,8 +64,13 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
                 final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
                 final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
                 final String pathToFile = getCurrentDirectoryPath(param.getCryptedUrl());
-                final String pathToFolder = pathToFile.substring(0, pathToFile.lastIndexOf("/"));
-                direct.setRelativeDownloadFolderPath(pathToFolder);
+                /* Set relative path if one is available. */
+                if (pathToFile.contains("/")) {
+                    final String pathToFolder = pathToFile.substring(0, pathToFile.lastIndexOf("/"));
+                    if (!StringUtils.isEmpty(pathToFolder)) {
+                        direct.setRelativeDownloadFolderPath(pathToFolder);
+                    }
+                }
                 decryptedLinks.add(direct);
                 return decryptedLinks;
             } else {
