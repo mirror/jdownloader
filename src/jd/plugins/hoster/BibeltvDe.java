@@ -16,9 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -97,14 +97,13 @@ public class BibeltvDe extends PluginForHost {
         return new Regex(url, TYPE_ALL).getMatch(0);
     }
 
-    private static final String        TYPE_ALL              = "https?://[^/]+/mediathek/videos(.+)";
-    private static final String        TYPE_REDIRECT         = "https?://[^/]+/mediathek/videos/crn/(\\d+)";
-    private static final String        TYPE_FID_AT_BEGINNING = "https?://[^/]+/mediathek/videos/(\\d{3,}).*";
-    private static final String        TYPE_FID_AT_END       = "https?://[^/]+/mediathek/videos/[a-z0-9\\-]+-(\\d{3,})$";
-    private Map<String, Object>        entries               = null;
-    private static Map<String, String> apiData               = new HashMap<String, String>();
+    private static final String              TYPE_ALL              = "https?://[^/]+/mediathek/videos(.+)";
+    private static final String              TYPE_REDIRECT         = "https?://[^/]+/mediathek/videos/crn/(\\d+)";
+    private static final String              TYPE_FID_AT_BEGINNING = "https?://[^/]+/mediathek/videos/(\\d{3,}).*";
+    private static final String              TYPE_FID_AT_END       = "https?://[^/]+/mediathek/videos/[a-z0-9\\-]+-(\\d{3,})$";
+    private Map<String, Object>              entries               = null;
+    protected static AtomicReference<String> apiKey                = new AtomicReference<String>();
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
@@ -198,22 +197,21 @@ public class BibeltvDe extends PluginForHost {
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-        String apikey = null;
-        synchronized (apiData) {
-            if (apiData.containsKey("key")) {
-                apikey = apiData.get("key");
-            } else {
+        String key = null;
+        synchronized (apiKey) {
+            if (apiKey.get() == null) {
                 final Browser brc = br.cloneBrowser();
                 brc.getPage("/mediathek/_next/static/chunks/pages/videos/%5Bslug%5D-ea0067d555fd0881.js");
-                apikey = brc.getRegex("Authorization\\s*:\"([^\"]+)\"").getMatch(0);
-                if (apikey == null) {
+                final String apikeyRegExed = brc.getRegex("Authorization\\s*:\"([^\"]+)\"").getMatch(0);
+                if (apikeyRegExed == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                apiData.put("key", apikey);
+                apiKey.set(apikeyRegExed);
             }
+            key = apiKey.get();
         }
         final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("Authorization", apikey);
+        br2.getHeaders().put("Authorization", key);
         br2.getPage("/mediathek/api/video/" + internalID);
         entries = JavaScriptEngineFactory.jsonToJavaMap(br2.getRequest().getHtmlCode());
         try {
