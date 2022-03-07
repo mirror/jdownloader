@@ -32,6 +32,28 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -57,28 +79,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.StorageException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -286,8 +286,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -324,7 +324,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br> This is only rarely needed e.g. filemia.com </br> default = false
+     * Enforces old, non-ajax login-method. </br>
+     * This is only rarely needed e.g. filemia.com </br>
+     * default = false
      */
     @Deprecated
     protected boolean enforce_old_login_method() {
@@ -397,8 +399,8 @@ public class YetiShareCore extends antiDDoSForHost {
                 link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
             }
             /**
-             * Additional offline check. Useful for websites which still provide filename & filesize for offline files. </br> This can only
-             * happen on special file information page!
+             * Additional offline check. Useful for websites which still provide filename & filesize for offline files. </br>
+             * This can only happen on special file information page!
              */
             if (br.containsHTML("(?i)>\\s*Status\\s*:\\s*</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -443,8 +445,9 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * Tries to find filename and filesize inside html. On Override, make sure to first use your special RegExes e.g. fileInfo[0]="bla",
-     * THEN, if needed, call super.scanInfo(fileInfo). </br> fileInfo[0] = filename, fileInfo[1] = filesize </br> TODO: 2021-11-19: Clean
-     * this up - it is a mess!
+     * THEN, if needed, call super.scanInfo(fileInfo). </br>
+     * fileInfo[0] = filename, fileInfo[1] = filesize </br>
+     * TODO: 2021-11-19: Clean this up - it is a mess!
      */
     public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
         if (supports_availablecheck_over_info_page(link)) {
@@ -618,7 +621,8 @@ public class YetiShareCore extends antiDDoSForHost {
                         break;
                     } else if (hasGoneThroughVerifiedLoginOnce) {
                         /**
-                         * Only try once! </br> We HAVE to be logged in at this stage!
+                         * Only try once! </br>
+                         * We HAVE to be logged in at this stage!
                          */
                         this.loggedInOrException(this.br, account);
                         break;
@@ -766,7 +770,7 @@ public class YetiShareCore extends antiDDoSForHost {
                             continueform.setMethod(MethodType.POST);
                             br.setFollowRedirects(true);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
-                        } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        } else if (this.containsSolvemediaCaptcha(br.getRequest().getHtmlCode())) {
                             loopLog += " --> SolvemediaCaptcha";
                             hasRequestedCaptcha = true;
                             logger.info("Detected captcha method \"solvemedia\" for this host");
@@ -943,8 +947,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * API file operations usually requires us to have the internal ID of files. </br> Most of all times we don't have this but if a website
-     * is using the "new" YetiShare script version and files were added as part of a folder, we do have these internal fileIDs available!
+     * API file operations usually requires us to have the internal ID of files. </br>
+     * Most of all times we don't have this but if a website is using the "new" YetiShare script version and files were added as part of a
+     * folder, we do have these internal fileIDs available!
      */
     protected String getStoredInternalFileID(final DownloadLink link) {
         return link.getStringProperty(PROPERTY_INTERNAL_FILE_ID);
@@ -1220,8 +1225,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * It was intended to replace this with checkErrorsLanguageIndependant but this doesn't work out as different templates/versions of
-     * YetiShare are using different errors and not all have their full language keys available. </br> Newer versions of YetiShare don't
-     * provide any language keys at all but provide mostly English errors inside URLs ("?e=...").
+     * YetiShare are using different errors and not all have their full language keys available. </br>
+     * Newer versions of YetiShare don't provide any language keys at all but provide mostly English errors inside URLs ("?e=...").
      */
     private void checkErrorsURL(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         final String errorMsgURL = this.getErrorMsgURL(br);
@@ -1269,8 +1274,10 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Checks for reasons to ignore given PluginExceptions. </br> Example: Certain errors thay may happen during availablecheck when user is
-     * not yet logged in but won't happen when user is logged in. </br> TODO: Remove this once "fastdrive.io" does not exist anymore.
+     * Checks for reasons to ignore given PluginExceptions. </br>
+     * Example: Certain errors thay may happen during availablecheck when user is not yet logged in but won't happen when user is logged in.
+     * </br>
+     * TODO: Remove this once "fastdrive.io" does not exist anymore.
      */
     @Deprecated
     protected void ignorePluginException(final PluginException exception, final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -1305,7 +1312,8 @@ public class YetiShareCore extends antiDDoSForHost {
     protected static HashMap<String, String> errorMsgURLMap = new HashMap<String, String>();
 
     /**
-     * 2020-03-25: No plugin should ever have to override this. </br> Please create a ticket before changing this!
+     * 2020-03-25: No plugin should ever have to override this. </br>
+     * Please create a ticket before changing this!
      */
     private void checkErrorsLanguageIndependant(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         final String errorMsgURL = this.getErrorMsgURL(br);
@@ -1353,7 +1361,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Very very rare case */
                 logger.info("This file can only be downloaded by the initial uploader");
                 throw new AccountRequiredException(errorMsgURL);
-            }/** Limit errorhandling */
+            } /** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_download_limit)) {
                 ipBlockedOrAccountLimit(link, account, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_download_limit_this_file)) {
@@ -1513,8 +1521,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this! </br> Do not
-     *         call this on file info page (URL ending with "~i")!
+     * @return true = file is offline, false = file is online </br>
+     *         Be sure to always call checkErrors before calling this! </br>
+     *         Do not call this on file info page (URL ending with "~i")!
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final Browser br, final DownloadLink link) throws Exception {
@@ -1682,8 +1691,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Access any YetiShare website via browser before and call this once to auto set flag for new YetiShare version! </br> New version =
-     * YetiShare 5.0 and above, see: https://yetishare.com/release_history.html
+     * Access any YetiShare website via browser before and call this once to auto set flag for new YetiShare version! </br>
+     * New version = YetiShare 5.0 and above, see: https://yetishare.com/release_history.html
      */
     protected void parseAndSetYetiShareVersion(final Browser br, final Account account) {
         if (br.containsHTML("(?i)https?://[^/]+/(account|register|account/login|account/logout)\"")) {
@@ -1700,7 +1709,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true: Cookies were validated</br> false: Cookies were not validated
+     * @return true: Cookies were validated</br>
+     *         false: Cookies were not validated
      */
     public boolean loginWebsite(final Account account, boolean force) throws Exception {
         synchronized (account) {
@@ -2221,8 +2231,9 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * true = API will be used for downloading whenever possible (usually, a special internal fileID is required to download files via API).
-     * </br> This ID is also used for some website requests but this method is not related to website requests!! </br> Only use this after
-     * testing!
+     * </br>
+     * This ID is also used for some website requests but this method is not related to website requests!! </br>
+     * Only use this after testing!
      */
     protected boolean supportsAPIDownloads(final DownloadLink link, final Account account) {
         return false;
@@ -2297,7 +2308,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * According to: https://fhscript.com/api#account-info </br> and: https://fhscript.com/api#account-package </br>
+     * According to: https://fhscript.com/api#account-info </br>
+     * and: https://fhscript.com/api#account-package </br>
      */
     protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final String key1, final String key2) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -2518,8 +2530,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * https://fhscript.com/api#file-download </br> This API call only works with self-uploaded files and/or whenever the internal fileID is
-     * given --> Most of all times it is of no use for us!
+     * https://fhscript.com/api#file-download </br>
+     * This API call only works with self-uploaded files and/or whenever the internal fileID is given --> Most of all times it is of no use
+     * for us!
      */
     protected void handleDownloadAPI(final DownloadLink link, final Account account, final String apikey1, final String apikey2) throws StorageException, Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
@@ -2582,8 +2595,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Handles API errormessages. </br> We usually can't use this API for downloading thus all Exceptions will be account related (as of
-     * 2021-04-22)
+     * Handles API errormessages. </br>
+     * We usually can't use this API for downloading thus all Exceptions will be account related (as of 2021-04-22)
      */
     protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         Map<String, Object> entries = null;

@@ -57,6 +57,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.CaptchaHosterHelperInterface;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -86,6 +87,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DefaultEditAccountPanel;
@@ -2116,7 +2118,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } else if (new Regex(getCorrectBR(br), "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                 logger.info("Detected captcha method \"reCaptchaV1\" for this host");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
-            } else if (new Regex(getCorrectBR(br), "solvemedia\\.com/papi/").matches()) {
+            } else if (this.containsSolvemediaCaptcha(getCorrectBR(br))) {
                 logger.info("Detected captcha method \"solvemedia\" for this host");
                 final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = null;
@@ -3894,9 +3896,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     } else {
                         logger.info("Cookie login failed");
                         if (account.hasEverBeenValid()) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new AccountInvalidException("Login cookies expired");
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new AccountInvalidException("Login cookies invalid");
                         }
                     }
                 } else if (this.requiresCookieLogin()) {
@@ -3905,7 +3907,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      * Ask user to login via exported browser cookies e.g. xubster.com.
                      */
                     showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Cookie login required");
                 }
                 int login_counter = 0;
                 final int login_counter_max = 2;
@@ -3954,12 +3956,20 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     } else {
                         logger.info("Login failed - check if the website needs a captcha after the first attempt so the plugin might have to be modified via allows_multiple_login_attempts_in_one_go");
                     }
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNieprawidłowa nazwa użytkownika / hasło!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (containsCaptcha(this.findLoginform(br))) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new AccountInvalidException("\r\nUngültiges Login captcha!\r\nVersuche es erneut.");
+                        } else {
+                            throw new AccountInvalidException("\r\nInvalid login captcha answer!\r\nTry again.");
+                        }
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new AccountInvalidException("\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.");
+                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new AccountInvalidException("\r\nNieprawidłowa nazwa użytkownika / hasło!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.");
+                        } else {
+                            throw new AccountInvalidException("\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                        }
                     }
                 }
                 account.saveCookies(br.getCookies(getMainPage()), "");
@@ -3972,6 +3982,24 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } finally {
                 br.setFollowRedirects(followRedirects);
             }
+        }
+    }
+
+    protected boolean containsCaptcha(final Form form) {
+        return containsCaptcha(form.getHtmlCode());
+    }
+
+    protected boolean containsCaptcha(final Browser br) {
+        return containsCaptcha(br.getRequest().getHtmlCode());
+    }
+
+    protected boolean containsCaptcha(final String str) {
+        if (str == null) {
+            return false;
+        } else if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || this.containsSolvemediaCaptcha(str) || containsHCaptcha(str) || containsRecaptchaV2Class(str) || containsPlainTextCaptcha(str)) {
+            return true;
+        } else {
+            return false;
         }
     }
 

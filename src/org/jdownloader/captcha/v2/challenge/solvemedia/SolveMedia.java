@@ -3,6 +3,8 @@ package org.jdownloader.captcha.v2.challenge.solvemedia;
 import java.io.File;
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -12,8 +14,6 @@ import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
 
 public class SolveMedia {
     private final Browser      br;
@@ -28,6 +28,16 @@ public class SolveMedia {
     private boolean            noscript                = true;
     private boolean            clearReferer            = true;
     public Browser             smBr;
+
+    public static final boolean containsSolvemediaCaptcha(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.contains("solvemedia.com/papi/")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     public SolveMedia(final Browser br) {
         this.br = br;

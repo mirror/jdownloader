@@ -48,7 +48,7 @@ public class VideoLaxdCom extends VideoFCTwoCore {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://" + buildHostsPatternPart(domains) + "/a/content/\\w+");
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/(?:en/)?a/content/\\w+");
         }
         return ret.toArray(new String[0]);
     }
