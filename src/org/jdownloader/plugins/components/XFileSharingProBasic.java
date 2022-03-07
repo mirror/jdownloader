@@ -3889,12 +3889,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     showCookieLoginInformation();
                     throw new AccountInvalidException("Cookie login required");
                 }
-                int login_counter = 0;
-                final int login_counter_max = 2;
+                int login_counter = 1;
+                final int login_counter_max = 3;
                 br.clearCookies(getMainPage());
-                boolean loginCaptchaFlag = false;
                 do {
-                    login_counter++;
                     logger.info("Performing full website login attempt: " + login_counter);
                     Form loginForm = findLoginform(this.br);
                     if (loginForm == null) {
@@ -3925,16 +3923,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     handleCaptcha(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true), loginForm);
                     final int captchasAfter = getChallenges().size();
                     if (captchasAfter == captchasBefore && login_counter > 1) {
-                        logger.info("Logins seem to be invalid!");
+                        /* after first login attempt(login_counter=1), there must either be a login captcha or the logins are wrong */
+                        logger.info("Logins seem to be invalid because no login captcha required on login attempt: " + login_counter);
                         break;
                     }
                     submitForm(loginForm);
                     if (!this.allowsMultipleLoginAttemptsInOneGo()) {
                         break;
                     } else if (captchasAfter > captchasBefore && containsInvalidLoginsMessage(br)) {
-                        logger.info("Logins seem to be invalid!");
+                        logger.info("Logins seem to be invalid because there has been a login captcha but server response indicates invalid logins on login attempt: " + login_counter);
                         break;
                     }
+                    login_counter++;
                 } while (!this.isLoggedin(this.br) && login_counter <= login_counter_max);
                 if (!this.isLoggedin(this.br)) {
                     if (getCorrectBR(br).contains("op=resend_activation")) {
