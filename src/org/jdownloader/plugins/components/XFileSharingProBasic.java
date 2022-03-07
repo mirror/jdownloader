@@ -3892,6 +3892,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 int login_counter = 0;
                 final int login_counter_max = 2;
                 br.clearCookies(getMainPage());
+                boolean loginCaptchaFlag = false;
                 do {
                     login_counter++;
                     logger.info("Performing full website login attempt: " + login_counter);
@@ -3923,6 +3924,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     final int captchasBefore = getChallenges().size();
                     handleCaptcha(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true), loginForm);
                     final int captchasAfter = getChallenges().size();
+                    if (captchasAfter == captchasBefore && login_counter > 1) {
+                        logger.info("Logins seem to be invalid!");
+                        break;
+                    }
                     submitForm(loginForm);
                     if (!this.allowsMultipleLoginAttemptsInOneGo()) {
                         break;
