@@ -47,6 +47,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
@@ -155,7 +156,7 @@ public class TwitterCom extends PornEmbedParser {
         } else if (param.getCryptedUrl().matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
             /* 2021-06-22: Support for those has been removed in crawler but is still required in host plugin so let's leave it here! */
             final String tweetID = new Regex(param.getCryptedUrl(), jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED).getMatch(0);
-            crawlAPITweet(decryptedLinks, param, tweetID, account);
+            return crawlAPITweet(param, tweetID, account);
         } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {
             final boolean prefer_mobile_website = false;
             if (prefer_mobile_website) {
@@ -167,7 +168,7 @@ public class TwitterCom extends PornEmbedParser {
                 /* Fallback to API/normal website */
             }
             final String tweetID = new Regex(param.getCryptedUrl(), TYPE_USER_POST).getMatch(1);
-            crawlAPITweet(decryptedLinks, param, tweetID, account);
+            return crawlAPITweet(param, tweetID, account);
         } else {
             crawlUserViaAPI(param, account);
         }
@@ -204,7 +205,8 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
-    private void crawlAPITweet(final ArrayList<DownloadLink> decryptedLinks, final CryptedLink param, final String tweetID, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlAPITweet(final CryptedLink param, final String tweetID, final Account account) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         logger.info("Crawling API tweet");
         final FilePackage fp = FilePackage.getInstance();
         prepareAPI(this.br, account);
@@ -217,18 +219,17 @@ public class TwitterCom extends PornEmbedParser {
             final String username = (String) user.get("screen_name");
             final String formattedDate = formatTwitterDate((String) entries.get("created_at"));
             final String postText = (String) entries.get("full_text");
+            String[] urlsInPostText = new String[0];
             fp.setName(formattedDate + "_" + username);
             if (!StringUtils.isEmpty(postText)) {
                 fp.setComment(postText);
+                urlsInPostText = HTMLParser.getHttpLinks(postText, br.getURL());
             }
             final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
             final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
-            if (medias == null) {
+            final String vmapURL = (String) JavaScriptEngineFactory.walkJson(entries, "card/binding_values/amplify_url_vmap/string_value");
+            if (medias == null && !StringUtils.isEmpty(vmapURL)) {
                 /* Fallback handling for very old (???) content */
-                final String vmapURL = (String) JavaScriptEngineFactory.walkJson(entries, "card/binding_values/amplify_url_vmap/string_value");
-                if (StringUtils.isEmpty(vmapURL)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
                 /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
                 final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
                 final String finalFilename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
@@ -243,88 +244,104 @@ public class TwitterCom extends PornEmbedParser {
                 }
                 singleVideo.setAvailable(true);
                 decryptedLinks.add(singleVideo);
-                return;
+                return decryptedLinks;
             }
-            int mediaIndex = 0;
-            for (final Map<String, Object> media : medias) {
-                final String type = (String) media.get("type");
-                try {
-                    final DownloadLink dl;
-                    if (type.equals("video") || type.equals("animated_gif")) {
-                        /* Find highest video quality */
-                        /* animated_gif will usually only have one .mp4 version available with bitrate "0". */
-                        int highestBitrate = -1;
-                        final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
-                        String streamURL = null;
-                        String hlsMaster = null;
-                        for (final Map<String, Object> videoVariant : videoVariants) {
-                            final String content_type = (String) videoVariant.get("content_type");
-                            if (content_type.equalsIgnoreCase("video/mp4")) {
-                                final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
-                                if (bitrate > highestBitrate) {
-                                    highestBitrate = bitrate;
-                                    streamURL = (String) videoVariant.get("url");
+            if (medias != null && !medias.isEmpty()) {
+                int mediaIndex = 0;
+                for (final Map<String, Object> media : medias) {
+                    final String type = (String) media.get("type");
+                    try {
+                        final DownloadLink dl;
+                        if (type.equals("video") || type.equals("animated_gif")) {
+                            /* Find highest video quality */
+                            /* animated_gif will usually only have one .mp4 version available with bitrate "0". */
+                            int highestBitrate = -1;
+                            final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
+                            String streamURL = null;
+                            String hlsMaster = null;
+                            for (final Map<String, Object> videoVariant : videoVariants) {
+                                final String content_type = (String) videoVariant.get("content_type");
+                                if (content_type.equalsIgnoreCase("video/mp4")) {
+                                    final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
+                                    if (bitrate > highestBitrate) {
+                                        highestBitrate = bitrate;
+                                        streamURL = (String) videoVariant.get("url");
+                                    }
+                                } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
+                                    hlsMaster = (String) videoVariant.get("url");
+                                } else {
+                                    logger.info("Skipping unsupported video content_type: " + content_type);
                                 }
-                            } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
-                                hlsMaster = (String) videoVariant.get("url");
-                            } else {
-                                logger.info("Skipping unsupported video content_type: " + content_type);
                             }
-                        }
-                        if (StringUtils.isEmpty(streamURL)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        dl = this.createDownloadlink(createVideourl(tweetID));
-                        if (useOriginalFilenames) {
-                            dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL)));
-                        } else if (medias.size() > 1) {
-                            dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4");
+                            if (StringUtils.isEmpty(streamURL)) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            dl = this.createDownloadlink(createVideourl(tweetID));
+                            if (useOriginalFilenames) {
+                                dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL)));
+                            } else if (medias.size() > 1) {
+                                dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4");
+                            } else {
+                                dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + ".mp4");
+                            }
+                            dl.setProperty(PROPERTY_BITRATE, highestBitrate);
+                            dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL, streamURL);
+                            if (!StringUtils.isEmpty(hlsMaster)) {
+                                dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
+                            }
+                            dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
+                        } else if (type.equals("photo")) {
+                            final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
+                            if (url == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            dl = this.createDownloadlink(url);
+                            if (useOriginalFilenames) {
+                                dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
+                            } else if (medias.size() > 1) {
+                                dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url));
+                            } else {
+                                dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + Plugin.getFileNameExtensionFromURL(url));
+                            }
                         } else {
-                            dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + ".mp4");
+                            /* Unknown type -> This should never happen! */
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown type:" + type);
                         }
-                        dl.setProperty(PROPERTY_BITRATE, highestBitrate);
-                        dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL, streamURL);
-                        if (!StringUtils.isEmpty(hlsMaster)) {
-                            dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
+                        dl.setAvailable(true);
+                        dl.setProperty(PROPERTY_USERNAME, username);
+                        dl.setProperty(PROPERTY_DATE, formattedDate);
+                        dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
+                        dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str").toString());
+                        if (!StringUtils.isEmpty(postText)) {
+                            dl.setProperty(PROPERTY_POST_TEXT, postText);
                         }
-                        dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
-                    } else if (type.equals("photo")) {
-                        final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
-                        if (url == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (dl.getFinalFileName() != null) {
+                            dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, dl.getFinalFileName());
                         }
-                        dl = this.createDownloadlink(url);
-                        if (useOriginalFilenames) {
-                            dl.setFinalFileName(tweetID + "_" + Plugin.getFileNameFromURL(new URL(url)));
-                        } else if (medias.size() > 1) {
-                            dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url));
-                        } else {
-                            dl.setFinalFileName(formattedDate + "_" + username + "_" + tweetID + Plugin.getFileNameExtensionFromURL(url));
+                        if (fp != null) {
+                            fp.add(dl);
                         }
-                    } else {
-                        /* Unknown type -> This should never happen! */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown type:" + type);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                    } catch (PluginException e) {
+                        logger.log(e);
                     }
-                    dl.setAvailable(true);
-                    dl.setProperty(PROPERTY_USERNAME, username);
-                    dl.setProperty(PROPERTY_DATE, formattedDate);
-                    dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
-                    dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str").toString());
-                    if (!StringUtils.isEmpty(postText)) {
-                        dl.setProperty(PROPERTY_POST_TEXT, postText);
-                    }
-                    if (dl.getFinalFileName() != null) {
-                        dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, dl.getFinalFileName());
-                    }
-                    if (fp != null) {
-                        fp.add(dl);
-                    }
+                    mediaIndex += 1;
+                }
+            }
+            if (PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isCrawlURLsInsidePostText() && urlsInPostText.length > 0) {
+                for (final String url : urlsInPostText) {
+                    final DownloadLink dl = this.createDownloadlink(url);
                     decryptedLinks.add(dl);
                     distribute(dl);
-                } catch (PluginException e) {
-                    logger.log(e);
                 }
-                mediaIndex += 1;
+            }
+            if (decryptedLinks.isEmpty()) {
+                if (urlsInPostText.length == 0) {
+                    logger.info("Failed to find any crawlable content in tweetID: " + tweetID);
+                } else {
+                    logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped http URLs inside post text: " + urlsInPostText.length);
+                }
             }
         } else {
             br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
@@ -332,6 +349,7 @@ public class TwitterCom extends PornEmbedParser {
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweetID);
             crawlTweetMediaObjectsAPI(decryptedLinks, fp, null, entries);
         }
+        return decryptedLinks;
     }
 
     public static Browser prepAPIHeaders(final Browser br) {

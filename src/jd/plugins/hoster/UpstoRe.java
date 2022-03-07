@@ -114,7 +114,6 @@ public class UpstoRe extends antiDDoSForHost {
         return prepBr;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -207,7 +206,8 @@ public class UpstoRe extends antiDDoSForHost {
             // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();
             final String waittimeStr = br.getRegex("var sec = (\\d+)").getMatch(0);
-            int wait = Integer.parseInt(waittimeStr);
+            final int waitFull = Integer.parseInt(waittimeStr);
+            int wait = waitFull;
             logger.info("Detected total waittime: " + wait);
             if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();

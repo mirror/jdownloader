@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -465,11 +466,11 @@ public class TwitterCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, null, true);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        requestFileInformation(link, null, true);
         if (geo_blocked) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         } else if (account_required) {
@@ -630,8 +631,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(this, this.br, account, false);
-        requestFileInformation(link, account, true);
-        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        handleDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 
     @Override
@@ -650,10 +650,15 @@ public class TwitterCom extends PluginForHost {
             public String getUseOriginalFilenames_label() {
                 return "Use original filename instead of format *date*_*username*_*postID*_*mediaindex*.*ext*?";
             }
+
+            public String getCrawlURLsInsidePostText_label() {
+                return "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
+            }
         }
 
         @DefaultBooleanValue(true)
         @AboutConfig
+        @DescriptionForConfigEntry("Force grab media? Disable this to also crawl media of retweets and other content from users' timelines (only if you add URLs without '/media'!)")
         @Order(10)
         boolean isForceGrabMediaOnlyEnabled();
 
@@ -661,10 +666,19 @@ public class TwitterCom extends PluginForHost {
 
         @DefaultBooleanValue(true)
         @AboutConfig
+        @DescriptionForConfigEntry("Use original filename instead of format *date*_*username*_*postID*_*mediaindex*.*ext*?")
         @Order(20)
         boolean isUseOriginalFilenames();
 
         void setUseOriginalFilenames(boolean b);
+
+        @DefaultBooleanValue(false)
+        @AboutConfig
+        @DescriptionForConfigEntry("Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!")
+        @Order(30)
+        boolean isCrawlURLsInsidePostText();
+
+        void setCrawlURLsInsidePostText(boolean b);
     }
 
     @Override
