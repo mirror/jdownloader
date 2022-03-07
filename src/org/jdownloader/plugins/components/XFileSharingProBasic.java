@@ -3806,6 +3806,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return "/?op=my_account";
     }
 
+    protected boolean containsInvalidLoginsMessage(final Browser br) {
+        return br != null && br.containsHTML(">\\s*Incorrect Login or Password\\s*<");
+    }
+
     /**
      * @param validateCookies
      *            true = Check whether stored cookies are still valid, if not, perform full login <br/>
@@ -3916,9 +3920,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     loginForm.put("password", Encoding.urlEncode(account.getPass()));
                     /* Handle login-captcha if required */
+                    final int captchasBefore = getChallenges().size();
                     handleCaptcha(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true), loginForm);
+                    final int captchasAfter = getChallenges().size();
                     submitForm(loginForm);
                     if (!this.allowsMultipleLoginAttemptsInOneGo()) {
+                        break;
+                    } else if (captchasAfter > captchasBefore && containsInvalidLoginsMessage(br)) {
+                        logger.info("Logins seem to be invalid!");
                         break;
                     }
                 } while (!this.isLoggedin(this.br) && login_counter <= login_counter_max);
