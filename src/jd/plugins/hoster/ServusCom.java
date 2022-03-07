@@ -343,7 +343,7 @@ public class ServusCom extends PluginForHost {
             if (StringUtils.equalsIgnoreCase(assetType, "live") && StringUtils.isEmpty(hlsMaster)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Livestreams are not supported");
             }
-            final ArrayList<String> playabilityErrors = (ArrayList<String>) entries.get("playabilityErrors");
+            final List<String> playabilityErrors = (List<String>) entries.get("playabilityErrors");
             if (playabilityErrors != null && !playabilityErrors.isEmpty()) {
                 for (final String playabilityError : playabilityErrors) {
                     if (playabilityError.equals("NOT_YET_AVAILABLE")) {

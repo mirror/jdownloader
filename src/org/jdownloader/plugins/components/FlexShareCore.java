@@ -6,10 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -28,8 +24,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class FlexShareCore extends antiDDoSForHost {
+public abstract class FlexShareCore extends antiDDoSForHost {
     public FlexShareCore(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("https://" + this.getHost() + "/get-premium.php");
@@ -68,9 +68,8 @@ public class FlexShareCore extends antiDDoSForHost {
 
     /**
      * Can be found in account under: '/members/account.php'. Docs are usually here: '/api/docs.php'. Example website with working API:
-     * filepup.net </br>
-     * The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does still not work, it
-     * will just return 404. Override this to use API.
+     * filepup.net </br> The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does
+     * still not work, it will just return 404. Override this to use API.
      */
     protected String getAPIKey() {
         return null;
@@ -471,9 +470,7 @@ public class FlexShareCore extends antiDDoSForHost {
     /**
      * @return true: Website supports https and plugin will prefer https. <br />
      *         false: Website does not support https - plugin will avoid https. <br />
-     *         default: true </br>
-     *         Example which supports https: extmatrix.com </br>
-     *         Example which does NOT support https: filepup.net
+     *         default: true </br> Example which supports https: extmatrix.com </br> Example which does NOT support https: filepup.net
      */
     protected boolean supports_https() {
         return true;

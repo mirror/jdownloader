@@ -67,18 +67,18 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     boolean isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
 
     void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
+
     /* 2022-01-20: Grabbing unknown qualities is not supported anymore for now. */
     // @DefaultBooleanValue(true)
     // @Order(22)
     // boolean isAddUnknownQualitiesEnabled();
     //
     // void setAddUnknownQualitiesEnabled(boolean b);
-
     @DefaultBooleanValue(false)
     @Order(25)
     boolean isGrabHLS144pVideoEnabled();
 
-    void setGrabHLS44pVideoEnabled(boolean b);
+    void setGrabHLS144pVideoEnabled(boolean b);
 
     @DefaultBooleanValue(false)
     @Order(30)
