@@ -70,7 +70,8 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
         }
         removeAll();
         setVisible(true);
-        boolean showProperties = CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && propertiesPanelVisible;
+        final AbstractNode selectedObject = getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex());
+        boolean showProperties = CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && propertiesPanelVisible && selectedObject != null;
         if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
             // Dimension p = tableScrollPane.getPreferredSize();
             // add(Box.createHorizontalGlue());
@@ -79,7 +80,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
                 add(wrap(createPropertiesPanel()), "");
                 add(wrap(getOverView()), "");
                 // update after adding the panels. else a repaint might get lost
-                createPropertiesPanel().update(getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()));
+                createPropertiesPanel().update(selectedObject);
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddTable(tableScrollPane,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddProperties(propertiesPanel,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddOverview(getOverView(),this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
@@ -92,7 +93,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
             if (showProperties) {
                 setLayout(new MigLayout("ins 2 0 0 0, wrap 1", "[grow,fill]", "[]"));
                 add(wrap(createPropertiesPanel()), "");
-                createPropertiesPanel().update(getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()));
+                createPropertiesPanel().update(selectedObject);
                 // update after adding the panels. else a repaint might get lost
             } else {
                 setVisible(false);

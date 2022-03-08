@@ -191,7 +191,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         } else {
             setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[]0[]"));
             this.add(tableScrollPane);
-            this.panelContainer = new DownloadsPabelWidgetContainer(table, bottomBar);
+            this.panelContainer = new DownloadsPanelWidgetContainer(table, bottomBar);
             panelContainer.relayout();
             this.add(panelContainer, "hidemode 3,gaptop " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap());
             add(bottomBar, "height 24!,gaptop " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap());
