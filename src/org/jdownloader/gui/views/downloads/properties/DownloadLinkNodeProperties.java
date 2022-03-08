@@ -24,7 +24,6 @@ import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTab
 import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkNodeProperties extends AbstractNodeProperties<DownloadLink> {
-
     private final DownloadLink currentLink;
     private final FilePackage  currentPackage;
     private List<Archive>      archives = null;
@@ -154,6 +153,7 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties<DownloadL
 
     @Override
     protected void saveArchivePasswords(List<String> hashSet) {
+        final List<Archive> archives = this.archives;
         if (archives != null && archives.size() == 1) {
             archives.get(0).getSettings().setPasswords(hashSet);
         }
@@ -161,6 +161,7 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties<DownloadL
 
     @Override
     protected void saveAutoExtract(BooleanStatus selectedItem) {
+        final List<Archive> archives = this.archives;
         if (archives != null && archives.size() == 1) {
             archives.get(0).getSettings().setAutoExtract(selectedItem);
         }
@@ -199,5 +200,4 @@ public class DownloadLinkNodeProperties extends AbstractNodeProperties<DownloadL
     protected DownloadLink getCurrentNode() {
         return currentLink;
     }
-
 }

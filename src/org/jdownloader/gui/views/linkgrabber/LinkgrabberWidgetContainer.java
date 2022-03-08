@@ -5,6 +5,7 @@ import java.awt.Point;
 
 import javax.swing.SwingUtilities;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -29,10 +30,8 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkgrabberWidgetContainer extends WidgetContainer implements GenericConfigEventListener<Boolean> {
-
     public void refreshAfterTabSwitch() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (propertiesPanelScrollPane != null) {
@@ -40,30 +39,15 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
                 }
             }
         };
-
     }
 
     private boolean                         propertiesPanelVisible;
-
     private CustomizeableActionBar          rightBar;
     private LinkgrabberPropertiesScrollPane propertiesPanelScrollPane;
     private CustomizeableActionBar          leftBar;
 
-    public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
+    protected void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
         this.propertiesPanelVisible = propertiesPanelVisible;
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if (propertiesPanelScrollPane != null) {
-                    if (!propertiesPanelVisible) {
-                        propertiesPanelScrollPane.save();
-
-                    }
-                }
-            }
-        }.waitForEDT();
-
     }
 
     @Override
@@ -73,10 +57,8 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
 
     public LinkgrabberWidgetContainer(final LinkGrabberTable table, CustomizeableActionBar leftBar, CustomizeableActionBar rightBar) {
         super(table, CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE);
-
         this.rightBar = rightBar;
         this.leftBar = leftBar;
-
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getEventSender().addListener(this);
     }
@@ -95,40 +77,33 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
             if (showProperties) {
                 setLayout(new MigLayout("ins " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + " 0 0 0, wrap 1", "[grow,fill]", "[]" + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + "[]"));
                 add(wrap(createPropertiesPanel()), "");
-
                 add(wrap(getOverView()), "");
                 // update after adding the panels. else a repaint might get lost
                 createPropertiesPanel().update(getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()));
-
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddTable(tableScrollPane,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddProperties(propertiesPanel,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddOverview(getOverView(),this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
                 // LAFOptions.getInstance().getExtension().customizeDownloadsPanelLayoutAddBottomBar(bottomBar,this,CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled(),showProperties);
-
             } else {
                 setLayout(new MigLayout("ins " + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + " 0 0 0, wrap 1", "[grow,fill]", "[]"));
-
                 add(wrap(getOverView()), "");
             }
-
         } else {
             if (showProperties) {
                 setLayout(new MigLayout("ins 2 0 0 0, wrap 1", "[grow,fill]", "[]"));
-
                 add(wrap(createPropertiesPanel()), "");
                 createPropertiesPanel().update(getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()));
-
                 // update after adding the panels. else a repaint might get lost
             } else {
                 setVisible(false);
-
             }
+        }
+        if (!showProperties) {
+            createPropertiesPanel().update((AbstractNode) null);
         }
         final Container p = getParent();
         if (p != null) {
-
             SwingUtilities.invokeLater(new Runnable() {
-
                 @Override
                 public void run() {
                     revalidate();
@@ -159,9 +134,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
                 super.setVisible(aFlag);
             }
         };
-
         propertiesScrollPane.setColumnHeaderView(new LinkgrabberPropertiesHeader(loverView) {
-
             @Override
             protected void onCloseAction() {
                 CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
@@ -170,12 +143,10 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
                 if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                     HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadsPanel_onCloseAction(), _GUI.T.Linkgrabber_properties_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                 }
-
             }
         });
         LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
         this.propertiesPanelScrollPane = propertiesScrollPane;
-
         return propertiesScrollPane;
     }
 
@@ -189,7 +160,6 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
         final OverviewHeaderScrollPane ret = new OverviewHeaderScrollPane(overview);
         LAFOptions.getInstance().applyPanelBackground(ret);
         ret.setColumnHeaderView(new LinkgrabberOverViewHeader(overview) {
-
             @Override
             protected void onCloseAction() {
                 if (overviewScrollPane == ret) {
@@ -198,7 +168,6 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
                 CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.setValue(false);
                 CustomizeableActionBar iconComp = rightBar;
                 Point loc = rightBar.getLocationOnScreen();
-
                 if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                     HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadsPanel_onCloseAction(), _GUI.T.DownloadsPanel_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                 }
@@ -210,7 +179,6 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
 
     public void save() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (propertiesPanelScrollPane != null) {
@@ -226,18 +194,13 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
 
     @Override
     public void onConfigValueModified(final KeyHandler<Boolean> keyHandler, final Boolean newValue) {
-
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 if (newValue && keyHandler == CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE) {
                     setPropertiesPanelVisible(true);
-
                 }
                 relayout();
-
             }
         };
     }

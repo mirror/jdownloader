@@ -12,7 +12,6 @@ import org.jdownloader.gui.views.downloads.properties.PropertiesScrollPaneInterf
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class LinkgrabberPropertiesScrollPane extends OverviewHeaderScrollPane implements PropertiesScrollPaneInterface {
-
     private final LinkgrabberProperties panel;
     private LinkgrabberPropertiesHeader header;
     private AbstractNode                selectedNode;
@@ -30,11 +29,9 @@ public class LinkgrabberPropertiesScrollPane extends OverviewHeaderScrollPane im
     public void update(AbstractNode objectbyRow) {
         header.update(objectbyRow);
         panel.update(objectbyRow);
-        Container parent = getParent();
-
+        final Container parent = getParent();
         if (parent != null && parent instanceof JComponent && !equals(selectedNode == null ? null : selectedNode.getClass(), objectbyRow == null ? null : objectbyRow.getClass())) {
             // revalidate the parent, because the panel hight may have changed
-
             ((JComponent) parent).revalidate();
         }
         selectedNode = objectbyRow;
@@ -63,5 +60,4 @@ public class LinkgrabberPropertiesScrollPane extends OverviewHeaderScrollPane im
     public void save() {
         panel.save();
     }
-
 }

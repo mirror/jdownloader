@@ -19,7 +19,6 @@ import org.jdownloader.gui.views.downloads.properties.AbstractNodeProperties;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 
 public class CrawledPackageNodeProperties extends AbstractNodeProperties<CrawledPackage> {
-
     private final CrawledPackage currentPackage;
     private List<Archive>        archives = null;
 
@@ -82,7 +81,6 @@ public class CrawledPackageNodeProperties extends AbstractNodeProperties<Crawled
             private static final long serialVersionUID = -1726390416496140264L;
 
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
-
                 return new File(stringpath);
             };
         }.actionPerformed(null);
@@ -124,6 +122,7 @@ public class CrawledPackageNodeProperties extends AbstractNodeProperties<Crawled
 
     @Override
     protected void saveArchivePasswords(List<String> hashSet) {
+        final List<Archive> archives = this.archives;
         if (archives != null && archives.size() == 1) {
             archives.get(0).getSettings().setPasswords(hashSet);
         }
@@ -131,6 +130,7 @@ public class CrawledPackageNodeProperties extends AbstractNodeProperties<Crawled
 
     @Override
     protected void saveAutoExtract(BooleanStatus selectedItem) {
+        final List<Archive> archives = this.archives;
         if (archives != null && archives.size() == 1) {
             archives.get(0).getSettings().setAutoExtract(selectedItem);
         }
