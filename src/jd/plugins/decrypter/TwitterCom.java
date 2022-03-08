@@ -63,7 +63,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?(\\?.*)?|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,7 +72,6 @@ public class TwitterCom extends PornEmbedParser {
     private static final String            TYPE_CARD                                                        = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
     private static final String            TYPE_USER_ALL                                                    = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
     private static final String            TYPE_USER_POST                                                   = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
-    private static final String            TYPE_REDIRECT                                                    = "https?://t\\.co/[a-zA-Z0-9]+";
     // private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private static AtomicReference<String> GUEST_TOKEN                                                      = new AtomicReference<String>();
     private static AtomicLong              GUEST_TOKEN_TS                                                   = new AtomicLong(-1);
@@ -91,27 +90,49 @@ public class TwitterCom extends PornEmbedParser {
         return ret;
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "twitter.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains);
+            regex += "/(?:";
+            regex += "[A-Za-z0-9_\\-]+/status/\\d+";
+            // regex += "|.+";
+            regex += "|i/videos/tweet/\\d+";
+            regex += "|[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?(\\?.*)?";
+            regex += ")";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setAllowedResponseCodes(new int[] { 429 });
-        final String newURL = param.getCryptedUrl().replaceAll("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://twitter.com/");
+        final String newURL = param.getCryptedUrl().replaceFirst("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
         if (!newURL.equals(param.getCryptedUrl())) {
             logger.info("Currected URL: " + newURL);
             param.setCryptedUrl(newURL);
-        }
-        if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
-            br.setFollowRedirects(false);
-            getPage(param.getCryptedUrl());
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(https?[^<>\"]*?)(#_=_)?\"").getMatch(0);
-            }
-            if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404 || finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            decryptedLinks.add(this.createDownloadlink(finallink));
-            return decryptedLinks;
         }
         br.setFollowRedirects(true);
         /* Some profiles can only be accessed if they accepted others as followers --> Login if the user has added his twitter account */
@@ -133,7 +154,7 @@ public class TwitterCom extends PornEmbedParser {
             decryptedLinks.addAll(this.findEmbedUrls(null));
             String externID = br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
             if (externID == null) {
-                externID = br.getRegex("\"card_ur(?:i|l)\"[\t\n\r ]*?:[\t\n\r ]*?\"(https?[^<>\"]*?)\"").getMatch(0);
+                externID = br.getRegex("\"card_ur(?:i|l)\"\\s*:\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
             }
             if (externID != null) {
                 decryptedLinks.add(this.createDownloadlink(externID));
@@ -154,7 +175,6 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(dl);
             }
         } else if (param.getCryptedUrl().matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
-            /* 2021-06-22: Support for those has been removed in crawler but is still required in host plugin so let's leave it here! */
             final String tweetID = new Regex(param.getCryptedUrl(), jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED).getMatch(0);
             return crawlAPITweet(param, tweetID, account);
         } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {

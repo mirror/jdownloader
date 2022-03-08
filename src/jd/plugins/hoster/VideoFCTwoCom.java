@@ -15,11 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Cookies;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -87,5 +96,46 @@ public class VideoFCTwoCom extends VideoFCTwoCore {
     @Override
     protected String getAccountNameSpaceForLoginCheck() {
         return "https://" + this.getHost() + "/";
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        synchronized (account) {
+            final AccountInfo ai = new AccountInfo();
+            this.login(account, true, this.getAccountNameSpaceForLoginCheck());
+            final String namespacePremium = getAccountNameSpacePremium();
+            final String relativeURL_Payment = new URL(namespacePremium).getPath();
+            /* Switch to english language if possible (e.g. video.fc2.com) */
+            final String userSelectedLanguage = br.getCookie(this.getHost(), "language", Cookies.NOTDELETEDPATTERN);
+            if (userSelectedLanguage != null && !StringUtils.equalsIgnoreCase(userSelectedLanguage, "en")) {
+                br.getHeaders().put("Referer", "https://" + this.br.getHost(true) + relativeURL_Payment);
+                br.getPage("/a/language_change.php?lang=en");
+            }
+            if (!br.getURL().contains(relativeURL_Payment)) {
+                br.getPage(relativeURL_Payment);
+            }
+            /* Check for multiple traits - we want to make sure that we correctly recognize premium accounts! */
+            boolean isPremium = br.containsHTML("class=\"c-header_main_mamberType\"[^>]*><span[^>]*>Premium|>\\s*Contract Extension|>\\s*Premium Member account information");
+            String expire = br.getRegex("(\\d{4}/\\d{2}/\\d{2})[^>]*Automatic renewal date").getMatch(0);
+            if (!isPremium && expire != null) {
+                isPremium = true;
+            }
+            if (isPremium) {
+                /* Only set expire date if we find one */
+                if (expire != null) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH), this.br);
+                }
+                account.setType(AccountType.PREMIUM);
+            } else {
+                account.setType(AccountType.FREE);
+            }
+            /* Switch back to users' previously set language if that != en */
+            if (userSelectedLanguage != null && !userSelectedLanguage.equalsIgnoreCase("en")) {
+                logger.info("Switching back to users preferred language: " + userSelectedLanguage);
+                br.getPage("/a/language_change.php?lang=" + userSelectedLanguage);
+            }
+            ai.setUnlimitedTraffic();
+            return ai;
+        }
     }
 }
