@@ -60,7 +60,7 @@ public class FreeDiscPl extends PluginForHost {
     public FreeDiscPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://freedisc.pl/");
-        this.setStartIntervall(1000);
+        this.setStartIntervall(10000);
         try {
             Browser.setBurstRequestIntervalLimitGlobal("freedisc.pl", 250, 20, 60000);
         } catch (final Throwable e) {
@@ -228,13 +228,17 @@ public class FreeDiscPl extends PluginForHost {
 
     private String getWeakFilename(final DownloadLink link) {
         if (link.getPluginPatternMatcher().matches(TYPE_FILE)) {
-            final String titleWithExtHint = new Regex(link.getPluginPatternMatcher(), TYPE_FILE).getMatch(0);
-            final String extFromURL = getExtensionFromNameInFileURL(link.getPluginPatternMatcher());
-            if (extFromURL != null) {
-                final String titleWithoutExtHint = titleWithExtHint.substring(0, titleWithExtHint.lastIndexOf("-"));
-                return titleWithoutExtHint + extFromURL;
+            final String titleWithExtHint = new Regex(link.getPluginPatternMatcher(), TYPE_FILE).getMatch(2);
+            if (titleWithExtHint != null) {
+                final String extFromURL = getExtensionFromNameInFileURL(link.getPluginPatternMatcher());
+                if (extFromURL != null) {
+                    final String titleWithoutExtHint = titleWithExtHint.substring(0, titleWithExtHint.lastIndexOf("-"));
+                    return titleWithoutExtHint + extFromURL;
+                } else {
+                    return titleWithExtHint;
+                }
             } else {
-                return titleWithExtHint;
+                return this.getFID(link);
             }
         } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED_ALL)) {
             final Regex embed = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED_ALL);

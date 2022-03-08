@@ -113,14 +113,15 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             final String title = resource.get("name").toString();
             final String name_url = resource.get("name_url").toString();
             final String filesize = resource.get("size_format").toString();
-            String realTitle = title;
-            final String realExtension = FreeDiscPl.getExtensionFromNameInFileURL(name_url);
-            if (realExtension != null && !realTitle.toLowerCase(Locale.ENGLISH).endsWith(realExtension.toLowerCase(Locale.ENGLISH))) {
-                realTitle += realExtension;
-            }
-            final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/" + user + "," + type + "-" + id + "-" + name_url);
+            final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/" + user + "," + type + "-" + id + "," + name_url);
             if (!isFolder) {
-                dl.setName(realTitle);
+                /* Try to fix extension in filename as their filenames would usually end like "-<ext>". */
+                final String realExtension = FreeDiscPl.getExtensionFromNameInFileURL(name_url);
+                if (realExtension != null && !title.toLowerCase(Locale.ENGLISH).endsWith(realExtension.toLowerCase(Locale.ENGLISH))) {
+                    dl.setName(title + realExtension);
+                } else {
+                    dl.setName(title);
+                }
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setAvailable(true);
             }
