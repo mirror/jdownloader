@@ -1,6 +1,9 @@
 package org.jdownloader.gui.views.downloads;
 
+import java.awt.Container;
 import java.awt.Point;
+
+import javax.swing.SwingUtilities;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import net.miginfocom.swing.MigLayout;
@@ -8,6 +11,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
@@ -25,7 +29,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class DownloadsPabelWidgetContainer extends WidgetContainer implements GenericConfigEventListener<Boolean> {
+public class DownloadsPanelWidgetContainer extends WidgetContainer implements GenericConfigEventListener<Boolean> {
     /**
      *
      */
@@ -62,8 +66,8 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
         }
         removeAll();
         setVisible(true);
-        AbstractNode selectedObject = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
-        boolean showProperties = CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && propertiesPanelVisible && selectedObject != null;
+        final AbstractNode selectedObject = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
+        final boolean showProperties = CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && propertiesPanelVisible && selectedObject != null;
         if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
             if (showProperties) {
                 setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[]" + LAFOptions.getInstance().getExtension().customizeLayoutGetDefaultGap() + "[]"));
@@ -84,7 +88,26 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
                 setVisible(false);
             }
         }
-        revalidate();
+        if (!showProperties) {
+            createPropertiesPanel().update((AbstractNode) null);
+        }
+        final Container p = getParent();
+        if (p != null) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    revalidate();
+                    if (Application.getJavaVersion() >= Application.JAVA17) {
+                        p.revalidate();
+                    } else {
+                        p.invalidate();
+                        p.validate();
+                    }
+                    doLayout();
+                    p.doLayout();
+                }
+            });
+        }
     }
 
     public void refreshAfterTabSwitch() {
@@ -129,7 +152,7 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
 
     private final CustomizeableActionBar bottomBar;
 
-    public DownloadsPabelWidgetContainer(final DownloadsTable table, CustomizeableActionBar bottomBar) {
+    public DownloadsPanelWidgetContainer(final DownloadsTable table, CustomizeableActionBar bottomBar) {
         super(table, CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE);
         this.table = table;
         this.bottomBar = bottomBar;
