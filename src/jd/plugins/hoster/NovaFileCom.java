@@ -28,6 +28,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,9 +43,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
@@ -233,18 +233,12 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
             }
         }
     }
-
     /* 2020-01-16: Not required anymore as they're using '?op=my_account' again. */
     // @Override
     // protected String getRelativeAccountInfoURL() {
     // /* 2019-08-20: Special */
     // return "/profile";
     // }
-    @Override
-    protected boolean allowsMultipleLoginAttemptsInOneGo() {
-        /* 2019-08-21: Special */
-        return true;
-    }
 
     @Override
     protected String getDllink(final DownloadLink downloadLink, final Account account, final Browser br, final String src) {

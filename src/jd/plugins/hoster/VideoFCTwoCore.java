@@ -205,7 +205,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
                     this.hlsDownloadurl = con.getURL().toString();
                     this.httpDownloadurl = null;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+                    checkErrorsNoFileLastResort(con);
                 }
             } finally {
                 try {
@@ -499,13 +499,24 @@ public abstract class VideoFCTwoCore extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                if (br.containsHTML("not found")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
-                }
+                checkErrorsNoFileLastResort(br.getHttpConnection());
             }
             dl.startDownload();
+        }
+    }
+
+    /**
+     * Use this whenever you get a non-file response when a file is to be expected.
+     *
+     * @throws PluginException
+     */
+    private void checkErrorsNoFileLastResort(final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+        } else if (br.containsHTML("not found")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'not found'", 5 * 60 * 1000l);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
         }
     }
 
