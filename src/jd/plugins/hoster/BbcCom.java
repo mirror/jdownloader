@@ -23,7 +23,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -84,7 +83,9 @@ public class BbcCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String vpid = new Regex(link.getPluginPatternMatcher(), "bbcdecrypted/(.+)").getMatch(0);
@@ -100,19 +101,21 @@ public class BbcCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final List<Object> media = (List<Object>) entries.get("media");
-            for (final Object mediaO : media) {
-                entries = (Map<String, Object>) mediaO;
-                final String kind = (String) entries.get("kind");
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String result = (String) root.get("result");
+            if (StringUtils.equalsIgnoreCase(result, "geolocation")) {
+                errorGeoBlocked();
+            }
+            final List<Map<String, Object>> mediaList = (List<Map<String, Object>>) root.get("media");
+            for (final Map<String, Object> media : mediaList) {
+                final String kind = (String) media.get("kind");
                 if (!kind.matches("audio|video")) {
                     continue;
                 }
-                final List<Object> connections = (List<Object>) entries.get("connection");
-                for (final Object connectionO : connections) {
-                    entries = (Map<String, Object>) connectionO;
-                    final String transferFormat = (String) entries.get("transferFormat");
-                    final String protocol = (String) entries.get("protocol");
+                final List<Map<String, Object>> connections = (List<Map<String, Object>>) media.get("connection");
+                for (final Map<String, Object> connection : connections) {
+                    final String transferFormat = (String) connection.get("transferFormat");
+                    final String protocol = (String) connection.get("protocol");
                     if (!transferFormat.equalsIgnoreCase("hls")) {
                         /* Skip dash/hds/other */
                         continue;
@@ -121,7 +124,7 @@ public class BbcCom extends PluginForHost {
                         continue;
                     }
                     // final String m3u8 = (String) entries.get("c");
-                    final String m3u8 = (String) entries.get("href");
+                    final String m3u8 = (String) connection.get("href");
                     if (StringUtils.isEmpty(m3u8)) {
                         continue;
                     }
@@ -349,6 +352,10 @@ public class BbcCom extends PluginForHost {
         }
     }
 
+    private void errorGeoBlocked() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-Blocked and/or account required");
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
@@ -358,7 +365,7 @@ public class BbcCom extends PluginForHost {
              * 2017-03-24: Example html in this case: <?xml version="1.0" encoding="UTF-8"?><mediaSelection
              * xmlns="http://bbc.co.uk/2008/mp/mediaselection"><error id="geolocation"/></mediaSelection>
              */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-Blocked and/or account required");
+            errorGeoBlocked();
         }
         final String qualityString;
         checkFFmpeg(link, "Download a HLS Stream");
