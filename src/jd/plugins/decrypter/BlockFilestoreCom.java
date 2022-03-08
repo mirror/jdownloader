@@ -16,36 +16,31 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.JDHash;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/folder/([a-f0-9\\-]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blockfilestore.com" }, urls = { "https?://(?:www\\.)?blockfilestore\\.com/folder/([a-f0-9\\-]+)" })
 public class BlockFilestoreCom extends PluginForDecrypt {
     public BlockFilestoreCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private final HashMap<Form, Browser> subdirectories = new HashMap<Form, Browser>();
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -53,77 +48,49 @@ public class BlockFilestoreCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString();
         final String uid = new Regex(parameter, getSupportedLinks()).getMatch(0);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(uid) || br.containsHTML(">This chapter has been removed due to infringement\\.<")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+        br.getPage("https://www." + this.getHost() + "/api/folder/get-public-folder?folderId=" + uid + "&originalFolderId=" + uid);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // now we need reference to the filename.. we assume there is only one filename in that given directory.
-        decryptedLinks.addAll(process(br, parameter, uid));
-        for (final Map.Entry<Form, Browser> a : subdirectories.entrySet()) {
-            final Browser br2 = a.getValue();
-            br2.submitForm(a.getKey());
-            decryptedLinks.addAll(process(br2, parameter, uid));
+        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Object resultO = root.get("result");
+        if (resultO == Boolean.FALSE) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return decryptedLinks;
-    }
-
-    private ArrayList<DownloadLink> process(final Browser br, final String parameter, final String uid) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String fpName = br.getRegex("<a id=\"ContentPlaceHolder1_rptNiveles_lnkGo_0\"[^>]*>(.*?)</a>").getMatch(0);
+        final Map<String, Object> result = (Map<String, Object>) resultO;
+        final Map<String, Object> detail = (Map<String, Object>) result.get("detail");
+        final List<Map<String, Object>> resources = (List<Map<String, Object>>) result.get("items");
+        if (resources.isEmpty()) {
+            logger.info("Folder is empty: " + param.getCryptedUrl());
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String currentFolderName = detail.get("name").toString();
+        String path = this.getAdoptedCloudFolderStructure();
+        if (path == null) {
+            path = currentFolderName;
+        } else {
+            path += "/" + currentFolderName;
+        }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
-        final String[] results = br.getRegex("<a[^>]+>.*?</div>\\s*</a>").getColumn(-1);
-        if (results != null) {
-            for (String result : results) {
-                result = Encoding.htmlDecode(result);
-                long r = 0;
-                while (r <= 10000) {
-                    r = new Random().nextLong();
-                }
-                final DownloadLink dl = new DownloadLink(null, null, getHost(), Encoding.urlDecode(parameter.replace("blockfilestore.com/", "blockfilestoredecrypted.com/") + "/" + r, true), true);
-                final String id = new Regex(result, "href=\"javascript:__doPostBack\\('(.*?)',''\\)\"").getMatch(0);
-                // folders
-                if (new Regex(result, "/images/folder\\.png").matches()) {
-                    final Form f = br.getFormbyActionRegex(".+" + uid);
-                    if (f == null) {
-                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        // return instead of defect.. could be empty folders or what ever we should always return the results.
-                        return decryptedLinks;
-                    }
-                    f.put("__EVENTTARGET", Encoding.urlEncode(id));
-                    f.put(Encoding.urlEncode("ctl00$txtEmaiLogin"), "");
-                    f.put(Encoding.urlEncode("ctl00$txtPasswordLogin"), "");
-                    f.put(Encoding.urlEncode("ctl00$txtEmaiRecovery"), "");
-                    f.remove("ctl00%24btnLogin");
-                    f.remove("ctl00%24btnSend");
-                    final Browser br2 = br.cloneBrowser();
-                    subdirectories.put(f, br2);
-                    continue;
-                }
-                // files
-                final String filename = new Regex(result, "<td class=\"seg\">\\s*(.*?)\\s*</td>").getMatch(0);
-                final String filesize = new Regex(result, "<td class=\"terc\">\\s*(.*?)\\s*</td>").getMatch(0);
-                // we assume there can only be one unique file within a given directory. note: can not use file id is the same across all,
-                // its just a reference of directory entry order.. may cause problem if someone decrypts the entire directory and then owner
-                // adds more files and directory changes its order (due to alphabetical order).
-                dl.setLinkID("blockfilestore://" + uid + "/" + JDHash.getSHA256(filename));
-                dl.setProperty("dlName", filename);
-                dl.setProperty("fileUID", id);
-                dl.setProperty("folderUID", uid);
-                if (fpName != null) {
-                    fp.add(dl);
-                }
-                dl.setName(filename);
-                dl.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-                dl.setAvailableStatus(AvailableStatus.TRUE);
+        fp.setName(path);
+        for (final Map<String, Object> resource : resources) {
+            if ((Boolean) resource.get("isFolder") == Boolean.TRUE) {
+                final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/folder/" + resource.get("id"));
+                dl.setRelativeDownloadFolderPath(path);
+                decryptedLinks.add(dl);
+            } else {
+                final DownloadLink dl = this.createDownloadlink("directhttp://" + resource.get("url"));
+                dl.setFinalFileName(resource.get("name").toString());
+                dl.setVerifiedFileSize(((Number) resource.get("size")).longValue());
+                dl.setAvailable(true);
+                dl.setRelativeDownloadFolderPath(path);
                 decryptedLinks.add(dl);
             }
         }
         return decryptedLinks;
     }
 
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }

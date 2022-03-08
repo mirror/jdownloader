@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -54,6 +55,7 @@ import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -598,16 +600,28 @@ public class GoogleDrive extends PluginForHost {
         return url;
     }
 
-    private static String regexConfirmDownloadurl(final Browser br) {
-        String res = br.getRegex("\"([^\"]*?/uc[^\"]+export=download[^<>\"]*?confirm=[^<>\"]+)\"").getMatch(0);
-        if (res == null) {
+    private static String regexConfirmDownloadurl(final Browser br) throws MalformedURLException {
+        String ret = null;
+        /**
+         * We're looking for such an URL (parameter positions may vary and 'resourcekey' parameter is not always given): </br>
+         * https://drive.google.com/uc?id=<fileID>&export=download&resourcekey=<key>&confirm=t
+         */
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : urls) {
+            final UrlQuery query = UrlQuery.parse(url);
+            if (query.containsKey("export") && query.containsKey("confirm")) {
+                ret = url;
+                break;
+            }
+        }
+        if (ret == null) {
             /* Fallback */
-            res = br.getRegex("form id=\"downloadForm\"[^<]*action=\"(https?://[^\"]+)\"").getMatch(0);
+            ret = br.getRegex("form id=\"downloadForm\"[^<]*action=\"(https?://[^\"]+)\"").getMatch(0);
         }
-        if (res != null) {
-            res = HTMLEntities.unhtmlentities(res);
+        if (ret != null) {
+            ret = HTMLEntities.unhtmlentities(ret);
         }
-        return res;
+        return ret;
     }
 
     /**

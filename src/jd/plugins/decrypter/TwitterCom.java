@@ -116,7 +116,6 @@ public class TwitterCom extends PornEmbedParser {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains);
             regex += "/(?:";
             regex += "[A-Za-z0-9_\\-]+/status/\\d+";
-            // regex += "|.+";
             regex += "|i/videos/tweet/\\d+";
             regex += "|[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?(\\?.*)?";
             regex += ")";
