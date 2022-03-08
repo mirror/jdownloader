@@ -51,18 +51,8 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
         };
     }
 
-    public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
+    protected void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
         this.propertiesPanelVisible = propertiesPanelVisible;
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                if (propertiesPanelScrollPane != null) {
-                    if (!propertiesPanelVisible) {
-                        propertiesPanelScrollPane.save();
-                    }
-                }
-            }
-        }.waitForEDT();
     }
 
     @Override
@@ -118,7 +108,6 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
         final OverviewHeaderScrollPane ret = new OverviewHeaderScrollPane(overView);
         LAFOptions.getInstance().applyPanelBackground(ret);
         ret.setColumnHeaderView(new DownloadOverViewHeader(overView) {
-
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -156,7 +145,6 @@ public class DownloadsPabelWidgetContainer extends WidgetContainer implements Ge
         final DownloadsPropertiesScrollPane propertiesScrollPane = new DownloadsPropertiesScrollPane(propertiesContentPanel, table);
         LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
         propertiesScrollPane.setColumnHeaderView(new DownloadPropertiesHeader(propertiesContentPanel) {
-
             @Override
             protected void onCloseAction() {
                 CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);

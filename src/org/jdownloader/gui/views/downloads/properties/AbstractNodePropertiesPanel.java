@@ -4,8 +4,6 @@ import java.awt.Component;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -122,25 +120,6 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
     public AbstractNodePropertiesPanel() {
         super("ins 0", "[grow,fill]", "[grow,fill]");
-        addComponentListener(new ComponentListener() {
-            @Override
-            public void componentShown(ComponentEvent e) {
-                onShowing();
-            }
-
-            @Override
-            public void componentResized(ComponentEvent e) {
-            }
-
-            @Override
-            public void componentMoved(ComponentEvent e) {
-            }
-
-            @Override
-            public void componentHidden(ComponentEvent e) {
-                onHidden();
-            }
-        });
         LAFOptions.getInstance().applyPanelBackground(this);
         config = JsonConfig.create(LinkgrabberSettings.class);
         saveDelayer = new DelayedRunnable(SERVICE, 500l, 2000l) {
@@ -667,7 +646,9 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
 
     protected boolean isDifferent(AbstractNode abstractNode) {
         final E lAbstractNodeProperties = getAbstractNodeProperties();
-        if (lAbstractNodeProperties == null && abstractNode != null) {
+        if (lAbstractNodeProperties == null && abstractNode == null) {
+            return false;
+        } else if (lAbstractNodeProperties == null && abstractNode != null) {
             return true;
         } else if (lAbstractNodeProperties != null && abstractNode == null) {
             return true;
