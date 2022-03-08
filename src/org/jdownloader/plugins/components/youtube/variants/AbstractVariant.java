@@ -252,25 +252,25 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     private static final SimpleMapper MAPPER = new SimpleMapper() {
-                                                 @Override
-                                                 protected JSonFactory newJsonFactory(String jsonString) {
-                                                     return new JSonFactory(jsonString) {
-                                                         @Override
-                                                         protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
-                                                             return null;
-                                                         };
-                                                     };
-                                                 }
+        @Override
+        protected JSonFactory newJsonFactory(String jsonString) {
+            return new JSonFactory(jsonString) {
+                @Override
+                protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                    return null;
+                };
+            };
+        }
 
-                                                 @Override
-                                                 protected void initMapper() {
-                                                 }
+        @Override
+        protected void initMapper() {
+        }
 
-                                                 @Override
-                                                 public boolean isPrettyPrintEnabled() {
-                                                     return false;
-                                                 }
-                                             };
+        @Override
+        public boolean isPrettyPrintEnabled() {
+            return false;
+        }
+    };
 
     public String getStorableString() {
         String ret = storableString;
@@ -287,7 +287,11 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     public static AbstractVariant get(DownloadLink downloadLink) {
-        final Object tmp = downloadLink.getTempProperties().getProperty(YoutubeHelper.YT_VARIANT, null);
+        return get(downloadLink, true);
+    }
+
+    public static AbstractVariant get(DownloadLink downloadLink, final boolean storeTempProperty) {
+        final Object tmp = downloadLink.hasTempProperties() ? downloadLink.getTempProperties().getProperty(YoutubeHelper.YT_VARIANT, null) : null;
         if (tmp != null && tmp instanceof AbstractVariant) {
             return (AbstractVariant) tmp;
         }
@@ -314,7 +318,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                 }
             }
         }
-        if (ret != null) {
+        if (ret != null && storeTempProperty) {
             downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, ret);
         }
         return ret;

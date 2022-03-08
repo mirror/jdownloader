@@ -180,10 +180,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     public boolean assignPlugin(DownloadLink link) {
         final boolean ret = super.assignPlugin(link);
         final long convertTimestamp = 1645833600000l;
-        if (ret && link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) < convertTimestamp) {
+        if (ret && (link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) < convertTimestamp)) {
             try {
-                final AbstractVariant variant = getVariant(link);
-                if (variant instanceof SubtitleVariant) {
+                final AbstractVariant variant = getVariant(link, false);
+                if (variant != null && !(variant instanceof SubtitleVariant)) {
                     // update linkID due to changed JSON parser/formatter
                     // see AbstractVariant._getUniqueId
                     final String youtubeID = link.getStringProperty(YoutubeHelper.YT_ID);
@@ -948,11 +948,15 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     protected AbstractVariant getVariant(final DownloadLink downloadLink) throws PluginException {
+        return getVariant(downloadLink, true);
+    }
+
+    protected AbstractVariant getVariant(final DownloadLink downloadLink, final boolean storeTempProperty) throws PluginException {
         final Object alternative = downloadLink.getTempProperties().getProperty(YT_ALTERNATE_VARIANT);
         if (alternative != null && alternative instanceof AbstractVariant) {
             return (AbstractVariant) alternative;
         } else {
-            final AbstractVariant ret = AbstractVariant.get(downloadLink);
+            final AbstractVariant ret = AbstractVariant.get(downloadLink, storeTempProperty);
             if (ret == null) {
                 getLogger().warning("Invalid Variant: " + downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
                 throw new PluginException(LinkStatus.ERROR_FATAL, "INVALID VARIANT: " + downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
