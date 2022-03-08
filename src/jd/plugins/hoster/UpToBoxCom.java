@@ -194,9 +194,8 @@ public class UpToBoxCom extends antiDDoSForHost {
         massLinkcheckerAPI(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
-        }
-        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
-            return AvailableStatus.FALSE;
+        } else if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             return AvailableStatus.TRUE;
         }
@@ -291,16 +290,14 @@ public class UpToBoxCom extends antiDDoSForHost {
                     boolean isOffline = false;
                     final Object errorO = entries.get("error");
                     if (errorO != null) {
-                        Map<String, Object> errormap = (Map<String, Object>) errorO;
-                        final long errorCode = JavaScriptEngineFactory.toLong(errormap.get("code"), 0);
+                        final Map<String, Object> errormap = (Map<String, Object>) errorO;
+                        final long errorCode = JavaScriptEngineFactory.toLong(errormap.get("code"), -1);
+                        dl.setProperty(PROPERTY_preset_api_errorcode, errorCode);
                         if (errorCode == api_errorcode_file_offline) {
                             isOffline = true;
                         } else if (errorCode == api_errorcode_password_required_or_wrong) {
                             /* E.g. "error":{"code":17,"message":"Password required"} */
                             dl.setPasswordProtected(true);
-                        } else {
-                            /* Undefined case or code is handled later */
-                            dl.setProperty(PROPERTY_preset_api_errorcode, errorCode);
                         }
                     } else {
                         dl.setPasswordProtected(false);
@@ -781,14 +778,20 @@ public class UpToBoxCom extends antiDDoSForHost {
     /** Throws Exception if DownloadLink contains preset property that indicates that a download is not possible. */
     private void handlePropertyBasedErrors(final DownloadLink link, final Account account) throws PluginException {
         final int presetErrorcode = link.getIntegerProperty(PROPERTY_preset_api_errorcode, -1);
-        if (presetErrorcode == -1) {
-            return;
-        } else {
-            if (presetErrorcode == api_errorcode_file_temporarily_unavailable) {
-                errorFileTemporarilyUnavailable();
-            } else {
-                logger.warning("Unknown cached errorcode: " + presetErrorcode);
-            }
+        switch (presetErrorcode) {
+        case -1:
+            break;
+        case api_errorcode_file_offline:
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        case api_errorcode_file_temporarily_unavailable:
+            errorFileTemporarilyUnavailable();
+            break;
+        case api_errorcode_password_required_or_wrong:
+            // ignore;
+            break;
+        default:
+            logger.warning("Unknown cached errorcode: " + presetErrorcode);
+            break;
         }
     }
 
