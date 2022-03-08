@@ -309,7 +309,7 @@ gui_settings_linkgrabber_title=链接抓取器过滤器
 gui_settings_plugins_description=JDownloader 使用适用于 %s1 个网站的‘插件’来自动化那些不用 JDownloader 则要花费大量时间的下载。这些插件的一部分拥有定制它们行为的设置。
 gui_settings_premium_description=输入并管理您的所有付费/黄金/铂金账户。
 gui_settings_premium_title=账户管理器
-gui_settings_proxy_description=如果需要代理服务器访问互联网，请在这里输入代理数据。JDownloader 可以轮换多个代理以避免 IP 等待时间。默认代理会用于所有没有受 IP 限制的连接。
+gui_settings_proxy_description=如果需要代理服务器访问互联网，请在这里输入代理数据。JDownloader 可以轮换多个代理以避免 IP 等待时间。默认代理会用于没有受 IP 限制的所有连接。
 gui_settings_proxy_description_new=如何使用连接管理器: \r\n您可以添加多个代理或网关到这个列表。使用过滤选项来针对一个特定的域名启用或禁用代理。对于免费下载，JDownloader 将会尝试同时使用所有可用代理。对于付费下载，将会使用第一个可用的代理。
 gui_settings_proxy_title=连接管理器
 gui_settings_reconnect_title=重连
@@ -323,7 +323,7 @@ image_description=图像文件: jpg, png, gif,…
 jd_controlling_SingleDownloadController_askexists3=下载文件时有问题!\r\n文件已在硬盘上。您想做什么?
 jd_controlling_SingleDownloadController_askexists_title=文件存在
 jd_controlling_reconnect_Reconnector_progress_failed2=重新连接失败太频繁! 自动重新连接被禁用! 请检查您的重连设置!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>未选择重新连接</u></b><br/><p>重新连接是跳过某些强制免费用户长时间等待的高级方式。<br>在使用付费账户时这个没什么用途。</p><p>在<a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>这里</a>阅读更多关于重新连接的信息</p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>未选择重连</u></b><br/><p>重新连接是跳过某些托管空间主机强迫免费用户长时间等待的高级方式。<br>在使用付费账户时则这个没什么用途。</p><p>在<a href='https://support.jdownloader.org/Knowledgebase/Article/View/1'>这里</a>阅读更多关于重新连接的信息</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=无重新连接
 jd_plugins_PluginUtils_askPassword=请输入 %s1 的密码
 lit_add_audio=添加音频
