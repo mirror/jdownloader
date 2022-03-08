@@ -15,10 +15,18 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -68,16 +76,47 @@ public class VideoLaxdCom extends VideoFCTwoCore {
 
     @Override
     protected String getAccountNameSpaceLogin() {
-        return "https://login.laxd.com/en/?ref=video";
+        return "https://login.laxd.com/?ref=video";
     }
 
     @Override
     protected String getAccountNameSpacePremium() {
-        return null;
+        return "https://video.laxd.com/a/payment/laxd_premium/";
     }
 
     @Override
     protected String getAccountNameSpaceForLoginCheck() {
         return "https://" + this.getHost() + "/en/";
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        synchronized (account) {
+            final AccountInfo ai = new AccountInfo();
+            this.login(account, true, this.getAccountNameSpaceForLoginCheck());
+            final String namespacePremium = getAccountNameSpacePremium();
+            final String relativeURL_Payment = new URL(namespacePremium).getPath();
+            if (!br.getURL().contains(relativeURL_Payment)) {
+                br.getPage(relativeURL_Payment);
+            }
+            /* Check for multiple traits - we want to make sure that we correctly recognize premium accounts! */
+            boolean isPremium = br.containsHTML("/a/payment/laxd_premium/cancel/");
+            final Regex expireRegex = br.getRegex("(?i)<dt>有効期限</dt><dd>(\\d+).(\\d{2}).(\\d{2})");
+            if (!isPremium && expireRegex.matches()) {
+                isPremium = true;
+            }
+            if (isPremium) {
+                /* Only set expire date if we find one */
+                if (expireRegex.matches()) {
+                    final String expire = expireRegex.getMatch(0) + "/" + expireRegex.getMatch(1) + "/" + expireRegex.getMatch(2);
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH), this.br);
+                }
+                account.setType(AccountType.PREMIUM);
+            } else {
+                account.setType(AccountType.FREE);
+            }
+            ai.setUnlimitedTraffic();
+            return ai;
+        }
     }
 }

@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -26,7 +25,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -73,7 +71,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
     private static final String PROPERTY_PREMIUMONLY          = "PREMIUMONLY";
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_fastLinkCheck, "Enable fastlinkcheck?\r\nFilesize won't be displayed until download is started.").setDefaultValue(default_SETTING_fastLinkCheck));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_fastLinkCheck, "Enable fast linkcheck?\r\nFilesize won't be displayed until download is started.").setDefaultValue(default_SETTING_fastLinkCheck));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_allowTrailerDownload, "Download trailer if full video is not available?").setDefaultValue(default_allowTrailerDownload));
     }
 
@@ -191,7 +189,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
             filename += ".mp4";
             link.setFinalFileName(filename);
         }
-        if (isDownload || !this.getPluginConfig().getBooleanProperty(SETTING_fastLinkCheck, default_SETTING_fastLinkCheck) && !StringUtils.isEmpty(httpDownloadurl)) {
+        if (!StringUtils.isEmpty(httpDownloadurl) && (isDownload || !this.getPluginConfig().getBooleanProperty(SETTING_fastLinkCheck, default_SETTING_fastLinkCheck))) {
             br.getHeaders().put("Referer", null);
             URLConnectionAdapter con = null;
             try {
@@ -223,7 +221,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
      * IMPORTANT NOTE: Free (unregistered) Users can watch (&download) videos up to 2 hours in length - if videos are longer, users can only
      * watch the first two hours of them - afterwards they will get this message: https://i.snipboard.io/FGl1E.jpg
      */
-    private void login(final Account account, final boolean verifyCookies, final String checkURL) throws IOException, PluginException, InterruptedException {
+    protected void login(final Account account, final boolean verifyCookies, final String checkURL) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             prepareBrowser(this.br);
             br.setCookiesExclusive(true);
@@ -320,16 +318,24 @@ public abstract class VideoFCTwoCore extends PluginForHost {
             if (br.getCookie(br.getHost(), loginCookieKey, Cookies.NOTDELETEDPATTERN) == null) {
                 br.setCookie(br.getHost(), loginCookieKey, System.currentTimeMillis() + "%2C" + Locale.getDefault().getLanguage());
             }
+            // /* 2022-03-28: Workaround-attempt for website doing unlimited redirects to home.laxd.com (same can happen in browser!). */
+            // br.setFollowRedirects(false);
+            // final String redirect = br.getRedirectLocation();
+            // if (redirect != null) {
+            // br.getPage(redirect);
+            // }
+            // br.setFollowRedirects(true);
             br.submitForm(loginform);
+            // br.submitForm(loginform);
             if (br.getURL().contains("error=1")) {
                 /* Login failed */
                 throw new AccountInvalidException();
             }
             {
                 /*
-                 * TODO: 2020-12-17: Check 2FA login handling below as it is untested.
+                 * 2021-01-04: Small workaround for bad redirect to wrong page on 2FA login required or redirect-loop e.g. on home.laxd.com
+                 * (same happens via browser).
                  */
-                /* 2021-01-04: Small workaround for bad redirect to wrong page on 2FA login required */
                 // final boolean required2FALogin = br.getRedirectLocation() != null &&
                 // br.getRedirectLocation().contains("login_authentication.php");
                 // if (!br.getURL().contains("login_authentication.php") && required2FALogin && this.getHost().equals("video.fc2.com")) {
@@ -354,8 +360,14 @@ public abstract class VideoFCTwoCore extends PluginForHost {
                     logger.info("Submitting 2FA code");
                     twoFactorLogin.put("code", twoFACode);
                     br.submitForm(twoFactorLogin);
+                    final String redirectAfterLogin = br.getRegex("http-equiv=\"Refresh\" content=\"0; url=(https?:/[^\"]+)\"").getMatch(0);
+                    if (redirectAfterLogin != null) {
+                        br.getPage(redirectAfterLogin);
+                    }
                     if (get2FALoginForm(this.br) != null) {
-                        throw new AccountInvalidException("2-factor-authentication failed!");
+                        throw new AccountInvalidException("2FA auth failed!");
+                    } else {
+                        logger.info("2FA login seems to be successful");
                     }
                 }
             }
@@ -419,43 +431,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
         synchronized (account) {
             final AccountInfo ai = new AccountInfo();
             this.login(account, true, this.getAccountNameSpaceForLoginCheck());
-            /* Only check for premium status if this URL is given. */
-            final String namespacePremium = getAccountNameSpacePremium();
-            if (namespacePremium != null) {
-                final String relativeURL_Payment = new URL(namespacePremium).getPath();
-                /* Switch to english language if possible (e.g. video.fc2.com) */
-                final String userSelectedLanguage = br.getCookie(this.getHost(), "language", Cookies.NOTDELETEDPATTERN);
-                if (userSelectedLanguage != null && !StringUtils.equalsIgnoreCase(userSelectedLanguage, "en")) {
-                    br.getHeaders().put("Referer", "https://" + this.br.getHost(true) + relativeURL_Payment);
-                    br.getPage("/a/language_change.php?lang=en");
-                }
-                if (!br.getURL().contains(relativeURL_Payment)) {
-                    br.getPage(relativeURL_Payment);
-                }
-                /* Check for multiple traits - we want to make sure that we correctly recognize premium accounts! */
-                boolean isPremium = br.containsHTML("class=\"c-header_main_mamberType\"[^>]*><span[^>]*>Premium|>\\s*Contract Extension|>\\s*Premium Member account information");
-                String expire = br.getRegex("(\\d{4}/\\d{2}/\\d{2})[^>]*Automatic renewal date").getMatch(0);
-                if (!isPremium && expire != null) {
-                    isPremium = true;
-                }
-                if (isPremium) {
-                    /* Only set expire date if we find one */
-                    if (expire != null) {
-                        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH), this.br);
-                    }
-                    account.setType(AccountType.PREMIUM);
-                } else {
-                    account.setType(AccountType.FREE);
-                }
-                /* Switch back to users' previously set language if that != en */
-                if (userSelectedLanguage != null && !userSelectedLanguage.equalsIgnoreCase("en")) {
-                    logger.info("Switching back to users preferred language: " + userSelectedLanguage);
-                    br.getPage("/a/language_change.php?lang=" + userSelectedLanguage);
-                }
-            } else {
-                /* Assume it's a free account */
-                account.setType(AccountType.FREE);
-            }
+            account.setType(AccountType.FREE);
             ai.setUnlimitedTraffic();
             return ai;
         }
