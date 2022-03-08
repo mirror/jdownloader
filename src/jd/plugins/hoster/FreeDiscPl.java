@@ -59,7 +59,12 @@ import jd.plugins.PluginForHost;
 public class FreeDiscPl extends PluginForHost {
     public FreeDiscPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://freedisc.pl/");
+        this.enablePremium("https://freedisc.pl/");
+        /**
+         * 2022-03-28: This is to reduce the occurence of "anti bot captchas" during downloading. </br>
+         * TODO: Update plugin so a start-intervall is only used for free downloads because in account mode, anti bot captchas should not
+         * happen at all (?).
+         */
         this.setStartIntervall(10000);
         try {
             Browser.setBurstRequestIntervalLimitGlobal("freedisc.pl", 250, 20, 60000);
