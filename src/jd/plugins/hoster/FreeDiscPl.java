@@ -91,7 +91,7 @@ public class FreeDiscPl extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains);
+            String regex = "https?://(?:(?:www|m)\\.)?" + buildHostsPatternPart(domains);
             regex += "/(?:";
             regex += "(#(!|%21))?[A-Za-z0-9\\-_]+,f-\\d+(,[\\w\\-]+)?";
             regex += "|embed/(?:audio|video)/\\d+";
