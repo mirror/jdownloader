@@ -123,8 +123,13 @@ public class TwitterCom extends PluginForHost {
         setconstants(link);
         prepBR(this.br);
         String title = null;
-        /* Most times twitter-image/videolinks will come from the decrypter. */
-        String filename = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_FILENAME_FROM_CRAWLER);
+        /* Most items will come from crawler. */
+        String filename = null;
+        final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_FILENAME_FROM_CRAWLER);
+        if (filenameFromCrawler != null) {
+            link.setFinalFileName(filenameFromCrawler);
+            filename = filenameFromCrawler;
+        }
         String tweetID = link.getStringProperty("tweetid");
         String vmap_url = null;
         boolean possibly_geo_blocked = false;
@@ -154,7 +159,6 @@ public class TwitterCom extends PluginForHost {
             }
         } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_EMBED)) {
             tweetID = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO_EMBED).getMatch(0);
-            final String username = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_USERNAME);
             this.dllink = getStoredVideoDirecturl(link);
             if (StringUtils.isEmpty(this.dllink)) {
                 final boolean useCrawler;
@@ -177,8 +181,8 @@ public class TwitterCom extends PluginForHost {
                 if (useCrawler) {
                     logger.info("Obtaining new directurl via crawler");
                     final PluginForDecrypt decrypter = this.getNewPluginForDecryptInstance(this.getHost());
-                    final String tweetURL = jd.plugins.decrypter.TwitterCom.createTwitterPostURL(username, tweetID);
-                    final CryptedLink param = new CryptedLink(tweetURL, link);
+                    final String tweetVideoURL = jd.plugins.decrypter.TwitterCom.createVideourl(tweetID);
+                    final CryptedLink param = new CryptedLink(tweetVideoURL, link);
                     final ArrayList<DownloadLink> results = decrypter.decryptIt(param, null);
                     if (results.isEmpty()) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
@@ -212,13 +216,7 @@ public class TwitterCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     }
-                    link.setProperty(PROPERTY_DIRECTURL, result.getStringProperty(PROPERTY_DIRECTURL));
-                    link.setProperty(PROPERTY_DIRECTURL_hls_master, result.getStringProperty(PROPERTY_DIRECTURL_hls_master));
-                    if (result.getFinalFileName() != null) {
-                        link.setFinalFileName(result.getFinalFileName());
-                    } else if (result.getForcedFileName() != null) { /* Old handling */
-                        link.setFinalFileName(result.getForcedFileName());
-                    }
+                    link.setProperties(result.getProperties());
                 } else {
                     /* 2018-11-13: Using static token */
                     final boolean use_static_token = true;
@@ -315,12 +313,13 @@ public class TwitterCom extends PluginForHost {
                         br.getPage(vmap_url);
                         this.dllink = regexVideoVmapHighestQualityURL(this.br);
                     }
-                    if (filename == null) {
-                        if (!StringUtils.isEmpty(title)) {
-                            filename = tweetID + "_" + title + ".mp4";
-                        } else {
-                            filename = tweetID + "_" + tweetID + ".mp4";
-                        }
+                }
+                if (filename == null) {
+                    /* Fallback */
+                    if (!StringUtils.isEmpty(title)) {
+                        link.setFinalFileName(tweetID + "_" + title + ".mp4");
+                    } else {
+                        link.setFinalFileName(tweetID + ".mp4");
                     }
                 }
             }
@@ -340,7 +339,6 @@ public class TwitterCom extends PluginForHost {
         }
         if (!StringUtils.isEmpty(dllink)) {
             if (dllink.contains(".m3u8")) {
-                link.setFinalFileName(filename);
                 checkFFProbe(link, "Download a HLS Stream");
                 br.setAllowedResponseCodes(new int[] { 403 });
                 try {
@@ -390,7 +388,7 @@ public class TwitterCom extends PluginForHost {
                             logger.log(e);
                         }
                         if (con.getResponseCode() == 404) {
-                            /* Definitly offline */
+                            /* Definitely offline */
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         } else if (con.getResponseCode() == 503) {
                             /* 2021-06-24: Possible rate-limit */

@@ -19,6 +19,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -36,15 +45,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "julesjordan.com" }, urls = { "https?://dl\\d+\\.julesjordan\\.com/dl/.+|https?://(?:www\\.)?julesjordan\\.com/(?:trial|members)/(?:movies|scenes)/[^/]+\\.html" })
 public class JulesjordanCom extends antiDDoSForHost {
@@ -95,7 +95,7 @@ public class JulesjordanCom extends antiDDoSForHost {
             String dllink_temp = null;
             final String[] jsons = this.br.getRegex("movie\\[\"[^\"]+\"\\]\\[\"[^\"]+\"\\] = (\\{.*?\\})").getColumn(0);
             for (final String json : jsons) {
-                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
                 final long width = JavaScriptEngineFactory.toLong(entries.get("movie_width"), 0);
                 dllink_temp = (String) entries.get("path");
                 if (width > width_max && !StringUtils.isEmpty(dllink_temp)) {
@@ -248,6 +248,7 @@ public class JulesjordanCom extends antiDDoSForHost {
         synchronized (account) {
             try {
                 prepBR(br, account.getHoster());
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36 OPR/84.0.4316.21");
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
