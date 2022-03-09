@@ -99,7 +99,6 @@ public class ChipDe extends PluginForHost {
         String md5 = null;
         String title_URL = null;
         String description = null;
-        long filesize = -1;
         final String contentID_URL;
         final Regex linkinfo = new Regex(link.getPluginPatternMatcher(), "/([^/]+)_(\\d+)\\.html$");
         title_URL = linkinfo.getMatch(0);
@@ -115,8 +114,8 @@ public class ChipDe extends PluginForHost {
                 /* chip.eu url without download button --> No downloadable content --> URL is offline for us */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filesize_str = null;
-            final String json = br.getRegex("var digitalData = (\\{.+\\});").getMatch(0);
+            String filesizeStr = null;
+            final String json = br.getRegex("var digitalData = (\\{.*?\\});").getMatch(0);
             if (json != null) {
                 /* 2021-07-22 */
                 final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
@@ -133,27 +132,26 @@ public class ChipDe extends PluginForHost {
                 /* Sometimes filesize is not given --> "n/a" */
                 final String filesizeTmp = (String) download.get("fileSize");
                 if (filesizeTmp.matches("\\d+(\\.\\d+)")) {
-                    filesize_str = filesizeTmp + "MB";
+                    filesizeStr = filesizeTmp + "MB";
                 }
                 link.setProperty(PROPERTY_DOWNLOAD_TARGET, download.get("Target").toString());
             }
+            final String filesizeBytesStr = br.getRegex("itemprop=\"fileSize\" content=\"([0-9\\.]+)\"").getMatch(0);
             if (StringUtils.isEmpty(filename)) {
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
-            if (filesize_str == null) {
-                /* Verified filesize! */
-                filesize_str = br.getRegex("itemprop=\"fileSize\" content=\"([0-9\\.]+)\"").getMatch(0);
+            if (StringUtils.isEmpty(filesizeStr)) {
+                filesizeStr = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
             }
-            if (StringUtils.isEmpty(filesize_str)) {
-                filesize_str = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
-            }
-            if (filesize_str == null) {
+            if (filesizeStr == null) {
                 /* For the international chip websites! */
-                filesize_str = br.getRegex("<dt>(?:File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
+                filesizeStr = br.getRegex("<dt>(?:File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
             }
-            if (filesize_str != null) {
-                filesize_str = filesize_str.replace("GByte", "GB");
-                filesize = SizeFormatter.getSize(filesize_str);
+            if (filesizeBytesStr != null) {
+                link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
+            } else if (filesizeStr != null) {
+                filesizeStr = filesizeStr.replace("GByte", "GB");
+                link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
             }
             /* Checksum is usually only available for chip.eu downloads! */
             md5 = br.getRegex("<dt>(?:Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:|Kontrolní součet:|Szumma:|Suma kontrolna|Checksum|Kontrol toplamı:|校验码：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(0);
@@ -202,7 +200,7 @@ public class ChipDe extends PluginForHost {
                 con = br.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        filesize = con.getCompleteContentLength();
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -230,9 +228,6 @@ public class ChipDe extends PluginForHost {
             link.setFinalFileName(filename);
         } else {
             link.setName(filename);
-        }
-        if (filesize > 0) {
-            link.setDownloadSize(filesize);
         }
         /*
          * Do not allow chip.eu hashes because at the moment we can only download their adware installers so even though they give us the
