@@ -66,17 +66,36 @@ public class FlimmitCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String urlSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        final String contentIDFromURL = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        final String parentID = contentIDFromURL;
         login();
         br.setFollowRedirects(true);
-        br.getPage(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + "dynamically/video/" + contentID + "/parent/" + contentID);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        // final String httpURL = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/progressive");
-        // we get hls since thats all we support at this stage.
-        final Object errorO = JavaScriptEngineFactory.walkJson(entries, "data/error");
+        String contentIDToUse = contentIDFromURL;
+        Map<String, Object> root = null;
+        Object errorO = null;
+        int attempt = 1;
+        do {
+            br.getPage(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + "dynamically/video/" + contentIDToUse + "/parent/" + parentID);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            // final String httpURL = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/progressive");
+            // we get hls since thats all we support at this stage.
+            errorO = JavaScriptEngineFactory.walkJson(root, "data/error");
+            final Object currentEpisodeId = root.get("currentEpisodeId");
+            if (attempt > 1) {
+                break;
+            } else if (currentEpisodeId == null || currentEpisodeId.toString().equals(contentIDFromURL)) {
+                break;
+            }
+            /*
+             * 2022-03-29: Special: Some content links to other content while we won't find any streams under the ID given in the added URL.
+             */
+            logger.info("Retry with new contentID: " + currentEpisodeId);
+            contentIDToUse = currentEpisodeId.toString();
+            attempt++;
+        } while (true);
         /*
          * Content is not a video object --> Maybe Series (2022-01-04: website actually handles this the same way and does the request for a
          * single video even for series-overview-pages lol)
@@ -93,22 +112,21 @@ public class FlimmitCom extends PluginForDecrypt {
                 final String episodeJson = Encoding.htmlDecode(episodesHTML);
                 final Map<String, Object> episodeInfo = JavaScriptEngineFactory.jsonToJavaMap(episodeJson);
                 String url = episodeInfo.get("linkUrl").toString();
-                if (url.endsWith(contentID)) {
+                if (url.endsWith(contentIDFromURL)) {
                     /* Do not add currently processed URL again! */
                     continue;
-                } else {
-                    url = br.getURL(url).toString();
-                    final DownloadLink video = this.createDownloadlink(url);
-                    /*
-                     * Store some info here which would be harder to get later (e.g. we would have to access HTML page for each single video
-                     * -> Takes time -> We want to avoid that)
-                     */
-                    video.setProperty(PROPERTY_COLLECTION_SLUG, urlSlug);
-                    if (title != null) {
-                        video.setProperty(PROPERTY_COLLECTION_TITLE, Encoding.htmlDecode(title).trim());
-                    }
-                    decryptedLinks.add(video);
                 }
+                url = br.getURL(url).toString();
+                final DownloadLink video = this.createDownloadlink(url);
+                /*
+                 * Store some info here which would be harder to get later (e.g. we would have to access HTML page for each single video ->
+                 * Takes time -> We want to avoid that)
+                 */
+                video.setProperty(PROPERTY_COLLECTION_SLUG, urlSlug);
+                if (title != null) {
+                    video.setProperty(PROPERTY_COLLECTION_TITLE, Encoding.htmlDecode(title).trim());
+                }
+                decryptedLinks.add(video);
             }
             logger.info("Found " + decryptedLinks.size() + " episodes");
         } else if (errorO != null) {
@@ -121,8 +139,8 @@ public class FlimmitCom extends PluginForDecrypt {
             }
         } else {
             /* Process video object */
-            final String m3u = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/hls");
-            final String videoTitle = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/title");
+            final String m3u = (String) JavaScriptEngineFactory.walkJson(root, "data/config/hls");
+            final String videoTitle = (String) JavaScriptEngineFactory.walkJson(root, "data/modules/titles/title");
             String seriesTitle = null;
             String seasonNumberStr = null;
             String episodeNumberStr = null;
@@ -169,7 +187,7 @@ public class FlimmitCom extends PluginForDecrypt {
                 /* Fallback */
                 baseVideoTitle = urlSlug;
             }
-            final String description = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/description");
+            final String description = (String) JavaScriptEngineFactory.walkJson(root, "data/modules/titles/description");
             final FilePackage fp = FilePackage.getInstance();
             if (!StringUtils.isEmpty(seriesTitle) && !StringUtils.isEmpty(seasonInfoFormatted)) {
                 fp.setName(seriesTitle + " " + seasonInfoFormatted);

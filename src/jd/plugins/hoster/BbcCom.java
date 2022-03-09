@@ -395,14 +395,14 @@ public class BbcCom extends PluginForHost {
                         try {
                             final String id = new Regex(thisHLSMaster, "/([^/]*?)\\.ism(\\.hlsv2\\.ism)?/").getMatch(0);
                             final String rewrittenHLSURL = thisHLSMaster.replaceFirst("/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8", "/" + id + ".ism/" + id + ".m3u8");
-                            foundQualities = HlsContainer.getHlsQualities(br, rewrittenHLSURL);
+                            foundQualities = HlsContainer.getHlsQualities(brc, rewrittenHLSURL);
                         } catch (final Exception e) {
                             logger.log(e);
                         }
                     }
                     if (foundQualities == null || foundQualities.isEmpty()) {
                         try {
-                            foundQualities = HlsContainer.getHlsQualities(br, thisHLSMaster);
+                            foundQualities = HlsContainer.getHlsQualities(brc, thisHLSMaster);
                         } catch (final Exception e) {
                             logger.log(e);
                         }
