@@ -180,7 +180,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     public boolean assignPlugin(DownloadLink link) {
         final boolean ret = super.assignPlugin(link);
         final long convertTimestamp = 1645833600000l;
-        if (ret && (link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) < convertTimestamp)) {
+        if (ret && (link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) != 2)) {
             try {
                 final AbstractVariant variant = getVariant(link, false);
                 if (variant != null && !(variant instanceof SubtitleVariant)) {
@@ -190,8 +190,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     if (StringUtils.isNotEmpty(youtubeID)) {
                         final String linkID = YoutubeHelper.createLinkID(youtubeID, variant);
                         if (StringUtils.isNotEmpty(linkID)) {
+                            link.setLinkID(linkID);
                             link.setPluginPatternMatcher(linkID);
-                            link.setProperty("assignPlugin", convertTimestamp);
+                            link.setProperty("assignPlugin", 2);
                         }
                     }
                 }
@@ -2454,9 +2455,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     cl.setName(oldName.replaceFirst("(\\." + oldExt + ")$", "." + newExt));
                 }
             }
-            downloadLink.setPluginPatternMatcher(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant));
+            final String linkID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant);
+            downloadLink.setPluginPatternMatcher(linkID);
             downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "#variant=" + Encoding.urlEncode(Base64.encode(v.getStorableString())));
-            downloadLink.setLinkID(YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), (AbstractVariant) variant));
+            downloadLink.setLinkID(linkID);
         }
         if (downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null) == null) {
             // old link?
