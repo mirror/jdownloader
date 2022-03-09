@@ -248,7 +248,6 @@ public class JulesjordanCom extends antiDDoSForHost {
         synchronized (account) {
             try {
                 prepBR(br, account.getHoster());
-                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36 OPR/84.0.4316.21");
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
