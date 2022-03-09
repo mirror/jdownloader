@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -36,6 +38,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
@@ -93,6 +96,7 @@ public class TeraboxCom extends PluginForHost {
     public static final String PROPERTY_DIRECTURL       = "directurl";
     public static final String PROPERTY_PASSWORD_COOKIE = "password_cookie";
     public static final String PROPERTY_PAGINATION_PAGE = "pagination_page";
+    public static final String PROPERTY_ACCOUNT_TOKEN   = "token";
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -253,10 +257,9 @@ public class TeraboxCom extends PluginForHost {
                     logger.info("Cookies are still fresh --> Trust cookies without login");
                     return false;
                 }
-                if (this.checkLoginStatus(br)) {
+                if (this.checkLoginStatus(br, account)) {
                     logger.info("Cookie login successful");
                     /* Refresh cookie timestamp */
-                    account.saveCookies(this.br.getCookies(this.getHost()), "");
                     return true;
                 } else {
                     logger.info("Cookie login failed");
@@ -269,14 +272,13 @@ public class TeraboxCom extends PluginForHost {
             }
             logger.info("Performing full (user-cookie) login");
             br.setCookies(userCookies);
-            if (!this.checkLoginStatus(br)) {
+            if (!this.checkLoginStatus(br, account)) {
                 if (account.hasEverBeenValid()) {
                     throw new AccountInvalidException("Expired login cookies");
                 } else {
                     throw new AccountInvalidException("Invalid login cookies");
                 }
             }
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
             return true;
         }
     }
@@ -318,11 +320,16 @@ public class TeraboxCom extends PluginForHost {
         return thread;
     }
 
-    private boolean checkLoginStatus(final Browser br) throws IOException {
+    private boolean checkLoginStatus(final Browser br, final Account account) throws IOException {
         br.setFollowRedirects(true);
         br.getPage("https://www." + this.getHost() + "/disk/home");
+        final String bdstoken = br.getRegex("\"bdstoken\":\"([a-f0-9]{32})\"").getMatch(0);
+        if (bdstoken != null) {
+            account.setProperty(PROPERTY_ACCOUNT_TOKEN, bdstoken);
+        }
         /* NOT logged in --> Redirect to mainpage */
         if (br.getURL().contains("/disk/home")) {
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
             return true;
         } else {
             return false;
@@ -333,9 +340,29 @@ public class TeraboxCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        /* 2021-04-14: Only free accounts are existant/supported */
+        final String token = account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
+        if (token != null) {
+            /* Try to find additional account information */
+            final Browser brc = br.cloneBrowser();
+            brc.getPage("/rest/2.0/membership/proxy/user?method=query&membership_version=1.0&channel=dubox&web=1&app_id=250528&clienttype=0&bdstoken=" + token);
+            /* 2021-04-14: Only free accounts are existant/supported */
+            final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> data = (Map<String, Object>) root.get("data");
+            final Map<String, Object> member_info = (Map<String, Object>) data.get("member_info");
+            final int is_vip = ((Number) member_info.get("is_vip")).intValue();
+            if (is_vip == 1) {
+                account.setType(AccountType.PREMIUM);
+                final long vip_left_time = ((Number) member_info.get("vip_left_time")).longValue();
+                if (vip_left_time > 0) {
+                    ai.setValidUntil(System.currentTimeMillis() + vip_left_time * 1000);
+                }
+            } else {
+                account.setType(AccountType.FREE);
+            }
+        } else {
+            account.setType(AccountType.FREE);
+        }
         ai.setUnlimitedTraffic();
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
