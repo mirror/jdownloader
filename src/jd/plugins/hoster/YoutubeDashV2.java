@@ -958,8 +958,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         } else {
             final AbstractVariant ret = AbstractVariant.get(downloadLink, storeTempProperty);
             if (ret == null) {
-                getLogger().warning("Invalid Variant: " + downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
-                throw new PluginException(LinkStatus.ERROR_FATAL, "INVALID VARIANT: " + downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT));
+                final String ytV = downloadLink.getStringProperty(YoutubeHelper.YT_VARIANT);
+                getLogger().warning("Invalid Variant: " + ytV);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "INVALID VARIANT: " + ytV);
             } else {
                 return ret;
             }

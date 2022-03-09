@@ -3760,11 +3760,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         // remove script tags
         // remove comments, eg ddl.to just comment some buttons/links for expired cookies/non logged in
         final String htmlWithoutScriptTagsAndComments = brc.toString().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
-        final String ahref = "<a[^<]*href\\s*=\\s*\"[^\"]*";
+        final String ahrefPattern = "<a[^<]*href\\s*=\\s*\"[^\"]*";
         /**
          * Test cases </br> op=logout: ddownload.com </br> /(user_)?logout\": ?? </br> logout\\.html: fastclick.to
          */
-        final boolean logoutOkay = new Regex(htmlWithoutScriptTagsAndComments, ahref + "(&|\\?)op=logout").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/(user_)?logout\"").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/logout\\.html\"").matches();
+        final boolean logout = new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "(&|\\?)op=logout").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "/(user_)?logout\"").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "/logout\\.html\"").matches();
+        final boolean login = new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "(&|\\?)op=login").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "/(user_)?login\"").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "/login\\.html\"").matches();
         // unsafe, not every site does redirect
         final boolean loginURLFailed = brc.getURL().contains("op=") && brc.getURL().contains("op=login");
         /*
@@ -3772,15 +3773,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * This may be the case if a user has direct downloads enabled. We access downloadurl --> Redirect happens --> We check for login
          */
         final boolean isRedirect = brc.getRedirectLocation() != null;
-        final boolean myAccountOkay = (new Regex(htmlWithoutScriptTagsAndComments, ahref + "(&|\\?)op=my_account").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/my(-|_)account\"").matches() || isRedirect);
+        final boolean myAccountOkay = new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "(&|\\?)op=my_account").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "/my(-|_)account\"").matches();
         logger.info("login_xfss_CookieOkay:" + login_xfss_CookieOkay);
         logger.info("login_xfsts_CookieOkay:" + login_xfsts_CookieOkay);
         logger.info("email_xfss_CookieOkay:" + email_xfss_CookieOkay);
         logger.info("email_xfsts_CookieOkay:" + email_xfsts_CookieOkay);
-        logger.info("logoutOkay:" + logoutOkay);
-        logger.info("myAccountOkay:" + myAccountOkay);
+        logger.info("logout_exists:" + logout);
+        logger.info("login_exists:" + login);
+        logger.info("myaccount_exists:" + myAccountOkay);
+        logger.info("redirect:" + isRedirect);
         logger.info("loginURLFailed:" + loginURLFailed);
-        final boolean ret = (login_xfss_CookieOkay || email_xfss_CookieOkay || login_xfsts_CookieOkay || email_xfsts_CookieOkay) && ((logoutOkay || myAccountOkay) && !loginURLFailed);
+        final boolean ret = (login_xfss_CookieOkay || email_xfss_CookieOkay || login_xfsts_CookieOkay || email_xfsts_CookieOkay) && ((logout || (myAccountOkay && !login) || isRedirect) && !loginURLFailed);
         logger.info("loggedin:" + ret);
         return ret;
     }

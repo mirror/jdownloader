@@ -55,7 +55,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
 
     public static AbstractVariant get(final String ytv) {
         try {
-            if (ytv.matches("[A-Z0-9_]+")) {
+            if (ytv != null && ytv.matches("[A-Z0-9_]+")) {
                 // old youtubevariant+try{
                 final VariantBase base = VariantBase.get(ytv);
                 if (base != null) {
@@ -88,11 +88,12 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
                     return ret;
                 }
             }
-            if (!ytv.contains("{")) {
+            if (ytv == null) {
+                return null;
+            } else if (!ytv.contains("{")) {
                 return null;
             }
             final YoutubeBasicVariantStorable storable = JSonStorage.restoreFromString(ytv, YoutubeBasicVariantStorable.TYPE);
-            AbstractVariant ret = null;
             VariantBase base = null;
             try {
                 base = VariantBase.valueOf(storable.getId());
@@ -105,6 +106,7 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
             if (base == null) {
                 return null;
             }
+            final AbstractVariant ret;
             switch (base.getGroup()) {
             case AUDIO:
                 ret = new AudioVariant(base);
@@ -121,9 +123,16 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
             case VIDEO:
                 ret = new VideoVariant(base);
                 break;
+            default:
+                ret = null;
+                break;
             }
-            ret.setJson(storable.getData());
-            return ret;
+            if (ret != null) {
+                ret.setJson(storable.getData());
+                return ret;
+            } else {
+                return null;
+            }
         } catch (Throwable e) {
             Log.log(e);
             return null;
