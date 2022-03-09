@@ -20,17 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.SiteType.SiteTemplate;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -41,6 +30,17 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JoinPeerTubeOrg extends antiDDoSForHost {
@@ -55,6 +55,10 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
     private String               mp4dllink         = null;
     private String               m3u8dllink        = null;
     private boolean              server_issues     = false;
+    /* Plugin/Packagizer properties */
+    private static final String  PROPERTY_TITLE    = "title";
+    private static final String  PROPERTY_UPLOADER = "uploader";
+    private static final String  PROPERTY_DATE     = "date";
 
     @Override
     public String getAGBLink() {
@@ -75,12 +79,9 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    // public static String[] getAnnotationNames() {
-    // return Plugin.buildAnnotationNames(getPluginDomains());
-    // }
+    /** Sync this list between hoster- and decrypterplugin! */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "joinpeertube.org", "thevideoverse.com", "tube.emy.plus", "video.jigmedatse.com", "video.amiga-ng.org", "video.berdi.xyz", "peertube.ssvo.de", "video.stackmatic.org", "peertube.espace.si", "videos.supertuxkart.net", "video.oliwaisfreeman.nohost.me", "pt.borgcube.eu", "tube.chaouane.xyz", "mp-tube.de", "oldpcmuseum.ru", "video.file.tube", "skeptube.fr", "socialwebtube.com", "tube.vvv.cash", "zergud.com", "peertube.soykaf.org", "kraut.zone", "video.asgardius.company", "tube.borked.host", "birkeundnymphe.de", "birkeundnymphe.de", "video.artist.cx", "v.kisombrella.top", "peertube.w.utnw.de", "tube.sp-codes.de", "tube.apolut.net", "myworkoutarenapeertube.cf", "tpaw.video", "peertube.dtmf.ca", "stream.shahab.nohost.me", "tube.mfraters.net", "tube.pyngu.com", "peertube.troback.com", "peertube.ucy.de", "peertube.aukfood.net", "peertube.bridaahost.ynh.fr",
                 "peertube.myrasp.eu", "peertube.freetalklive.com", "watch.softinio.com", "peertube.plataformess.org", "vid.pravdastalina.info", "peertube.bitsandlinux.com", "tv1.gomntu.space", "phijkchu.com", "tube.arthack.nz", "tv.atmx.ca", "peertube.cybercirujas.club", "toob.bub.org", "pt.maciej.website", "tube.superseriousbusiness.org", "videos.petch.rocks", "kino.kompot.si", "play.rosano.ca", "tube.kockatoo.org", "peertube.cabaal.net", "nastub.cz", "sovran.video", "v.xxxapex.com", "tube.odat.xyz", "stream.k-prod.fr", "peertube.fenarinarsa.com", "peertube.art3mis.de", "tube.tylerdavis.xyz", "video.ethantheenigma.me", "arcana.fun", "peertube.ecologie.bzh", "peertube.atsuchan.page", "peertube.vlaki.cz", "video-cave-v2.de", "peertube.keazilla.net", "vids.tekdmn.me", "piraten.space", "offenes.tv", "peertube.arbleizez.bzh", "tube.bstly.de", "web-fellow.de", "peertube.mattone.net",
                 "ptb.lunarviews.net", "ovaltube.codinglab.ch", "video.wilkie.how", "video.wsf2021.info", "videorelay.co", "auf1.eu", "tube.toontoet.nl", "libertynode.tv", "video.gyt.is", "peertube.0x5e.eu", "turkum.me", "videos.denshi.live", "peertube.jensdiemer.de", "peertube.bubbletea.dev", "tube.futuretic.fr", "libra.syntazia.org", "peertube.thenewoil.xyz", "peertube.beeldengeluid.nl", "tv.lumbung.space", "vid.dascoyote.xyz", "peertube.cuatrolibertades.org", "orgdup.media", "pocketnetpeertube1.nohost.me", "live.toobnix.org", "videos.hush.is", "tube.ebin.club", "tube.wien.rocks", "tube.tpshd.de", "tube.cowfee.moe", "video.ozgurkon.org", "video.progressiv.dev", "tube.s1gm4.eu", "s1.gegenstimme.tv", "peertube.nz", "pocketnetpeertube4.nohost.me", "comf.tube", "peertube.orthus.link", "pocketnetpeertube6.nohost.me", "peertube.freenet.ru", "pocketnetpeertube5.nohost.me", "peertube.biz",
@@ -131,9 +132,9 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
 
     /**
      * Debug function which can find new instances compatible with this code/plugin/template from:
-     * https://instances.joinpeertube.org/instances </br> Important: Do NOT overwrite old entries with these ones! Looks like this list is
-     * not reliably collecting "all" peertube instances and/or single peertube instances can turn off some kind of
-     * "allow my instance to appear on tht list" setting!
+     * https://instances.joinpeertube.org/instances </br>
+     * Important: Do NOT overwrite old entries with these ones! Looks like this list is not reliably collecting "all" peertube instances
+     * and/or single peertube instances can turn off some kind of "allow my instance to appear on tht list" setting!
      */
     private static ArrayList<String> findNewScriptInstances() {
         if (false) {
@@ -207,25 +208,36 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         checkErrorsAPI(brc);
-        Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-        String title = (String) entries.get("name");
-        final String createdAt = (String) entries.get("createdAt");
-        final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "account/name");
-        String formattedDate = new Regex(createdAt, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-        if (formattedDate == null) {
-            formattedDate = createdAt;
+        final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        String description = (String) root.get("description");
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            /* Description is truncated sometimes --> Grab full description if needed */
+            if (description.endsWith("...")) {
+                logger.info("Description seems to be truncated -> Trying to fetch full description");
+                brc.getPage(brc.getURL() + "/description");
+                final Map<String, Object> descriptionInfo = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Object descriptionFull = descriptionInfo.get("description");
+                if (descriptionFull instanceof String) {
+                    description = descriptionFull.toString();
+                } else {
+                    logger.warning("Failed to fetch full description");
+                }
+            }
+            link.setComment(description);
         }
+        parseMetadataAndSetFilename(link, root);
         /* Grab highest quality downloadurl + filesize */
-        final List<Map<String, Object>> oficialDownloads = (List<Map<String, Object>>) entries.get("files");
+        final List<Map<String, Object>> oficialDownloads = (List<Map<String, Object>>) root.get("files");
         if (!oficialDownloads.isEmpty()) {
-            this.mp4dllink = (String) JavaScriptEngineFactory.walkJson(entries, "files/{0}/fileDownloadUrl");
-            final long filesize = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "files/{0}/size"), 0);
-            if (filesize > 0) {
-                link.setDownloadSize(filesize);
+            final Map<String, Object> downloadInfo = oficialDownloads.get(0);
+            this.mp4dllink = (String) downloadInfo.get("fileDownloadUrl");
+            final Number filesize = (Number) downloadInfo.get("size");
+            if (filesize != null) {
+                link.setDownloadSize(filesize.longValue());
             }
         } else {
             logger.info("Official download impossible, checking stream variants");
-            final List<Map<String, Object>> streamingPlaylists = (List<Map<String, Object>>) entries.get("streamingPlaylists");
+            final List<Map<String, Object>> streamingPlaylists = (List<Map<String, Object>>) root.get("streamingPlaylists");
             if (!streamingPlaylists.isEmpty()) {
                 playlistLoop: for (final Map<String, Object> streamPlaylist : streamingPlaylists) {
                     m3u8dllink = (String) streamPlaylist.get("playlistUrl");
@@ -252,36 +264,34 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
                 }
             }
         }
-        if (StringUtils.isEmpty(title)) {
-            title = this.getFID(link);
-        }
-        String filename = "";
-        if (!StringUtils.isEmpty(formattedDate)) {
-            filename += formattedDate + "_";
-        }
-        filename += host.replace(".", "_") + "_";
-        if (!StringUtils.isEmpty(uploader)) {
-            filename += uploader + "_";
-        }
-        filename += title + ".mp4";
-        link.setFinalFileName(filename);
-        String description = (String) entries.get("description");
-        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
-            /* Description is truncated sometimes --> Grab full description if needed */
-            if (description.endsWith("...")) {
-                logger.info("Description seems to be truncated -> Trying to fetch full description");
-                brc.getPage(brc.getURL() + "/description");
-                entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                final Object descriptionO = entries.get("description");
-                if (descriptionO instanceof String) {
-                    description = descriptionO.toString();
-                } else {
-                    logger.warning("Failed to fetch full description");
-                }
-            }
+        return AvailableStatus.TRUE;
+    }
+
+    public static void parseMetadataAndSetFilename(final DownloadLink link, final Map<String, Object> entries) {
+        final String host = Browser.getHost(link.getPluginPatternMatcher());
+        String title = (String) entries.get("name");
+        final String createdAt = (String) entries.get("createdAt");
+        final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "account/name");
+        final String formattedDate = new Regex(createdAt, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        final String description = (String) entries.get("description");
+        if (description != null && true) {
             link.setComment(description);
         }
-        return AvailableStatus.TRUE;
+        if (!StringUtils.isEmpty(title)) {
+            link.setProperty(PROPERTY_TITLE, title);
+            String filename = "";
+            if (!StringUtils.isEmpty(formattedDate)) {
+                link.setProperty(PROPERTY_DATE, formattedDate);
+                filename += formattedDate + "_";
+            }
+            filename += host.replace(".", "_") + "_";
+            if (!StringUtils.isEmpty(uploader)) {
+                link.setProperty(PROPERTY_UPLOADER, uploader);
+                filename += uploader + "_";
+            }
+            filename += title + ".mp4";
+            link.setFinalFileName(filename);
+        }
     }
 
     protected void checkErrorsAPI(final Browser br) throws PluginException {
