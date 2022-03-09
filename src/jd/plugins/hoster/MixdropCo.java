@@ -18,6 +18,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -25,20 +34,12 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MixdropCo extends antiDDoSForHost {
@@ -124,100 +125,112 @@ public class MixdropCo extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         final String fid = this.getFID(link);
-        String filename = null;
+        if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(fid);
+        }
         if (USE_API_FOR_LINKCHECK) {
             /* 2019-09-30: Let's just use it that way and hope it keeps working. */
             /*
              * https://mixdrop.co/api#fileinfo --> Also supports multiple fileIDs but as we are unsure how long this will last and this is
              * only a small filehost, we're only using this to check single fileIDs.
              */
-            getPage(API_BASE + "/fileinfo?email=" + Encoding.urlEncode(getAPIMail()) + "&key=" + getAPIKey() + "&ref[]=" + this.getFID(link));
-            if (br.getHttpConnection().getResponseCode() == 404 || !"true".equalsIgnoreCase(PluginJSonUtils.getJson(br, "success"))) {
+            final Browser brc = br.cloneBrowser();
+            getPage(brc, API_BASE + "/fileinfo?email=" + Encoding.urlEncode(getAPIMail()) + "&key=" + getAPIKey() + "&ref[]=" + this.getFID(link));
+            final Map<String, Object> json = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Boolean success = (Boolean) json.get("success");
+            if (brc.getHttpConnection().getResponseCode() == 404 || success == Boolean.FALSE) {
                 /* E.g. {"success":false,"result":{"msg":"file not found"}} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if ("true".equalsIgnoreCase(PluginJSonUtils.getJson(br, "deleted"))) {
+            }
+            final Map<String, Object> result = ((List<Map<String, Object>>) json.get("result")).get(0);
+            final String filename = result.get("title").toString();
+            if (!StringUtils.isEmpty(filename)) {
+                link.setFinalFileName(filename);
+            }
+            final Object filesizeO = result.get("size");
+            if (filesizeO != null) {
+                if (filesizeO instanceof Number) {
+                    link.setDownloadSize(((Number) filesizeO).longValue());
+                } else {
+                    link.setDownloadSize(Long.parseLong(filesizeO.toString()));
+                }
+            }
+            if ((Boolean) result.get("deleted") == Boolean.TRUE) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                filename = PluginJSonUtils.getJson(br, "title");
-                if (filename != null) {
-                    link.setFinalFileName(filename);
-                }
-                final String filesize = PluginJSonUtils.getJson(br, "size");
-                if (filesize != null) {
-                    // size is not verified! can be different!
-                    link.setDownloadSize(Long.parseLong(filesize));
-                }
             }
         } else {
             getPage(getNormalFileURL(link));
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("/imgs/illustration-notfound\\.png")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                final Regex fileinfo = br.getRegex("imgs/icon-file\\.png\"[^>]*/> <span title=\"([^\"]+)\">[^<>]*</span>([^<>\"]+)</div>");
-                filename = fileinfo.getMatch(0);
-                final String filesize = fileinfo.getMatch(1);
-                if (filesize != null) {
-                    link.setDownloadSize(SizeFormatter.getSize(filesize));
-                }
             }
+            final Regex fileinfo = br.getRegex("imgs/icon-file\\.png\"[^>]*/> <span title=\"([^\"]+)\">[^<>]*</span>([^<>\"]+)</div>");
+            String filename = fileinfo.getMatch(0);
+            final String filesize = fileinfo.getMatch(1);
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
         }
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = fid;
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            requestFileInformation(link);
             if (USE_API_FOR_LINKCHECK) {
                 getPage(getNormalFileURL(link));
             }
-            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
             /** 2021-03-03: E.g. extra step needed for .mp4 files but not for .zip files (which they call "folders"). */
             final String continueURL = br.getRegex("((?://[^/]+/f/[a-z0-9]+)?\\?download)").getMatch(0);
             if (continueURL != null) {
-                logger.info("Found continueURL");
+                logger.info("Found continueURL: " + continueURL);
                 getPage(continueURL);
             } else {
                 logger.info("Failed to find continueURL");
             }
             String csrftoken = br.getRegex("name=\"csrf\" content=\"([^<>\"]+)\"").getMatch(0);
             if (csrftoken == null) {
+                logger.info("Failed to find csrftoken");
                 csrftoken = "";
+            } else {
+                logger.info("Found csrftoken: " + csrftoken);
             }
             final UrlQuery query = new UrlQuery();
             query.add("a", "genticket");
             query.add("csrf", csrftoken);
-            /* 2019-12-13: Invisible reCaptcha */
+            /* 2019-12-13: Invisible reCaptchaV2 */
             final boolean requiresCaptcha = true;
             if (requiresCaptcha) {
                 final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 query.appendEncoded("token", recaptchaV2Response);
             }
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             postPage(br.getURL(), query.toString());
-            dllink = PluginJSonUtils.getJson(br, "url");
+            final Map<String, Object> json = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            dllink = (String) json.get("url");
             if (StringUtils.isEmpty(dllink)) {
-                if (br.containsHTML("Failed captcha verification")) {
-                    /*
-                     * 2020-04-20: Should never happen but happens:
-                     * {"type":"error","msg":"Failed captcha verification. Please try again. #errcode: 2"}
-                     */
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else if (br.containsHTML("File not found")) {
-                    /* 2020-06-08: {"type":"error","msg":"File not found"} */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String errormsg = (String) json.get("error");
+                if (errormsg != null) {
+                    if (errormsg.matches("(?i).*Failed captcha verification.*")) {
+                        /*
+                         * 2020-04-20: Should never happen but happens:
+                         * {"type":"error","msg":"Failed captcha verification. Please try again. #errcode: 2"}
+                         */
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else if (errormsg.matches("(?i).*File not found.*")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        /* Unknown error */
+                        throw new PluginException(LinkStatus.ERROR_FATAL, errormsg);
+                    }
                 }
             }
             /* 2019-09-30: Skip short pre-download waittime */
@@ -255,8 +268,8 @@ public class MixdropCo extends antiDDoSForHost {
         return "6LetXaoUAAAAAB6axgg4WLG9oZ_6QLTsFXZj-5sd";
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -270,7 +283,7 @@ public class MixdropCo extends antiDDoSForHost {
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 return null;
             } finally {
                 if (con != null) {
@@ -283,17 +296,8 @@ public class MixdropCo extends antiDDoSForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
-        return false;
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        return true;
     }
 
     @Override
