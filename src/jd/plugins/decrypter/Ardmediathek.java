@@ -530,7 +530,12 @@ public class Ardmediathek extends PluginForDecrypt {
             metadata.setDateTimestamp(getDateMilliseconds(date));
         }
         metadata.setChannel(trackerData.get("trackerClipCategory").toString());
-        metadata.setContentID(trackerData.get("trackerClipId").toString());
+        /**
+         * 2022-03-10: Do not use trackerClipId as unique ID as there can be different IDs for the same streams. </br>
+         * Let the handling go into fallback and use the final downloadurls as unique trait!
+         */
+        // metadata.setContentID(trackerData.get("trackerClipId").toString());
+        metadata.setRequiresContentIDToBeSet(false);
         final HashMap<String, DownloadLink> foundQualitiesMap = crawlARDJson(param, metadata, wdrMediaObject);
         return this.handleUserQualitySelection(metadata, foundQualitiesMap);
     }
@@ -675,7 +680,7 @@ public class Ardmediathek extends PluginForDecrypt {
                                     logger.warning("Skipping unknown resolution for URL: " + url);
                                     continue;
                                 }
-                                final DownloadLink download = addQuality(param, metadata, foundQualitiesMap, url, null, 0, resolution, false);
+                                final DownloadLink download = addQualityHTTP(param, metadata, foundQualitiesMap, url, null, resolution, false);
                                 if (download != null) {
                                     httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, resolution));
                                 }
@@ -741,7 +746,7 @@ public class Ardmediathek extends PluginForDecrypt {
                         final String qualityIdentifier = getQualityIdentifier(final_url, resolution);
                         if (!httpStreamsQualityIdentifiers_2_over_hls_master.contains(qualityIdentifier)) {
                             logger.info("Found (additional) http quality via HLS Master: " + qualityIdentifier);
-                            addQuality(param, metadata, foundQualitiesMap_http_urls_via_HLS_master, final_url, null, 0, resolution, false);
+                            addQualityHTTP(param, metadata, foundQualitiesMap_http_urls_via_HLS_master, final_url, null, resolution, false);
                             httpStreamsQualityIdentifiers_2_over_hls_master.add(qualityIdentifier);
                         }
                     }
@@ -772,7 +777,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 /* 2019-04-11: Workaround for missing protocol */
                 http_url_audio = "https:" + http_url_audio;
             }
-            addQuality(param, metadata, foundQualitiesMap, http_url_audio, null, 0, null, false);
+            addQualityHTTP(param, metadata, foundQualitiesMap, http_url_audio, null, null, false);
         }
         return foundQualitiesMap;
     }
@@ -1132,6 +1137,10 @@ public class Ardmediathek extends PluginForDecrypt {
 
     private boolean foundAtLeastOneValidItem = false;
 
+    private DownloadLink addQualityHTTP(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, final VideoResolution resolution, final boolean isAudioDescription) {
+        return addQuality(param, metadata, qualitiesMap, directurl, filesize_str, -1, resolution, isAudioDescription);
+    }
+
     private DownloadLink addQuality(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, long bitrate, final VideoResolution resolution, final boolean isAudioDescription) {
         /* Errorhandling */
         final String ext;
@@ -1191,7 +1200,9 @@ public class Ardmediathek extends PluginForDecrypt {
         if (resolution != null) {
             data.setResolution(resolution.toString());
         }
-        data.setBitrateTotal(bitrate);
+        if (bitrate != -1) {
+            data.setBitrateTotal(bitrate);
+        }
         data.setProtocol(protocol);
         data.setFileExtension(ext);
         data.setAudioDescription(isAudioDescription);
@@ -1203,12 +1214,12 @@ public class Ardmediathek extends PluginForDecrypt {
         link.setFinalFileName(finalFilename);
         link.setProperty(ARDMediathek.PROPERTY_CRAWLER_FORCED_FILENAME, finalFilename);
         link.setContentUrl(param.getCryptedUrl());
-        if (metadata.getContentID() == null) {
-            /* ContentID should always be available! */
-            logger.log(new Exception("FixMe!"));
-        } else {
+        if (metadata.getContentID() != null) {
             /* Needed for linkid / dupe check! */
-            link.setProperty("itemId", metadata.getContentID());
+            link.setProperty(ARDMediathek.PROPERTY_ITEM_ID, metadata.getContentID());
+        } else if (metadata.isRequiresContentIDToBeSet()) {
+            /* ContentID should be available but is not! */
+            logger.log(new Exception("FixMe!"));
         }
         if (filesize > 0) {
             if (setVerifiedFilesize) {
@@ -1318,7 +1329,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 final String finalFilename = MediathekHelper.getMediathekFilename(subtitle, data_subtitle, true, false);
                 subtitle.setFinalFileName(finalFilename);
                 subtitle.setProperty(ARDMediathek.PROPERTY_CRAWLER_FORCED_FILENAME, finalFilename);
-                subtitle.setProperty("itemId", dl.getProperty("itemId", null));
+                subtitle.setProperty(ARDMediathek.PROPERTY_ITEM_ID, dl.getProperty(ARDMediathek.PROPERTY_ITEM_ID));
                 subtitle.setContentUrl(dl.getContentUrl());
                 subtitle._setFilePackage(dl.getFilePackage());
                 ret.add(subtitle);
@@ -1353,13 +1364,14 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     public class ArdMetadata {
-        private String title         = null;
-        private String subtitle      = null;
-        private String channel       = null;
-        private String description   = null;
-        private String contentID     = null;
-        private String captionsURL   = null;
-        private long   dateTimestamp = -1;
+        private String  title                    = null;
+        private String  subtitle                 = null;
+        private String  channel                  = null;
+        private String  description              = null;
+        private String  contentID                = null;
+        private String  captionsURL              = null;
+        private long    dateTimestamp            = -1;
+        private boolean requiresContentIDToBeSet = true;
 
         protected String getTitle() {
             return title;
@@ -1440,6 +1452,14 @@ public class Ardmediathek extends PluginForDecrypt {
 
         public void setCaptionsURL(final String captionsURL) {
             this.captionsURL = captionsURL;
+        }
+
+        public boolean isRequiresContentIDToBeSet() {
+            return requiresContentIDToBeSet;
+        }
+
+        public void setRequiresContentIDToBeSet(boolean requiresContentIDToBeSet) {
+            this.requiresContentIDToBeSet = requiresContentIDToBeSet;
         }
     }
 

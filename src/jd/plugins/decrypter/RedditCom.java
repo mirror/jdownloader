@@ -38,6 +38,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -87,55 +88,24 @@ public class RedditCom extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlSubreddit(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
-        final Set<String> lastItemDupes = new HashSet<String>();
         /* Prepare crawl process */
         final String subredditTitle = new Regex(param.getCryptedUrl(), TYPE_SUBREDDIT).getMatch(0);
         if (subredditTitle == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
+        final String url = "https://www." + this.getHost() + "/r/" + subredditTitle + "/.json";
         fp.setName("/r/" + subredditTitle);
-        /* 2020-09-22: TODO Crawling entire user-profiles or subreddits will cause a lot of http requests - do not enable this yet! */
-        final int maxItemsPerCall = 100;
-        final UrlQuery query = new UrlQuery();
-        // query.add("type", "links");
-        query.add("limit", Integer.toString(maxItemsPerCall));
-        int page = 1;
-        int maxPage = 1;
-        int numberofItemsCrawled = 0;
-        do {
-            br.getPage("https://www." + this.getHost() + "/r/" + subredditTitle + "/.json?" + query.toString());
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-            final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
-            numberofItemsCrawled += numberofItemsOnCurrentPage;
-            crawledLinks.addAll(this.crawlListing(entries, fp));
-            logger.info("Crawled page " + page + " | Crawled items so far: " + numberofItemsCrawled);
-            final String fullnameAfter = (String) data.get("after");
-            /* Multiple fail safes to prevent an infinite loop. */
-            if (numberofItemsOnCurrentPage < maxItemsPerCall) {
-                logger.info("Stopping because we got only " + numberofItemsOnCurrentPage + "/" + maxItemsPerCall + " items this round");
-                break;
-            } else if (StringUtils.isEmpty(fullnameAfter)) {
-                logger.info("Seems like we've crawled everything");
-                break;
-            } else if (!lastItemDupes.add(fullnameAfter)) {
-                logger.info("Stopping because we already know this fullnameAfter");
-                break;
-            } else if (maxPage > -1 && page >= maxPage) {
-                logger.info("Stopping after desired page " + maxPage);
-                break;
-            }
-            query.addAndReplace("after", fullnameAfter);
-            page++;
-        } while (!this.isAbort());
-        return crawledLinks;
+        if (PluginJsonConfig.get(RedditConfig.class).isCrawlCompleteSubreddits()) {
+            /* Crawl until we've reached the end. */
+            return this.crawlPagination(url, fp, -1);
+        } else {
+            /* Crawl only first page */
+            return this.crawlPagination(url, fp, 1);
+        }
     }
 
     private ArrayList<DownloadLink> crawlUser(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
-        final Set<String> lastItemDupes = new HashSet<String>();
         /* Prepare crawl process */
         final String userTitle = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
         if (userTitle == null) {
@@ -144,46 +114,27 @@ public class RedditCom extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("/u/" + userTitle);
-        /* 2020-09-22: TODO Crawling entire user-profiles or subreddits will cause a lot of http requests - do not enable this yet! */
-        final boolean stopAfterFirstPage = true;
-        final int maxItemsPerCall = 100;
-        final UrlQuery query = new UrlQuery();
-        query.add("type", "links");
-        query.add("limit", Integer.toString(maxItemsPerCall));
-        int page = 1;
-        int numberofItemsCrawled = 0;
-        do {
-            logger.info("Crawling page: " + page);
-            br.getPage("https://www." + this.getHost() + "/user/" + userTitle + "/.json?" + query.toString());
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            crawledLinks.addAll(crawlListing(entries, fp));
-            entries = (Map<String, Object>) entries.get("data");
-            final String fullnameAfter = (String) entries.get("after");
-            final long numberofItemsOnCurrentPage = JavaScriptEngineFactory.toLong(entries.get("dist"), 0);
-            logger.info("Crawled page " + page + " | Crawled items so far: " + numberofItemsCrawled);
-            /* Multiple fail safes to prevent an infinite loop. */
-            if (StringUtils.isEmpty(fullnameAfter)) {
-                logger.info("Seems like we've crawled everything");
-                break;
-            } else if (numberofItemsOnCurrentPage < maxItemsPerCall) {
-                logger.info("Stopping because we got less than " + maxItemsPerCall + " items");
-                break;
-            } else if (!lastItemDupes.add(fullnameAfter)) {
-                logger.info("Stopping because we already know this fullnameAfter");
-                break;
-            } else if (stopAfterFirstPage) {
-                logger.info("Stopping after first page");
-                break;
-            }
-            query.remove("after");
-            query.add("after", fullnameAfter);
-            page++;
-        } while (!this.isAbort());
-        return crawledLinks;
+        final String url = "https://www." + this.getHost() + "/user/" + userTitle + "/.json";
+        if (PluginJsonConfig.get(RedditConfig.class).isCrawlCompleteUserProfiles()) {
+            /* Crawl until we've reached the end. */
+            return this.crawlPagination(url, fp, -1);
+        } else {
+            /* Crawl only first page */
+            return this.crawlPagination(url, fp, 1);
+        }
     }
 
-    /** TODO: Use this to replace the other two pagination functions. */
-    private ArrayList<DownloadLink> crawlPagination(final String url, final FilePackage fp) throws Exception {
+    /**
+     * Use this to crawl complete subreddits or user-profiles. </br>
+     *
+     * @param url
+     *            json-URL to crawl
+     * @param fp
+     *            FilePackage to set on crawled items.
+     * @param maxPage
+     *            Max. page to crawl. -1 = crawl all pages.
+     */
+    private ArrayList<DownloadLink> crawlPagination(final String url, final FilePackage fp, final int maxPage) throws Exception {
         final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         final Set<String> lastItemDupes = new HashSet<String>();
         /*
@@ -195,26 +146,30 @@ public class RedditCom extends PluginForDecrypt {
         // query.add("type", "links");
         query.add("limit", Integer.toString(maxItemsPerCall));
         int page = 1;
-        int maxPage = 3;
         int numberofItemsCrawled = 0;
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+        fp.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, false);
         do {
             br.getPage(url + "?" + query.toString());
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> data = (Map<String, Object>) root.get("data");
             final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
             numberofItemsCrawled += numberofItemsOnCurrentPage;
-            crawledLinks.addAll(this.crawlListing(entries, fp));
+            crawledLinks.addAll(this.crawlListing(root, fp));
             logger.info("Crawled page " + page + " | Crawled items so far: " + numberofItemsCrawled);
             final String nextPageToken = (String) data.get("after");
             /* Multiple fail safes to prevent an infinite loop. */
-            if (numberofItemsOnCurrentPage < maxItemsPerCall) {
-                logger.info("Stopping because: Found only " + numberofItemsOnCurrentPage + "/" + maxItemsPerCall + " items this round");
-                break;
-            } else if (StringUtils.isEmpty(nextPageToken)) {
+            if (StringUtils.isEmpty(nextPageToken)) {
                 logger.info("Stopping because: nextPageToken is not given");
                 break;
             } else if (!lastItemDupes.add(nextPageToken)) {
                 logger.info("Stopping because: We already know this nextPageToken");
+                break;
+            } else if (numberofItemsOnCurrentPage < maxItemsPerCall) {
+                logger.info("Stopping because: Found only " + numberofItemsOnCurrentPage + "/" + maxItemsPerCall + " items this round");
                 break;
             } else if (maxPage > -1 && page >= maxPage) {
                 logger.info("Stopping because: Reached desired max. page: " + maxPage);
@@ -289,7 +244,7 @@ public class RedditCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
-        br.getPage("https://www.reddit.com/comments/" + commentID + "/.json");
+        br.getPage("https://www." + this.getHost() + "/comments/" + commentID + "/.json");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -395,9 +350,11 @@ public class RedditCom extends PluginForDecrypt {
                     }
                     thisCrawledLinks.add(dl);
                 }
+                /* 2022-03-10: When a gallery is removed, 'is_gallery' can be true while 'gallery_data' does not exist. */
                 final Object is_galleryO = data.get("is_gallery");
-                if (is_galleryO == Boolean.TRUE) {
-                    final Map<String, Object> gallery_data = (Map<String, Object>) data.get("gallery_data");
+                final Object galleryO = data.get("gallery_data");
+                if (is_galleryO == Boolean.TRUE && galleryO != null) {
+                    final Map<String, Object> gallery_data = (Map<String, Object>) galleryO;
                     final List<Map<String, Object>> galleryItems = (List<Map<String, Object>>) gallery_data.get("items");
                     int imageNumber = 0;
                     for (final Map<String, Object> galleryItem : galleryItems) {
@@ -558,10 +515,5 @@ public class RedditCom extends PluginForDecrypt {
 
     public static final String getApiBaseOauth() {
         return jd.plugins.hoster.RedditCom.getApiBaseOauth();
-    }
-
-    @Override
-    public Class<? extends RedditConfig> getConfigInterface() {
-        return RedditConfig.class;
     }
 }

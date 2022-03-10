@@ -47,6 +47,7 @@ public class ARDMediathek extends PluginForHost {
     private String             dllink                           = null;
     private boolean            server_issues                    = false;
     public static final String PROPERTY_CRAWLER_FORCED_FILENAME = "crawler_forced_filename";
+    public static final String PROPERTY_ITEM_ID                 = "itemId";
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -76,7 +77,7 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public String getLinkID(final DownloadLink link) {
         final MediathekProperties data = link.bindData(MediathekProperties.class);
-        final String itemId = link.getStringProperty("itemId");
+        final String itemId = link.getStringProperty(PROPERTY_ITEM_ID);
         final String itemSrc = data.getSourceHost();
         final String itemType = data.getProtocol();
         final String itemRes = data.getResolution();
