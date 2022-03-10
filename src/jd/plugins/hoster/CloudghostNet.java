@@ -102,4 +102,10 @@ public class CloudghostNet extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2022-03-10 */
+        return false;
+    }
 }
