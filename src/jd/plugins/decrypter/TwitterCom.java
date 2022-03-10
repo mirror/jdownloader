@@ -335,27 +335,6 @@ public class TwitterCom extends PornEmbedParser {
         final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(entries, "card/binding_values/amplify_url_vmap/string_value");
-        if (medias == null && !StringUtils.isEmpty(vmapURL)) {
-            /* Fallback handling for very old (???) content */
-            /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
-            final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
-            final String finalFilename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
-            singleVideo.setFinalFileName(finalFilename);
-            singleVideo.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, finalFilename);
-            singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
-            singleVideo.setProperty(PROPERTY_USERNAME, username);
-            singleVideo.setProperty(PROPERTY_DATE, formattedDate);
-            singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
-            if (!StringUtils.isEmpty(postText)) {
-                singleVideo.setProperty(PROPERTY_POST_TEXT, postText);
-            }
-            singleVideo.setAvailable(true);
-            if (fp != null) {
-                singleVideo._setFilePackage(fp);
-            }
-            decryptedLinks.add(singleVideo);
-            distribute(singleVideo);
-        }
         if (medias != null && !medias.isEmpty()) {
             int mediaIndex = 0;
             for (final Map<String, Object> media : medias) {
@@ -443,6 +422,26 @@ public class TwitterCom extends PornEmbedParser {
                 }
                 mediaIndex += 1;
             }
+        } else if (!StringUtils.isEmpty(vmapURL)) {
+            /* Fallback handling for very old (???) content */
+            /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
+            final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
+            final String finalFilename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
+            singleVideo.setFinalFileName(finalFilename);
+            singleVideo.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, finalFilename);
+            singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
+            singleVideo.setProperty(PROPERTY_USERNAME, username);
+            singleVideo.setProperty(PROPERTY_DATE, formattedDate);
+            singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
+            if (!StringUtils.isEmpty(postText)) {
+                singleVideo.setProperty(PROPERTY_POST_TEXT, postText);
+            }
+            singleVideo.setAvailable(true);
+            if (fp != null) {
+                singleVideo._setFilePackage(fp);
+            }
+            decryptedLinks.add(singleVideo);
+            distribute(singleVideo);
         }
         if (PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isCrawlURLsInsidePostText() && urlsInPostText.length > 0) {
             for (final String url : urlsInPostText) {

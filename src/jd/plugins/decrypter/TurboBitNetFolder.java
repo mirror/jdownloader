@@ -16,17 +16,28 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -63,7 +74,7 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
     public static String[] getAnnotationUrls() {
         // construct pattern
         final String host = getHostsPattern();
-        return new String[] { host + "/download/folder/\\d+" };
+        return new String[] { host + "/download/folder/(\\d+)" };
     }
 
     private static String getHostsPattern() {
@@ -83,32 +94,99 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setAllowedResponseCodes(new int[] { 400 });
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        String id = new Regex(parameter, "download/folder/(\\d+)").getMatch(0);
-        if (id == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (folderID == null) {
+            /* Developer mistake! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // rows = 100 000 makes sure that we only get one page with all links
         // br.getPage("http://turbobit.net/downloadfolder/gridFile?id_folder=" + id + "&_search=false&nd=&rows=100000&page=1");
-        final String host = Browser.getHost(parameter);
+        final String host = Browser.getHost(param.getCryptedUrl(), true);
         br.setFollowRedirects(true);
-        getPage(String.format("http://%s/downloadfolder/gridFile?rootId=%s?currentId=%s&_search=false&nd=&rows=100000&page=1&sidx=file_type&sord=asc", host, id, id));
-        if (br.containsHTML("\"records\":0,\"total\":0,\"") || br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        final String[] ids = br.getRegex("\\{\"id\":\"([a-z0-9]+)\"").getColumn(0);
-        if (ids == null || ids.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleID : ids) {
-            /* Do not add the same folder again. */
-            if (!singleID.equals(id)) {
-                decryptedLinks.add(createDownloadlink(String.format("https://%s/%s.html", host, singleID)));
+        final int maxItemsPerPage = 100;
+        int page = 1;
+        do {
+            final UrlQuery query = new UrlQuery();
+            query.add("rootId", folderID);
+            query.add("currentId", folderID);
+            query.add("_search", "false");
+            query.add("nd", Long.toString(System.currentTimeMillis()));
+            query.add("rows", Integer.toString(maxItemsPerPage));
+            query.add("page", Integer.toString(page));
+            query.add("sidx", "name");
+            /* Yes they misspelled "sort"! */
+            query.add("sord", "asc");
+            getPage("https://" + host + "/downloadfolder/gridFile?" + query.toString());
+            if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final int maxPage = ((Number) entries.get("total")).intValue();
+            final int numberofItemsOnCurrentPage = ((Number) entries.get("records")).intValue();
+            final Map<String, Object> pathInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "userdata/path/{0}");
+            final String currentFolderName = pathInfo.get("name").toString();
+            String path = this.getAdoptedCloudFolderStructure();
+            if (path != null) {
+                path += "/" + currentFolderName;
+            } else {
+                /* Current folder = our root folder */
+                path = currentFolderName;
+            }
+            if (numberofItemsOnCurrentPage == 0) {
+                if (decryptedLinks.isEmpty()) {
+                    /* Happened on first page */
+                    final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER_" + path, "This folder is empty.");
+                    decryptedLinks.add(dummy);
+                    return decryptedLinks;
+                } else {
+                    /* This should never happen */
+                    logger.info("Stopping because: Current page contains zero items");
+                    break;
+                }
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(path);
+            final List<Map<String, Object>> resources = (List<Map<String, Object>>) entries.get("rows");
+            for (final Map<String, Object> resource : resources) {
+                final String id = resource.get("id").toString();
+                final List<String> data = (List<String>) resource.get("cell");
+                final String fileFolderInfo = data.get(2);
+                if (id.matches("\\d+") && fileFolderInfo.contains("")) {
+                    /* Folder */
+                    final DownloadLink folder = this.createDownloadlink("https://" + br.getHost() + "/download/folder/" + id);
+                    folder.setRelativeDownloadFolderPath(path);
+                    decryptedLinks.add(folder);
+                    distribute(folder);
+                } else {
+                    /* File */
+                    final DownloadLink file = this.createDownloadlink("https://" + br.getHost() + "/" + id + ".html");
+                    final String filename = new Regex(fileFolderInfo, "target='_blank'[^>]*>([^<]*?)</a>").getMatch(0);
+                    if (filename != null) {
+                        file.setName(Encoding.htmlDecode(filename).trim());
+                    } else {
+                        logger.warning("Failed to find filename for item: " + id);
+                    }
+                    final String filesize = data.get(3);
+                    file.setDownloadSize(SizeFormatter.getSize(filesize));
+                    file.setAvailable(true);
+                    file.setRelativeDownloadFolderPath(path);
+                    file._setFilePackage(fp);
+                    decryptedLinks.add(file);
+                    distribute(file);
+                }
+            }
+            logger.info("Crawled page " + page + "/" + maxPage + " | Found items: " + decryptedLinks.size() + "/" + numberofItemsOnCurrentPage);
+            if (this.isAbort()) {
+                break;
+            } else if (page >= maxPage) {
+                logger.info("Stopping because: Reached last page");
+                break;
+            } else if (resources.size() < maxItemsPerPage) {
+                /* Additional fail-safe */
+                logger.info("Stopping because: Reached end");
+                break;
+            }
+            page++;
+        } while (true);
         return decryptedLinks;
     }
 
