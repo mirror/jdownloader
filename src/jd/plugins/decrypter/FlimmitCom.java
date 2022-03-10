@@ -66,166 +66,148 @@ public class FlimmitCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String urlSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String contentIDFromURL = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        final String parentID = contentIDFromURL;
+        final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         login();
         br.setFollowRedirects(true);
-        String contentIDToUse = contentIDFromURL;
-        Map<String, Object> root = null;
-        Object errorO = null;
-        int attempt = 1;
-        do {
-            br.getPage(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + "dynamically/video/" + contentIDToUse + "/parent/" + parentID);
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            // final String httpURL = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/progressive");
-            // we get hls since thats all we support at this stage.
-            errorO = JavaScriptEngineFactory.walkJson(root, "data/error");
-            final Object currentEpisodeId = root.get("currentEpisodeId");
-            if (attempt > 1) {
-                break;
-            } else if (currentEpisodeId == null || currentEpisodeId.toString().equals(contentIDFromURL)) {
-                break;
-            }
-            /*
-             * 2022-03-29: Special: Some content links to other content while we won't find any streams under the ID given in the added URL.
-             */
-            logger.info("Retry with new contentID: " + currentEpisodeId);
-            contentIDToUse = currentEpisodeId.toString();
-            attempt++;
-        } while (true);
+        br.getPage(jd.plugins.hoster.FlimmitCom.getInternalBaseURL() + "dynamically/video/" + contentID + "/parent/" + contentID);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        // final String httpURL = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/progressive");
+        // we get hls since thats all we support at this stage.
+        final Object errorO = JavaScriptEngineFactory.walkJson(entries, "data/error");
         /*
          * Content is not a video object --> Maybe Series (2022-01-04: website actually handles this the same way and does the request for a
          * single video even for series-overview-pages lol)
          */
-        if ((errorO instanceof String) && errorO.toString().equalsIgnoreCase("Video not found.")) {
+        if ((errorO instanceof String) && (errorO.toString().equalsIgnoreCase("Video not found.") || errorO.toString().equalsIgnoreCase("Dieses Video ist derzeit nicht verfügbar."))) {
             logger.info("Content is not a single video --> Maybe series-overview");
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String title = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
-            final String[] episodesHTMLs = br.getRegex("<div class=\"b-card is-asset has-img-media  js-link-item\" data-jsb=\"(\\{\\&quot;.*?)\">").getColumn(0);
+            final String[] episodesHTMLs = br.getRegex("<div class=\"b-card is-asset has-img-media[^\"]*?js-link-item\" data-jsb=\"(\\{\\&quot;.*?)\">").getColumn(0);
             for (final String episodesHTML : episodesHTMLs) {
                 final String episodeJson = Encoding.htmlDecode(episodesHTML);
                 final Map<String, Object> episodeInfo = JavaScriptEngineFactory.jsonToJavaMap(episodeJson);
                 String url = episodeInfo.get("linkUrl").toString();
-                if (url.endsWith(contentIDFromURL)) {
+                if (url.endsWith(contentID)) {
                     /* Do not add currently processed URL again! */
                     continue;
+                } else {
+                    url = br.getURL(url).toString();
+                    final DownloadLink video = this.createDownloadlink(url);
+                    /*
+                     * Store some info here which would be harder to get later (e.g. we would have to access HTML page for each single video
+                     * -> Takes time -> We want to avoid that)
+                     */
+                    video.setProperty(PROPERTY_COLLECTION_SLUG, urlSlug);
+                    if (title != null) {
+                        video.setProperty(PROPERTY_COLLECTION_TITLE, Encoding.htmlDecode(title).trim());
+                    }
+                    decryptedLinks.add(video);
                 }
-                url = br.getURL(url).toString();
-                final DownloadLink video = this.createDownloadlink(url);
-                /*
-                 * Store some info here which would be harder to get later (e.g. we would have to access HTML page for each single video ->
-                 * Takes time -> We want to avoid that)
-                 */
-                video.setProperty(PROPERTY_COLLECTION_SLUG, urlSlug);
-                if (title != null) {
-                    video.setProperty(PROPERTY_COLLECTION_TITLE, Encoding.htmlDecode(title).trim());
-                }
-                decryptedLinks.add(video);
             }
             logger.info("Found " + decryptedLinks.size() + " episodes");
+            return decryptedLinks;
         } else if (errorO != null) {
-            if (br.containsHTML("Sie ein laufendes Abo") || br.containsHTML("\"code\"\\s*:\\s*1006")) {
+            if (br.containsHTML("(?i)Sie ein laufendes Abo") || br.containsHTML("\"code\"\\s*:\\s*1006")) {
                 /* active subscription required */
                 throw new AccountRequiredException();
             } else {
                 /* Offline or GEO-blocked */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } else {
-            /* Process video object */
-            final String m3u = (String) JavaScriptEngineFactory.walkJson(root, "data/config/hls");
-            final String videoTitle = (String) JavaScriptEngineFactory.walkJson(root, "data/modules/titles/title");
-            String seriesTitle = null;
-            String seasonNumberStr = null;
-            String episodeNumberStr = null;
-            String seasonEpisodeInfoFormatted = null;
-            String seasonInfoFormatted = null;
-            if (param.getDownloadLink() != null) {
-                final String collectionSlug = param.getDownloadLink().getStringProperty(PROPERTY_COLLECTION_SLUG);
-                final String collectionTitle = param.getDownloadLink().getStringProperty(PROPERTY_COLLECTION_TITLE);
-                if (collectionTitle != null) {
-                    final Regex seriesTitleRegex = new Regex(collectionTitle, "(?i)(.*) . Staffel (\\d+)");
-                    if (seriesTitleRegex.matches()) {
-                        seriesTitle = seriesTitleRegex.getMatch(0);
-                        seasonNumberStr = seriesTitleRegex.getMatch(1);
-                    } else {
-                        /* For collections without season numbers */
-                        seriesTitle = collectionTitle;
-                    }
-                } else if (collectionSlug != null) {
-                    /* Fallback */
-                    final Regex seriesTitleSlugRegex = new Regex(collectionSlug, "(?i)(.*)\\s*staffel-(\\d+)");
-                    if (seriesTitleSlugRegex.matches()) {
-                        seriesTitle = seriesTitleSlugRegex.getMatch(0);
-                        seasonNumberStr = seriesTitleSlugRegex.getMatch(1);
-                    } else {
-                        /* For collections without season numbers */
-                        seriesTitle = collectionSlug;
-                    }
+        }
+        /* Process video object */
+        final String m3u = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/hls");
+        final String videoTitle = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/title");
+        String seriesTitle = null;
+        String seasonNumberStr = null;
+        String episodeNumberStr = null;
+        String seasonEpisodeInfoFormatted = null;
+        String seasonInfoFormatted = null;
+        if (param.getDownloadLink() != null) {
+            final String collectionSlug = param.getDownloadLink().getStringProperty(PROPERTY_COLLECTION_SLUG);
+            final String collectionTitle = param.getDownloadLink().getStringProperty(PROPERTY_COLLECTION_TITLE);
+            if (collectionTitle != null) {
+                final Regex seriesTitleRegex = new Regex(collectionTitle, "(?i)(.*) . Staffel (\\d+)");
+                if (seriesTitleRegex.matches()) {
+                    seriesTitle = seriesTitleRegex.getMatch(0);
+                    seasonNumberStr = seriesTitleRegex.getMatch(1);
+                } else {
+                    /* For collections without season numbers */
+                    seriesTitle = collectionTitle;
+                }
+            } else if (collectionSlug != null) {
+                /* Fallback */
+                final Regex seriesTitleSlugRegex = new Regex(collectionSlug, "(?i)(.*)\\s*staffel-(\\d+)");
+                if (seriesTitleSlugRegex.matches()) {
+                    seriesTitle = seriesTitleSlugRegex.getMatch(0);
+                    seasonNumberStr = seriesTitleSlugRegex.getMatch(1);
+                } else {
+                    /* For collections without season numbers */
+                    seriesTitle = collectionSlug;
                 }
             }
-            episodeNumberStr = new Regex(videoTitle, "Folge (\\d+)").getMatch(0);
-            if (seasonNumberStr != null && episodeNumberStr != null) {
-                final DecimalFormat df = new DecimalFormat("00");
-                seasonInfoFormatted = "S" + df.format(Integer.parseInt(seasonNumberStr));
-                seasonEpisodeInfoFormatted = seasonInfoFormatted + "E" + df.format(Integer.parseInt(episodeNumberStr));
-            }
-            if (m3u == null) {
-                logger.info("Failed to find any downloadable content");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String baseVideoTitle;
-            if (!StringUtils.isEmpty(videoTitle)) {
-                baseVideoTitle = videoTitle;
-            } else {
-                /* Fallback */
-                baseVideoTitle = urlSlug;
-            }
-            final String description = (String) JavaScriptEngineFactory.walkJson(root, "data/modules/titles/description");
-            final FilePackage fp = FilePackage.getInstance();
-            if (!StringUtils.isEmpty(seriesTitle) && !StringUtils.isEmpty(seasonInfoFormatted)) {
-                fp.setName(seriesTitle + " " + seasonInfoFormatted);
-            } else if (!StringUtils.isEmpty(seriesTitle)) {
-                fp.setName(seriesTitle);
-            } else {
-                fp.setName(baseVideoTitle);
-            }
-            if (!StringUtils.isEmpty(description)) {
-                fp.setComment(description);
-            }
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-            final String baseFilename;
-            if (!StringUtils.isEmpty(seriesTitle) && seasonEpisodeInfoFormatted != null) {
-                baseFilename = seriesTitle + " " + seasonEpisodeInfoFormatted;
-            } else if (!StringUtils.isEmpty(seriesTitle)) {
-                baseFilename = seriesTitle + " - " + baseVideoTitle;
-            } else {
-                baseFilename = baseVideoTitle;
-            }
-            br.getPage(m3u);
-            // TODO: please rewrite to use the dedicated hoster plugin
-            // TODO: store asset ID/contentID and maybe seriesSlug(might be required in future) and hlscontainer id as properties, so hoster
-            // plugin can later refresh urls or change quality
-            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
-            final ArrayList<HlsContainer> selectedQualities = new ArrayList<HlsContainer>();
-            if (PluginJsonConfig.get(FlimmitComConfig.class).isPreferBest()) {
-                selectedQualities.add(HlsContainer.findBestVideoByBandwidth(qualities));
-            } else {
-                selectedQualities.addAll(qualities);
-            }
-            for (final HlsContainer quality : selectedQualities) {
-                final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
-                dl.setFinalFileName(baseFilename + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-            }
+        }
+        episodeNumberStr = new Regex(videoTitle, "Folge (\\d+)").getMatch(0);
+        if (seasonNumberStr != null && episodeNumberStr != null) {
+            final DecimalFormat df = new DecimalFormat("00");
+            seasonInfoFormatted = "S" + df.format(Integer.parseInt(seasonNumberStr));
+            seasonEpisodeInfoFormatted = seasonInfoFormatted + "E" + df.format(Integer.parseInt(episodeNumberStr));
+        }
+        if (m3u == null) {
+            logger.info("Failed to find any downloadable content");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String baseVideoTitle;
+        if (!StringUtils.isEmpty(videoTitle)) {
+            baseVideoTitle = videoTitle;
+        } else {
+            /* Fallback */
+            baseVideoTitle = urlSlug;
+        }
+        final String description = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/description");
+        final FilePackage fp = FilePackage.getInstance();
+        if (!StringUtils.isEmpty(seriesTitle) && !StringUtils.isEmpty(seasonInfoFormatted)) {
+            fp.setName(seriesTitle + " " + seasonInfoFormatted);
+        } else if (!StringUtils.isEmpty(seriesTitle)) {
+            fp.setName(seriesTitle);
+        } else {
+            fp.setName(baseVideoTitle);
+        }
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
+        }
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+        final String baseFilename;
+        if (!StringUtils.isEmpty(seriesTitle) && seasonEpisodeInfoFormatted != null) {
+            baseFilename = seriesTitle + " " + seasonEpisodeInfoFormatted;
+        } else if (!StringUtils.isEmpty(seriesTitle)) {
+            baseFilename = seriesTitle + " - " + baseVideoTitle;
+        } else {
+            baseFilename = baseVideoTitle;
+        }
+        br.getPage(m3u);
+        // TODO: please rewrite to use the dedicated hoster plugin
+        // TODO: store asset ID/contentID and maybe seriesSlug(might be required in future) and hlscontainer id as properties, so hoster
+        // plugin can later refresh urls or change quality
+        final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
+        final ArrayList<HlsContainer> selectedQualities = new ArrayList<HlsContainer>();
+        if (PluginJsonConfig.get(FlimmitComConfig.class).isPreferBest()) {
+            selectedQualities.add(HlsContainer.findBestVideoByBandwidth(qualities));
+        } else {
+            selectedQualities.addAll(qualities);
+        }
+        for (final HlsContainer quality : selectedQualities) {
+            final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
+            dl.setFinalFileName(baseFilename + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
+            dl.setAvailable(true);
+            dl._setFilePackage(fp);
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
