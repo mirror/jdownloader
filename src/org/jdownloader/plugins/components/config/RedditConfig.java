@@ -12,6 +12,30 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "reddit.com", type = Type.HOSTER)
 public interface RedditConfig extends PluginConfigInterface {
+    public static final RedditConfig.TRANSLATION TRANSLATION = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getPreferredCommentsPackagenameScheme_label() {
+            return "Select preferred package name scheme for comments";
+        }
+
+        public String getPreferredFilenameScheme_label() {
+            return "Select preferred filename scheme";
+        }
+
+        public String getCrawlUrlsInsidePostText_label() {
+            return "Crawl URLs inside post-text?";
+        }
+
+        public String getCrawlCompleteUserProfiles_label() {
+            return "Crawl complete user profiles?\r\nThis can cause very time consuming crawl processes!";
+        }
+
+        public String getCrawlCompleteSubreddits_label() {
+            return "Crawl complete subreddits?\r\nThis can cause very time consuming crawl processes!";
+        }
+    }
+
     public static enum FilenameScheme implements LabelInterface {
         DATE_SUBREDDIT_POSTID_SERVER_FILENAME {
             @Override
@@ -63,8 +87,10 @@ public interface RedditConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DATE_SUBREDDIT_POSTID_SLUG")
     @Order(10)
-    @DescriptionForConfigEntry("Select preferred filename scheme")
+    @DescriptionForConfigEntry("Select preferred package name scheme for comments")
     CommentsPackagenameScheme getPreferredCommentsPackagenameScheme();
+
+    void setPreferredCommentsPackagenameScheme(final CommentsPackagenameScheme quality);
 
     @AboutConfig
     @DefaultEnumValue("DATE_SUBREDDIT_POSTID_SLUG")
@@ -74,13 +100,27 @@ public interface RedditConfig extends PluginConfigInterface {
 
     void setPreferredFilenameScheme(final FilenameScheme quality);
 
-    void setPreferredCommentsPackagenameScheme(final CommentsPackagenameScheme quality);
-
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Crawl URLs inside post text?")
+    @DescriptionForConfigEntry("Crawl URLs inside post-text?")
     @Order(20)
     boolean isCrawlUrlsInsidePostText();
 
     void setCrawlUrlsInsidePostText(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Crawl complete user profiles?\r\nThis can cause very time consuming crawl processes!")
+    @Order(30)
+    boolean isCrawlCompleteUserProfiles();
+
+    void setCrawlCompleteUserProfiles(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Crawl complete subreddits?\r\nThis can cause very time consuming crawl processes!")
+    @Order(40)
+    boolean isCrawlCompleteSubreddits();
+
+    void setCrawlCompleteSubreddits(boolean b);
 }

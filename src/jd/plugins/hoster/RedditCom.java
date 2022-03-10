@@ -521,7 +521,6 @@ public class RedditCom extends PluginForHost {
         // br.getPage(getApiBaseOauth() + "/api/v1/me");
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
