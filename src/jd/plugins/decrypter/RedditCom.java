@@ -137,10 +137,6 @@ public class RedditCom extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlPagination(final String url, final FilePackage fp, final int maxPage) throws Exception {
         final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         final Set<String> lastItemDupes = new HashSet<String>();
-        /*
-         * 2020-09-22: TODO Crawling entire user-profiles or subreddits will cause a lot of http requests - do not enable this yet! </br>
-         * TODO: Add a plugin setting for this!
-         */
         final int maxItemsPerCall = 100;
         final UrlQuery query = new UrlQuery();
         // query.add("type", "links");
@@ -181,6 +177,7 @@ public class RedditCom extends PluginForDecrypt {
         return crawledLinks;
     }
 
+    /** TODO: Try to crawlPagination instead! */
     private ArrayList<DownloadLink> crawlUserSavedObjects(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         /* Login required */
