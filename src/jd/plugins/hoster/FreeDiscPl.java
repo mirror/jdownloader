@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -60,12 +62,6 @@ public class FreeDiscPl extends PluginForHost {
     public FreeDiscPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://freedisc.pl/");
-        /**
-         * 2022-03-28: This is to reduce the occurence of "anti bot captchas" during downloading. </br>
-         * TODO: Update plugin so a start-intervall is only used for free downloads because in account mode, anti bot captchas should not
-         * happen at all (?).
-         */
-        this.setStartIntervall(10000);
         try {
             Browser.setBurstRequestIntervalLimitGlobal("freedisc.pl", 250, 20, 60000);
         } catch (final Throwable e) {
@@ -113,19 +109,22 @@ public class FreeDiscPl extends PluginForHost {
         }
     }
 
-    private static final boolean PREFER_AVAILABLECHECK_VIA_AJAX_REQUEST = true;
-    protected static Cookies     botSafeCookies                         = new Cookies();
-    private static final String  TYPE_FILE                              = "https?://[^/]+/(?:#(?:!|%21))?([A-Za-z0-9\\-_]+,f-(\\d+)(,([\\w\\-]+))?)";
-    private static final String  TYPE_EMBED_ALL                         = "https?://[^/]+/embed/(audio|video)/(\\d+)";
-    private static final String  TYPE_EMBED_AUDIO                       = "https?://[^/]+/embed/audio/(\\d+)";
-    private static final String  TYPE_EMBED_VIDEO                       = "https?://[^/]+/embed/video/(\\d+)";
-    private static final String  PROPERTY_AUDIO_STREAM_IS_AVAILABLE     = "stream_is_available_audio";
-    private static final String  PROPERTY_VIDEO_STREAM_IS_AVAILABLE     = "stream_is_available_video";
-    private static final String  PROPERTY_DIRECTURL                     = "directurl";
-    private static final String  PROPERTY_DIRECTURL_ACCOUNT             = "directurl_account";
-    private static final String  PROPERTY_HAS_ATTEMPTED_STREAM_DOWNLOAD = "isvideo";
-    private static final String  PROPERTY_STREAMING_FILENAME            = "streaming_filename";
-    private static final String  PROPERTY_UPLOADER                      = "uploader";
+    private static final boolean       PREFER_AVAILABLECHECK_VIA_AJAX_REQUEST = true;
+    protected static Cookies           botSafeCookies                         = new Cookies();
+    private static final AtomicLong    timestampLastFreeDownloadStarted       = new AtomicLong(0);
+    /* Don't touch the following! */
+    private static final AtomicInteger freeRunning                            = new AtomicInteger(0);
+    private static final String        TYPE_FILE                              = "https?://[^/]+/(?:#(?:!|%21))?([A-Za-z0-9\\-_]+,f-(\\d+)(,([\\w\\-]+))?)";
+    private static final String        TYPE_EMBED_ALL                         = "https?://[^/]+/embed/(audio|video)/(\\d+)";
+    private static final String        TYPE_EMBED_AUDIO                       = "https?://[^/]+/embed/audio/(\\d+)";
+    private static final String        TYPE_EMBED_VIDEO                       = "https?://[^/]+/embed/video/(\\d+)";
+    private static final String        PROPERTY_AUDIO_STREAM_IS_AVAILABLE     = "stream_is_available_audio";
+    private static final String        PROPERTY_VIDEO_STREAM_IS_AVAILABLE     = "stream_is_available_video";
+    private static final String        PROPERTY_DIRECTURL                     = "directurl";
+    private static final String        PROPERTY_DIRECTURL_ACCOUNT             = "directurl_account";
+    private static final String        PROPERTY_HAS_ATTEMPTED_STREAM_DOWNLOAD = "isvideo";
+    private static final String        PROPERTY_STREAMING_FILENAME            = "streaming_filename";
+    private static final String        PROPERTY_UPLOADER                      = "uploader";
 
     private boolean preferAvailablecheckViaAjaxRequest(final DownloadLink link) {
         final String username = getUploader(link);
@@ -173,11 +172,14 @@ public class FreeDiscPl extends PluginForHost {
         }
     }
 
-    private Browser prepBR(final Browser br) {
+    private Browser prepBR(final Browser br, final Account account) {
         prepBRStatic(br);
-        synchronized (botSafeCookies) {
-            if (!botSafeCookies.isEmpty()) {
-                br.setCookies(this.getHost(), botSafeCookies);
+        /* In account mode we're using account cookies thus we only need those whenthere is not account available. */
+        if (account == null) {
+            synchronized (botSafeCookies) {
+                if (!botSafeCookies.isEmpty()) {
+                    br.setCookies(this.getHost(), botSafeCookies);
+                }
             }
         }
         return br;
@@ -277,10 +279,9 @@ public class FreeDiscPl extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(this.getWeakFilename(link));
         }
+        prepBR(this.br, account);
         if (account != null) {
             this.login(account, false);
-        } else {
-            prepBR(this.br);
         }
         prepBRAjax(this.br);
         final String username = this.getUploader(link);
@@ -359,7 +360,7 @@ public class FreeDiscPl extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(this.getWeakFilename(link));
         }
-        prepBR(this.br);
+        prepBR(this.br, account);
         br.getPage(link.getPluginPatternMatcher());
         if (isBotBlocked(this.br)) {
             logger.info("Cannot do linkcheck due to antiBot captcha");
@@ -456,6 +457,16 @@ public class FreeDiscPl extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        final boolean waitBetweenFreeDownloadStarts = false;
+        if (waitBetweenFreeDownloadStarts) {
+            /* Ensure that we wait at least X seconds between download-starts. */
+            final long waitMillisBetweenDownloads = 30 * 1000;
+            final long passedMillisSinceLastDownload = System.currentTimeMillis() - timestampLastFreeDownloadStarted.get();
+            if (passedMillisSinceLastDownload < waitMillisBetweenDownloads) {
+                final long wait = Math.min(waitMillisBetweenDownloads - passedMillisSinceLastDownload, waitMillisBetweenDownloads);
+                this.sleep(wait, link);
+            }
+        }
         handleDownload(link, null);
     }
 
@@ -524,12 +535,12 @@ public class FreeDiscPl extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* Make sure to set antiBot cookies before we attempt to check directURLs! */
-        prepBR(this.br);
+        prepBR(this.br, account);
         synchronized (botSafeCookies) {
             if (!attemptStoredDownloadurlDownload(link, account)) {
                 requestFileInformation(link, account);
                 if (isBotBlocked(this.br)) {
-                    this.handleAntiBot(this.br);
+                    this.handleAntiBot(this.br, account);
                     /* Important! Check status if we were blocked before! */
                     requestFileInformation(link, account);
                 }
@@ -547,7 +558,7 @@ public class FreeDiscPl extends PluginForHost {
                 } else {
                     final String fid = this.getFID(link);
                     /* TODO: Improve errorhandling */
-                    postPageRaw("/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}");
+                    postPageRaw("/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}", account);
                     try {
                         final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                         final Map<String, Object> response = (Map<String, Object>) root.get("response");
@@ -578,12 +589,10 @@ public class FreeDiscPl extends PluginForHost {
                             final String download_url = download_data.get("download_url").toString();
                             final String item_id = download_data.get("item_id").toString();
                             final String time = download_data.get("time").toString();
-                            if (StringUtils.isAllNotEmpty(download_url, item_id, time)) {
-                                dllink = download_url + item_id + "/" + time;
-                            }
-                            if (dllink == null) {
+                            if (StringUtils.isEmpty(download_url) || StringUtils.isEmpty(item_id) || StringUtils.isEmpty(time)) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
+                            dllink = download_url + item_id + "/" + time;
                         }
                     } catch (final Exception e) {
                         if (mode == StreamDownloadMode.STREAM_AS_FALLBACK && streamIsAvailable) {
@@ -603,7 +612,7 @@ public class FreeDiscPl extends PluginForHost {
                     }
                     logger.info("Seems like a stream is available --> Trying to find stream-downloadlink");
                     final String streamEmbedURL = getStreamDownloadURL(link);
-                    getPage(streamEmbedURL);
+                    getPage(streamEmbedURL, account);
                     dllink = br.getRegex("data-video-url=\"(https?://[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("(https?://stream\\.[^/]+/(?:audio|video)/\\d+/[^/\"]+)").getMatch(0);
@@ -664,7 +673,31 @@ public class FreeDiscPl extends PluginForHost {
                 link.setFinalFileName(newFilename);
             }
         }
-        dl.startDownload();
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(account, link, +1);
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(account, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                if (after > before) {
+                    synchronized (timestampLastFreeDownloadStarted) {
+                        timestampLastFreeDownloadStarted.set(System.currentTimeMillis());
+                    }
+                }
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
@@ -708,17 +741,17 @@ public class FreeDiscPl extends PluginForHost {
         }
     }
 
-    private void getPage(final String url) throws Exception {
+    private void getPage(final String url, final Account account) throws Exception {
         br.getPage(url);
-        handleAntiBot(this.br);
+        handleAntiBot(this.br, account);
     }
 
-    private void postPageRaw(final String url, final String parameters) throws Exception {
+    private void postPageRaw(final String url, final String parameters, final Account account) throws Exception {
         this.br.postPageRaw(url, parameters);
-        handleAntiBot(this.br);
+        handleAntiBot(this.br, account);
     }
 
-    private void handleAntiBot(final Browser br) throws Exception {
+    private void handleAntiBot(final Browser br, final Account account) throws Exception {
         int retry = 0;
         while (isBotBlocked(this.br)) {
             if (isAbort()) {
@@ -768,7 +801,11 @@ public class FreeDiscPl extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti-Bot block", 5 * 60 * 1000l);
                 }
             } else {
-                this.saveSession(br);
+                if (account != null) {
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                } else {
+                    this.saveSession(br);
+                }
                 break;
             }
         }
@@ -776,13 +813,14 @@ public class FreeDiscPl extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        final int running = freeRunning.get();
+        return running + 1;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
-            prepBR(br);
+            prepBR(br, account);
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 /* Always try to re-use cookies. */
@@ -793,7 +831,7 @@ public class FreeDiscPl extends PluginForHost {
                     return;
                 }
                 br.getPage("https://" + this.getHost() + "/");
-                handleAntiBot(br);
+                handleAntiBot(br, account);
                 if (br.containsHTML("id=\"btnLogout\"")) {
                     logger.info("Cookie login successful");
                     account.saveCookies(br.getCookies(this.getHost()), "");
@@ -806,7 +844,7 @@ public class FreeDiscPl extends PluginForHost {
             }
             logger.info("Performing full login");
             br.getPage("https://" + this.getHost() + "/");
-            handleAntiBot(br);
+            handleAntiBot(br, account);
             // this is done via ajax!
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

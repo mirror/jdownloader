@@ -28,6 +28,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,6 +36,7 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -42,6 +44,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FreeDiscPl;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "https?://(?:(?:www|m)\\.)?freedisc\\.pl/([A-Za-z0-9_\\-]+),d-(\\d+)(,([\\w\\-]+))?" })
@@ -57,11 +60,14 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
     // private static final String TYPE_FOLDER = "https?://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d-\\d+";
     protected static Cookies botSafeCookies = new Cookies();
 
-    private Browser prepBR(final Browser br) {
+    private Browser prepBR(final Browser br, final Account account) {
         jd.plugins.hoster.FreeDiscPl.prepBRStatic(br);
-        synchronized (botSafeCookies) {
-            if (!botSafeCookies.isEmpty()) {
-                br.setCookies(this.getHost(), botSafeCookies);
+        /* In account mode we're using account cookies thus we only need those whenthere is not account available. */
+        if (account == null) {
+            synchronized (botSafeCookies) {
+                if (!botSafeCookies.isEmpty()) {
+                    br.setCookies(this.getHost(), botSafeCookies);
+                }
             }
         }
         return br;
@@ -73,17 +79,23 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         return 1;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Regex dir = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String user = dir.getMatch(0);
         final String folderID = dir.getMatch(1);
         // final String folderSlug = dir.getMatch(3);
         br.setFollowRedirects(true);
-        prepBR(this.br);
+        prepBR(this.br, account);
+        /* Login whenever possible. The only benefit we got from this in this crawler is that we should not get any antiBot captchas. */
+        if (account != null) {
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.FreeDiscPl) plg).login(account, false);
+        }
         FreeDiscPl.prepBRAjax(this.br);
         /* First let's find the absolute path to the folder we want. If we fail to do so we can assume that it is offline. */
-        getPage("https://" + this.getHost() + "/directory/directory_data/get_tree/" + user, param);
+        getPage("https://" + this.getHost() + "/directory/directory_data/get_tree/" + user, param, account);
         final Map<String, Object> responseFolderTree = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Map<String, Object>> folderTree = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolderTree, "response/data");
         final Map<String, Object> folderInfo = findFolderMap(folderTree, folderID);
@@ -99,7 +111,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             decryptedLinks.add(dummy);
             return decryptedLinks;
         }
-        getPage("https://" + this.getHost() + "/directory/directory_data/get/" + user + "/" + folderID, param);
+        getPage("https://" + this.getHost() + "/directory/directory_data/get/" + user + "/" + folderID, param, account);
         final boolean crawlSubfolders = PluginJsonConfig.get(FreeDiscPlConfig.class).isCrawlSubfolders();
         final Map<String, Object> responseFolder = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Map<String, Object>> data = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolder, "response/data/data");
@@ -176,12 +188,12 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         return path;
     }
 
-    private void getPage(final String url, final CryptedLink param) throws Exception {
+    private void getPage(final String url, final CryptedLink param, final Account account) throws Exception {
         this.br.getPage(url);
-        handleAntiBot(br, param);
+        handleAntiBot(br, param, account);
     }
 
-    private void handleAntiBot(final Browser br, final CryptedLink param) throws Exception {
+    private void handleAntiBot(final Browser br, final CryptedLink param, final Account account) throws Exception {
         int retry = 0;
         while (isBotBlocked()) {
             if (isAbort()) {
@@ -216,7 +228,11 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Anti-Bot block", 5 * 60 * 1000l);
                 }
             } else {
-                saveSession(br);
+                if (account != null) {
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                } else {
+                    saveSession(br);
+                }
                 break;
             }
         }
