@@ -20,8 +20,20 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -40,16 +52,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.RedditConfig;
-import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
 public class RedditCom extends PluginForDecrypt {
@@ -86,7 +88,7 @@ public class RedditCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlSubreddit(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> lastItemDupes = new ArrayList<String>();
+        final Set<String> lastItemDupes = new HashSet<String>();
         /* Prepare crawl process */
         final String subredditTitle = new Regex(param.getCryptedUrl(), TYPE_SUBREDDIT).getMatch(0);
         if (subredditTitle == null) {
@@ -95,48 +97,49 @@ public class RedditCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("/r/" + subredditTitle);
         /* 2020-09-22: TODO Crawling entire user-profiles or subreddits will cause a lot of http requests - do not enable this yet! */
-        final boolean stopAfterFirstPage = true;
         final int maxItemsPerCall = 100;
         final UrlQuery query = new UrlQuery();
-        query.add("type", "links");
+        // query.add("type", "links");
         query.add("limit", Integer.toString(maxItemsPerCall));
-        int page = 0;
+        int page = 1;
+        int maxPage = 1;
+        int numberofItemsCrawled = 0;
         do {
-            page++;
-            logger.info("Crawling page: " + page);
             br.getPage("https://www." + this.getHost() + "/r/" + subredditTitle + "/.json?" + query.toString());
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
+            numberofItemsCrawled += numberofItemsOnCurrentPage;
             crawledLinks.addAll(this.crawlListing(entries, fp));
-            entries = (Map<String, Object>) entries.get("data");
-            final String fullnameAfter = (String) entries.get("after");
-            final long numberofItems = JavaScriptEngineFactory.toLong(entries.get("dist"), 0);
+            logger.info("Crawled page " + page + " | Crawled items so far: " + numberofItemsCrawled);
+            final String fullnameAfter = (String) data.get("after");
             /* Multiple fail safes to prevent an infinite loop. */
-            if (StringUtils.isEmpty(fullnameAfter)) {
+            if (numberofItemsOnCurrentPage < maxItemsPerCall) {
+                logger.info("Stopping because we got only " + numberofItemsOnCurrentPage + "/" + maxItemsPerCall + " items this round");
+                break;
+            } else if (StringUtils.isEmpty(fullnameAfter)) {
                 logger.info("Seems like we've crawled everything");
                 break;
-            } else if (numberofItems < maxItemsPerCall) {
-                logger.info("Stopping because we got less than " + maxItemsPerCall + " items");
-                break;
-            } else if (lastItemDupes.contains(fullnameAfter)) {
+            } else if (!lastItemDupes.add(fullnameAfter)) {
                 logger.info("Stopping because we already know this fullnameAfter");
                 break;
-            } else if (stopAfterFirstPage) {
-                logger.info("Stopping after first page");
+            } else if (maxPage > -1 && page >= maxPage) {
+                logger.info("Stopping after desired page " + maxPage);
                 break;
             }
-            lastItemDupes.add(fullnameAfter);
-            query.remove("after");
-            query.add("after", fullnameAfter);
+            query.addAndReplace("after", fullnameAfter);
+            page++;
         } while (!this.isAbort());
         return crawledLinks;
     }
 
     private ArrayList<DownloadLink> crawlUser(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> lastItemDupes = new ArrayList<String>();
+        final Set<String> lastItemDupes = new HashSet<String>();
         /* Prepare crawl process */
         final String userTitle = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
         if (userTitle == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -147,33 +150,78 @@ public class RedditCom extends PluginForDecrypt {
         final UrlQuery query = new UrlQuery();
         query.add("type", "links");
         query.add("limit", Integer.toString(maxItemsPerCall));
-        int page = 0;
+        int page = 1;
+        int numberofItemsCrawled = 0;
         do {
-            page++;
             logger.info("Crawling page: " + page);
             br.getPage("https://www." + this.getHost() + "/user/" + userTitle + "/.json?" + query.toString());
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             crawledLinks.addAll(crawlListing(entries, fp));
             entries = (Map<String, Object>) entries.get("data");
             final String fullnameAfter = (String) entries.get("after");
-            final long numberofItems = JavaScriptEngineFactory.toLong(entries.get("dist"), 0);
+            final long numberofItemsOnCurrentPage = JavaScriptEngineFactory.toLong(entries.get("dist"), 0);
+            logger.info("Crawled page " + page + " | Crawled items so far: " + numberofItemsCrawled);
             /* Multiple fail safes to prevent an infinite loop. */
             if (StringUtils.isEmpty(fullnameAfter)) {
                 logger.info("Seems like we've crawled everything");
                 break;
-            } else if (numberofItems < maxItemsPerCall) {
+            } else if (numberofItemsOnCurrentPage < maxItemsPerCall) {
                 logger.info("Stopping because we got less than " + maxItemsPerCall + " items");
                 break;
-            } else if (lastItemDupes.contains(fullnameAfter)) {
+            } else if (!lastItemDupes.add(fullnameAfter)) {
                 logger.info("Stopping because we already know this fullnameAfter");
                 break;
             } else if (stopAfterFirstPage) {
                 logger.info("Stopping after first page");
                 break;
             }
-            lastItemDupes.add(fullnameAfter);
             query.remove("after");
             query.add("after", fullnameAfter);
+            page++;
+        } while (!this.isAbort());
+        return crawledLinks;
+    }
+
+    /** TODO: Use this to replace the other two pagination functions. */
+    private ArrayList<DownloadLink> crawlPagination(final String url, final FilePackage fp) throws Exception {
+        final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
+        final Set<String> lastItemDupes = new HashSet<String>();
+        /*
+         * 2020-09-22: TODO Crawling entire user-profiles or subreddits will cause a lot of http requests - do not enable this yet! </br>
+         * TODO: Add a plugin setting for this!
+         */
+        final int maxItemsPerCall = 100;
+        final UrlQuery query = new UrlQuery();
+        // query.add("type", "links");
+        query.add("limit", Integer.toString(maxItemsPerCall));
+        int page = 1;
+        int maxPage = 3;
+        int numberofItemsCrawled = 0;
+        do {
+            br.getPage(url + "?" + query.toString());
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
+            numberofItemsCrawled += numberofItemsOnCurrentPage;
+            crawledLinks.addAll(this.crawlListing(entries, fp));
+            logger.info("Crawled page " + page + " | Crawled items so far: " + numberofItemsCrawled);
+            final String nextPageToken = (String) data.get("after");
+            /* Multiple fail safes to prevent an infinite loop. */
+            if (numberofItemsOnCurrentPage < maxItemsPerCall) {
+                logger.info("Stopping because: Found only " + numberofItemsOnCurrentPage + "/" + maxItemsPerCall + " items this round");
+                break;
+            } else if (StringUtils.isEmpty(nextPageToken)) {
+                logger.info("Stopping because: nextPageToken is not given");
+                break;
+            } else if (!lastItemDupes.add(nextPageToken)) {
+                logger.info("Stopping because: We already know this nextPageToken");
+                break;
+            } else if (maxPage > -1 && page >= maxPage) {
+                logger.info("Stopping because: Reached desired max. page: " + maxPage);
+                break;
+            }
+            query.addAndReplace("after", nextPageToken);
+            page++;
         } while (!this.isAbort());
         return crawledLinks;
     }
