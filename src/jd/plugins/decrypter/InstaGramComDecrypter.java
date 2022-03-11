@@ -517,6 +517,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String username_url = new Regex(param.getCryptedUrl(), TYPE_PROFILE).getMatch(0);
+        if (username_url == null) {
+            /* Developer mistake! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         fp.setName(username_url);
         int counter = 0;
         long itemCount = 0;
@@ -543,8 +547,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             if (id_owner == null) {
                 // this isn't necessarily an error! check https://www.instagram.com/israbox/
-                logger.info("Failed to find id_owner");
-                return decryptedLinks;
+                logger.info("Failed to find id_owner -> Profile probably doesn't exist");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             isPrivate = ((Boolean) get(entries, "entry_data/ProfilePage/{0}/user/is_private", "entry_data/ProfilePage/{0}/graphql/user/is_private")).booleanValue();
             resource_data_list = (List) get(entries, "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/edges", "entry_data/ProfilePage/{0}/user/media/nodes");
