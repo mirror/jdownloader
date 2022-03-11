@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -28,15 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?crackeddecrypted\\.com/video_\\d+.*?\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?cracked\\.com/video_(\\d+)_[a-z0-9\\-]+\\.html" })
 public class CrackedCom extends PluginForHost {
-
-    @Override
-    public void correctDownloadLink(final DownloadLink downloadLink) throws PluginException {
-        downloadLink.setPluginPatternMatcher(downloadLink.getPluginPatternMatcher().replace("crackeddecrypted.com/", "cracked.com/"));
-    }
-
-    private String ddlink = null;
+    private String dllink = null;
 
     public CrackedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,7 +39,7 @@ public class CrackedCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.cracked.com/terms-and-conditions.html";
+        return "https://www.cracked.com/terms-and-conditions.html";
     }
 
     @Override
@@ -53,52 +48,65 @@ public class CrackedCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, false, 1);
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<title> - Funny Videos \\| Cracked\\.com</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dllink = br.getRegex("<video src=(\"|'|)(.*?)\\1").getMatch(1);
+        final String title = br.getRegex("<meta name=og:name content=\"([^\"]+)\"").getMatch(0);
+        dllink = Encoding.htmlDecode(dllink);
+        if (title != null) {
+            link.setFinalFileName(Encoding.htmlDecode(title).trim() + ".mp4");
+        }
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(this.dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title> - Funny Videos \\| Cracked\\.com</title>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        ddlink = br.getRegex("<video src=(\"|'|)(.*?)\\1").getMatch(1);
-        String filename = br.getRegex("(?:<title>|<meta name=og:name content=\")(.*?)\\s*\\|").getMatch(0);
-
-        if (filename == null || ddlink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        ddlink = Encoding.htmlDecode(ddlink);
-        filename = filename.trim();
-        String ext = getFileNameExtensionFromString(ddlink, ".mp4");
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(ddlink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
     }
 
     @Override

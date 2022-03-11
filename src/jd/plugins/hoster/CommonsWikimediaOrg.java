@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,11 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9%]+.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:[^\\&]+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9%]+.*" })
 public class CommonsWikimediaOrg extends PluginForHost {
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,9 +64,8 @@ public class CommonsWikimediaOrg extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(400);
+        br.setAllowedResponseCodes(new int[400]);
         String filename = null;
-        long filesize = 0;
         String filesize_str = null;
         String host = Browser.getHost(link.getPluginPatternMatcher());
         /* 2021-01-04: Small workaround RE: #89249 */
@@ -85,7 +83,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
         if (use_api) {
             /* Docs: https://www.mediawiki.org/wiki/API:Query */
             br.getPage("https://" + host + "/w/api.php?action=query&format=json&prop=imageinfo&titles=" + Encoding.urlEncode(url_title) + "&iiprop=timestamp%7Curl%7Csize%7Cmime%7Cmediatype%7Cextmetadata&iiextmetadatafilter=DateTime%7CDateTimeOriginal%7CObjectName%7CImageDescription%7CLicense%7CLicenseShortName%7CUsageTerms%7CLicenseUrl%7CCredit%7CArtist%7CAuthorCount%7CGPSLatitude%7CGPSLongitude%7CPermission%7CAttribution%7CAttributionRequired%7CNonFree%7CRestrictions&iiextmetadatalanguage=en&uselang=content&smaxage=300&maxage=300");
-            if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("\"invalid\"")) { // ""missing" too?
+            if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("\"(invalid|missing)\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* The code below is rubbish to recognize offline items! TODO: Improve this */
@@ -111,10 +109,10 @@ public class CommonsWikimediaOrg extends PluginForHost {
             }
             filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
             if (filesize_str != null) {
-                filesize = Long.parseLong(filesize_str);
+                link.setDownloadSize(Long.parseLong(filesize_str));
             }
         } else {
-            br.getPage(link.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -149,27 +147,24 @@ public class CommonsWikimediaOrg extends PluginForHost {
             if (!dllink.startsWith("http")) {
                 dllink = URLHelper.parseLocation(br._getURL(), dllink);
             }
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = encodeUnicode(filename);
+            filename = Encoding.htmlDecode(filename).trim();
             final String ext = getFileNameExtensionFromString(dllink, ".jpg");
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }
             if (filesize_str != null) {
-                filesize = SizeFormatter.getSize(filesize_str);
+                link.setDownloadSize(Long.parseLong(filesize_str));
             } else {
                 URLConnectionAdapter con = null;
                 try {
                     final Browser brc = br.cloneBrowser();
                     brc.setFollowRedirects(true);
                     con = brc.openHeadConnection(dllink);
-                    if (this.looksLikeDownloadableContent(con)) {
-                        if (con.getCompleteContentLength() > 0) {
-                            filesize = con.getCompleteContentLength();
-                        }
-                    } else {
+                    if (!this.looksLikeDownloadableContent(con)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } finally {
                     try {
@@ -180,10 +175,6 @@ public class CommonsWikimediaOrg extends PluginForHost {
             }
         }
         link.setFinalFileName(filename);
-        if (filesize > 0) {
-            link.setDownloadSize(filesize);
-            link.setVerifiedFileSize(filesize);
-        }
         return AvailableStatus.TRUE;
     }
 
