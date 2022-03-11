@@ -1,4 +1,4 @@
-AutoDetectAction_run_failed=JDownloader 无法找到一个工作中的 LiveHeader 重新连接脚本。\n\n请确保您已输入了正确的信息，并且您有一个动态的 IP 连接。
+AutoDetectAction_run_failed=JDownloader 无法找到一个工作中的 LiveHeader 重新连接脚本。\n请确保您已输入了正确的信息，并且您有一个动态的 IP 连接。
 BadQueryException=错误搜索。\r\n确保搜索式样不是 1 或 2 个字符长。
 DataCompareDialog_DataCompareDialog_=比较路由器信息
 DataCompareDialog_layoutDialogContent__desc=请检查下列信息，并尝试尽可能精确的填写空白的字段。
