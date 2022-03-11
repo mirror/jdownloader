@@ -30,11 +30,11 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -59,6 +59,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.InstaGramComDecrypter;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
@@ -66,7 +67,7 @@ public class InstaGramCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public InstaGramCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
+        // setConfigElements();
         this.enablePremium(MAINPAGE + "/accounts/login/");
     }
 
@@ -87,52 +88,33 @@ public class InstaGramCom extends PluginForHost {
     /**
      * https://instagram.api-docs.io/1.0 </br>
      */
-    public static final String  ALT_API_BASE                                      = "https://i.instagram.com/api/v1";
+    public static final String  ALT_API_BASE                             = "https://i.instagram.com/api/v1";
     /* Connection stuff */
-    private final boolean       RESUME                                            = true;
+    private final boolean       RESUME                                   = true;
     /* Chunkload makes no sense for pictures/small files */
-    private final int           MAXCHUNKS_pictures                                = 1;
+    private final int           MAXCHUNKS_pictures                       = 1;
     /* 2020-01-21: Multi chunks are possible but it's better not to do this to avoid getting blocked! */
-    private final int           MAXCHUNKS_videos                                  = 1;
-    private final int           MAXDOWNLOADS                                      = -1;
-    /* Plugin settings properties */
-    private static final String MAINPAGE                                          = "https://www.instagram.com";
-    public static final String  QUIT_ON_RATE_LIMIT_REACHED                        = "QUIT_ON_RATE_LIMIT_REACHED";
-    public static final String  HASHTAG_CRAWLER_FIND_USERNAMES                    = "HASHTAG_CRAWLER_FIND_USERNAMES";
-    public static final String  PREFER_SERVER_FILENAMES                           = "PREFER_SERVER_FILENAMES";
-    public static final String  ADD_DATE_TO_FILENAMES                             = "ADD_DATE_TO_FILENAMES";
-    public static final String  ADD_ORDERID_TO_FILENAMES                          = "ADD_ORDERID_TO_FILENAMES";
-    public static final String  ADD_SHORTCODE_TO_FILENAMES                        = "ADD_SHORTCODE_TO_FILENAMES";
-    private final String        ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY              = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
-    public static final String  ONLY_GRAB_X_ITEMS                                 = "ONLY_GRAB_X_ITEMS";
-    public static final String  ONLY_GRAB_X_ITEMS_NUMBER                          = "ONLY_GRAB_X_ITEMS_NUMBER";
-    public static final String  ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER          = "ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER";
-    public static final String  PROFILE_CRAWLER_PREFER_ALTERNATIVE_API            = "PROFILE_CRAWLER_PREFER_ALTERNATIVE_API";
-    /* Settings default values */
-    public static final boolean defaultPREFER_SERVER_FILENAMES                    = false;
-    public static final boolean defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY       = false;
-    public static final boolean defaultADD_DATE_TO_FILENAMES                      = false;
-    public static final boolean defaultADD_ORDERID_TO_FILENAMES                   = false;
-    public static final boolean defaultADD_SHORTCODE_TO_FILENAMES                 = false;
-    public static final boolean defaultQUIT_ON_RATE_LIMIT_REACHED                 = false;
-    public static final boolean defaultHASHTAG_CRAWLER_FIND_USERNAMES             = false;
-    public static final boolean defaultONLY_GRAB_X_ITEMS                          = false;
-    public static final int     defaultONLY_GRAB_X_ITEMS_NUMBER                   = 25;
-    public static final boolean defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER = false;
+    private final int           MAXCHUNKS_videos                         = 1;
+    private final int           MAXDOWNLOADS                             = -1;
+    private static final String MAINPAGE                                 = "https://www.instagram.com";
     /* DownloadLink/Packagizer properties */
-    public static final String  PROPERTY_has_tried_to_crawl_original_url          = "has_tried_to_crawl_original_url";
-    public static final String  PROPERTY_is_part_of_story                         = "is_part_of_story";
-    public static final String  PROPERTY_DIRECTURL                                = "directurl";
-    public static final String  PROPERTY_private_url                              = "private_url";
-    public static final String  PROPERTY_postid                                   = "postid";
-    public static final String  PROPERTY_orderid                                  = "orderid";
-    public static final String  PROPERTY_orderid_raw                              = "orderid_raw";
-    public static final String  PROPERTY_shortcode                                = "shortcode";
-    public static final String  PROPERTY_description                              = "description";
-    public static final String  PROPERTY_uploader                                 = "uploader";
-    public static final String  PROPERTY_is_video                                 = "isvideo";
-    public static final String  PROPERTY_date                                     = "date";
-    public static final String  PROPERTY_filename_from_crawler                    = "decypter_filename";
+    public static final String  PROPERTY_has_tried_to_crawl_original_url = "has_tried_to_crawl_original_url";
+    public static final String  PROPERTY_is_part_of_story                = "is_part_of_story";
+    public static final String  PROPERTY_DIRECTURL                       = "directurl";
+    public static final String  PROPERTY_private_url                     = "private_url";
+    public static final String  PROPERTY_postid                          = "postid";
+    public static final String  PROPERTY_orderid                         = "orderid";
+    public static final String  PROPERTY_orderid_raw                     = "orderid_raw";
+    public static final String  PROPERTY_shortcode                       = "shortcode";
+    public static final String  PROPERTY_description                     = "description";
+    public static final String  PROPERTY_uploader                        = "uploader";
+    public static final String  PROPERTY_is_video                        = "isvideo";
+    public static final String  PROPERTY_date                            = "date";
+    public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";
+
+    public static void setRequestLimit() {
+        Browser.setRequestIntervalLimitGlobal("instagram.com", true, 8000);
+    }
 
     public void correctDownloadLink(final DownloadLink link) {
         String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
@@ -159,7 +141,7 @@ public class InstaGramCom extends PluginForHost {
          */
         prepBRWebsite(this.br);
         boolean isLoggedIN = false;
-        if (this.userWantsToDownloadOriginalQuality() && canGrabOriginalQualityDownloadurlViaAltAPI(link) && !hasTriedToCrawlOriginalQuality(link) && account != null) {
+        if (PluginJsonConfig.get(InstagramConfig.class).isAttemptToDownloadOriginalQuality() && canGrabOriginalQualityDownloadurlViaAltAPI(link) && !hasTriedToCrawlOriginalQuality(link) && account != null) {
             login(account, false);
             isLoggedIN = true;
             this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, true);
@@ -179,7 +161,7 @@ public class InstaGramCom extends PluginForHost {
                 ext = getFileNameExtensionFromString(dllink, ".jpg");
             }
             String server_filename = getFileNameFromURL(new URL(dllink));
-            if (this.getPluginConfig().getBooleanProperty(PREFER_SERVER_FILENAMES, defaultPREFER_SERVER_FILENAMES) && server_filename != null) {
+            if (PluginJsonConfig.get(InstagramConfig.class).isPreferServerFilenames()) {
                 server_filename = fixServerFilename(server_filename, ext);
                 link.setFinalFileName(server_filename);
             } else {
@@ -217,10 +199,6 @@ public class InstaGramCom extends PluginForHost {
 
     private static boolean hasTriedToCrawlOriginalQuality(final DownloadLink link) {
         return link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false);
-    }
-
-    private boolean userWantsToDownloadOriginalQuality() {
-        return this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
     }
 
     private boolean isVideo(final DownloadLink link) {
@@ -814,7 +792,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal("instagram.com", 400);
+        InstaGramComDecrypter.setRequestIntervalLimitGlobal();
     }
 
     public static Browser prepBRWebsite(final Browser br) {
@@ -826,23 +804,9 @@ public class InstaGramCom extends PluginForHost {
         return br;
     }
 
-    private void setConfigElements() {
-        final ConfigEntry preferServerFilenames = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES);
-        getConfig().addEntry(preferServerFilenames);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_DATE_TO_FILENAMES, "Include date (yyyy-MM-dd) in filenames?").setDefaultValue(defaultADD_DATE_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID_TO_FILENAMES, "Include order-ID in filenames if an album contains more than one element?\r\nCan be useful if you want to be able to keep the original order of multiple elements of an album.").setDefaultValue(defaultADD_ORDERID_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_SHORTCODE_TO_FILENAMES, "Include 'shortcode' in filenames if it is available?").setDefaultValue(defaultADD_SHORTCODE_TO_FILENAMES).setEnabledCondidtion(preferServerFilenames, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, "Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]").setDefaultValue(defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HASHTAG_CRAWLER_FIND_USERNAMES, "Crawl- and set usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (Slows down crawl-process!)").setDefaultValue(defaultHASHTAG_CRAWLER_FIND_USERNAMES));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry grabXitems = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_GRAB_X_ITEMS, "Only grab the X latest items?").setDefaultValue(defaultONLY_GRAB_X_ITEMS);
-        getConfig().addEntry(grabXitems);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_NUMBER, "Which amount of latest items shall be grabbed?", defaultONLY_GRAB_X_ITEMS_NUMBER, 1025, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER).setEnabledCondidtion(grabXitems, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER, "How many items shall be grabbed (for '/explore/tags/example')?", defaultONLY_GRAB_X_ITEMS_NUMBER, 10000, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROFILE_CRAWLER_PREFER_ALTERNATIVE_API, "Use alternative API for profile crawler? Can be slower, only works when an Instagram account is active and doesn't crawl reposts!").setDefaultValue(defaultPREFER_ALTERNATIVE_API_FOR_PROFILE_CRAWLER));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, "Abort crawl process once rate limit is reached?").setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
+    @Override
+    public Class<? extends InstagramConfig> getConfigInterface() {
+        return InstagramConfig.class;
     }
 
     @Override

@@ -22,6 +22,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 /**
@@ -29,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?cracked\\.com/video_\\d+.*?\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cracked.com" }, urls = { "https?://(?:www\\.)?cracked\\.com/video_\\d+_[a-z0-9\\-]+\\.html" })
 public class CrackedCom extends PluginForDecrypt {
     public CrackedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,9 +39,11 @@ public class CrackedCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // they have youtube sometimes
         String finallink = br.getRegex("id=youtubePlayer src=\"//(?:www\\.)?(youtube\\.com/embed/[^<>\"]+)\"").getMatch(0);
         if (finallink == null) {
@@ -53,9 +57,10 @@ public class CrackedCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        // when nothing is found or result was not a youtube video lets just throw back to hoster plugin, error handling there can pick it
-        // up!
-        decryptedLinks.add(createDownloadlink(parameter.replace("cracked.com/", "crackeddecrypted.com/")));
+        /*
+         * If nothing is found or result was not a youtube video lets just throw back to hoster plugin, error handling there can pick it up!
+         */
+        decryptedLinks.add(this.createDownloadlink(param.getCryptedUrl()));
         return decryptedLinks;
     }
 }

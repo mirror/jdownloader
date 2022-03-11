@@ -77,16 +77,30 @@ public abstract class VideoFCTwoCore extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
-        if (linkid != null) {
-            return this.getHost() + "://" + linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     protected String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(?:i=|content/)(.+)").getMatch(0);
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), "(?:i=|content/)(.+)").getMatch(0);
+        }
     }
 
     private Browser prepareBrowser(final Browser br) {
