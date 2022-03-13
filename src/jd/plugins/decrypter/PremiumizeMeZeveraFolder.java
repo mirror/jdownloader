@@ -2,7 +2,6 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +63,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (accs == null || accs.size() == 0) {
@@ -80,21 +79,21 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             if ("error".equals(status)) {
                 /* E.g. "{"status":"error","message":"customer_id and pin param missing or not logged in "}" */
                 logger.info("Either invalid logindata, wrong account (you can only download your own cloud files) OR offline content");
-                final String url_params = new Regex(parameter.getCryptedUrl(), "\\?(.+)").getMatch(0);
+                final String urlParams = new Regex(parameter.getCryptedUrl(), "\\?(.+)").getMatch(0);
                 final DownloadLink offline = this.createOfflinelink(parameter.getCryptedUrl());
-                if (url_params != null) {
-                    offline.setName(url_params);
+                if (urlParams != null) {
+                    offline.setFinalFileName(urlParams);
                 }
                 ret.add(offline);
                 return ret;
             }
             return null;
         }
-        /* Find path from previous craw process if available. */
+        /* Use path from previous craw process if available --> Saves http requests */
         String folderPath = this.getAdoptedCloudFolderStructure();
         if (folderPath == null) {
             /* Try to find complete path by going back until we reach the root folder. */
-            folderPath = this.getFullFolderPath(account, "", data, new ArrayList<String>());
+            folderPath = this.findFullFolderPath(account, "", data, new ArrayList<String>());
         }
         ret.addAll(convert(parameter.getCryptedUrl(), nodes, folderPath));
         return ret;
@@ -106,21 +105,26 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private String getFullFolderPath(final Account account, String path, final Map<String, Object> data, final ArrayList<String> dupes) throws Exception {
+    private String findFullFolderPath(final Account account, String path, final Map<String, Object> data, final ArrayList<String> dupes) throws Exception {
         final String parent_id = (String) data.get("parent_id");
         final String currentFolderName = (String) data.get("name");
         if (StringUtils.isEmpty(parent_id) || StringUtils.isEmpty(currentFolderName)) {
-            /* This should never happen */
-            return null;
+            /**
+             * This should never happen but can and will: e.g. {"status":"error","message":"Could not decode folder id"} </br>
+             * The root folder also has a 'parent_id' but we can't access this one and also we can't just stop when we've reached a folder
+             * named 'root' because users could also download files with normal folders named 'root'...
+             */
+            return path;
         } else if (dupes.contains(parent_id)) {
             /* Fail safe was triggered */
+            return path;
+        } else if (dupes.size() >= 200) {
+            /* This should never happen */
+            logger.warning("Fail safe triggered: Path is too long");
             return path;
         } else if (parent_id.equals("0")) {
             /* We've reached the end (root) */
             return path;
-        } else if (currentFolderName.equalsIgnoreCase("root")) {
-            /* We've reached the end (root) */
-            return "root";
         } else {
             dupes.add(parent_id);
             if (path.length() == 0) {
@@ -130,20 +134,22 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             }
             final String response = accessCloudItem(br, account, createFolderURL(this.getHost(), parent_id));
             final Map<String, Object> dataNew = JavaScriptEngineFactory.jsonToJavaMap(response);
-            return getFullFolderPath(account, path, dataNew, dupes);
+            return findFullFolderPath(account, path, dataNew, dupes);
         }
     }
 
-    public static List<DownloadLink> convert(final String url_source, ArrayList<PremiumizeBrowseNode> premiumizeNodes, String currentPath) {
+    public static List<DownloadLink> convert(final String url_source, ArrayList<PremiumizeBrowseNode> premiumizeNodes, String folderPath) {
         final List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (premiumizeNodes == null || premiumizeNodes.size() == 0) {
             return ret;
         }
-        if (currentPath == null) {
-            currentPath = "";
+        /*
+         * Allow loose files from root folder to go into package named "root" but remove "root" from path for all items that are below the
+         * root folder.
+         */
+        if (folderPath.contains("/") && folderPath.startsWith("root")) {
+            folderPath = folderPath.substring(folderPath.indexOf("/"));
         }
-        final boolean addPath = StringUtils.isNotEmpty(currentPath);
-        final Map<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
         final String host = Browser.getHost(url_source);
         for (final PremiumizeBrowseNode node : premiumizeNodes) {
             final String itemName = node.getName();
@@ -152,18 +158,18 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             if (node._isDirectory()) {
                 /* Folder */
                 final String path_for_next_crawl_level;
-                if (StringUtils.isEmpty(currentPath)) {
+                if (StringUtils.isEmpty(folderPath)) {
                     if (!StringUtils.isEmpty(parentName)) {
                         path_for_next_crawl_level = parentName + "/" + itemName;
                     } else {
                         path_for_next_crawl_level = itemName;
                     }
                 } else {
-                    path_for_next_crawl_level = currentPath + "/" + itemName;
+                    path_for_next_crawl_level = folderPath + "/" + itemName;
                 }
                 final String folderURL = createFolderURL(host, nodeCloudID);
                 final DownloadLink folder = new DownloadLink(null, null, host, folderURL, true);
-                folder.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path_for_next_crawl_level);
+                folder.setRelativeDownloadFolderPath(path_for_next_crawl_level);
                 ret.add(folder);
             } else {
                 /* File */
@@ -171,10 +177,10 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
                 final DownloadLink link = new DownloadLink(null, null, host, url_for_hostplugin, true);
                 setPremiumizeBrowserNodeInfoOnDownloadlink(link, node);
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(currentPath);
+                fp.setName(folderPath);
                 link._setFilePackage(fp);
-                if (addPath && StringUtils.isNotEmpty(currentPath)) {
-                    link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
+                if (!StringUtils.isEmpty(folderPath)) {
+                    link.setRelativeDownloadFolderPath(folderPath);
                 }
                 ret.add(link);
             }
