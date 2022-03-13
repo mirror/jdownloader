@@ -119,11 +119,8 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             /* Fail safe was triggered */
             return path;
         } else if (dupes.size() >= 200) {
-            /* This should never happen */
+            /* Fail safe 2: This should never happen */
             logger.warning("Fail safe triggered: Path is too long");
-            return path;
-        } else if (parent_id.equals("0")) {
-            /* We've reached the end (root) */
             return path;
         } else {
             dupes.add(parent_id);
