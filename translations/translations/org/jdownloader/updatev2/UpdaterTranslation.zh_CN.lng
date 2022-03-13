@@ -73,4 +73,4 @@ update_dialog_title_updates_available=更新可用
 update_dialog_yes=是(推荐)
 update_done_close_in_TIME=安装完成。%s1 后退出
 update_in_next_session=取消，直到重启之前都不再提示
-updatedplugins=插件已经更新。\r\n您现在正在运行最新版本的 JDownloader。
+updatedplugins=插件已经更新。\r\n您现在正在运行最新的 JDownloader 版本。
