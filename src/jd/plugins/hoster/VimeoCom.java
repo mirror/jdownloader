@@ -1038,7 +1038,7 @@ public class VimeoCom extends PluginForHost {
                 if (!Boolean.FALSE.equals(hls) && false) {
                     // skip HLS because of unsupported split video/audio
                     plugin.getLogger().info("query hls streams");
-                    final List<VimeoContainer> hlsStreams = handleHLS(plugin, ibr, entries);
+                    final List<VimeoContainer> hlsStreams = handleHLS(plugin, ibr.cloneBrowser(), entries);
                     plugin.getLogger().info("hls streams found:" + hlsStreams.size() + "|" + hlsStreams);
                     results.addAll(hlsStreams);
                 }

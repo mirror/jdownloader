@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
+
+import jd.http.Browser;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
@@ -53,10 +53,9 @@ public class HlsContainer {
     }
 
     public static List<HlsContainer> getHlsQualities(final Browser br, final String m3u8) throws Exception {
-        final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("Accept", "*/*");
-        br2.getPage(m3u8);
-        return getHlsQualities(br2);
+        br.getHeaders().put("Accept", "*/*");
+        br.getPage(m3u8);
+        return getHlsQualities(br);
     }
 
     public static List<HlsContainer> getHlsQualities(final Browser br) throws Exception {
@@ -246,6 +245,7 @@ public class HlsContainer {
         AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "avc\\d+"),
         HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev|hvc)\\d+"),
         UNKNOWN(CODEC_TYPE.UNKNOWN, null, null, null);
+
         private final CODEC_TYPE type;
 
         public CODEC_TYPE getType() {
