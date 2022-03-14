@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -34,6 +35,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -82,10 +84,10 @@ public class RarbgTo extends PluginForHost {
     /* Resume & chunkload is disabled as this website only contains small files. */
     private static final boolean              FREE_RESUME         = false;
     private static final int                  FREE_MAXCHUNKS      = 1;
-    /* Only increase this if you previously add handling to this plugin to start one download after another! */
-    private static final int                  FREE_MAXDOWNLOADS   = 1;
     protected static HashMap<String, Cookies> antiCaptchaCookies  = new HashMap<String, Cookies>();
     private static final String               PROPERTY_DIRECTLINK = "directlink";
+    /* Don't touch the following! */
+    private static final AtomicInteger        freeRunning         = new AtomicInteger(0);
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -410,7 +412,30 @@ public class RarbgTo extends PluginForHost {
             link.setProperty(PROPERTY_DIRECTLINK, dl.getConnection().getURL().toString());
         }
         dl.setFilenameFix(true);
-        dl.startDownload();
+        /*
+         * Start free downloads sequentially to prevent the need to solve antiBot captchas and also the possibility of multiple antiBot
+         * captchas appearing at the same time.
+         */
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(null, link, +1);
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(null, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     private String getHostOfAddedURL(final DownloadLink link) {
@@ -454,7 +479,7 @@ public class RarbgTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return freeRunning.get() + 1;
     }
 
     @Override

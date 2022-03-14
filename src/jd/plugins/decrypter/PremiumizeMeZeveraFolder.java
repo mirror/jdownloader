@@ -91,7 +91,15 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         }
         /* Use path from previous craw process if available --> Saves http requests */
         String folderPath = this.getAdoptedCloudFolderStructure();
-        if (folderPath == null) {
+        if (folderPath != null) {
+            /*
+             * Allow loose files from root folder to go into package named "root" but remove "root" from path for all items that are below
+             * the root folder.
+             */
+            if (folderPath.contains("/") && folderPath.startsWith("root")) {
+                folderPath = folderPath.substring(folderPath.indexOf("/"));
+            }
+        } else {
             /* Try to find complete path by going back until we reach the root folder. */
             folderPath = this.findFullFolderPath(account, "", data, new ArrayList<String>());
         }
@@ -135,17 +143,10 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         }
     }
 
-    public static List<DownloadLink> convert(final String url_source, ArrayList<PremiumizeBrowseNode> premiumizeNodes, String folderPath) {
+    public static List<DownloadLink> convert(final String url_source, ArrayList<PremiumizeBrowseNode> premiumizeNodes, final String folderPath) {
         final List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (premiumizeNodes == null || premiumizeNodes.size() == 0) {
             return ret;
-        }
-        /*
-         * Allow loose files from root folder to go into package named "root" but remove "root" from path for all items that are below the
-         * root folder.
-         */
-        if (folderPath.contains("/") && folderPath.startsWith("root")) {
-            folderPath = folderPath.substring(folderPath.indexOf("/"));
         }
         final String host = Browser.getHost(url_source);
         for (final PremiumizeBrowseNode node : premiumizeNodes) {
