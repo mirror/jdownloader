@@ -95,6 +95,7 @@ public class BbcCom extends PluginForHost {
         /**
          * Look for special VPN "shadow ban": All info and streams are available but we'll run into error 403 when we try to access them.
          */
+        int counterError403 = 0;
         boolean vpnBlocked = false;
         /* 2021-01-12: Website uses "/pc/" instead of "/iptv-all/" */
         this.br.getPage("https://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/iptv-all/vpid/" + getFID(link) + "/format/json");
@@ -135,7 +136,7 @@ public class BbcCom extends PluginForHost {
                     try {
                         final String id = new Regex(thisHLSMaster, "/([^/]*?)\\.ism(\\.hlsv2\\.ism)?/").getMatch(0);
                         final String thisHLSMasterCorrected = thisHLSMaster.replaceFirst("/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8", "/" + id + ".ism/" + id + ".m3u8");
-                        results = HlsContainer.getHlsQualities(brc, thisHLSMasterCorrected);
+                        results = getHlsQualities(brc, thisHLSMasterCorrected);
                     } catch (final Exception e) {
                         logger.log(e);
                         logger.info("Failed to grab superhigh hls_master: " + brc.getURL());
@@ -143,12 +144,13 @@ public class BbcCom extends PluginForHost {
                 }
                 if (results == null || results.isEmpty()) {
                     try {
-                        results = HlsContainer.getHlsQualities(brc, thisHLSMaster);
+                        results = getHlsQualities(brc, thisHLSMaster);
                     } catch (final Exception e) {
                         logger.log(e);
                     }
                 }
                 if ((results == null || results.isEmpty()) && brc.getHttpConnection().getResponseCode() == 403) {
+                    counterError403++;
                     vpnBlocked = true;
                 } else if (results != null && !results.isEmpty()) {
                     hlsContainers.addAll(results);
@@ -193,6 +195,11 @@ public class BbcCom extends PluginForHost {
         }
         hls_url = hlscontainer_chosen.getDownloadurl();
         return AvailableStatus.TRUE;
+    }
+
+    private static List<HlsContainer> getHlsQualities(final Browser br, final String m3u8) throws Exception {
+        br.getPage(m3u8);
+        return HlsContainer.getHlsQualities(br);
     }
 
     private String getFilenameBase(final DownloadLink link) {
