@@ -165,7 +165,7 @@ public class SproutVideoCom extends PluginForHost {
                 /* 2021-09-21: HLS URLs are broken but content is DRM protected anyways. */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "DRM unsupported");
             }
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br, dllink));
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br.cloneBrowser(), dllink));
             String dllink = hlsbest.getDownloadurl();
             String betterFilename = link.getName();
             betterFilename = betterFilename.replace(".mp4", "") + "-" + hlsbest.getHeight() + "p.mp4";

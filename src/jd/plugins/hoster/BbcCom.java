@@ -165,18 +165,24 @@ public class BbcCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         /* Find working HLS URL */
-        final String configuredPreferredVideoHeight = getConfiguredVideoHeight();
-        final String configuredPreferredVideoFramerate = getConfiguredVideoFramerate();
+        final String configuredPreferredVideoHeightStr = getConfiguredVideoHeight();
+        final String configuredPreferredVideoFramerateStr = getConfiguredVideoFramerate();
         HlsContainer hlscontainer_chosen = null;
-        if (!configuredPreferredVideoHeight.matches("\\d+")) {
-            hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(hlsContainers);
-        } else {
-            final String height_for_quality_selection = getHeightForQualitySelection(Integer.parseInt(configuredPreferredVideoHeight));
+        final boolean userWantsOver720p;
+        if (configuredPreferredVideoHeightStr.matches("\\d+")) {
+            /* Look for user-preferred quality */
+            final int configuredPreferredVideoHeight = Integer.parseInt(configuredPreferredVideoHeightStr);
+            if (configuredPreferredVideoHeight > 720 && (configuredPreferredVideoFramerateStr == null || Integer.parseInt(configuredPreferredVideoFramerateStr) >= 50)) {
+                userWantsOver720p = true;
+            } else {
+                userWantsOver720p = false;
+            }
+            final String height_for_quality_selection = getHeightForQualitySelection(configuredPreferredVideoHeight);
             for (final HlsContainer hlscontainer_temp : hlsContainers) {
                 final int height = hlscontainer_temp.getHeight();
                 final String height_for_quality_selection_temp = getHeightForQualitySelection(height);
                 final String framerate = Integer.toString(hlscontainer_temp.getFramerate(25));
-                if (height_for_quality_selection_temp.equals(height_for_quality_selection) && framerate.equals(configuredPreferredVideoFramerate)) {
+                if (height_for_quality_selection_temp.equals(height_for_quality_selection) && framerate.equals(configuredPreferredVideoFramerateStr)) {
                     logger.info("Found user selected quality");
                     hlscontainer_chosen = hlscontainer_temp;
                     break;
@@ -186,6 +192,22 @@ public class BbcCom extends PluginForHost {
                 logger.info("Failed to find user selected quality --> Fallback to BEST");
                 hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(hlsContainers);
             }
+        } else {
+            /* User prefers BEST quality */
+            hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(hlsContainers);
+            userWantsOver720p = true;
+        }
+        final String urlpartToReplace = "-video=5070000.m3u8";
+        if (isAttemptToDownloadUnofficialFullHD() && hlscontainer_chosen.getDownloadurl().contains(urlpartToReplace) && userWantsOver720p) {
+            /*
+             * 2022-03-14: This can get us an upscaled/higher quality version of that video according to discussion in public ticket:
+             * https://github.com/ytdl-org/youtube-dl/issues/30136
+             */
+            logger.info("Attempting workaround to get 1080p quality even though it is not officially available");
+            hlscontainer_chosen.setStreamURL(hlscontainer_chosen.getDownloadurl().replace(urlpartToReplace, "-video=12000000.m3u8"));
+            hlscontainer_chosen.setWidth(1920);
+            hlscontainer_chosen.setHeight(1080);
+            hlscontainer_chosen.setFramerate(50);
         }
         qualityString = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
         link.setFinalFileName(getFilenameBase(link) + "_" + qualityString + ".mp4");
@@ -277,7 +299,7 @@ public class BbcCom extends PluginForHost {
     // return formattedDate;
     // }
     private String getConfiguredVideoFramerate() {
-        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final int selection = this.getPluginConfig().getIntegerProperty(SETTING_SELECTED_VIDEO_FORMAT, 0);
         final String selectedResolution = FORMATS[selection];
         if (selectedResolution.contains("x")) {
             final String framerate = selectedResolution.split("@")[1];
@@ -289,7 +311,7 @@ public class BbcCom extends PluginForHost {
     }
 
     private String getConfiguredVideoHeight() {
-        final int selection = this.getPluginConfig().getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final int selection = this.getPluginConfig().getIntegerProperty(SETTING_SELECTED_VIDEO_FORMAT, 0);
         final String selectedResolution = FORMATS[selection];
         if (selectedResolution.contains("x")) {
             final String height = new Regex(selectedResolution, "\\d+x(\\d+)").getMatch(0);
@@ -301,12 +323,19 @@ public class BbcCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, "Select preferred videoresolution:").setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_VIDEO_FORMAT, FORMATS, "Select preferred video resolution:").setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ATTEMPT_FHD_WORKAROUND, "Try to download 1080p 50fps streams if not officially available?\r\nWarning: This may lead to download failures!").setDefaultValue(default_SETTING_ATTEMPT_FHD_WORKAROUND));
     }
 
     /* The list of qualities displayed to the user */
-    private final String[] FORMATS               = new String[] { "BEST", "1920x1080@50", "1920x1080@25", "1280x720@50", "1280x720@25", "1024x576@50", "1024x576@25", "768x432@50", "768x432@25", "640x360@25", "480x270@25", "320x180@25" };
-    private final String   SELECTED_VIDEO_FORMAT = "SELECTED_VIDEO_FORMAT";
+    private static final String[] FORMATS                                = new String[] { "BEST", "1920x1080@50", "1920x1080@25", "1280x720@50", "1280x720@25", "1024x576@50", "1024x576@25", "768x432@50", "768x432@25", "640x360@25", "480x270@25", "320x180@25" };
+    private static final String   SETTING_SELECTED_VIDEO_FORMAT          = "SELECTED_VIDEO_FORMAT";
+    private static final String   SETTING_ATTEMPT_FHD_WORKAROUND         = "ATTEMPT_FDH_WORKAROUND";
+    private static final boolean  default_SETTING_ATTEMPT_FHD_WORKAROUND = false;
+
+    private boolean isAttemptToDownloadUnofficialFullHD() {
+        return this.getPluginConfig().getBooleanProperty(SETTING_ATTEMPT_FHD_WORKAROUND, default_SETTING_ATTEMPT_FHD_WORKAROUND);
+    }
 
     /** Delete this after 01-2023 */
     @Deprecated
