@@ -114,7 +114,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     public boolean isFinished() {
-        return finishedDate > 0;
+        final long ret = finishedDate;
+        return ret > 0 || ret == Integer.MIN_VALUE;
     }
 
     public int getDisabledCount() {
@@ -122,7 +123,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     public long getFinishedDate() {
-        return finishedDate;
+        final long ret = finishedDate;
+        if (ret <= 0) {
+            return -1;
+        } else {
+            return ret;
+        }
     }
 
     private String commonSourceUrl;
@@ -262,7 +268,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         this.enabledCount = tmp.newEnabledCount;
         if (tmp.allFinished && atLeastOneEnabled) {
             /* all links have reached finished state */
-            this.finishedDate = tmp.newFinishedDate;
+            if (tmp.newFinishedDate <= 0) {
+                /* special handling for manual *mark as finished*, does not set finished date */
+                this.finishedDate = Integer.MIN_VALUE;
+            } else {
+                this.finishedDate = tmp.newFinishedDate;
+            }
         } else {
             /* not all have finished */
             this.finishedDate = -1;

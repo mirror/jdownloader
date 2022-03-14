@@ -20,21 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
-import org.jdownloader.plugins.components.config.FreeDiscPlConfig.StreamDownloadMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -50,12 +41,30 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig.StreamDownloadMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FreeDiscPl extends PluginForHost {
@@ -752,21 +761,73 @@ public class FreeDiscPl extends PluginForHost {
     }
 
     private void handleAntiBot(final Browser br, final Account account) throws Exception {
+        final DownloadLink originalDownloadLink = this.getDownloadLink();
+        final DownloadLink downloadlinkToUse;
+        if (originalDownloadLink != null) {
+            downloadlinkToUse = originalDownloadLink;
+        } else {
+            /* E.g. captcha during login process */
+            downloadlinkToUse = new DownloadLink(this, "Account Login " + this.getHost(), this.getHost(), "https://" + this.getHost(), true);
+        }
+        final Object lock = account != null ? account : downloadlinkToUse;
+        synchronized (lock) {
+            final Future<Boolean> abort = new Future<Boolean>() {
+                @Override
+                public boolean cancel(boolean mayInterruptIfRunning) {
+                    return false;
+                }
+
+                @Override
+                public boolean isCancelled() {
+                    return false;
+                }
+
+                @Override
+                public boolean isDone() {
+                    return true;
+                }
+
+                @Override
+                public Boolean get() throws InterruptedException, ExecutionException {
+                    return FreeDiscPl.this.isAbort();
+                }
+
+                @Override
+                public Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                    return FreeDiscPl.this.isAbort();
+                }
+            };
+            this.setDownloadLink(downloadlinkToUse);
+            try {
+                handleAntiBot(this, br, abort, downloadlinkToUse, null);
+                saveSession(botSafeCookies, br, account);
+            } finally {
+                this.setDownloadLink(originalDownloadLink);
+            }
+        }
+    }
+
+    public static void saveSession(Cookies botSafeCookies, final Browser br, final Account account) {
+        if (account != null) {
+            synchronized (account) {
+                account.saveCookies(br.getCookies(br.getHost()), "");
+            }
+        } else {
+            synchronized (botSafeCookies) {
+                botSafeCookies.clear();
+                botSafeCookies.add(br.getCookies(br.getHost()));
+            }
+        }
+    }
+
+    public static void handleAntiBot(final Plugin plugin, final Browser br, final Future<Boolean> abort, final DownloadLink downloadLink, final CryptedLink cryptedLink) throws Exception {
         int retry = 0;
-        while (isBotBlocked(this.br)) {
-            if (isAbort()) {
+        while (isBotBlocked(br)) {
+            if (abort.get()) {
                 throw new InterruptedException();
             }
             /* Process anti-bot captcha */
-            logger.info("Login captcha / spam protection detected");
-            final DownloadLink originalDownloadLink = this.getDownloadLink();
-            final DownloadLink downloadlinkToUse;
-            if (originalDownloadLink != null) {
-                downloadlinkToUse = originalDownloadLink;
-            } else {
-                /* E.g. captcha during login process */
-                downloadlinkToUse = new DownloadLink(this, "Account Login " + this.getHost(), this.getHost(), "https://" + this.getHost(), true);
-            }
+            plugin.getLogger().info("Login captcha / spam protection detected");
             final Request request = br.getRequest();
             /* Remove uncommented code from html */
             request.setHtmlCode(request.getHtmlCode().replaceAll("(?s)(<!--.*?-->)", ""));
@@ -777,35 +838,45 @@ public class FreeDiscPl extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            try {
-                this.setDownloadLink(downloadlinkToUse);
-                if (request.containsHTML("class\\s*=\\s*\"g-recaptcha\"")) {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
+                final String recaptchaV2Response;
+                if (plugin instanceof PluginForHost) {
+                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2((PluginForHost) plugin, br).getToken();
+                } else if (plugin instanceof PluginForDecrypt) {
+                    recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2((PluginForDecrypt) plugin, br).getToken();
                 } else {
-                    final String captcha = br.getRegex("\"([^\"]*captcha\\.png)").getMatch(0);
-                    if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            } else {
+                final String captcha = br.getRegex("\"([^\"]*captcha\\.png)").getMatch(0);
+                if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String code;
+                if (plugin instanceof PluginForHost) {
+                    if (downloadLink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        code = ((PluginForHost) plugin).getCaptchaCode(captcha, downloadLink);
                     }
-                    final String code = getCaptchaCode(captcha, getDownloadLink());
-                    captchaForm.put("captcha", Encoding.urlEncode(code));
+                } else if (plugin instanceof PluginForDecrypt) {
+                    if (cryptedLink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        code = ((PluginForDecrypt) plugin).getCaptchaCode(captcha, cryptedLink);
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } finally {
-                if (originalDownloadLink != null) {
-                    this.setDownloadLink(originalDownloadLink);
-                }
+                captchaForm.put("captcha", Encoding.urlEncode(code));
             }
             br.submitForm(captchaForm);
-            if (isBotBlocked(this.br)) {
+            if (isBotBlocked(br)) {
                 if (++retry == 5) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Anti-Bot block", 5 * 60 * 1000l);
                 }
             } else {
-                if (account != null) {
-                    account.saveCookies(br.getCookies(br.getHost()), "");
-                } else {
-                    this.saveSession(br);
-                }
                 break;
             }
         }
@@ -855,13 +926,6 @@ public class FreeDiscPl extends PluginForHost {
                 throw new AccountInvalidException();
             }
             account.saveCookies(br.getCookies(this.getHost()), "");
-        }
-    }
-
-    private void saveSession(final Browser br) {
-        synchronized (botSafeCookies) {
-            botSafeCookies.clear();
-            botSafeCookies.add(br.getCookies(br.getHost()));
         }
     }
 
