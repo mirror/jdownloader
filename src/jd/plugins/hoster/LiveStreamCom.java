@@ -19,6 +19,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -31,12 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "https?://(www\\.)?livestream\\.com/[^<>\"]+/videos/\\d+" })
 public class LiveStreamCom extends PluginForHost {
@@ -201,10 +201,10 @@ public class LiveStreamCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (StringUtils.isNotEmpty(progressive_url)) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, progressive_url, free_resume, free_maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, progressive_url, free_resume, free_maxchunks);
             if (dl.getConnection().getContentType().contains("text")) {
                 try {
                     br.followConnection(true);
@@ -220,14 +220,13 @@ public class LiveStreamCom extends PluginForHost {
                 }
             }
         } else if (StringUtils.isNotEmpty(m3u8_url)) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            checkFFmpeg(link, "Download a HLS Stream");
             final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8_url);
             final HlsContainer best = HlsContainer.findBestVideoByBandwidth(qualities);
-            if (best != null) {
-                dl = new HLSDownloader(downloadLink, br, best.getStreamURL());
-            } else {
+            if (best == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl = new HLSDownloader(link, br, best.getStreamURL());
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

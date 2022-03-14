@@ -136,7 +136,7 @@ public class BbcCom extends PluginForHost {
                     try {
                         final String id = new Regex(thisHLSMaster, "/([^/]*?)\\.ism(\\.hlsv2\\.ism)?/").getMatch(0);
                         final String thisHLSMasterCorrected = thisHLSMaster.replaceFirst("/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8", "/" + id + ".ism/" + id + ".m3u8");
-                        results = getHlsQualities(brc, thisHLSMasterCorrected);
+                        results = HlsContainer.getHlsQualities(brc, thisHLSMasterCorrected);
                     } catch (final Exception e) {
                         logger.log(e);
                         logger.info("Failed to grab superhigh hls_master: " + brc.getURL());
@@ -144,7 +144,7 @@ public class BbcCom extends PluginForHost {
                 }
                 if (results == null || results.isEmpty()) {
                     try {
-                        results = getHlsQualities(brc, thisHLSMaster);
+                        results = HlsContainer.getHlsQualities(brc, thisHLSMaster);
                     } catch (final Exception e) {
                         logger.log(e);
                     }
@@ -195,11 +195,6 @@ public class BbcCom extends PluginForHost {
         }
         hls_url = hlscontainer_chosen.getDownloadurl();
         return AvailableStatus.TRUE;
-    }
-
-    private static List<HlsContainer> getHlsQualities(final Browser br, final String m3u8) throws Exception {
-        br.getPage(m3u8);
-        return HlsContainer.getHlsQualities(br);
     }
 
     private String getFilenameBase(final DownloadLink link) {
