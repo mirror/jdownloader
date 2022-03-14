@@ -43,7 +43,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -107,7 +106,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     protected DownloadLink createDownloadlink(final String url) {
         final DownloadLink link = super.createDownloadlink(url);
         if (this.hashtag != null) {
-            link.setProperty("hashtag", this.hashtag);
+            link.setProperty(InstaGramCom.PROPERTY_hashtag, this.hashtag);
         }
         return link;
     }
@@ -232,15 +231,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.clearAll();
         br.setFollowRedirects(true);
         if (param.getDownloadLink() != null) {
             /*
              * E.g. user crawls hashtag URL --> Some URLs go back into crawler --> We want to keep the hashtag in order to use it inside
              * filenames and as a packagizer property.
              */
-            this.hashtag = param.getDownloadLink().getStringProperty("hashtag");
+            this.hashtag = param.getDownloadLink().getStringProperty(InstaGramCom.PROPERTY_hashtag);
         }
         br.addAllowedResponseCodes(new int[] { 502 });
         fp = FilePackage.getInstance();
@@ -933,6 +930,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderpath);
             dl._setFilePackage(fp);
             decryptedLinks.add(dl);
+            distribute(dl);
         }
         return decryptedLinks;
     }
@@ -1070,14 +1068,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             distribute(dl);
         } else if (StringUtils.equalsIgnoreCase("GraphImage", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
             /* Single image */
-            final DownloadLink dl = crawlSingleMediaObject(param, request, entries, linkid_main, date, description, preGivenIndex, preGivenOrderidFormatted, usernameForFilename);
-            decryptedLinks.add(dl);
-            distribute(dl);
+            decryptedLinks.add(crawlSingleMediaObject(param, request, entries, linkid_main, date, description, preGivenIndex, preGivenOrderidFormatted, usernameForFilename));
         } else if (StringUtils.equalsIgnoreCase("GraphVideo", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
             /* Single video */
-            final DownloadLink dl = crawlSingleMediaObject(param, request, entries, linkid_main, date, description, preGivenIndex, preGivenOrderidFormatted, usernameForFilename);
-            decryptedLinks.add(dl);
-            distribute(dl);
+            decryptedLinks.add(crawlSingleMediaObject(param, request, entries, linkid_main, date, description, preGivenIndex, preGivenOrderidFormatted, usernameForFilename));
         } else if (typename != null && typename.matches("Graph[A-Z][a-zA-Z0-9]+") && resource_data_list == null && !param.getCryptedUrl().matches(TYPE_GALLERY)) {
             /*
              * 2017-05-09: User has added a 'User' URL and in this case a single post contains multiple images (=album) but at this stage
@@ -1100,15 +1094,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 if (picture.containsKey("node")) {
                     picture = (Map<String, Object>) picture.get("node");
                 }
-                final DownloadLink dl = crawlSingleMediaObject(param, request, picture, linkid_main, date, description, index, orderidFormatted, usernameForFilename);
-                decryptedLinks.add(dl);
-                distribute(dl);
+                decryptedLinks.add(crawlSingleMediaObject(param, request, picture, linkid_main, date, description, index, orderidFormatted, usernameForFilename));
             }
         } else {
             /* Single image */
-            final DownloadLink dl = crawlSingleMediaObject(param, request, entries, linkid_main, date, description, -1, null, usernameForFilename);
-            decryptedLinks.add(dl);
-            distribute(dl);
+            decryptedLinks.add(crawlSingleMediaObject(param, request, entries, linkid_main, date, description, -1, null, usernameForFilename));
         }
         return decryptedLinks;
     }
@@ -1174,7 +1164,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.log(e);
             }
         }
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         String dateFormatted = null;
         if (date > 0) {
             final String targetFormat = "yyyy-MM-dd";
@@ -1309,6 +1298,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             dl.setContentUrl(param.getCryptedUrl());
         }
         dl.setProperty(InstaGramCom.PROPERTY_is_video, isVideo);
+        distribute(dl);
         return dl;
     }
 

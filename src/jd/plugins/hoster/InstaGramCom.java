@@ -110,6 +110,7 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_uploader                        = "uploader";
     public static final String  PROPERTY_is_video                        = "isvideo";
     public static final String  PROPERTY_date                            = "date";
+    public static final String  PROPERTY_hashtag                         = "hashtag";
     public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";
 
     public static void setRequestLimit() {
