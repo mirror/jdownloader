@@ -24,25 +24,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -61,6 +42,25 @@ import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuali
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -408,8 +408,9 @@ public class UpToBoxCom extends antiDDoSForHost {
                          * "If you have a premium account, please login to remove the limitation."
                          */
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
@@ -499,7 +500,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     private void errorFileTemporarilyUnavailable() throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable, please retry later", 5 * 60 * 1000);
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable, please retry later", 5 * 60 * 1000);
     }
 
     private int getPreDownloadWaittimeWebsite() {
