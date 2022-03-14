@@ -137,11 +137,7 @@ public class HlsContainer {
     private List<M3U8Playlist> m3u8List = null;
     private int                width    = -1;
 
-    protected int getAverage_bandwidth() {
-        return average_bandwidth;
-    }
-
-    public void setAverage_bandwidth(int average_bandwidth) {
+    public void setAverageBandwidth(int average_bandwidth) {
         this.average_bandwidth = average_bandwidth;
     }
 
