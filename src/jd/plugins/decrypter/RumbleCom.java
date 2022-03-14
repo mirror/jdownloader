@@ -24,6 +24,11 @@ import java.util.Map.Entry;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.RumbleComConfig;
+import org.jdownloader.plugins.components.config.RumbleComConfig.Quality;
+import org.jdownloader.plugins.components.config.RumbleComConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -89,19 +94,20 @@ public class RumbleCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
+        final RumbleComConfig cfg = PluginJsonConfig.get(RumbleComConfig.class);
         br.getPage("https://" + this.getHost() + "/embedJS/u3/?request=video&v=" + videoID);
         /* Double-check for offline content */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         String dateFormatted = null;
-        final String dateStr = (String) entries.get("pubDate");
+        final String dateStr = (String) root.get("pubDate");
         if (!StringUtils.isEmpty(dateStr)) {
             dateFormatted = new Regex(dateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         }
-        final String uploaderName = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
-        String title = (String) entries.get("title");
+        final String uploaderName = (String) JavaScriptEngineFactory.walkJson(root, "author/name");
+        String title = (String) root.get("title");
         String baseTitle = title;
         if (StringUtils.isEmpty(baseTitle)) {
             /* Fallback */
@@ -115,25 +121,83 @@ public class RumbleCom extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(baseTitle);
-        entries = (Map<String, Object>) entries.get("ua");
-        final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+        final Map<String, Object> videoInfo = (Map<String, Object>) root.get("ua");
+        final Iterator<Entry<String, Object>> iterator = videoInfo.entrySet().iterator();
+        final QualitySelectionMode mode = cfg.getQualitySelectionMode();
+        int bestQualityHeight = 0;
+        DownloadLink best = null;
+        int worstQualityHeight = 10000;
+        DownloadLink worst = null;
+        final int preferredHeight = getUserPreferredqualityHeight();
+        DownloadLink selectedQuality = null;
         while (iterator.hasNext()) {
             final Entry<String, Object> entry = iterator.next();
-            final String qualityModifier = entry.getKey();
+            final String qualityHeightStr = entry.getKey();
+            final int qualityHeight = Integer.parseInt(qualityHeightStr);
             final List<Object> qualityInfoArray = (List<Object>) entry.getValue();
             final String url = (String) qualityInfoArray.get(0);
-            if (StringUtils.isEmpty(url) || StringUtils.isEmpty(qualityModifier)) {
+            if (StringUtils.isEmpty(url) || StringUtils.isEmpty(qualityHeightStr)) {
                 /* Skip invalid items */
                 continue;
             }
             final DownloadLink dl = this.createDownloadlink(url);
             /* Set this so when user copies URL of any video quality he'll get the URL to the main video. */
             dl.setContentUrl(param.getCryptedUrl());
-            dl.setForcedFileName(baseTitle + "_" + qualityModifier + ".mp4");
+            dl.setForcedFileName(baseTitle + "_" + qualityHeightStr + ".mp4");
             dl.setAvailable(true);
             dl._setFilePackage(fp);
+            if (qualityHeight > bestQualityHeight) {
+                bestQualityHeight = qualityHeight;
+                best = dl;
+            }
+            if (qualityHeight < worstQualityHeight) {
+                worstQualityHeight = qualityHeight;
+                worst = dl;
+            }
+            if (qualityHeight == preferredHeight) {
+                selectedQuality = dl;
+            }
             decryptedLinks.add(dl);
         }
-        return decryptedLinks;
+        if (mode == QualitySelectionMode.WORST && worst != null) {
+            decryptedLinks.clear();
+            decryptedLinks.add(worst);
+            return decryptedLinks;
+        } else if (mode == QualitySelectionMode.BEST && best != null) {
+            decryptedLinks.clear();
+            decryptedLinks.add(best);
+            return decryptedLinks;
+        } else if (mode == QualitySelectionMode.SELECTED_ONLY && selectedQuality != null) {
+            decryptedLinks.clear();
+            decryptedLinks.add(selectedQuality);
+            return decryptedLinks;
+        } else {
+            /* Return all if wanted by user and also as fallback. */
+            return decryptedLinks;
+        }
+    }
+
+    private int getUserPreferredqualityHeight() throws PluginException {
+        final Quality quality = PluginJsonConfig.get(RumbleComConfig.class).getPreferredQuality();
+        switch (quality) {
+        case Q240:
+            return 240;
+        case Q360:
+            return 360;
+        case Q480:
+            return 480;
+        case Q720:
+            return 720;
+        case Q1080:
+            return 1080;
+        default:
+            /* Should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return RumbleComConfig.class;
     }
 }

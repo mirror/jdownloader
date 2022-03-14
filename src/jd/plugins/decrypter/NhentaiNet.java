@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -43,10 +44,34 @@ import jd.plugins.components.PluginJSonUtils;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nhentai.net" }, urls = { "https?://(?:www\\.)?nhentai\\.(?:net|to|xxx)/g/(\\d+)/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class NhentaiNet extends antiDDoSForDecrypt {
     public NhentaiNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "nhentai.net", "nhentai.to", "nhentai.xxx" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/g/(\\d+)/?");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -67,7 +92,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = null;
         try {
@@ -102,17 +127,16 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         }
         title = Encoding.htmlDecode(title);
         // images
-        final String[] imgs = br.getRegex("class\\s*=\\s*\"gallerythumb\"\\s*href\\s*=\\s*\"/g/\\d+/\\d+/?\"[^<]*?<img\\s*(?:is=\"[^\"]*lazyload-image[^\"]*\")?\\s*class\\s*=\\s*\"[^\"]*lazyload[^\"]*\"[^>]+data-src\\s*=\\s*\"(.*?)\"").getColumn(0);
-        if (imgs == null || imgs.length == 0) {
+        final String[] urls = br.getRegex("(/g/" + galleryID + "/\\d+/?)").getColumn(0);
+        if (urls == null || urls.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final int numberOfPages = imgs.length;
-        final DecimalFormat df = numberOfPages > 999 ? new DecimalFormat("0000") : numberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
-        int i = 0;
-        for (final String img : imgs) {
-            final String link = Request.getLocation(img.replace("//t.", "//i.").replaceFirst("/(\\d+)t(\\.[a-z0-9]+)$", "/$1$2"), br.getRequest());
-            final DownloadLink dl = createDownloadlink("directhttp://" + link);
-            dl.setFinalFileName(df.format(++i) + getFileNameExtensionFromString(img, ".jpg"));
+        final int estimatedNumberOfPages = urls.length;
+        final DecimalFormat df = estimatedNumberOfPages > 999 ? new DecimalFormat("0000") : estimatedNumberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
+        for (final String url : urls) {
+            final int pageNumber = Integer.parseInt(new Regex(url, "(\\d+)/?$").getMatch(0));
+            final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
+            dl.setFinalFileName(df.format(pageNumber) + getFileNameExtensionFromString(url, ".jpg"));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }

@@ -9,8 +9,8 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "biqle.ru", type = Type.CRAWLER)
-public interface BiqleRuConfig extends PluginConfigInterface {
+@PluginHost(host = "rumble.com", type = Type.CRAWLER)
+public interface RumbleComConfig extends PluginConfigInterface {
     public static enum QualitySelectionMode implements LabelInterface {
         BEST {
             @Override
@@ -18,16 +18,16 @@ public interface BiqleRuConfig extends PluginConfigInterface {
                 return "Best quality";
             }
         },
-        // BEST_OF_SELECTED {
-        // @Override
-        // public String getLabel() {
-        // return "Best quality (use selected as highest)";
-        // }
-        // },
+        WORST {
+            @Override
+            public String getLabel() {
+                return "Worst quality";
+            }
+        },
         SELECTED_ONLY {
             @Override
             public String getLabel() {
-                return "Selected quality only (fallback = best)";
+                return "Selected quality only (fallback = all)";
             }
         },
         ALL {
@@ -80,10 +80,10 @@ public interface BiqleRuConfig extends PluginConfigInterface {
     void setQualitySelectionMode(QualitySelectionMode mode);
 
     @AboutConfig
-    @DefaultEnumValue("Q720")
+    @DefaultEnumValue("Q1080")
     @Order(20)
     @DescriptionForConfigEntry("Best will be used if selected preferred quality does not exist")
-    BiqleRuConfig.Quality getPreferredQuality();
+    RumbleComConfig.Quality getPreferredQuality();
 
-    void setPreferredQuality(BiqleRuConfig.Quality quality);
+    void setPreferredQuality(RumbleComConfig.Quality quality);
 }
