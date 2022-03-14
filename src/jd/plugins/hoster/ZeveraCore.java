@@ -431,10 +431,8 @@ abstract public class ZeveraCore extends UseNet {
             /* 2019-06-26: New */
             ai.setUsedSpace(((Number) space_usedO).longValue());
         }
-        /* E.g. free account: "premium_until":false */
-        final long currentTime = br.getCurrentServerTime(System.currentTimeMillis());
-        final long premium_until = (premium_untilO != null && premium_untilO instanceof Number) ? ((Number) premium_untilO).longValue() * 1000 : 0;
-        if (premium_until > currentTime) {
+        /* E.g. free account: "premium_until":false or "premium_until":null */
+        if (premium_untilO != null && premium_untilO.toString().matches("\\d+")) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
             if (isBoosterPointsUnlimitedTrafficWorkaroundActive(account)) {
@@ -459,7 +457,17 @@ abstract public class ZeveraCore extends UseNet {
                     ai.setUnlimitedTraffic();
                 }
             }
-            ai.setValidUntil(premium_until, br);
+            /*
+             * 2022-03-14: Small workaround for API returning un-precise premium expire values. As long as a value is given and > current
+             * time we'll set it else we just won't set an expire-date as we simply cannot know it.
+             */
+            final long premium_until = ((Number) premium_untilO).longValue() * 1000;
+            if (premium_until > System.currentTimeMillis()) {
+                ai.setValidUntil(premium_until, br);
+            } else {
+                logger.info("This premium account appears to be nearly expired");
+                ai.setValidUntil(-1);
+            }
         } else {
             /* Expired == FREE */
             account.setType(AccountType.FREE);

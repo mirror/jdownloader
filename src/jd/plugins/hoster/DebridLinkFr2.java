@@ -519,41 +519,40 @@ public class DebridLinkFr2 extends PluginForHost {
                 throw new AccountUnavailableException("Session expired", 1 * 60 * 1000l);
             } else if ("serverNotAllowed".equals(error)) {
                 /** Temporary IP (account) ban (used used a VPN/Proxy which is not allowed) */
-                throw new AccountUnavailableException("Dedicated Server/VPN/Proxy detected, account disabled!", 30 * 60 * 1000l);
+                throw new AccountUnavailableException("Dedicated Server/VPN/Proxy detected, account disabled!", 10 * 60 * 1000l);
             } else if ("disabledServerHost".equals(error)) {
                 /** Happens if downloading from single hosts is not allowed via VPN/proxy. */
                 mhm.putError(account, link, 5 * 60 * 1000l, "Host prohibits VPN/Proxy usage");
             } else if ("floodDetected".equals(error)) {
-                /* API Flood detected, retry after 1 hour -> Should usually not happen */
-                throw new AccountUnavailableException("API Flood, will retry in 1 hour!", 1 * 60 * 60 * 1001l);
+                throw new AccountUnavailableException("API Flood, will retry in 1 hour!", 30 * 60 * 1001l);
             } else if ("accountLocked".equals(error)) {
-                throw new AccountUnavailableException("Account locked", 1 * 60 * 60 * 1001l);
+                throw new AccountUnavailableException("Account locked", 30 * 60 * 1001l);
             } else if ("fileNotFound".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'", 5 * 60 * 1000l);
             } else if ("notDebrid".equals(error)) {
-                mhm.putError(account, link, 60 * 60 * 1000l, "Disabled filehost: server error notDebrid");
+                mhm.putError(account, link, 2 * 60 * 1000l, "Disabled filehost: server error notDebrid");
             } else if ("disabledHost".equals(error)) {
                 /* The filehoster is disabled */
                 mhm.putError(account, link, 5 * 60 * 1000l, "Disabled filehost");
             } else if ("notFreeHost".equals(error)) {
-                mhm.putError(account, link, 60 * 60 * 1000l, "Disabled filehost as it is only available for premium users");
+                mhm.putError(account, link, 5 * 60 * 1000l, "Disabled filehost as it is only available for premium users");
             } else if ("maintenanceHost".equals(error) || "noServerHost".equals(error)) {
                 /* Some generic "Host currently doesn't work" traits! */
-                mhm.putError(account, link, 5 * 60 * 1000l, error);
+                mhm.putError(account, link, 2 * 60 * 1000l, error);
             } else if ("maxLinkHost".equals(error)) {
                 synchronized (quotaReachedHostsList) {
                     quotaReachedHostsList.add(link.getHost());
                 }
-                mhm.putError(account, link, 5 * 60 * 1000l, "Max links per day limit reached for this host");
+                mhm.putError(account, link, 2 * 60 * 1000l, "Max links per day limit reached for this host");
             } else if ("maxDataHost".equals(error)) {
                 synchronized (quotaReachedHostsList) {
                     quotaReachedHostsList.add(link.getHost());
                 }
-                mhm.putError(account, link, 5 * 60 * 1000l, "Max data per day limit reached for this host");
+                mhm.putError(account, link, 2 * 60 * 1000l, "Max data per day limit reached for this host");
             } else if ("maxLink".equals(error)) {
-                throw new AccountUnavailableException("Download limit reached: Max links per day", 1 * 60 * 60 * 1001l);
+                throw new AccountUnavailableException("Download limit reached: Max links per day", 10 * 60 * 1001l);
             } else if ("maxData".equals(error)) {
-                throw new AccountUnavailableException("Download limit reached: Max traffic per day", 1 * 60 * 60 * 1001l);
+                throw new AccountUnavailableException("Download limit reached: Max traffic per day", 10 * 60 * 1001l);
             } else if ("freeServerOverload".equals(error)) {
                 /* I assume this means free account downloads from this host are not possible at the moment? */
                 mhm.putError(account, link, 10 * 60 * 1000l, "Free account downloads not possible at the moment");

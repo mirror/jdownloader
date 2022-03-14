@@ -381,8 +381,9 @@ public class PixivNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                final String siteKeyInvisible = "6LfF1dcZAAAAAOHQX8v16MX5SktDwmQINVD_6mBF";
+                final String siteKeyEnterpriseInvisible = "6LfF1dcZAAAAAOHQX8v16MX5SktDwmQINVD_6mBF";
                 final String siteKeyNormal = "6LejidcZAAAAAE0-BHUjuY_1yIR478OolN4akKyy";
+                final boolean requiresNormalReCaptchaV2 = true;
                 if (plugin instanceof PluginForHost) {
                     final PluginForHost plg = (PluginForHost) plugin;
                     final DownloadLink dlinkbefore = plg.getDownloadLink();
@@ -390,7 +391,7 @@ public class PixivNet extends PluginForHost {
                         if (dlinkbefore == null) {
                             plg.setDownloadLink(new DownloadLink(plg, "Account", plg.getHost(), "http://" + account.getHoster(), true));
                         }
-                        final CaptchaHelperHostPluginRecaptchaV2 v3Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyInvisible) {
+                        final CaptchaHelperHostPluginRecaptchaV2 v3Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyEnterpriseInvisible) {
                             @Override
                             protected boolean isEnterprise(String source) {
                                 return true;
@@ -404,18 +405,22 @@ public class PixivNet extends PluginForHost {
                             }
                         };
                         loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(v3Captcha.getToken()));
-                        final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyNormal) {
-                            @Override
-                            protected boolean isEnterprise(String source) {
-                                return true;
-                            }
+                        if (requiresNormalReCaptchaV2) {
+                            final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyNormal) {
+                                @Override
+                                protected boolean isEnterprise(String source) {
+                                    return true;
+                                }
 
-                            @Override
-                            protected Map<String, Object> getV3Action(final String source) {
-                                return null;
+                                @Override
+                                protected Map<String, Object> getV3Action(final String source) {
+                                    return null;
+                                };
                             };
-                        };
-                        loginform.put("g_recaptcha_response", Encoding.urlEncode(v2Captcha.getToken()));
+                            loginform.put("g_recaptcha_response", Encoding.urlEncode(v2Captcha.getToken()));
+                        } else {
+                            loginform.put("g_recaptcha_response", "");
+                        }
                     } finally {
                         if (dlinkbefore != null) {
                             plg.setDownloadLink(dlinkbefore);
@@ -423,7 +428,7 @@ public class PixivNet extends PluginForHost {
                     }
                 } else if (plugin instanceof PluginForDecrypt) {
                     final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
-                    final CaptchaHelperCrawlerPluginRecaptchaV2 v3Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyInvisible) {
+                    final CaptchaHelperCrawlerPluginRecaptchaV2 v3Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyEnterpriseInvisible) {
                         @Override
                         protected boolean isEnterprise(String source) {
                             return true;
@@ -437,18 +442,22 @@ public class PixivNet extends PluginForHost {
                         }
                     };
                     loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(v3Captcha.getToken()));
-                    final CaptchaHelperCrawlerPluginRecaptchaV2 v2Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyNormal) {
-                        @Override
-                        protected boolean isEnterprise(String source) {
-                            return true;
-                        }
+                    if (requiresNormalReCaptchaV2) {
+                        final CaptchaHelperCrawlerPluginRecaptchaV2 v2Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyNormal) {
+                            @Override
+                            protected boolean isEnterprise(String source) {
+                                return true;
+                            }
 
-                        @Override
-                        protected Map<String, Object> getV3Action(final String source) {
-                            return null;
+                            @Override
+                            protected Map<String, Object> getV3Action(final String source) {
+                                return null;
+                            };
                         };
-                    };
-                    loginform.put("g_recaptcha_response", Encoding.urlEncode(v2Captcha.getToken()));
+                        loginform.put("g_recaptcha_response", Encoding.urlEncode(v2Captcha.getToken()));
+                    } else {
+                        loginform.put("g_recaptcha_response", "");
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -458,6 +467,7 @@ public class PixivNet extends PluginForHost {
                 loginform.put("post_key", Encoding.urlEncode(postkey));
                 loginform.put("tt", Encoding.urlEncode(postkey));
                 loginform.put("source", "pc");
+                loginform.put("app_ios", "0");
                 loginform.put("ref", "wwwtop_accounts_index");
                 loginform.put("return_to", Encoding.urlEncode("https://www.pixiv.net/en/"));
                 loginform.setAction("https://accounts.pixiv.net/api/login?lang=en");
@@ -469,13 +479,15 @@ public class PixivNet extends PluginForHost {
                 if ("true".equals(error)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    if (br.containsHTML("Complete the reCAPTCHA verification")) {
+                    if (br.containsHTML("(?i)Complete the reCAPTCHA verification")) {
                         showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     br.getPage("https://www." + account.getHoster() + "/en");
                     if (!isLoggedIN(br)) {
-                        showCookieLoginInformation();
+                        if (!account.hasEverBeenValid()) {
+                            showCookieLoginInformation();
+                        }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
