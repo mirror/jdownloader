@@ -30,12 +30,14 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -78,7 +80,7 @@ public class BatoTo extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/chapter/(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(series|chapter)/(\\d+)(/[^/\\s]+)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -92,6 +94,8 @@ public class BatoTo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setProperty("CLEANUP_NAME", false);
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         /* Login if possible */
@@ -105,58 +109,69 @@ public class BatoTo extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(param.toString()));
             return decryptedLinks;
         }
-        final String chapterID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        final String batojs = br.getRegex("batojs = (.*?);").getMatch(0);
-        String secret = null;
-        final String cipherText = br.getRegex("const server = \"([^\"]+)").getMatch(0);
-        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        final StringBuilder sb = new StringBuilder();
-        sb.append("var batojs = " + batojs + ";");
-        sb.append("var server = \"" + cipherText + "\";");
-        try {
-            engine.eval(sb.toString());
-            secret = engine.get("batojs").toString();
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-        final String server = aesDecrypt(secret, cipherText).replace("\"", "");
-        final String titleSeries = br.getRegex("<a href=\"/series/\\d+\">([^<]+)</a>").getMatch(0);
-        final Regex chapterInfo = br.getRegex("property=\"og:title\"[^>]*content=\"([^>]*) - Chapter (\\d+)\"/>");
-        final String titleChapter = chapterInfo.getMatch(0);
-        final String chapterNumber = chapterInfo.getMatch(1);
-        String imgsText = br.getRegex("const images = \\[(.*?);").getMatch(0);
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setProperty("CLEANUP_NAME", false);
-        if (titleSeries == null || titleChapter == null) {
-            logger.info(br.toString());
-            logger.info(titleSeries + "|" + titleChapter);
-            throw new DecrypterException("Decrypter broken for link: " + param);
-        }
-        fp.setName(titleSeries + " - Chapter " + chapterNumber + ": " + titleChapter);
-        imgsText = imgsText.replace("\"", "");
-        final String[] imgs = imgsText.split(",");
-        int index = 0;
-        final DecimalFormat df = new DecimalFormat("00");
-        for (String url : imgs) {
-            url = server + url;
-            final String pageNumberFormatted = df.format(index);
-            final DownloadLink link = createDownloadlink(url);
-            final String fname_without_ext = fp.getName() + " - Page " + pageNumberFormatted;
-            link.setProperty("fname_without_ext", fname_without_ext);
-            final String urlWithoutParams;
-            if (url.contains("?")) {
-                urlWithoutParams = url.substring(0, url.lastIndexOf("?"));
-            } else {
-                urlWithoutParams = url;
+        if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/series/")) {
+            String[] chapters = br.getRegex("<a[^>]+class\\s*=\\s*\"[^\"]*chapt[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]*/chapter/[^\"]+)\"").getColumn(0);
+            if (chapters != null && chapters.length > 0) {
+                for (String chapter : chapters) {
+                    String url = br.getURL(Encoding.htmlOnlyDecode(chapter)).toString();
+                    final DownloadLink link = createDownloadlink(url);
+                    fp.add(link);
+                    distribute(link);
+                    decryptedLinks.add(link);
+                }
             }
-            link.setFinalFileName(fname_without_ext + Plugin.getFileNameExtensionFromURL(urlWithoutParams));
-            link.setAvailable(true);
-            link.setContentUrl("http://bato.to/reader#" + chapterID + "_" + pageNumberFormatted);
-            fp.add(link);
-            distribute(link);
-            decryptedLinks.add(link);
-            index++;
+        } else {
+            final String chapterID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+            final String batojs = br.getRegex("batojs = (.*?);").getMatch(0);
+            String secret = null;
+            final String cipherText = br.getRegex("const server = \"([^\"]+)").getMatch(0);
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            final StringBuilder sb = new StringBuilder();
+            sb.append("var batojs = " + batojs + ";");
+            sb.append("var server = \"" + cipherText + "\";");
+            try {
+                engine.eval(sb.toString());
+                secret = engine.get("batojs").toString();
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+            final String server = aesDecrypt(secret, cipherText).replace("\"", "");
+            final String titleSeries = br.getRegex("<a href=\"/series/\\d+\">([^<]+)</a>").getMatch(0);
+            final Regex chapterInfo = br.getRegex("property=\"og:title\"[^>]*content=\"([^>]*) - Chapter (\\d+)\"/>");
+            final String titleChapter = chapterInfo.getMatch(0);
+            final String chapterNumber = chapterInfo.getMatch(1);
+            String imgsText = br.getRegex("const images = \\[(.*?);").getMatch(0);
+            if (titleSeries == null || titleChapter == null) {
+                logger.info(br.toString());
+                logger.info(titleSeries + "|" + titleChapter);
+                throw new DecrypterException("Decrypter broken for link: " + param);
+            }
+            fp.setName(titleSeries + " - Chapter " + chapterNumber + ": " + titleChapter);
+            imgsText = imgsText.replace("\"", "");
+            final String[] imgs = imgsText.split(",");
+            int index = 0;
+            final DecimalFormat df = new DecimalFormat("00");
+            for (String url : imgs) {
+                url = server + url;
+                final String pageNumberFormatted = df.format(index);
+                final DownloadLink link = createDownloadlink(url);
+                final String fname_without_ext = fp.getName() + " - Page " + pageNumberFormatted;
+                link.setProperty("fname_without_ext", fname_without_ext);
+                final String urlWithoutParams;
+                if (url.contains("?")) {
+                    urlWithoutParams = url.substring(0, url.lastIndexOf("?"));
+                } else {
+                    urlWithoutParams = url;
+                }
+                link.setFinalFileName(fname_without_ext + Plugin.getFileNameExtensionFromURL(urlWithoutParams));
+                link.setAvailable(true);
+                link.setContentUrl("http://bato.to/reader#" + chapterID + "_" + pageNumberFormatted);
+                fp.add(link);
+                distribute(link);
+                decryptedLinks.add(link);
+                index++;
+            }
         }
         return decryptedLinks;
     }
