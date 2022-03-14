@@ -66,11 +66,14 @@ public class DatPiffCom extends PluginForHost {
         if (br.containsHTML(ONLYREGISTEREDUSERTEXT)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.datpiffcom.only4premium", ONLYREGISTEREDUSERTEXT));
             return AvailableStatus.TRUE;
-        } else if (br.containsHTML("(?i)(>Download Unavailable<|>A zip file has not yet been generated<|>Mixtape Not Found<|has been removed<)")) {
+        } else if (br.containsHTML("(?i)(>\\s*Download Unavailable\\s*<|>\\s*A zip file has not yet been generated\\s*<|>\\s*Mixtape Not Found\\s*<|has been removed<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getPluginPatternMatcher().matches(TYPE_SONG)) {
-            /* TODO */
+            final String title = br.getRegex("<span>Download Track<em>([^<>\"]+)</em>").getMatch(0);
+            if (title != null) {
+                link.setName(Encoding.htmlDecode(title).trim() + ".mp3");
+            }
         } else {
             /* TYPE_MIXTAPE */
             String filename = null;
@@ -149,13 +152,23 @@ public class DatPiffCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     dllink = trackPrefix + trackServerFilename;
+                } else {
+                    final Form dlform = br.getFormbyProperty("id", "loginform");
+                    if (dlform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(false);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    brc.submitForm(dlform);
+                    dllink = brc.getRedirectLocation();
                 }
             } else {
                 /* Download complete mixtape as .zip file. */
                 if (br.containsHTML(PATTERN_PREMIUMONLY)) {
                     throw new AccountRequiredException();
-                }
-                if (br.containsHTML(PATTERN_CURRENTLYUNAVAILABLE)) {
+                } else if (br.containsHTML(PATTERN_CURRENTLYUNAVAILABLE)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, CURRENTLYUNAVAILABLETEXT, 3 * 60 * 60 * 1000l);
                 }
                 final String downloadID = br.getRegex("openDownload\\(\\s*'([^<>\"\\']+)").getMatch(0);
@@ -218,13 +231,12 @@ public class DatPiffCom extends PluginForHost {
                         break;
                     }
                 }
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
             }
-            if (dllink.matches("https?://(www\\.)?datpiff\\.com/pop\\-mixtape\\-download\\.php\\?id=[A-Za-z0-9]+")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (dllink.matches("https?://[^/]+/pop\\-mixtape\\-download\\.php\\?id=[A-Za-z0-9]+")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -235,9 +247,10 @@ public class DatPiffCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // Server doesn't send the correct filename directly, filename fix also
-        // doesn't work so we have to do it this way
-        link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        final String headerFilename = getFileNameFromHeader(dl.getConnection());
+        if (headerFilename != null) {
+            link.setFinalFileName(headerFilename);
+        }
         link.setProperty("directlink", dllink);
         dl.startDownload();
     }
