@@ -217,7 +217,7 @@ public class MixdropCo extends antiDDoSForHost {
             final Map<String, Object> json = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             dllink = (String) json.get("url");
             if (StringUtils.isEmpty(dllink)) {
-                final String errormsg = (String) json.get("error");
+                final String errormsg = (String) json.get("msg");
                 if (errormsg != null) {
                     if (errormsg.matches("(?i).*Failed captcha verification.*")) {
                         /*
@@ -232,6 +232,7 @@ public class MixdropCo extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_FATAL, errormsg);
                     }
                 }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* 2019-09-30: Skip short pre-download waittime */
         }

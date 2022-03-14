@@ -486,7 +486,9 @@ public class TwitterCom extends PluginForHost {
         } else {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                if (dl.getConnection().getResponseCode() == 429) {
+                if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 429) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
                 }
                 try {
