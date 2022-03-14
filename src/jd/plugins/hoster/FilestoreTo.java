@@ -19,12 +19,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.FilestoreToConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -43,6 +37,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.FilestoreToConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "https?://(?:www\\.)?filestore\\.to/\\?d=([A-Z0-9]+)" })
 public class FilestoreTo extends PluginForHost {
@@ -218,9 +218,12 @@ public class FilestoreTo extends PluginForHost {
                     filename = new Regex(html, "und starte dann den Download\\.\\.\\.\\.\\s*[A-Za-z]+:?\\s*([^<>\"/]*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}))").getMatch(0);
                 }
             }
-            String filesizeStr = new Regex(html, "class=\"size\">\\s*(\\d+[^<]+)<").getMatch(0);
+            String filesizeStr = new Regex(html, "<small>\\s*(?:Dateigröße|Filesize)\\s*</small>\\s*<div\\s*class\\s*=\\s*\"size\"\\s*>\\s*(\\d+[^<]+)<").getMatch(0);
             if (filesizeStr == null) {
-                filesizeStr = new Regex(html, "(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(0);
+                filesizeStr = new Regex(html, "class=\"size\">\\s*(\\d+[^<]+)<").getMatch(0);
+                if (filesizeStr == null) {
+                    filesizeStr = new Regex(html, "(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(0);
+                }
             }
             if (filename != null) {
                 link.setName(Encoding.htmlDecode(filename).trim());

@@ -811,7 +811,7 @@ public class PornHubCom extends PluginForHost {
         final String format = link.getStringProperty(PROPERT_FORMAT);
         if (StringUtils.equalsIgnoreCase(format, "hls")) {
             checkFFmpeg(link, "Download a HLS Stream");
-            final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(br, dlUrl);
+            final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(br.cloneBrowser(), dlUrl);
             if (hlsContainers == null || hlsContainers.size() != 1) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

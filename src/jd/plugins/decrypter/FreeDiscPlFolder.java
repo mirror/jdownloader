@@ -18,24 +18,17 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.Request;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -46,6 +39,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FreeDiscPl;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "https?://(?:(?:www|m)\\.)?freedisc\\.pl/([A-Za-z0-9_\\-]+),d-(\\d+)(,([\\w\\-]+))?" })
 public class FreeDiscPlFolder extends PluginForDecrypt {
@@ -194,59 +194,37 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
     }
 
     private void handleAntiBot(final Browser br, final CryptedLink param, final Account account) throws Exception {
-        int retry = 0;
-        while (isBotBlocked()) {
-            if (isAbort()) {
-                throw new InterruptedException();
-            }
-            /* Process anti-bot captcha */
-            logger.info("Spam protection detected");
-            final Request request = br.getRequest();
-            // remove uncomment code
-            request.setHtmlCode(request.getHtmlCode().replaceAll("(?s)(<!--.*?-->)", ""));
-            Form captchaForm = br.getFormByRegex("name\\s*=\\s*\"captcha\"");
-            if (captchaForm == null) {
-                captchaForm = br.getFormByRegex("value\\s*=\\s*\"Wchodzę\"");
-                if (captchaForm == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Object lock = account != null ? account : botSafeCookies;
+        synchronized (lock) {
+            final Future<Boolean> abort = new Future<Boolean>() {
+                @Override
+                public boolean cancel(boolean mayInterruptIfRunning) {
+                    return false;
                 }
-            }
-            if (request.containsHTML("class\\s*=\\s*\"g-recaptcha\"")) {
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            } else {
-                final String captcha = br.getRegex("\"([^\"]*captcha\\.png)").getMatch(0);
-                if (captcha == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String code = getCaptchaCode(captcha, param);
-                captchaForm.put("captcha", Encoding.urlEncode(code));
-            }
-            br.submitForm(captchaForm);
-            if (isBotBlocked()) {
-                if (++retry == 5) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Anti-Bot block", 5 * 60 * 1000l);
-                }
-            } else {
-                if (account != null) {
-                    account.saveCookies(br.getCookies(br.getHost()), "");
-                } else {
-                    saveSession(br);
-                }
-                break;
-            }
-        }
-    }
 
-    private void saveSession(final Browser br) {
-        synchronized (botSafeCookies) {
-            botSafeCookies.clear();
-            botSafeCookies.add(br.getCookies(br.getHost()));
-        }
-    }
+                @Override
+                public boolean isCancelled() {
+                    return false;
+                }
 
-    private boolean isBotBlocked() {
-        return jd.plugins.hoster.FreeDiscPl.isBotBlocked(this.br);
+                @Override
+                public boolean isDone() {
+                    return true;
+                }
+
+                @Override
+                public Boolean get() throws InterruptedException, ExecutionException {
+                    return FreeDiscPlFolder.this.isAbort();
+                }
+
+                @Override
+                public Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                    return FreeDiscPlFolder.this.isAbort();
+                }
+            };
+            FreeDiscPl.handleAntiBot(this, br, abort, null, param);
+            FreeDiscPl.saveSession(botSafeCookies, br, account);
+        }
     }
 
     /* NO OVERRIDE!! */

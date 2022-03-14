@@ -128,7 +128,7 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                     throw e;
                 }
             }
-            if (stdOut != null && outFile.exists() && outFile.isFile()) {
+            if (stdOut != null && outFile.isFile()) {
                 try {
                     if (lastModifiedAudio > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                         outFile.setLastModified(lastModifiedAudio);
@@ -190,7 +190,7 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                     throw e;
                 }
             }
-            if (stdOut != null && outFile.exists() && outFile.isFile()) {
+            if (stdOut != null && outFile.isFile()) {
                 try {
                     final long lastModified = Math.max(lastModifiedAudio, lastModifiedVideo);
                     if (lastModified > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
@@ -200,8 +200,9 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                     logger.log(e);
                 }
                 return true;
+            } else {
+                return false;
             }
-            return false;
         }
     }
 
