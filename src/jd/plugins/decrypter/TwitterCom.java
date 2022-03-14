@@ -664,7 +664,7 @@ public class TwitterCom extends PornEmbedParser {
             handleErrorsAPI(this.br);
             final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> globalObjects = (Map<String, Object>) root.get("globalObjects");
-            final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(globalObjects, "users/{0}");
+            final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(globalObjects, "users/" + user_id);
             final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(root, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) globalObjects.get("tweets");
             if (tweetMap == null || tweetMap.isEmpty()) {
