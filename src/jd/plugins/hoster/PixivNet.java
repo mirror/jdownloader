@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -33,6 +35,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -47,6 +50,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -384,6 +388,8 @@ public class PixivNet extends PluginForHost {
                 final String siteKeyEnterpriseInvisible = "6LfF1dcZAAAAAOHQX8v16MX5SktDwmQINVD_6mBF";
                 final String siteKeyNormal = "6LejidcZAAAAAE0-BHUjuY_1yIR478OolN4akKyy";
                 final boolean requiresNormalReCaptchaV2 = true;
+                String reCaptchaV2Response = "";
+                String reCaptchaEnterpriseInvisibleResponse = "";
                 if (plugin instanceof PluginForHost) {
                     final PluginForHost plg = (PluginForHost) plugin;
                     final DownloadLink dlinkbefore = plg.getDownloadLink();
@@ -404,7 +410,7 @@ public class PixivNet extends PluginForHost {
                                 return ret;
                             }
                         };
-                        loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(v3Captcha.getToken()));
+                        reCaptchaEnterpriseInvisibleResponse = v3Captcha.getToken();
                         if (requiresNormalReCaptchaV2) {
                             final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyNormal) {
                                 @Override
@@ -417,9 +423,7 @@ public class PixivNet extends PluginForHost {
                                     return null;
                                 };
                             };
-                            loginform.put("g_recaptcha_response", Encoding.urlEncode(v2Captcha.getToken()));
-                        } else {
-                            loginform.put("g_recaptcha_response", "");
+                            reCaptchaV2Response = v2Captcha.getToken();
                         }
                     } finally {
                         if (dlinkbefore != null) {
@@ -441,7 +445,7 @@ public class PixivNet extends PluginForHost {
                             return ret;
                         }
                     };
-                    loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(v3Captcha.getToken()));
+                    reCaptchaEnterpriseInvisibleResponse = v3Captcha.getToken();
                     if (requiresNormalReCaptchaV2) {
                         final CaptchaHelperCrawlerPluginRecaptchaV2 v2Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyNormal) {
                             @Override
@@ -454,42 +458,48 @@ public class PixivNet extends PluginForHost {
                                 return null;
                             };
                         };
-                        loginform.put("g_recaptcha_response", Encoding.urlEncode(v2Captcha.getToken()));
-                    } else {
-                        loginform.put("g_recaptcha_response", "");
+                        reCaptchaV2Response = v2Captcha.getToken();
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("captcha", "");
+                loginform.put("g_recaptcha_response", Encoding.urlEncode(reCaptchaV2Response));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("pixiv_id", Encoding.urlEncode(account.getUser()));
                 loginform.put("post_key", Encoding.urlEncode(postkey));
-                loginform.put("tt", Encoding.urlEncode(postkey));
                 loginform.put("source", "pc");
                 loginform.put("app_ios", "0");
                 loginform.put("ref", "wwwtop_accounts_index");
                 loginform.put("return_to", Encoding.urlEncode("https://www.pixiv.net/en/"));
-                loginform.setAction("https://accounts.pixiv.net/api/login?lang=en");
+                loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(reCaptchaEnterpriseInvisibleResponse));
+                loginform.put("tt", Encoding.urlEncode(postkey));
+                loginform.setAction("/api/login?lang=en");
                 final Request loginRequest = br.createFormRequest(loginform);
                 loginRequest.getHeaders().put("Accept", "application/json");
                 loginRequest.getHeaders().put("Origin", "https://accounts." + account.getHoster());
                 br.getPage(loginRequest);
-                final String error = PluginJSonUtils.getJsonValue(br, "error");
-                if ("true".equals(error)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    if (br.containsHTML("(?i)Complete the reCAPTCHA verification")) {
+                final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                if ((Boolean) response.get("error") == Boolean.TRUE) {
+                    throw new AccountInvalidException();
+                }
+                final Map<String, Object> body = (Map<String, Object>) response.get("body");
+                final String successURL = (String) JavaScriptEngineFactory.walkJson(body, "success/return_to");
+                if (successURL == null) {
+                    final Map<String, Object> validation_errors = (Map<String, Object>) body.get("validation_errors");
+                    if (validation_errors != null && validation_errors.containsKey("captcha")) {
+                        /* {"error":false,"message":"","body":{"validation_errors":{"captcha":"Complete the reCAPTCHA verification"}}} */
                         showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    br.getPage("https://www." + account.getHoster() + "/en");
-                    if (!isLoggedIN(br)) {
-                        if (!account.hasEverBeenValid()) {
-                            showCookieLoginInformation();
-                        }
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
+                }
+                br.getPage("https://www." + account.getHoster() + "/en");
+                if (!isLoggedIN(br)) {
+                    if (!account.hasEverBeenValid()) {
+                        showCookieLoginInformation();
                     }
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
