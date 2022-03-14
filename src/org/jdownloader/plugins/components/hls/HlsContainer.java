@@ -134,14 +134,40 @@ public class HlsContainer {
         return m3u8URL;
     }
 
-    private List<M3U8Playlist> m3u8List          = null;
-    private int                width             = -1;
-    private int                height            = -1;
-    private int                bandwidth         = -1;
-    private int                average_bandwidth = -1;
-    private int                programID         = -1;
-    private int                framerate         = -1;
-    private String             name              = null;
+    private List<M3U8Playlist> m3u8List = null;
+    private int                width    = -1;
+
+    protected int getAverage_bandwidth() {
+        return average_bandwidth;
+    }
+
+    public void setAverage_bandwidth(int average_bandwidth) {
+        this.average_bandwidth = average_bandwidth;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public void setBandwidth(int bandwidth) {
+        this.bandwidth = bandwidth;
+    }
+
+    private int height            = -1;
+    private int bandwidth         = -1;
+    private int average_bandwidth = -1;
+    private int programID         = -1;
+    private int framerate         = -1;
+
+    public void setFramerate(int framerate) {
+        this.framerate = framerate;
+    }
+
+    private String name = null;
 
     public String getName() {
         return name;
@@ -345,6 +371,10 @@ public class HlsContainer {
 
     public String getCodecs() {
         return this.codecs;
+    }
+
+    public void setStreamURL(final String url) {
+        this.streamURL = url;
     }
 
     @Deprecated
