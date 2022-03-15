@@ -23,6 +23,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.KeyValueStringEntry;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -44,20 +58,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.KeyValueStringEntry;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
@@ -283,8 +283,11 @@ abstract public class ZeveraCore extends UseNet {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    handleAPIErrors(this.br, link, account);
-                    mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 5 * 60 * 1000l);
+                    /* Only check for API issues if we got a json response. */
+                    if (br.getHttpConnection().getContentType().contains("application/json")) {
+                        handleAPIErrors(this.br, link, account);
+                    }
+                    mhm.handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
                 }
                 final long verifiedFileSize = link.getVerifiedFileSize();
                 final long completeContentLength = dl.getConnection().getCompleteContentLength();
@@ -863,8 +866,9 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
-     * users find this annoying and will deactivate it. </br> default = true
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true
      */
     public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
@@ -872,9 +876,10 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
-     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
-     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
+     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
+     * JDownloader and will not be able to download any more files then. </br>
+     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
@@ -901,7 +906,11 @@ abstract public class ZeveraCore extends UseNet {
         try {
             entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         } catch (final Exception ignore) {
-            throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+            }
         }
         final String status = (String) entries.get("status");
         final String message = (String) entries.get("message");
