@@ -592,7 +592,7 @@ public class PixivNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(this, this.br, account, true);
+        login(this, this.br, account, false);
         requestFileInformation(link);
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
