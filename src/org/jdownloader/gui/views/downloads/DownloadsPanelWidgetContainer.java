@@ -66,7 +66,7 @@ public class DownloadsPanelWidgetContainer extends WidgetContainer implements Ge
         }
         removeAll();
         setVisible(true);
-        final AbstractNode selectedObject = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
+        final AbstractNode selectedObject = getTable().getModel().hasSelectedObjects() ? getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()) : null;
         final boolean showProperties = CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && propertiesPanelVisible && selectedObject != null;
         if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
             if (showProperties) {

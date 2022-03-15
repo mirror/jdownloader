@@ -44,7 +44,6 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
     private boolean                         propertiesPanelVisible;
     private CustomizeableActionBar          rightBar;
     private LinkgrabberPropertiesScrollPane propertiesPanelScrollPane;
-    private CustomizeableActionBar          leftBar;
 
     protected void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
         this.propertiesPanelVisible = propertiesPanelVisible;
@@ -58,7 +57,6 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
     public LinkgrabberWidgetContainer(final LinkGrabberTable table, CustomizeableActionBar leftBar, CustomizeableActionBar rightBar) {
         super(table, CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE);
         this.rightBar = rightBar;
-        this.leftBar = leftBar;
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getEventSender().addListener(this);
     }
@@ -70,8 +68,8 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
         }
         removeAll();
         setVisible(true);
-        final AbstractNode selectedObject = getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex());
-        boolean showProperties = CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && propertiesPanelVisible && selectedObject != null;
+        final AbstractNode selectedObject = getTable().getModel().hasSelectedObjects() ? getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()) : null;
+        final boolean showProperties = CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && propertiesPanelVisible && selectedObject != null;
         if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
             // Dimension p = tableScrollPane.getPreferredSize();
             // add(Box.createHorizontalGlue());
@@ -126,7 +124,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
             return propertiesPanelScrollPane;
         }
         final LinkgrabberProperties loverView = new LinkgrabberProperties(getTable());
-        LinkgrabberPropertiesScrollPane propertiesScrollPane = new LinkgrabberPropertiesScrollPane(loverView, getTable()) {
+        final LinkgrabberPropertiesScrollPane propertiesScrollPane = new LinkgrabberPropertiesScrollPane(loverView, getTable()) {
             @Override
             public void setVisible(boolean aFlag) {
                 if (!aFlag) {
@@ -139,8 +137,8 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
             @Override
             protected void onCloseAction() {
                 CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
-                CustomizeableActionBar iconComp = rightBar;
-                Point loc = iconComp.getLocationOnScreen();
+                final CustomizeableActionBar iconComp = rightBar;
+                final Point loc = iconComp.getLocationOnScreen();
                 if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                     HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadsPanel_onCloseAction(), _GUI.T.Linkgrabber_properties_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                 }
@@ -167,8 +165,8 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
                     overviewScrollPane = null;
                 }
                 CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.setValue(false);
-                CustomizeableActionBar iconComp = rightBar;
-                Point loc = rightBar.getLocationOnScreen();
+                final CustomizeableActionBar iconComp = rightBar;
+                final Point loc = rightBar.getLocationOnScreen();
                 if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                     HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadsPanel_onCloseAction(), _GUI.T.DownloadsPanel_onCloseAction_help(), new AbstractIcon(IconKey.ICON_BOTTOMBAR, 32));
                 }
@@ -198,7 +196,7 @@ public class LinkgrabberWidgetContainer extends WidgetContainer implements Gener
         new EDTRunner() {
             @Override
             protected void runInEDT() {
-                if (newValue && keyHandler == CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE) {
+                if (Boolean.TRUE.equals(newValue) && keyHandler == CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE) {
                     setPropertiesPanelVisible(true);
                 }
                 relayout();
