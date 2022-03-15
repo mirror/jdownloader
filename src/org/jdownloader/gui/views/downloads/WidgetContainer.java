@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads;
 
+import java.awt.Container;
+
 import javax.swing.JComponent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -23,24 +25,34 @@ public abstract class WidgetContainer extends MigPanel {
         setOpaque(false);
         this.table = t;
         propertiesDelayer = new DelayedRunnable(100l, 1000l) {
-
             @Override
             public void delayedrun() {
                 new EDTRunner() {
+                    private boolean isVisible(PropertiesScrollPaneInterface propertiesPanel) {
+                        final Container parent = propertiesPanel.getParent();
+                        if (parent == null) {
+                            return false;
+                        } else {
+                            // JD_PLAIN theme(maybe others too), relayout()->removeAll(), PropertiesScrollPaneInterface still has MigPanel
+                            // as parent, so check
+                            // parent twice
+                            return parent.getParent() != null;
+                        }
+                    }
 
                     @Override
                     protected void runInEDT() {
-                        if (table.getSelectedRowCount() > 0) {
-                            if (createPropertiesPanel().getParent() != null) {
-                                // no relayout but update
-                                createPropertiesPanel().update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+                        final PropertiesScrollPaneInterface propertiesPanel = createPropertiesPanel();
+                        final AbstractNode selectedObject = getTable().getModel().hasSelectedObjects() ? getTable().getModel().getObjectbyRow(getTable().getSelectionModel().getLeadSelectionIndex()) : null;
+                        if (selectedObject != null) {
+                            if (isVisible(propertiesPanel)) {
+                                // no relayout but update PropertiesScrollPaneInterface only
+                                createPropertiesPanel().update(selectedObject);
                                 return;
+                            } else {
+                                setPropertiesPanelVisible(true);
                             }
-                            setPropertiesPanelVisible(true);
-                        } else {
-                            if (createPropertiesPanel().getParent() == null) {
-                                return;
-                            }
+                        } else if (isVisible(propertiesPanel)) {
                             setPropertiesPanelVisible(false);
                         }
                         relayout();
@@ -52,17 +64,15 @@ public abstract class WidgetContainer extends MigPanel {
             public String getID() {
                 return "updateDelayer";
             }
-
         };
-
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || propertiesToggleHandler == null || !propertiesToggleHandler.isEnabled()) {
                     return;
+                } else {
+                    propertiesDelayer.run();
                 }
-                propertiesDelayer.run();
             }
         });
     }
@@ -83,5 +93,4 @@ public abstract class WidgetContainer extends MigPanel {
 
     public void refreshAfterTabSwitch() {
     }
-
 }
