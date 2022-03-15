@@ -35,14 +35,14 @@ public class LinkgrabberProperties extends MigPanel {
 
     @Override
     public Dimension getPreferredSize() {
-        Dimension ret = super.getPreferredSize();
+        final Dimension ret = super.getPreferredSize();
         if (CFG_GUI.CFG.isPropertiesPanelHeightNormalized()) {
             ret.height = Math.max(pkgPanel.getPreferredSize().height, linkPanel.getPreferredSize().height);
         }
         return ret;
     }
 
-    public void update(AbstractNode objectbyRow) {
+    public void update(final AbstractNode objectbyRow) {
         if (objectbyRow != null) {
             if (objectbyRow instanceof CrawledPackage) {
                 final CrawledPackage pkg = (CrawledPackage) objectbyRow;

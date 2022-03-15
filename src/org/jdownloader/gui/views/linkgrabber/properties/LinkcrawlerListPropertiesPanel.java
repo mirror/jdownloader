@@ -18,7 +18,6 @@ import org.jdownloader.gui.views.downloads.properties.AbstractNodePropertiesPane
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public abstract class LinkcrawlerListPropertiesPanel<E extends AbstractNodeProperties> extends AbstractNodePropertiesPanel<E> implements LinkCollectorListener {
-
     public LinkcrawlerListPropertiesPanel() {
         super();
         CFG_GUI.LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE.getEventSender().addListener(this, true);
@@ -142,18 +141,18 @@ public abstract class LinkcrawlerListPropertiesPanel<E extends AbstractNodePrope
     @Override
     protected void onHidden() {
         try {
-            super.onHidden();
-        } finally {
             LinkCollector.getInstance().getEventsender().removeListener(this);
+        } finally {
+            super.onHidden();
         }
     }
 
     @Override
     protected void onShowing() {
         try {
-            super.onShowing();
-        } finally {
             LinkCollector.getInstance().getEventsender().addListener(this, true);
+        } finally {
+            super.onShowing();
         }
     }
 

@@ -55,8 +55,9 @@ public class CrawledLinkNodeProperties extends AbstractNodeProperties<CrawledLin
         final String dlLink = currentLink.getDownloadLink().getView().getDisplayUrl();
         if (dlLink == null) {
             return "*******************************";
+        } else {
+            return dlLink;
         }
-        return dlLink;
     }
 
     @Override

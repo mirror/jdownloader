@@ -100,7 +100,10 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
         new EDTRunner() {
             @Override
             protected void runInEDT() {
-                abstractNodeProperties = null;
+                final E current = AbstractNodePropertiesPanel.this.abstractNodeProperties;
+                if (current != null) {
+                    onHidden(); // setAbstractNodeProperties(null)
+                }
             }
         };
     }
@@ -110,8 +113,13 @@ public abstract class AbstractNodePropertiesPanel<E extends AbstractNodeProperti
             @Override
             protected void runInEDT() {
                 save();
+                final E before = AbstractNodePropertiesPanel.this.abstractNodeProperties;
                 AbstractNodePropertiesPanel.this.abstractNodeProperties = abstractNodeProperties;
-                if (abstractNodeProperties != null) {
+                if (before != null && abstractNodeProperties == null) {
+                    onHidden();
+                } else if (before == null && abstractNodeProperties != null) {
+                    onShowing();
+                } else if (abstractNodeProperties != null) {
                     loadInEDT(true, abstractNodeProperties);
                 }
             }

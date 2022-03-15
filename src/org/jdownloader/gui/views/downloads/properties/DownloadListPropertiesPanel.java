@@ -19,7 +19,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public abstract class DownloadListPropertiesPanel<E extends AbstractNodeProperties> extends AbstractNodePropertiesPanel<E> implements ActionListener, DownloadControllerListener {
-
     /**
      *
      */
@@ -40,12 +39,10 @@ public abstract class DownloadListPropertiesPanel<E extends AbstractNodeProperti
     @Override
     protected ExtTextField createFileNameTextField() {
         return new ExtTextField() {
-
             @Override
             public void onChanged() {
                 // delayedSave();
             }
-
         };
     }
 
@@ -150,19 +147,18 @@ public abstract class DownloadListPropertiesPanel<E extends AbstractNodeProperti
     @Override
     protected void onHidden() {
         try {
-            super.onHidden();
-        } finally {
             DownloadController.getInstance().getEventSender().removeListener(this);
+        } finally {
+            super.onHidden();
         }
     }
 
     @Override
     protected void onShowing() {
         try {
-            super.onShowing();
-        } finally {
             DownloadController.getInstance().getEventSender().addListener(this, true);
+        } finally {
+            super.onShowing();
         }
     }
-
 }
