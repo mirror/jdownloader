@@ -9,8 +9,7 @@ import org.appwork.swing.components.IDIcon;
 import org.appwork.swing.components.IconIdentifier;
 
 public class IdentifierImageIcon extends ImageIcon implements Icon, IDIcon {
-
-    private String id;
+    private final String id;
 
     public IdentifierImageIcon(Image image, String relativePath) {
         super(image);
@@ -21,5 +20,4 @@ public class IdentifierImageIcon extends ImageIcon implements Icon, IDIcon {
     public IconIdentifier getIdentifier() {
         return new IconIdentifier(null, id);
     }
-
 }

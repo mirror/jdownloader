@@ -11,10 +11,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,6 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -514,8 +514,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
 
     /**
      * 2020-01-24: I was able to test the following captcha types: reCaptchaV2, basiccaptcha, simplecaptcha, coolcaptcha, fancycaptcha(Fancy
-     * Captcha, fancy), with- and without password and with password + captcha. </br>
-     * Seems like the following captcha types are not used anymore: threeD, qaptcha, cats(CaptchaCatAndDog)
+     * Captcha, fancy), with- and without password and with password + captcha. </br> Seems like the following captcha types are not used
+     * anymore: threeD, qaptcha, cats(CaptchaCatAndDog)
      */
     protected void handleCaptcha_oldStyle(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
@@ -578,10 +578,12 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 }
                 switch (getCaptchaTypeNumber()) {
                 case 0:
-                /* No captcha */
+                    /* No captcha */
                 {
                     timesNoUserInput++;
-                    if (!password) {
+                    if (decryptMultipleLinks(param).size() > 0) {
+                        break;
+                    } else if (!password) {
                         // // unsupported types
                         // // short wait to prevent hammering
                         // sleep(2500, param);

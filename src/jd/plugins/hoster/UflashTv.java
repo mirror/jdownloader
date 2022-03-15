@@ -17,10 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,6 +28,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uflash.tv" }, urls = { "http://(www\\.)?uflash\\.tv/video/\\d+" })
 public class UflashTv extends PluginForHost {
@@ -64,8 +65,18 @@ public class UflashTv extends PluginForHost {
             downloadLink.setName(filename + ".flv");
             return AvailableStatus.TRUE;
         }
-        br.getPage("/media/player/config.v89x.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        dllink = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
+        String video = br.getRegex("var\\s*[\\w_]*\\s*=\\s*\"(a.*?)\"").getMatch(0);
+        if (video != null) {
+            final String videoID = new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)").getMatch(0);
+            video = Base64.decodeToString(video);
+            if (StringUtils.contains(video, videoID)) {
+                dllink = video;
+            }
+        }
+        if (dllink == null) {
+            br.getPage("/media/player/config.v89x.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+            dllink = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
+        }
         final String ext = ".mp4";
         downloadLink.setFinalFileName(filename + ext);
         if (dllink != null) {

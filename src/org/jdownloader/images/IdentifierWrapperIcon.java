@@ -9,9 +9,8 @@ import org.appwork.swing.components.IDIcon;
 import org.appwork.swing.components.IconIdentifier;
 
 public class IdentifierWrapperIcon implements Icon, IDIcon {
-
-    private Icon   _icon;
-    private String key;
+    private final Icon   _icon;
+    private final String key;
 
     public IdentifierWrapperIcon(Icon ret, String relativePath) {
         _icon = ret;
@@ -41,5 +40,4 @@ public class IdentifierWrapperIcon implements Icon, IDIcon {
     public IconIdentifier getIdentifier() {
         return new IconIdentifier(null, key);
     }
-
 }

@@ -13,6 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
 import org.jdownloader.controlling.hosterrule.CachedAccountGroup;
 
@@ -29,9 +30,14 @@ public class AccountCache implements Iterable<CachedAccount> {
         private final ACCOUNTTYPE   type;
         private final PluginForHost plugin;
         private final String        host;
+        private final DomainInfo    pluginDomainInfo;
 
         public String getHost() {
             return host;
+        }
+
+        public DomainInfo getPluginDomainInfo() {
+            return pluginDomainInfo;
         }
 
         public CachedAccount(String host, Account account, PluginForHost plugin) {
@@ -47,6 +53,7 @@ public class AccountCache implements Iterable<CachedAccount> {
             }
             this.plugin = plugin;
             this.host = host;
+            pluginDomainInfo = DomainInfo.getInstance(plugin.getHost());
         }
 
         public final Account getAccount() {

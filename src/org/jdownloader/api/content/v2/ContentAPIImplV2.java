@@ -92,17 +92,17 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
 
     public String getIconKey(Icon icon) {
         if (icon instanceof IDIcon) {
-            Object id = ((IDIcon) icon).getIdentifier();
-            IconDescriptor ret = JSonStorage.convert(id, new TypeRef<IconDescriptor>() {
+            final Object id = ((IDIcon) icon).getIdentifier();
+            final IconDescriptor ret = JSonStorage.convert(id, new TypeRef<IconDescriptor>() {
             });
-            String s = JSonStorage.serializeToJson(ret);
+            final String s = JSonStorage.serializeToJson(ret);
             try {
-                String cr32 = Hash.getMD5(s.getBytes("UTF-8"));
-                s = "kc." + cr32;
+                final String cr32 = Hash.getMD5(s.getBytes("UTF-8"));
+                final String iconKey = "kc." + cr32;
                 synchronized (descriptorMap) {
-                    descriptorMap.put(s, ret);
+                    descriptorMap.put(iconKey, ret);
                 }
-                return s;
+                return iconKey;
             } catch (Throwable e) {
                 throw new WTFException(e);
             }
@@ -167,12 +167,10 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
     }
 
     private Icon createIcon(IconDescriptor desc, int size) throws InternalApiException, StorageException {
-        System.out.println("ICONget " + JSonStorage.serializeToJson(desc));
         if (desc.getCls() == null && desc.getKey() != null) {
             return NewTheme.I().getIcon(desc.getKey(), size);
-        }
-        if ("ColMerge".equals(desc.getCls())) {
-            Icon[] icons = new Icon[desc.getRsc().size()];
+        } else if ("ColMerge".equals(desc.getCls())) {
+            final Icon[] icons = new Icon[desc.getRsc().size()];
             for (int i = 0; i < desc.getRsc().size(); i++) {
                 icons[i] = createIcon(desc.getRsc().get(i), size);
             }
@@ -184,14 +182,14 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
                 return new BadgeIcon(createIcon(desc.getRsc().get(0), size), createIcon(desc.getRsc().get(1), size / 2), 0, 0);
             }
         } else if ("Merge".equals(desc.getCls())) {
-            ExtMergedIcon ret = new ExtMergedIcon();
+            final ExtMergedIcon ret = new ExtMergedIcon();
             int orgWidth = ((Number) desc.getPrps().get("width")).intValue();
             int orgHeight = ((Number) desc.getPrps().get("height")).intValue();
             double hfaktor = size / (double) (Math.max(orgHeight, orgWidth));
             for (int i = 0; i < desc.getRsc().size(); i++) {
                 int x = 0;
                 int y = 0;
-                HashMap<String, Object> props = desc.getRsc().get(i).getPrps();
+                final HashMap<String, Object> props = desc.getRsc().get(i).getPrps();
                 int orgIconWidth = ((Number) props.get("width")).intValue();
                 int orgIconHeight = ((Number) props.get("height")).intValue();
                 int newIconSize = (int) (Math.max(orgIconWidth, orgIconHeight) * hfaktor);
@@ -209,7 +207,8 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             return ret;
         } else if ("Favit".equals(desc.getCls())) {
             return new FavitIcon(createIcon(desc.getRsc().get(1), size), DomainInfo.getInstance(desc.getRsc().get(0).getKey()));
+        } else {
+            throw new InternalApiException(new Exception("Cannot paint " + JSonStorage.serializeToJson(desc)));
         }
-        throw new InternalApiException(new Exception("Cannot paint " + JSonStorage.serializeToJson(desc)));
     }
 }
