@@ -2,6 +2,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -101,7 +102,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             }
         } else {
             /* Try to find complete path by going back until we reach the root folder. */
-            folderPath = this.findFullFolderPath(account, "", data, new ArrayList<String>());
+            folderPath = this.findFullFolderPath(account, "", data, new HashSet<String>());
         }
         ret.addAll(convert(parameter.getCryptedUrl(), nodes, folderPath));
         return ret;
@@ -113,7 +114,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private String findFullFolderPath(final Account account, String path, final Map<String, Object> data, final ArrayList<String> dupes) throws Exception {
+    private String findFullFolderPath(final Account account, String path, final Map<String, Object> data, final HashSet<String> dupes) throws Exception {
         final String parent_id = (String) data.get("parent_id");
         final String currentFolderName = (String) data.get("name");
         if (StringUtils.isEmpty(parent_id) || StringUtils.isEmpty(currentFolderName)) {
