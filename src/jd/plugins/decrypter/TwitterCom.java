@@ -598,8 +598,8 @@ public class TwitterCom extends PornEmbedParser {
             throw new DecrypterException("Decrypter broken");
         }
         if (statuses_count != null && statuses_count.intValue() == 0) {
-            /* Profile contains zero tweets */
-            decryptedLinks.add(getDummyErrorProfileEmpty(username));
+            /* Profile contains zero tweets! */
+            decryptedLinks.add(getDummyErrorProfileContainsNoTweets(username));
             return decryptedLinks;
         }
         final boolean setting_force_grab_media = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isForceGrabMediaOnlyEnabled();
@@ -757,13 +757,18 @@ public class TwitterCom extends PornEmbedParser {
             if (account == null) {
                 throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "PROFILE_CONTAINS_ONLY_EXPLICIT_CONTENT_ACCOUNT_REQUIRED_" + username, "Profile " + username + " contains only explicit content which can only be viewed when logged in --> Add a twitter account to JDownloader and try again!");
             } else {
-                decryptedLinks.add(getDummyErrorProfileEmpty(username));
+                decryptedLinks.add(getDummyErrorProfileContainsNoDownloadableContent(username));
             }
         }
         return decryptedLinks;
     }
 
-    private DownloadLink getDummyErrorProfileEmpty(final String username) {
+    private DownloadLink getDummyErrorProfileContainsNoTweets(final String username) {
+        final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_CONTAINS_NO_TWEETS_" + username, "This profile does not contain any tweets.");
+        return dummy;
+    }
+
+    private DownloadLink getDummyErrorProfileContainsNoDownloadableContent(final String username) {
         final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_CONTAINS_NO_DOWNLOADABLE_CONTENT_" + username, "This profile does not contain any downloadable content. Check your twitter plugin settings maybe you've turned off some of the crawlable content.");
         return dummy;
     }
