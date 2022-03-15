@@ -21,6 +21,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -174,8 +175,7 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(dl);
             }
         } else if (param.getCryptedUrl().matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
-            final String tweetID = new Regex(param.getCryptedUrl(), jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED).getMatch(0);
-            return crawlAPISingleTweet(param, tweetID, account);
+            return crawlAPISingleTweet(param, new Regex(param.getCryptedUrl(), jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED).getMatch(0), account);
         } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {
             final boolean prefer_mobile_website = false;
             if (prefer_mobile_website) {
@@ -189,7 +189,7 @@ public class TwitterCom extends PornEmbedParser {
             final String tweetID = new Regex(param.getCryptedUrl(), TYPE_USER_POST).getMatch(1);
             return crawlAPISingleTweet(param, tweetID, account);
         } else {
-            crawlUserViaAPI(param, account);
+            return crawlUserViaAPI(param, account);
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Could not find any results for: " + param.getCryptedUrl());
@@ -225,6 +225,10 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     private ArrayList<DownloadLink> crawlAPISingleTweet(final CryptedLink param, final String tweetID, final Account account) throws Exception {
+        if (tweetID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         logger.info("Crawling API tweet");
         prepareAPI(this.br, account);
         final boolean useNewMethod = true; /* 2021-06-15 */
@@ -324,12 +328,18 @@ public class TwitterCom extends PornEmbedParser {
         if (entries.containsKey("user")) {
             /* We're crawling a single tweet -> Set date + username as packagename. */
             fp.setName(formattedDate + "_" + username);
+            if (!StringUtils.isEmpty(postText)) {
+                fp.setComment(postText);
+            }
         } else {
             /* We're crawling a tweet as part of the complete timeline -> Set username as packagename. */
             fp.setName(username);
+            final String userDescription = (String) user.get("description");
+            if (!StringUtils.isEmpty(userDescription)) {
+                fp.setComment(userDescription);
+            }
         }
         if (!StringUtils.isEmpty(postText)) {
-            fp.setComment(postText);
             urlsInPostText = HTMLParser.getHttpLinks(postText, br.getURL());
         }
         final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
@@ -457,7 +467,7 @@ public class TwitterCom extends PornEmbedParser {
             if (urlsInPostText.length == 0) {
                 logger.info("Failed to find any crawlable content in tweetID: " + tweetID);
             } else {
-                logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped http URLs inside post text: " + urlsInPostText.length);
+                logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped http URLs inside post " + tweetID + ": " + urlsInPostText.length);
             }
         }
         return decryptedLinks;
@@ -542,16 +552,19 @@ public class TwitterCom extends PornEmbedParser {
 
     private ArrayList<DownloadLink> crawlUserViaAPI(final CryptedLink param, final Account account) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        logger.info("Crawling API user");
+        logger.info("Crawling user profile via API");
         final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         this.prepareAPI(br, account);
         final boolean use_old_api_to_get_userid = true;
-        Map<String, Object> entries;
-        final String user_id;
+        final String userID;
         /* = numberof tweets */
-        String statuses_count = null;
+        Number statuses_count = null;
         /* = number of media tweets (NOT total numberof items - this may even be higher! A tweet can e.g. contain multiple photos!) */
-        String media_count = null;
+        Number media_count = null;
         if (use_old_api_to_get_userid) {
             /* https://developer.twitter.com/en/docs/accounts-and-users/follow-search-get-users/api-reference/get-users-show */
             /* https://developer.twitter.com/en/docs/twitter-api/rate-limits */
@@ -564,24 +577,35 @@ public class TwitterCom extends PornEmbedParser {
                 /* {"errors":[{"code":17,"message":"No user matches for specified terms."}]} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            user_id = PluginJSonUtils.getJson(br, "id_str");
-            statuses_count = PluginJSonUtils.getJson(br, "statuses_count");
-            media_count = PluginJSonUtils.getJson(br, "media_count");
+            final Object responseO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            if (!(responseO instanceof List)) {
+                logger.warning("Unknown API error/response");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final List<Map<String, Object>> users = (List<Map<String, Object>>) responseO;
+            final Map<String, Object> user = users.get(0);
+            userID = user.get("id_str").toString();
+            statuses_count = ((Number) user.get("statuses_count"));
+            media_count = ((Number) user.get("media_count"));
         } else {
             br.getPage("https://api.twitter.com/graphql/DO_NOT_USE_ATM_2020_02_05/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + username + "%22%2C%22withHighlightedLabel%22%3Afalse%7D");
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
-            user_id = (String) entries.get("rest_id");
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
+            userID = (String) user.get("rest_id");
         }
-        if (StringUtils.isEmpty(user_id)) {
+        if (StringUtils.isEmpty(userID)) {
             logger.warning("Failed to find user_id");
             throw new DecrypterException("Decrypter broken");
+        }
+        if (statuses_count != null && statuses_count.intValue() == 0) {
+            /* Profile contains zero tweets */
+            decryptedLinks.add(getDummyErrorProfileEmpty(username));
+            return decryptedLinks;
         }
         final boolean setting_force_grab_media = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isForceGrabMediaOnlyEnabled();
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
         final String content_type;
-        String max_countStr;
-        int index = 0;
+        Integer max_count = null;
         final int expected_items_per_page = 20;
         String nextCursor = null;
         final UrlQuery query = new UrlQuery();
@@ -609,66 +633,75 @@ public class TwitterCom extends PornEmbedParser {
         query.append("include_ext_sensitive_media_warning", "true", false);
         query.append("send_error_codes", "true", false);
         query.append("simple_quoted_tweet", "true", false);
-        final boolean isGrabLikedTweetsOfUser = param.getCryptedUrl().endsWith("/likes");
+        final boolean isGrabLikedTweetsOfUser = param.getCryptedUrl().endsWith("/likes"); // TODO: Test this
         final boolean isGrabMediaFromOriginalPosterOnly = param.getCryptedUrl().endsWith("/media");
-        String fpname = username;
+        // String fpname = username;
         if (isGrabLikedTweetsOfUser) {
             /* 2020-08-24: Most likely an account is required to do this! */
             logger.info("Grabbing all liked items of a user");
             content_type = "favorites";
-            max_countStr = PluginJSonUtils.getJson(br, "favourites_count");
+            final String max_countStr = PluginJSonUtils.getJson(br, "favourites_count");
+            if (max_countStr != null) {
+                max_count = Integer.parseInt(max_countStr);
+            }
             query.append("simple_quoted_tweets", "true", false);
             query.append("sorted_by_time", "true", false);
-            fpname += " - likes";
+            // fpname += " - likes";
         } else if (isGrabMediaFromOriginalPosterOnly || setting_force_grab_media) {
             logger.info("Grabbing self posted media only");
+            if (media_count.intValue() == 0) {
+                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "PROFILE_CONTAINS_NO_MEDIA_POSTS_" + username, "Profile " + username + " contains no media-posts but user wants to crawl media posts only.");
+            }
             content_type = "media";
-            max_countStr = media_count;
+            max_count = media_count.intValue();
         } else {
-            /* 2022-02-23: TODO: Remove this and always grab all "media". */
+            /* 2022-02-23: TODO: Remove this and always grab all "media"?! */
             logger.info("Grabbing ALL media of a user e.g. also retweets");
             content_type = "profile";
-            max_countStr = statuses_count;
+            max_count = statuses_count.intValue();
             query.add("include_tweet_replies", "false");
-        }
-        if (StringUtils.isEmpty(max_countStr)) {
-            /* This should never happen */
-            max_countStr = "??";
         }
         final UrlQuery addedURLQuery = UrlQuery.parse(param.getCryptedUrl());
         Number maxTweetsToCrawl = null;
         final String maxTweetsToCrawlStr = addedURLQuery.get("maxitems");
         final String maxTweetDateStr = addedURLQuery.get("max_date");
         long crawlUntilTimestamp = -1;
-        if (maxTweetsToCrawlStr != null && maxTweetsToCrawlStr.matches("\\d+")) {
-            maxTweetsToCrawl = Integer.parseInt(maxTweetsToCrawlStr);
+        if (maxTweetsToCrawlStr != null) {
+            if (maxTweetsToCrawlStr.matches("\\d+")) {
+                maxTweetsToCrawl = Integer.parseInt(maxTweetsToCrawlStr);
+            } else {
+                logger.info("Ignoring user defined 'maxitems' parameter because of invalid input format: " + maxTweetsToCrawlStr);
+            }
         }
         if (maxTweetDateStr != null) {
             try {
                 crawlUntilTimestamp = TimeFormatter.getMilliSeconds(maxTweetDateStr, "yyyy-MM-dd", Locale.ENGLISH);
             } catch (final Throwable ignore) {
+                logger.info("Ignoring user defined 'max_date' parameter because of invalid input format: " + maxTweetDateStr);
             }
         }
-        query.append("userId", user_id, false);
+        query.append("userId", userID, false);
         query.append("count", expected_items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
+        final HashSet<String> cursorDupes = new HashSet<String>();
         int totalCrawledTweetsCount = 0;
+        int page = 1;
         tweetTimeline: do {
-            logger.info("Crawling page " + (index + 1));
+            logger.info("Crawling page " + page);
             final UrlQuery thisquery = query;
             if (!StringUtils.isEmpty(nextCursor)) {
                 thisquery.append("cursor", nextCursor, true);
             }
-            final String url = String.format("https://api.twitter.com/2/timeline/%s/%s.json", content_type, user_id);
+            final String url = String.format("https://api.twitter.com/2/timeline/%s/%s.json", content_type, userID);
             br.getPage(url + "?" + thisquery.toString());
             handleErrorsAPI(this.br);
             final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> globalObjects = (Map<String, Object>) root.get("globalObjects");
-            final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(globalObjects, "users/" + user_id);
+            final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(globalObjects, "users/" + userID);
             final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(root, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) globalObjects.get("tweets");
             if (tweetMap == null || tweetMap.isEmpty()) {
-                logger.info("Found 0 tweets on current page --> Stopping");
+                logger.info("Stopping because: Found 0 tweets on current page");
                 break;
             }
             final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
@@ -688,47 +721,51 @@ public class TwitterCom extends PornEmbedParser {
                     break tweetTimeline;
                 }
             }
-            logger.info(String.format("Tweets current page: %d|Tweets crawled so far: %d of expected total %s", tweetMap.size(), totalCrawledTweetsCount, max_countStr));
-            logger.info("Last created_at date of current page: " + lastCreatedAtDateStr);
+            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + max_count.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr);
             if (tweetMap.size() < expected_items_per_page) {
-                logger.info(String.format("Warning: Page contains less than %d objects --> Reached the end?", expected_items_per_page));
+                /* We'll try anyways and let it run into our fail-safe for when a page contains zero items. */
+                logger.info(String.format("Warning: Current page contains less than %d objects --> Reached the end?", expected_items_per_page));
             }
-            /* Done - now try to find string required to access next page */
+            /* Done - now try to find string required to access next page. */
             try {
-                Map<String, Object> pagination_info_entries = (Map<String, Object>) pagination_info.get(pagination_info.size() - 1);
+                final Map<String, Object> pagination_info_entries = (Map<String, Object>) pagination_info.get(pagination_info.size() - 1);
                 final String entryId = (String) pagination_info_entries.get("entryId");
-                if (entryId.contains("cursor-bottom")) {
-                    logger.info("Expecting next page to be available...");
-                    final String nextCursorTmp = (String) JavaScriptEngineFactory.walkJson(pagination_info_entries, "content/operation/cursor/value");
-                    if (StringUtils.isEmpty(nextCursorTmp)) {
-                        logger.info("Stopping because: Failed to find nextCursor");
-                        break;
-                    }
-                    logger.info("nextCursor = " + nextCursor);
-                    if (nextCursor != null && nextCursor.equals(nextCursorTmp)) {
-                        /* Extra fallback - this should never be required */
-                        logger.info("Stopping because: New nextCursor is the same as last nextCursor --> Reached the end?!");
-                        break;
-                    } else {
-                        nextCursor = nextCursorTmp;
-                    }
-                } else {
-                    logger.info("Stopping because: Found wrong cursor object --> Plugin needs update");
+                if (!entryId.contains("cursor-bottom")) {
+                    logger.info("Stopping because: Found wrong cursor object --> Plugin probably needs update");
                     break;
                 }
+                nextCursor = (String) JavaScriptEngineFactory.walkJson(pagination_info_entries, "content/operation/cursor/value");
+                if (StringUtils.isEmpty(nextCursor)) {
+                    logger.info("Stopping because: Failed to find nextCursor");
+                    break;
+                } else if (!cursorDupes.add(nextCursor)) {
+                    logger.info("Stopping because: We've already crawled current cursor: " + nextCursor);
+                    break;
+                }
+                logger.info("nextCursor = " + nextCursor);
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.info("Stopping because: Failed to get nextCursor (Exception occured)");
                 break;
             }
-            index++;
+            page++;
             this.sleep(3000l, param);
         } while (!this.isAbort());
-        logger.info(String.format("Done after %d pages", index));
+        logger.info("Done after " + page + " pages");
         if (decryptedLinks.isEmpty()) {
             logger.info("Found nothing --> Either user has posts containing media or those can only be viewed by certain users or only when logged in (explicit content)");
+            if (account == null) {
+                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "PROFILE_CONTAINS_ONLY_EXPLICIT_CONTENT_ACCOUNT_REQUIRED_" + username, "Profile " + username + " contains only explicit content which can only be viewed when logged in --> Add a twitter account to JDownloader and try again!");
+            } else {
+                decryptedLinks.add(getDummyErrorProfileEmpty(username));
+            }
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink getDummyErrorProfileEmpty(final String username) {
+        final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_CONTAINS_NO_DOWNLOADABLE_CONTENT_" + username, "This profile does not contain any downloadable content. Check your twitter plugin settings maybe you've turned off some of the crawlable content.");
+        return dummy;
     }
 
     /**
