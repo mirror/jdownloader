@@ -121,6 +121,9 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         decryptedLinks.addAll(crawlPosts(br, fp));
+        if (decryptedLinks.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
         if (csrftoken == null) {
             logger.warning("Pagination failed");
