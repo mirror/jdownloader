@@ -271,7 +271,7 @@ public class FileCryptCc extends PluginForDecrypt {
                         submitForm(captchaForm);
                     } else if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries) {
                         /* Fallback to rc2 no longer working or not desired by user. */
-                        throw new DecrypterRetryException(RetryReason.CAPTCHA, "CUTCAPTCHA_IS_NOT_SUPPORTED_" + folderID, "Cutcaptcha is not supported! Open this link manually in your browser, solve the captcha and add the links manually to JD either via Click and load or via DLC container.", null);
+                        throw new DecrypterRetryException(RetryReason.CAPTCHA, "CUTCAPTCHA_IS_NOT_SUPPORTED_" + folderID, "Cutcaptcha is not supported! Open this link manually in your browser, solve the captcha and add the links manually to JD either via Click and load or via DLC container.");
                     } else {
                         logger.info("Trying to avoid cutcaptcha");
                         /* Clear cookies to increase the chances of getting a different captcha type than cutcaptcha. */
