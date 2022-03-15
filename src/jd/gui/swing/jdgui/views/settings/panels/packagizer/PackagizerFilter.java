@@ -47,8 +47,10 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1) {
             public void valueChanged(final ListSelectionEvent e) {
                 boolean en = true;
+                int count = 0;
                 for (PackagizerRule rule : PackagizerFilter.this.table.getModel().getSelectedObjects()) {
                     en &= !rule.isStaticRule();
+                    count++;
                 }
                 if (!en) {
                     btRemove.setToolTipText(_GUI.T.PackagizerFilter_valueChanged_disable_static());
@@ -57,7 +59,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
                 } else {
                     btRemove.setToolTipText(null);
                 }
-                this.action.setEnabled(PackagizerFilter.this.table.getSelectedRowCount() >= this.minSelections);
+                this.action.setEnabled(count >= this.minSelections);
             }
         });
         add(new JScrollPane(table));

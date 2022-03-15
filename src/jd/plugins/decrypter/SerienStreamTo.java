@@ -19,14 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.SerienStreamToConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -41,6 +36,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.SerienStreamToConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SerienStreamTo extends PluginForDecrypt {
@@ -227,42 +228,52 @@ public class SerienStreamTo extends PluginForDecrypt {
                 logger.info("Crawling ALL URLs: " + allRedirectURLs.size());
                 urlsToProcess = allRedirectURLs;
             }
-            int index = 0;
-            for (String videoURL : urlsToProcess) {
-                logger.info("Working on item " + index + "/" + urlsToProcess.size());
-                final Browser br2 = br.cloneBrowser();
-                videoURL = br.getURL(Encoding.htmlDecode(videoURL)).toString();
-                br2.setFollowRedirects(true);
-                String redirectPage = br2.getPage(videoURL);
-                if (br2.getRedirectLocation() != null) {
-                    videoURL = br2.getRedirectLocation();
-                } else if (br2.containsHTML("grecaptcha")) {
-                    Form captcha = br2.getForm(0);
-                    String sitekey = new Regex(redirectPage, "grecaptcha.execute\\('([^']+)'").getMatch(0);
-                    String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey) {
-                        @Override
-                        public TYPE getType() {
-                            return TYPE.INVISIBLE;
-                        }
-                    }.getToken();
-                    captcha.put("original", "");
-                    captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
-                    try {
-                        redirectPage = br2.submitForm(captcha);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
-                    videoURL = br2.getURL().toString();
-                }
-                decryptedLinks.add(createDownloadlink(videoURL));
-                index += 1;
+            final FilePackage filePackage;
+            if (title != null) {
+                filePackage = FilePackage.getInstance();
+                filePackage.setName(title);
+                filePackage.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            } else {
+                filePackage = null;
             }
-        }
-        if (title != null) {
-            final FilePackage filePackage = FilePackage.getInstance();
-            filePackage.setName(title);
-            filePackage.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-            filePackage.addLinks(decryptedLinks);
+            int index = 0;
+            final HashSet<String> dup = new HashSet<String>();
+            for (String videoURL : urlsToProcess) {
+                if (dup.add(videoURL)) {
+                    logger.info("Working on item " + index + "/" + urlsToProcess.size());
+                    final Browser br2 = br.cloneBrowser();
+                    videoURL = br.getURL(Encoding.htmlDecode(videoURL)).toString();
+                    br2.setFollowRedirects(true);
+                    String redirectPage = br2.getPage(videoURL);
+                    if (br2.getRedirectLocation() != null) {
+                        videoURL = br2.getRedirectLocation();
+                    } else if (br2.containsHTML("grecaptcha")) {
+                        final Form captcha = br2.getForm(0);
+                        final String sitekey = new Regex(redirectPage, "grecaptcha.execute\\('([^']+)'").getMatch(0);
+                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey) {
+                            @Override
+                            public TYPE getType() {
+                                return TYPE.INVISIBLE;
+                            }
+                        }.getToken();
+                        captcha.put("original", "");
+                        captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
+                        try {
+                            redirectPage = br2.submitForm(captcha);
+                        } catch (IOException e) {
+                            logger.log(e);
+                        }
+                        videoURL = br2.getURL().toString();
+                    }
+                    final DownloadLink link = createDownloadlink(videoURL);
+                    if (filePackage != null) {
+                        filePackage.add(link);
+                    }
+                    decryptedLinks.add(link);
+                    distribute(link);
+                    index += 1;
+                }
+            }
         }
         return decryptedLinks;
     }

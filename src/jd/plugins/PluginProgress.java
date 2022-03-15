@@ -93,8 +93,9 @@ public abstract class PluginProgress {
     public Icon getIcon(Object requestor) {
         if (requestor instanceof ETAColumn) {
             return null;
+        } else {
+            return icon;
         }
-        return icon;
     }
 
     public void setIcon(Icon icon) {

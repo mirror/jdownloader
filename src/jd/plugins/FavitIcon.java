@@ -20,7 +20,6 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
 
 public class FavitIcon implements Icon, FavIconRequestor, IDIcon {
-
     private int        width;
     private int        height;
     private int        size  = 10;
@@ -39,17 +38,12 @@ public class FavitIcon implements Icon, FavIconRequestor, IDIcon {
 
     @Override
     public IconIdentifier getIdentifier() {
-
-        IconIdentifier ret = new IconIdentifier("Favit");
-
+        final IconIdentifier ret = new IconIdentifier("Favit");
         ret.add(new IconIdentifier("tld", domainInfo.getTld()));
-
         if (icon instanceof IDIcon) {
             ret.add(((IDIcon) icon).getIdentifier());
-
         } else {
             ret.add(new IconIdentifier(null, RemoteAPIController.getInstance().getContentAPI().getIconKey(icon)));
-
         }
         return ret;
     }
@@ -57,27 +51,22 @@ public class FavitIcon implements Icon, FavIconRequestor, IDIcon {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Icon back = icon;
-
         // badge = new ImageIcon(ImageProvider.getScaledInstance((BufferedImage) icon.getImage(), size, size,
         // RenderingHints.VALUE_INTERPOLATION_BILINEAR, true));
         // back = domainInfo.getIcon(icon.getIconHeight());
         back.paintIcon(c, g, x - 0, y - 0);
         Graphics2D g2d = (Graphics2D) g;
         g.setColor(Color.WHITE);
-
         Composite comp = g2d.getComposite();
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
-
         int xx = x + width - badge.getIconWidth();
         int yy = y + height - badge.getIconHeight();
         g2d.fill(new Ellipse2D.Float(xx, yy, badge.getIconWidth(), badge.getIconHeight()));
         // g.fillRect(xx, yy, size, size);
-
         badge.paintIcon(c, g, xx, yy);
         if (comp != null) {
             g2d.setComposite(comp);
         }
-
     }
 
     @Override
@@ -97,5 +86,4 @@ public class FavitIcon implements Icon, FavIconRequestor, IDIcon {
         }
         return badge;
     }
-
 }

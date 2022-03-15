@@ -133,8 +133,10 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                     return;
                 }
                 boolean en = true;
+                int count = 0;
                 for (LinkgrabberFilterRule rule : LinkgrabberFilter.this.exceptionsTable.getModel().getSelectedObjects()) {
                     en &= !rule.isStaticRule();
+                    count++;
                 }
                 if (!en) {
                     btRemove.setToolTipText(_GUI.T.PackagizerFilter_valueChanged_disable_static());
@@ -143,7 +145,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                 } else {
                     btRemove.setToolTipText(null);
                 }
-                this.action.setEnabled(LinkgrabberFilter.this.exceptionsTable.getSelectedRowCount() >= this.minSelections);
+                this.action.setEnabled(count >= minSelections);
             }
         });
         filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1) {
@@ -152,8 +154,10 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                     return;
                 }
                 boolean en = true;
+                int count = 0;
                 for (LinkgrabberFilterRule rule : LinkgrabberFilter.this.filterTable.getModel().getSelectedObjects()) {
                     en &= !rule.isStaticRule();
+                    count++;
                 }
                 if (!en) {
                     btRemove.setToolTipText(_GUI.T.PackagizerFilter_valueChanged_disable_static());
@@ -162,7 +166,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                 } else {
                     btRemove.setToolTipText(null);
                 }
-                this.action.setEnabled(LinkgrabberFilter.this.filterTable.getSelectedRowCount() >= this.minSelections);
+                this.action.setEnabled(count >= minSelections);
             }
         });
     }

@@ -41,6 +41,14 @@ public class AbstractIcon implements Icon, IDIcon {
         this.size = size;
     }
 
+    public AbstractIcon getIcon(final int size) {
+        if (size == getSize()) {
+            return this;
+        } else {
+            return new AbstractIcon(getKey(), size);
+        }
+    }
+
     /**
      *
      */

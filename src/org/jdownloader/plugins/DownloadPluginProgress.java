@@ -2,10 +2,16 @@ package org.jdownloader.plugins;
 
 import java.awt.Color;
 
+import javax.swing.Icon;
+
+import jd.controlling.downloadcontroller.AccountCache;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.nutils.Formatter;
+import jd.plugins.FavitIcon;
 import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
 import org.jdownloader.api.downloads.ChannelCollector;
@@ -19,13 +25,10 @@ import org.jdownloader.plugins.tasks.PluginProgressTask;
 import org.jdownloader.translate._JDT;
 
 public class DownloadPluginProgress extends PluginProgress {
-
     private final DownloadInterface downloadInterface;
-
     private final String            unknownFileSize = _JDT.T.gui_download_filesize_unknown() + " \u221E";
     protected final long            startTimeStamp;
     private final String            normal;
-
     private final Downloadable      downloadable;
 
     public DownloadPluginProgress(Downloadable downloadable, DownloadInterface downloadInterface, Color color) {
@@ -36,6 +39,20 @@ public class DownloadPluginProgress extends PluginProgress {
         setIcon(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16));
         startTimeStamp = downloadInterface.getStartTimeStamp();
         normal = _JDT.T.download_connection_normal();
+    }
+
+    protected FavitIcon downloadMultihosterIcon = null;
+
+    @Override
+    public Icon getIcon(Object requestor) {
+        if (requestor instanceof DownloadsAPIV2Impl && downloadable instanceof DownloadLinkDownloadable) {
+            final SingleDownloadController controller = ((DownloadLinkDownloadable) downloadable).getDownloadLinkController();
+            if (controller != null && AccountCache.ACCOUNTTYPE.MULTI.equals(controller.getDownloadLinkCandidate().getCachedAccount().getType())) {
+                // return FavitIcon that contains the Multihoster Icon
+                return new FavitIcon(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16), controller.getDownloadLinkCandidate().getCachedAccount().getPluginDomainInfo());
+            }
+        }
+        return super.getIcon(requestor);
     }
 
     @Override
@@ -89,5 +106,4 @@ public class DownloadPluginProgress extends PluginProgress {
     public PluginTaskID getID() {
         return PluginTaskID.DOWNLOAD;
     }
-
 }
