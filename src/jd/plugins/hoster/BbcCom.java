@@ -168,15 +168,11 @@ public class BbcCom extends PluginForHost {
         final String configuredPreferredVideoHeightStr = getConfiguredVideoHeight();
         final String configuredPreferredVideoFramerateStr = getConfiguredVideoFramerate();
         HlsContainer hlscontainer_chosen = null;
-        final boolean userWantsOver720p;
+        final boolean userWantsBest;
         if (configuredPreferredVideoHeightStr.matches("\\d+")) {
             /* Look for user-preferred quality */
+            userWantsBest = false;
             final int configuredPreferredVideoHeight = Integer.parseInt(configuredPreferredVideoHeightStr);
-            if (configuredPreferredVideoHeight > 720 && (configuredPreferredVideoFramerateStr == null || Integer.parseInt(configuredPreferredVideoFramerateStr) >= 50)) {
-                userWantsOver720p = true;
-            } else {
-                userWantsOver720p = false;
-            }
             final String height_for_quality_selection = getHeightForQualitySelection(configuredPreferredVideoHeight);
             for (final HlsContainer hlscontainer_temp : hlsContainers) {
                 final int height = hlscontainer_temp.getHeight();
@@ -195,10 +191,10 @@ public class BbcCom extends PluginForHost {
         } else {
             /* User prefers BEST quality */
             hlscontainer_chosen = HlsContainer.findBestVideoByBandwidth(hlsContainers);
-            userWantsOver720p = true;
+            userWantsBest = true;
         }
         final String urlpartToReplace = "-video=5070000.m3u8";
-        if (isAttemptToDownloadUnofficialFullHD() && hlscontainer_chosen.getDownloadurl().contains(urlpartToReplace) && userWantsOver720p) {
+        if (isAttemptToDownloadUnofficialFullHD() && hlscontainer_chosen.getDownloadurl().contains(urlpartToReplace) && userWantsBest) {
             /*
              * 2022-03-14: This can get us an upscaled/higher quality version of that video according to discussion in public ticket:
              * https://github.com/ytdl-org/youtube-dl/issues/30136
@@ -324,7 +320,7 @@ public class BbcCom extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_VIDEO_FORMAT, FORMATS, "Select preferred video resolution:").setDefaultValue(0));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ATTEMPT_FHD_WORKAROUND, "Try to download 1080p 50fps streams if not officially available?\r\nWarning: This may lead to download failures!").setDefaultValue(default_SETTING_ATTEMPT_FHD_WORKAROUND));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ATTEMPT_FHD_WORKAROUND, "Try to download 1080p 50fps streams if not officially available?\r\nOnly has an effect when best quality is chosen!\r\nWarning: This may lead to download failures!").setDefaultValue(default_SETTING_ATTEMPT_FHD_WORKAROUND));
     }
 
     /* The list of qualities displayed to the user */
