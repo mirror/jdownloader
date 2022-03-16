@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -148,9 +149,10 @@ public class DepicMe extends XFileSharingProBasic {
              * 2022-03-16: Special: Detection for offline content based on exact content-length static image containing text
              * "File not found" e.g.: http://depic.me/ngghhomm3brn
              */
+            final Browser brc = br.cloneBrowser();
             URLConnectionAdapter con = null;
             try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
                 if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
                 }

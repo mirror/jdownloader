@@ -16,9 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,7 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:[^\\&]+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9%]+.*" })
 public class CommonsWikimediaOrg extends PluginForHost {
@@ -65,8 +69,6 @@ public class CommonsWikimediaOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[400]);
-        String filename = null;
-        String filesize_str = null;
         String host = Browser.getHost(link.getPluginPatternMatcher());
         /* 2021-01-04: Small workaround RE: #89249 */
         if (host.equalsIgnoreCase("wikimedia.org")) {
@@ -83,22 +85,34 @@ public class CommonsWikimediaOrg extends PluginForHost {
         if (use_api) {
             /* Docs: https://www.mediawiki.org/wiki/API:Query */
             br.getPage("https://" + host + "/w/api.php?action=query&format=json&prop=imageinfo&titles=" + Encoding.urlEncode(url_title) + "&iiprop=timestamp%7Curl%7Csize%7Cmime%7Cmediatype%7Cextmetadata&iiextmetadatafilter=DateTime%7CDateTimeOriginal%7CObjectName%7CImageDescription%7CLicense%7CLicenseShortName%7CUsageTerms%7CLicenseUrl%7CCredit%7CArtist%7CAuthorCount%7CGPSLatitude%7CGPSLongitude%7CPermission%7CAttribution%7CAttributionRequired%7CNonFree%7CRestrictions&iiextmetadatalanguage=en&uselang=content&smaxage=300&maxage=300");
-            if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("\"(invalid|missing)\"")) {
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.containsHTML("\"invalid\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* The code below is rubbish to recognize offline items! TODO: Improve this */
-            // final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            // final Object batchcomplete = entries.get("batchcomplete");
-            // if (batchcomplete == null) {
-            // /* No success response */
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // }
-            filename = new Regex(url_title, ".*?:(.+)").getMatch(0);
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> page = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "query/pages/{0}");
+            final Object imageinfoO = page.get("imageinfo");
+            if (imageinfoO == null) {
+                if (page.containsKey("missing")) {
+                    /* E.g. https://zh.wikipedia.org/wiki/File:%E9%84%AD%E7%A7%80%E6%96%87_%E5%8E%BB%E6%84%9B%E5%90%A7.jpg */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            final List<Map<String, Object>> imageinfo = (List<Map<String, Object>>) imageinfoO;
+            final Map<String, Object> fileInfo = imageinfo.get(0);
+            String filename = new Regex(url_title, ".*?:(.+)").getMatch(0);
             if (filename == null) {
                 filename = url_title;
             }
-            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+            dllink = (String) fileInfo.get("url");
+            /* Do not trust this filesize 100%! */
+            // link.setVerifiedFileSize(((Number) fileInfo.get("size")).longValue());
+            link.setDownloadSize(((Number) fileInfo.get("size")).longValue());
             if (StringUtils.isEmpty(dllink)) {
+                /* TODO: Check if this is still needed */
                 if (!link.getPluginPatternMatcher().matches(TYPE_WIKIPEDIA_2)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -107,10 +121,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
                 this.dllink = "https://" + urlinfo.getMatch(0) + ".wikipedia.org/api/rest_v1/page/pdf/" + urlinfo.getMatch(2);
                 filename += ".pdf";
             }
-            filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
-            if (filesize_str != null) {
-                link.setDownloadSize(Long.parseLong(filesize_str));
-            }
+            link.setFinalFileName(filename);
         } else {
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
@@ -120,11 +131,11 @@ public class CommonsWikimediaOrg extends PluginForHost {
              * URL is different for every country e.g. https://en.wikipedia.org/wiki/File:Krak%C3%B3w_G%C5%82%C3%B3wny_(budynek_dworca).JPG,
              * https://pl.wikipedia.org/wiki/Plik:Dworzec_Krak%C3%B3w_G%C5%82%C3%B3wny.jpg
              */
-            filename = br.getRegex("\"wgTitle\":\"([^<>\"]*?)\"").getMatch(0);
+            String filename = br.getRegex("\"wgTitle\":\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
                 filename = url_title;
             }
-            filesize_str = this.br.getRegex("file size: (\\d+(?:\\.\\d{1,2})? [A-Za-z]+)").getMatch(0);
+            String filesize_str = this.br.getRegex("file size: (\\d+(?:\\.\\d{1,2})? [A-Za-z]+)").getMatch(0);
             if (filesize_str == null) {
                 filesize_str = this.br.getRegex("(?-i)class=\"fileInfo\">[^<]*?(\\d+(\\.\\d+)?\\s*[KMGT]B)").getMatch(0);
             }
@@ -152,6 +163,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }
+            link.setFinalFileName(filename);
             if (filesize_str != null) {
                 link.setDownloadSize(Long.parseLong(filesize_str));
             } else {
@@ -174,7 +186,6 @@ public class CommonsWikimediaOrg extends PluginForHost {
                 }
             }
         }
-        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
