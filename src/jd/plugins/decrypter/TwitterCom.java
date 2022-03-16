@@ -340,12 +340,15 @@ public class TwitterCom extends PornEmbedParser {
             if (!StringUtils.isEmpty(tweetText)) {
                 fp.setComment(tweetText);
             }
+        } else {
+            /* Assume that we're crawling a complete profile. */
+            final String profileDescription = (String) user.get("description");
+            if (StringUtils.isEmpty(fp.getComment()) && !StringUtils.isEmpty(profileDescription)) {
+                fp.setComment(profileDescription);
+            }
         }
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-        if (!StringUtils.isEmpty(tweetText)) {
-            fp.setComment(tweetText);
-        }
         TwitterConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class);
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
