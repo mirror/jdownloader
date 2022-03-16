@@ -204,7 +204,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     void setDeleteArchiveFilesAfterExtractionAction(FileCreationManager.DeleteOption selectedItem);
 
     @AboutConfig
-    @DefaultEnumValue("SKIP_FILE")
+    @DefaultEnumValue("ASK_FOR_EACH_FILE")
     IfFileExistsAction getIfFileExistsAction();
 
     void setIfFileExistsAction(IfFileExistsAction action);
