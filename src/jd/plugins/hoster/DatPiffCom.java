@@ -40,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "https?://(www\\.)?datpiff\\.com/([^<>\"% ]*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+|.*?\\-mixtape\\.\\d+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "https?://(?:www\\.)?datpiff\\.com/([^<>\"% ]*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+|.*?\\-mixtape\\.\\d+\\.html)" })
 public class DatPiffCom extends PluginForHost {
     private static final String PATTERN_PREMIUMONLY               = "(?i)>\\s*you must be logged in to download mixtapes<";
     private static final String ONLYREGISTEREDUSERTEXT            = "Only downloadable for registered users";
@@ -52,7 +52,8 @@ public class DatPiffCom extends PluginForHost {
     public static final String  PROPERTY_SONG_TRACK_POSITION      = "track_position";
     public static final String  PROPERTY_SONG_TRACK_DOWNLOAD_ID   = "track_download_id";
     private static final String TYPE_MIXTAPE                      = "https?://[^/]+/[A-Za-z0-9\\-_]+\\-mixtape\\.(\\d+)\\.html";
-    private static final String TYPE_SONG                         = "https://[^/]+/pop-download-track\\.php\\?id=(\\d+)";
+    private static final String TYPE_SONG                         = "https?://[^/]+/pop-download-track\\.php\\?id=(\\d+)";
+    private static final String TYPE_ALBUM                        = "https?://[^/]+/pop-mixtape-download\\.php\\?id=(mb\\d+)";
 
     public DatPiffCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -171,15 +172,21 @@ public class DatPiffCom extends PluginForHost {
                 } else if (br.containsHTML(PATTERN_CURRENTLYUNAVAILABLE)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, CURRENTLYUNAVAILABLETEXT, 3 * 60 * 60 * 1000l);
                 }
-                final String downloadID = br.getRegex("openDownload\\(\\s*'([^<>\"\\']+)").getMatch(0);
-                if (downloadID == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable");
+                if (br.getURL().matches(TYPE_ALBUM)) {
+                    logger.info("We've already accessed the target URL: " + br.getURL());
+                } else {
+                    final String downloadID = br.getRegex("openDownload\\(\\s*'([^<>\"\\']+)").getMatch(0);
+                    if (downloadID == null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable");
+                    }
+                    br.getPage("/pop-mixtape-download.php?id=" + downloadID);
                 }
-                br.getPage("/pop-mixtape-download.php?id=" + downloadID);
                 final Form form = br.getForm(0);
                 if (form != null) {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(form)) {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
                     br.setFollowRedirects(false);
                     br.submitForm(form);
                     br.setFollowRedirects(true);
