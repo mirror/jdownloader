@@ -247,11 +247,6 @@ public class SiteType {
          */
         SafeLinking_SafeLinking,
         /**
-         * Old link crypt script e.g. <a href="http://save-link.info">save-link.info</a> <br />
-         * <b>Main decrypter class:</b> Zro10BasicDecrypt. <br />
-         */
-        Zero10BasicDecrypt,
-        /**
          * <a href="https://shorte.st/">shorte.st</a> plugin, used to detect new/old domains that are using their service.
          */
         ShorteSt_ShorteSt,

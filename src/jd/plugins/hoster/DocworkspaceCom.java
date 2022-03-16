@@ -151,6 +151,15 @@ public class DocworkspaceCom extends PluginForHost {
             brc.getPage("https://ru-drive.wps.com/api/v3/links/" + this.getFID(link) + "/download?isblocks=false");
             final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
             final Map<String, Object> fileInfo = (Map<String, Object>) entries.get("fileinfo");
+            if (fileInfo == null) {
+                final String errorMsg = (String) entries.get("msg");
+                if (errorMsg != null) {
+                    /* E.g. {"result":"lightLinkNotExist","msg":"The link does not exist."} */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, errorMsg);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
             /* 2021-06-23: Seems like these hashes do not reflect the original file hashes. */
             final String hashMD5 = (String) fileInfo.get("md5");
             if (!StringUtils.isEmpty(hashMD5)) {
