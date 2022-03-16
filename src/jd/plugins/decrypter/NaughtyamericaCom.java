@@ -59,7 +59,7 @@ public class NaughtyamericaCom extends PluginForDecrypt {
         }
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
-            redirect = br.getRegex("Redirecting to <a href=\"(https?://[^<>\"]+)\">").getMatch(0);
+            redirect = br.getRegex("Redirecting to <a\\s*href\\s*=\\s*\"(https?://[^<>\"]+)\"\\s*>").getMatch(0);
         }
         if (isOffline(br)) {
             final DownloadLink offline = this.createOfflinelink(parameter);
@@ -165,7 +165,7 @@ public class NaughtyamericaCom extends PluginForDecrypt {
     }
 
     public static String[] getVideoInfoArray(final Browser br) {
-        return br.getRegex("(<a onclick=\"trackVideo\\(.*?</a>)").getColumn(0);
+        return br.getRegex("(<a[^>]*onclick\\s*=\\s*\"trackVideo\\(.*?</a>)").getColumn(0);
     }
 
     public static String[] getVideoInfoDetailed(final String source) {
@@ -176,15 +176,17 @@ public class NaughtyamericaCom extends PluginForDecrypt {
     }
 
     public static String getDirecturlFromVideoInfo(final String source) {
-        String directurl = new Regex(source, "(https?://[^<>\"]+\\.(?:mp4|wmv)[^<>\"]*?)\"").getMatch(0);
+        String directurl = new Regex(source, "(https?://[^<>\"']+\\.(?:mp4|wmv)[^<>\"']+)").getMatch(0);
         if (directurl != null) {
             directurl = Encoding.htmlDecode(directurl);
+            return directurl;
+        } else {
+            return null;
         }
-        return directurl;
     }
 
     public static String[] getPictureArray(final Browser br) {
-        return br.getRegex("<a class=\"fancybox gallery_pic\"[^>]+rel=\"nozoom\"[^>]+href=\"(http[^<>\"]+\\.jpg[^<>\"]*?)\">").getColumn(0);
+        return br.getRegex("<a\\s*class\\s*=\\s*\"fancybox gallery_pic\"[^>]+rel\\s*=\\s*\"nozoom\"[^>]+href\\s*=\\s*\"(https?[^<>\"]+\\.jpg[^<>\"]*?)\"\\s*>").getColumn(0);
     }
 
     public static String getVideoUrlFree(final String filename_url) {

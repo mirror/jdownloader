@@ -260,6 +260,8 @@ public class FilestoreTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)Derzeit haben wir Serverprobleme und arbeiten daran\\. Bitte nochmal versuchen\\.")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 15 * 60 * 1000l);
+        } else if (br.containsHTML(">503 - Service Temporarily Unavailable<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 15 * 60 * 1000l);
         }
     }
 
@@ -310,6 +312,7 @@ public class FilestoreTo extends PluginForHost {
                 br.getPage(location);
             }
             checkErrors(link);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
             /* Add a download slot */

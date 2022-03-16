@@ -15,8 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,6 +37,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
 public class NaughtyamericaCom extends PluginForHost {
@@ -102,7 +104,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* 2019-01-18: Trailer is only available in a single quality */
-            dllink = br.getRegex("file\\s*?:\\s*?\"(http[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("file\\s*?:\\s*?\"(https?[^<>\"]+)\"").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 link.getLinkStatus().setStatusText("Trailer not foind: Cannot check/download links without valid premium account");
                 return AvailableStatus.UNCHECKABLE;
@@ -110,18 +112,29 @@ public class NaughtyamericaCom extends PluginForHost {
         }
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(dllink);
-            if (con.getContentType().contains("html")) {
-                refreshDirecturl(link);
-                con = br.openHeadConnection(dllink);
-                if (con.getContentType().contains("html")) {
+            Browser brc = br.cloneBrowser();
+            con = brc.openHeadConnection(dllink);
+            if (!looksLikeDownloadableContent(con)) {
+                try {
+                    brc.followConnection(true);
+                } catch (IOException ignore) {
+                    logger.log(ignore);
+                }
+                final String directURL = refreshDirecturl(br, aa, link);
+                brc = br.cloneBrowser();
+                con = brc.openHeadConnection(directURL);
+                if (!looksLikeDownloadableContent(con)) {
                     server_issues = true;
                     return AvailableStatus.TRUE;
+                } else {
+                    /* If user copies url he should always get a valid one too :) */
+                    link.setPluginPatternMatcher(directURL);
+                    dllink = directURL;
                 }
-                /* If user copies url he should always get a valid one too :) */
-                link.setContentUrl(dllink);
             }
-            link.setDownloadSize(con.getLongContentLength());
+            if (con.getLongContentLength() > 0) {
+                link.setDownloadSize(con.getLongContentLength());
+            }
             if (link.getFinalFileName() == null) {
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
             }
@@ -134,12 +147,13 @@ public class NaughtyamericaCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void refreshDirecturl(final DownloadLink link) throws Exception {
+    private String refreshDirecturl(final Browser br, final Account account, final DownloadLink link) throws Exception {
         final String filename_url = getFilenameUrl(link);
         if (filename_url == null) {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String directURL = null;
         if (link.getDownloadURL().matches(type_pic)) {
             final String number_formatted = link.getStringProperty("picnumber_formatted", null);
             if (filename_url == null || number_formatted == null) {
@@ -153,7 +167,7 @@ public class NaughtyamericaCom extends PluginForHost {
             final String pictures[] = jd.plugins.decrypter.NaughtyamericaCom.getPictureArray(br);
             for (final String finallink : pictures) {
                 if (finallink.contains(number_formatted + ".jpg")) {
-                    dllink = finallink;
+                    directURL = finallink;
                     break;
                 }
             }
@@ -184,12 +198,14 @@ public class NaughtyamericaCom extends PluginForHost {
                     /* Not the quality we're looking for --> Skip it */
                     continue;
                 }
-                dllink = directlink;
+                directURL = directlink;
                 break;
             }
         }
-        if (dllink == null || !dllink.startsWith("http")) {
+        if (!StringUtils.startsWithCaseInsensitive(directURL, "http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return directURL;
         }
     }
 
@@ -204,7 +220,7 @@ public class NaughtyamericaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        handleDownload(downloadLink);
+        handleDownload(null, downloadLink);
     }
 
     @Override
@@ -319,7 +335,9 @@ public class NaughtyamericaCom extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -345,17 +363,21 @@ public class NaughtyamericaCom extends PluginForHost {
         return ai;
     }
 
-    private void handleDownload(final DownloadLink link) throws Exception {
+    private void handleDownload(final Account account, final DownloadLink link) throws Exception {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(dllink)) {
             /* Usually only happens in free mode e.g. trailer download --> But no trailer is available */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        } else {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        }
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -364,7 +386,7 @@ public class NaughtyamericaCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        handleDownload(link);
+        handleDownload(account, link);
     }
 
     @Override
