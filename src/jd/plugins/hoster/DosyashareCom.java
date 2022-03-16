@@ -29,8 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class DosyaTv extends YetiShareCore {
-    public DosyaTv(PluginWrapper wrapper) {
+public class DosyashareCom extends YetiShareCore {
+    public DosyashareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -46,7 +46,7 @@ public class DosyaTv extends YetiShareCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "dosya.tv" });
+        ret.add(new String[] { "dosyashare.com", "dosya.tv" });
         return ret;
     }
 

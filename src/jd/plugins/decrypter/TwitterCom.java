@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -72,25 +71,20 @@ public class TwitterCom extends PornEmbedParser {
         super(wrapper);
     }
 
-    private static final String                  TYPE_CARD                                                        = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
-    private static final String                  TYPE_USER_ALL                                                    = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
-    private static final String                  TYPE_USER_POST                                                   = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
+    private static final String            TYPE_CARD                                                        = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
+    private static final String            TYPE_USER_ALL                                                    = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
+    private static final String            TYPE_USER_POST                                                   = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
     // private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-    private static AtomicReference<String>       GUEST_TOKEN                                                      = new AtomicReference<String>();
-    private static AtomicLong                    GUEST_TOKEN_TS                                                   = new AtomicLong(-1);
-    public static final String                   PROPERTY_USERNAME                                                = "username";
-    private static final String                  PROPERTY_DATE                                                    = "date";
-    public static final String                   PROPERTY_MEDIA_INDEX                                             = "mediaindex";
-    public static final String                   PROPERTY_MEDIA_ID                                                = "mediaid";
-    public static final String                   PROPERTY_BITRATE                                                 = "bitrate";
-    public static final String                   PROPERTY_TWEET_TEXT                                              = "tweet_text";
-    public static final String                   PROPERTY_FILENAME_FROM_CRAWLER                                   = "crawlerfilename";
-    public static final String                   PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY = "video_direct_urls_are_available_via_api_extended_entity";
-    private static LinkedHashMap<String, Object> USER_CACHE                                                       = new LinkedHashMap<String, Object>() {
-                                                                                                                      protected boolean removeEldestEntry(Map.Entry<String, Object> eldest) {
-                                                                                                                          return size() > 500;
-                                                                                                                      };
-                                                                                                                  };
+    private static AtomicReference<String> GUEST_TOKEN                                                      = new AtomicReference<String>();
+    private static AtomicLong              GUEST_TOKEN_TS                                                   = new AtomicLong(-1);
+    public static final String             PROPERTY_USERNAME                                                = "username";
+    private static final String            PROPERTY_DATE                                                    = "date";
+    public static final String             PROPERTY_MEDIA_INDEX                                             = "mediaindex";
+    public static final String             PROPERTY_MEDIA_ID                                                = "mediaid";
+    public static final String             PROPERTY_BITRATE                                                 = "bitrate";
+    public static final String             PROPERTY_TWEET_TEXT                                              = "tweet_text";
+    public static final String             PROPERTY_FILENAME_FROM_CRAWLER                                   = "crawlerfilename";
+    public static final String             PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY = "video_direct_urls_are_available_via_api_extended_entity";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -317,42 +311,40 @@ public class TwitterCom extends PornEmbedParser {
         return PluginJSonUtils.getJson(brc, "guest_token");
     }
 
+    /** Wrapper */
+    private ArrayList<DownloadLink> crawlTweetMap(final Map<String, Object> tweet) throws MalformedURLException {
+        return crawlTweetMap(tweet, null, null);
+    }
+
     /**
      * Crawls single media objects obtained via API.
      *
      * @throws MalformedURLException
      */
-    private ArrayList<DownloadLink> crawlTweetMap(final Map<String, Object> tweet) throws MalformedURLException {
+    private ArrayList<DownloadLink> crawlTweetMap(final Map<String, Object> tweet, Map<String, Object> user, FilePackage fp) throws MalformedURLException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String userIDStr = tweet.get("user_id_str").toString();
         final String tweetID = tweet.get("id_str").toString();
         final Object userInContextOfTweet = tweet.get("user");
-        final Map<String, Object> user;
         if (userInContextOfTweet != null) {
-            user = (Map<String, Object>) tweet.get("user");
-        } else {
-            user = this.getCachedUserInfo(userIDStr);
+            /* Prefer this as our user object. Usually it's only included when adding single tweets. */
+            user = (Map<String, Object>) userInContextOfTweet;
         }
         String username = (String) user.get("screen_name");
         final String formattedDate = formatTwitterDate((String) tweet.get("created_at"));
         final String tweetText = (String) tweet.get("full_text");
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-        if (userInContextOfTweet != null) {
-            /* We're crawling a single tweet -> Set date + username as packagename. */
+        if (fp == null) {
+            /* Assume that we're crawling a single tweet -> Set date + username as packagename. */
             username = (String) user.get("screen_name");
+            fp = FilePackage.getInstance();
             fp.setName(formattedDate + "_" + username);
             if (!StringUtils.isEmpty(tweetText)) {
                 fp.setComment(tweetText);
             }
-        } else {
-            /* We're crawling a tweet as part of the complete timeline -> Set username as packagename. */
-            fp.setName(username);
-            final String userDescription = (String) user.get("description");
-            if (!StringUtils.isEmpty(userDescription)) {
-                fp.setComment(userDescription);
-            }
+        }
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+        if (!StringUtils.isEmpty(tweetText)) {
+            fp.setComment(tweetText);
         }
         TwitterConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class);
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
@@ -636,16 +628,11 @@ public class TwitterCom extends PornEmbedParser {
             decryptedLinks.add(getDummyErrorProfileContainsNoTweets(username));
             return decryptedLinks;
         }
-        /* Add user-object to cache */
-        synchronized (USER_CACHE) {
-            USER_CACHE.put(userID, user);
-        }
         final boolean setting_force_grab_media = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isForceGrabMediaOnlyEnabled();
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
         final String content_type;
         Integer maxCount = null;
         final int expected_items_per_page = 20;
-        String nextCursor = null;
         final UrlQuery query = new UrlQuery();
         query.append("include_profile_interstitial_type", "1", false);
         query.append("include_blocking", "1", false);
@@ -671,6 +658,7 @@ public class TwitterCom extends PornEmbedParser {
         query.append("include_ext_sensitive_media_warning", "true", false);
         query.append("send_error_codes", "true", false);
         query.append("simple_quoted_tweet", "true", false);
+        final FilePackage fp = FilePackage.getInstance();
         if (param.getCryptedUrl().endsWith("/likes")) {
             /* Crawl all liked items of a user */
             logger.info("Crawling all liked items of user " + username);
@@ -687,7 +675,7 @@ public class TwitterCom extends PornEmbedParser {
             maxCount = favoritesCount;
             query.append("simple_quoted_tweets", "true", false);
             query.append("sorted_by_time", "true", false);
-            // fpname += " - likes";
+            fp.setName(username + " - likes");
         } else if (param.getCryptedUrl().endsWith("/media") || setting_force_grab_media) {
             logger.info("Crawling self posted media only from user: " + username);
             if (media_count == 0) {
@@ -695,12 +683,17 @@ public class TwitterCom extends PornEmbedParser {
             }
             content_type = "media";
             maxCount = media_count;
+            fp.setName(username + " - media");
         } else {
             logger.info("Crawling ALL media of a user e.g. also retweets | user: " + username);
             content_type = "profile";
             maxCount = statuses_count;
             query.add("include_tweet_replies", "false");
+            fp.setName(username);
         }
+        query.append("userId", userID, false);
+        query.append("count", expected_items_per_page + "", false);
+        query.append("ext", "mediaStats,cameraMoment", true);
         final UrlQuery addedURLQuery = UrlQuery.parse(param.getCryptedUrl());
         Number maxTweetsToCrawl = null;
         final String maxTweetsToCrawlStr = addedURLQuery.get("maxitems");
@@ -720,12 +713,10 @@ public class TwitterCom extends PornEmbedParser {
                 logger.info("Ignoring user defined 'max_date' parameter because of invalid input format: " + maxTweetDateStr);
             }
         }
-        query.append("userId", userID, false);
-        query.append("count", expected_items_per_page + "", false);
-        query.append("ext", "mediaStats,cameraMoment", true);
         final HashSet<String> cursorDupes = new HashSet<String>();
         int totalCrawledTweetsCount = 0;
         int page = 1;
+        String nextCursor = null;
         tweetTimeline: do {
             logger.info("Crawling page " + page);
             final UrlQuery thisquery = query;
@@ -738,14 +729,6 @@ public class TwitterCom extends PornEmbedParser {
             final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> globalObjects = (Map<String, Object>) root.get("globalObjects");
             final Map<String, Object> users = (Map<String, Object>) globalObjects.get("users");
-            final Iterator<Entry<String, Object>> userIterator = users.entrySet().iterator();
-            synchronized (USER_CACHE) {
-                USER_CACHE.clear();
-                while (userIterator.hasNext()) {
-                    final Entry<String, Object> entry = userIterator.next();
-                    USER_CACHE.put(entry.getKey(), entry.getValue());
-                }
-            }
             final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(root, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) globalObjects.get("tweets");
             if (tweetMap == null || tweetMap.isEmpty()) {
@@ -756,7 +739,9 @@ public class TwitterCom extends PornEmbedParser {
             String lastCreatedAtDateStr = null;
             while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
-                decryptedLinks.addAll(crawlTweetMap(tweet));
+                final String userIDStr = tweet.get("user_id_str").toString();
+                final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(userIDStr);
+                decryptedLinks.addAll(crawlTweetMap(tweet, userWhoPostedThisTweet, fp));
                 totalCrawledTweetsCount++;
                 lastCreatedAtDateStr = (String) tweet.get("created_at");
                 final long currentTweetTimestamp = TimeFormatter.getMilliSeconds(lastCreatedAtDateStr, "EEE MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
@@ -915,15 +900,6 @@ public class TwitterCom extends PornEmbedParser {
         } while (nextURL != null && !this.isAbort());
         logger.info(String.format("Done after %d pages", index));
         return decryptedLinks;
-    }
-
-    /** Retrns cached map containing information about user according to given userID. */
-    private Map<String, Object> getCachedUserInfo(final String userID) {
-        if (USER_CACHE.containsKey(userID)) {
-            return (Map<String, Object>) USER_CACHE.get(userID);
-        } else {
-            return null;
-        }
     }
 
     protected void getPage(final Browser br, final String url) throws Exception {
