@@ -15,8 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -25,6 +27,7 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -58,12 +61,43 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap|https?://video\\.twimg\\.com/amplify_video/vmap/\\d+\\.vmap|https?://amp\\.twimg\\.com/v/.+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterCom extends PluginForHost {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
         /* 2020-01-20: Disabled login functionality as it is broken */
         this.enablePremium("https://twitter.com/signup");
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.TwitterCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            final StringBuilder regex = new StringBuilder();
+            regex.append("https?://[a-z0-9]+\\.twimg\\.com/media/[^/]+");
+            regex.append("|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap");
+            regex.append("|https?://video\\.twimg\\.com/amplify_video/vmap/\\d+\\.vmap");
+            regex.append("|https?://amp\\.twimg\\.com/v/.+");
+            regex.append("|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:i/videos/tweet/\\d+|[^/]+/status/\\d+)");
+            ret.add(regex.toString());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -81,13 +115,10 @@ public class TwitterCom extends PluginForHost {
     private final String        TYPE_VIDEO_DIRECT             = "https?://amp\\.twimg\\.com/v/.+";
     private final String        TYPE_VIDEO_VMAP               = "^https?://.*\\.vmap$";
     public static final String  TYPE_VIDEO_EMBED              = "https?://[^/]+/i/videos/tweet/(\\d+)";
-    /* Connection stuff - don't allow chunks as we only download small pictures */
-    private final boolean       FREE_RESUME                   = true;
-    private final int           FREE_MAXCHUNKS                = 1;
-    private final int           FREE_MAXDOWNLOADS             = 20;
-    private final boolean       ACCOUNT_FREE_RESUME           = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS        = 1;
-    private final int           ACCOUNT_FREE_MAXDOWNLOADS     = 20;
+    private static final String TYPE_TWEET_TEXT               = "https?://[^/]+/([^/]+)/status/(\\d+)";
+    /* Connection stuff - don't allow chunks as we only download small pictures/videos */
+    private final int           MAXCHUNKS                     = 1;
+    private final int           MAXDOWNLOADS                  = -1;
     private String              dllink                        = null;
     private boolean             account_required              = false;
     private boolean             geo_blocked                   = false;
@@ -108,10 +139,6 @@ public class TwitterCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, 500);
     }
 
-    private void setconstants(final DownloadLink link) {
-        dllink = null;
-    }
-
     private static Object LOCK = new Object();
 
     @Override
@@ -119,310 +146,319 @@ public class TwitterCom extends PluginForHost {
         return requestFileInformation(link, null, false);
     }
 
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        setconstants(link);
-        prepBR(this.br);
-        String title = null;
-        /* Most items will come from crawler. */
-        String filename = null;
-        final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_FILENAME_FROM_CRAWLER);
-        if (filenameFromCrawler != null) {
-            link.setFinalFileName(filenameFromCrawler);
-            filename = filenameFromCrawler;
-        }
-        String tweetID = link.getStringProperty("tweetid");
-        String vmap_url = null;
-        boolean possibly_geo_blocked = false;
-        if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_DIRECT) || link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
-            /* 2022-02-02: Rarely used e.g. for: https://video.twimg.com/amplify_video/vmap/<videoID>.vmap */
-            this.br.getPage(link.getPluginPatternMatcher());
-            if (this.br.getHttpConnection().getResponseCode() == 403) {
-                throw new AccountRequiredException();
-            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (link.getPluginPatternMatcher().matches(TYPE_TWEET_TEXT)) {
+            if (StringUtils.isEmpty(getTweetText(link))) {
+                /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
-                /* Direct vmap url was added by user- or decrypter. */
-                vmap_url = link.getPluginPatternMatcher();
-            } else {
-                /* Videolink was added by user or decrypter. */
-                vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
+            final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_FILENAME_FROM_CRAWLER);
+            if (filenameFromCrawler != null) {
+                link.setFinalFileName(filenameFromCrawler);
             }
-            if (StringUtils.isEmpty(vmap_url)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                this.br.getPage(vmap_url);
-                this.dllink = regexVideoVmapHighestQualityURL(this.br);
-                if (StringUtils.isEmpty(dllink)) {
+        } else {
+            prepBR(this.br);
+            /* Most items will come from crawler. */
+            String filename = null;
+            final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_FILENAME_FROM_CRAWLER);
+            if (filenameFromCrawler != null) {
+                link.setFinalFileName(filenameFromCrawler);
+                filename = filenameFromCrawler;
+            }
+            String tweetID = link.getStringProperty("tweetid");
+            String vmap_url = null;
+            boolean possibly_geo_blocked = false;
+            if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_DIRECT) || link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
+                /* 2022-02-02: Rarely used e.g. for: https://video.twimg.com/amplify_video/vmap/<videoID>.vmap */
+                this.br.getPage(link.getPluginPatternMatcher());
+                if (this.br.getHttpConnection().getResponseCode() == 403) {
+                    throw new AccountRequiredException();
+                } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
+                    /* Direct vmap url was added by user- or decrypter. */
+                    vmap_url = link.getPluginPatternMatcher();
+                } else {
+                    /* Videolink was added by user or decrypter. */
+                    vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
+                }
+                if (StringUtils.isEmpty(vmap_url)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-        } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_EMBED)) {
-            tweetID = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO_EMBED).getMatch(0);
-            this.dllink = getStoredVideoDirecturl(link);
-            if (StringUtils.isEmpty(this.dllink)) {
-                final boolean useCrawler;
-                /*
-                 * 2022-02-02: Legacy handling: TODO: Hardcode set 'useCrawler' to false after 04-2022 to fix rare issue with single
-                 * embedded video URLs. Don't do this earlier as it will kill filenames of existing videos!
-                 */
-                if (link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY)) {
-                    if (link.getBooleanProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false)) {
-                        useCrawler = true;
-                    } else {
-                        useCrawler = false;
-                    }
-                } else if (!link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
-                    /* Link was added to host plugin directly -> Don't use crawler handling. */
-                    useCrawler = false;
                 } else {
-                    useCrawler = true;
-                }
-                if (useCrawler) {
-                    logger.info("Obtaining new directurl via crawler");
-                    final PluginForDecrypt decrypter = this.getNewPluginForDecryptInstance(this.getHost());
-                    final String tweetVideoURL = jd.plugins.decrypter.TwitterCom.createVideourl(tweetID);
-                    final CryptedLink param = new CryptedLink(tweetVideoURL, link);
-                    final ArrayList<DownloadLink> results = decrypter.decryptIt(param, null);
-                    if (results.isEmpty()) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
-                    }
-                    final DownloadLink result;
-                    if (results.size() == 1) {
-                        result = results.get(0);
-                    } else {
-                        /*
-                         * We expect exactly one element - for twitter posts containing videos, only one single video item is allowed per
-                         * twitter post BUT there are edge cases e.g. when the user has edited/replaced a video inside a post. In this case
-                         * the API may return 2 items whereas via browser you can only watch one video which is usually the first item in
-                         * the array returned by the API.
-                         */
-                        logger.info("Edge case: Video tweet contains multiple elements: " + results.size());
-                        result = results.get(link.getIntegerProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_MEDIA_INDEX, 0));
-                    }
-                    if (!result.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
-                        /*
-                         * This should never happen but it can if the user e.g. for some reason adds a non-video single tweet URL as URL
-                         * matching this video embed pattern.
-                         */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Single tweet video item type mismatch");
-                    }
-                    this.dllink = getStoredVideoDirecturl(result);
+                    this.br.getPage(vmap_url);
+                    this.dllink = regexVideoVmapHighestQualityURL(this.br);
                     if (StringUtils.isEmpty(dllink)) {
-                        /* Video download failed and no alternatives are available? */
-                        if (this.looksLikeBrokenFile(link)) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_EMBED)) {
+                tweetID = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO_EMBED).getMatch(0);
+                this.dllink = getStoredVideoDirecturl(link);
+                if (StringUtils.isEmpty(this.dllink)) {
+                    final boolean useCrawler;
+                    /*
+                     * 2022-02-02: Legacy handling: TODO: Hardcode set 'useCrawler' to false after 04-2022 to fix rare issue with single
+                     * embedded video URLs. Don't do this earlier as it will kill filenames of existing videos!
+                     */
+                    if (link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY)) {
+                        if (link.getBooleanProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false)) {
+                            useCrawler = true;
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            useCrawler = false;
                         }
-                    }
-                    link.setProperties(result.getProperties());
-                } else {
-                    /* 2018-11-13: Using static token */
-                    final boolean use_static_token = true;
-                    final String authorization_token;
-                    if (use_static_token) {
-                        authorization_token = "AAAAAAAAAAAAAAAAAAAAAIK1zgAAAAAA2tUWuhGZ2JceoId5GwYWU5GspY4%3DUq7gzFoCZs1QfwGoVdvSac3IniczZEYXIcDyumCauIXpcAPorE";
+                    } else if (!link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
+                        /* Link was added to host plugin directly -> Don't use crawler handling. */
+                        useCrawler = false;
                     } else {
-                        br.getPage(link.getPluginPatternMatcher());
-                        if (this.br.getHttpConnection().getResponseCode() == 403) {
-                            account_required = true;
-                            return AvailableStatus.TRUE;
-                        } else if (this.br.getHttpConnection().getResponseCode() == 404) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        final String jsURL = br.getRegex("<script src=\"(https?://[^\"]+/TwitterVideoPlayerIframe[^\"]+\\.js)\">").getMatch(0);
-                        if (jsURL == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        br.getPage(jsURL);
-                        authorization_token = br.getRegex("Authorization:\"Bearer ([^\"]+)\"").getMatch(0);
-                        if (authorization_token == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
+                        useCrawler = true;
                     }
-                    br.getHeaders().put("Authorization", "Bearer " + authorization_token);
-                    br.getHeaders().put("Accept", "*/*");
-                    br.getHeaders().put("Origin", "https://twitter.com");
-                    br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweetID);
-                    final Browser brc = br.cloneBrowser();
-                    brc.setAllowedResponseCodes(400);
-                    synchronized (LOCK) {
-                        jd.plugins.decrypter.TwitterCom.prepAPIHeaders(brc);
-                        /* Set guest_token header if needed. */
-                        if (account == null) {
-                            final String guest_token = jd.plugins.decrypter.TwitterCom.getAndSetGuestToken(this, brc);
-                            if (guest_token != null) {
-                                brc.getHeaders().put("x-guest-token", guest_token);
+                    if (useCrawler) {
+                        logger.info("Obtaining new directurl via crawler");
+                        final PluginForDecrypt decrypter = this.getNewPluginForDecryptInstance(this.getHost());
+                        final String tweetVideoURL = jd.plugins.decrypter.TwitterCom.createVideourl(tweetID);
+                        final CryptedLink param = new CryptedLink(tweetVideoURL, link);
+                        final ArrayList<DownloadLink> results = decrypter.decryptIt(param, null);
+                        if (results.isEmpty()) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
+                        }
+                        final DownloadLink result;
+                        if (results.size() == 1) {
+                            result = results.get(0);
+                        } else {
+                            /*
+                             * We expect exactly one element - for twitter posts containing videos, only one single video item is allowed
+                             * per twitter post BUT there are edge cases e.g. when the user has edited/replaced a video inside a post. In
+                             * this case the API may return 2 items whereas via browser you can only watch one video which is usually the
+                             * first item in the array returned by the API.
+                             */
+                            logger.info("Edge case: Video tweet contains multiple elements: " + results.size());
+                            result = results.get(link.getIntegerProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_MEDIA_INDEX, 0));
+                        }
+                        if (!result.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
+                            /*
+                             * This should never happen but it can if the user e.g. for some reason adds a non-video single tweet URL as URL
+                             * matching this video embed pattern.
+                             */
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Single tweet video item type mismatch");
+                        }
+                        this.dllink = getStoredVideoDirecturl(result);
+                        if (StringUtils.isEmpty(dllink)) {
+                            /* Video download failed and no alternatives are available? */
+                            if (this.looksLikeBrokenFile(link)) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
                             } else {
-                                logger.warning("Failed to get guesttoken");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                         }
-                        /*
-                         * Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests
-                         * --> {"errors":[{"message":"Rate limit exceeded","code":88}]}
-                         */
-                        brc.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweetID + ".json");
-                        if (brc.getHttpConnection().getResponseCode() == 400) {
-                            /* Invalid videoID format --> Offline */
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else if (brc.getHttpConnection().getResponseCode() == 404) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else if (brc.getHttpConnection().getResponseCode() == 403) {
-                            /* 403 is typically 'rights missing' but in this case it means that the content is offline. */
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else if (brc.getHttpConnection().getResponseCode() == 429) {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
-                        }
-                        /* Now we got some old errorhandling */
-                        final String errorcode = PluginJSonUtils.getJson(brc, "error");
-                        final String errormessage = PluginJSonUtils.getJson(brc, "message");
-                        if (!StringUtils.isEmpty(errorcode)) {
-                            logger.info("Failure, errorcode: " + errorcode);
-                            if (!StringUtils.isEmpty(errormessage)) {
-                                logger.info("Errormessage: " + errormessage);
-                            }
-                            if (errorcode.equals("239")) {
-                                /*
-                                 * 2019-08-20: {"errors":[{"code":239,"message":"Bad guest token."}]}
-                                 */
-                                logger.info("Possible token failure 239, retrying");
-                                jd.plugins.decrypter.TwitterCom.resetGuestToken();
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 3 * 60 * 1000l);
-                            } else if (errorcode.equals("353")) {
-                                logger.info("Possible token failure 353, retrying");
-                                jd.plugins.decrypter.TwitterCom.resetGuestToken();
-                                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 353", 2 * 60 * 1000l);
-                            } else {
-                                logger.warning("Unknown error");
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error " + errorcode);
-                            }
-                        }
-                    }
-                    Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
-                    Map<String, Object> track = (Map<String, Object>) root.get("track");
-                    if ((Boolean) track.get("isEventGeoblocked") == Boolean.TRUE) {
-                        possibly_geo_blocked = true;
-                    }
-                    dllink = (String) track.get("playbackUrl");
-                    if (StringUtils.isEmpty(dllink)) {
-                        vmap_url = (String) track.get("vmapUrl");
-                        if (StringUtils.isEmpty(vmap_url)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        br.getPage(vmap_url);
-                        this.dllink = regexVideoVmapHighestQualityURL(this.br);
-                    }
-                }
-                if (filename == null) {
-                    /* Fallback */
-                    if (!StringUtils.isEmpty(title)) {
-                        link.setFinalFileName(tweetID + "_" + title + ".mp4");
+                        link.setProperties(result.getProperties());
                     } else {
+                        /* 2018-11-13: Using static token */
+                        final boolean use_static_token = true;
+                        final String authorization_token;
+                        if (use_static_token) {
+                            authorization_token = "AAAAAAAAAAAAAAAAAAAAAIK1zgAAAAAA2tUWuhGZ2JceoId5GwYWU5GspY4%3DUq7gzFoCZs1QfwGoVdvSac3IniczZEYXIcDyumCauIXpcAPorE";
+                        } else {
+                            br.getPage(link.getPluginPatternMatcher());
+                            if (this.br.getHttpConnection().getResponseCode() == 403) {
+                                account_required = true;
+                                return AvailableStatus.TRUE;
+                            } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            final String jsURL = br.getRegex("<script src=\"(https?://[^\"]+/TwitterVideoPlayerIframe[^\"]+\\.js)\">").getMatch(0);
+                            if (jsURL == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            br.getPage(jsURL);
+                            authorization_token = br.getRegex("Authorization:\"Bearer ([^\"]+)\"").getMatch(0);
+                            if (authorization_token == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                        br.getHeaders().put("Authorization", "Bearer " + authorization_token);
+                        br.getHeaders().put("Accept", "*/*");
+                        br.getHeaders().put("Origin", "https://twitter.com");
+                        br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweetID);
+                        final Browser brc = br.cloneBrowser();
+                        brc.setAllowedResponseCodes(400);
+                        synchronized (LOCK) {
+                            jd.plugins.decrypter.TwitterCom.prepAPIHeaders(brc);
+                            /* Set guest_token header if needed. */
+                            if (account == null) {
+                                final String guest_token = jd.plugins.decrypter.TwitterCom.getAndSetGuestToken(this, brc);
+                                if (guest_token != null) {
+                                    brc.getHeaders().put("x-guest-token", guest_token);
+                                } else {
+                                    logger.warning("Failed to get guesttoken");
+                                }
+                            }
+                            /*
+                             * Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many
+                             * Requests --> {"errors":[{"message":"Rate limit exceeded","code":88}]}
+                             */
+                            brc.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweetID + ".json");
+                            if (brc.getHttpConnection().getResponseCode() == 400) {
+                                /* Invalid videoID format --> Offline */
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            } else if (brc.getHttpConnection().getResponseCode() == 404) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            } else if (brc.getHttpConnection().getResponseCode() == 403) {
+                                /* 403 is typically 'rights missing' but in this case it means that the content is offline. */
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            } else if (brc.getHttpConnection().getResponseCode() == 429) {
+                                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
+                            }
+                            /* Now we got some old errorhandling */
+                            final String errorcode = PluginJSonUtils.getJson(brc, "error");
+                            final String errormessage = PluginJSonUtils.getJson(brc, "message");
+                            if (!StringUtils.isEmpty(errorcode)) {
+                                logger.info("Failure, errorcode: " + errorcode);
+                                if (!StringUtils.isEmpty(errormessage)) {
+                                    logger.info("Errormessage: " + errormessage);
+                                }
+                                if (errorcode.equals("239")) {
+                                    /*
+                                     * 2019-08-20: {"errors":[{"code":239,"message":"Bad guest token."}]}
+                                     */
+                                    logger.info("Possible token failure 239, retrying");
+                                    jd.plugins.decrypter.TwitterCom.resetGuestToken();
+                                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 3 * 60 * 1000l);
+                                } else if (errorcode.equals("353")) {
+                                    logger.info("Possible token failure 353, retrying");
+                                    jd.plugins.decrypter.TwitterCom.resetGuestToken();
+                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 353", 2 * 60 * 1000l);
+                                } else {
+                                    logger.warning("Unknown error");
+                                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error " + errorcode);
+                                }
+                            }
+                        }
+                        Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                        Map<String, Object> track = (Map<String, Object>) root.get("track");
+                        if ((Boolean) track.get("isEventGeoblocked") == Boolean.TRUE) {
+                            possibly_geo_blocked = true;
+                        }
+                        dllink = (String) track.get("playbackUrl");
+                        if (StringUtils.isEmpty(dllink)) {
+                            vmap_url = (String) track.get("vmapUrl");
+                            if (StringUtils.isEmpty(vmap_url)) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            br.getPage(vmap_url);
+                            this.dllink = regexVideoVmapHighestQualityURL(this.br);
+                        }
+                    }
+                    if (filename == null) {
+                        /* Fallback */
                         link.setFinalFileName(tweetID + ".mp4");
                     }
                 }
-            }
-        } else { // TYPE_DIRECT - jpg/png/mp4
-            if (link.getDownloadURL().contains("jpg") || link.getDownloadURL().contains("png")) {
-                if (link.getDownloadURL().contains(":large")) {
-                    dllink = link.getDownloadURL().replace(":large", "") + ":orig";
-                } else if (link.getDownloadURL().matches("(?i).+\\.(jpg|jpeg|png)$")) {
-                    /* Append this to get the highest quality possible */
-                    dllink = link.getDownloadURL() + ":orig";
+            } else { // TYPE_DIRECT - jpg/png/mp4
+                if (link.getDownloadURL().contains("jpg") || link.getDownloadURL().contains("png")) {
+                    if (link.getDownloadURL().contains(":large")) {
+                        dllink = link.getDownloadURL().replace(":large", "") + ":orig";
+                    } else if (link.getDownloadURL().matches("(?i).+\\.(jpg|jpeg|png)$")) {
+                        /* Append this to get the highest quality possible */
+                        dllink = link.getDownloadURL() + ":orig";
+                    } else {
+                        dllink = link.getDownloadURL();
+                    }
                 } else {
                     dllink = link.getDownloadURL();
                 }
-            } else {
-                dllink = link.getDownloadURL();
             }
-        }
-        if (!StringUtils.isEmpty(dllink)) {
-            if (dllink.contains(".m3u8")) {
-                checkFFProbe(link, "Download a HLS Stream");
-                br.setAllowedResponseCodes(new int[] { 403 });
-                try {
-                    br.getPage(dllink);
-                } catch (final Exception e) {
-                    logger.info("Fatal failure");
-                }
-                if (this.br.getHttpConnection().getResponseCode() == 403) {
-                    /* 2017-06-01: Unsure because browser shows the thumbnail and video 'wants to play' but doesn't. */
-                    // throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
-                    if (possibly_geo_blocked) {
-                        /* We already had the info before that this content is probably GEO-blocked - now we know it for sure! */
-                        geo_blocked = true;
-                    } else {
-                        account_required = true;
+            if (!StringUtils.isEmpty(dllink)) {
+                if (dllink.contains(".m3u8")) {
+                    checkFFProbe(link, "Download a HLS Stream");
+                    br.setAllowedResponseCodes(new int[] { 403 });
+                    try {
+                        br.getPage(dllink);
+                    } catch (final Exception e) {
+                        logger.info("Fatal failure");
                     }
-                    return AvailableStatus.TRUE;
-                } else if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-                this.dllink = hlsBest.getDownloadurl();
-                final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
-                final StreamInfo streamInfo = downloader.getProbe();
-                if (streamInfo == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS failure");
-                }
-                final int hlsBandwidth = hlsBest.getBandwidth();
-                if (hlsBandwidth > 0) {
-                    for (M3U8Playlist playList : downloader.getPlayLists()) {
-                        playList.setAverageBandwidth(hlsBandwidth);
-                    }
-                }
-                final long estimatedSize = downloader.getEstimatedSize();
-                if (estimatedSize > 0) {
-                    link.setDownloadSize(estimatedSize);
-                }
-            } else if (!(Thread.currentThread() instanceof SingleDownloadController) || link.getFinalFileName() == null) {
-                URLConnectionAdapter con = null;
-                try {
-                    final Browser brc = br.cloneBrowser();
-                    con = brc.openHeadConnection(dllink);
-                    if (!this.looksLikeDownloadableContent(con)) {
-                        try {
-                            brc.followConnection(true);
-                        } catch (IOException e) {
-                            logger.log(e);
-                        }
-                        if (con.getResponseCode() == 404) {
-                            /* Definitely offline */
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else if (con.getResponseCode() == 503) {
-                            /* 2021-06-24: Possible rate-limit */
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+                    if (this.br.getHttpConnection().getResponseCode() == 403) {
+                        /* 2017-06-01: Unsure because browser shows the thumbnail and video 'wants to play' but doesn't. */
+                        // throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
+                        if (possibly_geo_blocked) {
+                            /* We already had the info before that this content is probably GEO-blocked - now we know it for sure! */
+                            geo_blocked = true;
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + con.getResponseCode(), 5 * 60 * 1000l);
+                            account_required = true;
+                        }
+                        return AvailableStatus.TRUE;
+                    } else if (br.getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                    this.dllink = hlsBest.getDownloadurl();
+                    final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
+                    final StreamInfo streamInfo = downloader.getProbe();
+                    if (streamInfo == null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS failure");
+                    }
+                    final int hlsBandwidth = hlsBest.getBandwidth();
+                    if (hlsBandwidth > 0) {
+                        for (M3U8Playlist playList : downloader.getPlayLists()) {
+                            playList.setAverageBandwidth(hlsBandwidth);
                         }
                     }
-                    if (con.getCompleteContentLength() <= 0) {
-                        /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
-                        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server sent empty file", 60 * 1000l);
-                        // 2017-07-20: Pass it to download core, it can handle this.
-                        logger.info("Downloading empty file ...");
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    final long estimatedSize = downloader.getEstimatedSize();
+                    if (estimatedSize > 0) {
+                        link.setDownloadSize(estimatedSize);
                     }
-                    if (!link.isNameSet()) {
-                        if (filename == null) {
-                            filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
-                        }
-                        if (filename != null) {
-                            if (tweetID != null && !filename.contains(tweetID)) {
-                                filename = tweetID + "_" + filename;
+                } else if (!(Thread.currentThread() instanceof SingleDownloadController) || link.getFinalFileName() == null) {
+                    URLConnectionAdapter con = null;
+                    try {
+                        final Browser brc = br.cloneBrowser();
+                        con = brc.openHeadConnection(dllink);
+                        if (!this.looksLikeDownloadableContent(con)) {
+                            try {
+                                brc.followConnection(true);
+                            } catch (IOException e) {
+                                logger.log(e);
                             }
-                            final String ext = getExtensionFromMimeType(con.getContentType());
-                            if (ext != null) {
-                                filename = applyFilenameExtension(filename, "." + ext);
+                            if (con.getResponseCode() == 404) {
+                                /* Definitely offline */
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            } else if (con.getResponseCode() == 503) {
+                                /* 2021-06-24: Possible rate-limit */
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + con.getResponseCode(), 5 * 60 * 1000l);
                             }
-                            link.setFinalFileName(filename);
                         }
-                    }
-                } finally {
-                    if (con != null) {
-                        con.disconnect();
+                        if (con.getCompleteContentLength() <= 0) {
+                            /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
+                            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server sent empty file", 60 * 1000l);
+                            // 2017-07-20: Pass it to download core, it can handle this.
+                            logger.info("Downloading empty file ...");
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                        if (!link.isNameSet()) {
+                            if (filename == null) {
+                                filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
+                            }
+                            if (filename != null) {
+                                if (tweetID != null && !filename.contains(tweetID)) {
+                                    filename = tweetID + "_" + filename;
+                                }
+                                final String ext = getExtensionFromMimeType(con.getContentType());
+                                if (ext != null) {
+                                    filename = applyFilenameExtension(filename, "." + ext);
+                                }
+                                link.setFinalFileName(filename);
+                            }
+                        }
+                    } finally {
+                        if (con != null) {
+                            con.disconnect();
+                        }
                     }
                 }
             }
@@ -441,6 +477,11 @@ public class TwitterCom extends PluginForHost {
     /** Returns true if last download attempt lead to empty file. */
     private boolean looksLikeBrokenFile(final DownloadLink link) {
         return link.getBooleanProperty(PROPERTY_BROKEN_FILE, false);
+    }
+
+    /** Returns text of this tweet. Can be null as not all tweets have a post-text! */
+    private String getTweetText(final DownloadLink link) {
+        return link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_TWEET_TEXT);
     }
 
     private static String regexVideoVmapHighestQualityURL(final Browser br) {
@@ -464,57 +505,68 @@ public class TwitterCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, null);
     }
 
-    private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, null, true);
-        if (geo_blocked) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
-        } else if (account_required) {
-            /*
-             * 2017-05-10: This can also happen when a user is logged in because there are e.g. timelines which only 'friends' can view
-             * which means having an account does not necessarily mean that a user has the rights to view all of the other users' content ;)
-             */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (this.dllink.contains(".m3u8")) {
-            dl = new HLSDownloader(link, br, this.dllink);
-            dl.startDownload();
+        if (link.getPluginPatternMatcher().matches(TYPE_TWEET_TEXT)) {
+            /* Write text to file */
+            final File dest = new File(link.getFileOutput());
+            IO.writeToFile(dest, getTweetText(link).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+            /* Set filesize so user can see it in UI. */
+            link.setVerifiedFileSize(dest.length());
+            /* Set progress to finished - the "download" is complete. */
+            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
         } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 429) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
-                }
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (dl.getConnection().getCompleteContentLength() == 0) {
+            if (geo_blocked) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+            } else if (account_required) {
                 /*
-                 * 2021-09-13: E.g. broken videos: HEAD request looks good but download-attepmpt will result in empty file --> Catch that
-                 * and use HLS download for next attempt
+                 * 2017-05-10: This can also happen when a user is logged in because there are e.g. timelines which only 'friends' can view
+                 * which means having an account does not necessarily mean that a user has the rights to view all of the other users'
+                 * content ;)
                  */
-                link.setProperty(PROPERTY_BROKEN_FILE, true);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Broken file?");
-            } else if (StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4") && dl.getConnection().getCompleteContentLength() == -1) {
-                link.setProperty(PROPERTY_BROKEN_FILE, true);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Broken video?");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } else if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
+            if (this.dllink.contains(".m3u8")) {
+                dl = new HLSDownloader(link, br, this.dllink);
+                dl.startDownload();
+            } else {
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), MAXCHUNKS);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 429) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
+                    }
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (dl.getConnection().getCompleteContentLength() == 0) {
+                    /*
+                     * 2021-09-13: E.g. broken videos: HEAD request looks good but download-attepmpt will result in empty file --> Catch
+                     * that and use HLS download for next attempt
+                     */
+                    link.setProperty(PROPERTY_BROKEN_FILE, true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Broken file?");
+                } else if (StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4") && dl.getConnection().getCompleteContentLength() == -1) {
+                    link.setProperty(PROPERTY_BROKEN_FILE, true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Broken video?");
+                }
+                dl.startDownload();
+            }
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return MAXDOWNLOADS;
     }
 
     public static void login(final Plugin plugin, final Browser br, final Account account, final boolean force) throws Exception {
@@ -631,7 +683,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(this, this.br, account, false);
-        handleDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        handleDownload(link, account);
     }
 
     @Override
@@ -651,7 +703,11 @@ public class TwitterCom extends PluginForHost {
                 return "Use original filename instead of format *date*_*username*_*postID*_*mediaindex*.*ext*?";
             }
 
-            public String getCrawlURLsInsidePostText_label() {
+            public String getAddTweetTextAsTextfile_label() {
+                return "Add tweet text as textfile?";
+            }
+
+            public String getCrawlURLsInsideTweetText_label() {
                 return "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
             }
         }
@@ -672,13 +728,21 @@ public class TwitterCom extends PluginForHost {
 
         void setUseOriginalFilenames(boolean b);
 
+        @DefaultBooleanValue(true)
+        @AboutConfig
+        @DescriptionForConfigEntry("Add tweet text as textfile?")
+        @Order(30)
+        boolean isAddTweetTextAsTextfile();
+
+        void setAddTweetTextAsTextfile(boolean b);
+
         @DefaultBooleanValue(false)
         @AboutConfig
         @DescriptionForConfigEntry("Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!")
-        @Order(30)
-        boolean isCrawlURLsInsidePostText();
+        @Order(40)
+        boolean isCrawlURLsInsideTweetText();
 
-        void setCrawlURLsInsidePostText(boolean b);
+        void setCrawlURLsInsideTweetText(boolean b);
     }
 
     @Override

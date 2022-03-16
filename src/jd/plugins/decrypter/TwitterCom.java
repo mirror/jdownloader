@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -63,6 +64,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.TwitterCom.TwitterConfigInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterCom extends PornEmbedParser {
@@ -81,7 +83,7 @@ public class TwitterCom extends PornEmbedParser {
     public static final String             PROPERTY_MEDIA_INDEX                                             = "mediaindex";
     public static final String             PROPERTY_MEDIA_ID                                                = "mediaid";
     public static final String             PROPERTY_BITRATE                                                 = "bitrate";
-    public static final String             PROPERTY_POST_TEXT                                               = "post_text";
+    public static final String             PROPERTY_TWEET_TEXT                                              = "tweet_text";
     public static final String             PROPERTY_FILENAME_FROM_CRAWLER                                   = "crawlerfilename";
     public static final String             PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY = "video_direct_urls_are_available_via_api_extended_entity";
 
@@ -320,16 +322,15 @@ public class TwitterCom extends PornEmbedParser {
         final String tweetID = entries.get("id_str").toString();
         final String username = (String) user.get("screen_name");
         final String formattedDate = formatTwitterDate((String) entries.get("created_at"));
-        final String postText = (String) entries.get("full_text");
-        String[] urlsInPostText = new String[0];
+        final String tweetText = (String) entries.get("full_text");
         final FilePackage fp = FilePackage.getInstance();
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
         if (entries.containsKey("user")) {
             /* We're crawling a single tweet -> Set date + username as packagename. */
             fp.setName(formattedDate + "_" + username);
-            if (!StringUtils.isEmpty(postText)) {
-                fp.setComment(postText);
+            if (!StringUtils.isEmpty(tweetText)) {
+                fp.setComment(tweetText);
             }
         } else {
             /* We're crawling a tweet as part of the complete timeline -> Set username as packagename. */
@@ -339,10 +340,7 @@ public class TwitterCom extends PornEmbedParser {
                 fp.setComment(userDescription);
             }
         }
-        if (!StringUtils.isEmpty(postText)) {
-            urlsInPostText = HTMLParser.getHttpLinks(postText, br.getURL());
-        }
-        final boolean useOriginalFilenames = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isUseOriginalFilenames();
+        TwitterConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class);
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "extended_entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(entries, "card/binding_values/amplify_url_vmap/string_value");
         if (medias != null && !medias.isEmpty()) {
@@ -377,7 +375,7 @@ public class TwitterCom extends PornEmbedParser {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         dl = this.createDownloadlink(createVideourl(tweetID));
-                        if (useOriginalFilenames) {
+                        if (cfg.isUseOriginalFilenames()) {
                             filename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL));
                         } else if (medias.size() > 1) {
                             filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4";
@@ -396,7 +394,7 @@ public class TwitterCom extends PornEmbedParser {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         dl = this.createDownloadlink(url);
-                        if (useOriginalFilenames) {
+                        if (cfg.isUseOriginalFilenames()) {
                             filename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(url));
                         } else if (medias.size() > 1) {
                             filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url);
@@ -416,8 +414,8 @@ public class TwitterCom extends PornEmbedParser {
                     dl.setProperty(PROPERTY_DATE, formattedDate);
                     dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
                     dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str").toString());
-                    if (!StringUtils.isEmpty(postText)) {
-                        dl.setProperty(PROPERTY_POST_TEXT, postText);
+                    if (!StringUtils.isEmpty(tweetText)) {
+                        dl.setProperty(PROPERTY_TWEET_TEXT, tweetText);
                     }
                     if (dl.getFinalFileName() != null) {
                         dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, dl.getFinalFileName());
@@ -443,8 +441,8 @@ public class TwitterCom extends PornEmbedParser {
             singleVideo.setProperty(PROPERTY_USERNAME, username);
             singleVideo.setProperty(PROPERTY_DATE, formattedDate);
             singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
-            if (!StringUtils.isEmpty(postText)) {
-                singleVideo.setProperty(PROPERTY_POST_TEXT, postText);
+            if (!StringUtils.isEmpty(tweetText)) {
+                singleVideo.setProperty(PROPERTY_TWEET_TEXT, tweetText);
             }
             singleVideo.setAvailable(true);
             if (fp != null) {
@@ -453,21 +451,51 @@ public class TwitterCom extends PornEmbedParser {
             decryptedLinks.add(singleVideo);
             distribute(singleVideo);
         }
-        if (PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isCrawlURLsInsidePostText() && urlsInPostText.length > 0) {
-            for (final String url : urlsInPostText) {
-                final DownloadLink dl = this.createDownloadlink(url);
-                if (fp != null) {
-                    dl._setFilePackage(fp);
+        int itemsSkippedDueToPluginSettings = 0;
+        if (!StringUtils.isEmpty(tweetText)) {
+            final String[] urlsInPostText = HTMLParser.getHttpLinks(tweetText, br.getURL());
+            if (cfg.isCrawlURLsInsideTweetText() && urlsInPostText.length > 0) {
+                for (final String url : urlsInPostText) {
+                    final DownloadLink dl = this.createDownloadlink(url);
+                    if (fp != null) {
+                        dl._setFilePackage(fp);
+                    }
+                    decryptedLinks.add(dl);
+                    distribute(dl);
                 }
-                decryptedLinks.add(dl);
-                distribute(dl);
+            } else if (urlsInPostText != null) {
+                itemsSkippedDueToPluginSettings += urlsInPostText.length;
+            }
+            if (cfg.isAddTweetTextAsTextfile()) {
+                final DownloadLink text = this.createDownloadlink(createTwitterPostURL(username, tweetID));
+                final String finalFilename = formattedDate + "_" + username + "_" + tweetID + ".txt";
+                text.setFinalFileName(finalFilename);
+                try {
+                    text.setDownloadSize(tweetText.getBytes("UTF-8").length);
+                } catch (final UnsupportedEncodingException ignore) {
+                    ignore.printStackTrace();
+                }
+                text.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, finalFilename);
+                text.setProperty(PROPERTY_USERNAME, username);
+                text.setProperty(PROPERTY_DATE, formattedDate);
+                text.setProperty(PROPERTY_MEDIA_INDEX, 0);
+                text.setProperty(PROPERTY_TWEET_TEXT, tweetText);
+                text.setAvailable(true);
+                if (fp != null) {
+                    text._setFilePackage(fp);
+                }
+                decryptedLinks.add(text);
+                distribute(text);
+            } else {
+                itemsSkippedDueToPluginSettings++;
             }
         }
+        /* Logger just in case nothing was added. */
         if (decryptedLinks.isEmpty()) {
-            if (urlsInPostText.length == 0) {
-                logger.info("Failed to find any crawlable content in tweetID: " + tweetID);
+            if (itemsSkippedDueToPluginSettings == 0) {
+                logger.info("Failed to find any crawlable content in tweet: " + tweetID);
             } else {
-                logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped http URLs inside post " + tweetID + ": " + urlsInPostText.length);
+                logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped " + itemsSkippedDueToPluginSettings + " items due to users' plugin settings.");
             }
         }
         return decryptedLinks;
