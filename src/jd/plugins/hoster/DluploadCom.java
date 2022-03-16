@@ -115,6 +115,8 @@ public class DluploadCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Sorry, there's nothing at this address")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>\\s*DLUpload -(.*?)</title>").getMatch(0);
         String filesize = br.getRegex(">File Size\\s*</td>\\s*<td[^>]*>([^<>\"]+)</td>").getMatch(0);
@@ -137,12 +139,12 @@ public class DluploadCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
+            requestFileInformation(link);
             /* 2021-05-12: Skip this */
             // final Browser brc = br.cloneBrowser();
             // brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");

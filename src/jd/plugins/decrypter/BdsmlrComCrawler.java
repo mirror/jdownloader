@@ -129,10 +129,6 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             logger.warning("Pagination failed");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            logger.info("Stopping because: Pagination hasn't been implemented yet");
-            return decryptedLinks;
-        }
         final String infinitescrollDate = br.getRegex("class=\"infinitescroll\" data-time=\"(\\d{4}[^\"]+)\"").getMatch(0);
         if (infinitescrollDate == null) {
             logger.info("Stopping because: Pagination not available");
@@ -152,35 +148,58 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         final int maxItemsPerPage = 20;
         int index = 0;
         int page = 1;
-        String lastPostID = decryptedLinks.get(decryptedLinks.size() - 1).getStringProperty(PROPERTY_POST_ID);
+        String nextLastPostID = decryptedLinks.get(decryptedLinks.size() - 1).getStringProperty(PROPERTY_POST_ID);
         profileLoop: do {
             final UrlQuery query = new UrlQuery();
             query.add("scroll", Integer.toString(index));
             query.add("timenow", Encoding.urlEncode(infinitescrollDate));
-            query.add("last", lastPostID);
+            query.add("last", nextLastPostID);
             br.postPage("/infinitepb2/" + username, query);
             final ArrayList<DownloadLink> results = crawlPosts(br, fp);
+            String lastPostIDOfActivePost = null;
+            int numberofNewItems = 0;
             if (results.isEmpty()) {
-                logger.info("Stopping because: Failed to find any results on current page: " + page);
-                break;
-            }
-            for (final DownloadLink result : results) {
-                final String postID = result.getStringProperty(PROPERTY_POST_ID);
-                if (!dupes.add(postID)) {
-                    logger.info("Stopping because: Found dupe: " + postID);
-                    break profileLoop;
+                logger.info("Failed to find any results on current page -> Probably it only contains offline items");
+            } else {
+                for (final DownloadLink result : results) {
+                    final String postID = result.getStringProperty(PROPERTY_POST_ID);
+                    if (!dupes.add(postID)) {
+                        /* Fail-safe! This should never happen! */
+                        logger.info("Stopping because: Found dupe: " + postID);
+                        break profileLoop;
+                    }
+                    lastPostIDOfActivePost = postID;
+                    decryptedLinks.add(result);
+                    numberofNewItems++;
                 }
-                lastPostID = postID;
-                decryptedLinks.add(result);
             }
-            logger.info("Crawled page " + page + " | Found items so far: " + decryptedLinks.size() + " | lastPostID: " + lastPostID);
+            logger.info("Crawled page " + page + " | Index: " + index + " | New crawled items on this page: " + numberofNewItems + " | Found items total: " + decryptedLinks.size() + " | nextLastPostID: " + nextLastPostID);
             if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
                 break;
             }
-            // if (results.size() < maxItemsPerPage) {
-            // logger.info("Stopping because: Current page contains only " + results.size() + " of max. " + maxItemsPerPage + " items");
-            // break;
-            // }
+            nextLastPostID = null;
+            /*
+             * Important: We only crawl media items but deleted items can also be in the timeline in between so sometimes there may be a
+             * block which contains only deleted posts -> Continue pagination until we don't find new postIDs!
+             */
+            final String[] postIDs = br.getRegex("data-id=\"(\\d+)\"[^>]*>").getColumn(0);
+            if (postIDs.length == 0) {
+                logger.info("Stopping because: Failed to find any postIDs on current page");
+                break;
+            }
+            String lastPostIDGeneral = null;
+            for (final String postID : postIDs) {
+                /* Be sure to add those IDs to our list of dupes! */
+                dupes.add(postID);
+                lastPostIDGeneral = postID;
+            }
+            if (numberofNewItems == 0) {
+                logger.info("Current page contained ONLY deleted posts which have been skipped: " + postIDs.length);
+            } else if (!lastPostIDGeneral.equals(lastPostIDOfActivePost)) {
+                logger.info("Current page contained deleted posts which have been skipped");
+            }
+            nextLastPostID = lastPostIDGeneral;
             index += maxItemsPerPage;
             page++;
         } while (true);
@@ -189,7 +208,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlPosts(final Browser br, final FilePackage fp) throws PluginException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage)\\s*\">.*data-orgpost=)").getColumn(0);
+        final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage)\\s*\">.*?class=\"countinf\")").getColumn(0);
         for (final String post : posts) {
             final Regex postInfo = new Regex(post, "(https?://(\\w+)\\.[^/]+/post/(\\d+))");
             final String postURL = postInfo.getMatch(0);
