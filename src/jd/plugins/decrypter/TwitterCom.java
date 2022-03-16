@@ -329,27 +329,26 @@ public class TwitterCom extends PornEmbedParser {
             /* Prefer this as our user object. Usually it's only included when adding single tweets. */
             user = (Map<String, Object>) userInContextOfTweet;
         }
-        String username = (String) user.get("screen_name");
+        final String username = (String) user.get("screen_name");
         final String formattedDate = formatTwitterDate((String) tweet.get("created_at"));
         final String tweetText = (String) tweet.get("full_text");
-        if (fp == null) {
-            /* Assume that we're crawling a single tweet -> Set date + username as packagename. */
-            username = (String) user.get("screen_name");
-            fp = FilePackage.getInstance();
-            fp.setName(formattedDate + "_" + username);
-            if (!StringUtils.isEmpty(tweetText)) {
-                fp.setComment(tweetText);
-            }
-        } else {
+        if (fp != null) {
             /* Assume that we're crawling a complete profile. */
             final String profileDescription = (String) user.get("description");
             if (StringUtils.isEmpty(fp.getComment()) && !StringUtils.isEmpty(profileDescription)) {
                 fp.setComment(profileDescription);
             }
+        } else {
+            /* Assume that we're crawling a single tweet -> Set date + username as packagename. */
+            fp = FilePackage.getInstance();
+            fp.setName(formattedDate + "_" + username);
+            if (!StringUtils.isEmpty(tweetText)) {
+                fp.setComment(tweetText);
+            }
         }
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-        TwitterConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class);
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class);
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
         if (medias != null && !medias.isEmpty()) {
@@ -623,14 +622,9 @@ public class TwitterCom extends PornEmbedParser {
         }
         final String userID = user.get("id_str").toString();
         /* = number of tweets */
-        final int statuses_count = ((Number) user.get("statuses_count")).intValue();
-        /* = number of tweets containing media (can be lower than "statuses_count") */
+        final int tweet_count = ((Number) user.get("statuses_count")).intValue();
+        /* = number of tweets containing media (can be lower [ar also higher?] than "statuses_count") */
         final int media_count = ((Number) user.get("media_count")).intValue();
-        if (statuses_count == 0) {
-            /* Profile contains zero tweets! */
-            decryptedLinks.add(getDummyErrorProfileContainsNoTweets(username));
-            return decryptedLinks;
-        }
         final boolean setting_force_grab_media = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isForceGrabMediaOnlyEnabled();
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
         final String content_type;
@@ -682,15 +676,21 @@ public class TwitterCom extends PornEmbedParser {
         } else if (param.getCryptedUrl().endsWith("/media") || setting_force_grab_media) {
             logger.info("Crawling self posted media only from user: " + username);
             if (media_count == 0) {
-                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "PROFILE_CONTAINS_NO_MEDIA_POSTS_" + username, "Profile " + username + " contains no media-posts but user wants to crawl media posts only.");
+                decryptedLinks.add(getDummyErrorProfileContainsNoMediaItems(username));
+                return decryptedLinks;
             }
             content_type = "media";
             maxCount = media_count;
             fp.setName(username + " - media");
         } else {
             logger.info("Crawling ALL media of a user e.g. also retweets | user: " + username);
+            if (tweet_count == 0) {
+                /* Profile contains zero tweets! */
+                decryptedLinks.add(getDummyErrorProfileContainsNoTweets(username));
+                return decryptedLinks;
+            }
             content_type = "profile";
-            maxCount = statuses_count;
+            maxCount = tweet_count;
             query.add("include_tweet_replies", "false");
             fp.setName(username);
         }
@@ -789,7 +789,7 @@ public class TwitterCom extends PornEmbedParser {
         } while (!this.isAbort());
         logger.info("Done after " + page + " pages");
         if (decryptedLinks.isEmpty()) {
-            logger.info("Found nothing --> Either user has posts containing media or those can only be viewed by certain users or only when logged in (explicit content)");
+            logger.info("Found nothing --> Either user has no posts containing media or those can only be viewed by certain users or only when logged in (explicit content)");
             if (account == null) {
                 throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "PROFILE_CONTAINS_ONLY_EXPLICIT_CONTENT_ACCOUNT_REQUIRED_" + username, "Profile " + username + " contains only explicit content which can only be viewed when logged in --> Add a twitter account to JDownloader and try again!");
             } else {
@@ -800,17 +800,22 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     private DownloadLink getDummyErrorProfileContainsNoLikedItems(final String username) {
-        final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_CONTAINS_NO_LIKES_" + username, "The profile " + username + " does not contain any liked items.");
+        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURLLikes(username), "PROFILE_CONTAINS_NO_LIKES_" + username, "The profile " + username + " does not contain any liked items.");
         return dummy;
     }
 
     private DownloadLink getDummyErrorProfileContainsNoTweets(final String username) {
-        final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_CONTAINS_NO_TWEETS_" + username, "The profile " + username + " does not contain any tweets.");
+        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURL(username), "PROFILE_CONTAINS_NO_TWEETS_" + username, "The profile " + username + " does not contain any tweets.");
+        return dummy;
+    }
+
+    private DownloadLink getDummyErrorProfileContainsNoMediaItems(final String username) {
+        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURL(username), "PROFILE_CONTAINS_NO_MEDIA_ITEMS_" + username, "The profile " + username + " does not contain any tweets containing media items.");
         return dummy;
     }
 
     private DownloadLink getDummyErrorProfileContainsNoDownloadableContent(final String username) {
-        final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_CONTAINS_NO_DOWNLOADABLE_CONTENT_" + username, "The profile " + username + " does not contain any downloadable content. Check your twitter plugin settings maybe you've turned off some of the crawlable content.");
+        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURL(username), "PROFILE_CONTAINS_NO_DOWNLOADABLE_CONTENT_" + username, "The profile " + username + " does not contain any downloadable content. Check your twitter plugin settings maybe you've turned off some of the crawlable content.");
         return dummy;
     }
 
@@ -914,6 +919,18 @@ public class TwitterCom extends PornEmbedParser {
 
     protected void getPage(final String url) throws Exception {
         getPage(br, url);
+    }
+
+    public static String createTwitterProfileURL(final String user) {
+        return "https://twitter.com/" + user;
+    }
+
+    public static String createTwitterProfileURLLikes(final String user) {
+        return "https://twitter.com/" + user + "/likes";
+    }
+
+    public static String createTwitterProfileURLMedia(final String user) {
+        return "https://twitter.com/" + user + "/media";
     }
 
     public static String createVideourl(final String tweetID) {
