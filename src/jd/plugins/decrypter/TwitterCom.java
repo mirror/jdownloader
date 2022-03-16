@@ -202,8 +202,13 @@ public class TwitterCom extends PornEmbedParser {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal("twimg.com", true, 500);
-        Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, 500);
+        setRequestIntervallLimits();
+    }
+
+    public static void setRequestIntervallLimits() {
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
+        Browser.setRequestIntervalLimitGlobal("twimg.com", true, cfg.getGlobalRequestIntervalLimitTwimgComMilliseconds());
+        Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, cfg.getGlobalRequestIntervalLimitApiTwitterComMilliseconds());
     }
 
     @Deprecated
@@ -503,7 +508,7 @@ public class TwitterCom extends PornEmbedParser {
             if (itemsSkippedDueToPluginSettings == 0) {
                 logger.info("Failed to find any crawlable content in tweet: " + tweetID);
             } else {
-                logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped " + itemsSkippedDueToPluginSettings + " items due to users' plugin settings.");
+                logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped " + itemsSkippedDueToPluginSettings + " item(s) due to users' plugin settings.");
             }
         }
         return decryptedLinks;
@@ -847,6 +852,13 @@ public class TwitterCom extends PornEmbedParser {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 63:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                case 88:
+                    /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
+                    // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
+                    // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
+                    // logger.info("Rate-limit reached | Resets in: " +
+                    // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
+                    // }
                 case 109:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 144:

@@ -23,7 +23,9 @@ import java.util.Map;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -135,8 +137,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal("twimg.com", true, 500);
-        Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, 500);
+        jd.plugins.decrypter.TwitterCom.setRequestIntervallLimits();
     }
 
     private static Object LOCK = new Object();
@@ -716,6 +717,14 @@ public class TwitterCom extends PluginForHost {
             public String getPreferHLSVideoDownload_label() {
                 return "Videos: Prefer HLS over http download?";
             }
+
+            public String getGlobalRequestIntervalLimitApiTwitterComMilliseconds_label() {
+                return "Define global request limit for api.twitter.com in milliseconds (0 = no limit)";
+            }
+
+            public String getGlobalRequestIntervalLimitTwimgComMilliseconds_label() {
+                return "Define global request limit for twimg.com in milliseconds (0 = no limit)";
+            }
         }
 
         @DefaultBooleanValue(true)
@@ -757,6 +766,24 @@ public class TwitterCom extends PluginForHost {
         boolean isPreferHLSVideoDownload();
 
         void setPreferHLSVideoDownload(boolean b);
+
+        @AboutConfig
+        @SpinnerValidator(min = 0, max = 60000, step = 100)
+        @DefaultIntValue(500)
+        @DescriptionForConfigEntry("Define global request limit for api.twitter.com in milliseconds (0 = no limit)")
+        @Order(60)
+        int getGlobalRequestIntervalLimitApiTwitterComMilliseconds();
+
+        void setGlobalRequestIntervalLimitApiTwitterComMilliseconds(int milliseconds);
+
+        @AboutConfig
+        @SpinnerValidator(min = 0, max = 60000, step = 100)
+        @DefaultIntValue(400)
+        @DescriptionForConfigEntry("Define global request limit for twimg.com in milliseconds (0 = no limit)")
+        @Order(70)
+        int getGlobalRequestIntervalLimitTwimgComMilliseconds();
+
+        void setGlobalRequestIntervalLimitTwimgComMilliseconds(int milliseconds);
     }
 
     @Override
