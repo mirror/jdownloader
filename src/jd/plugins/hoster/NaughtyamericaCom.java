@@ -171,6 +171,9 @@ public class NaughtyamericaCom extends PluginForHost {
                     break;
                 }
             }
+            if (!StringUtils.startsWithCaseInsensitive(directURL, "http")) {
+                logger.info("refreshDirecturl(image) failed:" + number_formatted);
+            }
         } else {
             final String quality_stored = link.getStringProperty("quality", null);
             final String type_stored = link.getStringProperty("type", null);
@@ -200,6 +203,9 @@ public class NaughtyamericaCom extends PluginForHost {
                 }
                 directURL = directlink;
                 break;
+            }
+            if (!StringUtils.startsWithCaseInsensitive(directURL, "http")) {
+                logger.info("refreshDirecturl failed:" + quality_stored + "|" + type_stored + "|" + type_target);
             }
         }
         if (!StringUtils.startsWithCaseInsensitive(directURL, "http")) {
