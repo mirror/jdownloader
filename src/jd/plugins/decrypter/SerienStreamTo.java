@@ -23,6 +23,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.SerienStreamToConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -37,12 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.SerienStreamToConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SerienStreamTo extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
@@ -53,7 +53,7 @@ public class SerienStreamTo extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "s.to", "serienstream.sx", "serienstream.to", "serien.sx", "190.115.18.20" });
+        ret.add(new String[] { "s.to", "serienstream.sx", "serienstream.to", "serien.sx", "serien.domains", "serien.cam", "190.115.18.20" });
         return ret;
     }
 
@@ -78,16 +78,16 @@ public class SerienStreamTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* 2021-11-08: Do NOT enforce HTTPS! */
-        final String parameter = param.toString().replaceAll("[/]+$", "");
+        param.setCryptedUrl(param.getCryptedUrl().replaceAll("[/]+$", ""));
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String title = br.getRegex("<meta property=\"og:title\" content=\"(?:Episode \\d+\\s|Staffel \\d+\\s|von+\\s)+([^\"]+)\"/>").getMatch(0);
-        final String itemTitle = new Regex(parameter, Regex.escape(br.getHost()) + "/[^/]+/[^/]+/(.*)").getMatch(0);
+        final String itemSlug = new Regex(br.getURL(), "https?://[^/]+/[^/]+/[^/]+/(.*)").getMatch(0);
         // If we're on a show site, add the seasons, if we're on a season page, add the episodes and so on ...
-        String[][] itemLinks = br.getRegex("href=\"([^\"]+" + Regex.escape(itemTitle) + "/[^\"]+)\"").getMatches();
+        String[][] itemLinks = br.getRegex("href=\"([^\"]+" + Regex.escape(itemSlug) + "/[^\"]+)\"").getMatches();
         for (String[] itemLink : itemLinks) {
             decryptedLinks.add(createDownloadlink(br.getURL(Encoding.htmlDecode(itemLink[0])).toString()));
         }
@@ -231,7 +231,7 @@ public class SerienStreamTo extends PluginForDecrypt {
             final FilePackage filePackage;
             if (title != null) {
                 filePackage = FilePackage.getInstance();
-                filePackage.setName(title);
+                filePackage.setName(Encoding.htmlDecode(title).trim());
                 filePackage.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
             } else {
                 filePackage = null;
