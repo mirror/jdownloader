@@ -22,11 +22,15 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DepicMe extends XFileSharingProBasic {
@@ -133,5 +137,36 @@ public class DepicMe extends XFileSharingProBasic {
             dllink = new Regex(src, "src=\"(https?://[^\"]+)\"[^>]*class=\"pic\"").getMatch(0);
         }
         return dllink;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        super.requestFileInformationWebsite(link, account, isDownload);
+        String dllink = getDllink(link, account, br, getCorrectBR(br));
+        if (!StringUtils.isEmpty(dllink)) {
+            /*
+             * 2022-03-16: Special: Detection for offline content based on exact content-length static image containing text
+             * "File not found" e.g.: http://depic.me/ngghhomm3brn
+             */
+            URLConnectionAdapter con = null;
+            try {
+                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
+                }
+                if (con.getCompleteContentLength() == 117707) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return AvailableStatus.TRUE;
     }
 }

@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,9 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
 public class NaughtyamericaCom extends PluginForHost {
@@ -87,7 +87,7 @@ public class NaughtyamericaCom extends PluginForHost {
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            login(br, aa, false);
+            login(aa, false);
             dllink = link.getPluginPatternMatcher();
         } else {
             logger.info("No account available, checking trailer download");
@@ -212,7 +212,7 @@ public class NaughtyamericaCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -227,7 +227,7 @@ public class NaughtyamericaCom extends PluginForHost {
                      */
                     br.setCookies(cookies);
                     br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
-                    if (isLoggedIN()) {
+                    if (isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
@@ -239,7 +239,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 } else if (userCookies != null) {
                     br.setCookies(userCookies);
                     br.getPage("https://" + jd.plugins.decrypter.NaughtyamericaCom.DOMAIN_PREFIX_PREMIUM + account.getHoster());
-                    if (isLoggedIN()) {
+                    if (isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
@@ -325,14 +325,18 @@ public class NaughtyamericaCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN() {
-        return br.containsHTML("/logout\"");
+    private boolean isLoggedIN(final Browser br) {
+        if (br.containsHTML("/logout\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(br, account, true);
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);

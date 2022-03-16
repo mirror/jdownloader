@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "t.co" }, urls = { "https?://(?:www\\.)t\\.co/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "t.co" }, urls = { "https?://(?:www\\.)?t\\.co/[a-zA-Z0-9]+" })
 public class TwitterComShorturls extends PluginForDecrypt {
     public TwitterComShorturls(PluginWrapper wrapper) {
         super(wrapper);
