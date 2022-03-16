@@ -37,10 +37,10 @@ import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -125,7 +125,7 @@ public class TwitterCom extends PluginForHost {
     public static final String  COOKIE_KEY_LOGINED_CSRFTOKEN  = "ct0";
     public static final String  PROPERTY_DIRECTURL            = "directlink";
     public static final String  PROPERTY_DIRECTURL_hls_master = "directlink_hls_master";
-    private static final String PROPERTY_BROKEN_FILE          = "broken_file";
+    private static final String PROPERTY_BROKEN_VIDEO_STREAM  = "broken_video_stream";
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 429 });
@@ -249,7 +249,7 @@ public class TwitterCom extends PluginForHost {
                         this.dllink = getStoredVideoDirecturl(result);
                         if (StringUtils.isEmpty(dllink)) {
                             /* Video download failed and no alternatives are available? */
-                            if (this.looksLikeBrokenFile(link)) {
+                            if (this.looksLikeBrokenVideoStream(link)) {
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
                             } else {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -411,7 +411,7 @@ public class TwitterCom extends PluginForHost {
                     if (estimatedSize > 0) {
                         link.setDownloadSize(estimatedSize);
                     }
-                } else if (!(Thread.currentThread() instanceof SingleDownloadController) || link.getFinalFileName() == null) {
+                } else if (!isDownload || link.getFinalFileName() == null) {
                     URLConnectionAdapter con = null;
                     try {
                         final Browser brc = br.cloneBrowser();
@@ -467,7 +467,9 @@ public class TwitterCom extends PluginForHost {
     }
 
     private String getStoredVideoDirecturl(final DownloadLink link) {
-        if (looksLikeBrokenFile(link)) {
+        if (looksLikeBrokenVideoStream(link)) {
+            return link.getStringProperty(PROPERTY_DIRECTURL_hls_master);
+        } else if (PluginJsonConfig.get(TwitterConfigInterface.class).isPreferHLSVideoDownload()) {
             return link.getStringProperty(PROPERTY_DIRECTURL_hls_master);
         } else {
             return link.getStringProperty(PROPERTY_DIRECTURL);
@@ -475,8 +477,8 @@ public class TwitterCom extends PluginForHost {
     }
 
     /** Returns true if last download attempt lead to empty file. */
-    private boolean looksLikeBrokenFile(final DownloadLink link) {
-        return link.getBooleanProperty(PROPERTY_BROKEN_FILE, false);
+    private boolean looksLikeBrokenVideoStream(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_BROKEN_VIDEO_STREAM, false);
     }
 
     /** Returns text of this tweet. Can be null as not all tweets have a post-text! */
@@ -553,10 +555,10 @@ public class TwitterCom extends PluginForHost {
                      * 2021-09-13: E.g. broken videos: HEAD request looks good but download-attepmpt will result in empty file --> Catch
                      * that and use HLS download for next attempt
                      */
-                    link.setProperty(PROPERTY_BROKEN_FILE, true);
+                    link.setProperty(PROPERTY_BROKEN_VIDEO_STREAM, true);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Broken file?");
                 } else if (StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4") && dl.getConnection().getCompleteContentLength() == -1) {
-                    link.setProperty(PROPERTY_BROKEN_FILE, true);
+                    link.setProperty(PROPERTY_BROKEN_VIDEO_STREAM, true);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Broken video?");
                 }
                 dl.startDownload();
@@ -710,6 +712,10 @@ public class TwitterCom extends PluginForHost {
             public String getCrawlURLsInsideTweetText_label() {
                 return "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
             }
+
+            public String getPreferHLSVideoDownload_label() {
+                return "Videos: Prefer HLS over http download?";
+            }
         }
 
         @DefaultBooleanValue(true)
@@ -743,6 +749,14 @@ public class TwitterCom extends PluginForHost {
         boolean isCrawlURLsInsideTweetText();
 
         void setCrawlURLsInsideTweetText(boolean b);
+
+        @DefaultBooleanValue(false)
+        @AboutConfig
+        @DescriptionForConfigEntry("Videos: Prefer HLS over http download?")
+        @Order(50)
+        boolean isPreferHLSVideoDownload();
+
+        void setPreferHLSVideoDownload(boolean b);
     }
 
     @Override
@@ -750,7 +764,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
-        link.removeProperty(PROPERTY_DIRECTURL);
+    public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(PROPERTY_BROKEN_VIDEO_STREAM);
     }
 }

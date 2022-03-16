@@ -115,7 +115,7 @@ public class TwitterCom extends PornEmbedParser {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains);
+            String regex = "https?://(?:(?:www|mobile)\\.)?" + buildHostsPatternPart(domains);
             regex += "/(?:";
             regex += "[A-Za-z0-9_\\-]+/status/\\d+";
             regex += "|i/videos/tweet/\\d+";
