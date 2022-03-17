@@ -131,11 +131,10 @@ public class TwitterCom extends PornEmbedParser {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setAllowedResponseCodes(new int[] { 429 });
         final String newURL = param.getCryptedUrl().replaceFirst("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
         if (!newURL.equals(param.getCryptedUrl())) {
-            logger.info("Currected URL: " + newURL);
+            logger.info("Currected URL: Old: " + param.getCryptedUrl() + " | New: " + newURL);
             param.setCryptedUrl(newURL);
         }
         br.setFollowRedirects(true);
@@ -147,59 +146,14 @@ public class TwitterCom extends PornEmbedParser {
             logger.info("No account available or login failed");
         }
         if (param.getCryptedUrl().matches(TYPE_CARD)) {
-            getPage(param.getCryptedUrl());
-            if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String tweetID = new Regex(param.getCryptedUrl(), TYPE_CARD).getMatch(0);
-            /* First check for external urls */
-            decryptedLinks.addAll(this.findEmbedUrls(null));
-            String externID = br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
-            if (externID == null) {
-                externID = br.getRegex("\"card_ur(?:i|l)\"\\s*:\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
-            }
-            if (externID != null) {
-                decryptedLinks.add(this.createDownloadlink(externID));
-                return decryptedLinks;
-            }
-            if (decryptedLinks.isEmpty()) {
-                String dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.(?:webm|mp4))").getMatch(0);
-                if (dllink == null) {
-                    logger.info("dllink == null, abend ");
-                    return null;
-                }
-                dllink = dllink.replace("\\", "");
-                final String filename = tweetID + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
-                final DownloadLink dl = this.createDownloadlink(dllink, tweetID);
-                dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, filename);
-                dl.setName(filename);
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
-            }
+            return this.crawlCard(param, account);
         } else if (param.getCryptedUrl().matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
-            return crawlAPISingleTweet(param, new Regex(param.getCryptedUrl(), jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED).getMatch(0), account);
+            return this.crawlAPISingleTweet(param, new Regex(param.getCryptedUrl(), jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED).getMatch(0), account);
         } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {
-            final boolean prefer_mobile_website = false;
-            if (prefer_mobile_website) {
-                /* Single Tweet */
-                if (switchtoMobile()) {
-                    crawlTweetViaMobileWebsite(decryptedLinks, param.getCryptedUrl(), null);
-                    return decryptedLinks;
-                }
-                /* Fallback to API/normal website */
-            }
-            final String tweetID = new Regex(param.getCryptedUrl(), TYPE_USER_POST).getMatch(1);
-            return crawlAPISingleTweet(param, tweetID, account);
+            return this.crawlSingleTweet(param, account);
         } else {
-            return crawlUserViaAPI(param, account);
+            return this.crawlUserViaAPI(param, account);
         }
-        if (decryptedLinks.size() == 0) {
-            logger.info("Could not find any results for: " + param.getCryptedUrl());
-            return decryptedLinks;
-        }
-        return decryptedLinks;
     }
 
     @Override
@@ -231,6 +185,58 @@ public class TwitterCom extends PornEmbedParser {
             logger.warning("Failed to switch to mobile website");
             return false;
         }
+    }
+
+    private ArrayList<DownloadLink> crawlCard(final CryptedLink param, final Account account) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String tweetID = new Regex(param.getCryptedUrl(), TYPE_CARD).getMatch(0);
+        if (tweetID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        getPage(param.getCryptedUrl());
+        if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* First check for external urls */
+        decryptedLinks.addAll(this.findEmbedUrls(null));
+        String externID = br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\"card_ur(?:i|l)\"\\s*:\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
+        }
+        if (externID != null) {
+            decryptedLinks.add(this.createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        if (decryptedLinks.isEmpty()) {
+            String dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.(?:webm|mp4))").getMatch(0);
+            if (dllink == null) {
+                logger.info("dllink == null, abend ");
+                return null;
+            }
+            dllink = dllink.replace("\\", "");
+            final String filename = tweetID + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
+            final DownloadLink dl = this.createDownloadlink(dllink, tweetID);
+            dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, filename);
+            dl.setName(filename);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+        }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlSingleTweet(final CryptedLink param, final Account account) throws Exception {
+        final boolean prefer_mobile_website = false;
+        if (prefer_mobile_website) {
+            /* Single Tweet */
+            if (switchtoMobile()) {
+                return crawlTweetViaMobileWebsite(param.getCryptedUrl(), null);
+            }
+            /* Fallback to API/normal website */
+        }
+        final String tweetID = new Regex(param.getCryptedUrl(), TYPE_USER_POST).getMatch(1);
+        return crawlAPISingleTweet(param, tweetID, account);
     }
 
     private ArrayList<DownloadLink> crawlAPISingleTweet(final CryptedLink param, final String tweetID, final Account account) throws Exception {
@@ -537,7 +543,8 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     @Deprecated
-    private void crawlTweetViaMobileWebsite(final ArrayList<DownloadLink> decryptedLinks, final String tweetURL, final FilePackage fp) throws IOException {
+    private ArrayList<DownloadLink> crawlTweetViaMobileWebsite(final String tweetURL, final FilePackage fp) throws IOException {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         logger.info("Crawling mobile website tweet");
         final String tweet_id = new Regex(param.getCryptedUrl(), "/(?:tweet|status)/(\\d+)").getMatch(0);
         if (br.containsHTML("/status/" + tweet_id + "/video/1")) {
@@ -590,6 +597,16 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             }
         }
+        return decryptedLinks;
+    }
+
+    /** Returns true if an account is required to process the given URL. */
+    private boolean requiresAccount(final String url) {
+        if (url.matches(TYPE_USER_LIKES)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private ArrayList<DownloadLink> crawlUserViaAPI(final CryptedLink param, final Account account) throws Exception {
@@ -599,6 +616,10 @@ public class TwitterCom extends PornEmbedParser {
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (requiresAccount(param.getCryptedUrl()) && account == null) {
+            logger.info("Account required to crawl all liked items of a user");
+            throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_LIKED_ITEMS_OF_PROFILE_" + username, "Account is required to crawl liked items of profiles.");
         }
         this.prepareAPI(br, account);
         final boolean use_old_api_to_get_userid = true;
@@ -668,10 +689,6 @@ public class TwitterCom extends PornEmbedParser {
         if (param.getCryptedUrl().matches(TYPE_USER_LIKES)) {
             /* Crawl all liked items of a user */
             logger.info("Crawling all liked items of user " + username);
-            if (account == null) {
-                logger.info("Account required to crawl all liked items of a user");
-                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_LIKED_ITEMS_OF_PROFILE_" + username, "Account is required to crawl liked items of profiles.");
-            }
             content_type = "favorites";
             final int favoritesCount = ((Number) user.get("favourites_count")).intValue();
             if (favoritesCount == 0) {
@@ -690,7 +707,7 @@ public class TwitterCom extends PornEmbedParser {
             }
             content_type = "media";
             maxCount = media_count;
-            fp.setName(username + " - media");
+            fp.setName(username);
         } else {
             logger.info("Crawling ALL media of a user e.g. also retweets | user: " + username);
             if (tweet_count == 0) {
@@ -927,7 +944,7 @@ public class TwitterCom extends PornEmbedParser {
                 decryptedLinks.add(dl);
                 distribute(dl);
             } else {
-                crawlTweetViaMobileWebsite(decryptedLinks, tweet_url, fp);
+                decryptedLinks.addAll(crawlTweetViaMobileWebsite(tweet_url, fp));
             }
             index++;
             nextURL = br.getRegex("(/[^/]+/media/grid\\?idx=" + index + ")").getMatch(0);

@@ -43,11 +43,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.PornflipCom;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com", "playvids.com", "pornflip.com" }, urls = { "https?://(?:www\\.)?playvid\\.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?pornflip\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?pornflip\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
-public class PlayVidComDecrypter extends PluginForDecrypt {
-    public PlayVidComDecrypter(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvids.com", "pornflip.com" }, urls = { "https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?pornflip\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?pornflip\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
+public class PornflipComCrawler extends PluginForDecrypt {
+    public PornflipComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -73,23 +74,19 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         if (videoID == null) {
             videoID = new Regex(param.toString(), "https?://[^/]+/(?:[a-z]{2})?([A-Za-z0-9\\-_]+)").getMatch(0);
         }
-        if (param.toString().contains("playvid.com/")) {
-            parameter = new Regex(param.toString(), "https?://").getMatch(-1) + "www.playvid.com/watch/" + videoID;
-        } else {
-            parameter = param.toString();
-        }
+        parameter = param.toString();
         /* 2017-05-10: Changed from http to https */
         parameter = parameter.replace("http://", "https://");
         this.param = param;
         br.setFollowRedirects(true);
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("playvid.com");
+            plugin = JDUtilities.getPluginForHost(this.getHost());
         }
-        ((jd.plugins.hoster.PlayVidCom) plugin).prepBrowser(br);
+        ((PornflipCom) plugin).prepBrowser(br);
         // Log in if possible to get 720p quality
         getUserLogin(false);
         getPage(parameter);
-        if (jd.plugins.hoster.PlayVidCom.isOffline(this.br)) {
+        if (PornflipCom.isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (br.containsHTML("class=\"title-hide-user\"")) {
@@ -114,7 +111,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(filename);
         /** Decrypt qualities START */
-        foundQualities = ((jd.plugins.hoster.PlayVidCom) plugin).getQualities(this.br);
+        foundQualities = ((PornflipCom) plugin).getQualities(this.br);
         if (foundQualities == null || foundQualities.isEmpty()) {
             /*
              * 2020-09-15: Assume that content is offline as they got a lot of different URLs all with a pattern matching the one of single
@@ -128,11 +125,11 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);// currently the help text to best doesn't imply that it works on
         // selected resolutions only, maybe add another option for this
-        final boolean q360p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_360P, true);
-        final boolean q480p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_480P, true);
-        final boolean q720p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_720P, true);
-        final boolean q1080p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_1080, true);
-        final boolean q2160p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_2160, true);
+        final boolean q360p = cfg.getBooleanProperty(PornflipCom.ALLOW_360P, true);
+        final boolean q480p = cfg.getBooleanProperty(PornflipCom.ALLOW_480P, true);
+        final boolean q720p = cfg.getBooleanProperty(PornflipCom.ALLOW_720P, true);
+        final boolean q1080p = cfg.getBooleanProperty(PornflipCom.ALLOW_1080, true);
+        final boolean q2160p = cfg.getBooleanProperty(PornflipCom.ALLOW_2160, true);
         final boolean all = best || (q360p == false && q480p == false && q720p == false && q1080p == false && q2160p == false);
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
@@ -250,7 +247,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 if (videoID != null) {
                     dl.setLinkID(getHost() + "//" + videoID + "/" + qualityValue);
                 }
-                if (SubConfiguration.getConfig("playvid.com").getBooleanProperty(FASTLINKCHECK, false)) {
+                if (SubConfiguration.getConfig(this.getHost()).getBooleanProperty(FASTLINKCHECK, false)) {
                     dl.setAvailable(true);
                 }
                 ret.add(dl);
@@ -303,7 +300,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             return false;
         }
         try {
-            ((jd.plugins.hoster.PlayVidCom) JDUtilities.getPluginForHost(this.getHost())).login(this.br, aa, force);
+            ((jd.plugins.hoster.PornflipCom) JDUtilities.getPluginForHost(this.getHost())).login(this.br, aa, force);
         } catch (final PluginException e) {
             return false;
         }

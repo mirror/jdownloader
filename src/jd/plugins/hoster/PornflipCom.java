@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,16 +44,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com", "playvids.com", "pornflip.com" }, urls = { "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+" })
-public class PlayVidCom extends PluginForHost {
-    public PlayVidCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvids.com", "pornflip.com" }, urls = { "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+" })
+public class PornflipCom extends PluginForHost {
+    public PornflipCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
         this.setConfigElements();
@@ -58,7 +57,7 @@ public class PlayVidCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.playvid.com/terms.html";
+        return "https://www.playvids.com/de/terms";
     }
 
     /** Settings stuff */
@@ -148,58 +147,58 @@ public class PlayVidCom extends PluginForHost {
         if (qualityvalue == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (StringUtils.containsIgnoreCase(qualityvalue, "hds_")) {
-                final HDSContainer container = HDSContainer.read(link);
-                if (container == null) {
+            final HDSContainer container = HDSContainer.read(link);
+            if (container == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                br.setFollowRedirects(true);
+                br.getPage(link.getStringProperty("mainlink", null).replace("http://", "https://"));
+                final LinkedHashMap<String, String> foundQualities = getQualities(br);
+                final String f4m = foundQualities.get(qualityvalue);
+                if (f4m == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                br.getPage(f4m);
+                br.followRedirect();
+                final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
+                if (all == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    br.setFollowRedirects(true);
-                    br.getPage(link.getStringProperty("mainlink", null).replace("http://", "https://"));
-                    final LinkedHashMap<String, String> foundQualities = getQualities(br);
-                    final String f4m = foundQualities.get(qualityvalue);
-                    if (f4m == null) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    br.getPage(f4m);
-                    br.followRedirect();
-                    final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
-                    if (all == null) {
+                    final HDSContainer hit = HDSContainer.getBestMatchingContainer(all, container);
+                    if (hit == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        final HDSContainer hit = HDSContainer.getBestMatchingContainer(all, container);
-                        if (hit == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else {
-                            hit.write(link);
-                            final HDSDownloader dl = new HDSDownloader(link, br, hit.getFragmentURL());
-                            this.dl = dl;
-                            dl.setEstimatedDuration(hit.getDuration());
-                        }
-                    }
-                    dl.startDownload();
-                }
-            } else if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
-                /* HLS download */
-                checkFFmpeg(link, "Download a HLS Stream");
-                dl = new HLSDownloader(link, br, dllink);
-                dl.startDownload();
-            } else {
-                if (quality_720.equals(qualityvalue) && account == null) {
-                    /* Should never happen! */
-                    logger.info("User is not logged in but tries to download a quality which needs login");
-                    throw new AccountRequiredException();
-                } else {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-                    if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                        try {
-                            br.followConnection(true);
-                        } catch (final IOException e) {
-                            logger.log(e);
-                        }
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        hit.write(link);
+                        final HDSDownloader dl = new HDSDownloader(link, br, hit.getFragmentURL());
+                        this.dl = dl;
+                        dl.setEstimatedDuration(hit.getDuration());
                     }
                 }
                 dl.startDownload();
             }
+        } else if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
+            /* HLS download */
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
+            dl.startDownload();
+        } else {
+            if (quality_720.equals(qualityvalue) && account == null) {
+                /* Should never happen! */
+                logger.info("User is not logged in but tries to download a quality which needs login");
+                throw new AccountRequiredException();
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            dl.startDownload();
+        }
     }
 
     public static final boolean isOffline(final Browser br) {
@@ -358,13 +357,13 @@ public class PlayVidCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's PlayVid Plugin helps downloading Videoclips from playvid.com. PlayVid provides different video formats and qualities.";
+        return "JDownloader's PlayVid Plugin helps downloading Videoclips from pornflip.com. There are different video formats and qualities.";
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.playvidcom.fastLinkcheck", "Fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Fast linkcheck (filesize won't be shown in linkgrabber)?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.playvidcom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
+        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, "Only grab the best available resolution").setDefaultValue(false);
         getConfig().addEntry(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, "Grab 360p?").setDefaultValue(true).setEnabledCondidtion(hq, false));
