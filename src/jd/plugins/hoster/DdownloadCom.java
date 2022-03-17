@@ -299,15 +299,15 @@ public class DdownloadCom extends XFileSharingProBasic {
             } else {
                 dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
             }
-            String twoFACode = getUserInput("Enter Google 2-Factor Authentication code?", dl_dummy);
+            String twoFACode = getUserInput("Enter Google 2-Factor Authentication code", dl_dummy);
             if (twoFACode != null) {
                 twoFACode = twoFACode.trim();
             }
             if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
                 }
             }
             logger.info("Submitting 2FA code");
@@ -315,9 +315,9 @@ public class DdownloadCom extends XFileSharingProBasic {
             this.submitForm(twoFAForm);
             if (!this.br.getURL().contains("?op=my_account")) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger 2-faktor-Authentifizierungscode!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountUnavailableException("\r\nUngültiger 2-faktor-Authentifizierungscode!", 1 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
                 }
             }
             account.saveCookies(br.getCookies(getMainPage()), "");

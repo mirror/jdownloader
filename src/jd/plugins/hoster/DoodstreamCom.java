@@ -28,16 +28,20 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -66,6 +70,156 @@ public class DoodstreamCom extends XFileSharingProBasic {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "dood.so", "doodstream.com", "dood.to", "doodapi.com", "dood.watch", "dood.cx", "doodstream.co", "dood.la", "dood.ws" });
         return ret;
+    }
+
+    @Override
+    public boolean loginWebsite(final DownloadLink link, final Account account, final boolean validateCookies) throws Exception {
+        synchronized (account) {
+            final boolean followRedirects = br.isFollowingRedirects();
+            try {
+                /* Load cookies */
+                br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                /* Important! Domains may change frequently! */
+                br.getPage(getMainPage());
+                if (cookies != null) {
+                    logger.info("Stored login-Cookies are available");
+                    br.setCookies(br.getHost(), cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        logger.info("Trust login-cookies without checking as they should still be fresh");
+                        return false;
+                    } else {
+                        logger.info("Verifying login-cookies");
+                        getPage(getRelativeAccountInfoURL());
+                        if (isLoggedin(this.br)) {
+                            logger.info("Successfully logged in via cookies");
+                            account.saveCookies(br.getCookies(br.getHost()), "");
+                            return true;
+                        } else {
+                            logger.info("Cookie login failed");
+                        }
+                    }
+                }
+                /*
+                 * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a captcha.
+                 * Example: filejoker.net
+                 */
+                logger.info("Full login required");
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                if (userCookies != null) {
+                    /* Fallback */
+                    logger.info("Verifying user-login-cookies");
+                    br.clearCookies(br.getHost());
+                    br.setCookies(br.getHost(), userCookies);
+                    getPage(getMainPage() + getRelativeAccountInfoURL());
+                    if (isLoggedin(this.br)) {
+                        logger.info("Successfully logged in via cookies");
+                        account.saveCookies(br.getCookies(getMainPage()), "");
+                        String cookiesUsername = br.getCookie(br.getHost(), "login", Cookies.NOTDELETEDPATTERN);
+                        if (StringUtils.isEmpty(cookiesUsername)) {
+                            cookiesUsername = br.getCookie(br.getHost(), "email", Cookies.NOTDELETEDPATTERN);
+                        }
+                        if (!StringUtils.isEmpty(cookiesUsername)) {
+                            cookiesUsername = Encoding.htmlDecode(cookiesUsername).trim();
+                            /**
+                             * During cookie login, user can enter whatever he wants into username field.</br>
+                             * Most users will enter their real username but to be sure to have unique usernames we don't trust them and try
+                             * to get the real username out of our cookies.
+                             */
+                            if (!StringUtils.isEmpty(cookiesUsername) && !account.getUser().equals(cookiesUsername)) {
+                                account.setUser(cookiesUsername);
+                            }
+                        }
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException("Login cookies expired");
+                        } else {
+                            throw new AccountInvalidException("Login cookies invalid");
+                        }
+                    }
+                } else if (this.requiresCookieLogin()) {
+                    /**
+                     * Cookie login required but user did not put cookies into the password field: </br>
+                     * Ask user to login via exported browser cookies e.g. xubster.com.
+                     */
+                    showCookieLoginInformation();
+                    throw new AccountInvalidException("Cookie login required");
+                }
+                br.clearCookies(getMainPage());
+                final UrlQuery query = new UrlQuery();
+                query.add("op", "login_ajax");
+                query.add("login", Encoding.urlEncode(account.getUser()));
+                query.add("password", Encoding.urlEncode(account.getPass()));
+                query.add("loginotp", "");
+                query.add("g-recaptcha-response", "");
+                query.add("_", Long.toString(System.currentTimeMillis()));
+                getPage("/?" + query.toString());
+                if (br.getRequest().getResponseHeader("content-type").contains("application/json")) {
+                    final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    if (response.get("status").toString().equalsIgnoreCase("otp_sent")) {
+                        /* {"status":"otp_sent","message":"OTP has been sent to your mail"} */
+                        logger.info("2FA code required");
+                        final DownloadLink dl_dummy;
+                        if (this.getDownloadLink() != null) {
+                            dl_dummy = this.getDownloadLink();
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        }
+                        String twoFACode = getUserInput("Enter Google 2-Factor Authentication code: " + response.get("message").toString(), dl_dummy);
+                        if (twoFACode != null) {
+                            twoFACode = twoFACode.trim();
+                        }
+                        if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
+                            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                                throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
+                            } else {
+                                throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
+                            }
+                        }
+                        logger.info("Submitting 2FA code");
+                        query.addAndReplace("loginotp", twoFACode);
+                        br.getPage("/?" + query.toString());
+                        /**
+                         * E.g. wrong code: {"status":"fail","message":"Wrong login OTP."} </br>
+                         * On success it will redirect us to a non-json page!
+                         */
+                        if (!this.isLoggedin(br)) {
+                            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                                throw new AccountUnavailableException("\r\nUngültiger 2-faktor-Authentifizierungscode!", 1 * 60 * 1000l);
+                            } else {
+                                throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
+                            }
+                        }
+                    }
+                }
+                if (!this.isLoggedin(this.br)) {
+                    if (getCorrectBR(br).contains("op=resend_activation")) {
+                        /* User entered correct logindata but hasn't activated his account yet. */
+                        throw new AccountUnavailableException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you received via E-Mail and try again!", 5 * 60 * 1000l);
+                    }
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new AccountInvalidException("\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.");
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new AccountInvalidException("\r\nNieprawidłowa nazwa użytkownika / hasło!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.");
+                    } else {
+                        throw new AccountInvalidException("\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                    }
+                }
+                account.saveCookies(br.getCookies(br.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            } finally {
+                br.setFollowRedirects(followRedirects);
+            }
+        }
     }
 
     @Override
