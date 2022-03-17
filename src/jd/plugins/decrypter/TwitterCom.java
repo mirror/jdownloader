@@ -789,7 +789,10 @@ public class TwitterCom extends PornEmbedParser {
             }
             logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
             if (tweetMap.size() < expected_items_per_page) {
-                /* We'll ignore this and let it run into our other fail-safe for when a page contains zero items. */
+                /**
+                 * This can sometimes happen! </br>
+                 * We'll ignore this and let it run into our other fail-safe for when a page contains zero items.
+                 */
                 logger.info(String.format("Current page contained only %d of max. %d expected objects --> Reached the end?", tweetMap.size(), expected_items_per_page));
                 // break;
             }
