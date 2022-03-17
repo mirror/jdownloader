@@ -36,6 +36,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -72,7 +73,9 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     private static final String            TYPE_CARD                                                        = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
-    private static final String            TYPE_USER_ALL                                                    = "https?://[^/]+/([A-Za-z0-9_\\-]+)(?:/(?:media|likes))?(\\?.*)?";
+    private static final String            TYPE_USER_ALL                                                    = "https?://[^/]+/([\\w\\-]+)(?:/(?:media|likes))?(\\?.*)?";
+    private static final String            TYPE_USER_LIKES                                                  = "https?://[^/]+/([\\w\\-]+)/likes.*";
+    private static final String            TYPE_USER_MEDIA                                                  = "https?://[^/]+/([\\w\\-]+)/media.*";
     private static final String            TYPE_USER_POST                                                   = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
     // private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private static AtomicReference<String> GUEST_TOKEN                                                      = new AtomicReference<String>();
@@ -662,7 +665,7 @@ public class TwitterCom extends PornEmbedParser {
         query.append("send_error_codes", "true", false);
         query.append("simple_quoted_tweet", "true", false);
         final FilePackage fp = FilePackage.getInstance();
-        if (param.getCryptedUrl().endsWith("/likes")) {
+        if (param.getCryptedUrl().matches(TYPE_USER_LIKES)) {
             /* Crawl all liked items of a user */
             logger.info("Crawling all liked items of user " + username);
             if (account == null) {
@@ -679,7 +682,7 @@ public class TwitterCom extends PornEmbedParser {
             query.append("simple_quoted_tweets", "true", false);
             query.append("sorted_by_time", "true", false);
             fp.setName(username + " - likes");
-        } else if (param.getCryptedUrl().endsWith("/media") || setting_force_grab_media) {
+        } else if (param.getCryptedUrl().matches(TYPE_USER_MEDIA) || setting_force_grab_media) {
             logger.info("Crawling self posted media only from user: " + username);
             if (media_count == 0) {
                 decryptedLinks.add(getDummyErrorProfileContainsNoMediaItems(username));
@@ -703,12 +706,7 @@ public class TwitterCom extends PornEmbedParser {
         query.append("userId", userID, false);
         query.append("count", expected_items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
-        final String addedURLWithoutParams;
-        if (param.getCryptedUrl().contains("?")) {
-            addedURLWithoutParams = param.getCryptedUrl().split("\\?")[0];
-        } else {
-            addedURLWithoutParams = param.getCryptedUrl();
-        }
+        final String addedURLWithoutParams = URLHelper.getURL(new URL(param.getCryptedUrl()), false, false, false).toString();
         final UrlQuery addedURLQuery = UrlQuery.parse(param.getCryptedUrl());
         Number maxTweetsToCrawl = null;
         final String maxTweetDateStr = addedURLQuery.get("max_date");
@@ -868,13 +866,13 @@ public class TwitterCom extends PornEmbedParser {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 63:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                case 88:
-                    /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
-                    // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
-                    // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
-                    // logger.info("Rate-limit reached | Resets in: " +
-                    // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
-                    // }
+                // case 88:
+                /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
+                // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
+                // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
+                // logger.info("Rate-limit reached | Resets in: " +
+                // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
+                // }
                 case 109:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 144:
