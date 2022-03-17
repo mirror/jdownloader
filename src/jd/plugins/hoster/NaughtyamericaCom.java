@@ -335,14 +335,14 @@ public class NaughtyamericaCom extends PluginForHost {
                     String message = "";
                     final String title;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Seedr.cc - Login";
-                        message += "Hallo liebe(r) Seedr.cc NutzerIn\r\n";
-                        message += "Um deinen seedr.cc Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        title = "Naughtyamerica.com - Login";
+                        message += "Hallo liebe(r) Naughtyamerica NutzerIn\r\n";
+                        message += "Um deinen naughtyamerica.com Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
                         message += help_article_url;
                     } else {
-                        title = "Seedr.cc - Login";
-                        message += "Hello dear seedr.cc user\r\n";
+                        title = "Naughtyamerica.com - Login";
+                        message += "Hello dear Naughtyamerica user\r\n";
                         message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
                         message += help_article_url;
                     }
