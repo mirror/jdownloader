@@ -103,8 +103,9 @@ public class PicsVc extends PluginForDecrypt {
         HashSet<String> dupes = new HashSet<String>();
         final boolean useNewHandling = true;
         if (useNewHandling) {
-            final String dataX = br.getRegex("data-x='(s\\d+)'").getMatch(0);
-            final String dataPhotoid = br.getRegex("data-photoid='([a-f0-9]{32})'").getMatch(0);
+            final String dataX = br.getRegex("data-x\\s*=\\s*'(.*?)'").getMatch(0);
+            final String dataAid = br.getRegex("data-aid\\s*=\\s*'(.*?)'").getMatch(0);
+            final String dataPhotoid = br.getRegex("data-photoid\\s*=\\s*'([a-f0-9]{32})'").getMatch(0);
             if (dataX == null || dataPhotoid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -113,6 +114,9 @@ public class PicsVc extends PluginForDecrypt {
             br.getHeaders().put("Origin", "https://" + br.getHost());
             final UrlQuery query = new UrlQuery();
             query.add("x", dataX);
+            if (dataAid != null) {
+                query.add("aid", dataAid);
+            }
             query.add("pid", dataPhotoid);
             query.add("ghash", galleryHash);
             query.add("width", "1720");

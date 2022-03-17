@@ -27,6 +27,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -270,7 +271,7 @@ public class HosterRuleController implements AccountControllerListener {
                     continue;
                 }
                 if (ar.getAccount() == null || !ar.isAvailable()) {
-                    logger.info("Removed " + ar + " from " + ag);
+                    // logger.info("Removed " + ar + " from " + ag);
                     removeAccounts.add(ar);
                 } else {
                     if (StringUtils.equalsIgnoreCase(ar.getAccount().getHoster(), host)) {
@@ -332,11 +333,13 @@ public class HosterRuleController implements AccountControllerListener {
     protected void save() {
         if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached() && initDone.get()) {
             try {
-                ArrayList<AccountRuleStorable> saveList = new ArrayList<AccountRuleStorable>();
+                final ArrayList<AccountRuleStorable> saveList = new ArrayList<AccountRuleStorable>();
                 for (AccountUsageRule hr : loadedRules) {
                     saveList.add(new AccountRuleStorable(hr));
                 }
-                IO.secureWrite(configFile, JSonStorage.serializeToJson(saveList).getBytes("UTF-8"));
+                final SimpleMapper mapper = new SimpleMapper();
+                mapper.setPrettyPrintEnabled(false);
+                IO.secureWrite(configFile, mapper.objectToByteArray((saveList)));
             } catch (Exception e) {
                 logger.log(e);
             }
