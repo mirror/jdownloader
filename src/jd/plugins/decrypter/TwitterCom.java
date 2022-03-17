@@ -625,12 +625,13 @@ public class TwitterCom extends PornEmbedParser {
             user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
             // userID = (String) user.get("rest_id");
         }
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class);
         final String userID = user.get("id_str").toString();
         /* = number of tweets */
         final int tweet_count = ((Number) user.get("statuses_count")).intValue();
         /* = number of tweets containing media (can be lower [ar also higher?] than "statuses_count") */
         final int media_count = ((Number) user.get("media_count")).intValue();
-        final boolean setting_force_grab_media = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isForceGrabMediaOnlyEnabled();
+        final boolean setting_force_grab_media = cfg.isForceGrabMediaOnlyEnabled();
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
         final String content_type;
         Integer maxCount = null;
@@ -702,17 +703,19 @@ public class TwitterCom extends PornEmbedParser {
         query.append("userId", userID, false);
         query.append("count", expected_items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
+        final String addedURLWithoutParams;
+        if (param.getCryptedUrl().contains("?")) {
+            addedURLWithoutParams = param.getCryptedUrl().split("\\?")[0];
+        } else {
+            addedURLWithoutParams = param.getCryptedUrl();
+        }
         final UrlQuery addedURLQuery = UrlQuery.parse(param.getCryptedUrl());
         Number maxTweetsToCrawl = null;
-        final String maxTweetsToCrawlStr = addedURLQuery.get("maxitems");
         final String maxTweetDateStr = addedURLQuery.get("max_date");
         long crawlUntilTimestamp = -1;
-        if (maxTweetsToCrawlStr != null) {
-            if (maxTweetsToCrawlStr.matches("\\d+")) {
-                maxTweetsToCrawl = Integer.parseInt(maxTweetsToCrawlStr);
-            } else {
-                logger.info("Ignoring user defined 'maxitems' parameter because of invalid input format: " + maxTweetsToCrawlStr);
-            }
+        try {
+            maxTweetsToCrawl = Integer.parseInt(addedURLQuery.get("maxitems"));
+        } catch (final Throwable ignore) {
         }
         if (maxTweetDateStr != null) {
             try {
@@ -721,18 +724,25 @@ public class TwitterCom extends PornEmbedParser {
                 logger.info("Ignoring user defined 'max_date' parameter because of invalid input format: " + maxTweetDateStr);
             }
         }
-        final HashSet<String> cursorDupes = new HashSet<String>();
         int totalCrawledTweetsCount = 0;
         int page = 1;
         String nextCursor = null;
+        try {
+            page = Integer.parseInt(addedURLQuery.get("page"));
+            totalCrawledTweetsCount = Integer.parseInt(addedURLQuery.get("totalCrawledTweetsCount"));
+            nextCursor = Encoding.htmlDecode(addedURLQuery.get("nextCursor"));
+            logger.info("Resuming from last state: page = " + page + " | totalCrawledTweetsCount = " + totalCrawledTweetsCount + " | nextCursor = " + nextCursor);
+        } catch (final Throwable e) {
+        }
+        final HashSet<String> cursorDupes = new HashSet<String>();
+        final String apiURL = "https://api.twitter.com/2/timeline/" + content_type + "/" + userID + ".json";
         tweetTimeline: do {
             logger.info("Crawling page " + page);
             final UrlQuery thisquery = query;
             if (!StringUtils.isEmpty(nextCursor)) {
                 thisquery.append("cursor", nextCursor, true);
             }
-            final String url = String.format("https://api.twitter.com/2/timeline/%s/%s.json", content_type, userID);
-            br.getPage(url + "?" + thisquery.toString());
+            br.getPage(apiURL + "?" + thisquery.toString());
             handleErrorsAPI(this.br);
             final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> globalObjects = (Map<String, Object>) root.get("globalObjects");
@@ -740,7 +750,7 @@ public class TwitterCom extends PornEmbedParser {
             final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(root, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) globalObjects.get("tweets");
             if (tweetMap == null || tweetMap.isEmpty()) {
-                logger.info("Stopping because: Found 0 tweets on current page");
+                logger.info("Stopping because: Found 0 tweets on current page --> Reached end?");
                 break;
             }
             final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
@@ -762,7 +772,7 @@ public class TwitterCom extends PornEmbedParser {
                     break tweetTimeline;
                 }
             }
-            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr);
+            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
             if (tweetMap.size() < expected_items_per_page) {
                 /* We'll try anyways and let it run into our fail-safe for when a page contains zero items. */
                 logger.info(String.format("Warning: Current page contains less than %d objects --> Reached the end?", expected_items_per_page));
@@ -789,8 +799,14 @@ public class TwitterCom extends PornEmbedParser {
                 logger.info("Stopping because: Failed to get nextCursor (Exception occured)");
                 break;
             }
+            /** Store this information in URL so in case crawler fails, it will resume from previous position if user adds that URL. */
+            addedURLQuery.addAndReplace("page", Integer.toString(page));
+            addedURLQuery.addAndReplace("totalCrawledTweetsCount", Integer.toString(totalCrawledTweetsCount));
+            addedURLQuery.addAndReplace("nextCursor", Encoding.urlEncode(nextCursor));
+            param.setCryptedUrl(addedURLWithoutParams + "?" + addedURLQuery.toString());
             page++;
-            this.sleep(3000l, param);
+            /* Wait before accessing next page. */
+            this.sleep(cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds(), param);
         } while (!this.isAbort());
         logger.info("Done after " + page + " pages");
         if (decryptedLinks.isEmpty()) {
