@@ -725,6 +725,10 @@ public class TwitterCom extends PluginForHost {
             public String getGlobalRequestIntervalLimitTwimgComMilliseconds_label() {
                 return "Define global request limit for twimg.com in milliseconds (0 = no limit)";
             }
+
+            public String getProfileCrawlerWaittimeBetweenPaginationMilliseconds_label() {
+                return "Profile crawler: Wait time between pagination requests in milliseconds";
+            }
         }
 
         @DefaultBooleanValue(true)
@@ -778,12 +782,21 @@ public class TwitterCom extends PluginForHost {
 
         @AboutConfig
         @SpinnerValidator(min = 0, max = 60000, step = 100)
-        @DefaultIntValue(400)
+        @DefaultIntValue(500)
         @DescriptionForConfigEntry("Define global request limit for twimg.com in milliseconds (0 = no limit)")
         @Order(70)
         int getGlobalRequestIntervalLimitTwimgComMilliseconds();
 
         void setGlobalRequestIntervalLimitTwimgComMilliseconds(int milliseconds);
+
+        @AboutConfig
+        @SpinnerValidator(min = 0, max = 30000, step = 100)
+        @DefaultIntValue(3000)
+        @DescriptionForConfigEntry("Profile crawler: Wait time between pagination requests in milliseconds")
+        @Order(80)
+        int getProfileCrawlerWaittimeBetweenPaginationMilliseconds();
+
+        void setProfileCrawlerWaittimeBetweenPaginationMilliseconds(int milliseconds);
     }
 
     @Override

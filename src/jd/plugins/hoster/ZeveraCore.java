@@ -19,6 +19,8 @@ import java.net.URL;
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -468,8 +470,13 @@ abstract public class ZeveraCore extends UseNet {
             if (premium_until > System.currentTimeMillis()) {
                 ai.setValidUntil(premium_until, br);
             } else {
-                logger.info("This premium account appears to be nearly expired");
-                ai.setValidUntil(-1);
+                logger.info("This premium account appears to be nearly expired --> Set expire-date to the end of the day");
+                final GregorianCalendar calendar = new GregorianCalendar();
+                calendar.setTimeInMillis(premium_until);
+                calendar.set(Calendar.HOUR, 23);
+                calendar.set(Calendar.MINUTE, 59);
+                calendar.set(Calendar.SECOND, 59);
+                ai.setValidUntil(calendar.getTimeInMillis());
             }
         } else {
             /* Expired == FREE */
