@@ -789,8 +789,9 @@ public class TwitterCom extends PornEmbedParser {
             }
             logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
             if (tweetMap.size() < expected_items_per_page) {
-                /* We'll try anyways and let it run into our fail-safe for when a page contains zero items. */
-                logger.info(String.format("Warning: Current page contains less than %d objects --> Reached the end?", expected_items_per_page));
+                /* We'll ignore this and let it run into our other fail-safe for when a page contains zero items. */
+                logger.info(String.format("Current page contained only %d of max. %d expected objects --> Reached the end?", tweetMap.size(), expected_items_per_page));
+                // break;
             }
             /* Done - now try to find string required to access next page. */
             try {
@@ -808,7 +809,6 @@ public class TwitterCom extends PornEmbedParser {
                     logger.info("Stopping because: We've already crawled current cursor: " + nextCursor);
                     break;
                 }
-                logger.info("nextCursor = " + nextCursor);
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.info("Stopping because: Failed to get nextCursor (Exception occured)");
@@ -823,7 +823,7 @@ public class TwitterCom extends PornEmbedParser {
             /* Wait before accessing next page. */
             this.sleep(cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds(), param);
         } while (!this.isAbort());
-        logger.info("Done after " + page + " pages");
+        logger.info("Done after " + page + " pages | last nextCursor = " + nextCursor);
         if (decryptedLinks.isEmpty()) {
             logger.info("Found nothing --> Either user has no posts containing media or those can only be viewed by certain users or only when logged in (explicit content)");
             if (account == null) {
