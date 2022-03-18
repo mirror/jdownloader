@@ -167,6 +167,7 @@ public class GoogleDrive extends PluginForDecrypt {
         String folderID = getFolderID(param.getCryptedUrl());
         final String folderResourceKey = this.getFolderResourceKey(param.getCryptedUrl());
         if (folderID == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Browser websiteBR = new Browser();
@@ -200,7 +201,7 @@ public class GoogleDrive extends PluginForDecrypt {
         queryFolder.add("supportsAllDrives", "true");
         queryFolder.add("includeItemsFromAllDrives", "true");
         /**
-         * Returns up to 1000 items per request (default = 100). </br>
+         * pageSize = up to how many items get returned per request. </br>
          * 2021-02-25: Appearently the GDrive API decides randomly how many items it wants to return but it doesn't matter as we got
          * pagination. It worked fine in my tests in their API explorer but in reality the max number of items I got was 30.
          */
@@ -233,6 +234,10 @@ public class GoogleDrive extends PluginForDecrypt {
                 throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY_OR_PRIVATE_OR_SHORTCUT, offlineFolderTitle);
             }
             if (page == 0 && subfolderPath == null) {
+                /**
+                 * Workaround to find the name of the folder we're currently in. </br>
+                 * TODO: Find a way to do this via API.
+                 */
                 /* Leave this in the loop! It doesn't really belong here but it's only a workaround and only executed once! */
                 logger.info("Trying to find title of current folder");
                 try {
@@ -266,37 +271,6 @@ public class GoogleDrive extends PluginForDecrypt {
                     logger.info("Folder title workaround failed due to Exception");
                 }
             }
-            // if (page == 0) {
-            // String parentFolderID = null;
-            // try {
-            // final List<Object> items = (List<Object>) entries.get("files");
-            // for (final Object item : items) {
-            // final Map<String, Object> itemInfo = (Map<String, Object>) item;
-            // parentFolderID = (String) JavaScriptEngineFactory.walkJson(itemInfo, "parents/{0}");
-            // break;
-            // }
-            // if (!StringUtils.isEmpty(parentFolderID)) {
-            // final UrlQuery queryParentDir = queryFolder;
-            // queryParentDir.remove("q");
-            // queryParentDir.appendEncoded("q", "'" + parentFolderID + "' in parents");
-            // final Browser brc = this.br.cloneBrowser();
-            // brc.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files?" + queryFolder.toString());
-            // final Map<String, Object> parentFolderInfo = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-            // final List<Object> parentFolderItems = (List<Object>) parentFolderInfo.get("files");
-            // for (final Object item : parentFolderItems) {
-            // final Map<String, Object> itemInfo = (Map<String, Object>) item;
-            // final String parentFolderItemID = (String) itemInfo.get("id");
-            // if (StringUtils.equals(parentFolderItemID, parentFolderID)) {
-            // nameOfCurrentFolder = (String) itemInfo.get("name");
-            // break;
-            // }
-            // }
-            // }
-            // } catch (final Throwable e) {
-            // logger.log(e);
-            // logger.info("Failed to find name of current folder");
-            // }
-            // }
             final boolean incompleteSearch = ((Boolean) entries.get("incompleteSearch")).booleanValue();
             if (incompleteSearch) {
                 /* This should never happen */
@@ -323,9 +297,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 logger.info("Stopping because: Failed to find any new item on current page");
                 break;
             } else {
-                /* TODO: Check if this is needed or if add() replaces the previous value */
-                // queryFolder.remove("pageToken");
-                queryFolder.appendEncoded("pageToken", nextPageToken);
+                queryFolder.addAndReplace("pageToken", Encoding.urlEncode(nextPageToken));
                 page++;
             }
         } while (!this.isAbort());
@@ -522,7 +494,7 @@ public class GoogleDrive extends PluginForDecrypt {
      *
      * @throws PluginException
      */
-    private void parseFolderJsonWebsite(final ArrayList<DownloadLink> decryptedLinks, Map<String, Object> entries, String subfolder, final String currentFolderTitle) throws PluginException {
+    private void parseFolderJsonWebsite(final ArrayList<DownloadLink> decryptedLinks, final Map<String, Object> data, String subfolder, final String currentFolderTitle) throws PluginException {
         if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
             /* Begin subfolder structure if not given already */
             subfolder = currentFolderTitle;
@@ -535,23 +507,23 @@ public class GoogleDrive extends PluginForDecrypt {
             fp = FilePackage.getInstance();
             fp.setName(currentFolderTitle);
         }
-        final List<Object> items = (List<Object>) entries.get("items");
+        final List<Object> items = (List<Object>) data.get("items");
         for (final Object item : items) {
-            entries = (Map<String, Object>) item;
+            final Map<String, Object> resource = (Map<String, Object>) item;
             // kind within entries, returns false positives 20170709-raz
-            final String mimeType = (String) entries.get("mimeType");
-            final String kind = mimeType != null && mimeType.contains(".folder") ? "folder" : (String) entries.get("kind");
-            final String title = (String) entries.get("title");
-            final String id = (String) entries.get("id");
-            final String resourceKey = (String) entries.get("resourceKey");
-            final String teamDriveId = (String) entries.get("teamDriveId");
+            final String mimeType = (String) resource.get("mimeType");
+            final String kind = mimeType != null && mimeType.contains(".folder") ? "folder" : (String) resource.get("kind");
+            final String title = (String) resource.get("title");
+            final String id = (String) resource.get("id");
+            final String resourceKey = (String) resource.get("resourceKey");
+            final String teamDriveId = (String) resource.get("teamDriveId");
             if (kind == null || title == null || id == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             boolean canDownload = true;
             try {
-                final Map<String, Object> capabilities = (Map<String, Object>) entries.get("capabilities");
+                final Map<String, Object> capabilities = (Map<String, Object>) resource.get("capabilities");
                 canDownload = ((Boolean) capabilities.get("canDownload")).booleanValue();
             } catch (final Throwable e) {
             }
@@ -562,7 +534,7 @@ public class GoogleDrive extends PluginForDecrypt {
             String folderPath = null;
             if (isFile) {
                 /* Single file */
-                final long fileSize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
+                final long fileSize = JavaScriptEngineFactory.toLong(resource.get("fileSize"), 0);
                 /* Single file */
                 dl = createDownloadlink(generateFileURL(id, resourceKey));
                 final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
@@ -631,7 +603,7 @@ public class GoogleDrive extends PluginForDecrypt {
     }
 
     /** Very similar to the website json but with some differences thus we got separate methods for API and website. */
-    private void parseFolderJsonAPI(final ArrayList<DownloadLink> decryptedLinks, final ArrayList<String> dupes, Map<String, Object> entries, String subfolder, final String currentFolderTitle) throws PluginException {
+    private void parseFolderJsonAPI(final ArrayList<DownloadLink> decryptedLinks, final ArrayList<String> dupes, final Map<String, Object> data, String subfolder, final String currentFolderTitle) throws PluginException {
         if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
             /* Begin subfolder structure if not given already */
             subfolder = currentFolderTitle;
@@ -645,15 +617,15 @@ public class GoogleDrive extends PluginForDecrypt {
             fp = FilePackage.getInstance();
             fp.setName(currentFolderTitle);
         }
-        final List<Object> items = (List<Object>) entries.get("files");
+        final List<Object> items = (List<Object>) data.get("files");
         for (final Object item : items) {
-            entries = (Map<String, Object>) item;
-            final String mimeType = (String) entries.get("mimeType");
-            final String kind = mimeType != null && mimeType.contains(".folder") ? "folder" : (String) entries.get("kind");
-            final String title = (String) entries.get("name");
-            final String id = (String) entries.get("id");
-            final String resourceKey = (String) entries.get("resourceKey");
-            final String teamDriveId = (String) entries.get("teamDriveId");
+            final Map<String, Object> resource = (Map<String, Object>) item;
+            final String mimeType = (String) resource.get("mimeType");
+            final String kind = mimeType != null && mimeType.contains(".folder") ? "folder" : (String) resource.get("kind");
+            final String title = (String) resource.get("name");
+            final String id = (String) resource.get("id");
+            final String resourceKey = (String) resource.get("resourceKey");
+            final String teamDriveId = (String) resource.get("teamDriveId");
             if (StringUtils.isEmpty(kind) || StringUtils.isEmpty(title) || StringUtils.isEmpty(id)) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -664,7 +636,7 @@ public class GoogleDrive extends PluginForDecrypt {
             dupes.add(id);
             boolean canDownload = true;
             try {
-                final Map<String, Object> capabilities = (Map<String, Object>) entries.get("capabilities");
+                final Map<String, Object> capabilities = (Map<String, Object>) resource.get("capabilities");
                 canDownload = ((Boolean) capabilities.get("canDownload")).booleanValue();
             } catch (final Throwable e) {
             }
@@ -676,7 +648,7 @@ public class GoogleDrive extends PluginForDecrypt {
             if (isFile) {
                 /* Single file */
                 dl = createDownloadlink(generateFileURL(id, resourceKey));
-                jd.plugins.hoster.GoogleDrive.parseFileInfoAPI(dl, entries);
+                jd.plugins.hoster.GoogleDrive.parseFileInfoAPI(dl, resource);
                 if (subfolder != null) {
                     folderPath = subfolder;
                     /*
