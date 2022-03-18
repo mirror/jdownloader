@@ -112,6 +112,8 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_date                            = "date";
     public static final String  PROPERTY_hashtag                         = "hashtag";
     public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";
+    public static final String  PROPERTY_main_content_id                 = "main_content_id";                // e.g.
+                                                                                                             // instagram.com/p/<main_content_id>/
 
     public static void setRequestLimit() {
         Browser.setRequestIntervalLimitGlobal("instagram.com", true, 8000);

@@ -674,7 +674,6 @@ public class TwitterCom extends PluginForHost {
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(1);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Free Account");
         return ai;
     }
 
