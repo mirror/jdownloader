@@ -81,42 +81,27 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                /* Important! Domains may change frequently! */
-                br.getPage(getMainPage());
-                if (cookies != null) {
-                    logger.info("Stored login-Cookies are available");
-                    br.setCookies(br.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust login-cookies without checking as they should still be fresh");
-                        return false;
-                    } else {
-                        logger.info("Verifying login-cookies");
-                        getPage(getRelativeAccountInfoURL());
-                        if (isLoggedin(this.br)) {
-                            logger.info("Successfully logged in via cookies");
-                            account.saveCookies(br.getCookies(br.getHost()), "");
-                            return true;
-                        } else {
-                            logger.info("Cookie login failed");
-                        }
-                    }
-                }
                 /*
                  * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a captcha.
                  * Example: filejoker.net
                  */
-                logger.info("Full login required");
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                /**
+                 * Important! Domains may change frequently! </br>
+                 * Let it redirect us to their current main domain so we know which domain to set the cookies on.
+                 */
+                br.getPage(getMainPage());
                 if (userCookies != null) {
                     /* Fallback */
                     logger.info("Verifying user-login-cookies");
-                    br.clearCookies(br.getHost());
                     br.setCookies(br.getHost(), userCookies);
-                    getPage(getMainPage() + getRelativeAccountInfoURL());
-                    if (isLoggedin(this.br)) {
+                    if (!validateCookies) {
+                        /* Trust cookies without check */
+                        return false;
+                    }
+                    if (checkLogin(br)) {
                         logger.info("Successfully logged in via cookies");
-                        account.saveCookies(br.getCookies(getMainPage()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         String cookiesUsername = br.getCookie(br.getHost(), "login", Cookies.NOTDELETEDPATTERN);
                         if (StringUtils.isEmpty(cookiesUsername)) {
                             cookiesUsername = br.getCookie(br.getHost(), "email", Cookies.NOTDELETEDPATTERN);
@@ -141,7 +126,25 @@ public class DoodstreamCom extends XFileSharingProBasic {
                             throw new AccountInvalidException("Login cookies invalid");
                         }
                     }
-                } else if (this.requiresCookieLogin()) {
+                }
+                if (cookies != null) {
+                    logger.info("Stored login-Cookies are available");
+                    br.setCookies(br.getHost(), cookies);
+                    if (!validateCookies) {
+                        /* Trust cookies without check */
+                        return false;
+                    }
+                    logger.info("Verifying login-cookies");
+                    if (this.checkLogin(br)) {
+                        logger.info("Successfully logged in via cookies");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Full login required");
+                if (this.requiresCookieLogin()) {
                     /**
                      * Cookie login required but user did not put cookies into the password field: </br>
                      * Ask user to login via exported browser cookies e.g. xubster.com.
@@ -219,6 +222,15 @@ public class DoodstreamCom extends XFileSharingProBasic {
             } finally {
                 br.setFollowRedirects(followRedirects);
             }
+        }
+    }
+
+    private boolean checkLogin(final Browser br) throws Exception {
+        getPage(br, getRelativeAccountInfoURL());
+        if (isLoggedin(br)) {
+            return true;
+        } else {
+            return false;
         }
     }
 

@@ -38,6 +38,7 @@ import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -64,7 +65,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.TwitterCom.TwitterConfigInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterCom extends PornEmbedParser {
@@ -362,7 +362,7 @@ public class TwitterCom extends PornEmbedParser {
         }
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-        final TwitterConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class);
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
         if (medias != null && !medias.isEmpty()) {
@@ -649,13 +649,14 @@ public class TwitterCom extends PornEmbedParser {
             user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
             // userID = (String) user.get("rest_id");
         }
-        final TwitterConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class);
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final String userID = user.get("id_str").toString();
         /* = number of tweets */
         final int tweet_count = ((Number) user.get("statuses_count")).intValue();
         /* = number of tweets containing media (can be lower [ar also higher?] than "statuses_count") */
         final int media_count = ((Number) user.get("media_count")).intValue();
-        final boolean setting_force_grab_media = cfg.isForceGrabMediaOnlyEnabled();
+        // final boolean force_grab_media = cfg.isForceGrabMediaOnlyEnabled();
+        final boolean force_grab_media = true;
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
         final String content_type;
         Integer maxCount = null;
@@ -699,7 +700,7 @@ public class TwitterCom extends PornEmbedParser {
             query.append("simple_quoted_tweets", "true", false);
             query.append("sorted_by_time", "true", false);
             fp.setName(username + " - likes");
-        } else if (param.getCryptedUrl().matches(TYPE_USER_MEDIA) || setting_force_grab_media) {
+        } else if (param.getCryptedUrl().matches(TYPE_USER_MEDIA) || force_grab_media) {
             logger.info("Crawling self posted media only from user: " + username);
             if (media_count == 0) {
                 decryptedLinks.add(getDummyErrorProfileContainsNoMediaItems(username));
@@ -709,6 +710,7 @@ public class TwitterCom extends PornEmbedParser {
             maxCount = media_count;
             fp.setName(username);
         } else {
+            /* 2022-03-18: Legacy - not used anymore! */
             logger.info("Crawling ALL media of a user e.g. also retweets | user: " + username);
             if (tweet_count == 0) {
                 /* Profile contains zero tweets! */
