@@ -24,15 +24,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -47,6 +38,15 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -87,8 +87,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
                  */
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 /**
-                 * Important! Domains may change frequently! </br>
-                 * Let it redirect us to their current main domain so we know which domain to set the cookies on.
+                 * Important! Domains may change frequently! </br> Let it redirect us to their current main domain so we know which domain
+                 * to set the cookies on.
                  */
                 br.getPage(getMainPage());
                 if (userCookies != null) {
@@ -109,9 +109,9 @@ public class DoodstreamCom extends XFileSharingProBasic {
                         if (!StringUtils.isEmpty(cookiesUsername)) {
                             cookiesUsername = Encoding.htmlDecode(cookiesUsername).trim();
                             /**
-                             * During cookie login, user can enter whatever he wants into username field.</br>
-                             * Most users will enter their real username but to be sure to have unique usernames we don't trust them and try
-                             * to get the real username out of our cookies.
+                             * During cookie login, user can enter whatever he wants into username field.</br> Most users will enter their
+                             * real username but to be sure to have unique usernames we don't trust them and try to get the real username
+                             * out of our cookies.
                              */
                             if (!StringUtils.isEmpty(cookiesUsername) && !account.getUser().equals(cookiesUsername)) {
                                 account.setUser(cookiesUsername);
@@ -146,8 +146,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 logger.info("Full login required");
                 if (this.requiresCookieLogin()) {
                     /**
-                     * Cookie login required but user did not put cookies into the password field: </br>
-                     * Ask user to login via exported browser cookies e.g. xubster.com.
+                     * Cookie login required but user did not put cookies into the password field: </br> Ask user to login via exported
+                     * browser cookies e.g. xubster.com.
                      */
                     showCookieLoginInformation();
                     throw new AccountInvalidException("Cookie login required");
@@ -187,8 +187,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
                         query.addAndReplace("loginotp", twoFACode);
                         br.getPage("/?" + query.toString());
                         /**
-                         * E.g. wrong code: {"status":"fail","message":"Wrong login OTP."} </br>
-                         * On success it will redirect us to a non-json page!
+                         * E.g. wrong code: {"status":"fail","message":"Wrong login OTP."} </br> On success it will redirect us to a
+                         * non-json page!
                          */
                         if (!this.isLoggedin(br)) {
                             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -327,8 +327,11 @@ public class DoodstreamCom extends XFileSharingProBasic {
     @Override
     public String getFUIDFromURL(final DownloadLink dl) {
         try {
-            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "([a-z0-9]+)$").getMatch(0);
-            return result;
+            final String url = dl.getPluginPatternMatcher();
+            if (url != null) {
+                final String result = new Regex(new URL(url).getPath(), "([a-z0-9]+)$").getMatch(0);
+                return result;
+            }
         } catch (MalformedURLException e) {
             logger.log(e);
         }
@@ -363,8 +366,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
     @Override
     protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
         /**
-         * 2021-08-20: Hoster is playing cat & mouse games by adding fake "file not found" texts. </br>
-         * An empty embed iframe is a sign that the item is offline.
+         * 2021-08-20: Hoster is playing cat & mouse games by adding fake "file not found" texts. </br> An empty embed iframe is a sign that
+         * the item is offline.
          */
         if (new Regex(html, "<iframe src=\"/e/\"").matches()) {
             /* 2021-26-04 */
@@ -514,7 +517,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
             String captchaContainer = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
             if (captchaContainer != null) {
                 final Browser brc = br.cloneBrowser();
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc, "6LceDBYbAAAAANJ5Kb2RKbuywtAw4YETbEbDAT8l").getToken();
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc).getToken();
                 this.getPage(brc, captchaContainer + Encoding.urlEncode(recaptchaV2Response), true);
                 sleep(1000, link);
                 getPage(br.getURL());// location.reload();
