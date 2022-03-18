@@ -1054,9 +1054,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.log(e);
             }
         }
-        if (description != null) {
-            logger.info("test");
-        }
         List<Map<String, Object>> resource_data_list = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
         if (resource_data_list == null) {
             // api
