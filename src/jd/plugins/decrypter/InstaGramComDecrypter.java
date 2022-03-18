@@ -734,6 +734,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 count = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/count"), 0);
                 if (count == 0) {
                     logger.info("User doesn't have any saved objects (?)");
+                    final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "USER_DOES_NOT_HAVE_ANY_SAVED_OBJECTS_" + username_url, "The following user does not have any saved objects: " + username_url);
+                    decryptedLinks.add(dummy);
                     return decryptedLinks;
                 } else {
                     logger.info("Expecting saved objects: " + count);
@@ -1052,6 +1054,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.log(e);
             }
         }
+        if (description != null) {
+            logger.info("test");
+        }
         List<Map<String, Object>> resource_data_list = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
         if (resource_data_list == null) {
             // api
@@ -1108,16 +1113,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      *
      * @throws PluginException
      */
-    private DownloadLink crawlSingleMediaObject(final CryptedLink param, final Request request, final Map<String, Object> entries, String linkid_main, final long date, final String description, final int orderid, final String orderidFormatted, final String username) throws PluginException {
-        final String itemID = (String) entries.get("id");
-        if (StringUtils.isEmpty(itemID)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+    private DownloadLink crawlSingleMediaObject(final CryptedLink param, final Request request, final Map<String, Object> entries, String mainContentID, final long date, final String description, final int orderid, final String orderidFormatted, final String username) throws PluginException {
+        final String itemID = entries.get("id").toString();
         String server_filename = null;
         final String shortcode = (String) entries.get("shortcode");
-        if (linkid_main == null && shortcode != null) {
+        if (mainContentID == null && shortcode != null) {
             // link uid, with /p/ its shortcode
-            linkid_main = shortcode;
+            mainContentID = shortcode;
         }
         final Number mediaType = (Number) entries.get("media_type");// api
         final boolean isVideo = Boolean.TRUE.equals(entries.get("is_video")) || (mediaType != null && mediaType.intValue() == 2);
@@ -1196,8 +1198,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     /* By default: Include orderid whenever it is given to prevent duplicate filenames for different files! */
                     filename += orderidFormatted;
                 }
-                filename += " - " + linkid_main;
-                if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
+                filename += " - " + mainContentID;
+                if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(mainContentID)) {
                     filename += "_" + shortcode;
                 }
             } else {
@@ -1207,13 +1209,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(username)) {
                     filename += username + " - ";
                 }
-                filename += linkid_main;
+                filename += mainContentID;
                 /*
                  * 2022-01-28: For some items, individual ID is available when user is not logged in but isn't available when user is logged
                  * in.
                  */
                 final boolean individualShortcodeIsAvailable;
-                if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
+                if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(mainContentID)) {
                     individualShortcodeIsAvailable = true;
                 } else {
                     individualShortcodeIsAvailable = false;
@@ -1244,12 +1246,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             filename += ext;
         }
-        final String hostplugin_url = "instagrammdecrypted://" + linkid_main;
-        if (!StringUtils.isEmpty(shortcode)) {
-            // hostplugin_url += "/" + shortcode; // Refresh directurl will fail
-        }
+        final String hostplugin_url = "instagrammdecrypted://" + mainContentID;
         final DownloadLink dl = this.createDownloadlink(hostplugin_url);
-        String content_url = createSinglePosturl(linkid_main);
+        String content_url = createSinglePosturl(mainContentID);
         if (isPrivate) {
             /*
              * Without account, private urls look exactly the same as offline urls --> Save private status for better host plugin
@@ -1264,6 +1263,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             fp.add(dl);
         }
         dl.setAvailable(true);
+        dl.setProperty(InstaGramCom.PROPERTY_main_content_id, mainContentID);
         dl.setProperty(InstaGramCom.PROPERTY_filename_from_crawler, filename);
         dl.setFinalFileName(filename);
         if (dateFormatted != null) {
@@ -1284,7 +1284,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             dl.setProperty(InstaGramCom.PROPERTY_description, description);
         }
         if (!StringUtils.isEmpty(orderidFormatted)) {
-            /* For custom packagizer filenames */
+            /* For custom Packagizer filenames */
             dl.setProperty(InstaGramCom.PROPERTY_orderid, orderidFormatted);
             dl.setProperty(InstaGramCom.PROPERTY_orderid_raw, orderid);
         }
@@ -1300,6 +1300,76 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         dl.setProperty(InstaGramCom.PROPERTY_is_video, isVideo);
         distribute(dl);
         return dl;
+    }
+
+    /** TODO: Make use of this for .txt files containing descriptions of photos see: https://svn.jdownloader.org/issues/85026 */
+    private String getFilenameBase(final DownloadLink link) {
+        final String dateFormatted = link.getStringProperty(InstaGramCom.PROPERTY_date);
+        final String username = link.getStringProperty(InstaGramCom.PROPERTY_uploader);
+        final String orderidFormatted = link.getStringProperty(InstaGramCom.PROPERTY_orderid);
+        final String mainContentID = link.getStringProperty(InstaGramCom.PROPERTY_main_content_id);
+        final String shortcode = link.getStringProperty(InstaGramCom.PROPERTY_shortcode);
+        String filenameBase;
+        if (PluginJsonConfig.get(InstagramConfig.class).isAddDateToFilenames() && dateFormatted != null) {
+            filenameBase = dateFormatted + "_";
+        } else {
+            filenameBase = "";
+        }
+        if (link.hasProperty(InstaGramCom.PROPERTY_is_part_of_story)) {
+            /* Use slightly different filenames for items that are part of a users' story */
+            if (!StringUtils.isEmpty(username)) {
+                filenameBase += username + " - ";
+            }
+            if (orderidFormatted != null && PluginJsonConfig.get(InstagramConfig.class).isAddOrderidToFilenames()) {
+                /* By default: Include orderid whenever it is given to prevent duplicate filenames for different files! */
+                filenameBase += orderidFormatted;
+            }
+            filenameBase += " - " + mainContentID;
+            if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(mainContentID)) {
+                filenameBase += "_" + shortcode;
+            }
+        } else {
+            if (!StringUtils.isEmpty(this.hashtag)) {
+                filenameBase = this.hashtag + " - ";
+            }
+            if (!StringUtils.isEmpty(username)) {
+                filenameBase += username + " - ";
+            }
+            filenameBase += mainContentID;
+            /*
+             * 2022-01-28: For some items, individual ID is available when user is not logged in but isn't available when user is logged in.
+             */
+            final boolean individualShortcodeIsAvailable;
+            if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(mainContentID)) {
+                individualShortcodeIsAvailable = true;
+            } else {
+                individualShortcodeIsAvailable = false;
+            }
+            final boolean tryToAddOrderIDToFilename;
+            if (PluginJsonConfig.get(InstagramConfig.class).isAddOrderidToFilenames()) {
+                tryToAddOrderIDToFilename = true;
+            } else if (!individualShortcodeIsAvailable) {
+                /* Enforce this otherwise we might get same filenames for all items! */
+                tryToAddOrderIDToFilename = true;
+            } else {
+                tryToAddOrderIDToFilename = false;
+            }
+            final boolean includeShortcodesInFilename;
+            if (tryToAddOrderIDToFilename) {
+                /* Respect user-setting */
+                if (orderidFormatted != null) {
+                    filenameBase += " - " + orderidFormatted;
+                }
+                includeShortcodesInFilename = PluginJsonConfig.get(InstagramConfig.class).isAddShortcodeToFilenames();
+            } else {
+                /* Force-add shortcode to filename in this case otherwise we might not get unique filenames! */
+                includeShortcodesInFilename = true;
+            }
+            if (individualShortcodeIsAvailable && includeShortcodesInFilename) {
+                filenameBase += "_" + shortcode;
+            }
+        }
+        return filenameBase;
     }
 
     /** Crawls all saved objects of a user. */

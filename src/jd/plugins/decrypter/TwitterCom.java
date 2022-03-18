@@ -710,7 +710,11 @@ public class TwitterCom extends PornEmbedParser {
             maxCount = media_count;
             fp.setName(username);
         } else {
-            /* 2022-03-18: Legacy - not used anymore! */
+            /*
+             * 2022-03-18: Legacy - not used anymore! This endpoint has either been removed by twitter or we're using it wrong. It would
+             * always return error 429 rate limit reached!
+             */
+            /* TODO: Remove this after 08-2022 */
             logger.info("Crawling ALL media of a user e.g. also retweets | user: " + username);
             if (tweet_count == 0) {
                 /* Profile contains zero tweets! */
