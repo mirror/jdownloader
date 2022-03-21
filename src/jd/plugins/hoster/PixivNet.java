@@ -17,7 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -61,11 +64,39 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+|https?://(?:www\\.)?pixiv\\.net/ajax/illust/\\d+/ugoira_meta" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixivNet extends PluginForHost {
     public PixivNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.pixiv.net/");
+        this.enablePremium("https://accounts.pixiv.net/signup");
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pixiv.net" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("decryptedpixivnet://(?:www\\.)?.+|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?:/ajax/illust/\\d+/ugoira_meta|/novel/show\\.php\\?id=\\d+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -104,7 +135,7 @@ public class PixivNet extends PluginForHost {
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String              dllink                       = null;
+    private String              downloadSource               = null;
     /* DownloadLink Properties / Packagizer properties */
     public static final String  PROPERTY_MAINLINK            = "mainlink";
     public static final String  PROPERTY_GALLERYID           = "galleryid";
@@ -113,6 +144,7 @@ public class PixivNet extends PluginForHost {
     public static final String  PROPERTY_UPLOADER            = "uploader";
     public static final String  ANIMATION_META               = "animation_meta";
     private static final String TYPE_ANIMATION_META          = "https?://[^/]+/ajax/illust/(\\d+)/ugoira_meta";
+    private static final String TYPE_NOVEL                   = "https?://[^/]+/novel/show\\.php\\?id=(\\d+)";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -128,6 +160,8 @@ public class PixivNet extends PluginForHost {
         if (link.getPluginPatternMatcher() != null) {
             if (link.getPluginPatternMatcher().matches(TYPE_ANIMATION_META)) {
                 return new Regex(link.getPluginPatternMatcher(), TYPE_ANIMATION_META).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_NOVEL)) {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_NOVEL).getMatch(0);
             } else {
                 return null;
             }
@@ -139,7 +173,28 @@ public class PixivNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepBR(this.br);
-        if (link.getPluginPatternMatcher().matches(TYPE_ANIMATION_META)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_NOVEL)) {
+            if (!link.isNameSet()) {
+                link.setName(this.getFID(link) + ".txt");
+            }
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String novelID = this.getFID(link);
+            final String json = br.getRegex("id=\"meta-preload-data\"[^>]*content='([^\\']*?)'").getMatch(0);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> novelInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "novel/" + novelID);
+            final String createDate = novelInfo.get("createDate").toString();
+            final String dateFormatted = new Regex(createDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            this.downloadSource = novelInfo.get("content").toString();
+            link.setFinalFileName(dateFormatted + "_ " + novelInfo.get("userName") + " - " + novelInfo.get("title") + ".txt");
+            try {
+                link.setDownloadSize(this.downloadSource.getBytes("UTF-8").length);
+            } catch (final UnsupportedEncodingException ignore) {
+                ignore.printStackTrace();
+            }
+        } else if (link.getPluginPatternMatcher().matches(TYPE_ANIMATION_META)) {
             if (!link.isNameSet()) {
                 link.setName(this.getFID(link));
             }
@@ -166,7 +221,7 @@ public class PixivNet extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    this.dllink = link.getPluginPatternMatcher();
+                    this.downloadSource = link.getPluginPatternMatcher();
                     brc.followConnection();
                     link.setProperty(ANIMATION_META, brc.toString());
                 } finally {
@@ -194,11 +249,11 @@ public class PixivNet extends PluginForHost {
             if (jd.plugins.decrypter.PixivNetGallery.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dllink = link.getPluginPatternMatcher();
+            downloadSource = link.getPluginPatternMatcher();
             URLConnectionAdapter con = null;
             if (account != null) {
                 logger.info("Account is available --> Trying to download original quality");
-                String original = dllink.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
+                String original = downloadSource.replaceFirst("/img-master/", "/img-original/").replaceFirst("_master\\d+", "").replaceFirst("/c/\\d+x\\d+/", "/");
                 try {
                     final Browser brc = br.cloneBrowser();
                     brc.setFollowRedirects(true);
@@ -215,7 +270,7 @@ public class PixivNet extends PluginForHost {
                     }
                     if (this.looksLikeDownloadableContent(con)) {
                         logger.info("Original download: success");
-                        dllink = original;
+                        downloadSource = original;
                         final String urlExtension = getFileNameExtensionFromURL(original);
                         final String nameExtension = Files.getExtension(link.getName());
                         if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
@@ -242,13 +297,13 @@ public class PixivNet extends PluginForHost {
             try {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
+                con = brc.openHeadConnection(downloadSource);
                 if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Broken file?");
                 }
-                final String urlExtension = getFileNameExtensionFromURL(dllink);
+                final String urlExtension = getFileNameExtensionFromURL(downloadSource);
                 final String nameExtension = Files.getExtension(link.getName());
                 if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
                     link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
@@ -275,7 +330,18 @@ public class PixivNet extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (link.hasProperty(ANIMATION_META)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_NOVEL)) {
+            if (this.downloadSource == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Write text to file */
+            final File dest = new File(link.getFileOutput());
+            IO.writeToFile(dest, this.downloadSource.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+            /* Set filesize so user can see it in UI. */
+            link.setVerifiedFileSize(dest.length());
+            /* Set progress to finished - the "download" is complete ;) */
+            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+        } else if (link.hasProperty(ANIMATION_META)) {
             /* Write text to file. */
             final String metadata = link.getStringProperty(ANIMATION_META, null);
             if (StringUtils.isEmpty(metadata)) {
@@ -289,10 +355,10 @@ public class PixivNet extends PluginForHost {
             /* Set progress to finished - the "download" is complete ;) */
             link.getLinkStatus().setStatus(LinkStatus.FINISHED);
         } else {
-            if (dllink == null) {
+            if (downloadSource == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadSource, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -307,7 +373,7 @@ public class PixivNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            link.setProperty(directlinkproperty, dllink);
+            link.setProperty(directlinkproperty, downloadSource);
             dl.startDownload();
         }
     }
