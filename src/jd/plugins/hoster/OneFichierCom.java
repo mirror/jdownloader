@@ -19,6 +19,7 @@ import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -492,23 +493,23 @@ public class OneFichierCom extends PluginForHost {
         if (ibr.getHttpConnection() != null) {
             responsecode = ibr.getHttpConnection().getResponseCode();
         }
-        if (ibr.containsHTML(">\\s*File not found")) {
+        if (ibr.containsHTML("(?i)>\\s*File not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (ibr.containsHTML(">\\s*Software error:<")) {
+        } else if (ibr.containsHTML("(?i)>\\s*Software error:<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Software error'", 10 * 60 * 1000l);
-        } else if (ibr.containsHTML(">\\s*Connexion à la base de données impossible<|>Can\\'t connect DB")) {
+        } else if (ibr.containsHTML("(?i)>\\s*Connexion à la base de données impossible<|>Can\\'t connect DB")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
-        } else if (ibr.containsHTML("not possible to free unregistered users")) {
+        } else if (ibr.containsHTML("(?i)not possible to free unregistered users")) {
             throw new AccountRequiredException();
-        } else if (ibr.containsHTML("Your account will be unlock")) {
+        } else if (ibr.containsHTML("(?i)Your account will be unlock")) {
             if (account != null) {
                 throw new AccountUnavailableException("Locked for security reasons", 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP blocked for security reasons", 60 * 60 * 1000l);
             }
-        } else if (ibr.containsHTML(">\\s*Access to this file is protected|>\\s*This file is protected")) {
+        } else if (ibr.containsHTML("(?i)>\\s*Access to this file is protected|>\\s*This file is protected")) {
             /* Access restricted by IP / only registered users / only premium users / only owner */
-            if (ibr.containsHTML(">\\s*The owner of this file has reserved access to the subscribers of our services")) {
+            if (ibr.containsHTML("(?i)>\\s*The owner of this file has reserved access to the subscribers of our services")) {
                 throw new AccountRequiredException();
             } else {
                 errorAccessControlLimit(link);
@@ -519,7 +520,7 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-        } else if (ibr.getHttpConnection().getResponseCode() == 503 && ibr.containsHTML(">\\s*Our services are in maintenance\\.\\s*Please come back after")) {
+        } else if (ibr.getHttpConnection().getResponseCode() == 503 && ibr.containsHTML("(?i)>\\s*Our services are in maintenance\\.\\s*Please come back after")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster is in maintenance mode!", 20 * 60 * 1000l);
         } else {
             ipBlockedErrorHandling(ibr);
@@ -562,23 +563,23 @@ public class OneFichierCom extends PluginForHost {
                 waittimeMinutesStr = br.getRegex(">\\s*Vous devez attendre encore\\s*(\\d+)\\s*minutes").getMatch(0);
             }
         }
-        if (br.containsHTML(">\\s*IP Locked|>\\s*Will be unlocked within 1h\\.")) {
+        if (br.containsHTML("(?i)>\\s*IP Locked|>\\s*Will be unlocked within 1h\\.")) {
             waittimeMinutesStr = "60";
         }
         boolean isBlocked = waittimeMinutesStr != null;
-        isBlocked |= br.containsHTML("/>\\s*Téléchargements en cours");
-        isBlocked |= br.containsHTML("En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier");
-        isBlocked |= br.containsHTML(">veuillez patienter avant de télécharger un autre fichier");
-        isBlocked |= br.containsHTML(">You already downloading (some|a) file");
-        isBlocked |= br.containsHTML(">You can download only one file at a time");
-        isBlocked |= br.containsHTML(">Please wait a few seconds before downloading new ones");
-        isBlocked |= br.containsHTML(">You must wait for another download");
-        isBlocked |= br.containsHTML("Without premium status, you can download only one file at a time");
-        isBlocked |= br.containsHTML("Without Premium, you can only download one file at a time");
-        isBlocked |= br.containsHTML("Without Premium, you must wait between downloads");
+        isBlocked |= br.containsHTML("(?i)/>\\s*Téléchargements en cours");
+        isBlocked |= br.containsHTML("(?i)En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier");
+        isBlocked |= br.containsHTML("(?i)>\\s*veuillez patienter avant de télécharger un autre fichier");
+        isBlocked |= br.containsHTML("(?i)>\\s*You already downloading (some|a) file");
+        isBlocked |= br.containsHTML("(?i)>\\s*You can download only one file at a time");
+        isBlocked |= br.containsHTML("(?i)>\\s*Please wait a few seconds before downloading new ones");
+        isBlocked |= br.containsHTML("(?i)>\\s*You must wait for another download");
+        isBlocked |= br.containsHTML("(?i)Without premium status, you can download only one file at a time");
+        isBlocked |= br.containsHTML("(?i)Without Premium, you can only download one file at a time");
+        isBlocked |= br.containsHTML("(?i)Without Premium, you must wait between downloads");
         // jdlog://3278035891641 jdlog://7543779150841
-        isBlocked |= br.containsHTML("Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.");
-        isBlocked |= br.containsHTML(">\\s*Votre adresse IP ouvre trop de connexions vers le serveur");
+        isBlocked |= br.containsHTML("(?i)Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.");
+        isBlocked |= br.containsHTML("(?i)>\\s*Votre adresse IP ouvre trop de connexions vers le serveur");
         if (isBlocked) {
             final boolean preferReconnect = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferReconnectEnabled();
             if (waittimeMinutesStr != null && preferReconnect) {
@@ -612,8 +613,8 @@ public class OneFichierCom extends PluginForHost {
         loginWebsite(account, true);
         /* And yet another workaround for broken API case ... */
         br.getPage("https://" + this.getHost() + "/en/console/index.pl");
-        final boolean isPremium = br.containsHTML(">\\s*Premium\\s*(offer)\\s*Account\\s*<");
-        final boolean isAccess = br.containsHTML(">\\s*Access\\s*(offer)\\s*Account\\s*<");
+        final boolean isPremium = br.containsHTML("(?i)>\\s*Premium\\s*(offer)\\s*Account\\s*<");
+        final boolean isAccess = br.containsHTML("(?i)>\\s*Access\\s*(offer)\\s*Account\\s*<");
         // final boolean isFree = br.containsHTML(">\\s*Free\\s*(offer)\\s*Account\\s*<");
         if (isPremium || isAccess) {
             final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/abo.pl");
@@ -624,7 +625,7 @@ public class OneFichierCom extends PluginForHost {
             if (validUntil != null) {
                 final long validUntilTimestamp = TimeFormatter.getMilliSeconds(validUntil, "yyyy'-'MM'-'dd", Locale.FRANCE);
                 if (validUntilTimestamp > 0) {
-                    ai.setValidUntil(validUntilTimestamp + (24 * 60 * 60 * 1000l), this.br);
+                    setValidUntil(ai, validUntilTimestamp);
                 }
             }
             /** TODO: Check for extra traffic */
@@ -662,6 +663,16 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         return ai;
+    }
+
+    /** Sets end of the day of given timestamp as validUntil date. */
+    private void setValidUntil(final AccountInfo ai, final long originalValidUntilTimestamp) {
+        final Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(originalValidUntilTimestamp);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        ai.setValidUntil(calendar.getTimeInMillis());
     }
 
     /**
@@ -726,14 +737,14 @@ public class OneFichierCom extends PluginForHost {
             account.setMaxSimultanDownloads(maxdownloads_account_premium);
             account.setConcurrentUsePossible(true);
             ai.setUnlimitedTraffic();
-            ai.setValidUntil(validuntil, this.br);
+            this.setValidUntil(ai, validuntil);
         } else {
             /* Free --> 2019-07-18: API Keys are only available for premium users so this should never happen! */
             account.setType(AccountType.FREE);
             accountStatus = "Free account";
             account.setMaxSimultanDownloads(maxdownloads_free);
             account.setConcurrentUsePossible(false);
-            /* 2019-04-04: Credits are only relevent for free accounts according to website: https://1fichier.com/console/params.pl */
+            /* 2019-04-04: Credits are only relevant for free accounts according to website: https://1fichier.com/console/params.pl */
             String creditsStatus = "";
             if (available_credits_in_gigabyte > 0) {
                 creditsStatus = "  (" + available_credits_in_gigabyte + " Credits available";
@@ -940,10 +951,10 @@ public class OneFichierCom extends PluginForHost {
                 }
                 br.postPage("https://" + this.getHost() + "/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password));
                 if (!isLoggedinWebsite(this.br)) {
-                    if (br.containsHTML("following many identification errors")) {
-                        if (br.containsHTML("Your account will be unlock")) {
+                    if (br.containsHTML("(?i)following many identification errors")) {
+                        if (br.containsHTML("(?i)Your account will be unlock")) {
                             throw new AccountUnavailableException("Your account will be unlocked within 1 hour", 60 * 60 * 1000l);
-                        } else if (br.containsHTML("your IP address") && br.containsHTML("is temporarily locked")) {
+                        } else if (br.containsHTML("(?i)your IP address") && br.containsHTML("(?i)is temporarily locked")) {
                             throw new AccountUnavailableException("For security reasons, following many identification errors, your IP address is temporarily locked.", 60 * 60 * 1000l);
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1150,10 +1161,10 @@ public class OneFichierCom extends PluginForHost {
             br.postPage(getContentURLWebsite(link), postData);
             dllink = br.getRedirectLocation();
             if (dllink == null) {
-                if (br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
+                if (br.containsHTML("(?i)\">Warning \\! Without premium status, you can download only")) {
                     logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.containsHTML(">\\s*You can use your account only for downloading from") || br.containsHTML(">\\s*Our services are not compatible with massively shared internet access") || br.containsHTML(">\\s*Be carrefull? to not use simultaneously your IPv4 and IPv6 IP")) {
+                } else if (br.containsHTML("(?i)>\\s*You can use your account only for downloading from") || br.containsHTML(">\\s*Our services are not compatible with massively shared internet access") || br.containsHTML(">\\s*Be carrefull? to not use simultaneously your IPv4 and IPv6 IP")) {
                     logger.warning("Your using account on multiple IP addresses at once");
                     throw new AccountUnavailableException("Account been used on another Internet connection", 10 * 60 * 1000l);
                 } else {
