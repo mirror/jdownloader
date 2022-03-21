@@ -70,10 +70,11 @@ import jd.utils.JDUtilities;
 public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
-        try {
-            Browser.setBurstRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
-        } catch (final Throwable e) {
-        }
+    }
+
+    @Override
+    public void init() {
+        VKontakteRuHoster.setRequestIntervalLimits();
     }
 
     @Override

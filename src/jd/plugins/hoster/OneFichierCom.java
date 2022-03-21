@@ -131,7 +131,6 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 2500);
         setRequestIntervalLimits();
     }
 
