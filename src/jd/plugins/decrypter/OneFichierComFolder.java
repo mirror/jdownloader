@@ -52,6 +52,11 @@ public class OneFichierComFolder extends PluginForDecrypt {
     }
 
     @Override
+    public void init() {
+        jd.plugins.hoster.OneFichierCom.setRequestIntervalLimits();
+    }
+
+    @Override
     public String[] siteSupportedNames() {
         return buildSupportedNames(jd.plugins.hoster.OneFichierCom.getPluginDomains());
     }
