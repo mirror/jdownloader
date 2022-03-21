@@ -88,6 +88,7 @@ public class TwitterCom extends PornEmbedParser {
     public static final String             PROPERTY_TWEET_TEXT                                              = "tweet_text";
     public static final String             PROPERTY_FILENAME_FROM_CRAWLER                                   = "crawlerfilename";
     public static final String             PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY = "video_direct_urls_are_available_via_api_extended_entity";
+    public static final String             PROPERTY_TYPE                                                    = "type";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -212,7 +213,7 @@ public class TwitterCom extends PornEmbedParser {
         if (decryptedLinks.isEmpty()) {
             String dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.(?:webm|mp4))").getMatch(0);
             if (dllink == null) {
-                logger.info("dllink == null, abend ");
+                logger.info("dllink == null");
                 return null;
             }
             dllink = dllink.replace("\\", "");
@@ -365,6 +366,7 @@ public class TwitterCom extends PornEmbedParser {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
+        String lastFoundOriginalFilename = null;
         if (medias != null && !medias.isEmpty()) {
             int mediaIndex = 0;
             for (final Map<String, Object> media : medias) {
@@ -394,11 +396,14 @@ public class TwitterCom extends PornEmbedParser {
                             }
                         }
                         if (StringUtils.isEmpty(streamURL)) {
+                            /* This should never happen */
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         dl = this.createDownloadlink(createVideourl(tweetID));
+                        dl.setProperty(PROPERTY_TYPE, "video");
+                        lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL));
                         if (cfg.isUseOriginalFilenames()) {
-                            filename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL));
+                            filename = lastFoundOriginalFilename;
                         } else if (medias.size() > 1) {
                             filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4";
                         } else {
@@ -411,17 +416,19 @@ public class TwitterCom extends PornEmbedParser {
                         }
                         dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
                     } else if (type.equals("photo")) {
-                        final String url = (String) media.get("media_url"); /* Also available as "media_url_https" */
-                        if (StringUtils.isEmpty(url)) {
+                        final String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
+                        if (StringUtils.isEmpty(photoURL)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        dl = this.createDownloadlink(url);
+                        dl = this.createDownloadlink(photoURL);
+                        dl.setProperty(PROPERTY_TYPE, "photo");
+                        lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(photoURL));
                         if (cfg.isUseOriginalFilenames()) {
-                            filename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(url));
+                            filename = lastFoundOriginalFilename;
                         } else if (medias.size() > 1) {
-                            filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(url);
+                            filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(photoURL);
                         } else {
-                            filename = formattedDate + "_" + username + "_" + tweetID + Plugin.getFileNameExtensionFromURL(url);
+                            filename = formattedDate + "_" + username + "_" + tweetID + Plugin.getFileNameExtensionFromURL(photoURL);
                         }
                     } else {
                         /* Unknown type -> This should never happen! */
@@ -466,6 +473,7 @@ public class TwitterCom extends PornEmbedParser {
             if (!StringUtils.isEmpty(tweetText)) {
                 singleVideo.setProperty(PROPERTY_TWEET_TEXT, tweetText);
             }
+            singleVideo.setProperty(PROPERTY_TYPE, "video");
             singleVideo.setAvailable(true);
             if (fp != null) {
                 singleVideo._setFilePackage(fp);
@@ -490,18 +498,28 @@ public class TwitterCom extends PornEmbedParser {
             }
             if (cfg.isAddTweetTextAsTextfile()) {
                 final DownloadLink text = this.createDownloadlink(createTwitterPostURL(username, tweetID));
-                final String finalFilename = formattedDate + "_" + username + "_" + tweetID + ".txt";
-                text.setFinalFileName(finalFilename);
+                final String filename;
+                if (cfg.isUseOriginalFilenames() && lastFoundOriginalFilename != null) {
+                    /*
+                     * In case tweet contains media, we can use the same filename as that media if user prefers original filename. We just
+                     * need to modify the extension.
+                     */
+                    filename = lastFoundOriginalFilename.substring(0, lastFoundOriginalFilename.lastIndexOf(".")) + ".txt";
+                } else {
+                    filename = formattedDate + "_" + username + "_" + tweetID + ".txt";
+                }
+                text.setFinalFileName(filename);
                 try {
                     text.setDownloadSize(tweetText.getBytes("UTF-8").length);
                 } catch (final UnsupportedEncodingException ignore) {
                     ignore.printStackTrace();
                 }
-                text.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, finalFilename);
+                text.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, filename);
                 text.setProperty(PROPERTY_USERNAME, username);
                 text.setProperty(PROPERTY_DATE, formattedDate);
                 text.setProperty(PROPERTY_MEDIA_INDEX, 0);
                 text.setProperty(PROPERTY_TWEET_TEXT, tweetText);
+                text.setProperty(PROPERTY_TYPE, "text");
                 text.setAvailable(true);
                 if (fp != null) {
                     text._setFilePackage(fp);
@@ -583,6 +601,7 @@ public class TwitterCom extends PornEmbedParser {
                         final DownloadLink dl = createDownloadlink(alink, tweet_id);
                         dl.setAvailable(true);
                         dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, final_filename);
+                        dl.setProperty(PROPERTY_TYPE, "photo");
                         dl.setName(final_filename);
                         if (fp != null) {
                             dl._setFilePackage(fp);
