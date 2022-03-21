@@ -104,6 +104,9 @@ public class FileCryptCc extends PluginForDecrypt {
             this.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("(?i)https?://[^/]+/404\\.html.*")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("(?i)>\\s*Dieser Ordner enthält keine Mirror")) {
+                /* Empty link/folder. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Separate password and captcha. this is easier for count reasons! */
             int passwordCounter = 0;
