@@ -133,7 +133,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 }
             }
             if (illustType == 2) {
-                logger.info("Found animation (?)");
+                logger.info("Found animation");
                 try {
                     final String animationsMetadataURL = this.br.getURL("/ajax/illust/" + itemID + "/ugoira_meta?lang=en").toString();
                     br.getPage(animationsMetadataURL);
