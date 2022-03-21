@@ -158,12 +158,20 @@ public class JumploadsCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean isPrivateContent() {
-        return br.containsHTML("(?i)>\\s*?Content you have requested is Private");
+    private boolean isPrivateContent(final Browser br) {
+        if (br.containsHTML("(?i)>\\s*?Content you have requested is Private")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    private boolean isPasswordProtectedContent() {
-        return br.containsHTML("(?i)class=\"passwordLockedFile\"");
+    private boolean isPasswordProtectedContent(final Browser br) {
+        if (br.containsHTML("(?i)class=\"passwordLockedFile\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -187,7 +195,7 @@ public class JumploadsCom extends antiDDoSForHost {
             }
             if (dllink == null) {
                 br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                if (isPasswordProtectedContent()) {
+                if (isPasswordProtectedContent(br)) {
                     /*
                      * 2020-04-27: Serverside broken e.g. https://www.jumploads.com/file/UKwbfe5PPn38TIDq-ygq9g/1mb.test --> Password =
                      * 123456
@@ -260,7 +268,7 @@ public class JumploadsCom extends antiDDoSForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (!directDownloadEnabled && account != null && account.getType() == AccountType.PREMIUM) {
                 errorEnableDirectDownload();
             }
@@ -269,7 +277,11 @@ public class JumploadsCom extends antiDDoSForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -282,7 +294,7 @@ public class JumploadsCom extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Enable 'Direct Download' in account settings");
     }
 
-    protected void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
+    protected void waitTime(final DownloadLink link, final long timeBefore) throws PluginException {
         /* 2019-08-13: Default waittime: 45 seconds */
         /* Ticket Time */
         /* 2019-08-13: Waittime is skippable */
@@ -313,7 +325,7 @@ public class JumploadsCom extends antiDDoSForHost {
             }
             if (wait > 0) {
                 logger.info("Waiting final waittime: " + wait);
-                sleep(wait * 1000l, downloadLink);
+                sleep(wait * 1000l, link);
             } else if (wait < -extraWaitSeconds) {
                 /* User needed more time to solve the captcha so there is no waittime left :) */
                 logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
@@ -328,7 +340,7 @@ public class JumploadsCom extends antiDDoSForHost {
         if (br.containsHTML(">\\s*?This link only for premium user")) {
             /* 2019-08-13: It seems like basically all files are premiumonly(?) */
             throw new AccountRequiredException();
-        } else if (isPrivateContent()) {
+        } else if (isPrivateContent(br)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private content, only downloadable by owner");
         }
     }
@@ -375,7 +387,7 @@ public class JumploadsCom extends antiDDoSForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     getPage("https://www." + this.getHost() + "/me");
                     /* 2020-04-07: Seems like their cookies are only valid for a very short time */
-                    if (this.isLoggedin()) {
+                    if (this.isLoggedin(br)) {
                         logger.info("Successfully loggedin via cookies");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
@@ -439,7 +451,7 @@ public class JumploadsCom extends antiDDoSForHost {
                 br.setCookie(br.getURL(), "userdata", logincookie);
                 getPage("/me");
                 /* Double-check */
-                if (!this.isLoggedin()) {
+                if (!this.isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -452,8 +464,12 @@ public class JumploadsCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedin() {
-        return br.containsHTML("/user/logout");
+    private boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("/user/logout")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -463,10 +479,10 @@ public class JumploadsCom extends antiDDoSForHost {
         if (br.getURL() == null || !br.getURL().contains("/me")) {
             getPage("/me");
         }
-        final Regex trafficRegex = br.getRegex(">Used Bandwidth</div>\\s*?<div class =\\s*?\"usedspace_percentage\"[^>]*?>([^<>\"]+) / ([^<>\"]+)</div>");
+        final Regex trafficRegex = br.getRegex("(?i)>\\s*Used Bandwidth\\s*</div>\\s*?<div class =\\s*?\"usedspace_percentage\"[^>]*?>([^<>\"]+) / ([^<>\"]+)</div>");
         final String traffic_usedStr = trafficRegex.getMatch(0);
         final String traffic_maxStr = trafficRegex.getMatch(1);
-        final String expireStr = br.getRegex(">\\s*Expires on (\\d{4}-\\d{1,2}-\\d{1,2})").getMatch(0);
+        final String expireStr = br.getRegex("(?i)>\\s*Expires on (\\d{4}-\\d{1,2}-\\d{1,2})").getMatch(0);
         long expireTimestamp = 0;
         if (expireStr != null) {
             expireTimestamp = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd", Locale.ENGLISH);
@@ -477,14 +493,12 @@ public class JumploadsCom extends antiDDoSForHost {
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
         } else {
             /* Premium */
             ai.setValidUntil(expireTimestamp, br);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
         }
         long traffic_left = 0;
         if (traffic_usedStr != null && traffic_maxStr != null) {
@@ -499,7 +513,7 @@ public class JumploadsCom extends antiDDoSForHost {
         if (traffic_left > 0) {
             ai.setTrafficLeft(traffic_left);
         } else {
-            logger.info("Failed to find trafficleft");
+            logger.warning("Failed to find trafficleft");
             ai.setUnlimitedTraffic();
         }
         return ai;
@@ -525,17 +539,17 @@ public class JumploadsCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
+        } else if (acc.getType() == AccountType.FREE) {
             /* Free accounts can have captchas */
             return true;
+        } else {
+            /* Premium accounts do not have captchas */
+            return false;
         }
-        /* Premium accounts do not have captchas */
-        return false;
     }
 
     @Override
