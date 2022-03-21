@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -32,6 +33,14 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
 
         public String getMaxPremiumChunks_label() {
             return "Max number of chunks(premium account)? See https://1fichier.com/hlp.html#dllent";
+        }
+
+        public String getGlobalRequestIntervalLimit1fichierComMilliseconds_label() {
+            return "Define global request limit for 1fichier.com milliseconds";
+        }
+
+        public String getGlobalRequestIntervalLimitAPI1fichierComMilliseconds_label() {
+            return "Define global request limit for api.1fichier.com milliseconds";
         }
     }
 
@@ -79,4 +88,22 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
     int getMaxPremiumChunks();
 
     void setMaxPremiumChunks(int b);
+
+    @AboutConfig
+    @SpinnerValidator(min = 2500, max = 30000, step = 500)
+    @DefaultIntValue(2500)
+    @DescriptionForConfigEntry("Define global request limit for 1fichier.com milliseconds")
+    @Order(60)
+    int getGlobalRequestIntervalLimit1fichierComMilliseconds();
+
+    void setGlobalRequestIntervalLimit1fichierComMilliseconds(int milliseconds);
+
+    @AboutConfig
+    @SpinnerValidator(min = 2500, max = 30000, step = 500)
+    @DefaultIntValue(2500)
+    @DescriptionForConfigEntry("Define global request limit for api.1fichier.com milliseconds")
+    @Order(70)
+    int getGlobalRequestIntervalLimitAPI1fichierComMilliseconds();
+
+    void setGlobalRequestIntervalLimitAPI1fichierComMilliseconds(int milliseconds);
 }

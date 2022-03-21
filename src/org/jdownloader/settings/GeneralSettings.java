@@ -325,6 +325,7 @@ public interface GeneralSettings extends ConfigInterface {
     void setKeepXOldLists(int x);
 
     @AboutConfig
+    @DescriptionForConfigEntry("Allows the user to copy single(!) 'protected' URLs which is not possible by default. This applies e.g. to URLs added via Click and Load or DLC containers.  See: https://support.jdownloader.org/Knowledgebase/Article/View/copy-view-added-urls")
     @DefaultBooleanValue(false)
     boolean isCopySingleRealURL();
 

@@ -218,6 +218,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Regex direct;
+            /* Video posts will also contain URLs to video-thumbnails so let's make sure we only grab exactly what we want. */
             if (post.contains("pubvideo")) {
                 direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/videos/(\\d{4})/(\\d{2})[^\"\\']+\\.mp4)(?:\"|\\')");
             } else {

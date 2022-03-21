@@ -130,8 +130,15 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void init() {
-        /** 2021-02-10: 1 request per second is also fine according to admin */
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 2500);
+        setRequestIntervalLimits();
+    }
+
+    public static void setRequestIntervalLimits() {
+        /** 2021-02-10: We use 2500ms as default, 1 request per second is also fine according to admin. */
+        final OneFichierConfigInterface cfg = PluginJsonConfig.get(OneFichierConfigInterface.class);
+        Browser.setRequestIntervalLimitGlobal("1fichier.com", cfg.getGlobalRequestIntervalLimit1fichierComMilliseconds());
+        Browser.setRequestIntervalLimitGlobal("api.1fichier.com", true, cfg.getGlobalRequestIntervalLimitAPI1fichierComMilliseconds());
     }
 
     private String correctProtocol(final String input) {
@@ -218,6 +225,10 @@ public class OneFichierCom extends PluginForHost {
                             dllink.setName(addedlink_id);
                         }
                     } else if (br.containsHTML(addedlink_id + "[^;]*;;;PRIVATE")) {
+                        /**
+                         * Private or password protected file. </br>
+                         * Admin was asked to change this to return a more precise status instead but declined that suggestion.
+                         */
                         dllink.setProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, true);
                         dllink.setAvailable(true);
                         if (!dllink.isNameSet()) {
@@ -810,7 +821,7 @@ public class OneFichierCom extends PluginForHost {
     private boolean isAPIErrorPassword(final String errorMsg) {
         if (errorMsg == null) {
             return false;
-        } else if (errorMsg.matches("(?i).*(Invalid password\\.|Password not provided\\.).*Resource not allowed #\\d+")) {
+        } else if (errorMsg.matches("(?i).*(Invalid password\\.|Password not provided\\.).*Resource not allowed.*")) {
             return true;
         } else {
             return false;
@@ -829,7 +840,14 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private String getAPIErrormessage(final Browser br) {
-        return PluginJSonUtils.getJson(br, "message");
+        final Map<String, Object> entries;
+        try {
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        } catch (final Throwable e) {
+            /* E.g. no valid json in browser. */
+            return null;
+        }
+        return (String) entries.get("message");
     }
 
     /**
@@ -1008,9 +1026,10 @@ public class OneFichierCom extends PluginForHost {
                 if (StringUtils.isEmpty(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
-                if (preferSSL && dllink.startsWith("http://")) {
+                if (PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
                     dllink = dllink.replace("http://", "https://");
+                } else {
+                    dllink = dllink.replaceFirst("https://", "http://");
                 }
                 br.setFollowRedirects(true);
                 link.setProperty(PROPERTY_PREMLINK, dllink);
@@ -1060,13 +1079,12 @@ public class OneFichierCom extends PluginForHost {
              */
             /** Description of optional parameters: cdn=0/1 - use download-credits, */
             performAPIRequest(API_BASE + "/download/get_token.cgi", String.format("{\"url\":\"%s\",\"pass\":\"%s\"}", link.getPluginPatternMatcher(), passCode));
-            final String api_error = this.getAPIErrormessage(br);
+            final String apiError = this.getAPIErrormessage(br);
             /**
              * 2021-02-10: This will ask for a password for all kinds of access limited files. They will have to update their API to fix
              * this. Example self uploaded file, only downloadable from afghanistan: https://1fichier.com/?uczre58xge6pif2d9n6g
              */
-            if (!StringUtils.isEmpty(api_error) && api_error.matches(".*(Invalid password\\.|Password not provided\\.).*Resource not allowed #\\d+")) {
-                link.setPasswordProtected(true);
+            if (isAPIErrorPassword(apiError)) {
                 if (usedLastPassword) {
                     lastSessionPassword.set(null);
                 } else {
@@ -1075,13 +1093,14 @@ public class OneFichierCom extends PluginForHost {
                 if (link.isPasswordProtected()) {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
                 } else {
+                    link.setPasswordProtected(true);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Password required!");
                 }
             } else if (passCode != null) {
                 lastSessionPassword.set(passCode);
                 link.setDownloadPassword(passCode);
             } else {
-                /* File is not password protected */
+                /* File is not password protected (anymore) */
                 link.setPasswordProtected(false);
             }
         }

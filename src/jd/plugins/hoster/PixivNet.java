@@ -105,7 +105,6 @@ public class PixivNet extends PluginForHost {
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
     private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private String              dllink                       = null;
-    private boolean             server_issues                = false;
     /* DownloadLink Properties / Packagizer properties */
     public static final String  PROPERTY_MAINLINK            = "mainlink";
     public static final String  PROPERTY_GALLERYID           = "galleryid";
@@ -158,24 +157,18 @@ public class PixivNet extends PluginForHost {
                     con = brc.openGetConnection(link.getPluginPatternMatcher());
                     if (con.getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (this.looksLikeDownloadableContent(con)) {
-                        if (link.getFinalFileName() == null) {
-                            link.setFinalFileName(this.getFID(link) + ".json");
-                        }
-                        if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                        this.dllink = link.getPluginPatternMatcher();
-                        brc.followConnection();
-                        link.setProperty(ANIMATION_META, brc.toString());
-                    } else {
-                        try {
-                            brc.followConnection(true);
-                        } catch (IOException e) {
-                            logger.log(e);
-                        }
-                        server_issues = true;
+                    } else if (!this.looksLikeDownloadableContent(con)) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Broken file?");
                     }
+                    if (link.getFinalFileName() == null) {
+                        link.setFinalFileName(this.getFID(link) + ".json");
+                    }
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    this.dllink = link.getPluginPatternMatcher();
+                    brc.followConnection();
+                    link.setProperty(ANIMATION_META, brc.toString());
                 } finally {
                     try {
                         if (con != null) {
@@ -186,7 +179,7 @@ public class PixivNet extends PluginForHost {
                 }
             }
         } else {
-            Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
             if (!(Thread.currentThread() instanceof SingleDownloadController)) {
                 this.setBrowserExclusive();
                 if (account != null) {
@@ -252,17 +245,16 @@ public class PixivNet extends PluginForHost {
                 con = brc.openHeadConnection(dllink);
                 if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (this.looksLikeDownloadableContent(con)) {
-                    final String urlExtension = getFileNameExtensionFromURL(dllink);
-                    final String nameExtension = Files.getExtension(link.getName());
-                    if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
-                        link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
-                    }
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    server_issues = true;
+                } else if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken file?");
+                }
+                final String urlExtension = getFileNameExtensionFromURL(dllink);
+                final String nameExtension = Files.getExtension(link.getName());
+                if (!StringUtils.endsWithCaseInsensitive(urlExtension, nameExtension)) {
+                    link.setFinalFileName(link.getName().replaceFirst("\\." + Pattern.quote(nameExtension) + "$", urlExtension));
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -297,9 +289,7 @@ public class PixivNet extends PluginForHost {
             /* Set progress to finished - the "download" is complete ;) */
             link.getLinkStatus().setStatus(LinkStatus.FINISHED);
         } else {
-            if (server_issues) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-            } else if (dllink == null) {
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
