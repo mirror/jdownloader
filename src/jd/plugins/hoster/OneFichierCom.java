@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,8 +29,26 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -53,22 +72,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
     private final String         PROPERTY_FREELINK                 = "freeLink";
@@ -84,7 +87,7 @@ public class OneFichierCom extends PluginForHost {
     private static final boolean resume_account_premium            = true;
     private static final int     maxchunks_account_premium         = -3;
     private static final int     maxdownloads_account_premium      = 10;
-    /* 2015-07-10: According to admin, resume is free mode is not possible anymore. On attempt this will lead to 404 server error! */
+    /* 2015-07-10: According to admin, resume in free mode is not possible anymore. On attempt this will lead to 404 server error! */
     private static final int     maxchunks_free                    = 1;
     private static final boolean resume_free                       = true;
     private static final int     maxdownloads_free                 = 1;
@@ -94,6 +97,7 @@ public class OneFichierCom extends PluginForHost {
      */
     private static final boolean resume_free_hotlink               = true;
     private static final int     maxchunks_free_hotlink            = -3;
+    private static final boolean PREFER_API_FOR_SINGLE_LINKCHECK   = false;
 
     @Override
     public String[] siteSupportedNames() {
@@ -154,8 +158,8 @@ public class OneFichierCom extends PluginForHost {
         final String fid = getFID(link);
         if (fid != null) {
             /* Use new/current linktype and keep original domain of inside added URL! */
-            final String current_domain = Browser.getHost(link.getPluginPatternMatcher());
-            link.setPluginPatternMatcher("https://" + current_domain + "/?" + fid);
+            final String domainFromURL = Browser.getHost(link.getPluginPatternMatcher());
+            link.setPluginPatternMatcher("https://" + domainFromURL + "/?" + fid);
         }
     }
 
@@ -212,6 +216,11 @@ public class OneFichierCom extends PluginForHost {
                 }
                 // remove last &
                 sb.deleteCharAt(sb.length() - 1);
+                /**
+                 * This method is serverside deprecated but we're still using it because: </br>
+                 * 1. It is still working. </br>
+                 * 2. It is the only method that can be used to check multiple items with one request.
+                 */
                 br.postPageRaw(correctProtocol("http://" + this.getHost() + "/check_links.pl"), sb.toString());
                 for (final DownloadLink dllink : links) {
                     // final String addedLink = dllink.getDownloadURL();
@@ -226,8 +235,8 @@ public class OneFichierCom extends PluginForHost {
                         }
                     } else if (br.containsHTML(addedlink_id + "[^;]*;;;PRIVATE")) {
                         /**
-                         * Private or password protected file. </br> Admin was asked to change this to return a more precise status instead
-                         * but declined that suggestion.
+                         * Private or password protected file. </br>
+                         * Admin was asked to change this to return a more precise status instead but declined that suggestion.
                          */
                         dllink.setProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, true);
                         dllink.setAvailable(true);
@@ -240,7 +249,7 @@ public class OneFichierCom extends PluginForHost {
                             logger.warning("Linkchecker for 1fichier.com is broken!");
                             return false;
                         }
-                        dllink.setProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, false);
+                        dllink.removeProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT);
                         dllink.setAvailable(true);
                         /* Trust API information. */
                         dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[0]));
@@ -257,67 +266,73 @@ public class OneFichierCom extends PluginForHost {
         return true;
     }
 
-    /** 2021-01-29: Not required at this moment. Review this before using it! Do not use this as it will cause IP-blocks!! */
-    // /** Checks single URLs via API, TODO: Add crawler compatibility once crawler is done */
-    // public AvailableStatus requestFileInformationAPI(final Browser br, final DownloadLink link, final Account account, final boolean
-    // isDownload) throws IOException, PluginException {
-    // prepareBrowserAPI(br, account);
-    // performAPIRequest(API_BASE + "/file/info.cgi", "{\"url\":\"" + link.getPluginPatternMatcher() + "\"}");
-    // if (br.getHttpConnection().getResponseCode() == 404) {
-    // /* E.g. message": "Resource not found #469" */
-    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // } else if (br.getHttpConnection().getResponseCode() == 403) {
-    // /* TODO: Do not jump into this only based on answer 403! Check for exact errormessage! */
-    // /* 2020-01-30: e.g. {"status":"KO","message":"Resource not allowed #631"} */
-    // /*
-    // * Password-protected (no information given at all but we know that file is online). Example reasons: file is not allowed to be
-    // * downloaded in current country, by current user, file is private
-    // */
-    // pwProtected = true;
-    // link.setProperty("privatelink", true);
-    // // link.setName(this.getFID(link));
-    // if (isDownload) {
-    // throwErrorPrivateLink();
-    // }
-    // /* Else all is fine - URL is online but we won't be able to download it. */
-    // return AvailableStatus.TRUE;
-    // }
-    // /* 2019-04-05: This type of checksum is not supported by JDonloader so far */
-    // // final String checksum = PluginJSonUtils.getJson(br, "checksum");
-    // // if (!StringUtils.isEmpty(checksum)) {
-    // // link.setSha256Hash(checksum);
-    // // }
-    // final String description = PluginJSonUtils.getJson(br, "description");
-    // String filename = PluginJSonUtils.getJson(br, "filename");
-    // if (StringUtils.isEmpty(filename)) {
-    // filename = this.getFID(link);
-    // }
-    // String filesize = PluginJSonUtils.getJson(br, "size");
-    // link.setName(filename);
-    // if (filesize != null && filesize.matches("\\d+")) {
-    // link.setDownloadSize(SizeFormatter.getSize(filesize));
-    // }
-    // if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
-    // link.setComment(description);
-    // }
-    // /* 2020-01-30: We cannot work with this checksum */
-    // // final String checksum = PluginJSonUtils.getJson(br, "checksum");
-    // return AvailableStatus.TRUE;
-    // }
     /* Old linkcheck removed AFTER revision 29396 */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         correctDownloadLink(link);
-        checkLinks(new DownloadLink[] { link });
-        prepareBrowserWebsite(br);
-        if (!link.isAvailabilityStatusChecked()) {
-            return AvailableStatus.UNCHECKED;
-        } else if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (PREFER_API_FOR_SINGLE_LINKCHECK && account != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return requestFileInformationAPI(br, link, account);
         } else {
+            checkLinks(new DownloadLink[] { link });
+            prepareBrowserWebsite(br);
+            if (!link.isAvailabilityStatusChecked()) {
+                return AvailableStatus.UNCHECKED;
+            } else if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                return AvailableStatus.TRUE;
+            }
+        }
+    }
+
+    /** 2021-01-29: Not required at this moment. Review this before using it! Do not use this as it will cause IP-blocks!! */
+    /**
+     * Checks single URLs via API.
+     *
+     * @throws Exception
+     */
+    public AvailableStatus requestFileInformationAPI(final Browser br, final DownloadLink link, final Account account) throws Exception {
+        prepareBrowserAPI(br, account);
+        final Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("url", link.getPluginPatternMatcher());
+        postData.put("pass", link.getDownloadPassword());
+        performAPIRequest(API_BASE + "/file/info.cgi", JSonStorage.serializeToJson(postData));
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String errorMsg = (String) entries.get("message");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            /* E.g. message": "Resource not found #469" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (errorMsg != null && errorMsg.matches("(?i).*Resource not allowed.*")) {
+            /* 2020-01-30: e.g. {"status":"KO","message":"Resource not allowed #631"} */
+            /*
+             * Password-protected or private file: No information given at all but we know that file is online. Example reasons: file is not
+             * allowed to be downloaded in current country, by current user, file is private, file is password protected.
+             */
+            link.setProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, true);
+            /* Else all is fine - URL is online but we might not be able to download it. */
             return AvailableStatus.TRUE;
         }
+        link.removeProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT);
+        final short passwordProtected = ((Number) entries.get("pass")).shortValue();
+        if (passwordProtected == 1) {
+            link.setPasswordProtected(true);
+        } else {
+            link.setPasswordProtected(false);
+        }
+        final String description = (String) entries.get("description");
+        link.setName((String) entries.get("filename"));
+        link.setVerifiedFileSize(((Number) entries.get("size")).longValue());
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
+        }
+        /* 2020-01-30: We cannot work with this checksum */
+        // final String checksum = (String) entries.get("checksum");
+        // if (!StringUtils.isEmpty(checksum)) {
+        // link.setSha256Hash(checksum);
+        // }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -537,8 +552,8 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /**
-     * Access restricted by IP / only registered users / only premium users / only owner. </br> See here for all possible reasons (login
-     * required): https://1fichier.com/console/acl.pl
+     * Access restricted by IP / only registered users / only premium users / only owner. </br>
+     * See here for all possible reasons (login required): https://1fichier.com/console/acl.pl
      *
      * @throws PluginException
      */
@@ -1005,8 +1020,8 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br> According to their admin, using the public
-         * availablecheck call just before downloading via API can be troublesome
+         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
+         * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
          */
         if (AccountType.FREE.equals(account.getType())) {
             /**
@@ -1058,13 +1073,15 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
-    private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
+    private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2019-04-05: At the moment there are no benefits for us when using this. </br> 2021-01-29: Removed this because if login is
-         * blocked because of "flood control" this won't work either!
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
+         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
          */
-        // requestFileInformationAPI(this.br, link, account, true);
-        // this.checkErrorsAPI(account);
+        final boolean checkFileInfoBeforeDownloadAttempt = false;
+        if (checkFileInfoBeforeDownloadAttempt) {
+            requestFileInformationAPI(this.br, link, account);
+        }
         setPremiumAPIHeaders(br, account);
         /* Do NOT trust pwProtected as this is obtained via website or old mass-linkcheck API!! */
         String dllink = null;
@@ -1309,7 +1326,11 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private boolean isaccessControlLimited(final DownloadLink link) {
-        return link.getBooleanProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, false);
+        if (link.hasProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /* Returns postPage key + data based on the users' SSL preference. */
