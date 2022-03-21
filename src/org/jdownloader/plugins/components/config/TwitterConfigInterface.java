@@ -21,7 +21,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         // add URLs without '/media'!)";
         // }
         public String getUseOriginalFilenames_label() {
-            return "Use original filename instead of format *date*_*username*_*postID*_*mediaindex*.*ext*?";
+            return "Use original filename instead of plugin filenames?";
         }
 
         public String getAddTweetTextAsTextfile_label() {
@@ -60,7 +60,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @DescriptionForConfigEntry("Use original filename instead of format *date*_*username*_*postID*_*mediaindex*.*ext*?")
+    @DescriptionForConfigEntry("Use original filename instead of plugin filenames?")
     @Order(20)
     boolean isUseOriginalFilenames();
 

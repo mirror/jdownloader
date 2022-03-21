@@ -222,7 +222,7 @@ public class TwitterCom extends PluginForHost {
                         if (results.isEmpty()) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
                         }
-                        final DownloadLink result;
+                        DownloadLink result = null;
                         if (results.size() == 1) {
                             result = results.get(0);
                         } else {
@@ -233,7 +233,21 @@ public class TwitterCom extends PluginForHost {
                              * first item in the array returned by the API.
                              */
                             logger.info("Edge case: Video tweet contains multiple elements: " + results.size());
+                            for (final DownloadLink tmp : results) {
+                                /**
+                                 * The check for filename-ending is only there for backward-compatibility to crawler revision 45677 and
+                                 * before. </br>
+                                 * TODO: Remove it after 08-2022
+                                 */
+                                if ((link.getName() != null && link.getName().endsWith(".mp4")) || StringUtils.equals(link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_TYPE), "video")) {
+                                    result = tmp;
+                                    break;
+                                }
+                            }
                             result = results.get(link.getIntegerProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_MEDIA_INDEX, 0));
+                        }
+                        if (result == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to refresh directurl");
                         }
                         if (!result.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
                             /*

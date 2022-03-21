@@ -63,7 +63,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://\\w+\\." + buildHostsPatternPart(domains) + "/(?:post/\\d+)?");
+            ret.add("https?://\\w+\\." + buildHostsPatternPart(domains) + "/(?:post/\\d+)?$");
         }
         return ret.toArray(new String[0]);
     }
@@ -217,7 +217,12 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             if (postURL == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Regex direct = new Regex(post, "\"(https?://[^/]+/uploads/(?:videos|photos)/(\\d{4})/(\\d{2})[^\"]+\\.[a-zA-Z0-9]{2,5})");
+            final Regex direct;
+            if (post.contains("pubvideo")) {
+                direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/videos/(\\d{4})/(\\d{2})[^\"\\']+\\.mp4)(?:\"|\\')");
+            } else {
+                direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/photos/(\\d{4})/(\\d{2})[^\"\\']+\\.[a-zA-Z0-9]{2,5})(?:\"|\\')");
+            }
             if (!direct.matches()) {
                 logger.warning("Failed to find any media for post: " + postURL);
                 continue;
