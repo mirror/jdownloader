@@ -46,7 +46,7 @@ public class AllySh extends PluginForDecrypt {
         }
         final String redirect = br.getRedirectLocation();
         if (redirect != null) {
-            if (!new Regex(redirect, this.getSupportedLinks()).matches()) {
+            if (!this.canHandle(redirect)) {
                 /* Direct-redirect */
                 decryptedLinks.add(this.createDownloadlink(redirect));
                 return decryptedLinks;
