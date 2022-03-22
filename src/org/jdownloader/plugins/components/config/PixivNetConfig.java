@@ -12,7 +12,7 @@ import org.jdownloader.plugins.config.Type;
 public interface PixivNetConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Crawl animations metadata?")
+    @DescriptionForConfigEntry("Crawl animations metadata as .json file?")
     @Order(20)
     boolean isCrawlAnimationsMetadata();
 

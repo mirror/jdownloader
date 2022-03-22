@@ -37,37 +37,32 @@ public class AhMeComGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.containsHTML("class=\"gal_thumbs spec_right\">[\t\n\r ]+</div>") || br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+        br.getPage(param.getCryptedUrl());
+        if (br.containsHTML("class=\"gal_thumbs spec_right\">\\s*</div>") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String galleryID = new Regex(param.getCryptedUrl(), "(\\d+)/\\d+/").getMatch(0);
         String fpName = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
         if (fpName == null) {
-            fpName = "ah-me.com gallery " + new Regex(parameter, "(\\d+)/\\d+/").getMatch(0);
+            fpName = this.getHost() + " gallery " + galleryID;
         }
-        final String[] links = br.getRegex("\"(https?://ahbigpics\\.fuckandcdn\\.com/work/[A-Za-z0-9\\-_]+/\\d+/[^\"]+\\.jpg)\"").getColumn(0);
+        final String[] links = br.getRegex("class=\"thumb\"[^>]*src=\"(https?://[^/]+/work/[^/]+/[^\"]+\\.jpg)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
-            final String relevantpart = new Regex(singleLink, "/work/[^/]+/(.+)").getMatch(0);
-            if (relevantpart == null) {
+            final String partToRemove = new Regex(singleLink, "/work/([^/]+)/").getMatch(0);
+            if (partToRemove == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final DownloadLink dl = createDownloadlink("directhttp://http://ahbigpics.fuckandcdn.com/work/orig/" + relevantpart);
+            final DownloadLink dl = createDownloadlink(singleLink.replaceFirst(org.appwork.utils.Regex.escape(partToRemove), "orig"));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.setName(Encoding.htmlDecode(fpName).trim());
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

@@ -183,7 +183,7 @@ public class FreeDiscPl extends PluginForHost {
 
     private Browser prepBR(final Browser br, final Account account) {
         prepBRStatic(br);
-        /* In account mode we're using account cookies thus we only need those whenthere is not account available. */
+        /* In account mode we're using account cookies thus we only need those when there is not account available. */
         if (account == null) {
             synchronized (botSafeCookies) {
                 if (!botSafeCookies.isEmpty()) {
@@ -203,6 +203,7 @@ public class FreeDiscPl extends PluginForHost {
     public static Browser prepBRAjax(final Browser br) {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Content-Type", "application/json");
         return br;
     }
 
@@ -903,7 +904,7 @@ public class FreeDiscPl extends PluginForHost {
                 }
                 br.getPage("https://" + this.getHost() + "/");
                 handleAntiBot(br, account);
-                if (br.containsHTML("id=\"btnLogout\"")) {
+                if (isLoggedinHTML(br)) {
                     logger.info("Cookie login successful");
                     account.saveCookies(br.getCookies(this.getHost()), "");
                     return;
@@ -916,16 +917,46 @@ public class FreeDiscPl extends PluginForHost {
             logger.info("Performing full login");
             br.getPage("https://" + this.getHost() + "/");
             handleAntiBot(br, account);
-            // this is done via ajax!
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getHeaders().put("Content-Type", "application/json");
-            br.getHeaders().put("Cache-Control", null);
+            prepBRAjax(br);
             br.postPageRaw("/account/signin_set", "{\"email_login\":\"" + account.getUser() + "\",\"password_login\":\"" + account.getPass() + "\",\"remember_login\":1,\"provider_login\":\"\"}");
-            if (br.getCookie(br.getHost(), "login_remember", Cookies.NOTDELETEDPATTERN) == null && br.getCookie(br.getHost(), "cookie_login_remember", Cookies.NOTDELETEDPATTERN) == null) {
+            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> response = (Map<String, Object>) root.get("response");
+            if (((Boolean) root.get("success")) == Boolean.FALSE) {
+                /*
+                 * E.g.
+                 * {"response":{"info":"Jeden u\u017cytkownik, jedno konto! Pozosta\u0142e konta zosta\u0142y czasowo zablokowane!"},"type":
+                 * "set","success":false}
+                 */
+                final String errMsg = (String) response.get("info");
+                if (errMsg == null) {
+                    throw new AccountInvalidException();
+                } else if (errMsg.equalsIgnoreCase("Jeden użytkownik, jedno konto! Pozostałe konta zostały czasowo zablokowane!")) {
+                    /**
+                     * 2022-03-22: Account is temp. banned under current IP. This can happen when trying to login with two accounts under
+                     * the same IP. </br>
+                     * Solution: Wait and retry later or delete cookies, change IP and try again.
+                     */
+                    throw new AccountUnavailableException(errMsg, 5 * 60 * 1000l);
+                } else {
+                    throw new AccountInvalidException(errMsg);
+                }
+            }
+            if (!isLoggedinHTML(response.get("html").toString())) {
                 throw new AccountInvalidException();
             }
             account.saveCookies(br.getCookies(this.getHost()), "");
+        }
+    }
+
+    private boolean isLoggedinHTML(final Browser br) {
+        return isLoggedinHTML(br.getRequest().getHtmlCode());
+    }
+
+    private boolean isLoggedinHTML(final String str) {
+        if (str.contains("id=\"btnLogout\"")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -956,7 +987,7 @@ public class FreeDiscPl extends PluginForHost {
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             final int free_downloads_count = Integer.parseInt(user_settings.get("free_downloads_count").toString());
-            ai.setStatus(accStatus + " | Free DLs: " + free_downloads_count);
+            ai.setStatus(accStatus + " | Free DLs so far: " + free_downloads_count);
         }
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(false);
