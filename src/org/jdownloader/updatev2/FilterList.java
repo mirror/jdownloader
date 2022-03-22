@@ -1,10 +1,12 @@
 package org.jdownloader.updatev2;
 
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
 
 public class FilterList implements Storable {
     public enum Type {
@@ -72,7 +74,13 @@ public class FilterList implements Storable {
                             accountPatterns[i] = Pattern.compile(".*" + Pattern.quote(username) + ".*", Pattern.CASE_INSENSITIVE);
                         }
                         try {
-                            domainPatterns[i] = Pattern.compile(host, Pattern.CASE_INSENSITIVE);
+                            try {
+                                domainPatterns[i] = Pattern.compile(host, Pattern.CASE_INSENSITIVE);
+                            } catch (PatternSyntaxException e) {
+                                if (StringUtils.containsIgnoreCase(e.getMessage(), "Dangling meta character '*'")) {
+                                    domainPatterns[i] = Pattern.compile(host.replace("*", ".*"), Pattern.CASE_INSENSITIVE);
+                                }
+                            }
                         } catch (Throwable e) {
                             LogV3.log(e);
                             domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(host) + ".*", Pattern.CASE_INSENSITIVE);
@@ -80,7 +88,13 @@ public class FilterList implements Storable {
                     } else {
                         accountPatterns[i] = null;
                         try {
-                            domainPatterns[i] = Pattern.compile(entry, Pattern.CASE_INSENSITIVE);
+                            try {
+                                domainPatterns[i] = Pattern.compile(entry, Pattern.CASE_INSENSITIVE);
+                            } catch (PatternSyntaxException e) {
+                                if (StringUtils.containsIgnoreCase(e.getMessage(), "Dangling meta character '*'")) {
+                                    domainPatterns[i] = Pattern.compile(entry.replace("*", ".*"), Pattern.CASE_INSENSITIVE);
+                                }
+                            }
                         } catch (Throwable e) {
                             LogV3.log(e);
                             domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(entry) + ".*", Pattern.CASE_INSENSITIVE);
