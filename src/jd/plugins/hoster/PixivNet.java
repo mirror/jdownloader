@@ -105,7 +105,7 @@ public class PixivNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.pixiv.net/";
+        return "https://policies.pixiv.net/en.html";
     }
 
     public static Browser prepBR(final Browser br) {
