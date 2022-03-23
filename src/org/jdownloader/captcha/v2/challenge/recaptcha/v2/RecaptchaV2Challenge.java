@@ -12,13 +12,14 @@ import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
-import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
@@ -178,7 +179,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             ret.setStoken(getSecureToken());
             final Map<String, Object> v3Action = getV3Action();
             if (v3Action != null) {
-                ret.setV3Action(JSonStorage.toString(v3Action));
+                ret.setV3Action(new SimpleMapper().setPrettyPrintEnabled(false).objectToString(v3Action));
             }
             ret.setType(getType());
             return ret;
@@ -672,7 +673,10 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             if (v3Action == null) {
                 html = html.replace("%%%v3action%%%", "");
             } else {
-                html = html.replace("%%%v3action%%%", JSonStorage.toString(v3Action));
+                // pixiv, hier falsche antwort
+                String v3ActionString = new SimpleMapper().setPrettyPrintEnabled(false).objectToString(v3Action);
+                v3ActionString = HTMLEntities.htmlDoubleQuotes(v3ActionString);
+                html = html.replace("%%%v3action%%%", v3ActionString);
             }
             html = html.replace("%%%unsupportedBrowser%%%", (isSafari || isEdge) ? "block" : "none");
             if (true) {
