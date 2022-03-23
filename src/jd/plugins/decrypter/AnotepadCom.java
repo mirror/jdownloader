@@ -25,6 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.Regex;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anotepad.com" }, urls = { "https?://(?:www\\.)?anotepad\\.com/notes/[a-z0-9]+" })
 public class AnotepadCom extends PluginForDecrypt {
     public AnotepadCom(PluginWrapper wrapper) {
@@ -43,10 +45,14 @@ public class AnotepadCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Single link */
-        String plaintxt = br.getRegex("href=\"(http[^<>\"]+)\">Download Link:Click Here").getMatch(0);
+        String plaintxt = br.getRegex("href\\s*=\\s*\"(https?[^<>\"]+)\">\\s*Download Link\\s*:\\s*Click Here").getMatch(0);
         if (plaintxt == null) {
             /* Plaintext containing multiple links (?) */
-            plaintxt = br.getRegex("<div class=\"plaintext\">([^<>]+)</div>").getMatch(0);
+            plaintxt = br.getRegex("<div class\\s*=\\s*\"plaintext\">([^<>]+)</div>").getMatch(0);
+            if (plaintxt == null) {
+                plaintxt = br.getRegex("<div class\\s*=\\s*\"note_content\">(.*?)class\\s*=\\s*\"sub-header\"").getMatch(0);
+                plaintxt = new Regex(plaintxt, "<div class\\s*=\\s*\"richtext\">(.*?)</div>").getMatch(0);
+            }
         }
         if (plaintxt == null) {
             /* Fallback */

@@ -179,8 +179,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             }
             if (e instanceof UpdateRequiredClassNotFoundException) {
                 throw (UpdateRequiredClassNotFoundException) e;
-            }
-            if (ThrowWTF) {
+            } else if (ThrowWTF) {
                 throw new WTFException(e);
             }
         }
