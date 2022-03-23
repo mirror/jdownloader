@@ -14,6 +14,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
+import org.jdownloader.DomainInfo;
 import org.jdownloader.api.downloads.ChannelCollector;
 import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
@@ -49,7 +50,10 @@ public class DownloadPluginProgress extends PluginProgress {
             final SingleDownloadController controller = ((DownloadLinkDownloadable) downloadable).getDownloadLinkController();
             if (controller != null && AccountCache.ACCOUNTTYPE.MULTI.equals(controller.getDownloadLinkCandidate().getCachedAccount().getType())) {
                 // return FavitIcon that contains the Multihoster Icon
-                return new FavitIcon(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16), controller.getDownloadLinkCandidate().getCachedAccount().getPluginDomainInfo());
+                final DomainInfo pluginDomain = controller.getDownloadLinkCandidate().getCachedAccount().getPluginDomainInfo();
+                if (pluginDomain != null) {
+                    return new FavitIcon(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16), pluginDomain);
+                }
             }
         }
         return super.getIcon(requestor);

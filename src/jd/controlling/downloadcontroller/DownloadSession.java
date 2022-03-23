@@ -45,6 +45,8 @@ import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 
@@ -90,66 +92,66 @@ public class DownloadSession extends Property {
     private AtomicLong                                                    activatorRebuildRequest = new AtomicLong(1);
     private NullsafeAtomicReference<CaptchaSettings.MODE>                 captchaMode             = new NullsafeAtomicReference<CaptchaSettings.MODE>(CaptchaSettings.MODE.NORMAL);
     private final static Comparator<CachedAccount>                        EXPIRE_DATE_SORTER      = new Comparator<CachedAccount>() {
-                                                                                                      public final int compare(long x, long y) {
-                                                                                                          return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                                                      }
+        public final int compare(long x, long y) {
+            return (x < y) ? -1 : ((x == y) ? 0 : 1);
+        }
 
-                                                                                                      public final long getExpireDate(Account account) {
-                                                                                                          if (account == null) {
-                                                                                                              return Long.MAX_VALUE;
-                                                                                                          } else {
-                                                                                                              final long validUntil = account.getValidPremiumUntil();
-                                                                                                              if (validUntil <= 0) {
-                                                                                                                  return Long.MAX_VALUE;
-                                                                                                              } else {
-                                                                                                                  return validUntil;
-                                                                                                              }
-                                                                                                          }
-                                                                                                      }
+        public final long getExpireDate(Account account) {
+            if (account == null) {
+                return Long.MAX_VALUE;
+            } else {
+                final long validUntil = account.getValidPremiumUntil();
+                if (validUntil <= 0) {
+                    return Long.MAX_VALUE;
+                } else {
+                    return validUntil;
+                }
+            }
+        }
 
-                                                                                                      @Override
-                                                                                                      public int compare(CachedAccount account1, CachedAccount account2) {
-                                                                                                          final long expireDate1 = getExpireDate(account1.getAccount());
-                                                                                                          final long expireDate2 = getExpireDate(account2.getAccount());
-                                                                                                          return compare(expireDate1, expireDate2);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        public int compare(CachedAccount account1, CachedAccount account2) {
+            final long expireDate1 = getExpireDate(account1.getAccount());
+            final long expireDate2 = getExpireDate(account2.getAccount());
+            return compare(expireDate1, expireDate2);
+        }
+    };
     private final static Comparator<CachedAccount>                        TRAFFIC_LEFT_SORTER     = new Comparator<CachedAccount>() {
-                                                                                                      public final int compare(long x, long y) {
-                                                                                                          return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                                                      }
+        public final int compare(long x, long y) {
+            return (x < y) ? -1 : ((x == y) ? 0 : 1);
+        }
 
-                                                                                                      public final long getTrafficLeft(Account account) {
-                                                                                                          if (account == null) {
-                                                                                                              return Long.MAX_VALUE;
-                                                                                                          } else {
-                                                                                                              final AccountTrafficView accountTrafficView = account.getAccountTrafficView();
-                                                                                                              if (accountTrafficView == null || accountTrafficView.isUnlimitedTraffic()) {
-                                                                                                                  return Long.MAX_VALUE;
-                                                                                                              } else {
-                                                                                                                  return accountTrafficView.getTrafficLeft();
-                                                                                                              }
-                                                                                                          }
-                                                                                                      }
+        public final long getTrafficLeft(Account account) {
+            if (account == null) {
+                return Long.MAX_VALUE;
+            } else {
+                final AccountTrafficView accountTrafficView = account.getAccountTrafficView();
+                if (accountTrafficView == null || accountTrafficView.isUnlimitedTraffic()) {
+                    return Long.MAX_VALUE;
+                } else {
+                    return accountTrafficView.getTrafficLeft();
+                }
+            }
+        }
 
-                                                                                                      @Override
-                                                                                                      public int compare(CachedAccount account1, CachedAccount account2) {
-                                                                                                          final long trafficLeft1 = getTrafficLeft(account1.getAccount());
-                                                                                                          final long trafficLeft2 = getTrafficLeft(account2.getAccount());
-                                                                                                          return compare(trafficLeft1, trafficLeft2);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        public int compare(CachedAccount account1, CachedAccount account2) {
+            final long trafficLeft1 = getTrafficLeft(account1.getAccount());
+            final long trafficLeft2 = getTrafficLeft(account2.getAccount());
+            return compare(trafficLeft1, trafficLeft2);
+        }
+    };
     private final static Comparator<CachedAccount>                        ACCOUNT_SORTER          = new Comparator<CachedAccount>() {
-                                                                                                      @Override
-                                                                                                      public int compare(CachedAccount o1, CachedAccount o2) {
-                                                                                                          final int ret = EXPIRE_DATE_SORTER.compare(o1, o2);
-                                                                                                          if (ret == 0) {
-                                                                                                              return TRAFFIC_LEFT_SORTER.compare(o1, o2);
-                                                                                                          } else {
-                                                                                                              return ret;
-                                                                                                          }
-                                                                                                      }
-                                                                                                  };
+        @Override
+        public int compare(CachedAccount o1, CachedAccount o2) {
+            final int ret = EXPIRE_DATE_SORTER.compare(o1, o2);
+            if (ret == 0) {
+                return TRAFFIC_LEFT_SORTER.compare(o1, o2);
+            } else {
+                return ret;
+            }
+        }
+    };
 
     public CaptchaSettings.MODE getCaptchaMode() {
         return captchaMode.get();
@@ -280,36 +282,36 @@ public class DownloadSession extends Property {
     }
 
     private final CopyOnWriteArraySet<SingleDownloadController> controllers        = new CopyOnWriteArraySet<SingleDownloadController>() {
-                                                                                       /**
+        /**
          *
          */
-                                                                                       private static final long serialVersionUID = -3897088297641777499L;
+         private static final long serialVersionUID = -3897088297641777499L;
 
-                                                                                       public boolean add(SingleDownloadController e) {
-                                                                                           downloadsStarted.incrementAndGet();
-                                                                                           e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
-                                                                                           return super.add(e);
-                                                                                       };
+        public boolean add(SingleDownloadController e) {
+            downloadsStarted.incrementAndGet();
+            e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
+            return super.add(e);
+        };
 
-                                                                                       @Override
-                                                                                       public boolean remove(Object e) {
-                                                                                           final boolean ret = super.remove(e);
-                                                                                           if (ret) {
-                                                                                               try {
-                                                                                                   getDiskSpaceManager().freeAllReservationsBy(e);
-                                                                                               } catch (final Throwable ignore) {
-                                                                                               }
-                                                                                               try {
-                                                                                                   getFileAccessManager().unlockAllHeldby(e);
-                                                                                               } finally {
-                                                                                                   if (e instanceof SingleDownloadController) {
-                                                                                                       ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
-                                                                                                   }
-                                                                                               }
-                                                                                           }
-                                                                                           return ret;
-                                                                                       };
-                                                                                   };
+        @Override
+        public boolean remove(Object e) {
+            final boolean ret = super.remove(e);
+            if (ret) {
+                try {
+                    getDiskSpaceManager().freeAllReservationsBy(e);
+                } catch (final Throwable ignore) {
+                }
+                try {
+                    getFileAccessManager().unlockAllHeldby(e);
+                } finally {
+                    if (e instanceof SingleDownloadController) {
+                        ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
+                    }
+                }
+            }
+            return ret;
+        };
+    };
     private final long                                          createTime;
     private static volatile WeakReference<FileBytesCache>       downloadWriteCache = null;
 
@@ -337,7 +339,17 @@ public class DownloadSession extends Property {
                     return plugin;
                 }
             }
-            final PluginForHost plugin = JDUtilities.getPluginForHost(host);
+            PluginForHost plugin = JDUtilities.getPluginForHost(host);
+            if (plugin == null) {
+                final LazyHostPlugin fallBackPlugin = HostPluginController.getInstance().getFallBackPlugin();
+                if (fallBackPlugin != null) {
+                    try {
+                        plugin = fallBackPlugin.getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild());
+                    } catch (Throwable e) {
+                        LogController.CL().log(e);
+                    }
+                }
+            }
             getActivationPluginCache().put(plugin, PluginClassLoader.getSharedChild(plugin));
             return plugin;
         }
