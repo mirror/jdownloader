@@ -20,6 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,11 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/(videos/crn/\\d+|videos/([a-z0-9\\-]+-\\d+|\\d+-[a-z0-9\\-]+))" })
 public class BibeltvDe extends PluginForHost {
@@ -197,11 +197,15 @@ public class BibeltvDe extends PluginForHost {
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
+        final String jsURL = br.getRegex("(/mediathek/_next/static/chunks/pages/videos/[^<>\"\\']+\\.js)").getMatch(0);
         String key = null;
         synchronized (apiKey) {
             if (apiKey.get() == null) {
+                if (jsURL == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 final Browser brc = br.cloneBrowser();
-                brc.getPage("/mediathek/_next/static/chunks/pages/videos/%5Bslug%5D-ea0067d555fd0881.js");
+                brc.getPage(jsURL);
                 final String apikeyRegExed = brc.getRegex("Authorization\\s*:\"([^\"]+)\"").getMatch(0);
                 if (apikeyRegExed == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
