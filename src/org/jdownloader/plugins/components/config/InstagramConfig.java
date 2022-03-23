@@ -16,6 +16,10 @@ public interface InstagramConfig extends PluginConfigInterface {
     public static final InstagramConfig.TRANSLATION TRANSLATION = new TRANSLATION();
 
     public static class TRANSLATION {
+        public String getAddPostDescriptionAsTextfile_label() {
+            return "Add post description as textfile?";
+        }
+
         public String getPreferServerFilenames_label() {
             return "Use server-filenames whenever possible?";
         }
@@ -60,6 +64,14 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Define global request limit in milliseconds (0 = no limit)";
         }
     }
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Add post description as textfile?")
+    @Order(5)
+    boolean isAddPostDescriptionAsTextfile();
+
+    void setAddPostDescriptionAsTextfile(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
