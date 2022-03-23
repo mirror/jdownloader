@@ -15,8 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +27,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -60,19 +61,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
-import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public InstaGramCom(PluginWrapper wrapper) {
         super(wrapper);
-        // setConfigElements();
         this.enablePremium(MAINPAGE + "/accounts/login/");
     }
 
     public static Browser prepBRAltAPI(final Browser br) {
-        // https://github.com/qsniyg/maxurl/blob/master/userscript.user.js
+        /* https://github.com/qsniyg/maxurl/blob/master/userscript.user.js */
         br.getHeaders().put("User-Agent", "Instagram 146.0.0.27.125 Android (23/6.0.1; 640dpi; 1440x2560; samsung; SM-G930F; herolte; samsungexynos8890; en_US)");
         br.setAllowedResponseCodes(new int[] { 429 });
         return br;
@@ -108,7 +107,7 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_shortcode                       = "shortcode";
     public static final String  PROPERTY_description                     = "description";
     public static final String  PROPERTY_uploader                        = "uploader";
-    public static final String  PROPERTY_is_video                        = "isvideo";
+    public static final String  PROPERTY_type                            = "type";
     public static final String  PROPERTY_date                            = "date";
     public static final String  PROPERTY_hashtag                         = "hashtag";
     public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";
@@ -129,8 +128,24 @@ public class InstaGramCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        /*
+         * There might be better ways for dupe-detection but for now we'll rely on this one as it provides backward compatibilities for URLs
+         * added via crawler rev <= 45678.
+         */
+        final String mainID = link.getStringProperty(PROPERTY_main_content_id);
+        final String orderid = link.getStringProperty(PROPERTY_orderid);
+        final String type = getType(link);
+        if (mainID != null) {
+            return this.getHost() + "://" + type + "_" + mainID + "_" + orderid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final Account account = AccountController.getInstance().getValidAccount(this);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, account, false);
     }
 
@@ -138,53 +153,48 @@ public class InstaGramCom extends PluginForHost {
         this.correctDownloadLink(link);
         dllink = null;
         this.setBrowserExclusive();
-        /*
-         * Decrypter can set this status - basically to be able to handle private urls correctly in host plugin in case users' account gets
-         * disabled for whatever reason.
-         */
-        prepBRWebsite(this.br);
-        boolean isLoggedIN = false;
-        if (PluginJsonConfig.get(InstagramConfig.class).isAttemptToDownloadOriginalQuality() && canGrabOriginalQualityDownloadurlViaAltAPI(link) && !hasTriedToCrawlOriginalQuality(link) && account != null) {
-            login(account, false);
-            isLoggedIN = true;
-            this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, true);
+        if (isText(link)) {
+            /* Text we want to save to a file is stored as property -> Such items are always cannot be "offline"! */
+            final String filename = InstaGramComDecrypter.getFilename(link);
+            if (filename != null) {
+                link.setFinalFileName(filename);
+            }
+            return AvailableStatus.TRUE;
         } else {
-            this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-        }
-        this.dllink = this.checkLinkAndSetFilesize(link, this.dllink);
-        if (this.dllink == null) {
-            /* This will also act as a fallback in case that "original quality" handling fails */
-            this.dllink = this.getFreshDirecturl(link, account, isLoggedIN);
-            if (this.dllink == null) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
-            }
-            String ext = null;
-            if (ext == null) {
-                ext = getFileNameExtensionFromString(dllink, ".jpg");
-            }
-            String server_filename = getFileNameFromURL(new URL(dllink));
-            if (PluginJsonConfig.get(InstagramConfig.class).isPreferServerFilenames()) {
-                server_filename = fixServerFilename(server_filename, ext);
-                link.setFinalFileName(server_filename);
+            prepBRWebsite(this.br);
+            boolean isLoggedIN = false;
+            if (PluginJsonConfig.get(InstagramConfig.class).isAttemptToDownloadOriginalQuality() && canGrabOriginalQualityDownloadurlViaAltAPI(link) && !hasTriedToCrawlOriginalQuality(link) && account != null) {
+                login(account, false);
+                isLoggedIN = true;
+                this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, true);
             } else {
-                // decrypter has set the proper name!
-                // if the user toggles PREFER_SERVER_FILENAMES setting many times the name can change.
-                final String name = link.getStringProperty(PROPERTY_filename_from_crawler);
-                if (name != null) {
-                    link.setFinalFileName(name);
-                } else {
-                    // do not change.
-                    logger.warning("missing storable, filename will not be renamed");
+                this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+            }
+            this.dllink = this.checkLinkAndSetFilesize(link, this.dllink);
+            if (this.dllink == null) {
+                /* This will also act as a fallback in case that "original quality" handling fails */
+                this.dllink = this.getFreshDirecturl(link, account, isLoggedIN);
+                if (this.dllink == null) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
+                }
+                String ext = null;
+                if (ext == null) {
+                    ext = getFileNameExtensionFromString(dllink, ".jpg");
+                }
+                link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                /* Only do this extra request if the user triggered a single linkcheck! */
+                if (!isDownload) {
+                    this.checkLinkAndSetFilesize(link, this.dllink);
                 }
             }
-            link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-            /* Only do this extra request if the user triggered a single linkcheck! */
-            if (!isDownload) {
-                this.checkLinkAndSetFilesize(link, this.dllink);
+            final String filename = InstaGramComDecrypter.getFilename(link);
+            if (filename != null) {
+                link.setFinalFileName(filename);
             }
+            System.out.println("LinkID: " + this.getLinkID(link));
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     private boolean canGrabOriginalQualityDownloadurlViaAltAPI(final DownloadLink link) {
@@ -204,13 +214,44 @@ public class InstaGramCom extends PluginForHost {
         return link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false);
     }
 
-    private boolean isVideo(final DownloadLink link) {
-        if (link.getBooleanProperty(PROPERTY_is_video, false)) {
+    public static boolean isVideo(final DownloadLink link) {
+        final String crawlerFilename = link.getStringProperty(PROPERTY_filename_from_crawler);
+        if (link.hasProperty(PROPERTY_type)) {
+            /* New/current handling */
+            final String type = link.getStringProperty(PROPERTY_type);
+            if (type.equals("video")) {
+                return true;
+            } else {
+                return false;
+            }
+        } else if (link.getName() != null && link.getName().endsWith(".mp4")) {
+            /* Backward compatibility: TODO: Remove after 01-2023 */
             return true;
-        } else if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4")) {
+        } else if (crawlerFilename != null && crawlerFilename.endsWith(".mp4")) {
+            /* Backward compatibility: TODO: Remove after 01-2023 */
             return true;
         } else {
             return false;
+        }
+    }
+
+    public static boolean isText(final DownloadLink link) {
+        if (getType(link).equals("text")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** @return photo, video, text */
+    private static String getType(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_type)) {
+            /* New/current handling for items added in revisions > 45677 */
+            return link.getStringProperty(PROPERTY_type);
+        } else if (isVideo(link)) {
+            return "video";
+        } else {
+            return "photo";
         }
     }
 
@@ -237,7 +278,7 @@ public class InstaGramCom extends PluginForHost {
         final String imageid = link.getStringProperty(PROPERTY_postid);
         if (imageid == null) {
             /* This should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Browser brc = br.cloneBrowser();
         prepBRAltAPI(brc);
@@ -338,25 +379,22 @@ public class InstaGramCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot refresh direct url of story elements without account");
         } else {
             logger.info("Trying to obtain fresh downloadurl via crawler");
-            final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt(this.getHost());
-            decrypter.setBrowser(this.br);
+            final PluginForDecrypt crawler = this.getNewPluginForDecryptInstance(this.getHost());
+            crawler.setBrowser(this.br);
+            final String thisLinkID = this.getLinkID(link);
+            final String thisOrderID = link.getStringProperty(PROPERTY_orderid);
             try {
                 final CryptedLink forDecrypter = new CryptedLink(link.getContentUrl(), link);
-                final ArrayList<DownloadLink> items = decrypter.decryptIt(forDecrypter, null);
+                final ArrayList<DownloadLink> items = crawler.decryptIt(forDecrypter, null);
                 DownloadLink foundLink = null;
-                if (items.size() == 1) {
-                    foundLink = items.get(0);
-                } else {
-                    String orderID = link.getStringProperty(InstaGramCom.PROPERTY_orderid);
-                    if (orderID == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (final DownloadLink linkTmp : items) {
-                        final String orderidTmp = linkTmp.getStringProperty(InstaGramCom.PROPERTY_orderid);
-                        if (orderID.equals(orderidTmp)) {
-                            foundLink = linkTmp;
-                            break;
-                        }
+                for (final DownloadLink linkTmp : items) {
+                    if (StringUtils.equals(linkTmp.getLinkID(), thisLinkID)) {
+                        foundLink = linkTmp;
+                        break;
+                    } else if (StringUtils.equals(linkTmp.getStringProperty(PROPERTY_orderid), thisOrderID)) {
+                        /* Backward compatibility. TODO: Remove this after 01-2023 */
+                        foundLink = linkTmp;
+                        break;
                     }
                 }
                 directurl = foundLink.getStringProperty(PROPERTY_DIRECTURL);
@@ -366,20 +404,10 @@ public class InstaGramCom extends PluginForHost {
         }
         if (directurl == null) {
             /* On failure, check for offline. */
-            logger.info("Failed to find fresh directurl --> Checking for offline");
-            if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Oops, an error occurred")) {
-                /*
-                 * This will also happen if a user tries to access private urls without being logged in --> Which is why we need to know the
-                 * private_url status from the crawler!
-                 */
-                logger.info("Seems like main URL is offline / post got deleted");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                logger.info("MainURL seems to be online --> Possible plugin error");
-            }
-        } else {
-            logger.info("Successfully found fresh directurl");
+            logger.info("Failed to find fresh directurl --> Assuming that item is offline");
+            return null;
         }
+        logger.info("Successfully found fresh directurl");
         return directurl;
     }
 
@@ -440,29 +468,39 @@ public class InstaGramCom extends PluginForHost {
     }
 
     public void handleDownload(final DownloadLink link) throws Exception {
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        int maxchunks = MAXCHUNKS_pictures;
-        if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4") || link.getName() != null && link.getName().contains(".mp4")) {
-            maxchunks = MAXCHUNKS_videos;
-        }
-        /*
-         * Other User-Agents get throtteled downloadspeed (block by Instagram). For linkchecking we can continue to use the other
-         * User-Agents.
-         */
-        br.getHeaders().put("User-Agent", "curl/7.64.1");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, RESUME, maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
+        if (isText(link)) {
+            /* Write text to file */
+            final File dest = new File(link.getFileOutput());
+            IO.writeToFile(dest, link.getStringProperty(PROPERTY_description).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+            /* Set filesize so user can see it in UI. */
+            link.setVerifiedFileSize(dest.length());
+            /* Set progress to finished - the "download" is complete. */
+            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+        } else {
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.removeProperty(PROPERTY_DIRECTURL);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired (?)", 5 * 60 * 1000l);
+            int maxchunks = MAXCHUNKS_pictures;
+            if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4") || link.getName() != null && link.getName().contains(".mp4")) {
+                maxchunks = MAXCHUNKS_videos;
+            }
+            /*
+             * Other User-Agents get throtteled downloadspeed (block by Instagram). For linkchecking we can continue to use the other
+             * User-Agents.
+             */
+            br.getHeaders().put("User-Agent", "curl/7.64.1");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, RESUME, maxchunks);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                link.removeProperty(PROPERTY_DIRECTURL);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired (?)", 5 * 60 * 1000l);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override

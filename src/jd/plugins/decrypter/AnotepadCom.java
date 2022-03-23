@@ -38,7 +38,7 @@ public class AnotepadCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This note either is private or has been deleted")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)This note either is private or has been deleted")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
