@@ -21,13 +21,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.PluginWrapper;
-import jd.plugins.HostPlugin;
-
 import org.jdownloader.plugins.components.TurbobitCore;
 import org.jdownloader.plugins.components.config.TurbobitCoreConfigHitfileNet;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+
+import jd.PluginWrapper;
+import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class HitFileNet extends TurbobitCore {
@@ -47,7 +47,6 @@ public class HitFileNet extends TurbobitCore {
         return 38;
     }
 
-    /* 2019-05-11: Special */
     @Override
     public boolean downloadurls_need_html_ending() {
         return false;

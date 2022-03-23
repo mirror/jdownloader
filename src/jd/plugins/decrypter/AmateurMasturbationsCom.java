@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "https?://(?:www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/.*?\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "https?://(?:www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/[\\w\\-]+-\\d+\\.html)" })
 public class AmateurMasturbationsCom extends PornEmbedParser {
     public AmateurMasturbationsCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -9,29 +9,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.nutils.JDHash;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.components.UserAgents;
-import jd.utils.JDHexUtils;
-
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.DebugMode;
@@ -43,6 +20,32 @@ import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCap
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.components.UserAgents;
+import jd.utils.JDHexUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -61,29 +64,22 @@ public class TurbobitCore extends antiDDoSForHost {
     private static String        PROPERTY_DOWNLOADLINK_checked_atleast_onetime = "checked_atleast_onetime";
     private static final int     FREE_MAXDOWNLOADS_PLUGINSETTING               = 20;
     private static final boolean prefer_single_linkcheck_via_mass_linkchecker  = true;
-    private static final String  premRedirectLinks                             = ".*//?download/redirect/[A-Za-z0-9]+/[a-z0-9]+";
+    private static final String  TYPE_premiumRedirectLinks                     = "(?:https?://[^/]+/)?/?download/redirect/[A-Za-z0-9]+/([a-z0-9]+)";
 
     public TurbobitCore(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        enablePremium("https://" + this.getHost() + "/turbo/emoney/");
+        enablePremium("https://" + this.getHost() + "/turbo/v2/");
     }
 
-    public void correctDownloadLink(final DownloadLink link) throws PluginException {
-        // changing to temp hosts (subdomains causes issues with multihosters.
-        final String protocol = new Regex(link.getPluginPatternMatcher(), "https?://").getMatch(-1);
-        final String uid = getFUID(link);
-        if (uid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Not all added URLs have to be corrected! */
-        if (!link.getPluginPatternMatcher().matches(premRedirectLinks)) {
-            String newDownloadURL = protocol + this.getHost() + "/" + uid;
-            if (downloadurls_need_html_ending()) {
-                newDownloadURL += ".html";
-            }
-            link.setPluginPatternMatcher(newDownloadURL);
-            link.setLinkID(uid);
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        try {
+            final String fuid = getFUID(link);
+            return this.getHost() + "://" + fuid;
+        } catch (PluginException e) {
+            e.printStackTrace();
+            return super.getLinkID(link);
         }
     }
 
@@ -102,9 +98,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
-         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
-         * short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br>
+         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
+         * slow down the linkcheck and cause more http requests in a short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -131,8 +127,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 sb.delete(0, sb.capacity());
                 sb.append("links_to_check=");
                 for (final DownloadLink dl : links) {
-                    correctDownloadLink(dl);
-                    sb.append(Encoding.urlEncode(dl.getPluginPatternMatcher()));
+                    sb.append(Encoding.urlEncode(this.getContentURL(dl)));
                     sb.append("%0A");
                 }
                 /* remove last */
@@ -142,27 +137,27 @@ public class TurbobitCore extends antiDDoSForHost {
                  * filename
                  */
                 postPage(br_linkcheck, "https://" + br_linkcheck.getHost() + "/linkchecker/check", sb.toString());
-                for (final DownloadLink dllink : links) {
-                    final Regex fileInfo = br_linkcheck.getRegex("<td>" + getFUID(dllink) + "</td>\\s*<td>([^<]*)</td>\\s*<td style=\"text-align:center;\">(?:[\t\n\r ]*)?<img src=\"(?:[^\"]+)?/(done|error)\\.png\"");
+                for (final DownloadLink link : links) {
+                    final Regex fileInfo = br_linkcheck.getRegex("<td>" + getFUID(link) + "</td>\\s*<td>([^<]*)</td>\\s*<td style=\"text-align:center;\">(?:[\t\n\r ]*)?<img src=\"(?:[^\"]+)?/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         /*
                          * 2020-01-27: E.g. "<p>Number of requests exceeded the limit. Please wait 5 minutes to check links again</p></div>"
                          */
-                        dllink.setAvailableStatus(AvailableStatus.UNCHECKED);
-                        logger.warning("Unable to check link: " + dllink.getPluginPatternMatcher());
+                        link.setAvailableStatus(AvailableStatus.UNCHECKED);
+                        logger.warning("Unable to check link: " + link.getPluginPatternMatcher());
                     } else {
                         if (fileInfo.getMatch(1).equals("error")) {
-                            dllink.setAvailable(false);
+                            link.setAvailable(false);
                         } else {
                             final String name = fileInfo.getMatch(0);
-                            dllink.setAvailable(true);
-                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-                            final boolean checkedBeforeAlready = dllink.getBooleanProperty(PROPERTY_DOWNLOADLINK_checked_atleast_onetime, false);
-                            if (dllink.getKnownDownloadSize() < 0 && (checkedBeforeAlready || !fastLinkcheck)) {
-                                deepChecks.add(dllink);
+                            link.setAvailable(true);
+                            link.setFinalFileName(Encoding.htmlDecode(name).trim());
+                            final boolean checkedBeforeAlready = link.getBooleanProperty(PROPERTY_DOWNLOADLINK_checked_atleast_onetime, false);
+                            if (link.getKnownDownloadSize() < 0 && (checkedBeforeAlready || !fastLinkcheck)) {
+                                deepChecks.add(link);
                             }
                             /* Allows it to look for the filesize on 2nd linkcheck. */
-                            dllink.setProperty(PROPERTY_DOWNLOADLINK_checked_atleast_onetime, true);
+                            link.setProperty(PROPERTY_DOWNLOADLINK_checked_atleast_onetime, true);
                         }
                     }
                 }
@@ -232,17 +227,14 @@ public class TurbobitCore extends antiDDoSForHost {
 
     public AvailableStatus requestFileInformation_Web(final DownloadLink link) throws Exception {
         /* premium links should not be accessed here, we will just return true */
-        if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
-            return AvailableStatus.TRUE;
-        }
         setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowserWebsite(br, userAgent.get());
-        accessDownloadURL(br, link);
+        accessContentURL(br, link);
         if (isFileOfflineWebsite(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String titlePattern = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden|Descargar\\s+el\\s+archivo|Télécharger\\s+un\\s+fichier|Scarica\\s+il\\s+file|Pobierz\\s+plik|Baixar\\s+arquivo|İndirilecek\\s+dosya|ファイルのダウンロード)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMKGTP]{1,2})\\)\\s*\\|\\s*(?:TurboBit|Hitfile)\\.net";
+        final String titlePattern = "(?i)<title>\\s*(?:Download\\s+file|Datei\\s+downloaden|Descargar\\s+el\\s+archivo|Télécharger\\s+un\\s+fichier|Scarica\\s+il\\s+file|Pobierz\\s+plik|Baixar\\s+arquivo|İndirilecek\\s+dosya|ファイルのダウンロード)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMKGTP]{1,2})\\)\\s*\\|\\s*(?:TurboBit|Hitfile)\\.net";
         String fileName = br.getRegex(titlePattern).getMatch(0);
         String fileSize = br.getRegex(titlePattern).getMatch(1);
         if (fileName == null) {
@@ -278,14 +270,10 @@ public class TurbobitCore extends antiDDoSForHost {
         return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|(?:Document|File|Page)\\s*(was)?\\s*not found|It could possibly be deleted\\.)");
     }
 
-    /** 2019-05-09: Seems like API can only be used to check self uploaded content - it is useless for us! */
+    /** 2019-05-09: Seems like API can only be used to check self uploaded content - <b>it is useless for us</b>! */
     public AvailableStatus requestFileInformation_API(final DownloadLink link) throws Exception {
         if (true) {
             return AvailableStatus.UNCHECKABLE;
-        }
-        /* premium links should not be accessed here, we will just return true */
-        if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
-            return AvailableStatus.TRUE;
         }
         br.setFollowRedirects(true);
         prepBrowserAPI(br, userAgent.get());
@@ -293,19 +281,6 @@ public class TurbobitCore extends antiDDoSForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    // private String escape(final String s) {
-    // /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-    // final byte[] org = s.getBytes();
-    // final StringBuilder sb = new StringBuilder();
-    // String code;
-    // for (final byte element : org) {
-    // sb.append('%');
-    // code = Integer.toHexString(element);
-    // code = code.length() % 2 > 0 ? "0" + code : code;
-    // sb.append(code.substring(code.length() - 2));
-    // }
-    // return sb + "";
-    // }
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -319,7 +294,7 @@ public class TurbobitCore extends antiDDoSForHost {
         try {
             login(account, true);
         } catch (final PluginException e) {
-            if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
+            if (br.containsHTML("(?i)Our service is currently unavailable in your country\\.")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWebsite is currently unavailable in your country!\r\nDiese webseite ist in deinem Land momentan nicht verfügbar!", PluginException.VALUE_ID_PREMIUM_DISABLE, e);
             } else {
                 throw e;
@@ -327,7 +302,7 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         ai.setUnlimitedTraffic();
         // >Turbo access till 27.09.2015</span>
-        String expire = br.getRegex(">Turbo access till\\s*(.*?)\\s*</span>").getMatch(0);
+        String expire = br.getRegex("(?i)>\\s*Turbo access till\\s*(.*?)\\s*</span>").getMatch(0);
         if (expire == null) {
             /* 2019-05-22: hitfile.net */
             expire = br.getRegex("'/premium(?:/info)?'\\s*>\\s*(\\d+\\.\\d+\\.\\d+)\\s*<").getMatch(0);
@@ -337,10 +312,8 @@ public class TurbobitCore extends antiDDoSForHost {
                 throw new AccountUnavailableException("You have reached limit of premium downloads", 30 * 60 * 1000l);
             }
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.ENGLISH));
-            ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
         } else {
-            ai.setStatus("Free Account");
             account.setType(AccountType.FREE);
         }
         return ai;
@@ -366,12 +339,13 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     protected String getAPIKey() {
-        String apikey = this.getPluginConfig().getStringProperty("APIKEY", null);
-        if (StringUtils.isEmpty(apikey) || apikey.equalsIgnoreCase("DEFAULT")) {
+        String userDefinedAPIKey = this.getPluginConfig().getStringProperty("APIKEY");
+        if (StringUtils.isEmpty(userDefinedAPIKey) || userDefinedAPIKey.equalsIgnoreCase("DEFAULT")) {
             /* No APIKey set or default? Return default key. */
-            apikey = getAPIKeyDefault();
+            return getAPIKeyDefault();
+        } else {
+            return userDefinedAPIKey;
         }
-        return apikey;
     }
 
     public String getAPIKeyDefault() {
@@ -406,81 +380,66 @@ public class TurbobitCore extends antiDDoSForHost {
         return 600;
     }
 
-    private String id = null;
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         handleFree(link, null);
     }
 
-    protected void accessDownloadURL(final Browser thisbr, final DownloadLink link) throws Exception {
-        final String fuid = getFUID(link);
-        String downloadurl = "https://" + getConfiguredDomain() + "/" + fuid;
-        if (downloadurls_need_html_ending()) {
-            downloadurl += ".html";
-        }
-        getPage(thisbr, downloadurl);
+    protected void accessContentURL(final Browser thisbr, final DownloadLink link) throws Exception {
+        getPage(thisbr, getContentURL(link));
     }
 
+    protected String getContentURL(final DownloadLink link) throws PluginException {
+        return getContentURL(getConfiguredDomain(), this.getFUID(link));
+    }
+
+    /** Returns base content URL for given DownloadLink. Most times this will be: https://<domain>/<fuid>.html */
+    protected String getContentURL(final String domain, final String fuid) throws PluginException {
+        String contentURL = "https://" + domain + "/" + fuid;
+        if (downloadurls_need_html_ending()) {
+            contentURL += ".html";
+        }
+        return contentURL;
+    }
+
+    /** Handles free- and free account downloads */
     protected void handleFree(final DownloadLink link, Account account) throws Exception {
         /* support for public premium links */
-        if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
-            handlePremiumLink(link);
-            return;
+        if (link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
+            if (handlePremiumLink(link)) {
+                return;
+            } else {
+                logger.info("Download of pre given directurl failed --> Attempting normal free download");
+            }
         }
-        requestFileInformation(link);
+        requestFileInformation_Web(link);
         if (checkShowFreeDialog(getHost())) {
             super.showFreeDialog(getHost());
         }
-        br = new Browser();
-        prepBrowserWebsite(br, userAgent.get());
-        sleep(2500, link);
-        br.setFollowRedirects(true);
-        accessDownloadURL(br, link);
-        /* 2020-03-03: Not required anymore? */
-        // simulateBrowser();
-        // accessDownloadURL(br, link);
-        if (isFileOfflineWebsite(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String fileSize = br.getRegex("class=\"file-size\">([^<>\"]*?)</span>").getMatch(0);
-        if (fileSize != null) {
-            fileSize = fileSize.replace("М", "M");
-            fileSize = fileSize.replace("к", "k");
-            fileSize = fileSize.replace("Г", "g");
-            fileSize = fileSize.replace("б", "");
-            if (!fileSize.endsWith("b")) {
-                fileSize = fileSize + "b";
-            }
-            link.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
-        }
-        id = getFUID(link);
         /**
          * 2020-03-03: Removed, not needed anymore 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so
          * let's set it anyways.
          */
         // br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
-        getPage(br, "/download/free/" + id);
-        /* 2020-03-03: Not required anymore? */
-        // simulateBrowser();
+        getPage(br, "/download/free/" + this.getFUID(link));
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isPremiumOnly(link, account, br, false)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         }
         partTwo(link, account, true);
     }
 
-    protected boolean isPremiumOnly(DownloadLink downloadLink, Account account, Browser br, boolean throwException) throws PluginException {
-        if (br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
+    protected boolean isPremiumOnly(final DownloadLink link, final Account account, final Browser br, final boolean throwException) throws PluginException {
+        if (br.containsHTML("(?i)<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
             if (throwException) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
             } else {
                 return true;
             }
         } else if (br.containsHTML("<a\\s*data-premium-only-download") || br.containsHTML("href\\s*=\\s*\"/download/free/[^>]*?data-premium-only-download")) {
             if (throwException) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
             } else {
                 return true;
             }
@@ -525,7 +484,7 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
-    private final void partTwo(final DownloadLink link, Account account, final boolean allowRetry) throws Exception {
+    private final void partTwo(final DownloadLink link, final Account account, final boolean allowRetry) throws Exception {
         Form captchaform = null;
         final Form[] allForms = br.getForms();
         if (allForms != null && allForms.length != 0) {
@@ -536,13 +495,12 @@ public class TurbobitCore extends antiDDoSForHost {
                 }
             }
         }
-        String downloadUrl = null, waittime = null;
         if (captchaform == null) {
-            handleGeneralErrors();
+            handleGeneralErrors(br);
             if (!br.getURL().contains("/download/free/")) {
-                if (allowRetry && br.containsHTML("/download/free/" + Pattern.quote(id))) {
+                if (allowRetry && br.containsHTML("/download/free/" + Pattern.quote(this.getFUID(link)))) {
                     // from a log where the first call to this, just redirected to main page and set some cookies
-                    getPage("/download/free/" + id);
+                    getPage("/download/free/" + this.getFUID(link));
                     partTwo(link, account, false);
                     return;
                 }
@@ -550,6 +508,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Captcha form fail", 1 * 60 * 1000l);
             }
             /* Don't give up yet - check for waittime! */
+            String waittime;
             if (br.containsHTML(tb(0))) {
                 waittime = br.getRegex(tb(1)).getMatch(0);
                 final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
@@ -583,85 +542,49 @@ public class TurbobitCore extends antiDDoSForHost {
         processCaptchaForm(link, account, captchaform, br, false);
         submitForm(captchaform);
         if (br.getHttpConnection().getResponseCode() == 302 || br.containsHTML("<div\\s*class\\s*=\\s*\"captcha-error\"\\s*>\\s*Incorrect")) {
-            /* Solving took too long? */
+            /* This should never happen - solving took too long? */
             invalidateLastChallengeResponse();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        /* 2020-03-03: Not required anymore? */
-        // simulateBrowser();
-        /** 2019-05-09: TODO: Remove this old overcomplicated handling */
-        /* Ticket Time */
-        String ttt = parseImageUrl(br.getRegex(IMAGEREGEX(null)).getMatch(0), true);
-        int maxWait = 9999, realWait = 0;
-        for (String s : br.getRegex(tb(11)).getColumn(0)) {
-            realWait = Integer.parseInt(s);
-            if (realWait == 0) {
-                continue;
-            }
-            if (realWait < maxWait) {
-                maxWait = realWait;
-            }
-        }
-        boolean waited = false;
-        int tt = getPreDownloadWaittime(br);
-        if (ttt != null) {
-            tt = Integer.parseInt(ttt);
-            tt = tt < realWait ? tt : realWait;
-            if (tt < 30 || tt > 600) {
-                ttt = parseImageUrl(tb(2) + tt + "};" + br.getRegex(tb(3)).getMatch(0), false);
-                if (ttt == null) {
-                    /* 2019-05-09: Old code - according to old errortext, this state means that we got blocked by the host ... */
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Failed to find waittime", 10 * 60 * 60 * 1001l);
-                }
-                tt = Integer.parseInt(ttt);
-            }
-            logger.info(" Waittime detected, waiting " + String.valueOf(tt) + " seconds from now on...");
-            if (tt > 250) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l);
-            }
-            waited = true;
-        }
-        String continueLink = br.getRegex("\\$\\('#timeoutBox'\\)\\.load\\(\"(/[^\"]+)\"\\);").getMatch(0);
+        final String continueLink = br.getRegex("\\$\\('#timeoutBox'\\)\\.load\\(\"(/[^\"]+)\"\\);").getMatch(0);
+        // if (continueLink == null) {
+        // /* Fallback */
+        // continueLink = "/download/getLinkTimeout/" + this.getFUID(link);
+        // }
         if (continueLink == null) {
-            continueLink = "/download/getLinkTimeout/" + id;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!waited) {
-            this.sleep(tt * 1001l, link);
+        /* Pre download wait */
+        int waitSeconds = getPreDownloadWaittime(br);
+        if (waitSeconds > 250) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", waitSeconds * 1001l);
         }
+        this.sleep(waitSeconds * 1001l, link);
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         getPage(br2, continueLink);
         {
             /* 2019-07-11: New for turbobit.net */
-            continueLink = br2.getRegex("(\"|')(/?/download/started/[^\"\\']+)\\1").getMatch(1);
-            if (!StringUtils.isEmpty(continueLink)) {
-                br2.getPage(continueLink);
+            final String continueLink2 = br2.getRegex("(\"|')(/?/download/started/[^\"\\']+)\\1").getMatch(1);
+            if (!StringUtils.isEmpty(continueLink2)) {
+                br2.getPage(continueLink2);
             }
         }
-        downloadUrl = br2.getRegex("(\"|')(/?/download/redirect/[^\"\\']+)\\1").getMatch(1);
+        final String downloadUrl = br2.getRegex("(\"|')(/?/download/redirect/[^\"\\']+)\\1").getMatch(1);
         handleDownloadRedirectErrors(downloadUrl, link);
         /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
         br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
-        br.setFollowRedirects(false);
-        // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
-        // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
-        getPage(downloadUrl);
-        downloadUrl = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getURL();
-        final String md5sum = new Regex(downloadUrl, "md5=([a-f0-9]{32})").getMatch(0);
-        if (md5sum != null) {
-            logger.info("Found md5hash on downloadstart");
-            link.setMD5Hash(md5sum);
-        }
-        initDownload(DownloadType.GUEST_FREE, link, downloadUrl, true);
-        handleServerErrors();
+        br.setFollowRedirects(true);
+        initDownload(DownloadType.GUEST_FREE, link, downloadUrl);
+        handleErrorsPreDownloadstart(dl.getConnection());
         dl.startDownload();
     }
 
     public int getPreDownloadWaittime(final Browser br) {
         int wait = 0;
-        /* This is NOT a corrent implementation - they use js for the waittime but usually this will do just fine! */
         final String wait_str = br.getRegex("minLimit\\s*?:\\s*?(\\d+)").getMatch(0);
         if (wait_str == null) {
+            logger.warning("Using fallback pre-download-wait");
             wait = get_fallback_waittime();
         } else {
             wait = Integer.parseInt(wait_str);
@@ -675,9 +598,8 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     /** Handles errors */
-    private void handleDownloadRedirectErrors(final String dllink, final DownloadLink link) throws PluginException {
-        final String host = link.getHost();
-        if (StringUtils.isEmpty(dllink)) {
+    private void handleDownloadRedirectErrors(final String redirect, final DownloadLink link) throws PluginException {
+        if (StringUtils.isEmpty(redirect)) {
             logger.info("'redirect' downloadurl is null");
             if (br.toString().matches("Error: \\d+")) {
                 // unknown error...
@@ -694,7 +616,7 @@ public class TurbobitCore extends antiDDoSForHost {
                  * <div class="action-block"><p>Der Link ist abgelaufen. Fordern Sie bitte <a href='/FUID.html'>new</a> download
                  * link.</p></div></div> </div> Example: http://turbobit.net/download/redirect/TEST/TEST
                  */
-                if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
+                if (link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Generated Premium link has expired");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to generate final downloadlink");
@@ -706,9 +628,8 @@ public class TurbobitCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, linkerror);
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown Error - failed to find redirect-url to final downloadurl");
-        } else if (StringUtils.endsWithCaseInsensitive(dllink, "://" + host + "/")) {
-            // expired/invalid?
-            // @see Link; 0418034739341.log; 1111047; jdlog://0418034739341
+        } else if (redirect.matches("^https?://[^/]+/?$")) {
+            /* Redirect to mainpage --> expired/invalid? */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Premium link no longer valid");
         }
     }
@@ -729,23 +650,27 @@ public class TurbobitCore extends antiDDoSForHost {
     /**
      * fuid = case sensitive.
      *
-     * @param downloadLink
+     * @param link
      * @return
      * @throws PluginException
      */
-    private String getFUID(final DownloadLink downloadLink) throws PluginException {
+    private String getFUID(final DownloadLink link) throws PluginException {
         /* standard links turbobit.net/uid.html && turbobit.net/uid/filename.html */
-        String fuid = new Regex(downloadLink.getPluginPatternMatcher(), "https?://[^/]+/([A-Za-z0-9]+)(?:/[^/]+)?(?:\\.html)?$").getMatch(0);
-        if (fuid == null) {
-            // download/free/
-            fuid = new Regex(downloadLink.getPluginPatternMatcher(), "download/free/([A-Za-z0-9]+)").getMatch(0);
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        }
+        String fuid;
+        if (link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
+            fuid = new Regex(link.getPluginPatternMatcher(), TYPE_premiumRedirectLinks).getMatch(0);
+        } else {
+            fuid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([A-Za-z0-9]+)(?:/[^/]+)?(?:\\.html)?$").getMatch(0);
             if (fuid == null) {
-                // support for public premium links
-                fuid = new Regex(downloadLink.getPluginPatternMatcher(), "download/redirect/[A-Za-z0-9]+/([a-zA-F0-9]+)").getMatch(0);
-                if (fuid == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                /* download/free/ */
+                fuid = new Regex(link.getPluginPatternMatcher(), "download/free/([A-Za-z0-9]+)").getMatch(0);
             }
+        }
+        if (fuid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return fuid;
     }
@@ -771,69 +696,73 @@ public class TurbobitCore extends antiDDoSForHost {
             this.handleFree(link, account);
         } else {
             /* support for public premium links */
-            if (link.getPluginPatternMatcher().matches(premRedirectLinks)) {
-                handlePremiumLink(link);
-                return;
+            if (link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
+                if (handlePremiumLink(link)) {
+                    return;
+                } else {
+                    logger.info("Download of pre given directurl failed --> Attempting normal premium download");
+                }
             }
             requestFileInformation(link);
             login(account, false);
-            sleep(2000, link);
-            accessDownloadURL(br, link);
+            accessContentURL(br, link);
             handlePremiumCaptcha(br, link, account);
             String dllink = null;
             final String[] mirrors = br.getRegex("('|\")(https?://([a-z0-9\\.]+)?[^/\\'\"]+//?download/redirect/.*?)\\1").getColumn(1);
             if (mirrors == null || mirrors.length == 0) {
-                if (br.containsHTML("You have reached the.*? limit of premium downloads")) {
+                if (br.containsHTML("(?i)You have reached the.*? limit of premium downloads")) {
                     throw new AccountUnavailableException("Downloadlimit reached", 30 * 60 * 1000l);
-                }
-                if (br.containsHTML("'>Premium access is blocked<")) {
+                } else if (br.containsHTML("(?i)'>\\s*Premium access is blocked\\s*<")) {
                     logger.info("Premium access is blocked --> No traffic available?");
-                    throw new AccountUnavailableException("Premium access is blocked --> No traffic available?", 30 * 60 * 1000l);
+                    throw new AccountUnavailableException("Error 'Premium access is blocked' --> No traffic available?", 30 * 60 * 1000l);
                 }
-                this.handleGeneralErrors();
+                this.handleGeneralErrors(br);
                 logger.warning("dllink equals null, plugin seems to be broken!");
-                if (isLoggedIN()) {
-                    synchronized (account) {
-                        account.setProperty("UA", null);
-                        account.clearCookies("");
-                    }
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                logger.info("unknown_dl_error_premium");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadlink");
             }
-            br.setFollowRedirects(false);
-            {
-                Browser br2 = br.cloneBrowser();
-                for (int i = 0; i < mirrors.length; i++) {
-                    final String currentlink = mirrors[i];
-                    logger.info("Checking mirror: " + currentlink);
-                    getPage(currentlink);
-                    if (br.getHttpConnection().getResponseCode() == 503) {
-                        logger.info("Too many connections on current account via current IP");
-                        throw new AccountUnavailableException("Too many connections on current account via current IP", 2 * 60 * 1000l);
-                    }
-                    if (br.getRedirectLocation() != null) {
-                        dllink = br.getRedirectLocation();
-                        if (dllink != null) {
-                            final boolean isdownloadable = initDownload(DownloadType.ACCOUNT_PREMIUM, link, dllink, mirrors.length - 1 == i);
-                            if (isdownloadable) {
-                                break;
-                            }
-                            br = br2.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(false);
+            for (int i = 0; i < mirrors.length; i++) {
+                final String currentlink = mirrors[i];
+                logger.info("Checking mirror: " + i + "/" + mirrors.length + ": " + currentlink);
+                getPage(currentlink);
+                if (br.getHttpConnection().getResponseCode() == 503) {
+                    logger.info("Too many connections on current account via current IP");
+                    throw new AccountUnavailableException("Too many connections on current account via current IP", 1 * 60 * 1000l);
+                }
+                if (br.getRedirectLocation() == null) {
+                    logger.info("Skipping broken mirror: " + currentlink);
+                    continue;
+                }
+                dllink = br.getRedirectLocation();
+                if (dllink != null) {
+                    final boolean isLast = mirrors.length - 1 == i;
+                    try {
+                        if (initDownload(DownloadType.ACCOUNT_PREMIUM, link, dllink)) {
+                            break;
+                        }
+                    } catch (final PluginException e) {
+                        if (isLast) {
+                            throw e;
+                        } else {
+                            e.printStackTrace();
+                            continue;
                         }
                     }
+                    /* Ugly workaround */
+                    logger.info("Skipping non working mirror: " + dllink);
+                    br = br2.cloneBrowser();
                 }
-                if (br.containsHTML(">\\s*Your IP exceeded the max\\.? number of files that can be downloaded")) {
-                    final Regex durationRegex = br.getRegex("You will be able to download at high speed again in (\\d+) hour\\(s\\) (\\d+) minute");
-                    final String hoursStr = durationRegex.getMatch(0);
-                    final String minutesStr = durationRegex.getMatch(1);
-                    long wait = 30 * 60 * 1000l;
-                    if (hoursStr != null && minutesStr != null) {
-                        wait = (Long.parseLong(hoursStr) * 60 * 60 + Long.parseLong(minutesStr) * 60) * 1000l;
-                    }
-                    throw new AccountUnavailableException("Your IP exceeded the max number of files that can be downloaded", wait);
+            }
+            if (br.containsHTML("(?i)>\\s*Your IP exceeded the max\\.? number of files that can be downloaded")) {
+                final Regex durationRegex = br.getRegex("You will be able to download at high speed again in (\\d+) hour\\(s\\) (\\d+) minute");
+                final String hoursStr = durationRegex.getMatch(0);
+                final String minutesStr = durationRegex.getMatch(1);
+                long wait = 30 * 60 * 1000l;
+                if (hoursStr != null && minutesStr != null) {
+                    wait = (Long.parseLong(hoursStr) * 60 * 60 + Long.parseLong(minutesStr) * 60) * 1000l;
                 }
+                throw new AccountUnavailableException("Your IP exceeded the max number of files that can be downloaded", wait);
             }
             if (dl == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadlink");
@@ -864,13 +793,14 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     /** 2019-05-11: Limits seem to be the same for all of their services. */
-    private boolean initDownload(final DownloadType downloadType, final DownloadLink link, final String directlink, final boolean isLast) throws Exception {
+    private boolean initDownload(final DownloadType downloadType, final DownloadLink link, final String directlink) throws Exception {
         if (directlink == null) {
             logger.warning("dllink is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        getAndSetMd5Hash(link, directlink);
-        boolean result = false;
+        boolean success = false;
+        final boolean previousFollowRedirectState = br.isFollowingRedirects();
+        br.setFollowRedirects(true);
         try {
             switch (downloadType) {
             case ACCOUNT_PREMIUM:
@@ -881,7 +811,6 @@ public class TurbobitCore extends antiDDoSForHost {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), directlink, true, 1);
                 break;
             }
-            // we require error handling here
             if (dl.getConnection().getURL().getPath().startsWith("/error/download/ip")) {
                 try {
                     br.followConnection(true);
@@ -910,72 +839,68 @@ public class TurbobitCore extends antiDDoSForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                logger.info("File is offline on download-attempt");
                 if (dl.getConnection().getURL().getPath().startsWith("landpage")) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Seems to be blocked by ISP", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Blocked by ISP?", 60 * 60 * 1000l);
+                } else {
+                    logger.info("File is offline on download-attempt");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                getAndSetMd5Hash(link, dl.getConnection().getURL().toString());
+                success = true;
+                return true;
+            } else {
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                handleGeneralErrors();
-                if (isLast) {
-                    // existing error handling is broken! there is no more mirrors!
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
-                }
-                return result;
+                handleGeneralErrors(br);
+                return false;
             }
-            result = true;
-            return result;
-        } catch (final Exception e) {
-            // on last mirror we should throw proper exception.
-            if (isLast) {
-                throw e;
-            }
-            logger.log(e);
-            return result;
         } finally {
+            br.setFollowRedirects(previousFollowRedirectState);
             try {
-                if (!result) {
+                if (!success) {
                     dl.getConnection().disconnect();
                 }
             } catch (final Throwable t) {
             }
-            logger.info("Mirror is " + (result ? "okay: " : "down: ") + directlink);
+            logger.info("Mirror is " + (success ? "okay: " : "down: ") + directlink);
         }
     }
 
-    public void handlePremiumLink(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        br.setCookie(br.getURL(), "JD", "1");
-        br.setFollowRedirects(false);
-        accessDownloadURL(br, link);
-        final String dllink = br.getRedirectLocation();
-        handleDownloadRedirectErrors(dllink, link);
-        initDownload(DownloadType.GUEST_PREMIUMLINK, link, dllink, true);
-        handleServerErrors();
-        dl.startDownload();
+    /** Attempts to download pre-given premium direct-URLs. */
+    protected boolean handlePremiumLink(final DownloadLink link) throws Exception {
+        if (!link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.setFollowRedirects(true);
+        if (initDownload(DownloadType.GUEST_PREMIUMLINK, link, link.getPluginPatternMatcher())) {
+            handleErrorsPreDownloadstart(dl.getConnection());
+            dl.startDownload();
+            return true;
+        } else {
+            this.dl = null;
+            return false;
+        }
     }
 
-    private void handleGeneralErrors() throws PluginException {
-        if (br.containsHTML("Try to download it once again after")) {
+    private void handleGeneralErrors(final Browser br) throws PluginException {
+        if (br.containsHTML("(?i)Try to download it once again after")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Try again later'", 20 * 60 * 1000l);
-        }
-        /* Either user waited too long for the captcha or maybe slow servers */
-        if (br.containsHTML(">Ссылка просрочена\\. Пожалуйста получите")) {
+        } else if (br.containsHTML("(?i)>\\s*Ссылка просрочена\\. Пожалуйста получите")) {
+            /* Either user waited too long for the captcha or maybe slow servers */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 5 * 60 * 1000l);
-        }
-        if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
+        } else if (br.containsHTML("(?i)Our service is currently unavailable in your country\\.")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, this.getHost() + " is currently unavailable in your country!");
         }
     }
 
-    private void handleServerErrors() throws PluginException {
-        if (dl.getConnection().getLongContentLength() == 0) {
+    private void handleErrorsPreDownloadstart(final URLConnectionAdapter con) throws PluginException {
+        if (con.getLongContentLength() == 0) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, server sends empty file", 5 * 60 * 1000l);
         }
     }
@@ -1291,5 +1216,14 @@ public class TurbobitCore extends antiDDoSForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Turbobit_Turbobit;
+    }
+
+    @Override
+    public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
+        try {
+            return getContentURL(this.getHost(), this.getFUID(link));
+        } catch (final PluginException e) {
+            return null;
+        }
     }
 }
