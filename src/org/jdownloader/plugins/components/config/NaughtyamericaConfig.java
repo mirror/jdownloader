@@ -117,7 +117,7 @@ public interface NaughtyamericaConfig extends PluginConfigInterface {
     void setGrab1080p(boolean b);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Grab 1440?")
+    @DescriptionForConfigEntry("Grab 1440p?")
     @DefaultBooleanValue(true)
     @Order(120)
     boolean isGrab1440p();

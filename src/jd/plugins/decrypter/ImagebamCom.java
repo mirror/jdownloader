@@ -119,17 +119,28 @@ public class ImagebamCom extends PluginForDecrypt {
         return crawlProcessGallery(param, this.br);
     }
 
-    /** Handles new style "gallery" URLs which can either lead to a gallery or a single image. */
-    private ArrayList<DownloadLink> crawlGalleryNew(final CryptedLink param) throws PluginException, IOException {
+    /**
+     * Handles new style "gallery" URLs which can either lead to a gallery or a single image.
+     *
+     * @throws InterruptedException
+     * @throws NumberFormatException
+     */
+    private ArrayList<DownloadLink> crawlGalleryNew(final CryptedLink param) throws PluginException, IOException, NumberFormatException, InterruptedException {
         final String galleryID = new Regex(param.getCryptedUrl(), TYPE_VIEW).getMatch(0);
         if (galleryID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setCookie(this.getHost(), "nsfw_inter", "1");
         br.getPage(param.getCryptedUrl());
         errorHandling(br, param);
         if (br.containsHTML("(?i)>\\s*Continue to your image")) {
             /* Reload page */
-            br.getPage(param.getCryptedUrl());
+            final boolean skipWaittime = true;
+            final String waitMillisStr = br.getRegex("show\\(\\);\\s*\\},\\s*(\\d+)\\);").getMatch(0);
+            if (waitMillisStr != null && !skipWaittime) {
+                this.sleep(Long.parseLong(waitMillisStr), param);
+            }
+            br.getPage(br.getURL());
         }
         if (br.containsHTML("class=\"links gallery\"")) {
             return this.crawlProcessGallery(param, this.br);
