@@ -192,7 +192,6 @@ public class InstaGramCom extends PluginForHost {
             if (filename != null) {
                 link.setFinalFileName(filename);
             }
-            System.out.println("LinkID: " + this.getLinkID(link));
             return AvailableStatus.TRUE;
         }
     }
