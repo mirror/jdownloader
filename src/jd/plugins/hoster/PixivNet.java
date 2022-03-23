@@ -24,22 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -63,6 +47,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixivNet extends PluginForHost {
@@ -426,9 +426,7 @@ public class PixivNet extends PluginForHost {
                     }
                 }
                 plugin.getLogger().info("Performing full login");
-                // br.getPage("https://accounts." + account.getHoster() +
-                // "/login?lang=en&source=pc&view_type=page&ref=wwwtop_accounts_index");
-                br.getPage("https://accounts." + account.getHoster() + "/login?lang=en");
+                br.getPage("https://www.pixiv.net/login.php?ref=wwwtop_accounts_index");
                 final String loginJson = br.getRegex("class=\"json-data\" value='(\\{.*?)\\'>").getMatch(0);
                 final Map<String, Object> loginInfo = JSonStorage.restoreFromString(loginJson, TypeRef.HASHMAP);
                 final Form loginform = new Form("https://accounts.pixiv.net/api/login?lang=en");
@@ -516,9 +514,9 @@ public class PixivNet extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("captcha", "");
                 loginform.put("g_recaptcha_response", Encoding.urlEncode(reCaptchaV2Response));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("pixiv_id", Encoding.urlEncode(account.getUser()));
                 loginform.put("post_key", Encoding.urlEncode(loginPostkey));
                 loginform.put("source", Encoding.urlEncode(loginSource));
