@@ -26,8 +26,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -43,67 +44,50 @@ public class AparatCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String itemID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        br.setAllowedResponseCodes(400);
+        br.getPage("https://www.aparat.com/api/fa/v1/video/video/show/videohash/" + itemID + "?pr=1&mf=1&referer=external");
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        //
-        String[][] videoMatches = br.getRegex("contentUrl\":\"(.+?)\"").getMatches();
-        for (String[] videoMatch : videoMatches) {
-            String videoURL = Encoding.htmlDecode(videoMatch[0]).replaceAll("\\\\/", "/");
-            decryptedLinks.add(createDownloadlink(videoURL));
-        }
-        final String newjson = br.getRegex("var options = (\\{.*?\\});").getMatch(0);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(newjson, TypeRef.HASHMAP);
-        final List<Map<String, Object>> streamingTypesList = (List<Map<String, Object>>) entries.get("multiSRC");
-        /* 0=HLS, 1= HTTP */
-        final List<Map<String, Object>> httpStreams = (List<Map<String, Object>>) streamingTypesList.get(1);
-        /* Last object = highest quality */
-        final Map<String, Object> bestHttpStream = httpStreams.get(httpStreams.size() - 1);
-        //
-        String videoTitle = null;
-        String[][] jsonMatches = br.getRegex("<script[\\s\\t\\r]+type=\"application/ld\\+json\">[\\s\\t\\r]*(.*?)[\\s\\t\\r]*</script>").getMatches();
-        if (jsonMatches.length == 1) {
-            final String[] jsonMatch = jsonMatches[0];
-            final Map<String, Object> jsonEntries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jsonMatch[0].replaceAll("\n", ""));
-            videoTitle = jsonEntries.get("name").toString();
-            if (videoTitle != null) {
-                videoTitle = Encoding.htmlDecode(videoTitle);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String type = (String) JavaScriptEngineFactory.walkJson(entries, "data/type");
+        if (StringUtils.equalsIgnoreCase(type, "VideoShow")) {
+            final Map<String, Object> videoShow = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/attributes");
+            final String title = (String) videoShow.get("title");
+            final List<Map<String, Object>> file_link_all = (List<Map<String, Object>>) videoShow.get("file_link_all");
+            if (file_link_all != null) {
+                // last one is best quality
+                final Map<String, Object> lastEntry = file_link_all.get(file_link_all.size() - 1);
+                final List<String> urls = (List<String>) lastEntry.get("urls");
+                final DownloadLink dl = this.createDownloadlink("directhttp://" + urls.get(0));
+                final String profile = (String) lastEntry.get("profile");
+                String fileName;
+                if (!StringUtils.isEmpty(title)) {
+                    fileName = title;
+                } else {
+                    fileName = itemID;
+                }
+                if (profile != null) {
+                    fileName += "_" + profile;
+                }
+                dl.setFinalFileName(fileName + ".mp4");
+                dl.setAvailable(true);
+                dl.setContentUrl(parameter);
+                decryptedLinks.add(dl);
             }
-        }
-        final DownloadLink dl = this.createDownloadlink("directhttp://" + (String) bestHttpStream.get("src"));
-        if (!StringUtils.isEmpty(videoTitle)) {
-            dl.setFinalFileName(videoTitle + ".mp4");
-        } else if (!StringUtils.isEmpty(title)) {
-            dl.setFinalFileName(title + ".mp4");
+            if (!title.isEmpty()) {
+                final FilePackage filePackage = FilePackage.getInstance();
+                filePackage.setName(Encoding.htmlDecode(title));
+                filePackage.setComment(title);
+                filePackage.addLinks(decryptedLinks);
+            }
+            return decryptedLinks;
         } else {
-            /* Fallback */
-            dl.setFinalFileName(itemID + ".mp4");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported type:" + type);
         }
-        dl.setAvailable(true);
-        decryptedLinks.add(dl);
-        /* Old HLS fallback: */
-        // if (decryptedLinks.isEmpty()) {
-        // /* 2020-11-09: Fallback to HLS */
-        // decryptedLinks.add(this.createDownloadlink("https://www.aparat.com/video/hls/manifest/visittype/site/videohash/" + itemID + "/f/"
-        // + itemID + ".m3u8"));
-        // }
-        if (!title.isEmpty()) {
-            final FilePackage filePackage = FilePackage.getInstance();
-            filePackage.setName(Encoding.htmlDecode(title));
-            filePackage.setComment(title);
-            filePackage.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
-    }
-
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.SibSoft_XFileShare;
     }
 }
