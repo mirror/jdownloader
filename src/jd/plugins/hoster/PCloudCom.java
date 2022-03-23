@@ -83,7 +83,7 @@ public class PCloudCom extends PluginForHost {
     private String               downloadURL                                     = null;
 
     public static String getAPIDomain(final String linkDomain) {
-        if (StringUtils.containsIgnoreCase(linkDomain, "e.pcloud")) {
+        if (linkDomain.matches("(?i).*e\\d*\\.pcloud\\.(com|link)")) {
             // europe data center
             return "eapi.pcloud.com";
         } else {
