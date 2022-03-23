@@ -17,12 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,10 +34,41 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagevenue.com" }, urls = { "https?://(?:www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}|https?://(?:www\\.)?imagevenue\\.com/view/o/\\?i=[^\\&]+\\&h=[^\\&]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImageVenueCom extends PluginForHost {
     public ImageVenueCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "imagevenue.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "https?://(?:www\\.)?img[0-9]+\\." + buildHostsPatternPart(domains) + "img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}";
+            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/view/o/\\?i=[^\\&]+\\&h=[^\\&]+";
+            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z0-9]+";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -62,17 +96,22 @@ public class ImageVenueCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        // Offline links should also have nice filenames
-        link.setName(getFilenameURL(link));
+        /* Offline links should also have nice filenames */
+        final String fallbackFilename = getFilenameURL(link);
+        if (!link.isNameSet() && fallbackFilename != null) {
+            link.setName(fallbackFilename);
+        }
         this.br.setAllowedResponseCodes(500);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         /* Error handling */
-        if (br.containsHTML("This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
-            logger.warning("File offline");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = null;
         dllink = br.getRegex("id=(?:\"|\\')thepic(?:\"|\\')[^>]*?.*?SRC=(?:\"|\\')(.*?)(?:\"|\\')").getMatch(0);
         if (dllink == null && (br.containsHTML("Continue to your image") || br.containsHTML("Continue to ImageVenue"))) {
             br.getPage(link.getDownloadURL());
@@ -95,27 +134,23 @@ public class ImageVenueCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String ending = new Regex(dllink, "imagevenue\\.com.*?\\.(.{3,4}$)").getMatch(0);
-        String filename0 = new Regex(dllink, "imagevenue\\.com/.*?/.*?/\\d+.*?_(.*?)($|\\..{2,4}$)").getMatch(0);
-        if (ending != null && filename0 != null) {
-            filename = filename0 + "." + ending;
-        }
+        String filename = br.getRegex("src=\"https?://[^\"]+\"[^>]*alt=\"([^<>\"]+)\"").getMatch(0);
         if (!StringUtils.isEmpty(filename)) {
-            link.setName(filename.trim());
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
             if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.getCompleteContentLength() == 14396) {
+            }
+            if (con.getCompleteContentLength() == 14396) {
                 /* 2021-08-27: Special "404 not image unavailable" dummy picture. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                final long size = con.getCompleteContentLength();
-                if (size > 0) {
-                    link.setDownloadSize(size);
-                }
+            }
+            final long size = con.getCompleteContentLength();
+            if (size > 0) {
+                link.setVerifiedFileSize(size);
             }
         } finally {
             try {

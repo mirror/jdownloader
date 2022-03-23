@@ -119,6 +119,12 @@ public class ImagebamCom extends PluginForDecrypt {
         return crawlProcessGallery(param, this.br);
     }
 
+    private Browser prepBR(final Browser br) {
+        /* 2022-03-23: This will skip some "Continue to image" pages. */
+        br.setCookie(this.getHost(), "nsfw_inter", "1");
+        return br;
+    }
+
     /**
      * Handles new style "gallery" URLs which can either lead to a gallery or a single image.
      *
@@ -130,7 +136,7 @@ public class ImagebamCom extends PluginForDecrypt {
         if (galleryID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.setCookie(this.getHost(), "nsfw_inter", "1");
+        prepBR(br);
         br.getPage(param.getCryptedUrl());
         errorHandling(br, param);
         if (br.containsHTML("(?i)>\\s*Continue to your image")) {
@@ -253,6 +259,7 @@ public class ImagebamCom extends PluginForDecrypt {
         if (imageID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        prepBR(br);
         br.getPage(param.getCryptedUrl());
         errorHandling(br, param);
         if (br.containsHTML("(?i)>\\s*Continue to your image")) {
