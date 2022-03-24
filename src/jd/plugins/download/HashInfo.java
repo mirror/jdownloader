@@ -143,8 +143,9 @@ public class HashInfo {
         } else if (obj instanceof HashInfo) {
             final HashInfo other = (HashInfo) obj;
             return other.getType().equals(getType()) && other.getHash().equals(getHash());
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
