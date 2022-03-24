@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -74,7 +73,6 @@ public class HqwoCc extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(getFID(link) + ".mp4");
         }
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
