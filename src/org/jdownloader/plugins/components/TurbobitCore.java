@@ -882,7 +882,6 @@ public class TurbobitCore extends antiDDoSForHost {
             try {
                 if (!success) {
                     dl.getConnection().disconnect();
-                } else {
                     dl = null;
                 }
             } catch (final Throwable t) {
