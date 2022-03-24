@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,6 +32,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Gogoplay4Com extends PluginForDecrypt {
@@ -111,16 +112,23 @@ public class Gogoplay4Com extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final UrlQuery postData = new UrlQuery();
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+        final UrlQuery firstCaptcha = new UrlQuery();
+        String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
             @Override
             public TYPE getType() {
                 return TYPE.INVISIBLE;
             }
         }.getToken();
-        postData.add("captcha_v3", Encoding.urlEncode(recaptchaV2Response));
-        postData.add("id", Encoding.urlEncode(id));
-        br.postPage("/download", postData);
+        firstCaptcha.add("captcha_v3", Encoding.urlEncode(recaptchaV2Response));
+        firstCaptcha.add("id", Encoding.urlEncode(id));
+        br.postPage("/download", firstCaptcha);
+        if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
+            final UrlQuery nextCaptcha = new UrlQuery();
+            recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            nextCaptcha.add("captcha_v2", Encoding.urlEncode(recaptchaV2Response));
+            nextCaptcha.add("id", Encoding.urlEncode(id));
+            br.postPage("/download", nextCaptcha);
+        }
         final String[] streamLinks = br.getRegex("class=\"dowload\"[^>]*><a\\s*href=\"(https?://[^\"]+)\"").getColumn(0);
         if (streamLinks == null || streamLinks.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
