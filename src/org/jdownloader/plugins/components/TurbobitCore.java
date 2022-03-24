@@ -792,18 +792,17 @@ public class TurbobitCore extends antiDDoSForHost {
      * This function tries to find this md5 value and sets it if possible.
      */
     protected boolean getAndSetMd5Hash(final DownloadLink link, final String dllink) {
-        final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
-        if (md5sum != null) {
-            final HashInfo md5 = HashInfo.parse(md5sum, true, false);
+        final String md5Value = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
+        final HashInfo md5Hash = HashInfo.parse(md5Value, true, false);
+        if (md5Hash != null) {
             final HashInfo existingHash = link.getHashInfo();
-            if (existingHash == null || existingHash.isWeakerThan(md5) || (existingHash.getType() == md5.getType() && !existingHash.equals(md5))) {
-                logger.info("Found hash on downloadstart:" + md5 + "|Existing:" + existingHash);
-                link.setHashInfo(md5);
+            if (existingHash == null || existingHash.isWeakerThan(md5Hash) || (existingHash.getType() == md5Hash.getType() && !existingHash.equals(md5Hash))) {
+                logger.info("Found hash on downloadstart:" + md5Hash + "|Existing:" + existingHash);
+                link.setHashInfo(md5Hash);
             }
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     static enum DownloadType {
