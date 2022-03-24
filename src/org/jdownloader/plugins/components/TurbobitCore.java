@@ -9,18 +9,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,7 +33,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+import jd.plugins.download.HashInfo;
 import jd.utils.JDHexUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -98,9 +99,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br>
-         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
-         * slow down the linkcheck and cause more http requests in a short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
+         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
+         * short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -261,6 +262,13 @@ public class TurbobitCore extends antiDDoSForHost {
             link.setName(fileName);
         }
         if (fileSize != null) {
+            fileSize = fileSize.replace("М", "M");
+            fileSize = fileSize.replace("к", "k");
+            fileSize = fileSize.replace("Г", "g");
+            fileSize = fileSize.replace("б", "");
+            if (!fileSize.endsWith("b")) {
+                fileSize = fileSize + "b";
+            }
             link.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
         }
         return AvailableStatus.TRUE;
@@ -339,8 +347,8 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     protected String getAPIKey() {
-        String userDefinedAPIKey = this.getPluginConfig().getStringProperty("APIKEY");
-        if (StringUtils.isEmpty(userDefinedAPIKey) || userDefinedAPIKey.equalsIgnoreCase("DEFAULT")) {
+        final String userDefinedAPIKey = this.getPluginConfig().getStringProperty("APIKEY");
+        if (StringUtils.isEmpty(userDefinedAPIKey) || StringUtils.equalsIgnoreCase(userDefinedAPIKey, "DEFAULT")) {
             /* No APIKey set or default? Return default key. */
             return getAPIKeyDefault();
         } else {
@@ -421,6 +429,7 @@ public class TurbobitCore extends antiDDoSForHost {
          * let's set it anyways.
          */
         // br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
+        sleep(2000, link);
         getPage(br, "/download/free/" + this.getFUID(link));
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -574,7 +583,6 @@ public class TurbobitCore extends antiDDoSForHost {
         handleDownloadRedirectErrors(downloadUrl, link);
         /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
         br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
-        br.setFollowRedirects(true);
         initDownload(DownloadType.GUEST_FREE, link, downloadUrl);
         handleErrorsPreDownloadstart(dl.getConnection());
         dl.startDownload();
@@ -658,21 +666,27 @@ public class TurbobitCore extends antiDDoSForHost {
         /* standard links turbobit.net/uid.html && turbobit.net/uid/filename.html */
         if (link == null || link.getPluginPatternMatcher() == null) {
             return null;
-        }
-        String fuid;
-        if (link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
-            fuid = new Regex(link.getPluginPatternMatcher(), TYPE_premiumRedirectLinks).getMatch(0);
         } else {
-            fuid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([A-Za-z0-9]+)(?:/[^/]+)?(?:\\.html)?$").getMatch(0);
-            if (fuid == null) {
-                /* download/free/ */
-                fuid = new Regex(link.getPluginPatternMatcher(), "download/free/([A-Za-z0-9]+)").getMatch(0);
+            if (link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
+                final String fuid = new Regex(link.getPluginPatternMatcher(), TYPE_premiumRedirectLinks).getMatch(0);
+                if (fuid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    return fuid;
+                }
+            } else {
+                String fuid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([A-Za-z0-9]+)(?:/[^/]+)?(?:\\.html)?$").getMatch(0);
+                if (fuid == null) {
+                    /* download/free/ */
+                    fuid = new Regex(link.getPluginPatternMatcher(), "download/free/([A-Za-z0-9]+)").getMatch(0);
+                }
+                if (fuid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    return fuid;
+                }
             }
         }
-        if (fuid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return fuid;
     }
 
     protected void handlePremiumCaptcha(final Browser br, final DownloadLink link, final Account account) throws Exception {
@@ -705,6 +719,7 @@ public class TurbobitCore extends antiDDoSForHost {
             }
             requestFileInformation(link);
             login(account, false);
+            sleep(2000, link);
             accessContentURL(br, link);
             handlePremiumCaptcha(br, link, account);
             String dllink = null;
@@ -720,8 +735,8 @@ public class TurbobitCore extends antiDDoSForHost {
                 logger.warning("dllink equals null, plugin seems to be broken!");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadlink");
             }
+            br.setFollowRedirects(false);
             final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(false);
             for (int i = 0; i < mirrors.length; i++) {
                 final String currentlink = mirrors[i];
                 logger.info("Checking mirror: " + i + "/" + mirrors.length + ": " + currentlink);
@@ -732,26 +747,27 @@ public class TurbobitCore extends antiDDoSForHost {
                 }
                 if (br.getRedirectLocation() == null) {
                     logger.info("Skipping broken mirror: " + currentlink);
-                    continue;
-                }
-                dllink = br.getRedirectLocation();
-                if (dllink != null) {
-                    final boolean isLast = mirrors.length - 1 == i;
-                    try {
-                        if (initDownload(DownloadType.ACCOUNT_PREMIUM, link, dllink)) {
-                            break;
-                        }
-                    } catch (final PluginException e) {
-                        if (isLast) {
-                            throw e;
-                        } else {
-                            e.printStackTrace();
-                            continue;
-                        }
-                    }
-                    /* Ugly workaround */
-                    logger.info("Skipping non working mirror: " + dllink);
                     br = br2.cloneBrowser();
+                } else {
+                    dllink = br.getRedirectLocation();
+                    if (dllink != null) {
+                        final boolean isLast = mirrors.length - 1 == i;
+                        try {
+                            if (initDownload(DownloadType.ACCOUNT_PREMIUM, link, dllink)) {
+                                break;
+                            }
+                        } catch (final PluginException e) {
+                            if (isLast) {
+                                throw e;
+                            } else {
+                                logger.log(e);
+                                continue;
+                            }
+                        }
+                        /* Ugly workaround */
+                        logger.info("Skipping non working mirror: " + dllink);
+                        br = br2.cloneBrowser();
+                    }
                 }
             }
             if (br.containsHTML("(?i)>\\s*Your IP exceeded the max\\.? number of files that can be downloaded")) {
@@ -763,11 +779,11 @@ public class TurbobitCore extends antiDDoSForHost {
                     wait = (Long.parseLong(hoursStr) * 60 * 60 + Long.parseLong(minutesStr) * 60) * 1000l;
                 }
                 throw new AccountUnavailableException("Your IP exceeded the max number of files that can be downloaded", wait);
-            }
-            if (dl == null) {
+            } else if (dl == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadlink");
+            } else {
+                dl.startDownload();
             }
-            dl.startDownload();
         }
     }
 
@@ -778,7 +794,12 @@ public class TurbobitCore extends antiDDoSForHost {
     protected boolean getAndSetMd5Hash(final DownloadLink link, final String dllink) {
         final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
         if (md5sum != null) {
-            link.setMD5Hash(md5sum);
+            final HashInfo md5 = HashInfo.parse(md5sum, true, false);
+            final HashInfo existingHash = link.getHashInfo();
+            if (existingHash == null || existingHash.isWeakerThan(md5) || (existingHash.getType() == md5.getType() && !existingHash.equals(md5))) {
+                logger.info("Found hash on downloadstart:" + md5 + "|Existing:" + existingHash);
+                link.setHashInfo(md5);
+            }
             return true;
         } else {
             return false;
@@ -820,7 +841,6 @@ public class TurbobitCore extends antiDDoSForHost {
                 // 403 by itself
                 // response code 403 && <p>You have reached the limit of downloads from this IP address, please contact our
                 if (downloadType == DownloadType.ACCOUNT_PREMIUM) {
-                    logger.info("No traffic available");
                     throw new AccountUnavailableException("403: You have reached the limit of downloads from this IP address", 30 * 60 * 1000l);
                 } else {
                     // some reason we have different error handling for free.
@@ -845,12 +865,7 @@ public class TurbobitCore extends antiDDoSForHost {
                     logger.info("File is offline on download-attempt");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            }
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                getAndSetMd5Hash(link, dl.getConnection().getURL().toString());
-                success = true;
-                return true;
-            } else {
+            } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
@@ -858,12 +873,18 @@ public class TurbobitCore extends antiDDoSForHost {
                 }
                 handleGeneralErrors(br);
                 return false;
+            } else {
+                getAndSetMd5Hash(link, dl.getConnection().getURL().toString());
+                success = true;
+                return true;
             }
         } finally {
             br.setFollowRedirects(previousFollowRedirectState);
             try {
                 if (!success) {
                     dl.getConnection().disconnect();
+                } else {
+                    dl = null;
                 }
             } catch (final Throwable t) {
             }
@@ -877,7 +898,6 @@ public class TurbobitCore extends antiDDoSForHost {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.setFollowRedirects(true);
         if (initDownload(DownloadType.GUEST_PREMIUMLINK, link, link.getPluginPatternMatcher())) {
             handleErrorsPreDownloadstart(dl.getConnection());
             dl.startDownload();

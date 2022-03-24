@@ -330,8 +330,9 @@ public class UploadgigCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
                 }
                 return false;
+            } else {
+                return true;
             }
-            return true;
         } catch (final Exception e) {
             try {
                 dl.getConnection().disconnect();
@@ -563,6 +564,7 @@ public class UploadgigCom extends antiDDoSForHost {
                 }
             }
             link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
+            dl.setFilenameFix(true);
             dl.startDownload();
         }
     }
