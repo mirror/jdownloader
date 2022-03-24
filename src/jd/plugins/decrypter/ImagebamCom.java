@@ -76,7 +76,7 @@ public class ImagebamCom extends PluginForDecrypt {
     private static final String TYPE_THUMBNAIL     = "https?://thumbs\\d+\\.[^/]+/\\d+/[a-z0-9]+/[a-z0-9]+/([a-z0-9]+)\\.[a-z]{3,5}";
     private static final String TYPE_THUMBNAIL_NEW = "https?://thumbs\\d+\\.[^/]+/\\d+/[a-z0-9]+/[a-z0-9]+/([A-Z0-9]+)_t\\.[a-z]{3,5}";
     private static final String TYPE_IMAGE         = "https?://(?:www\\.)?[^/]+/image/([a-z0-9]+)";
-    private static final String TYPE_VIEW          = "https?://(?:www\\.)?[^/]+/view/([A-Z0-9]+)";
+    private static final String TYPE_VIEW          = "https?://(?:www\\.)?[^/]+/view/([A-Za-z0-9]+)";
     private static final String TYPE_GALLERY       = "https?://(?:www\\.)?[^/]+/gallery/([a-z0-9]+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
