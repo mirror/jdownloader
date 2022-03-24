@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,10 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqwo.cc" }, urls = { "https?://(?:www\\.)?hqwo\\.cc/player/([a-f0-9]{32})" })
 public class HqwoCc extends PluginForHost {
     public HqwoCc(PluginWrapper wrapper) {
@@ -44,14 +44,11 @@ public class HqwoCc extends PluginForHost {
     // Tags: Porn plugin
     // protocol: no https
     // other:
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -60,33 +57,37 @@ public class HqwoCc extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(getFID(link) + ".mp4");
+        }
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = getLinkID(link);
-        /* Website does not have good filenames - first check if maybe decrypter set final filename! */
-        String filename = link.getFinalFileName();
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = url_filename;
-        }
         final String continue_url = br.getRegex("\\'(https?://[^/]+/runplayer/[^<>\"\\']+)\\'").getMatch(0);
         if (continue_url != null) {
             br.getPage(continue_url);
         }
         /* RegExes sometimes used for streaming */
-        final String jssource = br.getRegex("play\\((.*?)\\);").getMatch(0);
+        final String jssource = br.getRegex("play\\((\\[.*?\\])").getMatch(0);
         if (jssource != null) {
             try {
                 Map<String, Object> entries = null;
@@ -130,46 +131,16 @@ public class HqwoCc extends PluginForHost {
                 logger.info("BEST handling for multiple video source failed");
             }
         }
-        // if (StringUtils.isEmpty(dllink)) {
-        // dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        // }
-        // if (StringUtils.isEmpty(dllink)) {
-        // dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
-        // }
-        // if (StringUtils.isEmpty(dllink)) {
-        // dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\"[^>]*?type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        // }
-        // if (StringUtils.isEmpty(dllink)) {
-        // dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-        // }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
-                ext = default_extension;
-            }
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                } else {
-                    server_issues = true;
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video?");
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -177,9 +148,6 @@ public class HqwoCc extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -187,19 +155,21 @@ public class HqwoCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
