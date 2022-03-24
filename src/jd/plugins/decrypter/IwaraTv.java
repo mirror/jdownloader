@@ -18,6 +18,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.IwaraTvConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -32,10 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+(/videos)?)" })
 public class IwaraTv extends PluginForDecrypt {
@@ -82,7 +84,7 @@ public class IwaraTv extends PluginForDecrypt {
         }
         final HashSet<String> dupes = new HashSet<String>();
         dupes.add("thumbnails");
-        int page = -1;
+        int page = 1;
         final UrlQuery query = new UrlQuery();
         query.add("language", "en");
         /* 2021-10-11: Not all user profiles have the "/videos" URL available! */
@@ -91,10 +93,9 @@ public class IwaraTv extends PluginForDecrypt {
         username = URLEncode.decodeURIComponent(username);
         FilePackage fp = null;
         do {
-            /* Start at page 0 */
-            page += 1;
-            if (page > 0 || !firstRequestHasAlreadyBeenDone) {
-                query.addAndReplace("page", Integer.toString(page));
+            if (page > 1 || !firstRequestHasAlreadyBeenDone) {
+                /* Website starts page-counting at 0. */
+                query.addAndReplace("page", Integer.toString(page - 1));
                 br.getPage(baseURL + "?" + query.toString());
             }
             if (fp == null) {
@@ -109,43 +110,48 @@ public class IwaraTv extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String[] videoIDs = br.getRegex("/videos/([A-Za-z0-9]+)").getColumn(0);
-            int foundNumberofItemsThisPage = 0;
+            int foundNumberofNewItemsThisPage = 0;
             for (final String videoID : videoIDs) {
-                if (dupes.add(videoID)) {
-                    /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
-                    final String videoURL = "https://" + br.getHost(true) + "/videos/" + videoID;
-                    final DownloadLink dl = createDownloadlink(videoURL);
-                    dl.setContentUrl(videoURL);
-                    String videoTitle = br.getRegex("<a\\s*href\\s*=\\s*\"/videos/" + videoID + "[^\"]*\"\\s*>\\s*<img[^>]*?title\\s*=\\s*\"([^\"]+).*?</a>\\s*</div>").getMatch(0);
-                    if (videoTitle == null) {
-                        videoTitle = br.getRegex("/videos/" + videoID + "[^\"]*\">([^<>\"]+)</a></h3>").getMatch(0);
-                    }
-                    if (videoTitle != null) {
-                        videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
-                    }
-                    if (videoTitle != null) {
-                        videoTitle = videoTitle.trim().replaceAll("([\\(\\s\\._]+)$", "");
-                        dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_TITLE, videoTitle);
-                        dl.setName(username + "_" + videoID + "_" + videoTitle + ".mp4");
-                    } else {
-                        dl.setName(username + "_" + videoID + ".mp4");
-                    }
-                    dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_VIDEOID, videoID);
-                    dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_USER, username);
-                    dl.setAvailable(true);
-                    dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                    foundNumberofItemsThisPage += 1;
+                if (!dupes.add(videoID)) {
+                    continue;
                 }
+                /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
+                final String videoURL = "https://" + br.getHost(true) + "/videos/" + videoID;
+                final DownloadLink dl = createDownloadlink(videoURL);
+                dl.setContentUrl(videoURL);
+                String videoTitle = br.getRegex("<a\\s*href\\s*=\\s*\"/videos/" + videoID + "[^\"]*\"\\s*>\\s*<img[^>]*?title\\s*=\\s*\"([^\"]+).*?</a>\\s*</div>").getMatch(0);
+                if (videoTitle == null) {
+                    videoTitle = br.getRegex("/videos/" + videoID + "[^\"]*\">([^<>\"]+)</a></h3>").getMatch(0);
+                }
+                if (videoTitle != null) {
+                    videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
+                }
+                if (videoTitle != null) {
+                    videoTitle = videoTitle.trim().replaceAll("([\\(\\s\\._]+)$", "");
+                    dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_TITLE, videoTitle);
+                    dl.setName(username + "_" + videoID + "_" + videoTitle + ".mp4");
+                } else {
+                    dl.setName(username + "_" + videoID + ".mp4");
+                }
+                dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_VIDEOID, videoID);
+                dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_USER, username);
+                if (PluginJsonConfig.get(IwaraTvConfig.class).isProfileCrawlerEnableFastLinkcheck()) {
+                    dl.setAvailable(true);
+                }
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
+                distribute(dl);
+                foundNumberofNewItemsThisPage++;
             }
-            logger.info("Crawled page " + (page + 1) + " | Found items: " + foundNumberofItemsThisPage + " | Total so far: " + decryptedLinks.size());
-            final boolean nextPageAvailable = br.containsHTML("page=" + (page + 1));
+            logger.info("Crawled page " + page + " | Found items on this page: " + foundNumberofNewItemsThisPage + " | Total so far: " + decryptedLinks.size());
+            final boolean nextPageAvailable = br.containsHTML("page=" + page);
             if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
                 break;
-            } else if (foundNumberofItemsThisPage == 0) {
+            } else if (foundNumberofNewItemsThisPage == 0) {
                 logger.info("Stopping because: Failed to find any items on current page");
                 if (decryptedLinks.isEmpty()) {
+                    /* No items have been found before -> Looks like profile is empty. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     break;
@@ -154,6 +160,7 @@ public class IwaraTv extends PluginForDecrypt {
                 logger.info("Stopping because: Reached last page");
                 break;
             }
+            page++;
         } while (true);
         return decryptedLinks;
     }
