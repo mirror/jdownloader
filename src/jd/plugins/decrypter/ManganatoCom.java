@@ -53,7 +53,13 @@ public class ManganatoCom extends antiDDoSForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            final String images[][] = br.getRegex("(?i)img\\s*src\\s*=\\s*\"(https?://[^\"]*?/(\\d+)\\.(jpe?g|png))\"").getMatches();
+            String images[][] = br.getRegex("(?i)img\\s*src\\s*=\\s*\"(https?://[^\"]*?/(\\d+)\\.(jpe?g|png))\"").getMatches();
+            if (images == null || images.length == 0) {
+                images = br.getRegex("(?i)img\\s*src\\s*=\\s*\"(https?://[^\"]*?/img/[^\"]*/(\\d+)[^/]*\\.(jpe?g|png))\"").getMatches();
+            }
+            if (images == null || images.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final HashSet<String> dups = new HashSet<String>();
             for (final String image[] : images) {
                 if (dups.add(image[0])) {
