@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -79,52 +80,46 @@ public class SexuCom extends PluginForHost {
         dllink = null;
         server_issues = false;
         final String lid = new Regex(link.getDownloadURL(), "(\\d+)/$").getMatch(0);
-        link.setLinkID(lid);
         link.setName(lid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"container page404\"|>This video was deleted<") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("class\\s*=\\s*\"container page404\"|>\\s*This video was deleted\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p" };
-        // String js = this.br.getRegex("\\.setup\\((\\{.*?\\})\\);").getMatch(0);
-        String js = br.getRegex("\"clip\":(\\{.*?\\}\\})").getMatch(0);
-        if (js == null) {
-            // js = br.cloneBrowser().getPage("http://sexu.com/v.php?v_id=" + downloadLink.getLinkID() + "&bitrate=720p&_=" +
-            // System.currentTimeMillis());
-            // js = js.replace("'", "\"");
+        final String playerSettingsString = br.getRegex("var\\s*playerSettings\\s*=\\s*(\\{.*?\\})\\s*;\\s*</script").getMatch(0);
+        if (playerSettingsString == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
-        final List<Object> sources = (List<Object>) entries.get("sources");
-        if (sources != null) {
-            /* Find best quality */
-            boolean done = false;
-            for (final String quality : qualities) {
-                for (final Object qualinfo : sources) {
-                    final Map<String, Object> qual_info = (Map<String, Object>) qualinfo;
-                    final String currquality = (String) qual_info.get("quality");
-                    if (currquality.contains(quality)) {
-                        dllink = (String) qual_info.get("src");
-                        done = true;
-                        break;
+        final Map<String, Object> playerSettings = JavaScriptEngineFactory.jsonToJavaMap(playerSettingsString);
+        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(playerSettings, "clip");
+        dllink = (String) entries.get("downloadUrl");
+        if (dllink == null) {
+            dllink = br.getRegex("<meta property=\"og:video:url\" content=\"([^<>\"]+)\" />").getMatch(0);
+            if (dllink == null) {
+                final List<Object> sources = (List<Object>) entries.get("sources");
+                if (sources != null) {
+                    /* Find best quality */
+                    boolean done = false;
+                    final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p" };
+                    for (final String quality : qualities) {
+                        for (final Object qualinfo : sources) {
+                            final Map<String, Object> qual_info = (Map<String, Object>) qualinfo;
+                            final String currquality = (String) qual_info.get("quality");
+                            if (currquality.contains(quality)) {
+                                dllink = (String) qual_info.get("src");
+                                done = true;
+                                break;
+                            }
+                        }
+                        if (done) {
+                            break;
+                        }
                     }
-                }
-                if (done) {
-                    break;
                 }
             }
         }
-        if (dllink == null) {
-            /* 2020-07-06 */
-            dllink = br.getRegex("<meta property=\"og:video:url\" content=\"([^<>\"]+)\" />").getMatch(0);
-        }
-        if (dllink == null) {
-            /* 2020-07-06 */
-            dllink = br.getRegex("<source src=\"([^\"]+)\"[^>]*type=\"video/mp4\">").getMatch(0);
-        }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
         if (filename == null) {
             /* Fallback */
             filename = this.getFID(link);
@@ -147,12 +142,11 @@ public class SexuCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("text")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                } else {
-                    server_issues = true;
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                 }
-                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -172,14 +166,19 @@ public class SexuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
