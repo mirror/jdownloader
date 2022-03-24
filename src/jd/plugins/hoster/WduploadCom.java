@@ -124,7 +124,7 @@ public class WduploadCom extends antiDDoSForHost {
         }
         String filename = null, filesize = null;
         final String fid = this.getFID(link);
-        final boolean use_API = false;
+        br.setFollowRedirects(true);
         if (useWebAPI) {
             /* 2020-01-20 */
             this.getPage("http://wduphp." + this.getHost() + "/api/filemanager/details/" + fid);
