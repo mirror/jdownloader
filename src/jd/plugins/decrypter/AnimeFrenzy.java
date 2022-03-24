@@ -30,15 +30,45 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animefrenzy.eu" }, urls = { "https?://(www\\.)?animefrenzy\\.(?:eu|net|org|vip)/(?:anime|cartoon|watch|stream)/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AnimeFrenzy extends antiDDoSForDecrypt {
     public AnimeFrenzy(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "animefrenzy.vip", "animefrenzy.net", "animefrenzy.org" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:anime|cartoon|watch|stream)/[^/]+|[\\w\\-]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -99,6 +129,14 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             if (link != null) {
                 link = processPrefixSlashes(Encoding.htmlDecode(link));
                 decryptedLinks.add(createDownloadlink(link));
+            }
+        }
+        /* 2022-03-24 */
+        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance("gogoplay4.com");
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : urls) {
+            if (plg.canHandle(url)) {
+                decryptedLinks.add(this.createDownloadlink(url));
             }
         }
         if (fpName != null) {
