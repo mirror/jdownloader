@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.IwaraTvConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -55,7 +56,6 @@ public class IwaraTv extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private final String         html_privatevideo = "(?i)>\\s*This video is only available for users that|>\\s*Private video<";
-    public static final String   html_loggedin     = "/user/logout";
     private static final String  type_image        = "https?://[^/]+/images/.+";
     private String               dllink            = null;
     private boolean              serverIssue       = false;
@@ -268,62 +268,67 @@ public class IwaraTv extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
-                boolean loggedIN = false;
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
+                    if (!force) {
+                        /* Trust cookies without check */
+                        return;
+                    }
+                    logger.info("Checking login cookies");
                     br.getPage("https://" + account.getHoster());
-                    if (br.containsHTML(html_loggedin)) {
-                        loggedIN = true;
+                    if (isLoggedIN(br)) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
                     } else {
-                        br = prepBR(new Browser());
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
                 }
-                if (!loggedIN) {
-                    br.getPage("https://www." + this.getHost() + "/user/login?destination=front");
-                    Form loginform = br.getFormbyProperty("id", "user-login");
-                    if (loginform == null) {
-                        /* Fallback */
-                        loginform = br.getForm(0);
+                logger.info("Performing full login");
+                br.getPage("https://www." + this.getHost() + "/user/login?destination=front");
+                Form loginform = br.getFormbyProperty("id", "user-login");
+                if (loginform == null) {
+                    /* Fallback */
+                    loginform = br.getForm(0);
+                }
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("name", Encoding.urlEncode(account.getUser()));
+                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                if (loginform.containsHTML("g\\-recaptcha")) {
+                    /* 2017-04-28 */
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                     }
-                    if (loginform == null) {
-                        logger.warning("Failed to find loginform");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
                     }
-                    loginform.put("name", Encoding.urlEncode(account.getUser()));
-                    loginform.put("pass", Encoding.urlEncode(account.getPass()));
-                    if (loginform.containsHTML("g\\-recaptcha")) {
-                        /* 2017-04-28 */
-                        final DownloadLink dlinkbefore = this.getDownloadLink();
-                        if (dlinkbefore == null) {
-                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
-                        }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        if (dlinkbefore != null) {
-                            this.setDownloadLink(dlinkbefore);
-                        }
-                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                /* 2019-12-12: Anti-anti-bot against: https://www.iwara.tv/sites/all/modules/contrib/antibot/js/antibot.js */
+                final String key = PluginJSonUtils.getJson(br, "key");
+                if (key != null) {
+                    loginform.put("antibot_key", key);
+                }
+                if (loginform.getAction() == null || loginform.getAction().contains("/antibot")) {
+                    loginform.setAction(br.getURL());
+                }
+                br.setCookie(br.getHost(), "has_js", "1");
+                /* Anti-anti-bot END */
+                br.submitForm(loginform);
+                if (!isLoggedIN(br)) {
+                    if (br.getURL().contains("/antibot")) {
+                        /* 2019-12-12: Anti-anti-bot failed :( */
+                        logger.warning("Login failed due to anti-bot measures");
                     }
-                    /* 2019-12-12: Anti-anti-bot against: https://www.iwara.tv/sites/all/modules/contrib/antibot/js/antibot.js */
-                    final String key = PluginJSonUtils.getJson(br, "key");
-                    if (key != null) {
-                        loginform.put("antibot_key", key);
-                    }
-                    if (loginform.getAction() == null || loginform.getAction().contains("/antibot")) {
-                        loginform.setAction(br.getURL());
-                    }
-                    br.setCookie(br.getHost(), "has_js", "1");
-                    /* Anti-anti-bot END */
-                    br.submitForm(loginform);
-                    if (!br.containsHTML(html_loggedin)) {
-                        if (br.getURL().contains("/antibot")) {
-                            /* 2019-12-12: Anti-anti-bot failed :( */
-                            logger.warning("Login failed due to anti-bot measures");
-                        }
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -336,6 +341,14 @@ public class IwaraTv extends PluginForHost {
         }
     }
 
+    private boolean isLoggedIN(final Browser br) {
+        if (br.containsHTML("/user/logout")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -343,7 +356,6 @@ public class IwaraTv extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
@@ -369,5 +381,10 @@ public class IwaraTv extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends IwaraTvConfig> getConfigInterface() {
+        return IwaraTvConfig.class;
     }
 }
