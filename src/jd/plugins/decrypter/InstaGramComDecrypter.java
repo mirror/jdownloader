@@ -1067,7 +1067,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink(createSinglePosturl(contentIDMain));
             decryptedLinks.add(dl);
             distribute(dl);
-        } else if (StringUtils.equalsIgnoreCase("GraphImage", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
+            return decryptedLinks;
+        }
+        if (StringUtils.equalsIgnoreCase("GraphImage", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
             /* Single image */
             decryptedLinks.add(crawlSingleMediaObject(param, request, entries, contentIDMain, date, description, preGivenIndex, preGivenOrderidFormatted, usernameForFilename));
         } else if (StringUtils.equalsIgnoreCase("GraphVideo", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
@@ -1081,6 +1083,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink(createSinglePosturl(contentIDMain));
             decryptedLinks.add(dl);
             distribute(dl);
+            return decryptedLinks;
         } else if (resource_data_list != null && resource_data_list.size() > 0) {
             final int padLength = getPadLength(resource_data_list.size());
             int index = 0;
