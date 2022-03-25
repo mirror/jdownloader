@@ -124,11 +124,12 @@ public class Gogoplay4Com extends PluginForDecrypt {
         br.postPage("/download", firstCaptcha);
         if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
             /* 2022-03-24: Can be two captchas required?! */
-            final UrlQuery nextCaptcha = new UrlQuery();
-            recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            nextCaptcha.add("captcha_v2", Encoding.urlEncode(recaptchaV2Response));
-            nextCaptcha.add("id", Encoding.urlEncode(id));
-            br.postPage("/download", nextCaptcha);
+            // final UrlQuery nextCaptcha = new UrlQuery();
+            // recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            // nextCaptcha.add("captcha_v2", Encoding.urlEncode(recaptchaV2Response));
+            // nextCaptcha.add("id", Encoding.urlEncode(id));
+            // br.postPage("/download", nextCaptcha);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         final String[] streamLinks = br.getRegex("class=\"dowload\"[^>]*><a\\s*href=\"(https?://[^\"]+)\"").getColumn(0);
         if (streamLinks == null || streamLinks.length == 0) {

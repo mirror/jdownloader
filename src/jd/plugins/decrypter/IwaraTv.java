@@ -168,25 +168,13 @@ public class IwaraTv extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-        if (aa != null) {
-            /* Login if account is available */
-            ((jd.plugins.hoster.IwaraTv) hostPlugin).login(aa, false);
-        }
-        br.getPage(param.getCryptedUrl());
-        /*
-         * 2020-09-16: Do not check for the following html for offline as it is always present: <div id="video-processing"
-         * class="video-processing hidden">Processing video, please check back in a while</div>
-         */
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"cb_error\"|>Sort by:")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(br.getURL(), "/videos/(.+)").getMatch(0);
-        }
-        if (filename != null) {
-            filename = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(filename));
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        final DownloadLink selfhostedVideo = this.createDownloadlink(param.getCryptedUrl());
+        PluginException errorDuringAvailablecheck = null;
+        try {
+            ((jd.plugins.hoster.IwaraTv) hostPlugin).requestFileInformation(selfhostedVideo, account, false);
+        } catch (final PluginException e) {
+            errorDuringAvailablecheck = e;
         }
         String externID = br.getRegex("\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
@@ -218,9 +206,19 @@ public class IwaraTv extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            final DownloadLink dl = createDownloadlink(br.getURL());
-            decryptedLinks.add(dl);
         }
-        return decryptedLinks;
+        if (decryptedLinks.isEmpty()) {
+            /* Looks like content is selfhosted. */
+            if (errorDuringAvailablecheck != null) {
+                /* Most likely content is offline */
+                throw errorDuringAvailablecheck;
+            }
+            selfhostedVideo.setAvailable(true);
+            decryptedLinks.add(selfhostedVideo);
+            return decryptedLinks;
+        } else {
+            /* Looks like we found embedded content. */
+            return decryptedLinks;
+        }
     }
 }
