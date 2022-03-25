@@ -92,6 +92,7 @@ public class IwaraTv extends PluginForDecrypt {
         final String baseURL = param.getCryptedUrl();
         username = URLEncode.decodeURIComponent(username);
         FilePackage fp = null;
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         do {
             if (page > 1 || !firstRequestHasAlreadyBeenDone) {
                 /* Website starts page-counting at 0. */
@@ -117,7 +118,11 @@ public class IwaraTv extends PluginForDecrypt {
                 }
                 /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
                 final String videoURL = "https://" + br.getHost(true) + "/videos/" + videoID;
-                final DownloadLink dl = createDownloadlink(videoURL);
+                /*
+                 * Do not process these URLs again via hosterplugin! We know that it's selfhosted plugin thus we use use the constructor in
+                 * which we can provide a PluginForHost.
+                 */
+                final DownloadLink dl = new DownloadLink(plg, this.getHost(), this.getHost(), videoURL, true);
                 dl.setContentUrl(videoURL);
                 String videoTitle = br.getRegex("<a\\s*href\\s*=\\s*\"/videos/" + videoID + "[^\"]*\"\\s*>\\s*<img[^>]*?title\\s*=\\s*\"([^\"]+).*?</a>\\s*</div>").getMatch(0);
                 if (videoTitle == null) {
