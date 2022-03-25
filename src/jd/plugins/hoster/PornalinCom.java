@@ -19,19 +19,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class MrdeepfakesCom extends KernelVideoSharingComV2 {
-    public MrdeepfakesCom(final PluginWrapper wrapper) {
+public class PornalinCom extends KernelVideoSharingComV2 {
+    public PornalinCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mrdeepfakes.com" });
+        ret.add(new String[] { "pornalin.com" });
         return ret;
     }
 
@@ -51,19 +50,13 @@ public class MrdeepfakesCom extends KernelVideoSharingComV2 {
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video/\\d+/[a-z0-9\\-]+/?|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video/[a-z0-9\\-]+/?|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        /** 2021-03-35: Special: Fix embed URLs as they won't work! */
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            link.setPluginPatternMatcher("https://mrdeepfakes.com/video/" + this.getFUID(link) + "/this_will_redirect");
-        }
+    @Override
+    protected boolean hasFUIDInsideURL(final String url) {
+        return false;
     }
-    // @Override
-    // protected boolean hasFUIDInsideURL(final String url) {
-    // return false;
-    // }
 }
