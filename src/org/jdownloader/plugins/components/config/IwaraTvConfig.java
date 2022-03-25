@@ -49,6 +49,12 @@ public interface IwaraTvConfig extends PluginConfigInterface {
                 return "date_uploader_videoid.ext";
             }
         },
+        DATE_UPLOADER_SPACE_TITLE {
+            @Override
+            public String getLabel() {
+                return "date_uploader title.ext";
+            }
+        },
         DATE_IN_BRACKETS_SPACE_TITLE {
             @Override
             public String getLabel() {
@@ -58,7 +64,7 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("UPLOADER_VIDEOID_TITLE")
+    @DefaultEnumValue("DATE_UPLOADER_SPACE_TITLE")
     @Order(20)
     @DescriptionForConfigEntry("Select preferred filename scheme")
     FilenameScheme getPreferredFilenameScheme();
