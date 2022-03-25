@@ -92,14 +92,13 @@ public class AlldebridComFolder extends PluginForDecrypt {
         query.add("id", magnetID);
         br.getPage(AllDebridCom.api_base + "/magnet/status?" + query.toString());
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        /* Don't care which error happens - always treat it as an offline file! */
         if (entries.containsKey("error")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         /**
          * 2021-01-19: This is supposed to always be an array. It's a small serverside bug but they can't fix it because a lot of people are
-         * already using their API.
+         * already using their API. 2022-03-25: According to their support that's fixed but we'll leave the workaround here anyways.
          */
         final Object magnetsO = JavaScriptEngineFactory.walkJson(entries, "data/magnets");
         if (magnetsO instanceof List) {
