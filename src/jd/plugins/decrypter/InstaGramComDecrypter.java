@@ -1640,7 +1640,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (StringUtils.isEmpty(userID)) {
             /* Most likely that profile doesn't exist */
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "PROFILE_NOT_FOUND_" + user, "This profile doesn't exist: " + user));
+            final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_NOT_FOUND_" + user, "This profile doesn't exist: " + user);
+            decryptedLinks.add(dummy);
             return decryptedLinks;
         }
         if (userID == null || !userID.matches("\\d+")) {
@@ -1648,6 +1649,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final String usernameURL = new Regex(param.getCryptedUrl(), TYPE_STORY).getMatch(0);
         if (usernameURL == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* We need to be loggedIN to be able to see stories of users! */
@@ -1759,5 +1761,19 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             return 8;
         }
         /* 2021-07-06: Why not use this instead? return Integer.toString(size).length(); */
+    }
+
+    /** TODO: Update this and make use of it. */
+    public class InstagramMetadata {
+        private String username    = null;
+        private String hashtag     = null;
+        private String description = null;
+
+        public InstagramMetadata() {
+        }
+
+        public InstagramMetadata(final String username) {
+            this.username = username;
+        }
     }
 }
