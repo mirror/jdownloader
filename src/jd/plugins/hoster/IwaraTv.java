@@ -224,7 +224,9 @@ public class IwaraTv extends PluginForHost {
         final String videoid = this.getFID(link);
         if (scheme == FilenameScheme.DATE_UPLOADER_VIDEOID && date != null && uploader != null) {
             filename = date + "_" + uploader + "_" + videoid;
-        } else if (scheme == FilenameScheme.DATE_IN_BRACKETS_SPACE_TITLE && date != null && uploader != null && title != null) {
+        } else if (scheme == FilenameScheme.DATE_UPLOADER_SPACE_TITLE && date != null && uploader != null && title != null) {
+            filename = date + "_" + uploader + " " + title;
+        } else if (scheme == FilenameScheme.DATE_IN_BRACKETS_SPACE_TITLE && date != null && title != null) {
             filename = "[" + date + "]" + " " + title;
         } else if (scheme == FilenameScheme.UPLOADER_VIDEOID_TITLE && uploader != null && title != null) {
             filename = uploader + "_" + videoid + "_" + title;
