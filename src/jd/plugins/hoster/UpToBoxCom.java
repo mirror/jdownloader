@@ -892,20 +892,15 @@ public class UpToBoxCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
                 }
             }
-        } catch (final JSonMapperException jsone) {
+        } catch (final JSonMapperException jse) {
             /* Assume we got html code and check for errors in html code */
             try {
                 this.checkErrorsWebsite(link, account);
             } catch (PluginException e) {
-                throw Exceptions.addSuppressed(e, jsone);
+                throw Exceptions.addSuppressed(e, jse);
             }
-            logger.log(jsone);
-            /* TODO: Throw exception here? */
-            // if (link == null) {
-            // throw new AccountUnavailableException("Unknown error", 5 * 60 * 1000l);
-            // } else {
-            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
-            // }
+            logger.log(jse);
+            throw new AccountUnavailableException("Unvalid API response", 1 * 60 * 1000l);
         }
     }
 
