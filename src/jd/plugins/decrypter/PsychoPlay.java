@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -68,7 +69,7 @@ public class PsychoPlay extends antiDDoSForDecrypt {
             } else {
                 fp.setName(url_name + "_Volume_" + url_volume_formatted + "_Chapter_" + url_chapter_formatted);
             }
-            final int padlength = getPadLength(images.length);
+            final int padlength = StringUtils.getPadLength(images.length);
             String ext = null;
             int page = 1;
             for (String image : images) {
@@ -90,9 +91,5 @@ public class PsychoPlay extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private final int getPadLength(final int size) {
-        return String.valueOf(size).length();
     }
 }
