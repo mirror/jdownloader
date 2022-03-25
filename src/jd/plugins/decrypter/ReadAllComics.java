@@ -67,7 +67,7 @@ public class ReadAllComics extends antiDDoSForDecrypt {
             String[] images = new Regex(linkSection, "<img[^>]+src\\s*=\\s*\"\\s*([^\"]+)\\s*\"[^>]*>").getColumn(0);
             if (images != null && images.length > 0) {
                 fp.setName(Encoding.htmlDecode(fpName));
-                final int padlength = getPadLength(images.length);
+                final int padlength = StringUtils.getPadLength(images.length);
                 int page = 1;
                 for (String image : images) {
                     String page_formatted = String.format(Locale.US, "%0" + padlength + "d", page++);
@@ -82,9 +82,5 @@ public class ReadAllComics extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private int getPadLength(final int size) {
-        return String.valueOf(size).length();
     }
 }

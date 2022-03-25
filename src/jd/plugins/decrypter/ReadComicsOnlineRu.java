@@ -67,8 +67,8 @@ public class ReadComicsOnlineRu extends antiDDoSForDecrypt {
                 int chapterCount = new Regex(chapterBlock, "<li").count();
                 int chapterNumber = Integer.parseInt(chapterID);
                 int pageNumber = 1;
-                final int pagePadlength = getPadLength(pageCount);
-                String chapter_formatted = String.format(Locale.US, "%0" + getPadLength(chapterCount) + "d", chapterNumber);
+                final int pagePadlength = StringUtils.getPadLength(pageCount);
+                String chapter_formatted = String.format(Locale.US, "%0" + StringUtils.getPadLength(chapterCount) + "d", chapterNumber);
                 for (String page : pages) {
                     final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(page));
                     String page_formatted = String.format(Locale.US, "%0" + pagePadlength + "d", pageNumber++);
@@ -84,9 +84,5 @@ public class ReadComicsOnlineRu extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private int getPadLength(final int size) {
-        return String.valueOf(size).length();
     }
 }

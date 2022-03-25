@@ -82,7 +82,7 @@ public class VLComic extends antiDDoSForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String chapter_name = Encoding.htmlDecode(fpName.trim());
-                final int padlength = getPadLength(images.length);
+                final int padlength = StringUtils.getPadLength(images.length);
                 int page = 1;
                 String ext = null;
                 for (String image : images) {
@@ -101,9 +101,5 @@ public class VLComic extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private int getPadLength(final int size) {
-        return String.valueOf(size).length();
     }
 }

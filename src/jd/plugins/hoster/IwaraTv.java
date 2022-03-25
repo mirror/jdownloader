@@ -129,7 +129,6 @@ public class IwaraTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
-        boolean usedApi = false;
         boolean isVideo = true;
         String date = br.getRegex("class=\"username\"[^>]*>[^<]+</a>\\s*作成日:(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         if (this.br.getURL().matches(type_image)) {
@@ -155,7 +154,6 @@ public class IwaraTv extends PluginForHost {
                     final String drupal = br.getRegex("jQuery\\.extend\\([^{]+(.+)\\);").getMatch(0);
                     final String videoHash = PluginJSonUtils.getJson(PluginJSonUtils.getJsonNested(drupal, "theme"), "video_hash");
                     if (!StringUtils.isEmpty(videoHash)) {
-                        usedApi = true;
                         final Browser brc = br.cloneBrowser();
                         brc.getPage("/api/video/" + videoHash);
                         if (brc.toString().equals("[]")) {

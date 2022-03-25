@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -70,7 +71,7 @@ public class ReadMng extends antiDDoSForDecrypt {
             } else {
                 fp.setName(url_name + "_Chapter_" + url_chapter_formatted);
             }
-            final int padlength = getPadLength(images.length);
+            final int padlength = StringUtils.getPadLength(images.length);
             String ext = null;
             int page = 1;
             for (String image : images) {
