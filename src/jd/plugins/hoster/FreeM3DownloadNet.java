@@ -324,13 +324,14 @@ public class FreeM3DownloadNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        int max = getMaxSimultaneousFreeAnonymousDownloads();
-        if (max < 0) {
-            max = 20;
+        final int max = getMaxSimultaneousFreeAnonymousDownloads();
+        if (max == -1) {
+            return -1;
+        } else {
+            final int running = getFreeRunning().get();
+            final int ret = Math.min(running + 1, max);
+            return ret;
         }
-        final int running = getFreeRunning().get();
-        final int ret = Math.min(running + 1, max);
-        return ret;
     }
 
     public int getMaxSimultaneousFreeAnonymousDownloads() {

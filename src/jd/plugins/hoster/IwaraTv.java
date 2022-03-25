@@ -16,7 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.IwaraTvConfig;
 
@@ -31,10 +38,12 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -58,7 +67,6 @@ public class IwaraTv extends PluginForHost {
     private final String         html_privatevideo = "(?i)>\\s*This video is only available for users that|>\\s*Private video<";
     private static final String  type_image        = "https?://[^/]+/images/.+";
     private String               dllink            = null;
-    private boolean              serverIssue       = false;
     private static final String  PROPERTY_DATE     = "date";
     public static final String   PROPERTY_USER     = "user";
     public static final String   PROPERTY_TITLE    = "title";
@@ -69,10 +77,10 @@ public class IwaraTv extends PluginForHost {
         return "https://www.iwara.tv/";
     }
 
-    public static Browser prepBR(final Browser br) {
+    private Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
         br.setCustomCharset("UTF-8");
-        br.setCookie("iwara.tv", "show_adult", "1");
+        br.setCookie(this.getHost(), "show_adult", "1");
         return br;
     }
 
@@ -95,9 +103,8 @@ public class IwaraTv extends PluginForHost {
         return requestFileInformation(link, false);
     }
 
-    @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        final Account account = AccountController.getInstance().getValidAccount(this);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, account, false);
     }
 
@@ -105,7 +112,6 @@ public class IwaraTv extends PluginForHost {
         /* Set Packagizer property */
         link.setProperty(PROPERTY_VIDEOID, this.getFID(link));
         dllink = null;
-        serverIssue = false;
         this.setBrowserExclusive();
         prepBR(this.br);
         /* 2020-10-20: Disabled because their streaming-servers are very slow --> Slowsdown linkcheck dramatically! */
@@ -115,40 +121,16 @@ public class IwaraTv extends PluginForHost {
             login(account, false);
         }
         this.br.getPage(link.getPluginPatternMatcher());
-        br.followRedirect();
-        final String date = br.getRegex("class=\"username\"[^>]*>[^<]+</a>\\s*作成日:(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-        if (date != null) {
-            link.setProperty(PROPERTY_DATE, date);
-        }
-        String uploadername = this.br.getRegex("class=\"username\">([^<>]+)<").getMatch(0);
-        String filename = "";
-        if (uploadername != null) {
-            uploadername = Encoding.htmlDecode(uploadername).trim();
-            /* Set Packagizer property */
-            link.setProperty(PROPERTY_USER, uploadername);
-            filename += uploadername + "_";
-        }
-        filename += this.getFID(link) + "_";
-        String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
-        if (title != null) {
-            title = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(title));
-            /* Set Packagizer property */
-            link.setProperty(PROPERTY_TITLE, title);
-            filename += title;
-        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML(html_privatevideo)) {
-            /* Private video */
-            link.setName(filename + ".mp4");
-            return AvailableStatus.TRUE;
-        } else if (!br.containsHTML("id=\"video-player\"")) {
+        } else if (!br.containsHTML("id=\"video-player\"") && !this.br.containsHTML(html_privatevideo)) {
             /* Invalid URL and webpage does not display any kind of error e.g. "https://www.iwara.tv/videos/0" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean usedApi = false;
         boolean isVideo = true;
+        String date = null;
         if (this.br.getURL().matches(type_image)) {
             /* Picture */
             isVideo = false;
@@ -159,46 +141,94 @@ public class IwaraTv extends PluginForHost {
                     dllink = "https:" + dllink;
                 }
             }
-        } else if (this.br.containsHTML("name=\"flashvars\"") || this.br.containsHTML("flowplayer\\.org/")) {
-            /* Video */
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\" type=\"video/").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://(?:www\\.)?iwara\\.tv/sites/default/files/videos/[^<>\"]+)\"").getMatch(0);
-            }
-        } else if (this.br.containsHTML("jQuery\\.extend")) {
-            String drupal = br.getRegex("jQuery\\.extend\\([^{]+(.+)\\);").getMatch(0);
-            String videoHash = PluginJSonUtils.getJson(PluginJSonUtils.getJsonNested(drupal, "theme"), "video_hash");
-            if (videoHash != null) {
-                usedApi = true;
-                this.br.getPage("/api/video/" + videoHash);
-                if (br.toString().equals("[]")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Processing video, please check back in a while");
+        } else {
+            if (this.br.containsHTML("name=\"flashvars\"") || this.br.containsHTML("flowplayer\\.org/")) {
+                /* Video */
+                dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\" type=\"video/").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(https?://(?:www\\.)?iwara\\.tv/sites/default/files/videos/[^<>\"]+)\"").getMatch(0);
                 }
-                dllink = PluginJSonUtils.getJson(this.br, "uri");
+            } else if (this.br.containsHTML("jQuery\\.extend")) {
+                /* Video new/current way */
+                if (isDownload) {
+                    final String drupal = br.getRegex("jQuery\\.extend\\([^{]+(.+)\\);").getMatch(0);
+                    final String videoHash = PluginJSonUtils.getJson(PluginJSonUtils.getJsonNested(drupal, "theme"), "video_hash");
+                    if (!StringUtils.isEmpty(videoHash)) {
+                        usedApi = true;
+                        final Browser brc = br.cloneBrowser();
+                        brc.getPage("/api/video/" + videoHash);
+                        if (brc.toString().equals("[]")) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Processing video, please check back in a while");
+                        }
+                        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.OBJECT);
+                        int maxQuality = -1;
+                        String maxQualityStr = null;
+                        String bestQualityDownloadurl = null;
+                        for (final Map<String, Object> quality : ressourcelist) {
+                            String url = quality.get("uri").toString();
+                            final String qualityStr = quality.get("resolution").toString();
+                            final Integer qualityTmp = qualityModifierToHeight(qualityStr);
+                            if (qualityTmp == null || url == null) {
+                                /* Akip invalid items */
+                                continue;
+                            }
+                            /* Fix url (protocol might be missing) */
+                            url = br.getURL(url).toString();
+                            if (qualityTmp.intValue() > maxQuality) {
+                                maxQuality = qualityTmp.intValue();
+                                maxQualityStr = qualityStr;
+                                bestQualityDownloadurl = url;
+                            }
+                        }
+                        if (bestQualityDownloadurl != null) {
+                            logger.info("Found official downloadurl - quality: " + maxQualityStr);
+                            this.dllink = bestQualityDownloadurl;
+                            /* Extract upload-date from this URL */
+                            final UrlQuery query = UrlQuery.parse(bestQualityDownloadurl);
+                            String stringWithDate = query.get("file");
+                            if (stringWithDate != null) {
+                                stringWithDate = Encoding.htmlDecode(stringWithDate);
+                                final Regex specialDateSource = new Regex(stringWithDate, "(\\d{4}/\\d{2}/\\d{2})");
+                                if (specialDateSource.matches()) {
+                                    date = specialDateSource.getMatch(0).replace("/", "-");
+                                }
+                            }
+                        } else {
+                            logger.warning("Failed to find any official downloads although it looks like they should be available!");
+                        }
+                    }
+                }
             }
-        } else {
-            logger.info("Failed to find downloadable content");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* Collect metadata and build filename */
+        final Regex usernameAndDate = br.getRegex("(?i)class=\"username\"[^>]*>([^<]+)</a>\\s*作成日\\s*:\\s*(\\d{4}-\\d{2}-\\d{2})");
+        String uploadername = usernameAndDate.getMatch(0);
+        if (date == null) {
+            date = usernameAndDate.getMatch(1);
         }
-        String filenameExt;
-        if (!usedApi) {
-            dllink = Encoding.htmlDecode(dllink);
-            filenameExt = dllink;
-        } else {
-            filenameExt = filename;
+        if (date != null) {
+            link.setProperty(PROPERTY_DATE, date);
+        }
+        String filename = "";
+        if (uploadername != null) {
+            uploadername = Encoding.htmlDecode(uploadername).trim();
+            /* Set Packagizer property */
+            link.setProperty(PROPERTY_USER, uploadername);
+            filename += uploadername + "_";
+        }
+        filename += this.getFID(link) + "_";
+        String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+        if (title != null) {
+            title = Encoding.htmlOnlyDecode(title).trim();
+            /* Set Packagizer property */
+            link.setProperty(PROPERTY_TITLE, title);
+            filename += title;
         }
         if (isVideo) {
-            if (!filename.endsWith(".mp4")) {
-                filename += ".mp4";
-            }
-        } else {
-            final String ext = getFileNameExtensionFromString(filenameExt, isVideo ? ".mp4" : ".png");
-            if (!filename.endsWith(ext)) {
-                filename += ext;
-            }
+            filename += ".mp4";
+        } else if (dllink != null) {
+            final String ext = Plugin.getFileNameExtensionFromURL(this.dllink);
+            filename += ext;
         }
         link.setFinalFileName(filename);
         if (findFilesize && !isDownload) {
@@ -209,13 +239,11 @@ public class IwaraTv extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
                 con = brc.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                    link.setProperty("directlink", dllink);
-                } else {
-                    serverIssue = true;
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -227,6 +255,20 @@ public class IwaraTv extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private Integer qualityModifierToHeight(final String qualityStr) {
+        if (qualityStr == null) {
+            return null;
+        }
+        if (qualityStr.equalsIgnoreCase("Source")) {
+            return 10000;
+        } else if (qualityStr.matches("(?i)\\d+p")) {
+            return Integer.parseInt(qualityStr.toLowerCase(Locale.ENGLISH).replace("p", ""));
+        } else {
+            /* Unknown quality identifier */
+            return -1;
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, null, true);
@@ -235,9 +277,9 @@ public class IwaraTv extends PluginForHost {
 
     public void doFree(final DownloadLink link) throws Exception {
         if (this.br.containsHTML(html_privatevideo)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (serverIssue) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
+            throw new AccountRequiredException();
+        } else if (StringUtils.isEmpty(this.dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -269,16 +311,16 @@ public class IwaraTv extends PluginForHost {
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br.setCookies(account.getHoster(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     if (!force) {
                         /* Trust cookies without check */
                         return;
                     }
                     logger.info("Checking login cookies");
-                    br.getPage("https://" + account.getHoster());
+                    br.getPage("https://" + this.getHost());
                     if (isLoggedIN(br)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -297,16 +339,8 @@ public class IwaraTv extends PluginForHost {
                 }
                 loginform.put("name", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
-                if (loginform.containsHTML("g\\-recaptcha")) {
-                    /* 2017-04-28 */
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
-                    }
+                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 /* 2019-12-12: Anti-anti-bot against: https://www.iwara.tv/sites/all/modules/contrib/antibot/js/antibot.js */
@@ -331,7 +365,7 @@ public class IwaraTv extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
