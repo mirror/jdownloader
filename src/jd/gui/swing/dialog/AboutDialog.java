@@ -78,7 +78,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public class AboutDialog extends AbstractDialog<Integer> {
-    private int labelHeight;
+    private int labelHeight = 0;
 
     public AboutDialog() {
         super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK | Dialog.STYLE_HIDE_ICON, _GUI.T.jd_gui_swing_components_AboutDialog_title(), null, null, null);
