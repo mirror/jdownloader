@@ -131,7 +131,7 @@ public class IwaraTv extends PluginForHost {
         final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
         boolean usedApi = false;
         boolean isVideo = true;
-        String date = null;
+        String date = br.getRegex("class=\"username\"[^>]*>[^<]+</a>\\s*作成日:(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         if (this.br.getURL().matches(type_image)) {
             /* Picture */
             isVideo = false;
