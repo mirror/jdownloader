@@ -65,26 +65,22 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
-        final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (accs == null || accs.size() == 0) {
-            logger.info("Cannot add cloud URLs without account");
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account == null) {
+            /* Account required to add such URLs */
             throw new AccountRequiredException();
         }
-        setBrowserExclusive();
-        final Account account = accs.get(0);
+        this.setBrowserExclusive();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, parameter.getCryptedUrl());
         final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         if (nodes == null) {
             final String status = (String) data.get("status");
             if ("error".equals(status)) {
                 /* E.g. "{"status":"error","message":"customer_id and pin param missing or not logged in "}" */
-                logger.info("Either invalid logindata, wrong account (you can only download your own cloud files) OR offline content");
                 final String urlParams = new Regex(parameter.getCryptedUrl(), "\\?(.+)").getMatch(0);
-                final DownloadLink offline = this.createOfflinelink(parameter.getCryptedUrl());
-                if (urlParams != null) {
-                    offline.setFinalFileName(urlParams);
-                }
+                final DownloadLink offline = this.createOfflinelink(parameter.getCryptedUrl(), urlParams, "Either invalid login credentials, wrong account (you can only download your own cloud files) or invalid folder_id");
+                offline.setFinalFileName(urlParams);
                 ret.add(offline);
                 return ret;
             }
@@ -92,17 +88,16 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         }
         /* Use path from previous craw process if available --> Saves http requests */
         String folderPath = this.getAdoptedCloudFolderStructure();
-        if (folderPath != null) {
-            /*
-             * Allow loose files from root folder to go into package named "root" but remove "root" from path for all items that are below
-             * the root folder.
-             */
-            if (folderPath.contains("/") && folderPath.startsWith("root")) {
-                folderPath = folderPath.substring(folderPath.indexOf("/"));
-            }
-        } else {
+        if (folderPath == null) {
             /* Try to find complete path by going back until we reach the root folder. */
             folderPath = this.findFullFolderPath(account, "", data, new HashSet<String>());
+        }
+        /*
+         * Allow loose files from root folder to go into package named "root" but remove "root" from path for all items that are below the
+         * root folder.
+         */
+        if (folderPath.contains("/") && folderPath.startsWith("root")) {
+            folderPath = folderPath.substring(folderPath.indexOf("/") + 1);
         }
         ret.addAll(convert(parameter.getCryptedUrl(), nodes, folderPath));
         return ret;
@@ -144,43 +139,37 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         }
     }
 
-    public static List<DownloadLink> convert(final String url_source, ArrayList<PremiumizeBrowseNode> premiumizeNodes, final String folderPath) {
+    public List<DownloadLink> convert(final String url_source, ArrayList<PremiumizeBrowseNode> premiumizeNodes, final String folderPath) {
         final List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (premiumizeNodes == null || premiumizeNodes.size() == 0) {
             return ret;
         }
         final String host = Browser.getHost(url_source);
+        final String folderPathForFiles;
+        if (folderPath.equals("root")) {
+            folderPathForFiles = this.getHost() + "_root";
+        } else {
+            folderPathForFiles = folderPath;
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(folderPathForFiles);
         for (final PremiumizeBrowseNode node : premiumizeNodes) {
             final String itemName = node.getName();
-            final String parentName = node._getParentName();
             final String nodeCloudID = node.getID();
             if (node._isDirectory()) {
                 /* Folder */
-                final String path_for_next_crawl_level;
-                if (StringUtils.isEmpty(folderPath)) {
-                    if (!StringUtils.isEmpty(parentName)) {
-                        path_for_next_crawl_level = parentName + "/" + itemName;
-                    } else {
-                        path_for_next_crawl_level = itemName;
-                    }
-                } else {
-                    path_for_next_crawl_level = folderPath + "/" + itemName;
-                }
+                final String folderPathForNextCrawlLevel = folderPath + "/" + itemName;
                 final String folderURL = createFolderURL(host, nodeCloudID);
                 final DownloadLink folder = new DownloadLink(null, null, host, folderURL, true);
-                folder.setRelativeDownloadFolderPath(path_for_next_crawl_level);
+                folder.setRelativeDownloadFolderPath(folderPathForNextCrawlLevel);
                 ret.add(folder);
             } else {
                 /* File */
                 final String url_for_hostplugin = "https://" + host + "/file?id=" + nodeCloudID;
                 final DownloadLink link = new DownloadLink(null, null, host, url_for_hostplugin, true);
                 setPremiumizeBrowserNodeInfoOnDownloadlink(link, node);
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(folderPath);
+                link.setRelativeDownloadFolderPath(folderPathForFiles);
                 link._setFilePackage(fp);
-                if (!StringUtils.isEmpty(folderPath)) {
-                    link.setRelativeDownloadFolderPath(folderPath);
-                }
                 ret.add(link);
             }
         }

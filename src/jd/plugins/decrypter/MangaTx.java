@@ -102,6 +102,6 @@ public class MangaTx extends antiDDoSForDecrypt {
     }
 
     private int getPadLength(final int size) {
-        return String.valueOf(size).length();
+        return StringUtils.getPadLength(size);
     }
 }

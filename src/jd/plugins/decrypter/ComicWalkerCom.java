@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -68,7 +69,7 @@ public class ComicWalkerCom extends antiDDoSForDecrypt {
             final Browser br2 = br.cloneBrowser();
             getPage(br2, apiURL);
             final String[] images = br2.getRegex("\\s*\"source_url\"\\s*:\\s*\"([^\"]+)\"").getColumn(0);
-            final int padlength = getPadLength(images.length);
+            final int padlength = StringUtils.getPadLength(images.length);
             final FilePackage fp = FilePackage.getInstance();
             String ext = null;
             int page = 1;
@@ -91,9 +92,5 @@ public class ComicWalkerCom extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private final int getPadLength(final int size) {
-        return String.valueOf(size).length();
     }
 }

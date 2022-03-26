@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -35,7 +36,7 @@ public class AcomicSpace extends antiDDoSForDecrypt {
     }
 
     /* Tags: MangaPictureCrawler */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Convert URLs containing old domain to new ones */
         final String parameter = param.toString().replaceFirst("https?://[^/]+/", "https://" + this.getHost() + "/");
@@ -57,7 +58,7 @@ public class AcomicSpace extends antiDDoSForDecrypt {
         if (images == null || images.length == 0) {
             return null;
         }
-        final int padLength = getPadLength(images.length);
+        final int padLength = StringUtils.getPadLength(images.length);
         int page = 1;
         for (String finallink : images) {
             if (this.isAbort()) {
@@ -81,25 +82,5 @@ public class AcomicSpace extends antiDDoSForDecrypt {
             page++;
         }
         return decryptedLinks;
-    }
-
-    private final int getPadLength(final int size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
-            return 2;
-        } else if (size < 1000) {
-            return 3;
-        } else if (size < 10000) {
-            return 4;
-        } else if (size < 100000) {
-            return 5;
-        } else if (size < 1000000) {
-            return 6;
-        } else if (size < 10000000) {
-            return 7;
-        } else {
-            return 8;
-        }
     }
 }

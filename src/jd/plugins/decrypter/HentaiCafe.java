@@ -19,6 +19,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -37,7 +38,7 @@ public class HentaiCafe extends antiDDoSForDecrypt {
     }
 
     /* Tags: MangaPictureCrawler */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
@@ -69,7 +70,7 @@ public class HentaiCafe extends antiDDoSForDecrypt {
         }
         fp.setName(fpName);
         final String[] images = br.getRegex("\"url\":\"(http[^<>\"]+)\"").getColumn(0);
-        final int padLength = getPadLength(images.length);
+        final int padLength = StringUtils.getPadLength(images.length);
         short page = 0;
         for (final String image : images) {
             page++;
@@ -95,25 +96,5 @@ public class HentaiCafe extends antiDDoSForDecrypt {
             distribute(dl);
         }
         return decryptedLinks;
-    }
-
-    private final int getPadLength(final int size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
-            return 2;
-        } else if (size < 1000) {
-            return 3;
-        } else if (size < 10000) {
-            return 4;
-        } else if (size < 100000) {
-            return 5;
-        } else if (size < 1000000) {
-            return 6;
-        } else if (size < 10000000) {
-            return 7;
-        } else {
-            return 8;
-        }
     }
 }

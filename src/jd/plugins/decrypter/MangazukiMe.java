@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -37,13 +38,12 @@ public class MangazukiMe extends antiDDoSForDecrypt {
     }
 
     /* Tags: MangaPictureCrawler */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         final String fpName = br.getRegex("<title>(?:Read\\s*)?([^<]+)\\s*(?:Free|-\\s*YoManga)").getMatch(0);
-        final Regex urlinfo = new Regex(parameter, "/manga/([^/]+)/[^/]+-(\\d+)");
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), "/manga/([^/]+)/[^/]+-(\\d+)");
         final String[] chapters = br.getRegex("<li class=\"wp-manga-chapter\\s*\">\\s*<a href=\"([^\"]+)\">").getColumn(0);
         if (chapters != null && chapters.length > 0) {
             for (String chapter : chapters) {
@@ -54,7 +54,7 @@ public class MangazukiMe extends antiDDoSForDecrypt {
         final String url_name = urlinfo.getMatch(0);
         final String url_chapter = urlinfo.getMatch(1);
         final String[] chapterUrls = br.getRegex("<option class=\"short\"[^>]+data-redirect=\"([^\"]+)\"").getColumn(0);
-        final String url_chapter_formatted = String.format(Locale.US, "%0" + getPadLength(chapterUrls.length) + "d", Integer.parseInt(url_chapter));
+        final String url_chapter_formatted = String.format(Locale.US, "%0" + StringUtils.getPadLength(chapterUrls.length) + "d", Integer.parseInt(url_chapter));
         String ext = null;
         final FilePackage fp = FilePackage.getInstance();
         if (fpName != null) {
@@ -64,9 +64,9 @@ public class MangazukiMe extends antiDDoSForDecrypt {
         }
         final String[] images = br.getRegex("<img[^>]+src=\"\\s*([^\"]+)\\s*\" class=\"wp-manga-chapter-img\">").getColumn(0);
         if (images == null || images.length == 0) {
-            throw new DecrypterException("Decrypter broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + param.getCryptedUrl());
         }
-        final int padLength = getPadLength(images.length);
+        final int padLength = StringUtils.getPadLength(images.length);
         int page = 1;
         for (final String url_image : images) {
             if (this.isAbort()) {
@@ -78,7 +78,7 @@ public class MangazukiMe extends antiDDoSForDecrypt {
                 ext = getFileNameExtensionFromURL(url_image, ".jpg");
             }
             String filename = url_name + "_Chapter_" + url_chapter_formatted + "_" + page_formatted + ext;
-            DownloadLink dl = createDownloadlink(url_image);
+            final DownloadLink dl = createDownloadlink(url_image);
             dl._setFilePackage(fp);
             dl.setFinalFileName(filename);
             dl.setLinkID(filename);
@@ -88,9 +88,5 @@ public class MangazukiMe extends antiDDoSForDecrypt {
             page++;
         }
         return decryptedLinks;
-    }
-
-    private final int getPadLength(final int size) {
-        return String.valueOf(size).length();
     }
 }

@@ -22,6 +22,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -43,14 +51,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -259,7 +259,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         final String galleryTitle = (String) data.get("title");
         this.fp = FilePackage.getInstance();
         this.fp.setName(getFormattedPackagename(this.author, galleryTitle, this.itemID));
-        final long imgcount = JavaScriptEngineFactory.toLong(data.get("images_count"), 0);
+        final int imgcount = ((Number) data.get("images_count")).intValue();
         Object images = data.get("images");
         final List<Map<String, Object>> items = (List<Map<String, Object>>) images;
         final int padLength = getPadLength(imgcount);
@@ -572,8 +572,8 @@ public class ImgurComGallery extends PluginForDecrypt {
         final Object dataO = entries.get("data");
         if (!(dataO instanceof Map)) {
             /**
-             * 2020-10-06: Offline content or single item e.g.: {"data":[],"success":true,"status":200} </br> We've checked for offline
-             * already so let's just add it as a single item.
+             * 2020-10-06: Offline content or single item e.g.: {"data":[],"success":true,"status":200} </br>
+             * We've checked for offline already so let's just add it as a single item.
              */
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             plg.setBrowser(brc);
@@ -791,24 +791,8 @@ public class ImgurComGallery extends PluginForDecrypt {
         return dl;
     }
 
-    private final int getPadLength(final long size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
-            return 2;
-        } else if (size < 1000) {
-            return 3;
-        } else if (size < 10000) {
-            return 4;
-        } else if (size < 100000) {
-            return 5;
-        } else if (size < 1000000) {
-            return 6;
-        } else if (size < 10000000) {
-            return 7;
-        } else {
-            return 8;
-        }
+    private final int getPadLength(final int size) {
+        return StringUtils.getPadLength(size);
     }
 
     private Browser prepBRWebsite(final Browser br) {

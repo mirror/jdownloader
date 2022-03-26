@@ -89,7 +89,7 @@ public class HighpornNet extends PluginForDecrypt {
                 singleVideo = true;
             }
         }
-        final int padLength = getPadLength(videoIDs.length);
+        final int padLength = StringUtils.getPadLength(videoIDs.length);
         int counter = 0;
         for (final String videoID : videoIDs) {
             if (isAbort()) {
@@ -153,25 +153,5 @@ public class HighpornNet extends PluginForDecrypt {
             title = new Regex(url, "video/(.+)").getMatch(0);
         }
         return title;
-    }
-
-    private final int getPadLength(final int size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
-            return 2;
-        } else if (size < 1000) {
-            return 3;
-        } else if (size < 10000) {
-            return 4;
-        } else if (size < 100000) {
-            return 5;
-        } else if (size < 1000000) {
-            return 6;
-        } else if (size < 10000000) {
-            return 7;
-        } else {
-            return 8;
-        }
     }
 }
