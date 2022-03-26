@@ -38,7 +38,7 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
@@ -78,7 +78,7 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
         final String[] images = br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]+chapter_img\"[^>]+data-original\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0);
         if (images != null && images.length > 0) {
             final String chapter_name = Encoding.htmlDecode(fpName.trim());
-            final int padlength = getPadLength(images.length);
+            final int padlength = StringUtils.getPadLength(images.length);
             int page = 1;
             for (String image : images) {
                 String page_formatted = String.format(Locale.US, "%0" + padlength + "d", page++);
@@ -91,9 +91,5 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private int getPadLength(final int size) {
-        return String.valueOf(size).length();
     }
 }

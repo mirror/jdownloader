@@ -146,6 +146,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
             } else {
                 link = createDownloadlink(streamLink);
             }
+            /* Important otherwise we cannot use their selfhosted URLs! */
             link.setReferrerUrl(param.getCryptedUrl());
             decryptedLinks.add(link);
         }

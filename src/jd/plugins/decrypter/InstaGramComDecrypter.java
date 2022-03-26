@@ -1078,14 +1078,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else if (typename != null && typename.matches("Graph[A-Z][a-zA-Z0-9]+") && resource_data_list == null && !param.getCryptedUrl().matches(TYPE_GALLERY)) {
             /*
              * 2017-05-09: User has added a 'User' URL and in this case a single post contains multiple images (=album) but at this stage
-             * the json does not contain the other images --> This has to go back into the decrypter and get crawled as a single item.
+             * the json does not contain the other images --> It has to go back into our crawler and get processed as a single item.
              */
             final DownloadLink dl = this.createDownloadlink(createSinglePosturl(contentIDMain));
             decryptedLinks.add(dl);
             distribute(dl);
             return decryptedLinks;
         } else if (resource_data_list != null && resource_data_list.size() > 0) {
-            final int padLength = getPadLength(resource_data_list.size());
+            final int padLength = StringUtils.getPadLength(resource_data_list.size());
             int index = 0;
             if (preGivenIndex != -1) {
                 /* Continue from pre-given index */
@@ -1740,27 +1740,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             /* 2020-01-21: Set to 1 to avoid download issues and try not to perform too many requests at the same time. */
             return 1;
         }
-    }
-
-    private final int getPadLength(final int size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
-            return 2;
-        } else if (size < 1000) {
-            return 3;
-        } else if (size < 10000) {
-            return 4;
-        } else if (size < 100000) {
-            return 5;
-        } else if (size < 1000000) {
-            return 6;
-        } else if (size < 10000000) {
-            return 7;
-        } else {
-            return 8;
-        }
-        /* 2021-07-06: Why not use this instead? return Integer.toString(size).length(); */
     }
 
     /** TODO: Update this and make use of it. */

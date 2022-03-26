@@ -87,7 +87,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
 
     /**
      * Crawler plugin that can handle instances of this project:
-     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br>
+     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md or:</br>
+     * https://github.com/alx-xlx/goindex </br>
      * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
@@ -119,7 +120,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         }
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.toString().contains("?")) {
             /* Remove all URL parameters */
@@ -208,11 +209,11 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         } else if (br.containsHTML("\"rateLimitExceeded\"")) {
             throw new DecrypterRetryException(RetryReason.HOST, "Rate Limit Exceeded");
         }
-        crawlFolder(decryptedLinks, param, useOldPostRequest);
-        return decryptedLinks;
+        return crawlFolder(param, useOldPostRequest);
     }
 
-    private void crawlFolder(ArrayList<DownloadLink> decryptedLinks, final CryptedLink param, final boolean useOldPOSTRequest) throws Exception {
+    private ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final boolean useOldPOSTRequest) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         final boolean isParameterFile = !param.getCryptedUrl().endsWith("/");
         String subFolder = getAdoptedCloudFolderStructure();
@@ -324,8 +325,9 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
          * skipped by our crawler!
          */
         if (decryptedLinks.isEmpty()) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subFolder, "EMPTY_FOLDER " + subFolder));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subFolder, "This folder is empty: " + subFolder));
         }
+        return decryptedLinks;
     }
 
     /** Returns String that can be used an unique ID based on given URL. */

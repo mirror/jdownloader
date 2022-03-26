@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -26,8 +29,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangazuki.co" }, urls = { "https?://(?:www\\.|raws\\.)?mangazuki\\.co/(?:read|manga)/[^/]+/\\d+(?:\\.\\d+)?" })
 public class MangazukiCo extends antiDDoSForDecrypt {
@@ -60,7 +61,7 @@ public class MangazukiCo extends antiDDoSForDecrypt {
         if (images == null || images.length == 0) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
-        final int padLength = getPadLength(images.length);
+        final int padLength = StringUtils.getPadLength(images.length);
         int page = 1;
         for (final String url_image : images) {
             if (this.isAbort()) {
@@ -89,25 +90,5 @@ public class MangazukiCo extends antiDDoSForDecrypt {
             page++;
         }
         return decryptedLinks;
-    }
-
-    private final int getPadLength(final int size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
-            return 2;
-        } else if (size < 1000) {
-            return 3;
-        } else if (size < 10000) {
-            return 4;
-        } else if (size < 100000) {
-            return 5;
-        } else if (size < 1000000) {
-            return 6;
-        } else if (size < 10000000) {
-            return 7;
-        } else {
-            return 8;
-        }
     }
 }

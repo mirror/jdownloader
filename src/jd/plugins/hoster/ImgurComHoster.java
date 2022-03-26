@@ -1234,7 +1234,7 @@ public class ImgurComHoster extends PluginForHost {
                                                       put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
                                                       put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
                                                       put("SETTING_USE_API", "Verwende API anstatt Webseite?");
-                                                      put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden verwenden? Um die API überhaupt verwenden zu können deine eigenen API Zugangsdaten unten eintragen ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
+                                                      put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden? Um die API überhaupt verwenden zu können musst du deine eigenen API Zugangsdaten unten eintragen, ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTID", "Gib deine persönliche imgur Oauth Client-ID ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
                                                       put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");

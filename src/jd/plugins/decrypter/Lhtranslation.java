@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -60,7 +61,7 @@ public class Lhtranslation extends antiDDoSForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(name_chapter + "_" + url_chapter);
-        final int padLength = getPadLength(images.length);
+        final int padLength = StringUtils.getPadLength(images.length);
         int page = 0;
         for (final String finallink : images) {
             page++;
@@ -82,25 +83,5 @@ public class Lhtranslation extends antiDDoSForDecrypt {
             distribute(dl);
         }
         return decryptedLinks;
-    }
-
-    private final int getPadLength(final int size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
-            return 2;
-        } else if (size < 1000) {
-            return 3;
-        } else if (size < 10000) {
-            return 4;
-        } else if (size < 100000) {
-            return 5;
-        } else if (size < 1000000) {
-            return 6;
-        } else if (size < 10000000) {
-            return 7;
-        } else {
-            return 8;
-        }
     }
 }
