@@ -91,25 +91,15 @@ public class AlldebridComFolder extends PluginForDecrypt {
         query.appendEncoded("apikey", AllDebridCom.getStoredApiKey(account));
         query.add("id", magnetID);
         br.getPage(AllDebridCom.api_base + "/magnet/status?" + query.toString());
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         if (entries.containsKey("error")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        /**
-         * 2021-01-19: This is supposed to always be an array. It's a small serverside bug but they can't fix it because a lot of people are
-         * already using their API. 2022-03-25: According to their support that's fixed but we'll leave the workaround here anyways.
-         */
-        final Object magnetsO = JavaScriptEngineFactory.walkJson(entries, "data/magnets");
-        if (magnetsO instanceof List) {
-            final List<Object> tmpList = (List<Object>) magnetsO;
-            entries = (Map<String, Object>) tmpList.get(0);
-        } else {
-            entries = (Map<String, Object>) magnetsO;
-        }
-        String torrentName = (String) entries.get("filename");
+        final Map<String, Object> magnet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/magnets");
+        final String torrentName = (String) magnet.get("filename");
         final String torrentNameEscaped = Regex.escape(torrentName);
-        final List<Object> linksO = (List<Object>) entries.get("links");
+        final List<Map<String, Object>> linksO = (List<Map<String, Object>>) magnet.get("links");
         if (linksO.isEmpty()) {
             /* Probably unfinished torrent download */
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -118,11 +108,10 @@ public class AlldebridComFolder extends PluginForDecrypt {
         final String folderRoot = torrentName;
         final FilePackage fpRoot = FilePackage.getInstance();
         fpRoot.setName(folderRoot);
-        for (final Object linkO : linksO) {
-            entries = (Map<String, Object>) linkO;
-            final String url = (String) entries.get("link");
-            final String filename = (String) entries.get("filename");
-            final long filesize = ((Number) entries.get("size")).longValue();
+        for (final Map<String, Object> resource : linksO) {
+            final String url = (String) resource.get("link");
+            final String filename = (String) resource.get("filename");
+            final long filesize = ((Number) resource.get("size")).longValue();
             final DownloadLink dl = this.createDownloadlink(url);
             dl.setName(filename);
             dl.setDownloadSize(filesize);
@@ -132,7 +121,7 @@ public class AlldebridComFolder extends PluginForDecrypt {
                 dl._setFilePackage(fpRoot);
             } else {
                 /* Check whether or not this file goes into a deeper subfolder level. */
-                String filePath = getFilePath((List<Object>) entries.get("files"), "");
+                String filePath = getFilePath((List<Object>) resource.get("files"), "");
                 /* Path is full path with filename at the end -> Remove that */
                 filePath = filePath.replaceAll("/" + org.appwork.utils.Regex.escape(filename) + "$", "");
                 if (!StringUtils.isEmpty(filePath)) {

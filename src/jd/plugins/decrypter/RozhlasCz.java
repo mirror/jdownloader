@@ -22,8 +22,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rozhlas.cz" }, urls = { "https?://(?:[a-z0-9]+\\.)?rozhlas\\.cz/([a-z0-9\\-]+)\\-(\\d+)" })
-public class RrozhlasCz extends PluginForDecrypt {
-    public RrozhlasCz(PluginWrapper wrapper) {
+public class RozhlasCz extends PluginForDecrypt {
+    public RozhlasCz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
