@@ -879,7 +879,7 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     private DownloadLink getDummyErrorProfileContainsNoDownloadableContent(final String username) {
-        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURL(username), "PROFILE_CONTAINS_NO_DOWNLOADABLE_CONTENT_" + username, "The profile " + username + " does not contain any downloadable content. Check your twitter plugin settings maybe you've turned off some of the crawlable content.");
+        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURL(username), "PROFILE_CONTAINS_NO_DOWNLOADABLE_CONTENT_" + username, "The profile " + username + " does not appear to contain any downloadable content. Check your twitter plugin settings maybe you've turned off some of the crawlable content.");
         return dummy;
     }
 
