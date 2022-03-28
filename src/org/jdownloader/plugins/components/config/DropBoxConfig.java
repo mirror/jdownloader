@@ -10,7 +10,8 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "dropbox.com", type = Type.HOSTER)
 public interface DropBoxConfig extends PluginConfigInterface {
-    /** 2019-09-25: Enforced API usage for all users. Consider removing this setting soon. */
+    public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
     public static class TRANSLATION {
         public String getUseAPI_label() {
             return "BETA: Use API (in account mode)?";
@@ -19,11 +20,9 @@ public interface DropBoxConfig extends PluginConfigInterface {
         }
 
         public String getAskIfSubfoldersShouldBeCrawled_label() {
-            return "If enabled, a dialog will show up whenever you add folders containing subfolders.";
+            return "Enable this if you want to be asked each time whether or not subfolders should be crawled.";
         }
     }
-
-    public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
     @DefaultBooleanValue(false)
     @AboutConfig
@@ -35,7 +34,7 @@ public interface DropBoxConfig extends PluginConfigInterface {
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry("If enabled, a dialog will show up whenever you add folders containing subfolders.")
+    @DescriptionForConfigEntry("Enable this if you want to be asked each time whether or not subfolders should be crawled.")
     @Order(20)
     boolean isAskIfSubfoldersShouldBeCrawled();
 
