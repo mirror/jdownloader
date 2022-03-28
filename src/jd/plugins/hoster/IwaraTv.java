@@ -148,7 +148,8 @@ public class IwaraTv extends PluginForHost {
                 if (dllink == null) {
                     dllink = br.getRegex("\"(https?://(?:www\\.)?iwara\\.tv/sites/default/files/videos/[^<>\"]+)\"").getMatch(0);
                 }
-            } else if (this.br.containsHTML("jQuery\\.extend")) {
+            }
+            if (dllink == null) {
                 /* Video new/current way */
                 if (isDownload || cfg.isFindFilesizeDuringAvailablecheck()) {
                     final String drupal = br.getRegex("jQuery\\.extend\\([^{]+(.+)\\);").getMatch(0);

@@ -264,12 +264,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             logger.info("URL was changed: Old: " + param.getCryptedUrl() + " | New: " + newURL);
             param.setCryptedUrl(newURL);
         }
-        if (this.requiresLogin(param.getCryptedUrl()) && !loggedIN.get()) {
-            /* Saved users own objects can only be crawled when he's logged in ;) */
-            if (account == null) {
-                logger.info("Account required to crawl your own saved items");
-                throw new AccountRequiredException();
-            }
+        if (this.requiresLogin(param.getCryptedUrl()) && !loggedIN.get() && account == null) {
+            /* E.g. saved users own objects can only be crawled when he's logged in ;) */
+            throw new AccountRequiredException();
         }
         InstaGramCom.prepBRWebsite(this.br);
         br.addAllowedResponseCodes(new int[] { 502 });
@@ -318,13 +315,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 /* Most likely that profile doesn't exist */
                 logger.info("Profile not found: " + username);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                /* Add to cache for later usage */
-                synchronized (ID_TO_USERNAME) {
-                    ID_TO_USERNAME.put(username, userID);
-                }
-                return userID;
             }
+            /* Add to cache for later usage */
+            synchronized (ID_TO_USERNAME) {
+                ID_TO_USERNAME.put(username, userID);
+            }
+            return userID;
         }
     }
 
@@ -1085,13 +1081,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             distribute(dl);
             return decryptedLinks;
         } else if (resource_data_list != null && resource_data_list.size() > 0) {
+            /* Process multiple media items posted in a single IG post. */
             final int padLength = StringUtils.getPadLength(resource_data_list.size());
             int index = 0;
             if (preGivenIndex != -1) {
                 /* Continue from pre-given index */
                 index = preGivenIndex;
             }
-            /* Album */
             for (Map<String, Object> picture : resource_data_list) {
                 index++;
                 final String orderidFormatted = String.format(Locale.US, "%0" + padLength + "d", index);
@@ -1101,7 +1097,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(crawlSingleMediaObject(param, request, picture, contentIDMain, date, description, index, orderidFormatted, usernameForFilename));
             }
         } else {
-            /* Single image */
+            /* Single media item */
             decryptedLinks.add(crawlSingleMediaObject(param, request, entries, contentIDMain, date, description, -1, null, usernameForFilename));
         }
         if (cfg.isAddPostDescriptionAsTextfile() && !StringUtils.isEmpty(description)) {
@@ -1694,8 +1690,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String createSinglePosturl(final String p_id) {
-        return String.format("https://www.instagram.com/p/%s", p_id);
+    private String createSinglePosturl(final String postID) {
+        return "https://www." + this.getHost() + "/p/" + postID;
     }
 
     private void prepBrAjax(final Browser br, final Qdb qdb) {
