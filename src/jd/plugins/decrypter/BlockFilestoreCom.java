@@ -79,7 +79,7 @@ public class BlockFilestoreCom extends PluginForDecrypt {
                 dl.setRelativeDownloadFolderPath(path);
                 decryptedLinks.add(dl);
             } else {
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + resource.get("url"));
+                final DownloadLink dl = this.createDownloadlink("directhttp://https://www." + this.getHost() + "/api/download?id=" + resource.get("id"));
                 dl.setFinalFileName(resource.get("name").toString());
                 dl.setVerifiedFileSize(((Number) resource.get("size")).longValue());
                 dl.setAvailable(true);

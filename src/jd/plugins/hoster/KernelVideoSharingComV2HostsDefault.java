@@ -45,13 +45,13 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "wankoz.com" });
         /* zbporn.com belongs to the same "porn network" as sexvid.xxx. */
         ret.add(new String[] { "zbporn.com" });
-        ret.add(new String[] { "xozilla.com" });
+        ret.add(new String[] { "xozilla.com", "xozilla.xxx" });
         ret.add(new String[] { "femdomtb.com" });
         ret.add(new String[] { "cutscenes.net" });
         ret.add(new String[] { "fetishshrine.com" });
         ret.add(new String[] { "sheshaft.com" });
         ret.add(new String[] { "yeswegays.com" });
-        ret.add(new String[] { "analdin.com" });
+        ret.add(new String[] { "analdin.com", "analdin.xxx" });
         ret.add(new String[] { "tryboobs.com" });
         ret.add(new String[] { "vikiporn.com" });
         ret.add(new String[] { "katestube.com" });
@@ -115,6 +115,16 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "wild-pornstars.com" });
         /* 2022-03-24 */
         ret.add(new String[] { "mypornhere.com" });
+        /* 2022-03-28 */
+        ret.add(new String[] { "fapnow.xxx" });
+        /* 2022-03-28 */
+        ret.add(new String[] { "4kporn.xxx" });
+        /* 2022-03-28 */
+        ret.add(new String[] { "bigwank.com" });
+        /* 2022-03-28 */
+        ret.add(new String[] { "xxxshake.com" });
+        /* 2022-03-28 */
+        ret.add(new String[] { "xgroovy.com" });
         return ret;
     }
 
