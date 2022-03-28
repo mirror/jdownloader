@@ -11,7 +11,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorListener {
-
     private final LinkCollectorCrawlerEventSender eventSender;
 
     protected LinkCollectorCrawler() {
@@ -31,6 +30,15 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
             eventSender.fireEvent(new LinkCollectorCrawlerEvent(this, LinkCollectorCrawlerEvent.Type.CRAWLER_PLUGIN, cryptedLink));
         }
         super.crawl(generation, lazyC, cryptedLink);
+    }
+
+    @Override
+    protected boolean distributeFinalCrawledLink(LinkCrawlerGeneration generation, CrawledLink crawledLink) {
+        final boolean ret = super.distributeFinalCrawledLink(generation, crawledLink);
+        if (ret && eventSender.hasListener()) {
+            eventSender.fireEvent(new LinkCollectorCrawlerEvent(this, LinkCollectorCrawlerEvent.Type.HOST_PLUGIN, crawledLink));
+        }
+        return ret;
     }
 
     @Override
@@ -99,5 +107,4 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
     @Override
     public void onLinkCrawlerFinished() {
     }
-
 }

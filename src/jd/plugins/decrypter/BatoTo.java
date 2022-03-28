@@ -30,9 +30,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -48,6 +45,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BatoTo extends PluginForDecrypt {
@@ -134,11 +134,11 @@ public class BatoTo extends PluginForDecrypt {
                 engine.eval(sb.toString());
                 secret = engine.get("batojs").toString();
             } catch (final Exception e) {
-                e.printStackTrace();
+                logger.log(e);
             }
             final String server = aesDecrypt(secret, cipherText).replace("\"", "");
             final String titleSeries = br.getRegex("<a href=\"/series/\\d+\">([^<]+)</a>").getMatch(0);
-            final Regex chapterInfo = br.getRegex("property=\"og:title\"[^>]*content=\"([^>]*) - Chapter (\\d+)\"/>");
+            final Regex chapterInfo = br.getRegex("property\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"\\s*([^>]*)\\s*-\\s*Chapter\\s*(\\d+)\\s*\"\\s*/>");
             final String titleChapter = chapterInfo.getMatch(0);
             final String chapterNumber = chapterInfo.getMatch(1);
             String imgsText = br.getRegex("const images = \\[(.*?);").getMatch(0);
@@ -177,8 +177,8 @@ public class BatoTo extends PluginForDecrypt {
     }
 
     /**
-     * Source: https://stackoverflow.com/questions/41432896/cryptojs-aes-encryption-and-java-aes-decryption </br>
-     * Replacement function for this js call: JSON.parse(CryptoJS.AES.decrypt(server, batojs).toString(CryptoJS.enc.Utf8))
+     * Source: https://stackoverflow.com/questions/41432896/cryptojs-aes-encryption-and-java-aes-decryption </br> Replacement function for
+     * this js call: JSON.parse(CryptoJS.AES.decrypt(server, batojs).toString(CryptoJS.enc.Utf8))
      */
     private String aesDecrypt(final String secret, final String cipherText) {
         try {
