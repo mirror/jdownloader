@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.Iterator;
@@ -33,33 +32,36 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "redbull.tv" }, urls = { "http://redbull\\.tvdecrypted\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "redbull.tv" }, urls = { "http://redbull\\.tvdecrypted\\d+" })
 public class RedbullTv extends PluginForHost {
-
     /** Settings stuff */
     private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
-
     public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution,
-             * audioCodec, audioBitrate
-             */
-            put("64", new String[] { "AVC", "64", "0x0", "AAC LC", "64" });
-            put("296", new String[] { "AVC", "296", "384x216", "AAC LC", "75,3" });
-            put("496", new String[] { "AVC", "496", "384x216", "AAC LC", "75,3" });
-            put("856", new String[] { "AVC", "856", "384x216", "AAC LC", "75,3" });
-            put("1200", new String[] { "AVC", "1200", "640x360", "AAC LC", "75,3" });
-            put("1800", new String[] { "AVC", "1800", "960x540", "AAC LC", "75,3" });
-            put("2500", new String[] { "AVC", "2500", "1280x720", "AAC LC", "75,3" });
-            put("3528", new String[] { "AVC", "3528", "1280x720", "AAC LC", "75,3" });
-            put("4500", new String[] { "AVC", "4500", "1280x720", "AAC LC", "75,3" });
-            put("6500", new String[] { "AVC", "6500", "1920x1080", "AAC LC", "75,3" });
-            put("8500", new String[] { "AVC", "8500", "1920x1080", "AAC LC", "75,3" });
-
-        }
-    });
-
+                                                                     {
+                                                                                                                                                       /*
+                                                                                                                                                        * Format
+                                                                                                                                                        * -
+                                                                                                                                                        * name
+                                                                                                                                                        * :
+                                                                                                                                                        * videoCodec,
+                                                                                                                                                        * videoBitrate,
+                                                                                                                                                        * videoResolution,
+                                                                                                                                                        * audioCodec,
+                                                                                                                                                        * audioBitrate
+                                                                                                                                                        */
+                                                                         put("64", new String[] { "AVC", "64", "0x0", "AAC LC", "64" });
+                                                                         put("296", new String[] { "AVC", "296", "384x216", "AAC LC", "75,3" });
+                                                                         put("496", new String[] { "AVC", "496", "384x216", "AAC LC", "75,3" });
+                                                                         put("856", new String[] { "AVC", "856", "384x216", "AAC LC", "75,3" });
+                                                                         put("1200", new String[] { "AVC", "1200", "640x360", "AAC LC", "75,3" });
+                                                                         put("1800", new String[] { "AVC", "1800", "960x540", "AAC LC", "75,3" });
+                                                                         put("2500", new String[] { "AVC", "2500", "1280x720", "AAC LC", "75,3" });
+                                                                         put("3528", new String[] { "AVC", "3528", "1280x720", "AAC LC", "75,3" });
+                                                                         put("4500", new String[] { "AVC", "4500", "1280x720", "AAC LC", "75,3" });
+                                                                         put("6500", new String[] { "AVC", "6500", "1920x1080", "AAC LC", "75,3" });
+                                                                         put("8500", new String[] { "AVC", "8500", "1920x1080", "AAC LC", "75,3" });
+                                                                     }
+                                                                 });
     private String                                DLLINK         = null;
 
     @SuppressWarnings("deprecation")
@@ -141,11 +143,10 @@ public class RedbullTv extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's Red Bull plugin helps downloading videoclips from redbull.tv. You can chose between different video qualities.";
+        return "JDownloader's Red Bull plugin helps downloading videoclips from redbull.com. You can chose between different video qualities.";
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.RedbullTv.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
         final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
         while (it.hasNext()) {
             /*

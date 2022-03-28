@@ -17,144 +17,100 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redbull.com" }, urls = { "https?://(www\\.)?redbull\\.(?:tv|com/[a-z-]+(/tv)?)/(?:episodes|videos?)(?:/[A-Z0-9-]+)?/[a-z0-9-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redbull.com" }, urls = { "https?://(?:www\\.)?redbull\\.com/(de-de)/(episodes|films)/([\\w\\-]+)" })
 public class RedbullTv extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public RedbullTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String DOMAIN         = "redbull.com";
-    /* Settings stuff */
-    private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
-
-    /* Thx https://github.com/bromix/repository.bromix.storage/tree/master/plugin.video.redbull.tv */
-    @SuppressWarnings({ "unchecked", "deprecation" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        /* Lost sister-host plugin */
-        JDUtilities.getPluginForHost("redbull.tv");
-        final String parameter = param.toString();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.RedbullTv.formats;
-        final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
-        final String decryptedhost = "http://" + nicehost + "decrypted";
-        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
-        boolean httpAvailable = false;
-        final String vid = new Regex(parameter, "videos?/([A-Za-z0-9\\-]+)/?").getMatch(0);
-        // if (parameter.matches(type_unsupported)) {
-        // try {
-        // decryptedLinks.add(this.createOfflinelink(parameter));
-        // } catch (final Throwable e) {
-        // /* Not available in old 0.9.581 Stable */
-        // }
-        // return decryptedLinks;
-        // }
-        br.getPage("https://api.redbull.tv/v3/videos/" + vid);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
-            return decryptedLinks;
+    @SuppressWarnings({ "deprecation" })
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
+        final Regex urlRegex = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
+        final String urlMediaType = urlRegex.getMatch(1);
+        final String urlSlug = urlRegex.getMatch(2);
+        final String internalMediaType;
+        if (urlMediaType.equals("episodes")) {
+            internalMediaType = "episode-videos";
+        } else {
+            internalMediaType = "films";
         }
-        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        /* Use API to find internal videoID. */
+        br.getPage("https://www.redbull.com/v3/api/graphql/v1/v3/feed/de-DE%3Ede-INT?filter[type]=" + internalMediaType + "&filter[uriSlug]=" + urlSlug + "&disableUsageRestrictions=true&rb3Schema=v1:urlLookup&rb3CountryCode=de");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> urlLookupRoot = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        /* Continue with internal videoID. */
+        final String videoID = (String) JavaScriptEngineFactory.walkJson(urlLookupRoot, "data/translations/{0}/id");
+        if (StringUtils.isEmpty(videoID)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Different API request for series-episodes and films but similar json response. */
+        if (urlMediaType.equalsIgnoreCase("episodes")) {
+            br.getPage("https://api-player.redbull.com/rbcom/episodewithplaylist?videoId=" + Encoding.urlEncode(videoID));
+        } else {
+            br.getPage("https://api-player.redbull.com/rbcom/vodwithplaylist?videoId=" + Encoding.urlEncode(videoID) + "&scoring=featuredFresh&disableUsageRestrictions=false&playlistItems=20&localeMixing=de-DE%3Ede-INT&relatedTo=" + Encoding.urlEncode(videoID) + "&spaces=redbull_com%2Crbtv%2Credbullmusic");
+        }
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String title = (String) entries.get("title");
-        final String subtitle = (String) entries.get("subtitle");
-        final String description = (String) entries.get("long_description");
+        final String subtitle = (String) entries.get("subHeading");
+        final String description = (String) entries.get("description");
         String main_title = title;
         long season = -1;
         long episode = -1;
-        if (entries.get("season_number") != null) {
-            season = ((Number) entries.get("season_number")).longValue();
+        final Number seasonNumber = ((Number) entries.get("seasonNumber"));
+        final Number episodeNumberO = ((Number) entries.get("episodeNumber"));
+        if (seasonNumber != null) {
+            season = seasonNumber.longValue();
         }
-        if (entries.get("episode_number") != null) {
-            episode = ((Number) entries.get("episode_number")).longValue();
+        if (episodeNumberO != null) {
+            episode = episodeNumberO.longValue();
         }
         if (season > -1 && episode > -1) {
             final DecimalFormat df = new DecimalFormat("00");
             main_title += " - S" + df.format(season) + "E" + df.format(episode);
         }
         main_title = main_title + " - " + subtitle;
-        entries = (Map<String, Object>) entries.get("videos");
-        if (entries.get("master") != null) {
-            httpAvailable = true;
-            entries = (Map<String, Object>) entries.get("master");
-        } else {
-            entries = (Map<String, Object>) entries.get("demand");
-        }
-        if (entries == null) {
-            /* Probably an ongoing/outstanding live stream --> Offline */
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
-            return decryptedLinks;
-        }
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(main_title);
-        if (httpAvailable) {
-            /* Typically available for all normal videos. */
-            entries = (Map<String, Object>) entries.get("renditions");
-            final Set<Entry<String, Object>> entryset = entries.entrySet();
-            for (Entry<String, Object> entry : entryset) {
-                final String bitrate = entry.getKey();
-                final String finallink = (String) entry.getValue();
-                if (formats.containsKey(bitrate) && cfg.getBooleanProperty(bitrate, false)) {
-                    final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                    final String[] vidinfo = formats.get(bitrate);
-                    String filename = title + "_" + getFormatString(vidinfo);
-                    filename += ".mp4";
-                    try {
-                        dl.setContentUrl(parameter);
-                        if (description != null) {
-                            dl.setComment(description);
-                        }
-                        dl.setLinkID(vid + filename);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
-                    dl._setFilePackage(fp);
-                    dl.setProperty("format", bitrate);
-                    dl.setProperty("mainlink", parameter);
-                    dl.setProperty("directlink", finallink);
-                    dl.setProperty("directfilename", filename);
-                    dl.setFinalFileName(filename);
-                    if (fastLinkcheck) {
-                        dl.setAvailable(true);
-                    }
-                    decryptedLinks.add(dl);
-                }
-            }
-        } else {
-            /* TODO: Add quality settings for this too in case there is demand. */
-            /* Typically only needed for "live" streams (recordings) as for some reason they don't have http sources available. */
-            final String hlsurl = (String) entries.get("uri");
-            if (hlsurl == null) {
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(hlsurl));
+        fp.setComment(description);
+        final String hlsMaster = (String) entries.get("videoUrl");
+        if (hlsMaster == null) {
+            return null;
+        }
+        /* TODO: Implement quality selection and improve filenames. */
+        br.getPage(hlsMaster);
+        final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
+        for (final HlsContainer quality : qualities) {
+            final DownloadLink video = this.createDownloadlink(quality.getDownloadurl().replaceFirst("https?://", "m3u8s://"));
+            video.setFinalFileName(main_title + "_" + quality.getHeight() + "p.mp4");
+            video.setAvailable(true);
+            video._setFilePackage(fp);
+            decryptedLinks.add(video);
         }
         return decryptedLinks;
     }
