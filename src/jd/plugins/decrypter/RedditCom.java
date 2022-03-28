@@ -262,6 +262,7 @@ public class RedditCom extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("00");
         final List<Object> items = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/children");
         final RedditConfig cfg = PluginJsonConfig.get(RedditConfig.class);
+        int skippedItems = 0;
         for (final Object itemO : items) {
             final Map<String, Object> post = (Map<String, Object>) itemO;
             final String kind = (String) post.get("kind");
@@ -273,6 +274,7 @@ public class RedditCom extends PluginForDecrypt {
             final String title = (String) data.get("title");
             final String subredditTitle = (String) data.get("subreddit");
             final String permalink = (String) data.get("permalink");
+            final String postText = (String) data.get("selftext");
             if (!"t3".equalsIgnoreCase(kind)) {
                 /*
                  * Skip everything except links (e.g. skips comments, awards and so on. See API docs --> In-text search for "type prefixes")
@@ -353,18 +355,25 @@ public class RedditCom extends PluginForDecrypt {
                 if (is_galleryO == Boolean.TRUE && galleryO != null) {
                     final Map<String, Object> gallery_data = (Map<String, Object>) galleryO;
                     final List<Map<String, Object>> galleryItems = (List<Map<String, Object>>) gallery_data.get("items");
-                    int imageNumber = 0;
+                    int imageNumber = 1;
                     for (final Map<String, Object> galleryItem : galleryItems) {
-                        imageNumber += 1;
                         final String mediaID = (String) galleryItem.get("media_id");
                         final String caption = (String) galleryItem.get("caption");
                         final String extension = ".png";
                         final String serverFilename = mediaID + extension;
                         final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + serverFilename);
                         if (filenameBase != null) {
-                            image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + ".png");
+                            if (galleryItems.size() == 1) {
+                                image.setFinalFileName(filenameBase + ".png");
+                            } else {
+                                image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + ".png");
+                            }
                         } else if (serverFilename != null && filenameBeginning != null) {
-                            image.setName(filenameBeginning + df.format(imageNumber) + "_" + serverFilename);
+                            if (galleryItems.size() == 1) {
+                                image.setName(filenameBeginning + "_" + serverFilename);
+                            } else {
+                                image.setName(filenameBeginning + df.format(imageNumber) + "_" + serverFilename);
+                            }
                         } else if (serverFilename != null) {
                             image.setName(serverFilename);
                         }
@@ -374,6 +383,7 @@ public class RedditCom extends PluginForDecrypt {
                             image.setComment(caption);
                         }
                         thisCrawledLinks.add(image);
+                        imageNumber++;
                     }
                     /* Old handling below */
                     // final Map<String, Object> media_metadata = (Map<String, Object>) data.get("media_metadata");
@@ -455,29 +465,48 @@ public class RedditCom extends PluginForDecrypt {
                 }
                 /* Look for selfhosted photo content, Only add image if nothing else is found */
                 if (thisCrawledLinks.size() == 0) {
-                    final List<Object> imagesO = (List<Object>) JavaScriptEngineFactory.walkJson(data, "preview/images");
-                    if (imagesO != null) {
-                        logger.info(String.format("Found %d selfhosted images", imagesO.size()));
+                    final List<Map<String, Object>> images = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(data, "preview/images");
+                    if (images != null) {
+                        logger.info(String.format("Found %d selfhosted images", images.size()));
                         /* TODO: 2022-01-12: Check filenames for such URLs (apply user preferred FilenameScheme) */
-                        for (final Object imageO : imagesO) {
-                            final Map<String, Object> imageInfo = (Map<String, Object>) imageO;
-                            final String bestImage = (String) JavaScriptEngineFactory.walkJson(imageInfo, "source/url");
-                            if (bestImage != null) {
-                                final DownloadLink dl = this.createDownloadlink("directhttp://" + bestImage);
-                                dl.setAvailable(true);
-                                thisCrawledLinks.add(dl);
+                        int imageNumber = 1;
+                        for (final Map<String, Object> imageInfo : images) {
+                            String bestImageURL = (String) JavaScriptEngineFactory.walkJson(imageInfo, "source/url");
+                            if (StringUtils.isEmpty(bestImageURL)) {
+                                /* Skip invalid items */
+                                continue;
                             }
+                            /* Fix encoding */
+                            bestImageURL = bestImageURL.replace("&amp;", "&");
+                            final String serverFilename = Plugin.getFileNameFromURL(new URL(bestImageURL));
+                            final DownloadLink image = this.createDownloadlink("directhttp://" + bestImageURL);
+                            if (filenameBase != null) {
+                                if (images.size() == 1) {
+                                    image.setFinalFileName(filenameBase + Plugin.getFileNameExtensionFromString(serverFilename));
+                                } else {
+                                    image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + Plugin.getFileNameExtensionFromString(serverFilename));
+                                }
+                            } else if (serverFilename != null && filenameBeginning != null) {
+                                if (images.size() == 1) {
+                                    image.setName(filenameBeginning + "_" + serverFilename);
+                                } else {
+                                    image.setName(filenameBeginning + df.format(imageNumber) + "_" + serverFilename);
+                                }
+                            } else if (serverFilename != null) {
+                                image.setName(serverFilename);
+                            }
+                            image.setAvailable(true);
+                            thisCrawledLinks.add(image);
+                            imageNumber++;
                         }
                     } else {
                         logger.info("Failed to find selfhosted image(s)");
                     }
                 }
                 /* Look for URLs inside post text. selftext is always present but empty when not used. */
+                final String[] urls = HTMLParser.getHttpLinks(postText, null);
                 if (cfg.isCrawlUrlsInsidePostText()) {
-                    final String postText = (String) data.get("selftext");
                     if (!StringUtils.isEmpty(postText)) {
-                        logger.info("Looking for URLs in selftext");
-                        String[] urls = HTMLParser.getHttpLinks(postText, null);
                         if (urls.length > 0) {
                             logger.info(String.format("Found %d URLs in selftext", urls.length));
                             for (final String url : urls) {
@@ -488,6 +517,8 @@ public class RedditCom extends PluginForDecrypt {
                             logger.info("Failed to find any URLs in selftext");
                         }
                     }
+                } else {
+                    skippedItems += urls.length;
                 }
             } finally {
                 for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
@@ -506,6 +537,9 @@ public class RedditCom extends PluginForDecrypt {
                     crawledItems.add(thisCrawledLink);
                 }
             }
+        }
+        if (skippedItems > 0) {
+            logger.info("Items skipped due to users' plugin settings: " + skippedItems);
         }
         return crawledItems;
     }
