@@ -46,13 +46,13 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -581,7 +581,7 @@ public class TwitterCom extends PluginForHost {
         return MAXDOWNLOADS;
     }
 
-    public static void login(final Plugin plugin, final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -593,27 +593,29 @@ public class TwitterCom extends PluginForHost {
                      * via E-Mail
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    // br.getHeaders().put("Referer", "https://twitter.com/");
-                    br.getPage("https://" + account.getHoster() + "/");
-                    final String auth_cookie = br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN);
-                    if (auth_cookie != null) {
+                    if (this.checkLogin(br)) {
                         /* Set new cookie timestamp */
+                        logger.info("Cookie login successful");
                         br.setCookies(account.getHoster(), cookies);
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
-                    /* Force full login (or login with user given cookies) */
                 }
                 /* 2020-07-02: Only cookie login is supported! */
                 final boolean allowCookieLoginOnly = true;
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), plugin.getLogger());
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), this.getLogger());
                 if (userCookies != null && !userCookies.isEmpty()) {
                     /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
                     br.setCookies(userCookies);
-                    jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
-                    br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
-                    if (br.getRequest().getHttpConnection().getResponseCode() != 200) {
-                        showCookieLoginInformation();
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (!checkLogin(br)) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException("Cookies expired");
+                        } else {
+                            showCookieLoginInformation();
+                            throw new AccountInvalidException("Invalid user name or password");
+                        }
                     }
                 } else {
                     if (allowCookieLoginOnly) {
@@ -633,14 +635,24 @@ public class TwitterCom extends PluginForHost {
                     if (br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN) == null) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                 }
-                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 }
                 throw e;
             }
+        }
+    }
+
+    private boolean checkLogin(final Browser br) throws IOException {
+        jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
+        br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
+        if (br.getRequest().getHttpConnection().getResponseCode() == 200) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -683,7 +695,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this, this.br, account, true);
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(1);
@@ -693,7 +705,7 @@ public class TwitterCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(this, this.br, account, false);
+        login(account, false);
         handleDownload(link, account);
     }
 

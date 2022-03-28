@@ -77,9 +77,10 @@ public class DropdocRu extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        final String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()) + ".pdf");
+            /* 2022-03-28: Setr final filename as server will sometimes only send fileID + file-extension as filename. */
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ".pdf");
         }
         return AvailableStatus.TRUE;
     }
@@ -90,6 +91,10 @@ public class DropdocRu extends PluginForHost {
         String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             br.getPage("/download/" + getFID(link));
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                /* 2022-03-28 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This doc is for private use only");
+            }
             final Form dlform = br.getFormbyProperty("id", "fDownload");
             if (dlform == null || !dlform.hasInputFieldByName("documentId")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

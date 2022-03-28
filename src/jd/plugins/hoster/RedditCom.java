@@ -120,7 +120,7 @@ public class RedditCom extends PluginForHost {
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        ret.add("https?://v\\.redd\\.it/([a-z0-9]+)|https?://i\\.redd\\.it/([a-z0-9]+)\\.jpg|reddidtext://[a-z0-9]+");
+        ret.add("https?://v\\.redd\\.it/([a-z0-9]+)|https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}|reddidtext://[a-z0-9]+");
         return ret.toArray(new String[0]);
     }
 

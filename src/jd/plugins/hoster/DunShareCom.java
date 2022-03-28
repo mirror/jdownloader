@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dunshare.com" }, urls = { "https?://(?:www\\.)?dunshare\\.com/([A-Za-z0-9]+)" })
 public class DunShareCom extends PluginForHost {
@@ -49,32 +49,23 @@ public class DunShareCom extends PluginForHost {
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"") || !this.br.containsHTML("class=\"wrapper-content title-page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<td><b>File Name:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<td><b>Size:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String filename = br.getRegex("<td><b>File Name:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        final String filesize = br.getRegex("<td><b>Size:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         final String md5 = br.getRegex("<td><b>MD5 Hash:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         if (md5 != null) {
             link.setMD5Hash(md5);
         }
@@ -83,13 +74,13 @@ public class DunShareCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            requestFileInformation(link);
             final Form dlform = this.br.getFormbyProperty("name", "frm");
             if (dlform == null) {
                 checkErrors();
