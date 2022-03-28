@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -32,6 +33,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.RedditConfig;
 import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
 import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -284,6 +286,7 @@ public class RedditCom extends PluginForDecrypt {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            boolean postContainsRealMedia = true;
             final String urlSlug = new Regex(permalink, TYPE_SUBREDDIT_COMMENTS).getMatch(3);
             final ArrayList<DownloadLink> thisCrawledLinks = new ArrayList<DownloadLink>();
             try {
@@ -465,6 +468,7 @@ public class RedditCom extends PluginForDecrypt {
                 }
                 /* Look for selfhosted photo content, Only add image if nothing else is found */
                 if (thisCrawledLinks.size() == 0) {
+                    postContainsRealMedia = false;
                     final List<Map<String, Object>> images = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(data, "preview/images");
                     if (images != null) {
                         logger.info(String.format("Found %d selfhosted images", images.size()));
@@ -503,22 +507,45 @@ public class RedditCom extends PluginForDecrypt {
                         logger.info("Failed to find selfhosted image(s)");
                     }
                 }
-                /* Look for URLs inside post text. selftext is always present but empty when not used. */
-                final String[] urls = HTMLParser.getHttpLinks(postText, null);
-                if (cfg.isCrawlUrlsInsidePostText()) {
-                    if (!StringUtils.isEmpty(postText)) {
-                        if (urls.length > 0) {
-                            logger.info(String.format("Found %d URLs in selftext", urls.length));
-                            for (final String url : urls) {
-                                final DownloadLink dl = this.createDownloadlink(url);
-                                thisCrawledLinks.add(dl);
+                if (!StringUtils.isEmpty(postText)) {
+                    /* Look for URLs inside post text. Field 'selftext' is always present but empty when not used. */
+                    final String[] urls = HTMLParser.getHttpLinks(postText, null);
+                    if (cfg.isCrawlUrlsInsidePostText()) {
+                        if (!StringUtils.isEmpty(postText)) {
+                            if (urls.length > 0) {
+                                logger.info(String.format("Found %d URLs in selftext", urls.length));
+                                for (final String url : urls) {
+                                    final DownloadLink dl = this.createDownloadlink(url);
+                                    thisCrawledLinks.add(dl);
+                                }
+                            } else {
+                                logger.info("Failed to find any URLs in selftext");
                             }
-                        } else {
-                            logger.info("Failed to find any URLs in selftext");
                         }
+                    } else {
+                        skippedItems += urls.length;
                     }
-                } else {
-                    skippedItems += urls.length;
+                    final TextCrawlerMode mode = cfg.getCrawlerTextDownloadMode();
+                    if (mode == TextCrawlerMode.ALWAYS || (mode == TextCrawlerMode.ONLY_IF_NO_MEDIA_AVAILABLE && !postContainsRealMedia)) {
+                        final DownloadLink text = this.createDownloadlink("reddidtext://" + postID);
+                        final String filename;
+                        if (thisCrawledLinks.size() == 1) {
+                            /* Use filename that matches other found media item. */
+                            final DownloadLink lastAddedDownloadLink = thisCrawledLinks.get(0);
+                            filename = lastAddedDownloadLink.getName().substring(0, lastAddedDownloadLink.getName().lastIndexOf(".")) + ".txt";
+                        } else {
+                            filename = filenameBeginning + ".txt";
+                        }
+                        text.setFinalFileName(filename);
+                        try {
+                            text.setDownloadSize(postText.getBytes("UTF-8").length);
+                        } catch (final UnsupportedEncodingException ignore) {
+                            ignore.printStackTrace();
+                        }
+                        text.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
+                        text.setAvailable(true);
+                        thisCrawledLinks.add(text);
+                    }
                 }
             } finally {
                 for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
@@ -531,6 +558,9 @@ public class RedditCom extends PluginForDecrypt {
                     thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_POST_ID, postID);
                     if (urlSlug != null) {
                         thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_SLUG, urlSlug);
+                    }
+                    if (!StringUtils.isEmpty(postText)) {
+                        thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_POST_TEXT, postText);
                     }
                     /* Not (yet) required */
                     // this.distribute(thisCrawledLink);
