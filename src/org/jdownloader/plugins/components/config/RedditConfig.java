@@ -23,7 +23,7 @@ public interface RedditConfig extends PluginConfigInterface {
             return "Select preferred filename scheme";
         }
 
-        public String getTextCrawlerMode_label() {
+        public String getCrawlerTextDownloadMode_label() {
             return "Crawler: Select text download mode";
         }
 
