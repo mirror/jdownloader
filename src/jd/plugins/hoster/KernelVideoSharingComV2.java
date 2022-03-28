@@ -294,7 +294,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /**
      * Enable this for websites which have embed URLs but they're broken e.g. motherporno.com. </br>
-     * EWmbed URLs will be changed to "fake" normal content URLs which should then redirect to the correct contentURL.
+     * EWmbed URLs will be changed to "fake" normal content URLs which should then redirect to the correct contentURL. </br>
+     * Warning: Enabling this without testing can break embed support of host plugins!!
      */
     protected boolean useEmbedWorkaround() {
         return false;
