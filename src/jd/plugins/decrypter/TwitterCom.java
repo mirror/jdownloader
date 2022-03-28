@@ -1012,8 +1012,7 @@ public class TwitterCom extends PornEmbedParser {
         return "https://twitter.com/" + user + "/status/" + tweetID;
     }
 
-    /** Log in the account of the hostplugin */
-    @SuppressWarnings({ "static-access" })
+    /** Log in the account via hostplugin */
     private Account getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = getNewPluginForHostInstance("twitter.com");
         final Account aa = AccountController.getInstance().getValidAccount("twitter.com");
@@ -1021,7 +1020,7 @@ public class TwitterCom extends PornEmbedParser {
             return null;
         }
         try {
-            ((jd.plugins.hoster.TwitterCom) hostPlugin).login(this, br, aa, force);
+            ((jd.plugins.hoster.TwitterCom) hostPlugin).login(aa, force);
             return aa;
         } catch (final PluginException e) {
             logger.log(e);

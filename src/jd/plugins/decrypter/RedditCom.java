@@ -74,7 +74,7 @@ public class RedditCom extends PluginForDecrypt {
     private static final String TYPE_USER               = "(?:https?://[^/]+)?/user/([^/]+)";
     private static final String TYPE_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/user/([^/]+)/saved";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         jd.plugins.hoster.RedditCom.prepBRAPI(this.br);
         if (param.getCryptedUrl().matches(TYPE_USER_SAVED_OBJECTS)) {
             return crawlUserSavedObjects(param);

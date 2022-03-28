@@ -19,80 +19,77 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:www\\.)?seedr\\.cc/files/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:www\\.)?seedr\\.cc/files/(\\d+)" })
 public class SeedrCc extends PluginForDecrypt {
     public SeedrCc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(plg);
-        final String folderid = new Regex(parameter, "(\\d+)$").getMatch(0);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa == null) {
             logger.info("Account needed to use this crawler");
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
-        ((jd.plugins.hoster.SeedrCc) plg).login(this.br, aa, false);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        ((jd.plugins.hoster.SeedrCc) plg).login(aa, false);
         jd.plugins.hoster.SeedrCc.prepAjaxBr(this.br);
-        this.br.postPage("https://www." + this.getHost() + "/content.php?action=list_contents", "content_type=folder&content_id=" + folderid);
+        br.getPage("https://www." + this.getHost() + "/fs/folder/" + folderID + "/items");
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final List<Object> ressourcelist_files = (List<Object>) entries.get("files");
-        final List<Object> ressourcelist_folders = (List<Object>) entries.get("folders");
-        final String full_path = (String) entries.get("fullname");
+        final Map<String, Object> response = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Map<String, Object>> ressourcelist_files = (List<Map<String, Object>>) response.get("files");
+        final List<Map<String, Object>> ressourcelist_folders = (List<Map<String, Object>>) response.get("folders");
+        final String full_path = (String) response.get("path");
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(full_path);
         if (ressourcelist_files != null) {
             /* Crawl files --> Urls go into host plugin */
-            for (final Object itemo : ressourcelist_files) {
-                entries = (Map<String, Object>) itemo;
-                final String filename = (String) entries.get("name");
-                final String folder_file_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("folder_file_id"), 0));
-                final String hash = (String) entries.get("hash");
-                final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                if (filename == null || folder_file_id == null) {
+            for (final Map<String, Object> fileInfo : ressourcelist_files) {
+                final String filename = fileInfo.get("name").toString();
+                final String fileID = fileInfo.get("id").toString();
+                final String hash = (String) fileInfo.get("hash");
+                if (filename == null || fileID == null) {
                     /* This should never happen! */
                     continue;
                 }
-                final DownloadLink dl = createDownloadlink("http://seedrdecrypted.cc/" + folder_file_id);
-                dl.setFinalFileName(filename);
-                dl.setDownloadSize(filesize);
+                final DownloadLink file = createDownloadlink("http://seedrdecrypted.cc/" + fileID);
+                file.setFinalFileName(filename);
+                file.setVerifiedFileSize(((Long) fileInfo.get("size")).longValue());
                 if (hash != null) {
-                    dl.setMD5Hash(hash);
+                    file.setMD5Hash(hash);
                 }
-                dl.setAvailable(true);
-                dl.setContentUrl(parameter);
-                if (!StringUtils.isEmpty(full_path)) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, full_path);
-                }
-                decryptedLinks.add(dl);
+                file.setAvailable(true);
+                file.setContentUrl(param.getCryptedUrl());
+                file.setRelativeDownloadFolderPath(full_path);
+                file._setFilePackage(fp);
+                decryptedLinks.add(file);
             }
         }
         if (ressourcelist_folders != null) {
             /* Crawl folders --> These urls go back into decrypter */
-            for (final Object itemo : ressourcelist_folders) {
-                entries = (Map<String, Object>) itemo;
-                final String id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
-                // final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+            for (final Map<String, Object> folderInfo : ressourcelist_folders) {
+                final String id = folderInfo.get("id").toString();
                 if (id.equals("0")) {
                     /* This should never happen! */
                     continue;

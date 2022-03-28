@@ -16,16 +16,19 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -72,60 +75,29 @@ public class SeedrCc extends PluginForHost {
     private static final String TYPE_DIRECTLINK              = "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/(\\d+).+";
     private static final String TYPE_ZIP                     = "https?://[^/]+/zip/(\\d+).+";
     private static final String TYPE_NORMAL                  = "http://seedrdecrypted\\.cc/(\\d+)";
-    private boolean             server_issues                = false;
     private String              dllink                       = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null, false);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
-        server_issues = false;
         String filename = null;
-        if (account == null) {
-            /* Pick random valid account if none is given via parameter. */
-            account = AccountController.getInstance().getValidAccount(this);
-        }
-        // if (link.getPluginPatternMatcher().matches(TYPE_ZIP)) {
-        // if (account == null) {
-        // return AvailableStatus.UNCHECKABLE;
-        // }
-        // this.login(this.br, account, false);
-        // prepAjaxBr(this.br);
-        // final String fid = new Regex(link.getPluginPatternMatcher(), TYPE_ZIP).getMatch(0);
-        // if (fid == null) {
-        // /* This should never happen */
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // this.br.postPage("https://www." + this.getHost() + "/content.php?action=fetch_archive",
-        // "%5B%7B%22type%22%3A%22folder%22%2C%22id%22%3A%22" + fid + "%22%7D%5D");
-        // if (br.getHttpConnection().getResponseCode() == 404) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // } else if (br.getHttpConnection().getResponseCode() == 401) {
-        // /*
-        // * 2020-07-15: E.g. deleted files --> They do not provide a meaningful errormessage for this case --> First check if we
-        // * really are loggedin --> If no Exception happens we're logged in which means the file is offline --> This is a rare case!
-        // * Most of all URLs the users add will be online and downloadable!
-        // */
-        // this.login(this.br, account, true);
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        // this.dllink = PluginJSonUtils.getJsonValue(this.br, "archive_url");
-        // }
         if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
             if (account == null) {
                 return AvailableStatus.UNCHECKABLE;
             }
-            this.login(this.br, account, false);
+            this.login(account, false);
             prepAjaxBr(this.br);
             final String fid = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
             if (fid == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.br.postPage("https://www." + this.getHost() + "/content.php?action=fetch_file", "folder_file_id=" + fid);
+            br.getPage("https://www." + this.getHost() + "/download/file/" + fid + "/url");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getResponseCode() == 401) {
@@ -134,15 +106,16 @@ public class SeedrCc extends PluginForHost {
                  * really are loggedin --> If no Exception happens we're logged in which means the file is offline --> This is a rare case!
                  * Most of all URLs the users add will be online and downloadable!
                  */
-                this.login(this.br, account, true);
+                this.login(account, true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            this.dllink = PluginJSonUtils.getJsonValue(this.br, "url");
-            filename = PluginJSonUtils.getJsonValue(this.br, "name");
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            this.dllink = (String) entries.get("url");
+            filename = (String) entries.get("name");
         } else {
             dllink = link.getPluginPatternMatcher();
         }
-        if (filename != null && !link.isNameSet()) {
+        if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
         if (dllink != null && !isDownload) {
@@ -150,13 +123,15 @@ public class SeedrCc extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 con = br.openHeadConnection(dllink);
-                if (con.isContentDisposition()) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    if (!link.isNameSet()) {
-                        link.setFinalFileName(getFileNameFromHeader(con));
-                    }
-                } else {
-                    server_issues = true;
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String filenameFromHeader = getFileNameFromHeader(con);
+                if (filenameFromHeader != null) {
+                    link.setFinalFileName(filenameFromHeader);
                 }
             } finally {
                 try {
@@ -175,13 +150,11 @@ public class SeedrCc extends PluginForHost {
         if (!link.getPluginPatternMatcher().matches(TYPE_DIRECTLINK)) {
             throw new AccountRequiredException();
         }
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+    private void handleDownload(final DownloadLink link, final boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (link.getPluginPatternMatcher().matches(TYPE_ZIP)) {
@@ -189,7 +162,7 @@ public class SeedrCc extends PluginForHost {
             maxchunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -211,7 +184,7 @@ public class SeedrCc extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -219,75 +192,64 @@ public class SeedrCc extends PluginForHost {
                 final boolean cookieLoginOnly = true;
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final Cookies cookies = account.loadCookies("");
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
+                    br.setCookies(userCookies);
+                    if (!force) {
+                        /* Do not verify cookies */
+                        return;
+                    }
+                    if (this.checkLogin(br, account)) {
+                        /* Save new cookie timestamp */
+                        logger.info("User Cookie login successful");
+                        return;
+                    } else {
+                        logger.info("User Cookie login failed");
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException("Cookies expired");
+                        } else {
+                            showCookieLoginInformation();
+                            throw new AccountInvalidException("Invalid user name or password");
+                        }
+                    }
+                }
+                if (cookieLoginOnly) {
+                    showCookieLoginInformation();
+                    throw new AccountInvalidException("Cookie login required");
+                }
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    prepAjaxBr(br);
-                    br.postPage("https://www." + this.getHost() + "/content.php?action=get_settings", "");
+                    if (!force) {
+                        /* Do not verify cookies */
+                        return;
+                    }
                     if (isLoggedIn(br)) {
                         /* Save new cookie timestamp */
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     }
-                    br.clearAll();
-                }
-                if (userCookies != null) {
-                    logger.info("Attempting user cookie login");
-                    br.setCookies(userCookies);
-                    br.postPage("https://www." + this.getHost() + "/content.php?action=get_settings", "");
-                    if (isLoggedIn(br)) {
-                        /* Save new cookie timestamp */
-                        logger.info("User Cookie login successful");
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
-                        return;
-                    } else {
-                        logger.info("User Cookie login failed");
-                        showCookieLoginInformation();
-                        throw new AccountInvalidException();
-                    }
+                    br.clearCookies(br.getHost());
                 }
                 logger.info("Performing full login");
-                if (cookieLoginOnly) {
-                    if (account.hasEverBeenValid()) {
-                        throw new AccountInvalidException("Cookies expired");
-                    } else {
-                        showCookieLoginInformation();
-                        throw new AccountInvalidException("Invalid user name or password");
-                    }
-                }
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 if (dlinkbefore == null) {
                     this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                 }
-                br.getPage("https://www." + this.getHost());
-                if (br.containsHTML("hcaptcha\\.com/") || br.containsHTML("class=\"h-captcha\"")) {
+                br.getPage("https://www." + this.getHost() + "/auth/pages/signup");
+                if (br.containsHTML("hcaptcha\\.com/") || br.containsHTML("class=\"h-captcha\"") || !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported captcha type 'hcaptcha', use cookie login or read: board.jdownloader.org/showthread.php?t=83712", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                String reCaptchaKey;
-                /*
-                 * 2019-06-06: Use static key because website contains two keys - one for registration and one for login! Using the wrong
-                 * key will result in login failure!
-                 */
-                final boolean useStaticReCaptchaKey = true;
-                if (useStaticReCaptchaKey) {
-                    /* 2018-10-30 */
-                    reCaptchaKey = "6LdNI3MUAAAAAKcY5lKxRTMxg4xFWHEJWzSNJGdE";
-                } else {
-                    reCaptchaKey = br.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
-                    if (reCaptchaKey == null) {
-                        /* 2018-10-30 */
-                        reCaptchaKey = "6LdNI3MUAAAAAKcY5lKxRTMxg4xFWHEJWzSNJGdE";
-                    }
-                }
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
-                if (dlinkbefore != null) {
-                    this.setDownloadLink(dlinkbefore);
-                }
-                String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberme=on";
-                postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
-                postData += "&recaptcha-version=3";
+                /* TODO: Test this */
+                final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
+                final UrlQuery query = new UrlQuery();
+                query.add("username", Encoding.urlEncode(account.getUser()));
+                query.add("password", Encoding.urlEncode(account.getPass()));
+                query.add("rememberme", "on");
+                query.add("g-recaptcha-response", "");
+                query.add("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
                 prepAjaxBr(br);
-                br.postPageRaw("https://www.seedr.cc/actions.php?action=login", postData);
+                br.postPage("/auth/login", query);
                 final String error = PluginJSonUtils.getJson(br, "error");
                 if (!StringUtils.isEmpty(error)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -302,6 +264,17 @@ public class SeedrCc extends PluginForHost {
                 account.clearCookies("");
                 throw e;
             }
+        }
+    }
+
+    private boolean checkLogin(final Browser br, final Account account) throws IOException {
+        prepAjaxBr(br);
+        br.setAllowedResponseCodes(401);
+        br.getPage("https://www." + this.getHost() + "/account/settings");
+        if (isLoggedIn(br)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -342,7 +315,12 @@ public class SeedrCc extends PluginForHost {
     }
 
     private static boolean isLoggedIn(final Browser br) {
-        return br.getCookie(br.getHost(), "remember", Cookies.NOTDELETEDPATTERN) != null;
+        if (br.getHttpConnection().getResponseCode() == 401) {
+            /* E.g. {"status_code":401,"reason_phrase":"Unauthorized"} */
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public static void prepAjaxBr(final Browser br) {
@@ -350,11 +328,10 @@ public class SeedrCc extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        login(account, true);
         /*
          * Correct username - e.g. when logging in via cookies, users can enter whatever they want into the username field but we want the
          * account to be unique!
@@ -365,36 +342,20 @@ public class SeedrCc extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         prepAjaxBr(this.br);
-        this.br.postPage("https://www." + this.getHost() + "/content.php?action=get_memory_bandwidth", "");
-        final String is_premium = PluginJSonUtils.getJsonValue(this.br, "is_premium");
-        final String bandwidth_used = PluginJSonUtils.getJsonValue(this.br, "bandwidth_used");
-        final String bandwidth_max = PluginJSonUtils.getJsonValue(this.br, "bandwidth_max");
-        final String space_used = PluginJSonUtils.getJsonValue(this.br, "space_used");
-        if (space_used != null && space_used.matches("\\d+")) {
-            ai.setUsedSpace(Long.parseLong(space_used));
-        }
-        if (is_premium == null || !is_premium.equals("1")) {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) user");
-        } else {
-            final String expire = br.getRegex("").getMatch(0);
-            if (expire == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-            }
-            if (bandwidth_used != null && bandwidth_max != null && bandwidth_used.matches("\\d+") && bandwidth_max.matches("\\d+")) {
-                ai.setTrafficMax(Long.parseLong(bandwidth_max));
-                ai.setTrafficLeft(ai.getTrafficMax() - Long.parseLong(bandwidth_used));
-            }
+        br.getPage("/account/quota/used");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final long bandwidth_used = ((Number) entries.get("bandwidth_used")).longValue();
+        final long bandwidth_max = ((Number) entries.get("bandwidth_max")).longValue();
+        ai.setUsedSpace(((Number) entries.get("space_used")).longValue());
+        if ((Boolean) entries.get("is_premium")) {
+            /* TODO: Set expire-date */
+            ai.setTrafficMax(bandwidth_max);
+            ai.setTrafficLeft(ai.getTrafficMax() - bandwidth_used);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            ai.setStatus("Premium account");
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         }
         account.setConcurrentUsePossible(true);
         return ai;
@@ -406,7 +367,7 @@ public class SeedrCc extends PluginForHost {
         // login(this.br, account, false);
         requestFileInformation(link, account, true);
         if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             // String dllink = this.checkDirectLink(link, "premium_directlink");
             // if (dllink == null) {
@@ -416,7 +377,7 @@ public class SeedrCc extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // }
             // }
-            doFree(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
+            handleDownload(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
         }
     }
 
