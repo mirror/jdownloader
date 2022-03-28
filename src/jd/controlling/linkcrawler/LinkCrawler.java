@@ -1908,6 +1908,15 @@ public class LinkCrawler {
         return ret;
     }
 
+    protected boolean distributeFinalCrawledLink(final LinkCrawlerGeneration generation, final CrawledLink crawledLink) {
+        if (generation != null && generation.isValid() && crawledLink != null) {
+            this.handleFinalCrawledLink(crawledLink);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     protected void distribute(final LinkCrawlerGeneration generation, List<CrawledLink> possibleCryptedLinks) {
         if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) {
             return;
@@ -1925,7 +1934,7 @@ public class LinkCrawler {
                         possibleCryptedLink.setUnknownHandler(null);
                         if (!distributeCrawledLink(possibleCryptedLink)) {
                             // direct forward, if we already have a final link.
-                            this.handleFinalCrawledLink(possibleCryptedLink);
+                            distributeFinalCrawledLink(generation, possibleCryptedLink);
                             continue mainloop;
                         }
                         final String url = possibleCryptedLink.getURL();
@@ -2718,7 +2727,7 @@ public class LinkCrawler {
                                         crawledLink.setMatchingRule(possibleCryptedLink.getMatchingRule());
                                     }
                                 }
-                                handleFinalCrawledLink(crawledLink);
+                                distributeFinalCrawledLink(generation, crawledLink);
                             }
                         }
                     } finally {
