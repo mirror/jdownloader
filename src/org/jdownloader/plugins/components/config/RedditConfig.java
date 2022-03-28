@@ -23,6 +23,10 @@ public interface RedditConfig extends PluginConfigInterface {
             return "Select preferred filename scheme";
         }
 
+        public String getTextCrawlerMode_label() {
+            return "Crawler: Select text download mode";
+        }
+
         public String getCrawlUrlsInsidePostText_label() {
             return "Crawl URLs inside post-text?";
         }
@@ -99,6 +103,35 @@ public interface RedditConfig extends PluginConfigInterface {
     FilenameScheme getPreferredFilenameScheme();
 
     void setPreferredFilenameScheme(final FilenameScheme quality);
+
+    public static enum TextCrawlerMode implements LabelInterface {
+        ALWAYS {
+            @Override
+            public String getLabel() {
+                return "Always";
+            }
+        },
+        ONLY_IF_NO_MEDIA_AVAILABLE {
+            @Override
+            public String getLabel() {
+                return "Only if no media is found";
+            }
+        },
+        NEVER {
+            @Override
+            public String getLabel() {
+                return "Never";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("ALWAYS")
+    @Order(17)
+    @DescriptionForConfigEntry("Crawler: Select text download mode")
+    TextCrawlerMode getCrawlerTextDownloadMode();
+
+    void setCrawlerTextDownloadMode(final TextCrawlerMode mode);
 
     @AboutConfig
     @DefaultBooleanValue(false)

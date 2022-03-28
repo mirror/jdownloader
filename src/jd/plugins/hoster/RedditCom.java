@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
@@ -62,13 +64,15 @@ public class RedditCom extends PluginForHost {
         }
     }
 
-    public static final String PROPERTY_SUBREDDIT = "subreddit";
-    public static final String PROPERTY_TITLE     = "title";
-    public static final String PROPERTY_USERNAME  = "username";
-    public static final String PROPERTY_DATE      = "date";
-    public static final String PROPERTY_INDEX     = "index";
-    public static final String PROPERTY_SLUG      = "slug";
-    public static final String PROPERTY_POST_ID   = "postid";
+    public static final String PROPERTY_SUBREDDIT        = "subreddit";
+    public static final String PROPERTY_TITLE            = "title";
+    public static final String PROPERTY_USERNAME         = "username";
+    public static final String PROPERTY_DATE             = "date";
+    public static final String PROPERTY_INDEX            = "index";
+    public static final String PROPERTY_SLUG             = "slug";
+    public static final String PROPERTY_POST_ID          = "postid";
+    public static final String PROPERTY_POST_TEXT        = "post_text";
+    public static final String PROPERTY_CRAWLER_FILENAME = "crawler_filename";
 
     /** API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
     public static final String getApiBaseLogin() {
@@ -116,7 +120,7 @@ public class RedditCom extends PluginForHost {
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        ret.add("https?://v\\.redd\\.it/([a-z0-9]+)|https?://i\\.redd\\.it/([a-z0-9]+)\\.jpg");
+        ret.add("https?://v\\.redd\\.it/([a-z0-9]+)|https?://i\\.redd\\.it/([a-z0-9]+)\\.jpg|reddidtext://[a-z0-9]+");
         return ret.toArray(new String[0]);
     }
 
@@ -144,11 +148,22 @@ public class RedditCom extends PluginForHost {
         return fid;
     }
 
+    private static final String TYPE_TEXT = "reddidtext://([a-z0-9]+)";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setAllowedResponseCodes(new int[] { 400 });
-        if (link.getPluginPatternMatcher().contains("v.redd.it")) {
+        if (link.hasProperty(PROPERTY_CRAWLER_FILENAME)) {
+            link.setFinalFileName(link.getStringProperty(PROPERTY_CRAWLER_FILENAME));
+        }
+        if (link.getPluginPatternMatcher().matches(TYPE_TEXT)) {
+            if (!link.hasProperty(PROPERTY_POST_TEXT)) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } else if (link.getPluginPatternMatcher().contains("v.redd.it")) {
             /* HLS Video */
             if (!link.isNameSet()) {
                 /* Fallback: Use this if no name was set in crawler. */
@@ -191,11 +206,19 @@ public class RedditCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, RESUME, MAXCHUNKS, "free_directlink");
+        handleDownload(link, RESUME, MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (link.getPluginPatternMatcher().contains("v.redd.it")) {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (link.getPluginPatternMatcher().matches(TYPE_TEXT)) {
+            /* Write text to file */
+            final File dest = new File(link.getFileOutput());
+            IO.writeToFile(dest, link.getStringProperty(PROPERTY_POST_TEXT).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+            /* Set filesize so user can see it in UI. */
+            link.setVerifiedFileSize(dest.length());
+            /* Set progress to finished - the "download" is complete ;) */
+            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+        } else if (link.getPluginPatternMatcher().contains("v.redd.it")) {
             /* HLS video */
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null) {
