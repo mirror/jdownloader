@@ -17,12 +17,12 @@ package jd.plugins.decrypter;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -261,7 +261,6 @@ public class RedditCom extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlListing(final Map<String, Object> entries, FilePackage fp) throws Exception {
         /* https://www.reddit.com/dev/api/#fullnames */
         final ArrayList<DownloadLink> crawledItems = new ArrayList<DownloadLink>();
-        final DecimalFormat df = new DecimalFormat("00");
         final List<Object> items = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/children");
         final RedditConfig cfg = PluginJsonConfig.get(RedditConfig.class);
         int skippedItems = 0;
@@ -358,24 +357,36 @@ public class RedditCom extends PluginForDecrypt {
                 if (is_galleryO == Boolean.TRUE && galleryO != null) {
                     final Map<String, Object> gallery_data = (Map<String, Object>) galleryO;
                     final List<Map<String, Object>> galleryItems = (List<Map<String, Object>>) gallery_data.get("items");
+                    final Map<String, Object> media_metadata = (Map<String, Object>) data.get("media_metadata");
                     int imageNumber = 1;
+                    final int padLength = StringUtils.getPadLength(galleryItems.size());
                     for (final Map<String, Object> galleryItem : galleryItems) {
-                        final String mediaID = (String) galleryItem.get("media_id");
+                        final String mediaID = galleryItem.get("media_id").toString();
                         final String caption = (String) galleryItem.get("caption");
-                        final String extension = ".png";
-                        final String serverFilename = mediaID + extension;
+                        final Map<String, Object> mediaInfo = (Map<String, Object>) media_metadata.get(mediaID);
+                        /* "image/png" --> "png" */
+                        String mediaType = (String) mediaInfo.get("m");
+                        String extension = getExtensionFromMimeType(mediaType);
+                        if (extension == null && mediaType.contains("/")) {
+                            final String[] mediaTypeSplit = mediaType.split("/");
+                            extension = mediaTypeSplit[mediaTypeSplit.length - 1];
+                        }
+                        if (extension == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final String serverFilename = mediaID + "." + extension;
                         final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + serverFilename);
                         if (filenameBase != null) {
                             if (galleryItems.size() == 1) {
-                                image.setFinalFileName(filenameBase + ".png");
+                                image.setFinalFileName(filenameBase + "." + extension);
                             } else {
-                                image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + ".png");
+                                image.setFinalFileName(filenameBase + "_" + String.format(Locale.US, "%0" + padLength + "d", imageNumber) + "." + extension);
                             }
                         } else if (serverFilename != null && filenameBeginning != null) {
                             if (galleryItems.size() == 1) {
                                 image.setName(filenameBeginning + "_" + serverFilename);
                             } else {
-                                image.setName(filenameBeginning + df.format(imageNumber) + "_" + serverFilename);
+                                image.setName(filenameBeginning + String.format(Locale.US, "%0" + padLength + "d", imageNumber) + "_" + serverFilename);
                             }
                         } else if (serverFilename != null) {
                             image.setName(serverFilename);
@@ -388,45 +399,12 @@ public class RedditCom extends PluginForDecrypt {
                         thisCrawledLinks.add(image);
                         imageNumber++;
                     }
-                    /* Old handling below */
-                    // final Map<String, Object> media_metadata = (Map<String, Object>) data.get("media_metadata");
-                    // final Iterator<Entry<String, Object>> iterator = media_metadata.entrySet().iterator();
-                    // int imageNumber = 0;
-                    // while (iterator.hasNext()) {
-                    // imageNumber += 1;
-                    // final Entry<String, Object> entry = iterator.next();
-                    // final Map<String, Object> mediaInfo = (Map<String, Object>) entry.getValue();
-                    // /* "image/png" --> "png" */
-                    // String mediaType = (String) mediaInfo.get("m");
-                    // String extension = getExtensionFromMimeType(mediaType);
-                    // if (extension == null && mediaType.contains("/")) {
-                    // final String[] mediaTypeSplit = mediaType.split("/");
-                    // extension = mediaTypeSplit[mediaTypeSplit.length - 1];
-                    // }
-                    // if (extension == null) {
-                    // // fallback
-                    // extension = "jpg";
-                    // }
-                    // final String media_id = (String) mediaInfo.get("id");
-                    // final String serverFilename = media_id + "." + extension;
-                    // final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + serverFilename);
-                    // if (filenameBase != null) {
-                    // image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + "." + extension);
-                    // } else if (serverFilename != null && filenameBeginning != null) {
-                    // image.setName(filenameBeginning + df.format(imageNumber) + "_" + serverFilename);
-                    // } else if (serverFilename != null) {
-                    // image.setName(serverFilename);
-                    // }
-                    // image.setAvailable(true);
-                    // image.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_INDEX, imageNumber);
-                    // thisCrawledLinks.add(image);
-                    // }
                     break;
                 }
                 /* Look for embedded content from external sources - the object is always given but can be empty */
                 final Object embeddedMediaO = data.get("media_embed");
                 if (embeddedMediaO != null) {
-                    Map<String, Object> embeddedMediaInfo = (Map<String, Object>) embeddedMediaO;
+                    final Map<String, Object> embeddedMediaInfo = (Map<String, Object>) embeddedMediaO;
                     if (!embeddedMediaInfo.isEmpty()) {
                         logger.info("Found media_embed");
                         String mediaEmbedStr = (String) embeddedMediaInfo.get("content");
@@ -472,8 +450,8 @@ public class RedditCom extends PluginForDecrypt {
                     final List<Map<String, Object>> images = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(data, "preview/images");
                     if (images != null) {
                         logger.info(String.format("Found %d selfhosted images", images.size()));
-                        /* TODO: 2022-01-12: Check filenames for such URLs (apply user preferred FilenameScheme) */
                         int imageNumber = 1;
+                        final int padLength = StringUtils.getPadLength(images.size());
                         for (final Map<String, Object> imageInfo : images) {
                             String bestImageURL = (String) JavaScriptEngineFactory.walkJson(imageInfo, "source/url");
                             if (StringUtils.isEmpty(bestImageURL)) {
@@ -488,13 +466,13 @@ public class RedditCom extends PluginForDecrypt {
                                 if (images.size() == 1) {
                                     image.setFinalFileName(filenameBase + Plugin.getFileNameExtensionFromString(serverFilename));
                                 } else {
-                                    image.setFinalFileName(filenameBase + "_" + df.format(imageNumber) + Plugin.getFileNameExtensionFromString(serverFilename));
+                                    image.setFinalFileName(filenameBase + "_" + String.format(Locale.US, "%0" + padLength + "d", imageNumber) + Plugin.getFileNameExtensionFromString(serverFilename));
                                 }
                             } else if (serverFilename != null && filenameBeginning != null) {
                                 if (images.size() == 1) {
                                     image.setName(filenameBeginning + "_" + serverFilename);
                                 } else {
-                                    image.setName(filenameBeginning + df.format(imageNumber) + "_" + serverFilename);
+                                    image.setName(filenameBeginning + String.format(Locale.US, "%0" + padLength + "d", imageNumber) + "_" + serverFilename);
                                 }
                             } else if (serverFilename != null) {
                                 image.setName(serverFilename);
