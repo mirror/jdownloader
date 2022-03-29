@@ -59,7 +59,6 @@ public class ChoMikujPl extends PluginForDecrypt {
     private String                            FOLDERPASSWORD                  = null;
     private String                            FOLDERPASSWORD_SPECIAL          = null;
     protected static HashMap<String, Cookies> recentCookies                   = new HashMap<String, Cookies>();
-    // private String REQUESTVERIFICATIONTOKEN = null;
     private final String                      PAGEDECRYPTLINK                 = "https?://chomikujpagedecrypt\\.pl/.+";
     private final String                      VIDEO_DIRECTURL                 = "https?://(?:www\\.)?chomikuj\\.pl//?video\\.ashx.+";
     private final String                      ENDINGS                         = "(?i)\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|url|viv|vivo|vob|webm|wav|wmv|wma|wpl|xla|xls|xpi|zeno|zip)";
@@ -138,7 +137,6 @@ public class ChoMikujPl extends PluginForDecrypt {
         parameter = parameter.replace("www.", "").replace("http://", "https://");
         br.setFollowRedirects(true);
         br.setLoadLimit(4194304);
-        boolean accessedURL = false;
         /********************** Load recent cookies ************************/
         this.loadCookies(br, this.getHost());
         /********************** Login if possible ************************/
@@ -147,12 +145,10 @@ public class ChoMikujPl extends PluginForDecrypt {
             jd.plugins.hoster.ChoMikujPl.setLoginCookies(this.br, account);
         }
         /********************** Multiple pages handling START ************************/
-        String requestVerificationToken = null;
+        getPage(parameter);
+        String requestVerificationToken = this.regexRequestVerificationToken(br);
+        passwordHandling(param);
         if (scanForMorePages) {
-            /* No specific page only? Add all! */
-            getPage(parameter);
-            requestVerificationToken = this.regexRequestVerificationToken(br);
-            passwordHandling(param);
             /* Find all pages and re-add them to the crawler to handle one page after another! */
             if (br.containsHTML("fileListPage")) {
                 int maxPage = 1;
@@ -184,99 +180,16 @@ public class ChoMikujPl extends PluginForDecrypt {
                     }
                 }
             }
-            accessedURL = true;
         }
         /********************** Multiple pages handling END ************************/
         /* Checking if the single link is folder with EXTENSTION in the name */
-        boolean checkedForFolderAndConfirmedFolder = false;
-        /* Handle single links */
-        if (linkending != null) {
-            String tempExt = null;
-            if (linkending.contains(".")) {
-                tempExt = linkending.substring(linkending.lastIndexOf("."));
-                /* Be sure to get a correct ending - exclude any other html-encoded stuff. This might reset it to null but that's fine. */
-                tempExt = new Regex(tempExt, "^(\\.[A-Za-z0-9]+)").getMatch(0);
-            }
-            final boolean isLinkEndingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());
-            if (endingLooksLikeFile(linkending) || isLinkEndingWithoutID) {
-                /**
-                 * If the ID is missing but it's a single link we have to access the link to get it's real link and it's download ID.
-                 */
-                if (isLinkEndingWithoutID) {
-                    getPage(parameter);
-                    accessedURL = true;
-                    final String orgLink = br.getRegex("property=\"og:url\"[^>]*content=\"(https?://(?:www\\.)?chomikuj\\.pl/[^<>\"]*?)\"").getMatch(0);
-                    if (orgLink != null && orgLink.contains(",")) {
-                        linkending = orgLink.substring(orgLink.lastIndexOf(","));
-                        if (!endingLooksLikeFile(linkending)) {
-                            logger.warning("SingleLink handling failed for link: " + parameter);
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        parameter = orgLink;
-                    } else {
-                        /* Check for folderID -> If that is given we know we have a folder. */
-                        // ENDINGS ("8 Cold fusion 2011 pl brrip x264")
-                        String folderID = br.getRegex("type=\"hidden\" name=\"FolderId\" value=\"(\\d+)\"").getMatch(0);
-                        if (folderID == null) {
-                            folderID = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
-                        }
-                        // if it is not folder then report offline file
-                        if (folderID == null) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else {
-                            checkedForFolderAndConfirmedFolder = true;
-                        }
-                    }
-                }
-                if (!checkedForFolderAndConfirmedFolder) {
-                    /* Not a folder? Check for single file. */
-                    final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\.[A-Za-z0-9]+).*?$");
-                    String filename;
-                    if (info.matches()) {
-                        filename = Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2);
-                    } else {
-                        filename = parameter.substring(parameter.lastIndexOf("/") + 1);
-                    }
-                    if (filename != null) {
-                        filename = filename.replaceAll("(\\*([a-f0-9]{2}))", "%$2");
-                        if (filename.contains("%")) {
-                            filename = URLDecoder.decode(filename, "UTF-8");
-                        }
-                    }
-                    String fileid = info.getMatch(1);
-                    final String singleFileFolderPath;
-                    if (fileid != null) {
-                        /* Add single file to hostplugin without the need of ever accessing our given URL. */
-                        singleFileFolderPath = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), "https?://[^/]+/(.*?)/[^/]+$").getMatch(0));
-                        final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
-                        dl.setProperty(PROPERTY_FILEID, fileid);
-                        dl.setName(filename);
-                        dl.setContentUrl(parameter);
-                        dl.setProperty(PROPERTY_MAINLINK, parameter);
-                        dl.setRelativeDownloadFolderPath(singleFileFolderPath);
-                        decryptedLinks.add(dl);
-                        return decryptedLinks;
-                    } else {
-                        /* Check if we have a single file or a folder. */
-                        getPage(parameter);
-                        accessedURL = true;
-                        final DownloadLink singleFile = this.crawlSingleFile(this.br);
-                        if (singleFile != null) {
-                            decryptedLinks.add(singleFile);
-                            return decryptedLinks;
-                        } else {
-                            checkedForFolderAndConfirmedFolder = true;
-                            logger.info("Failed to find single file --> Crawling folder");
-                        }
-                    }
-                }
-            }
+        /* Check if we have a single file or a folder */
+        final DownloadLink singleFile = this.crawlSingleFile(this.br);
+        if (singleFile != null) {
+            decryptedLinks.add(singleFile);
+            return decryptedLinks;
         }
-        /* Access main URL if it hasn't been done before. */
-        if (!accessedURL) {
-            getPage(parameter);
-            requestVerificationToken = this.regexRequestVerificationToken(br);
-        }
+        logger.info("Failed to find single file --> Crawling folder");
         /*
          * If e.g. crawler found page 100 but that folder only has 50 pages, there will be a redirect to the max/last page --> We do not
          * want to crawl anything then!
@@ -289,25 +202,13 @@ public class ChoMikujPl extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String numberofFiles = br.getRegex("(?i)class=\"bold\">(\\d+)</span> plik\\&#243;w<br />").getMatch(0);
-        if (br.containsHTML("(?i)Nie znaleziono \\- błąd 404") || (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) || !br.containsHTML("class=\"greenActionButton\"|name=\"FolderId\"") || ("0".equals(numberofFiles) && !br.containsHTML("foldersList"))) {
+        if (br.containsHTML("(?i)Nie znaleziono \\- błąd 404") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /* Handle single links 2 */
-        final String ext = br.getURL().substring(br.getURL().lastIndexOf("."));
-        if (ext != null && ext.matches(ENDINGS) && !checkedForFolderAndConfirmedFolder) {
-            br.setFollowRedirects(true);
-            getPage(parameter);
-            /* Check if link can be crawled */
-            final String cantCrawl = getError();
-            if (cantCrawl != null) {
-                logger.info(String.format(cantCrawl, parameter));
-                return decryptedLinks;
-            }
-            final DownloadLink singleFile = crawlSingleFile(this.br);
-            if (singleFile == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            decryptedLinks.add(singleFile);
+        } else if (!br.containsHTML("class=\"greenActionButton\"|name=\"FolderId\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if ("0".equals(numberofFiles) && !br.containsHTML("foldersList")) {
+            final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER_" + getCurrentURLFolderPath(param.getCryptedUrl()), "This folder doesn't contain any files.");
+            decryptedLinks.add(dummy);
             return decryptedLinks;
         }
         // Check if link can be decrypted
@@ -351,7 +252,10 @@ public class ChoMikujPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /** Returns DownloadLink if single downloadable file is available according to html code in given browser instance. */
+    /**
+     * Returns DownloadLink if single downloadable file is available according to html code in given browser instance. </br>
+     * This can be used to determine if the current page is a folder or a single file.
+     */
     private DownloadLink crawlSingleFile(final Browser br) {
         final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
         final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
@@ -370,6 +274,14 @@ public class ChoMikujPl extends PluginForDecrypt {
             dl.setRelativeDownloadFolderPath(singleFileFolderPath);
         }
         return dl;
+    }
+
+    private String getCurrentURLFolderPath(final String url) {
+        final String path = new Regex(url, "https?://[^/]+/(.+)").getMatch(0);
+        if (path == null) {
+            return null;
+        }
+        return Encoding.htmlDecode(path);
     }
 
     private String getSingleFileFolderPath(final Browser br) {
