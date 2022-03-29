@@ -63,16 +63,17 @@ public class IwaraTv extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private final String         html_privatevideo = "(?i)>\\s*This video is only available for users that|>\\s*Private video<";
-    private static final String  type_image        = "https?://[^/]+/images/.+";
-    private String               dllink            = null;
-    private static final String  PROPERTY_DATE     = "date";
-    public static final String   PROPERTY_USER     = "user";
-    public static final String   PROPERTY_TITLE    = "title";
-    public static final String   PROPERTY_VIDEOID  = "videoid";
+    private static final boolean free_resume              = true;
+    private static final int     free_maxchunks           = 0;
+    private static final int     free_maxdownloads        = -1;
+    private final String         html_privatevideo        = "(?i)>\\s*This video is only available for users that|>\\s*Private video<";
+    private static final String  type_image               = "https?://[^/]+/images/.+";
+    private String               dllink                   = null;
+    private static final String  PROPERTY_DATE            = "date";
+    public static final String   PROPERTY_USER            = "user";
+    public static final String   PROPERTY_TITLE           = "title";
+    public static final String   PROPERTY_VIDEOID         = "videoid";
+    public static final String   PROPERTY_FILE_EXTENSTION = "file_extension";
 
     @Override
     public String getAGBLink() {
@@ -96,7 +97,7 @@ public class IwaraTv extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
+    public String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
@@ -200,7 +201,7 @@ public class IwaraTv extends PluginForHost {
                 }
             }
         }
-        /* Collect metadata and build filename */
+        /* Collect metadata and set so we can later build filename */
         final Regex usernameAndDate = br.getRegex("(?i)class=\"username\"[^>]*>([^<]+)</a>\\s*作成日\\s*:\\s*(\\d{4}-\\d{2}-\\d{2})");
         /* Set some Packagizer properties */
         String uploader = usernameAndDate.getMatch(0);
@@ -219,32 +220,12 @@ public class IwaraTv extends PluginForHost {
             title = Encoding.htmlOnlyDecode(title).trim();
             link.setProperty(PROPERTY_TITLE, title);
         }
-        /* Build filename */
-        String filename = null;
-        final FilenameScheme scheme = cfg.getPreferredFilenameScheme();
-        final String videoid = this.getFID(link);
-        if (scheme == FilenameScheme.DATE_UPLOADER_VIDEOID && date != null && uploader != null) {
-            filename = date + "_" + uploader + "_" + videoid;
-        } else if (scheme == FilenameScheme.DATE_UPLOADER_SPACE_TITLE && date != null && uploader != null && title != null) {
-            filename = date + "_" + uploader + " " + title;
-        } else if (scheme == FilenameScheme.DATE_IN_BRACKETS_SPACE_TITLE && date != null && title != null) {
-            filename = "[" + date + "]" + " " + title;
-        } else if (scheme == FilenameScheme.UPLOADER_VIDEOID_TITLE && uploader != null && title != null) {
-            filename = uploader + "_" + videoid + "_" + title;
-        } else if (title != null) {
-            /* Fallback 1 */
-            filename = videoid + "_" + title;
-        } else {
-            /* Fallback 2 */
-            filename = videoid;
-        }
-        if (isVideo) {
-            filename += ".mp4";
-        } else if (dllink != null) {
+        if (!isVideo && dllink != null) {
+            /* Legacy code which we can maybe remove. Atm we're only downloading video files with this plugin(?) */
             final String ext = Plugin.getFileNameExtensionFromURL(this.dllink);
-            filename += ext;
+            link.setProperty(PROPERTY_FILE_EXTENSTION, ext);
         }
-        link.setFinalFileName(filename);
+        link.setFinalFileName(getFilename(link));
         if (cfg.isFindFilesizeDuringAvailablecheck() && !isDownload && this.dllink != null) {
             // In case the link redirects to the finallink
             br.setFollowRedirects(true);
@@ -267,6 +248,42 @@ public class IwaraTv extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static String getFilename(final DownloadLink link) {
+        /* Build filename */
+        String filename = null;
+        final FilenameScheme scheme = PluginJsonConfig.get(IwaraTvConfig.class).getPreferredFilenameScheme();
+        final String date = link.getStringProperty(PROPERTY_DATE);
+        final String videoid = link.getStringProperty(PROPERTY_VIDEOID);
+        final String uploader = link.getStringProperty(PROPERTY_USER);
+        final String title = link.getStringProperty(PROPERTY_TITLE);
+        if (scheme == FilenameScheme.DATE_UPLOADER_VIDEOID && date != null && uploader != null) {
+            filename = date + "_" + uploader + "_" + videoid;
+        } else if (scheme == FilenameScheme.DATE_UPLOADER_SPACE_TITLE && date != null && uploader != null && title != null) {
+            filename = date + "_" + uploader + " " + title;
+        } else if (scheme == FilenameScheme.DATE_IN_BRACKETS_SPACE_TITLE && date != null && title != null) {
+            filename = "[" + date + "]" + " " + title;
+        } else if (scheme == FilenameScheme.UPLOADER_VIDEOID_TITLE && uploader != null && title != null) {
+            filename = uploader + "_" + videoid + "_" + title;
+        } else if (scheme == FilenameScheme.TITLE && title != null) {
+            filename = title;
+        } else if (title != null && uploader != null) {
+            /* Fallback 1 */
+            filename = uploader + "_" + videoid + "_" + title;
+        } else if (title != null) {
+            /* Fallback 2 */
+            filename = videoid + "_" + title;
+        } else {
+            /* Fallback 3 */
+            filename = videoid;
+        }
+        String ext = link.getStringProperty(PROPERTY_FILE_EXTENSTION);
+        if (StringUtils.isEmpty(ext)) {
+            ext = ".mp4";
+        }
+        filename += ext;
+        return filename;
     }
 
     private Integer qualityModifierToHeight(final String qualityStr) {

@@ -60,6 +60,12 @@ public interface IwaraTvConfig extends PluginConfigInterface {
             public String getLabel() {
                 return "[date] title.ext";
             }
+        },
+        TITLE {
+            @Override
+            public String getLabel() {
+                return "title.ext";
+            }
         };
     }
 
