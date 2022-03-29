@@ -53,10 +53,9 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
@@ -471,9 +470,13 @@ public abstract class K2SApi extends PluginForHost {
                             String name = (String) fileInfo.get("name");
                             if (name != null && name.matches(".*=(\\?|_)utf-8(\\?|_).+")) {
                                 // workaround for rfc2047 support
-                                final DispositionHeader fixed = HTTPConnectionUtils.parseRFC2047(name);
-                                if (fixed != null) {
-                                    name = fixed.getFilename();
+                                try {
+                                    final CharSequence fixed = new RFC2047().decode(name, true);
+                                    if (fixed != null && fixed != name) {
+                                        name = fixed.toString();
+                                    }
+                                } catch (IOException e) {
+                                    logger.log(e);
                                 }
                             }
                             final Object sizeO = fileInfo.get("size");
