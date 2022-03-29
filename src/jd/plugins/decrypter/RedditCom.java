@@ -525,6 +525,16 @@ public class RedditCom extends PluginForDecrypt {
                         thisCrawledLinks.add(text);
                     }
                 }
+                if (thisCrawledLinks.isEmpty() && skippedItems == 0) {
+                    final String removed_by_category = (String) data.get("removed_by_category");
+                    if (removed_by_category != null) {
+                        final String subredditURL = "https://" + this.getHost() + permalink;
+                        final DownloadLink dummy = this.createOfflinelink(subredditURL, "REMOVED_BY_" + removed_by_category + "_" + postID, "This post has been removed by " + removed_by_category + ".");
+                        thisCrawledLinks.add(dummy);
+                    } else {
+                        logger.warning("Post offline or contains unsupported content: " + postID);
+                    }
+                }
             } finally {
                 for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
                     thisCrawledLink._setFilePackage(fp);
