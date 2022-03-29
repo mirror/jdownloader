@@ -130,16 +130,14 @@ public class IwaraTv extends PluginForDecrypt {
                 }
                 if (videoTitle != null) {
                     videoTitle = Encoding.htmlOnlyDecode(Encoding.htmlOnlyDecode(videoTitle));
-                }
-                if (videoTitle != null) {
-                    videoTitle = videoTitle.trim().replaceAll("([\\(\\s\\._]+)$", "");
-                    dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_TITLE, videoTitle);
-                    dl.setName(username + "_" + videoID + "_" + videoTitle + ".mp4");
-                } else {
-                    dl.setName(username + "_" + videoID + ".mp4");
+                    if (videoTitle != null) {
+                        videoTitle = videoTitle.trim().replaceAll("([\\(\\s\\._]+)$", "");
+                        dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_TITLE, videoTitle);
+                    }
                 }
                 dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_VIDEOID, videoID);
                 dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_USER, username);
+                dl.setName(jd.plugins.hoster.IwaraTv.getFilename(dl));
                 if (PluginJsonConfig.get(IwaraTvConfig.class).isProfileCrawlerEnableFastLinkcheck()) {
                     dl.setAvailable(true);
                 }
