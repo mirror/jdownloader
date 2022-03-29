@@ -202,9 +202,15 @@ public class IwaraTv extends PluginForHost {
             }
         }
         /* Collect metadata and set so we can later build filename */
-        final Regex usernameAndDate = br.getRegex("(?i)class=\"username\"[^>]*>([^<]+)</a>\\s*作成日\\s*:\\s*(\\d{4}-\\d{2}-\\d{2})");
+        /* Important: Make sure that this RegEx is working for all possible languages! */
+        final Regex usernameAndDate = br.getRegex("(?i)class=\"username\"[^>]*>([^<]+)</a>[^<]*(\\d{4}-\\d{2}-\\d{2})");
         /* Set some Packagizer properties */
         String uploader = usernameAndDate.getMatch(0);
+        // if (uploader == null) {
+        // /* Fallback */
+        // /* 2022-03-29: Do not use this as it will return the usernameSlub but not the "real username"! */
+        // uploader = br.getRegex("<div class=\"user-picture\"[^>]*>\\s*<a[^>]*href=\"/users/([<>\"]+)\"").getMatch(0);
+        // }
         if (uploader != null) {
             uploader = Encoding.htmlDecode(uploader).trim();
             link.setProperty(PROPERTY_USER, uploader);
@@ -215,7 +221,7 @@ public class IwaraTv extends PluginForHost {
         if (date != null) {
             link.setProperty(PROPERTY_DATE, date);
         }
-        String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+        String title = br.getRegex("<h1[^>]*class=\"title\">([^<>\"]+)</h1>").getMatch(0);
         if (title != null) {
             title = Encoding.htmlOnlyDecode(title).trim();
             link.setProperty(PROPERTY_TITLE, title);

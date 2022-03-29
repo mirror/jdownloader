@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.IwaraTvConfig;
@@ -60,8 +59,8 @@ public class IwaraTv extends PluginForDecrypt {
     /** Crawls all videos of a user/channel. */
     private ArrayList<DownloadLink> crawlChannel(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String username = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
-        if (username == null) {
+        String usernameSlug = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
+        if (usernameSlug == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -71,7 +70,7 @@ public class IwaraTv extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* Change "/user/<username>" url to "/user/<username>/videos" if the user has a certain amount of videos. */
+            /* Change "/user/<usernameSlug>" url to "/user/<usernameSlug>/videos" if the user has a certain amount of videos. */
             final String viewMore = br.getRegex("class=\"more-link\">\\s*<a href=\"(/users/[^/]+/videos)\"").getMatch(0);
             if (viewMore != null) {
                 logger.info("Seems like the user has videos spread over multiple pages -> Using: " + viewMore);
@@ -88,24 +87,25 @@ public class IwaraTv extends PluginForDecrypt {
         final UrlQuery query = new UrlQuery();
         query.add("language", "en");
         /* 2021-10-11: Not all user profiles have the "/videos" URL available! */
-        // final String baseURL = "https://" + Browser.getHost(param.getCryptedUrl(), true) + "/users/" + username + "/videos";
+        // final String baseURL = "https://" + Browser.getHost(param.getCryptedUrl(), true) + "/users/" + usernameSlug + "/videos";
+        final String usernameForFilename;
+        String usernameReal = br.getRegex("href=\"/messages/new\\?user=([^\"]+)\"").getMatch(0);
+        if (usernameReal != null) {
+            usernameReal = URLEncode.decodeURIComponent(usernameReal);
+            usernameForFilename = usernameReal;
+        } else {
+            usernameForFilename = usernameSlug;
+        }
         final String baseURL = param.getCryptedUrl();
-        username = URLEncode.decodeURIComponent(username);
-        FilePackage fp = null;
+        usernameSlug = URLEncode.decodeURIComponent(usernameSlug);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(usernameForFilename);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         do {
             if (page > 1 || !firstRequestHasAlreadyBeenDone) {
                 /* Website starts page-counting at 0. */
                 query.addAndReplace("page", Integer.toString(page - 1));
                 br.getPage(baseURL + "?" + query.toString());
-            }
-            if (fp == null) {
-                String title = br.getRegex("<title>\\s*(.*?)\\s*(\\|\\s*Iwara)?\\s*</title>").getMatch(0);
-                if (StringUtils.isEmpty(title)) {
-                    title = URLEncode.decodeURIComponent(username);
-                }
-                fp = FilePackage.getInstance();
-                fp.setName(title);
             }
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,7 +136,7 @@ public class IwaraTv extends PluginForDecrypt {
                     }
                 }
                 dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_VIDEOID, videoID);
-                dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_USER, username);
+                dl.setProperty(jd.plugins.hoster.IwaraTv.PROPERTY_USER, usernameForFilename);
                 dl.setName(jd.plugins.hoster.IwaraTv.getFilename(dl));
                 if (PluginJsonConfig.get(IwaraTvConfig.class).isProfileCrawlerEnableFastLinkcheck()) {
                     dl.setAvailable(true);
