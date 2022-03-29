@@ -47,7 +47,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https://seedr\\.cc/download/file/\\d+" })
 public class SeedrCc extends PluginForHost {
@@ -339,8 +338,17 @@ public class SeedrCc extends PluginForHost {
          * Correct username - e.g. when logging in via cookies, users can enter whatever they want into the username field but we want the
          * account to be unique!
          */
-        final String email = PluginJSonUtils.getJson(br, "username");
-        if (!StringUtils.isEmpty(email)) {
+        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> userAccount = (Map<String, Object>) user.get("account");
+        // final Map<String, Object> userSettings =(Map<String, Object>)user.get("settings");
+        final String email = (String) userAccount.get("email");
+        final String userAccountPackageName = (String) userAccount.get("package_name");
+        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+        /*
+         * Users can enter anything into the "username" field when cookie login is used --> Correct that so we got an unique 'username'
+         * value. Otherwise users could easily add one account multiple times -> Could cause issues.
+         */
+        if (!StringUtils.isEmpty(email) && userCookies != null) {
             account.setUser(email);
         }
         ai.setUnlimitedTraffic();
@@ -351,14 +359,19 @@ public class SeedrCc extends PluginForHost {
         final long bandwidth_max = ((Number) entries.get("bandwidth_max")).longValue();
         ai.setUsedSpace(((Number) entries.get("space_used")).longValue());
         if ((Boolean) entries.get("is_premium")) {
-            /* TODO: Set expire-date */
-            ai.setTrafficMax(bandwidth_max);
-            ai.setTrafficLeft(ai.getTrafficMax() - bandwidth_used);
+            /* TODO: Set expire-date if present */
             account.setType(AccountType.PREMIUM);
         } else {
             account.setType(AccountType.FREE);
         }
+        if (bandwidth_max > 0) {
+            ai.setTrafficMax(bandwidth_max);
+            ai.setTrafficLeft(ai.getTrafficMax() - bandwidth_used);
+        }
         account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
+        if (!StringUtils.isEmpty(userAccountPackageName)) {
+            ai.setStatus("Package: " + userAccountPackageName);
+        }
         account.setConcurrentUsePossible(true);
         return ai;
     }
