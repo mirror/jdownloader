@@ -239,6 +239,7 @@ public class SeedrCc extends PluginForHost {
                     } else {
                         logger.info("Cookie login failed");
                         br.clearCookies(br.getHost());
+                        account.clearCookies("");
                     }
                 }
                 logger.info("Performing full login");

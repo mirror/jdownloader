@@ -64,6 +64,7 @@ public class SeedrCc extends PluginForDecrypt {
         jd.plugins.hoster.SeedrCc.prepAjaxBr(this.br);
         br.getPage("https://www." + this.getHost() + "/fs/folder/" + folderID + "/items");
         if (br.getHttpConnection().getResponseCode() == 404) {
+            /* {"status_code":404,"reason_phrase":"Not Found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> response = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
