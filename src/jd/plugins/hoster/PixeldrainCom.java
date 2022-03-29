@@ -24,22 +24,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -63,6 +47,23 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixeldrainCom extends PluginForHost {
@@ -181,6 +182,15 @@ public class PixeldrainCom extends PluginForHost {
     public boolean checkLinks(final DownloadLink[] urls) {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return this.checkLinks(urls, account);
+    }
+
+    @Override
+    public void setBrowser(Browser br) {
+        super.setBrowser(br);
+        if (br != null) {
+            // re by admin
+            br.setIPVersion(IPVERSION.IPV6_IPV4);
+        }
     }
 
     public boolean checkLinks(final DownloadLink[] allLinks, final Account account) {
@@ -435,8 +445,8 @@ public class PixeldrainCom extends PluginForHost {
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 /**
-                 * First try to migrate old accounts which still used website login. </br>
-                 * Website cookies contain the API key too -> Extract and set this. Then delete cookies as we don't need them anymore.
+                 * First try to migrate old accounts which still used website login. </br> Website cookies contain the API key too ->
+                 * Extract and set this. Then delete cookies as we don't need them anymore.
                  */
                 logger.info("Trying to convert old website cookies to first time API key login");
                 final List<Cookie> allCookies = cookies.getCookies();
@@ -545,9 +555,8 @@ public class PixeldrainCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         /**
          * 2021-01-15: (Free) Accounts = No captcha required for downloading (usually not even via anonymous files but captchas can
-         * sometimes be required for files with high traffic). </br>
-         * There are also "Donator" Accounts (at this moment we don't try to differ between them) but the download process is no different
-         * when using those!
+         * sometimes be required for files with high traffic). </br> There are also "Donator" Accounts (at this moment we don't try to
+         * differ between them) but the download process is no different when using those!
          */
         final AccountInfo ai = new AccountInfo();
         login(account, true);
@@ -585,9 +594,8 @@ public class PixeldrainCom extends PluginForHost {
         accountStatusText += String.format(" | Balance: %2.2f€", euroBalance / 1000000);
         ai.setStatus(accountStatusText);
         /**
-         * Limits for anonymous users can be checked here: https://pixeldrain.com/api/misc/rate_limits </br>
-         * Once one of these limits is hit, a captcha will be required for downloading. These captchas can be avoided by using free/paid
-         * accounts.
+         * Limits for anonymous users can be checked here: https://pixeldrain.com/api/misc/rate_limits </br> Once one of these limits is
+         * hit, a captcha will be required for downloading. These captchas can be avoided by using free/paid accounts.
          */
         return ai;
     }

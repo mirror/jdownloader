@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,6 +33,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -135,8 +135,12 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         final DecimalFormat df = estimatedNumberOfPages > 999 ? new DecimalFormat("0000") : estimatedNumberOfPages > 99 ? new DecimalFormat("000") : new DecimalFormat("00");
         for (final String url : urls) {
             final int pageNumber = Integer.parseInt(new Regex(url, "(\\d+)/?$").getMatch(0));
+            String extensionGuess = br.getRegex("/\\d+/" + pageNumber + "t(\\.(?:png|jpe?g))").getMatch(0);
+            if (extensionGuess == null) {
+                extensionGuess = ".jpg";
+            }
             final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
-            dl.setFinalFileName(df.format(pageNumber) + getFileNameExtensionFromString(url, ".jpg"));
+            dl.setFinalFileName(df.format(pageNumber) + getFileNameExtensionFromString(url, extensionGuess));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
