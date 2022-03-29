@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -696,6 +698,17 @@ public class TwitterCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
+        br.getPage("https://" + this.getHost() + "/i/api/1.1/account/settings.json?include_mention_filter=true&include_nsfw_user_flag=true&include_nsfw_admin_flag=true&include_ranked_timeline=true&include_alt_text_compose=true&ext=ssoConnections&include_country_code=true&include_ext_dm_nsfw_media_filter=true&include_ext_sharing_audiospaces_listening_data_with_followers=true");
+        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String username = (String) user.get("screen_name");
+        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), this.getLogger());
+        /*
+         * Users can enter anything into the "username" field when cookie login is used --> Correct that so we got an unique 'username'
+         * value. Otherwise users could easily add one account multiple times -> Could cause issues.
+         */
+        if (!StringUtils.isEmpty(username) && userCookies != null) {
+            account.setUser(username);
+        }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(1);
