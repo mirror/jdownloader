@@ -23,7 +23,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
@@ -50,7 +49,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/\\d+.+|http://seedrdecrypted\\.cc/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https://seedr\\.cc/download/file/\\d+" })
 public class SeedrCc extends PluginForHost {
     public SeedrCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,19 +62,12 @@ public class SeedrCc extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean       FREE_RESUME                  = true;
-    private final int           FREE_MAXCHUNKS               = -2;
-    private final int           FREE_MAXDOWNLOADS            = 20;
-    private final boolean       ACCOUNT_FREE_RESUME          = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS       = -2;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
-    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final String TYPE_DIRECTLINK              = "https?://(?:[A-Za-z0-9\\-]+)?\\.seedr\\.cc/(?:downloads|zip)/(\\d+).+";
-    private static final String TYPE_ZIP                     = "https?://[^/]+/zip/(\\d+).+";
-    private static final String TYPE_NORMAL                  = "http://seedrdecrypted\\.cc/(\\d+)";
-    private String              dllink                       = null;
+    private final int           FREE_MAXDOWNLOADS    = -1;
+    private final int           ACCOUNT_MAXDOWNLOADS = -1;
+    private final boolean       ACCOUNT_RESUME       = true;
+    private final int           ACCOUNT_MAXCHUNKS    = -2;
+    private String              dllink               = null;
+    private static final String PROPERTY_DIRECTURL   = "directurl";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -85,40 +77,28 @@ public class SeedrCc extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
-        String filename = null;
-        if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
-            if (account == null) {
-                return AvailableStatus.UNCHECKABLE;
-            }
-            this.login(account, false);
-            prepAjaxBr(this.br);
-            final String fid = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
-            if (fid == null) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage("https://www." + this.getHost() + "/download/file/" + fid + "/url");
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getHttpConnection().getResponseCode() == 401) {
-                /*
-                 * 2020-07-15: E.g. deleted files --> They do not provide a meaningful errormessage for this case --> First check if we
-                 * really are loggedin --> If no Exception happens we're logged in which means the file is offline --> This is a rare case!
-                 * Most of all URLs the users add will be online and downloadable!
-                 */
-                this.login(account, true);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            this.dllink = (String) entries.get("url");
-            filename = (String) entries.get("name");
-        } else {
-            dllink = link.getPluginPatternMatcher();
+        final boolean lookForFilesize = false; // filesize gets set set in crawler already
+        if (account == null) {
+            return AvailableStatus.UNCHECKABLE;
         }
+        this.login(account, false);
+        prepAjaxBr(this.br);
+        final String fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        if (fid == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("https://www." + this.getHost() + "/download/file/" + fid + "/url");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        this.dllink = (String) entries.get("url");
+        final String filename = (String) entries.get("name");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
-        if (dllink != null && !isDownload) {
+        if (dllink != null && !isDownload && lookForFilesize) {
             URLConnectionAdapter con = null;
             try {
                 br.setFollowRedirects(true);
@@ -146,37 +126,65 @@ public class SeedrCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
-        /* Without account, only directurls can be downloaded! */
-        if (!link.getPluginPatternMatcher().matches(TYPE_DIRECTLINK)) {
-            throw new AccountRequiredException();
-        }
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        throw new AccountRequiredException();
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (link.getPluginPatternMatcher().matches(TYPE_ZIP)) {
-            /* 2020-03-09: Such URLs are not resumable */
-            maxchunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        if (this.attemptStoredDownloadurlDownload(link)) {
+            logger.info("Downloading previously stored directurl");
+        } else {
+            requestFileInformation(link, account, true);
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                }
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
-        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        boolean valid = false;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
+                return true;
+            } else {
+                link.removeProperty(PROPERTY_DIRECTURL);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return false;
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
+                }
+                this.dl = null;
+            }
+        }
     }
 
     @Override
@@ -189,7 +197,7 @@ public class SeedrCc extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final boolean cookieLoginOnly = true;
+                final boolean cookieLoginOnly = false;
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final Cookies cookies = account.loadCookies("");
                 if (userCookies != null) {
@@ -223,13 +231,15 @@ public class SeedrCc extends PluginForHost {
                         /* Do not verify cookies */
                         return;
                     }
-                    if (isLoggedIn(br)) {
+                    if (this.checkLogin(br, account)) {
                         /* Save new cookie timestamp */
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
-                    br.clearCookies(br.getHost());
                 }
                 logger.info("Performing full login");
                 final DownloadLink dlinkbefore = this.getDownloadLink();
@@ -237,29 +247,21 @@ public class SeedrCc extends PluginForHost {
                     this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
                 }
                 br.getPage("https://www." + this.getHost() + "/auth/pages/signup");
-                if (br.containsHTML("hcaptcha\\.com/") || br.containsHTML("class=\"h-captcha\"") || !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported captcha type 'hcaptcha', use cookie login or read: board.jdownloader.org/showthread.php?t=83712", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                /* TODO: Test this */
-                final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
                 final UrlQuery query = new UrlQuery();
                 query.add("username", Encoding.urlEncode(account.getUser()));
                 query.add("password", Encoding.urlEncode(account.getPass()));
                 query.add("rememberme", "on");
                 query.add("g-recaptcha-response", "");
-                query.add("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
+                if (CaptchaHelperHostPluginHCaptcha.containsHCaptcha(br)) {
+                    final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
+                    query.add("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
+                }
                 prepAjaxBr(br);
                 br.postPage("/auth/login", query);
-                final String error = PluginJSonUtils.getJson(br, "error");
-                if (!StringUtils.isEmpty(error)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://www." + br.getHost() + "/content.php?action=get_devices", "");
                 if (!isLoggedIn(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -352,38 +354,22 @@ public class SeedrCc extends PluginForHost {
             ai.setTrafficMax(bandwidth_max);
             ai.setTrafficLeft(ai.getTrafficMax() - bandwidth_used);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         } else {
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         }
+        account.setMaxSimultanDownloads(ACCOUNT_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /* Login is done inside linkcheck */
-        // login(this.br, account, false);
-        requestFileInformation(link, account, true);
-        if (account.getType() == AccountType.FREE) {
-            handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-        } else {
-            // String dllink = this.checkDirectLink(link, "premium_directlink");
-            // if (dllink == null) {
-            // dllink = br.getRegex("").getMatch(0);
-            // if (dllink == null) {
-            // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // }
-            handleDownload(link, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
-        }
+        handleDownload(link, account);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return ACCOUNT_MAXDOWNLOADS;
     }
 
     @Override

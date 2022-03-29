@@ -36,11 +36,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:www\\.)?seedr\\.cc/files/(\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https?://(?:www\\.)?seedr\\.cc/files(/\\d+)?" })
 public class SeedrCc extends PluginForDecrypt {
     public SeedrCc(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE_FOLDER_ROOT     = "^https?://[^/]+/files$";
+    private static final String TYPE_FOLDER_SPECIFIC = "^https?://[^/]+/files/(\\d+)$";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
@@ -50,7 +53,13 @@ public class SeedrCc extends PluginForDecrypt {
             throw new AccountRequiredException();
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String folderID;
+        if (param.getCryptedUrl().matches(TYPE_FOLDER_SPECIFIC)) {
+            folderID = new Regex(param.getCryptedUrl(), TYPE_FOLDER_SPECIFIC).getMatch(0);
+        } else {
+            /* Root folder --> Crawl All files in current users' account. */
+            folderID = "0";
+        }
         ((jd.plugins.hoster.SeedrCc) plg).login(aa, false);
         jd.plugins.hoster.SeedrCc.prepAjaxBr(this.br);
         br.getPage("https://www." + this.getHost() + "/fs/folder/" + folderID + "/items");
@@ -61,9 +70,14 @@ public class SeedrCc extends PluginForDecrypt {
         final List<Map<String, Object>> ressourcelist_files = (List<Map<String, Object>>) response.get("files");
         final List<Map<String, Object>> ressourcelist_folders = (List<Map<String, Object>>) response.get("folders");
         final String full_path = (String) response.get("path");
+        if (ressourcelist_files.isEmpty() && ressourcelist_folders.isEmpty()) {
+            final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER_" + full_path, "This folder doesn't contain any files.");
+            decryptedLinks.add(dummy);
+            return decryptedLinks;
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(full_path);
-        if (ressourcelist_files != null) {
+        if (!ressourcelist_files.isEmpty()) {
             /* Crawl files --> Urls go into host plugin */
             for (final Map<String, Object> fileInfo : ressourcelist_files) {
                 final String filename = fileInfo.get("name").toString();
@@ -73,7 +87,7 @@ public class SeedrCc extends PluginForDecrypt {
                     /* This should never happen! */
                     continue;
                 }
-                final DownloadLink file = createDownloadlink("http://seedrdecrypted.cc/" + fileID);
+                final DownloadLink file = createDownloadlink("https://" + this.getHost() + "/download/file/" + fileID);
                 file.setFinalFileName(filename);
                 file.setVerifiedFileSize(((Long) fileInfo.get("size")).longValue());
                 if (hash != null) {
@@ -86,7 +100,7 @@ public class SeedrCc extends PluginForDecrypt {
                 decryptedLinks.add(file);
             }
         }
-        if (ressourcelist_folders != null) {
+        if (!ressourcelist_folders.isEmpty()) {
             /* Crawl folders --> These urls go back into decrypter */
             for (final Map<String, Object> folderInfo : ressourcelist_folders) {
                 final String id = folderInfo.get("id").toString();
@@ -96,9 +110,6 @@ public class SeedrCc extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink("https://www." + this.getHost() + "/files/" + id));
             }
-        }
-        if (decryptedLinks.size() == 0) {
-            logger.info("Found nothing - probably only empty folder(s)");
         }
         return decryptedLinks;
     }
