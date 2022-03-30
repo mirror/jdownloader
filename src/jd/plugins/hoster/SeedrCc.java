@@ -18,17 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -48,7 +37,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https://seedr\\.cc/download/file/\\d+" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https://(?:www\\.)?seedr\\.cc/download/(file/\\d+|archive/[a-fA-F0-9]+\\?token=[a-fA-F0-9]+&exp=\\d+)" })
 public class SeedrCc extends PluginForHost {
     public SeedrCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,6 +68,10 @@ public class SeedrCc extends PluginForHost {
     private String              dllink               = null;
     private static final String PROPERTY_DIRECTURL   = "directurl";
 
+    private boolean isFinalDownloadURL(final DownloadLink link) {
+        return link != null && new Regex(link.getPluginPatternMatcher(), ".*/download/archive/.*").matches();
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -76,7 +80,32 @@ public class SeedrCc extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
-        final boolean lookForFilesize = false; // filesize gets set set in crawler already
+        if (isFinalDownloadURL(link)) {
+            this.dllink = link.getPluginPatternMatcher();
+            URLConnectionAdapter con = null;
+            try {
+                br.setFollowRedirects(true);
+                con = br.openHeadConnection(dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    // not possible to refresh
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    final String filenameFromHeader = getFileNameFromHeader(con);
+                    if (filenameFromHeader != null && link.getFinalFileName() == null) {
+                        link.setFinalFileName(filenameFromHeader);
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+            return AvailableStatus.TRUE;
+        }
         if (account == null) {
             return AvailableStatus.UNCHECKABLE;
         }
@@ -97,6 +126,7 @@ public class SeedrCc extends PluginForHost {
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
+        final boolean lookForFilesize = false; // filesize gets set set in crawler already
         if (dllink != null && !isDownload && lookForFilesize) {
             URLConnectionAdapter con = null;
             try {
@@ -125,7 +155,11 @@ public class SeedrCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
-        throw new AccountRequiredException();
+        if (isFinalDownloadURL(link)) {
+            handleDownload(link, null);
+        } else {
+            throw new AccountRequiredException();
+        }
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
@@ -138,17 +172,18 @@ public class SeedrCc extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-                }
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                }
             }
             link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
@@ -193,6 +228,7 @@ public class SeedrCc extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
+            boolean userCookiesFlag = false;
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
@@ -200,6 +236,7 @@ public class SeedrCc extends PluginForHost {
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final Cookies cookies = account.loadCookies("");
                 if (userCookies != null) {
+                    userCookiesFlag = true;
                     logger.info("Attempting user cookie login");
                     br.setCookies(userCookies);
                     if (!force) {
@@ -220,6 +257,7 @@ public class SeedrCc extends PluginForHost {
                         }
                     }
                 }
+                userCookiesFlag = false;
                 if (cookieLoginOnly) {
                     showCookieLoginInformation();
                     throw new AccountInvalidException("Cookie login required");
@@ -263,7 +301,12 @@ public class SeedrCc extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    if (userCookiesFlag) {
+                        account.setPass(null);
+                    }
+                }
                 throw e;
             }
         }

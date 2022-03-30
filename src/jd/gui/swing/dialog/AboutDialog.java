@@ -155,7 +155,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(stats, "pushx,growx,spanx");
         Map<String, Object> map = null;
         try {
-            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_trademark()), "spanx,alignx center");
+            stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_trademark(), "https://jdownloader.org/impressum"), "spanx,alignx center");
             try {
                 final File buildJson = Application.getResource("build.json");
                 if (buildJson.isFile()) {
