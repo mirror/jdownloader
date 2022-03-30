@@ -18,12 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,6 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
@@ -98,8 +98,10 @@ public class ORFMediathek extends PluginForHost {
             }
             try {
                 con = br.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                     link.setProperty("directURL", dllink);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -187,7 +189,7 @@ public class ORFMediathek extends PluginForHost {
             dl.startDownload();
         } else if ("hds".equals(link.getStringProperty("delivery"))) {
             br.getPage(dllink);
-            br.followRedirect();
+            br.followRedirect(true);
             final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
             if (all == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -220,8 +222,12 @@ public class ORFMediathek extends PluginForHost {
             }
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

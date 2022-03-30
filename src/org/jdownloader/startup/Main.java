@@ -32,6 +32,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.Regex;
@@ -177,32 +178,32 @@ public class Main {
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
             // set MyJDownloaderCLient JsonHandler
             final SimpleMapper mapper = new SimpleMapper() {
-                @Override
-                protected JSonFactory newJsonFactory(String jsonString) {
-                    return new JSonFactory(jsonString) {
-                        @Override
-                        protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
-                            return null;
-                        };
-                    };
-                }
+                                          @Override
+                                          protected JSonFactory newJsonFactory(String jsonString) {
+                                              return new JSonFactory(jsonString) {
+                                                  @Override
+                                                  protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                                                      return null;
+                                                  };
+                                              };
+                                          }
 
-                @Override
-                protected void initMapper() {
-                    super.initMapper();
-                    putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
-                        @Override
-                        public String toJSonString(Object object, Object mapper) {
-                            return ((JsonFactoryInterface) object).toJsonString();
-                        }
-                    });
-                }
+                                          @Override
+                                          protected void initMapper() {
+                                              super.initMapper();
+                                              putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
+                                                  @Override
+                                                  public String toJSonString(Object object, Object mapper) {
+                                                      return ((JsonFactoryInterface) object).toJsonString();
+                                                  }
+                                              });
+                                          }
 
-                @Override
-                public boolean isPrettyPrintEnabled() {
-                    return false;
-                }
-            };
+                                          @Override
+                                          public boolean isPrettyPrintEnabled() {
+                                              return false;
+                                          }
+                                      };
 
             @Override
             public String objectToJSon(Object payload) {
@@ -244,29 +245,31 @@ public class Main {
 
     public static void loadJXBrowser(ClassLoader cl) {
         try {
-            final File lib;
-            switch (CrossSystem.getOSFamily()) {
-            case LINUX:
-                if (Application.is64BitJvm()) {
-                    lib = Application.getResource("libs/jxbrowser/jxbrowser-linux64.jar");
-                } else {
-                    lib = Application.getResource("libs/jxbrowser/jxbrowser-linux32.jar");
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                final File lib;
+                switch (CrossSystem.getOSFamily()) {
+                case LINUX:
+                    if (Application.is64BitJvm()) {
+                        lib = Application.getResource("libs/jxbrowser/jxbrowser-linux64.jar");
+                    } else {
+                        lib = Application.getResource("libs/jxbrowser/jxbrowser-linux32.jar");
+                    }
+                    break;
+                case WINDOWS:
+                    lib = Application.getResource("libs/jxbrowser/jxbrowser-win.jar");
+                    break;
+                case MAC:
+                    lib = Application.getResource("libs/jxbrowser/jxbrowser-mac.jar");
+                    break;
+                default:
+                    lib = null;
                 }
-                break;
-            case WINDOWS:
-                lib = Application.getResource("libs/jxbrowser/jxbrowser-win.jar");
-                break;
-            case MAC:
-                lib = Application.getResource("libs/jxbrowser/jxbrowser-mac.jar");
-                break;
-            default:
-                lib = null;
-            }
-            final File jar = Application.getResource("libs/jxbrowser/license.jar");
-            if (jar.exists()) {
-                Application.addUrlToClassPath(jar.toURI().toURL(), cl);
-                if (lib != null && lib.exists()) {
-                    Application.addUrlToClassPath(lib.toURI().toURL(), cl);
+                final File jar = Application.getResource("libs/jxbrowser/license.jar");
+                if (jar.isFile()) {
+                    Application.addUrlToClassPath(jar.toURI().toURL(), cl);
+                    if (lib != null && lib.isFile()) {
+                        Application.addUrlToClassPath(lib.toURI().toURL(), cl);
+                    }
                 }
             }
         } catch (Throwable e) {
