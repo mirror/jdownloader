@@ -9,9 +9,17 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "drop.download", type = Type.HOSTER)
 public interface XFSConfigDropapk extends XFSConfig {
+    public static final XFSConfigDropapk.TRANSLATION TRANSLATION = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getWebsiteAllowMassLinkcheck_label() {
+            return "Allow website mass linkchecking?\r\nIf enabled, filenames are sometimes invisible until download is started.";
+        }
+    }
+
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Allow website mass linkchecking? If enabled, filenames are sometimes invisible until download is started.")
+    @DescriptionForConfigEntry("Allow website mass linkchecking?\r\nIf enabled, filenames are sometimes invisible until download is started.")
     @Order(500)
     boolean isWebsiteAllowMassLinkcheck();
 

@@ -29,7 +29,7 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getAddOrderidToFilenames_label() {
-            return "Include order-ID in filenames if an album contains more than one element?\r\nCan be useful if you want to be able to keep the original order of multiple elements of an album.";
+            return "Include order-ID in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.";
         }
 
         public String getAddShortcodeToFilenames_label() {
@@ -94,7 +94,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ADD_ORDERID_TO_FILENAMES")
-    @DescriptionForConfigEntry("Include order-ID in filenames if an album contains more than one element?\r\nCan be useful if you want to be able to keep the original order of multiple elements of an album.")
+    @DescriptionForConfigEntry("Include order-ID in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.")
     @Order(30)
     boolean isAddOrderidToFilenames();
 
