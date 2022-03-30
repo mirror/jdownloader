@@ -155,7 +155,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(stats, "pushx,growx,spanx");
         Map<String, Object> map = null;
         try {
-            stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_trademark(), "https://jdownloader.org/impressum"), "spanx,alignx center");
+            stats.add(createLink(_GUI.T.jd_gui_swing_components_AboutDialog_trademark(), "https://jdownloader.org/impressum"), "spanx,alignx center");
             try {
                 final File buildJson = Application.getResource("build.json");
                 if (buildJson.isFile()) {
@@ -166,15 +166,15 @@ public class AboutDialog extends AbstractDialog<Integer> {
             }
             if (map != null) {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_builddate()));
-                stats.add(disable(map.get("buildDate")));
+                stats.add(createLink(map.get("buildDate")));
             }
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_runtime()));
-            stats.add(disable(TimeFormatter.formatMilliSeconds(Time.systemIndependentCurrentJVMTimeMillis() - SecondLevelLaunch.startup, 0)));
+            stats.add(createLink(TimeFormatter.formatMilliSeconds(Time.systemIndependentCurrentJVMTimeMillis() - SecondLevelLaunch.startup, 0)));
             try {
                 stats.add(new JLabel("Java:"), "");
                 java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
                 ExtButton comp;
-                stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit)" : "(32bit)")));
+                stats.add(comp = createLink(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit)" : "(32bit)")));
                 comp.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -211,9 +211,9 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
                 }
                 stats.add(new JLabel("OS:"), "");
-                stats.add(disable(CrossSystem.getOSFamily() + "(" + CrossSystem.getOS() + ")"));
+                stats.add(createLink(CrossSystem.getOSFamily() + "(" + CrossSystem.getOS() + ")"));
                 stats.add(new JLabel("Memory:"), "");
-                stats.add(comp = disable("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
+                stats.add(comp = createLink("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
                 try {
                     final List<MemoryPoolMXBean> memoryPoolMXBeans = java.lang.management.ManagementFactory.getMemoryPoolMXBeans();
                     final StringBuilder sb = new StringBuilder();
@@ -242,7 +242,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             final File directory = Application.getResource(".");
             final String fullPath = "<html><u>" + directory + "</u></html>";
             final String anonPath = "<html><u>" + _GUI.T.jd_gui_swing_components_AboutDialog_installdir_anon() + "</u></html>";
-            stats.add(bt = disable(anonPath));
+            stats.add(bt = createLink(anonPath));
             final ExtButton directoryButton = bt;
             bt.addMouseListener(new MouseListener() {
                 @Override
@@ -277,29 +277,29 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_environment()), "spanx");
                 if (HardwareType.getHardware() != null) {
                     stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_hardware()), "gapleft 10");
-                    stats.add(disable(HardwareType.getHardware().toString()));
+                    stats.add(createLink(HardwareType.getHardware().toString()));
                 }
                 if (Snap.isInsideSnap()) {
                     stats.add(new JLabel("Snap:"), "gapleft 10");
-                    stats.add(disable(Snap.getSnapInstanceName()));
+                    stats.add(createLink(Snap.getSnapInstanceName()));
                 }
                 if (Docker.isInsideDocker()) {
                     stats.add(new JLabel("Docker:"), "gapleft 10");
-                    stats.add(disable(Docker.getDockerContainerID()));
+                    stats.add(createLink(Docker.getDockerContainerID()));
                 }
             }
             if (map != null) {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
-                stats.add(disable("#" + map.get("JDownloaderRevision"), "https://svn.jdownloader.org/build.php?check=" + map.get("JDownloaderRevision")));
+                stats.add(createLink("#" + map.get("JDownloaderRevision"), "https://svn.jdownloader.org/build.php?check=" + map.get("JDownloaderRevision")));
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_launcher()), "gapleft 10");
-                stats.add(disable("#" + map.get("JDownloaderUpdaterRevision")));
+                stats.add(createLink("#" + map.get("JDownloaderUpdaterRevision")));
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_appworkutilities()), "gapleft 10");
-                stats.add(disable("#" + map.get("AppWorkUtilsRevision")));
+                stats.add(createLink("#" + map.get("AppWorkUtilsRevision")));
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_browser()), "gapleft 10");
-                stats.add(disable("#" + map.get("JDBrowserRevision")));
+                stats.add(createLink("#" + map.get("JDBrowserRevision")));
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_updater()), "gapleft 10");
-                stats.add(disable("#" + map.get("UpdateClientV2Revision")));
+                stats.add(createLink("#" + map.get("UpdateClientV2Revision")));
             }
         } catch (Throwable t) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
@@ -308,53 +308,53 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats = new MigPanel("ins 0 10 0 0,wrap 2", "[][grow,align right]", "[]");
         contentpane.add(stats, "pushx,growx,spanx");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "");
-        stats.add(disable("Copyright \u00A9 2009-2022 AppWork GmbH"));
+        stats.add(createLink("Copyright \u00A9 2009-2022 AppWork GmbH"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_plugins()), "");
-        stats.add(disable("Copyright \u00A9 2009-2022 JDownloader Community"));
+        stats.add(createLink("Copyright \u00A9 2009-2022 JDownloader Community"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
-        stats.add(disable("Copyright \u00A9 2009-2022 JDownloader Community"));
+        stats.add(createLink("Copyright \u00A9 2009-2022 JDownloader Community"));
         stats.add(new JLabel("Java Native Access:"), "");
-        stats.add(disable("JNA 5.10.0", "https://github.com/java-native-access/jna"));
+        stats.add(createLink("JNA 5.10.0", "https://github.com/java-native-access/jna"));
         stats.add(new JLabel("UPNP:"), "");
-        stats.add(disable("Cling", "https://github.com/4thline/cling"));
+        stats.add(createLink("Cling", "https://github.com/4thline/cling"));
         stats.add(new JLabel("Extraction:"));
-        stats.add(disable("7ZipJBindings (" + get7ZipJBindingDetails() + ")", "https://github.com/borisbrodski/sevenzipjbinding"));
-        stats.add(disable("Zip4J", "https://github.com/srikanth-lingala/zip4j"), "skip");
+        stats.add(createLink("7ZipJBindings (" + get7ZipJBindingDetails() + ")", "https://github.com/borisbrodski/sevenzipjbinding"));
+        stats.add(createLink("Zip4J", "https://github.com/srikanth-lingala/zip4j"), "skip");
         final LookAndFeel laf = UIManager.getLookAndFeel();
         if (laf != null) {
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_laf()), "");
             if (StringUtils.containsIgnoreCase(laf.getID(), "FlatLaf")) {
-                stats.add(disable(laf.getName(), "https://www.formdev.com/flatlaf/"));
+                stats.add(createLink(laf.getName(), "https://www.formdev.com/flatlaf/"));
             } else if (StringUtils.containsIgnoreCase(laf.getID(), "Synthetica")) {
-                stats.add(disable(laf.getName(), "https://www.jyloo.com/synthetica/"));
+                stats.add(createLink(laf.getName(), "https://www.jyloo.com/synthetica/"));
                 try {
                     final Object info = UIManager.get("Synthetica.license.info");
                     if (info instanceof String[]) {
                         final String license = StringUtils.join(Arrays.asList((String[]) info), "\r");
                         final String Licensee = new Regex(license, "Licensee\\s*=\\s*([^\r\n]+)").getMatch(0);
                         final String LicenseRegistrationNumber = new Regex(license, "LicenseRegistrationNumber\\s*=\\s*([^\r\n]+)").getMatch(0);
-                        stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2(Licensee + "(#" + LicenseRegistrationNumber + ")")), "skip");
+                        stats.add(createLink(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2(Licensee + "(#" + LicenseRegistrationNumber + ")")), "skip");
                     }
                 } catch (Throwable ignore) {
                 }
             } else if (StringUtils.containsIgnoreCase(laf.getID(), "Substance")) {
-                stats.add(disable(laf.getName(), "https://github.com/kirill-grouchnikov/radiance"));
+                stats.add(createLink(laf.getName(), "https://github.com/kirill-grouchnikov/radiance"));
             } else {
-                stats.add(disable(laf.getName(), ""));
+                stats.add(createLink(laf.getName(), ""));
             }
         }
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_icons()), "");
-        stats.add(disable("See /themes/* folder for Icon Licenses"), "");
-        stats.add(disable("Icons8", "https://icons8.com"), "skip");
-        stats.add(disable("Tango Icons", "https://en.wikipedia.org/wiki/Tango_Desktop_Project"), "skip");
-        stats.add(disable("FatCow-Farm Fresh Icons", "https://www.fatcow.com/free-icons"), "skip");
-        stats.add(disable("Mimi Glyphs Set", "http://salleedesign.com/blog/mimi-glyphs/"), "skip");
-        stats.add(disable("Bright Mix Set", "http://brightmix.com/blog/brightmix-icon-set-free-for-all/"), "skip");
-        stats.add(disable("Picol Icon Set", "http://www.picol.org/"), "skip");
-        stats.add(disable("Aha Soft Icon Set", "http://www.aha-soft.com"), "skip");
-        stats.add(disable("Oxygen Team", "https://techbase.kde.org/Projects/Oxygen/Licensing"), "skip");
-        stats.add(disable("further icons by AppWork GmbH"), "skip");
-        stats.add(disable("& the JDownloader Community"), "skip");
+        stats.add(createLink("See /themes/* folder for Icon Licenses"), "");
+        stats.add(createLink("Icons8", "https://icons8.com"), "skip");
+        stats.add(createLink("Tango Icons", "https://en.wikipedia.org/wiki/Tango_Desktop_Project"), "skip");
+        stats.add(createLink("FatCow-Farm Fresh Icons", "https://www.fatcow.com/free-icons"), "skip");
+        stats.add(createLink("Mimi Glyphs Set", "http://salleedesign.com/blog/mimi-glyphs/"), "skip");
+        stats.add(createLink("Bright Mix Set", "http://brightmix.com/blog/brightmix-icon-set-free-for-all/"), "skip");
+        stats.add(createLink("Picol Icon Set", "http://www.picol.org/"), "skip");
+        stats.add(createLink("Aha Soft Icon Set", "http://www.aha-soft.com"), "skip");
+        stats.add(createLink("Oxygen Team", "https://techbase.kde.org/Projects/Oxygen/Licensing"), "skip");
+        stats.add(createLink("further icons by AppWork GmbH"), "skip");
+        stats.add(createLink("& the JDownloader Community"), "skip");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");
         this.registerEscape(contentpane);
         return contentpane;
@@ -373,7 +373,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         return version;
     }
 
-    private ExtButton disable(final Object object, final String url) {
+    private ExtButton createLink(final Object object, final String url) {
         ExtButton ret = new ExtButton(new AppAction() {
             /**
              *
@@ -409,7 +409,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         return ret;
     }
 
-    private ExtButton disable(final Object object) {
-        return disable(object, null);
+    private ExtButton createLink(final Object object) {
+        return createLink(object, null);
     }
 }
