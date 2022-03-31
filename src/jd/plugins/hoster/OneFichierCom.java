@@ -405,7 +405,7 @@ public class OneFichierCom extends PluginForHost {
         final String contentURL = getContentURLWebsite(link);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, contentURL, resume_free_hotlink, maxchunks_free_hotlink);
         if (this.looksLikeDownloadableContent(dl.getConnection())) {
-            /* Hotlink */
+            /* Hotlink or user is using CDN credits for downloading */
             link.setProperty(PROPERTY_HOTLINK, dl.getConnection().getURL().toString());
             dl.startDownload();
             return;
@@ -630,6 +630,7 @@ public class OneFichierCom extends PluginForHost {
         final boolean isPremium = br.containsHTML("(?i)>\\s*Premium\\s*(offer)\\s*Account\\s*<");
         final boolean isAccess = br.containsHTML("(?i)>\\s*Access\\s*(offer)\\s*Account\\s*<");
         // final boolean isFree = br.containsHTML(">\\s*Free\\s*(offer)\\s*Account\\s*<");
+        String accountStatus = null;
         if (isPremium || isAccess) {
             final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/abo.pl");
             get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -645,9 +646,10 @@ public class OneFichierCom extends PluginForHost {
             /** TODO: Check for extra traffic */
             // final String traffic=br.getRegex("Your account have ([^<>\"]*?) of CDN credits").getMatch(0);
             if (isPremium) {
+                accountStatus = "Premium Account";
                 ai.setStatus("Premium Account");
             } else {
-                ai.setStatus("Access Account");
+                accountStatus = "Access Account";
             }
             ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
@@ -661,21 +663,33 @@ public class OneFichierCom extends PluginForHost {
             get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.setFollowRedirects(true);
             br.getPage(get);
-            /* 2019-04-04: Credits are only relevent for free accounts according to website: https://1fichier.com/console/params.pl */
-            final String credits = br.getRegex(">\\s*Your account have ([^<>\"]*?) of (?:Hotlinks|direct download) credits").getMatch(0);
-            final boolean useOwnCredits = StringUtils.equalsIgnoreCase("checked", br.getRegex("<input\\s*type=\"checkbox\"\\s*checked=\"(.*?)\"\\s*name=\"own_credit\"").getMatch(0));
-            if (credits != null && useOwnCredits) {
-                ai.setStatus("Free Account (Credits available[using credits])");
-                ai.setTrafficLeft(SizeFormatter.getSize(credits));
-            } else {
-                if (credits != null) {
-                    ai.setStatus("Free Account (Credits available[NOT using credits])");
-                } else {
-                    ai.setStatus("Free Account");
+            accountStatus = "Free Account";
+            ai.setUnlimitedTraffic();
+        }
+        /* Credits are only relevant if usage of credits for downloads is enabled: https://1fichier.com/console/params.pl */
+        final String creditsStr = br.getRegex("(?)>\\s*Your account have ([^<>\"]*?) of[^<]*credits").getMatch(0);
+        final boolean useOwnCredits = StringUtils.equalsIgnoreCase("checked", br.getRegex("<input\\s*type=\"checkbox\"\\s*checked=\"(.*?)\"[^>]*name=\"own_credit\"").getMatch(0));
+        long creditsAsFilesize = 0;
+        if (creditsStr != null) {
+            creditsAsFilesize = SizeFormatter.getSize(creditsStr);
+        }
+        if (creditsAsFilesize > 0) {
+            if (account.getType() == AccountType.FREE) {
+                ai.setTrafficLeft(creditsAsFilesize);
+                /* Display traffic but do not care about how much is actually left. */
+                ai.setSpecialTraffic(true);
+            }
+            if (useOwnCredits) {
+                accountStatus += " [Using credits]";
+                if (account.getType() == AccountType.FREE) {
+                    /* Treat Free accounts like a premium account if credits are used. */
+                    account.setMaxSimultanDownloads(maxdownloads_account_premium);
                 }
-                ai.setUnlimitedTraffic();
+            } else {
+                accountStatus += " [NOT using credits]";
             }
         }
+        ai.setStatus(accountStatus);
         return ai;
     }
 
@@ -737,7 +751,14 @@ public class OneFichierCom extends PluginForHost {
         }
         final String subscription_end = (String) entries.get("subscription_end");
         final Object available_credits_in_gigabyteO = entries.get("cdn");
-        final double available_credits_in_gigabyte = available_credits_in_gigabyteO != null && available_credits_in_gigabyteO instanceof Double ? ((Number) available_credits_in_gigabyteO).doubleValue() : 0;
+        double available_credits_in_gigabyte = 0;
+        if (available_credits_in_gigabyteO != null) {
+            if (available_credits_in_gigabyteO instanceof Number) {
+                available_credits_in_gigabyte = ((Number) available_credits_in_gigabyteO).doubleValue();
+            } else {
+                available_credits_in_gigabyte = Double.parseDouble(available_credits_in_gigabyteO.toString());
+            }
+        }
         final long useOwnCredits = JavaScriptEngineFactory.toLong(entries.get("use_cdn"), 0);
         long validuntil = 0;
         if (!StringUtils.isEmpty(subscription_end)) {
@@ -747,7 +768,7 @@ public class OneFichierCom extends PluginForHost {
         if (validuntil > System.currentTimeMillis()) {
             /* Premium */
             account.setType(AccountType.PREMIUM);
-            accountStatus = "Premium account";
+            accountStatus = "Premium Account";
             account.setMaxSimultanDownloads(maxdownloads_account_premium);
             account.setConcurrentUsePossible(true);
             ai.setUnlimitedTraffic();
@@ -755,25 +776,30 @@ public class OneFichierCom extends PluginForHost {
         } else {
             /* Free --> 2019-07-18: API Keys are only available for premium users so this should never happen! */
             account.setType(AccountType.FREE);
-            accountStatus = "Free account";
+            accountStatus = "Free Account";
             account.setMaxSimultanDownloads(maxdownloads_free);
             account.setConcurrentUsePossible(false);
-            /* 2019-04-04: Credits are only relevant for free accounts according to website: https://1fichier.com/console/params.pl */
-            String creditsStatus = "";
-            if (available_credits_in_gigabyte > 0) {
-                creditsStatus = "  (" + available_credits_in_gigabyte + " Credits available";
-                if (useOwnCredits == 1) {
-                    creditsStatus += "[Using credits]";
-                    ai.setTrafficLeft((long) available_credits_in_gigabyte);
-                } else {
-                    creditsStatus += "[NOT using credits]";
-                    creditsStatus += ")";
-                    ai.setUnlimitedTraffic();
-                }
-                accountStatus += creditsStatus;
-            } else {
-                ai.setUnlimitedTraffic();
+        }
+        /* 2019-04-04: Credits are only relevant for free accounts according to website: https://1fichier.com/console/params.pl */
+        String creditsStatus = "";
+        if (available_credits_in_gigabyte > 0) {
+            if (account.getType() == AccountType.FREE) {
+                ai.setTrafficLeft((long) available_credits_in_gigabyte);
+                /* Display traffic but do not care about how much is actually left. */
+                ai.setSpecialTraffic(true);
             }
+            if (useOwnCredits == 1) {
+                creditsStatus += " [Using credits]";
+                if (account.getType() == AccountType.FREE) {
+                    /* Treat Free accounts like a premium account if credits are used. */
+                    account.setMaxSimultanDownloads(maxdownloads_account_premium);
+                }
+            } else {
+                creditsStatus += " [NOT using credits]";
+            }
+            accountStatus += creditsStatus;
+        } else {
+            ai.setUnlimitedTraffic();
         }
         ai.setStatus(accountStatus);
         return ai;
