@@ -1019,10 +1019,6 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /**
-         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
-         * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
-         */
         if (AccountType.FREE.equals(account.getType())) {
             /**
              * Website mode is required for free account downloads
@@ -1041,6 +1037,10 @@ public class OneFichierCom extends PluginForHost {
             }
             logger.info("Max Chunks:" + maxChunks);
             if (!this.attemptStoredDownloadurlDownload(link, PROPERTY_PREMLINK, resume_account_premium, maxChunks)) {
+                /**
+                 * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
+                 * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
+                 */
                 String dllink;
                 if (canUseAPI(account)) {
                     dllink = getDllinkPremiumAPI(link, account);
