@@ -29,6 +29,7 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
@@ -209,12 +210,18 @@ public class UpstoRe extends antiDDoSForHost {
             final int waitFull = Integer.parseInt(waittimeStr);
             int wait = waitFull;
             logger.info("Detected total waittime: " + wait);
+            boolean firstWaitThenCaptcha = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
             if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-                wait -= passedTime;
-                if (wait > 0) {
+                if (firstWaitThenCaptcha) {
                     sleep(wait * 1000l, link);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                if (!firstWaitThenCaptcha) {
+                    final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+                    wait -= passedTime;
+                    if (wait > 0) {
+                        sleep(wait * 1000l, link);
+                    }
                 }
                 // final String kpw = br.getRegex("\\(\\{'type':'hidden','name':'(\\w+)'\\}\\).val\\(window\\.antispam").getMatch(0);
                 // some javascript crapola
@@ -225,12 +232,17 @@ public class UpstoRe extends antiDDoSForHost {
                 submitForm(captchaForm);
             } else if (containsHCaptcha(this.br)) {
                 /* 2021-06-25 */
+                if (firstWaitThenCaptcha) {
+                    sleep(wait * 1000l, link);
+                }
                 final CaptchaHelperHostPluginHCaptcha hCaptcha = new CaptchaHelperHostPluginHCaptcha(this, br);
                 final String captchaResponse = hCaptcha.getToken();
-                final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-                wait -= passedTime;
-                if (wait > 0) {
-                    sleep(wait * 1000l, link);
+                if (!firstWaitThenCaptcha) {
+                    final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+                    wait -= passedTime;
+                    if (wait > 0) {
+                        sleep(wait * 1000l, link);
+                    }
                 }
                 captchaForm.put("kpw", "spam");
                 captchaForm.put("antispam", "spam");
@@ -289,7 +301,7 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     private void handleServerErrors() throws PluginException {
-        if (br.containsHTML("not found")) {
+        if (br.containsHTML("(?i)not found")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'not found'", 30 * 60 * 1000l);
         }
     }
@@ -299,7 +311,7 @@ public class UpstoRe extends antiDDoSForHost {
          * Example error json:
          * {"errors":["Sorry, download server with your file is temporary unavailable... Try again later or contact support."]}
          */
-        if (this.br.containsHTML("Sorry, download server with your file is temporarily unavailable")) {
+        if (this.br.containsHTML("(?i)Sorry, download server with your file is temporarily unavailable")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
     }
@@ -308,14 +320,14 @@ public class UpstoRe extends antiDDoSForHost {
         /* Example: "<span class="error">File size is larger than 2 GB. Unfortunately, it can be downloaded only with premium</span>" */
         if (isOffline1()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("File size is larger than|it can be downloaded only with premium")) {
+        } else if (this.br.containsHTML("(?i)File size is larger than|it can be downloaded only with premium")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (br.containsHTML(">\\s*This file is available only for Premium users")) {
+        } else if (br.containsHTML("(?i)>\\s*This file is available only for Premium users")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (br.containsHTML(">\\s*Server for free downloads is overloaded<")) {
+        } else if (br.containsHTML("(?i)>\\s*Server for free downloads is overloaded<")) {
             /* Here some errors that should only happen in free(account) mode: */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server for free downloads is overloaded'", 30 * 60 * 1000l);
-        } else if (br.containsHTML(">\\s*Server with file not found<")) {
+        } else if (br.containsHTML("(?i)>\\s*Server with file not found<")) {
             // Same server error (displayed differently) also exists for premium users
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server with file not found'", 60 * 60 * 1000l);
         }
@@ -388,7 +400,7 @@ public class UpstoRe extends antiDDoSForHost {
                     }
                 }
                 submitForm(login);
-                if (br.containsHTML(">\\s*Wrong email or password\\.\\s*<")) {
+                if (br.containsHTML("(?i)>\\s*Wrong email or password\\.\\s*<")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if (br.containsHTML(regexLoginCaptcha)) {
                     // incorrect captcha, or form values changed
@@ -462,11 +474,11 @@ public class UpstoRe extends antiDDoSForHost {
 
     private long getPremiumTill(Browser br) {
         long result = -1;
-        String expire = br.getRegex("premium till\\s*(\\d{1,2}/\\d{1,2}/\\d{2})").getMatch(0);
+        String expire = br.getRegex("(?i)premium till\\s*(\\d{1,2}/\\d{1,2}/\\d{2})").getMatch(0);
         if (expire != null) {
             result = TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null);
         }
-        expire = br.getRegex("premium till\\s*([a-zA-Z.]+\\s*\\d{1,2}\\s*,\\s*(\\d{4}|\\d{2}))").getMatch(0);
+        expire = br.getRegex("(?i)premium till\\s*([a-zA-Z.]+\\s*\\d{1,2}\\s*,\\s*(\\d{4}|\\d{2}))").getMatch(0);
         if (expire != null && result == -1) {
             result = TimeFormatter.getMilliSeconds(expire, "MMMM dd','yyyy", Locale.ENGLISH);
         }
@@ -482,7 +494,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
         this.login(account, true);
         // Make sure that the language is correct
@@ -492,7 +504,7 @@ public class UpstoRe extends antiDDoSForHost {
         if (!br.containsHTML(lifetimeAccount)) {
             final long validUntil = getPremiumTill(br);
             if (validUntil == -1) {
-                if (br.containsHTML("unlimited premium")) {
+                if (br.containsHTML("(?i)unlimited premium")) {
                     ai.setValidUntil(-1);
                     ai.setStatus("Unlimited Premium Account");
                 } else {
@@ -506,7 +518,7 @@ public class UpstoRe extends antiDDoSForHost {
         // ai.setUnlimitedTraffic();
         // this is in MiB, more accurate than the top rounded figure
         // final String trafficUsed = br.getRegex(">Total:</td>\\s*<td>([\\d+\\.]+)<").getMatch(0);
-        final String traffic[] = br.getRegex("Downloaded in last \\d+ hours: ([\\d+\\.]+) of ([\\d+\\.]+) GB").getRow(0);
+        final String traffic[] = br.getRegex("(?i)Downloaded in last \\d+ hours: ([\\d+\\.]+) of ([\\d+\\.]+) GB").getRow(0);
         final long trafficDaily = SizeFormatter.getSize(traffic[1] + "GiB");
         final long trafficLeft = trafficDaily - SizeFormatter.getSize(traffic[0] + "GiB");
         ai.setTrafficLeft(trafficLeft);
@@ -761,11 +773,11 @@ public class UpstoRe extends antiDDoSForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 }
