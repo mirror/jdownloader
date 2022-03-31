@@ -62,12 +62,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram.com/p/[A-Za-z0-9_-]+/" })
 public class InstaGramCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public InstaGramCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/accounts/login/");
+    }
+
+    @Override
+    public void init() {
+        InstaGramComDecrypter.setRequestIntervalLimitGlobal();
     }
 
     public static Browser prepBRAltAPI(final Browser br) {
@@ -81,7 +86,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE + "/about/legal/terms/#";
+        return MAINPAGE + "/about/legal/terms/";
     }
 
     /**
@@ -101,7 +106,7 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_is_part_of_story                = "is_part_of_story";
     public static final String  PROPERTY_DIRECTURL                       = "directurl";
     public static final String  PROPERTY_private_url                     = "private_url";
-    public static final String  PROPERTY_postid                          = "postid";
+    public static final String  PROPERTY_internal_media_id               = "internal_media_id";
     public static final String  PROPERTY_orderid                         = "orderid";
     public static final String  PROPERTY_orderid_raw                     = "orderid_raw";
     public static final String  PROPERTY_shortcode                       = "shortcode";
@@ -113,6 +118,8 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";
     public static final String  PROPERTY_main_content_id                 = "main_content_id";                // e.g.
                                                                                                              // instagram.com/p/<main_content_id>/
+    public static final String  PROPERTY_forced_packagename              = "forced_packagename";
+    public static final String  PROPERTY_is_private                      = "is_private";
 
     public static void setRequestLimit() {
         Browser.setRequestIntervalLimitGlobal("instagram.com", true, 8000);
@@ -129,17 +136,32 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        /*
-         * There might be better ways for dupe-detection but for now we'll rely on this one as it provides backward compatibilities for URLs
-         * added via crawler rev <= 45678.
-         */
+        final String internalMediaID = this.getInternalMediaID(link);
         final String mainID = link.getStringProperty(PROPERTY_main_content_id);
-        final String orderid = link.getStringProperty(PROPERTY_orderid);
-        final String type = getType(link);
-        if (mainID != null) {
+        if (mainID != null && PluginJsonConfig.get(InstagramConfig.class).isUseLegacyDupeCheck()) {
+            /*
+             * Optional backward compatibility for elements added in rev <= 45704
+             */
+            String orderid = link.getStringProperty(PROPERTY_orderid);
+            if (orderid == null) {
+                /* More backward compatibility */
+                orderid = "1";
+            }
+            final String type = getType(link);
             return this.getHost() + "://" + type + "_" + mainID + "_" + orderid;
+        } else if (internalMediaID != null) {
+            return this.getHost() + "://" + internalMediaID;
         } else {
             return super.getLinkID(link);
+        }
+    }
+
+    private String getInternalMediaID(final DownloadLink link) {
+        final String idFromLegacyProperty = link.getStringProperty("postid"); // backward compatibility
+        if (idFromLegacyProperty != null) {
+            return idFromLegacyProperty;
+        } else {
+            return link.getStringProperty(PROPERTY_internal_media_id);
         }
     }
 
@@ -163,7 +185,7 @@ public class InstaGramCom extends PluginForHost {
         } else {
             prepBRWebsite(this.br);
             boolean isLoggedIN = false;
-            if (PluginJsonConfig.get(InstagramConfig.class).isAttemptToDownloadOriginalQuality() && canGrabOriginalQualityDownloadurlViaAltAPI(link) && !hasTriedToCrawlOriginalQuality(link) && account != null) {
+            if (PluginJsonConfig.get(InstagramConfig.class).isAttemptToDownloadOriginalQuality() && !hasTriedToCrawlOriginalQuality(link) && account != null) {
                 login(account, false);
                 isLoggedIN = true;
                 this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, true);
@@ -196,21 +218,12 @@ public class InstaGramCom extends PluginForHost {
         }
     }
 
-    private boolean canGrabOriginalQualityDownloadurlViaAltAPI(final DownloadLink link) {
-        // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
-        /*
-         * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
-         * higher than before then but it can also get smaller - which is okay as it is the original content.
-         */
-        /* 2020-10-07: Doesn't work anymore, see new method (old iPhone API endpoint) */
-        // String drlink = dllink.replace(resolution_inside_url, "/");
-        final String imageid = link.getStringProperty(PROPERTY_postid);
-        /* Avoids doing an extra http request for video files as they're never available in "original" quality (?) */
-        return !isVideo(link) && imageid != null;
-    }
-
     private static boolean hasTriedToCrawlOriginalQuality(final DownloadLink link) {
-        return link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false);
+        if (link.hasProperty(PROPERTY_has_tried_to_crawl_original_url)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static boolean isVideo(final DownloadLink link) {
@@ -254,11 +267,34 @@ public class InstaGramCom extends PluginForHost {
         }
     }
 
+    private static boolean requiresAccount(final DownloadLink link) {
+        if (isPartOfStory(link)) {
+            return true;
+        } else if (isPrivate(link)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private static boolean isPartOfStory(final DownloadLink link) {
-        return link.getBooleanProperty(PROPERTY_is_part_of_story, false);
+        if (link.hasProperty(PROPERTY_is_part_of_story)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean isPrivate(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_is_private)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
+     * Login required to be able to use this!! </br>
      * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
      */
     private String getHighesQualityDownloadlinkAltAPI(final DownloadLink link, final boolean removePictureEffects) throws IOException, PluginException {
@@ -274,9 +310,9 @@ public class InstaGramCom extends PluginForHost {
          * Source of this idea:
          * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/instaloadercontext.py# L462
          */
-        final String imageid = link.getStringProperty(PROPERTY_postid);
+        final String imageid = this.getInternalMediaID(link);
         if (imageid == null) {
-            /* This should never happen */
+            /* We need this ID! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Browser brc = br.cloneBrowser();
@@ -291,9 +327,9 @@ public class InstaGramCom extends PluginForHost {
         /*
          * New URL should be the BEST quality (resolution).
          */
-        Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
-        final String downloadurl = getBestQualityURLAltAPI(entries);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> mediaItem = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+        final String downloadurl = getBestQualityURLAltAPI(mediaItem);
         link.setProperty(PROPERTY_has_tried_to_crawl_original_url, true);
         link.setProperty(PROPERTY_DIRECTURL, downloadurl);
         return downloadurl;
@@ -312,10 +348,9 @@ public class InstaGramCom extends PluginForHost {
 
     public static String getBestQualityURLAltAPI(final Map<String, Object> entries) {
         final Object videoO = entries.get("video_versions");
-        final boolean isVideo = videoO != null;
         String dllink = null;
-        if (isVideo) {
-            /* Find best video-quality */
+        if (videoO != null) {
+            /* Video: Find best video-quality */
             /*
              * TODO: 2020-11-17: What's the difference between e.g. the following "types": 101, 102, 103 - seems to be all the same quality
              * and filesize/resolution/URLs
@@ -333,7 +368,7 @@ public class InstaGramCom extends PluginForHost {
                 }
             }
         } else {
-            /* Find best image-quality */
+            /* Image: Find best image-quality */
             final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "image_versions2/candidates");
             if (ressourcelist != null) {
                 long qualityMax = 0;
@@ -366,20 +401,18 @@ public class InstaGramCom extends PluginForHost {
     private String getFreshDirecturl(final DownloadLink link, final Account account, final boolean isLoggedIN) throws Exception {
         String directurl = null;
         logger.info("Trying to refresh directurl");
-        /* Story elements can only be refreshed by ID and thus we need to use the other API for those! */
-        final boolean useBestQualityDownload = canGrabOriginalQualityDownloadurlViaAltAPI(link) || isPartOfStory(link);
-        if (useBestQualityDownload && account != null) {
+        if (preferAltAPIForDirecturlRefresh() && account != null) {
             logger.info("Tring to obtain fresh original quality downloadurl");
             if (!isLoggedIN) {
                 this.login(account, false);
             }
             directurl = getHighesQualityDownloadlinkAltAPI(link, true);
         } else if (isPartOfStory(link)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot refresh direct url of story elements without account");
+            throw new AccountRequiredException("Cannot refresh direct url of story elements without account");
         } else {
+            /* More complicated method via crawler */
             logger.info("Trying to obtain fresh downloadurl via crawler");
             final PluginForDecrypt crawler = this.getNewPluginForDecryptInstance(this.getHost());
-            crawler.setBrowser(this.br);
             final String thisLinkID = this.getLinkID(link);
             final String thisOrderID = link.getStringProperty(PROPERTY_orderid);
             try {
@@ -410,6 +443,12 @@ public class InstaGramCom extends PluginForHost {
         return directurl;
     }
 
+    private boolean preferAltAPIForDirecturlRefresh() {
+        // return PluginJsonConfig.get(InstagramConfig.class).isAttemptToDownloadOriginalQuality();
+        /* 2022-03-31: Always use this method as it is way easier. */
+        return true;
+    }
+
     public static void checkErrors(final Browser br) throws PluginException {
         /* Old trait */
         // if (br.getURL().matches("https?://[^/]+/accounts/login/\\?next=.*")) {
@@ -433,7 +472,7 @@ public class InstaGramCom extends PluginForHost {
                 throw new IOException();
             } else {
                 if (con.getCompleteContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 return flink;
             }
@@ -479,9 +518,11 @@ public class InstaGramCom extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            int maxchunks = MAXCHUNKS_pictures;
-            if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4") || link.getName() != null && link.getName().contains(".mp4")) {
+            final int maxchunks;
+            if (isVideo(link)) {
                 maxchunks = MAXCHUNKS_videos;
+            } else {
+                maxchunks = MAXCHUNKS_pictures;
             }
             /*
              * Other User-Agents get throtteled downloadspeed (block by Instagram). For linkchecking we can continue to use the other
@@ -809,7 +850,11 @@ public class InstaGramCom extends PluginForHost {
         // Cookies.NOTDELETEDPATTERN) != null;
         final String fullname = PluginJSonUtils.getJson(br, "full_name");
         final String has_profile_pic = PluginJSonUtils.getJson(br, "has_profile_pic");
-        return fullname != null && has_profile_pic != null;
+        if (fullname != null && has_profile_pic != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -828,11 +873,6 @@ public class InstaGramCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
         this.handleDownload(link);
-    }
-
-    @Override
-    public void init() {
-        InstaGramComDecrypter.setRequestIntervalLimitGlobal();
     }
 
     public static Browser prepBRWebsite(final Browser br) {

@@ -37,7 +37,7 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getAttemptToDownloadOriginalQuality_label() {
-            return "Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]";
+            return "Try to download original quality (bigger filesize, without image-effects)? [This can slow down the download-process!]";
         }
 
         public String getHashtagCrawlerFindUsernames_label() {
@@ -45,7 +45,19 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getProfileCrawlerMaxItemsLimit_label() {
-            return "Profile crawler: Only grab X latest items? [0 = disable profile crawler, -1 = unlimited]";
+            return "Profile crawler: Only grab X latest posts? [0 = do not crawl posts, -1 = crawl all posts]";
+        }
+
+        public String getProfileCrawlerCrawlStory_label() {
+            return "Profile crawler: Crawl story?";
+        }
+
+        public String getProfileCrawlerCrawlStoryHighlights_label() {
+            return "Profile crawler: Crawl story highlights?";
+        }
+
+        public String getProfileCrawlerCrawlProfilePicture_label() {
+            return "Profile crawler: Crawl profile picture?";
         }
 
         public String getProfileCrawlerPreferAlternativeAPI_label() {
@@ -62,6 +74,10 @@ public interface InstagramConfig extends PluginConfigInterface {
 
         public String getGlobalRequestIntervalLimitMilliseconds_label() {
             return "Define global request limit in milliseconds (0 = no limit)";
+        }
+
+        public String getUseLegacyDupeCheck_label() {
+            return "Use legacy dupe-check?";
         }
     }
 
@@ -112,7 +128,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY")
-    @DescriptionForConfigEntry("Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]")
+    @DescriptionForConfigEntry("Try to download original quality (bigger filesize, without image-effects)? [This can slow down the download-process!]")
     @Order(50)
     boolean isAttemptToDownloadOriginalQuality();
 
@@ -130,11 +146,35 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @SpinnerValidator(min = -1, max = 1024, step = 1)
     @DefaultIntValue(-1)
-    @DescriptionForConfigEntry("Profile crawler: Only grab X latest items? [0 = disable profile crawler, -1 = unlimited]")
+    @DescriptionForConfigEntry("Profile crawler: Only grab X latest posts? [0 = do not crawl posts, -1 = crawl all posts]")
     @Order(70)
     int getProfileCrawlerMaxItemsLimit();
 
     void setProfileCrawlerMaxItemsLimit(int items);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Profile crawler: Crawl story?")
+    @Order(71)
+    boolean isProfileCrawlerCrawlStory();
+
+    void setProfileCrawlerCrawlStory(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Profile crawler: Crawl story highlights?")
+    @Order(72)
+    boolean isProfileCrawlerCrawlStoryHighlights();
+
+    void setProfileCrawlerCrawlStoryHighlights(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Profile crawler: Crawl profile picture?")
+    @Order(73)
+    boolean isProfileCrawlerCrawlProfilePicture();
+
+    void setProfileCrawlerCrawlProfilePicture(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
@@ -172,4 +212,13 @@ public interface InstagramConfig extends PluginConfigInterface {
     int getGlobalRequestIntervalLimitMilliseconds();
 
     void setGlobalRequestIntervalLimitMilliseconds(int milliseconds);
+
+    /** TODO: Change this to false in 2023-01 */
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Use legacy dupe-check?")
+    @Order(120)
+    boolean isUseLegacyDupeCheck();
+
+    void setUseLegacyDupeCheck(boolean b);
 }
