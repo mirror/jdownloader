@@ -299,7 +299,7 @@ public class DdownloadCom extends XFileSharingProBasic {
             } else {
                 dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
             }
-            String twoFACode = getUserInput("Enter Google 2-Factor Authentication code", dl_dummy);
+            String twoFACode = getUserInput("Enter Google 2-Factor authentication code", dl_dummy);
             if (twoFACode != null) {
                 twoFACode = twoFACode.trim();
             }
