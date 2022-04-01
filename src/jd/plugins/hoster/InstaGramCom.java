@@ -138,7 +138,7 @@ public class InstaGramCom extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         final String internalMediaID = this.getInternalMediaID(link);
         final String mainID = link.getStringProperty(PROPERTY_main_content_id);
-        if (mainID != null && PluginJsonConfig.get(InstagramConfig.class).isUseLegacyDupeCheck()) {
+        if (mainID != null && !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /*
              * Optional backward compatibility for elements added in rev <= 45704
              */

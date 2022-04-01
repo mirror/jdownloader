@@ -75,10 +75,6 @@ public interface InstagramConfig extends PluginConfigInterface {
         public String getGlobalRequestIntervalLimitMilliseconds_label() {
             return "Define global request limit in milliseconds (0 = no limit)";
         }
-
-        public String getUseLegacyDupeCheck_label() {
-            return "Use legacy dupe-check?";
-        }
     }
 
     @AboutConfig
@@ -212,13 +208,4 @@ public interface InstagramConfig extends PluginConfigInterface {
     int getGlobalRequestIntervalLimitMilliseconds();
 
     void setGlobalRequestIntervalLimitMilliseconds(int milliseconds);
-
-    /** TODO: Change this to false in 2023-01 */
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Use legacy dupe-check?")
-    @Order(120)
-    boolean isUseLegacyDupeCheck();
-
-    void setUseLegacyDupeCheck(boolean b);
 }
