@@ -16,58 +16,76 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.RandomUserAgent;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paste2.org" }, urls = { "https?://(www\\.)?paste2\\.org/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = { "https?://(?:www\\.)?paste2\\.org/[A-Za-z0-9]+" })
 public class Paste2Org extends PluginForDecrypt {
     public Paste2Org(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "paste2.org" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     /* DEV NOTES */
     // Tags: pastebin
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(parameter);
-        /* Error handling */
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        final String plaintxt = br.getRegex("<ol class='highlight code'>(.*?)</div></li></ol>").getMatch(0);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        final DownloadLink textfile = this.createDownloadlink(param.getCryptedUrl());
+        /*
+         * Use hosterplugin to check availablestatus. If this paste is e.g. offline, Exception will be thown during hosterplugin
+         * availablecheck.
+         */
+        ((jd.plugins.hoster.Paste2Org) plg).requestFileInformation(textfile);
+        textfile.setAvailable(true);
+        decryptedLinks.add(textfile);
+        final String plaintxt = jd.plugins.hoster.Paste2Org.getPastebinText(this.br);
         if (plaintxt == null) {
-            logger.info("Paste2 Decrypter: Could not find textfield: " + parameter);
-            logger.info("Paste2 Decrypter: Please report this to JDownloader' Development Team.");
-            return null;
+            logger.warning("Paste2 Decrypter: Could not find pastebin textfield");
+            return decryptedLinks;
         }
         final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links == null || links.length == 0) {
-            logger.info("Found no URLs in plaintext from link " + parameter);
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
+        if (links.length > 0) {
+            for (final String link : links) {
+                decryptedLinks.add(createDownloadlink(link));
             }
-            return decryptedLinks;
-        }
-        /* avoid recursion */
-        for (int i = 0; i < links.length; i++) {
-            String dlLink = links[i];
-            if (!this.canHandle(dlLink)) {
-                decryptedLinks.add(createDownloadlink(dlLink));
-            }
+        } else {
+            logger.info("Found no URLs in pastebin plaintext");
         }
         return decryptedLinks;
     }
