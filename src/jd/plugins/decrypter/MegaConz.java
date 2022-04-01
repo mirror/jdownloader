@@ -141,9 +141,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                                /*
-                                 * + "&domain=meganz
-                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                        /*
+                         * + "&domain=meganz
+                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -236,6 +236,11 @@ public class MegaConz extends PluginForDecrypt {
                             // WebSocket(wsc) = empty
                             break;
                         } else if (num.intValue() == -3) {
+                            /**
+                             * Error: RequestFailedRetry API_EAGAIN (-3) (always at the request level): A temporary congestion or server
+                             * malfunction is preventing your request from processing. Could not alter any data. Retry. Retries must be
+                             * spaced with exponential backoff.
+                             */
                             if (retryCounter < 10) {
                                 sleep(5000, parameter);
                                 retryCounter++;
@@ -243,9 +248,13 @@ public class MegaConz extends PluginForDecrypt {
                             } else {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
+                        } else if (num.intValue() == -9) {
+                            /**
+                             * Error: ResourceDoesNotExists API_EOENT (-9): Object (typically, node or user) not found
+                             */
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         } else {
                             // https://help.servmask.com/knowledgebase/mega-error-codes/
-                            // -3 for EAGAIN
                             return decryptedLinks;
                         }
                     } else {
@@ -310,19 +319,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         *
+         * 
          * s = size
-         *
+         * 
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         *
+         * 
          * ts = timestamp
-         *
+         * 
          * h = node (ID)
-         *
+         * 
          * u = owner
-         *
+         * 
          * a = attribute (contains name)
-         *
+         * 
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
