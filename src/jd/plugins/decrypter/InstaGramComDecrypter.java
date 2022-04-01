@@ -1853,7 +1853,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
-    /** TODO: Update this and make use of it. */
     protected class InstagramMetadata {
         private String  username             = null;
         private String  hashtag              = null;
