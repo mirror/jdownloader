@@ -39,6 +39,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
@@ -57,6 +58,7 @@ import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -988,8 +990,58 @@ public class OneFichierCom extends PluginForHost {
                 } else if (password == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "No password given!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.postPage("https://" + this.getHost() + "/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password));
+                final UrlQuery query = new UrlQuery();
+                query.add("mail", Encoding.urlEncode(username));
+                query.add("pass", Encoding.urlEncode(password));
+                query.add("lt", "on"); // long term session
+                query.add("other", "on"); // set cookies also on other 1fichier domains
+                query.add("valider", "ok");
+                br.postPage("https://" + this.getHost() + "/login.pl", query);
+                Form twoFAForm = null;
+                final String formKey2FA = "tfa";
+                final Form[] forms = br.getForms();
+                for (final Form form : forms) {
+                    final InputField twoFAField = form.getInputField(formKey2FA);
+                    if (twoFAField != null) {
+                        twoFAForm = form;
+                        break;
+                    }
+                }
+                if (!isLoggedinWebsite(this.br) && twoFAForm != null) {
+                    logger.info("2FA code required");
+                    final DownloadLink dl_dummy;
+                    if (this.getDownloadLink() != null) {
+                        dl_dummy = this.getDownloadLink();
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                    }
+                    String twoFACode = getUserInput("Enter 2-Factor authentication code", dl_dummy);
+                    if (twoFACode != null) {
+                        twoFACode = twoFACode.trim();
+                    }
+                    if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
+                        } else {
+                            throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
+                        }
+                    }
+                    logger.info("Submitting 2FA code");
+                    twoFAForm.put(formKey2FA, twoFACode);
+                    br.submitForm(twoFAForm);
+                    if (!isLoggedinWebsite(this.br)) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new AccountUnavailableException("\r\nUngültiger 2-faktor-Authentifizierungscode!", 1 * 60 * 1000l);
+                        } else {
+                            throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
+                        }
+                    }
+                }
                 if (!isLoggedinWebsite(this.br)) {
+                    final String errorTooManyLoginAttempts = br.getRegex("(?i)>(More than \\d+ login try per \\d+ minutes is not allowed)").getMatch(0);
+                    if (errorTooManyLoginAttempts != null) {
+                        throw new AccountUnavailableException(errorTooManyLoginAttempts, 1 * 60 * 1000l);
+                    }
                     if (br.containsHTML("(?i)following many identification errors")) {
                         if (br.containsHTML("(?i)Your account will be unlock")) {
                             throw new AccountUnavailableException("Your account will be unlocked within 1 hour", 60 * 60 * 1000l);
