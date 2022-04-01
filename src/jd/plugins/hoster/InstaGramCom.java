@@ -128,20 +128,14 @@ public class InstaGramCom extends PluginForHost {
     @Override
     public String getLinkID(final DownloadLink link) {
         final String internalMediaID = this.getInternalMediaID(link);
-        final String mainID = link.getStringProperty(PROPERTY_main_content_id);
-        if (mainID != null && !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /*
-             * Optional backward compatibility for elements added in rev <= 45704
-             */
-            String orderid = link.getStringProperty(PROPERTY_orderid);
-            if (orderid == null) {
-                /* More backward compatibility */
-                orderid = "1";
+        if (internalMediaID != null) {
+            final String mediaIDWithoutUsername;
+            if (internalMediaID.matches("\\d+_\\d+")) {
+                mediaIDWithoutUsername = internalMediaID.split("_")[0];
+            } else {
+                mediaIDWithoutUsername = internalMediaID;
             }
-            final String type = getType(link);
-            return this.getHost() + "://" + type + "_" + mainID + "_" + orderid;
-        } else if (internalMediaID != null) {
-            return this.getHost() + "://" + internalMediaID;
+            return this.getHost() + "://" + mediaIDWithoutUsername;
         } else if (link.getName() != null && link.getName().endsWith(".txt")) {
             return this.getHost() + "://" + link.getName();
         } else {
@@ -149,14 +143,11 @@ public class InstaGramCom extends PluginForHost {
         }
     }
 
+    /** Can be only numbers or : <numbers>_<userID> */
     private String getInternalMediaID(final DownloadLink link) {
         final String idFromLegacyProperty = link.getStringProperty("postid"); // backward compatibility
         if (idFromLegacyProperty != null) {
-            if (idFromLegacyProperty.matches("\\d+_\\d+")) {
-                return idFromLegacyProperty.split("_")[0];
-            } else {
-                return idFromLegacyProperty;
-            }
+            return idFromLegacyProperty;
         } else {
             return link.getStringProperty(PROPERTY_internal_media_id);
         }
