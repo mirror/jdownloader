@@ -58,6 +58,11 @@ public class GfyCatCom extends PluginForHost {
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "gfycat.com", "gifdeliverynetwork.com", "redgifs.com" };
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://gfycat.com/terms";
     }

@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -775,10 +776,28 @@ public abstract class AbstractFFmpegBinary {
         return null;
     }
 
+    private boolean isLocalhost(List<String> commandLine) {
+        if (commandLine != null) {
+            for (final String cmd : commandLine) {
+                if (StringUtils.containsIgnoreCase(cmd, "127.0.0.1")) {
+                    return true;
+                } else if (StringUtils.containsIgnoreCase(cmd, "localhost")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
         final LogInterface logger = getLogger();
         logger.info("runCommand(ProcessBuilderFactory):" + commandLine);
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
+        final Map<String, String> env = pb.environment();
+        if (isLocalhost(commandLine) && env != null) {
+            logger.info("unset SysEnv:https_proxy=" + env.remove("https_proxy"));
+            logger.info("unset SysEnv:http_proxy=" + env.remove("http_proxy"));
+        }
         logger.info("runCommand(ProcessBuilder):" + pb.command());
         final Process process = pb.start();
         final AccessibleByteArrayOutputStream stdout = new AccessibleByteArrayOutputStream();

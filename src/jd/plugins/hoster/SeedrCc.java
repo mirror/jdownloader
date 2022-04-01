@@ -18,17 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -47,6 +36,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https://(?:www\\.)?seedr\\.cc/download/(file/\\d+|archive/[a-fA-F0-9]+\\?token=[a-fA-F0-9]+&exp=\\d+)" })
 public class SeedrCc extends PluginForHost {
@@ -89,13 +89,15 @@ public class SeedrCc extends PluginForHost {
                 if (!this.looksLikeDownloadableContent(con)) {
                     // not possible to refresh
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final String filenameFromHeader = getFileNameFromHeader(con);
-                if (filenameFromHeader != null && link.getFinalFileName() == null) {
-                    link.setFinalFileName(filenameFromHeader);
+                } else {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    final String filenameFromHeader = getFileNameFromHeader(con);
+                    if (filenameFromHeader != null && link.getFinalFileName() == null) {
+                        link.setFinalFileName(filenameFromHeader);
+                    }
+                    return AvailableStatus.TRUE;
                 }
             } finally {
                 try {
@@ -103,7 +105,6 @@ public class SeedrCc extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            return AvailableStatus.TRUE;
         }
         if (account == null) {
             return AvailableStatus.UNCHECKABLE;
