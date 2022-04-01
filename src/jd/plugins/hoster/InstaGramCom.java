@@ -125,15 +125,6 @@ public class InstaGramCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal("instagram.com", true, 8000);
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
-        if (!newurl.endsWith("/")) {
-            /* Add slash to the end to prevent 302 redirect to speed up the download process a tiny bit. */
-            newurl += "/";
-        }
-        link.setPluginPatternMatcher(newurl);
-    }
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String internalMediaID = this.getInternalMediaID(link);
@@ -151,6 +142,8 @@ public class InstaGramCom extends PluginForHost {
             return this.getHost() + "://" + type + "_" + mainID + "_" + orderid;
         } else if (internalMediaID != null) {
             return this.getHost() + "://" + internalMediaID;
+        } else if (link.getName() != null && link.getName().endsWith(".txt")) {
+            return this.getHost() + "://" + link.getName();
         } else {
             return super.getLinkID(link);
         }
@@ -159,7 +152,11 @@ public class InstaGramCom extends PluginForHost {
     private String getInternalMediaID(final DownloadLink link) {
         final String idFromLegacyProperty = link.getStringProperty("postid"); // backward compatibility
         if (idFromLegacyProperty != null) {
-            return idFromLegacyProperty;
+            if (idFromLegacyProperty.matches("\\d+_\\d+")) {
+                return idFromLegacyProperty.split("_")[0];
+            } else {
+                return idFromLegacyProperty;
+            }
         } else {
             return link.getStringProperty(PROPERTY_internal_media_id);
         }
