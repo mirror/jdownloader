@@ -13,6 +13,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -35,6 +36,7 @@ import jd.http.ProxySelectorInterface;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
@@ -227,23 +229,51 @@ public class ProxyController implements ProxySelectorInterface {
         });
     }
 
+    private String assignHost(final PluginFinder pluginFinder, final Map<String, String> mapping, final String host) {
+        if (mapping != null && mapping.containsKey(host)) {
+            return mapping.get(host);
+        }
+        String assignedHost = pluginFinder.assignHost(host);
+        if (assignedHost == null) {
+            final AccountInfo ai = new AccountInfo();
+            final List<String> assigned = ai.setMultiHostSupport(null, Arrays.asList(new String[] { host }), pluginFinder);
+            if (assigned != null && assigned.size() == 1) {
+                assignedHost = assigned.get(0);
+            }
+        }
+        if (mapping != null) {
+            mapping.put(host, assignedHost);
+        }
+        return assignedHost;
+    }
+
     private void updateProxyFilterList(final AbstractProxySelectorImpl proxy, PluginFinder pluginFinder) {
         final FilterList filter = proxy.getFilter();
+        // redgifs.com
+        // vielleicht auf accountinfo handling umschreiben
         if (filter != null && pluginFinder != null) {
             final String[] entries = filter.getEntries();
-            for (int i = 0; i < entries.length; i++) {
-                final String entry = entries[i] == null ? "" : entries[i].trim();
+            final HashMap<String, String> mapping = new HashMap<String, String>();
+            final List<String> updatedEntries = new ArrayList<String>();
+            for (final String entry : entries) {
+                if (entry == null) {
+                    /**
+                     * skip null
+                     */
+                    continue;
+                }
                 if (entry.length() == 0 || entry.startsWith("//") || entry.startsWith("#")) {
                     /*
                      * empty/comment lines
                      */
+                    updatedEntries.add(entry);
                     continue;
                 } else {
                     if (entry.matches("(?i)^.*appwork.org$") || entry.matches("(?i)^.*jdownloader.org$")) {
                         /*
                          * do not modify JDownloader/MyJDownloader infrastructure URLs
                          */
-                        entries[i] = entry.toLowerCase(Locale.ENGLISH);
+                        updatedEntries.add(entry.toLowerCase(Locale.ENGLISH));
                     } else {
                         final int index = entry.lastIndexOf("@");
                         if (index != -1) {
@@ -251,24 +281,30 @@ public class ProxyController implements ProxySelectorInterface {
                                 final String host = entry.substring(index + 1);
                                 if (host.matches("^[a-zA-Z0-9.-_]+$") && host.contains(".") && host.length() >= 3) {
                                     final String username = entry.substring(0, index);
-                                    final String assignedHost = pluginFinder.assignHost(host);
+                                    final String assignedHost = assignHost(pluginFinder, mapping, host);
                                     if (assignedHost != null && !StringUtils.equals(host, assignedHost)) {
-                                        entries[i] = username.concat("@").concat(assignedHost);
+                                        updatedEntries.add("#auto assigned correct plugin:" + host + "->" + assignedHost);
+                                        updatedEntries.add(username.concat("@").concat(assignedHost));
+                                    } else {
+                                        updatedEntries.add(entry);
                                     }
                                 }
                             }
                         } else {
                             if (entry.matches("^[a-zA-Z0-9.-_]+$") && entry.contains(".") && entry.length() >= 3) {
-                                final String assignedHost = pluginFinder.assignHost(entry);
+                                final String assignedHost = assignHost(pluginFinder, mapping, entry);
                                 if (assignedHost != null && !StringUtils.equals(entry, assignedHost)) {
-                                    entries[i] = assignedHost;
+                                    updatedEntries.add("#auto assigned correct plugin:" + entry + "->" + assignedHost);
+                                    updatedEntries.add(assignedHost);
+                                } else {
+                                    updatedEntries.add(entry);
                                 }
                             }
                         }
                     }
                 }
             }
-            filter.setEntries(entries);
+            filter.setEntries(updatedEntries.toArray(new String[0]));
         }
     }
 

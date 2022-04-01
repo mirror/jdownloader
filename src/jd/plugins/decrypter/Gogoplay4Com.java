@@ -113,23 +113,27 @@ public class Gogoplay4Com extends PluginForDecrypt {
         String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final UrlQuery firstCaptcha = new UrlQuery();
-        String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+        final String recaptchaV3Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
             @Override
             public TYPE getType() {
                 return TYPE.INVISIBLE;
             }
         }.getToken();
-        firstCaptcha.add("captcha_v3", Encoding.urlEncode(recaptchaV2Response));
+        firstCaptcha.add("captcha_v3", Encoding.urlEncode(recaptchaV3Response));
         firstCaptcha.add("id", Encoding.urlEncode(id));
         br.postPage("/download", firstCaptcha);
         if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha.render") && br.containsHTML("captcha_v2"))) {
             /* 2022-03-24: Can be two captchas required?! */
             final UrlQuery nextCaptcha = new UrlQuery();
-            recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            final String siteKey = br.getRegex("site_key\\s*=\\s*'(" + AbstractRecaptchaV2.apiKeyRegex + ")'").getMatch(0);
+            if (siteKey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, siteKey).getToken();
             nextCaptcha.add("captcha_v2", Encoding.urlEncode(recaptchaV2Response));
             nextCaptcha.add("id", Encoding.urlEncode(id));
             br.postPage("/download", nextCaptcha);
-            if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
+            if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha.render") && br.containsHTML("captcha_v2"))) {
                 /* Website prompts for captcha again -> Should never happen */
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

@@ -256,7 +256,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         return getSiteKey(br != null ? br.toString() : null);
     }
 
-    private final static String apiKeyRegex = "[\\w-_]{6,}";
+    public final static String apiKeyRegex = "[\\w-_]{16,}";
 
     public final static boolean isValidSiteKey(final String siteKey) {
         return siteKey != null && siteKey.matches("(?i)^" + apiKeyRegex + "$");
