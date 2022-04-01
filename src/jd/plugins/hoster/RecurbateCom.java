@@ -38,7 +38,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -145,6 +145,9 @@ public class RecurbateCom extends antiDDoSForHost {
         if (!this.attemptStoredDownloadurlDownload(link, directurlproperty, resume, free_maxchunks)) {
             requestFileInformation(link);
             checkErrors(br, account);
+            if (account != null && !this.isLoggedin(br)) {
+                throw new AccountUnavailableException("Session expired?", 30 * 1000l);
+            }
             final String token = br.getRegex("data-token=\"([a-f0-9]{64})\"").getMatch(0);
             if (token == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -160,19 +163,13 @@ public class RecurbateCom extends antiDDoSForHost {
             query.add("token", token);
             brc.getPage("/api/get.php?" + query.toString());
             if (brc.toString().equalsIgnoreCase("shall_signin")) {
-                /* Free users can watch one video per IP per X time. */
-                if (account != null) {
-                    /* This should not happen when user is logged in but I guess it can happen for free accounts. */
-                    throw new AccountRequiredException();
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-                }
+                /**
+                 * Free users can watch one video per IP per X time. </br>
+                 * This error should only happen in logged-out state.
+                 */
+                errorDailyDownloadlimitReached(account);
             } else if (brc.toString().equalsIgnoreCase("shall_subscribe")) {
-                if (account != null) {
-                    throw new AccountUnavailableException("Daily downloadlimit reached", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 60 * 60 * 1000l);
-                }
+                errorDailyDownloadlimitReached(account);
             }
             final String dllink = brc.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\" />").getMatch(0);
             if (dllink == null) {
@@ -201,6 +198,14 @@ public class RecurbateCom extends antiDDoSForHost {
             link.setProperty(directurlproperty, dl.getConnection().getURL().toString());
         }
         dl.startDownload();
+    }
+
+    private void errorDailyDownloadlimitReached(final Account account) throws PluginException {
+        if (account != null) {
+            throw new AccountUnavailableException("Daily downloadlimit reached", 60 * 60 * 1000l);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 10 * 60 * 1000l);
+        }
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
@@ -233,37 +238,35 @@ public class RecurbateCom extends antiDDoSForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
-                if (cookies == null && userCookies == null) {
-                    /* 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment. */
+                if (userCookies == null) {
+                    /**
+                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br>
+                     * Login page: https://recurbate.com/signin
+                     */
                     /* Only display cookie login instructions on first login attempt */
                     if (!account.hasEverBeenValid()) {
                         showCookieLoginInformation();
                     }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Cookie login required");
                 }
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                } else {
-                    /* First login attempt with user cookies. */
-                    logger.info("Attempting user cookie login");
-                    this.br.setCookies(this.getHost(), userCookies);
-                }
-                if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                    logger.info("Cookies are still fresh --> Trust cookies without login");
+                logger.info("Attempting user cookie login");
+                this.br.setCookies(this.getHost(), userCookies);
+                if (!force) {
+                    /* Do not validate cookies */
                     return false;
                 }
                 br.getPage("https://" + this.getHost() + "/account.php");
-                if (this.isLoggedin()) {
-                    logger.info("Cookie login successful");
-                    /* Refresh cookie timestamp */
-                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                if (this.isLoggedin(br)) {
+                    logger.info("User cookie login successful");
                     return true;
                 } else {
                     logger.info("Cookie login failed");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException("Login cookies expired");
+                    } else {
+                        throw new AccountInvalidException("Login cookies invalid");
+                    }
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -274,8 +277,12 @@ public class RecurbateCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedin() {
-        return br.containsHTML("/signout\"");
+    private boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("/signout\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private Thread showCookieLoginInformation() {
@@ -340,7 +347,6 @@ public class RecurbateCom extends antiDDoSForHost {
             account.setConcurrentUsePossible(true);
             account.setMaxSimultanDownloads(premium_maxdownloads);
             ai.setStatus(plan);
-            ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(free_maxdownloads);
