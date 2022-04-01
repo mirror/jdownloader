@@ -371,17 +371,17 @@ public class TwitterCom extends PluginForHost {
                     }
                 }
             } else { // TYPE_DIRECT - jpg/png/mp4
-                if (link.getDownloadURL().contains("jpg") || link.getDownloadURL().contains("png")) {
-                    if (link.getDownloadURL().contains(":large")) {
-                        dllink = link.getDownloadURL().replace(":large", "") + ":orig";
-                    } else if (link.getDownloadURL().matches("(?i).+\\.(jpg|jpeg|png)$")) {
+                if (link.getPluginPatternMatcher().contains("jpg") || link.getPluginPatternMatcher().contains("png")) {
+                    if (link.getPluginPatternMatcher().contains(":large")) {
+                        dllink = link.getPluginPatternMatcher().replaceFirst(":large", "") + ":orig";
+                    } else if (link.getPluginPatternMatcher().matches("(?i).+\\.(jpg|jpeg|png)$")) {
                         /* Append this to get the highest quality possible */
-                        dllink = link.getDownloadURL() + ":orig";
+                        dllink = link.getPluginPatternMatcher() + ":orig";
                     } else {
-                        dllink = link.getDownloadURL();
+                        dllink = link.getPluginPatternMatcher();
                     }
                 } else {
-                    dllink = link.getDownloadURL();
+                    dllink = link.getPluginPatternMatcher();
                 }
             }
             if (!StringUtils.isEmpty(dllink)) {
@@ -434,15 +434,7 @@ public class TwitterCom extends PluginForHost {
                             } catch (IOException e) {
                                 logger.log(e);
                             }
-                            if (con.getResponseCode() == 404) {
-                                /* Definitely offline */
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            } else if (con.getResponseCode() == 503) {
-                                /* 2021-06-24: Possible rate-limit */
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + con.getResponseCode(), 5 * 60 * 1000l);
-                            }
+                            handleServerErrorsLastResort(con);
                         }
                         if (con.getCompleteContentLength() <= 0) {
                             /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
@@ -490,7 +482,11 @@ public class TwitterCom extends PluginForHost {
 
     /** Returns true if last download attempt lead to empty file. */
     private boolean looksLikeBrokenVideoStream(final DownloadLink link) {
-        return link.getBooleanProperty(PROPERTY_BROKEN_VIDEO_STREAM, false);
+        if (link.hasProperty(PROPERTY_BROKEN_VIDEO_STREAM)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Returns text of this tweet. Can be null as not all tweets have a post-text! */
@@ -551,17 +547,12 @@ public class TwitterCom extends PluginForHost {
             } else {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), MAXCHUNKS);
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    if (dl.getConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
-                    } else if (dl.getConnection().getResponseCode() == 429) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
-                    }
                     try {
                         br.followConnection(true);
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    handleServerErrorsLastResort(dl.getConnection());
                 } else if (dl.getConnection().getCompleteContentLength() == 0) {
                     /*
                      * 2021-09-13: E.g. broken videos: HEAD request looks good but download-attepmpt will result in empty file --> Catch
@@ -575,6 +566,21 @@ public class TwitterCom extends PluginForHost {
                 }
                 dl.startDownload();
             }
+        }
+    }
+
+    private void handleServerErrorsLastResort(final URLConnectionAdapter con) throws PluginException {
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403: Profile which posted this media has been deleted?", 10 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
+        } else if (con.getResponseCode() == 503) {
+            /* 2021-06-24: Possible rate-limit */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
     }
 
