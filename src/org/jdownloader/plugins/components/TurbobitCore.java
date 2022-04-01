@@ -6,9 +6,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -16,7 +13,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -34,7 +30,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
-import jd.utils.JDHexUtils;
 
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -44,9 +39,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -457,22 +450,6 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
-    protected String IMAGEREGEX(final String b) {
-        final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
-        /*
-         * CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset!
-         */
-        final byte[] o = JDHash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + JDHash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
-        /*
-         * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
-         */
-        if (b != null) {
-            return new String(v.D(o, JDHexUtils.getByteArray(b)));
-        } else {
-            return new String(v.D(o, JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
-        }
-    }
-
     protected boolean processCaptchaForm(final DownloadLink link, final Account account, final Form captchaform, final Browser br, final boolean optionalCaptcha) throws PluginException, InterruptedException {
         if (containsHCaptcha(br)) {
             final String response = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
@@ -490,6 +467,15 @@ public class TurbobitCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             return false;
+        }
+    }
+
+    protected void handleWaitingTime(final Browser br, final DownloadLink downloadLink, final Account account) throws Exception {
+        final String waittime = br.getRegex("limit\\s?:\\s?(\\d+)\\s*,").getMatch(0);
+        if (waittime != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
+        } else if (br.containsHTML("Timeout\\.limit\\s*>\\s*0")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001l);
         }
     }
 
@@ -516,22 +502,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 /* 2019-04-24: This should not happen anymore but still we should retry if it happens. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Captcha form fail", 1 * 60 * 1000l);
             }
-            /* Don't give up yet - check for waittime! */
-            String waittime;
-            if (br.containsHTML(tb(0))) {
-                waittime = br.getRegex(tb(1)).getMatch(0);
-                final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
-                if (wait > 31) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-                } else if (wait < 0) {
-                } else {
-                    sleep(wait * 1000l, link);
-                }
-            }
-            waittime = br.getRegex(tb(1)).getMatch(0);
-            if (waittime != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
-            }
+            handleWaitingTime(br, link, account);
             /* Give up */
             logger.warning("captchaform equals null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -556,15 +527,12 @@ public class TurbobitCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         final String continueLink = br.getRegex("\\$\\('#timeoutBox'\\)\\.load\\(\"(/[^\"]+)\"\\);").getMatch(0);
-        // if (continueLink == null) {
-        // /* Fallback */
-        // continueLink = "/download/getLinkTimeout/" + this.getFUID(link);
-        // }
         if (continueLink == null) {
+            handleWaitingTime(br, link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Pre download wait */
-        int waitSeconds = getPreDownloadWaittime(br);
+        final int waitSeconds = getPreDownloadWaittime(br);
         if (waitSeconds > 250) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", waitSeconds * 1001l);
         }
@@ -1116,25 +1084,6 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
-    private String parseImageUrl(String fun, final boolean NULL) {
-        if (fun == null) {
-            return null;
-        }
-        if (!NULL) {
-            final String[] next = fun.split(tb(9));
-            if (next == null || next.length != 2) {
-                fun = rhino(fun, 0);
-                if (fun == null) {
-                    return null;
-                }
-                fun = new Regex(fun, tb(4)).getMatch(0);
-                return fun == null ? new Regex(fun, tb(5)).getMatch(0) : rhino(fun, 2);
-            }
-            return rhino(next[1], 1);
-        }
-        return new Regex(fun, tb(1)).getMatch(0);
-    }
-
     public String getMainpage() {
         if (supports_https()) {
             return "https://" + this.getConfiguredDomain() + "/";
@@ -1151,45 +1100,6 @@ public class TurbobitCore extends antiDDoSForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-    private String rhino(final String s, final int b) {
-        Object result = new Object();
-        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            switch (b) {
-            case 0:
-                engine.eval(s + tb(6));
-                result = engine.get(tb(7));
-                break;
-            case 1:
-                result = ((Double) engine.eval(tb(8))).longValue();
-                break;
-            case 2:
-                engine.eval("var out=\"" + s + "\";");
-                result = engine.get("out");
-                break;
-            case 100:
-                String[] code = s.split("@");
-                engine.eval(code[0] + "var b = 3;var inn = \'" + code[1] + "\';" + code[2]);
-                result = engine.get("out");
-                break;
-            case 666:
-                code = s.split("@");
-                engine.eval(code[0] + "var b = 1;var inn = \'" + code[1] + "\';" + code[2]);
-                result = engine.get("out");
-                break;
-            case 999:
-                code = s.split("@");
-                engine.eval("var b = 2;var inn = \'" + code[0] + "\';" + code[1]);
-                result = engine.get("out");
-                break;
-            }
-        } catch (final Throwable e) {
-            return null;
-        }
-        return result != null ? result.toString() : null;
-    }
-
     /** For some hosts, users can configure their preferred domain. */
     protected String getConfiguredDomain() {
         return this.getHost();
@@ -1199,23 +1109,6 @@ public class TurbobitCore extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_FREE_PARALLEL_DOWNLOADSTARTS, "Activate parallel downloadstarts in free mode?\r\n<html><p style=\"color:#F62817\"><b>Warning: This setting can lead to a lot ofnon-accepted captcha popups!</b></p></html>").setDefaultValue(false));
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "APIKEY", "Define custom APIKey (can be
         // found on website in account settings ['/user/settings'])").setDefaultValue(""));
-    }
-
-    private String tb(final int i) {
-        final String[] s = new String[12];
-        s[0] = "fe8cfbfafa57cde31bc2b798df5141ab2dc171ec0852d89a1a135e3f116c83d15d8bf93a";
-        s[1] = "fddbfbfafa57cdef1a90b5cedf5647ae2cc572ec0958dd981e125c68156882d65d82f869";
-        s[2] = "fdd9fbf2fb05cde71a97b69edf5742f1289470bb0a5bd9c81a1b5e39116c85805982fc6e880ce26a201651b8ea211874e4232d90c59b6462ac28d2b26f0537385fa6";
-        s[3] = "f980f8f7fa0acdb21b91b6cbdf5043fc2ac775ea080fd8c71a4f5d68156586d05982fd3e8b5ae33f244555e8eb201d77e12128cbc1c7";
-        s[4] = "f980ffa5fa07cdb01a93b6c8de0642ae299571bb0c0ddb9c1a1b5b6f143d84855ddfff6b8b5de66e254553eeea751d72e17e2d98c19a6760af75d6b46b05";
-        s[5] = "f980ffa5f951ceb31ec7b3c8da5246fa2ac770bc0b0fdc9c1e13";
-        s[6] = "fc8efbf2fb01c9e61bc2b798df5146f82cc075bf0b5fd8c71a4e5f3e153a8781588ff86f890de26a221050eaee701824e4742d9cc1c66238a973";
-        s[7] = "fddefaf6fb07";
-        s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
-        s[9] = "ff88";
-        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ea523acfb545fd8adb";
-        s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
-        return JDHexUtils.toString(IMAGEREGEX(s[i]));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

@@ -19,11 +19,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
@@ -137,7 +137,7 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             /** shortawy.com links */
             "shortawy.com",
             /** up4cash.com links */
-            "up4cash.com" };
+            "up4cash.com"                                       };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */
@@ -171,7 +171,7 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
         final String host = getHostsPattern();
         /* [a-zA-Z0-9]{2,} will work for 99% but site shortit.ca is not compatible. */
         /* 2019-04-25: Added special pattern for direct-redirects of clicksfly.com domains('/entrar/...') */
-        return new String[] { host + "/(entrar/[A-Za-z0-9\\-]+|[a-zA-Z0-9]{2,}/?)" };
+        return new String[] { host + "/(entrar/[A-Za-z0-9\\-]+|(?!full)[a-zA-Z0-9]{2,}/?)" };
     }
 
     private static String getHostsPattern() {
