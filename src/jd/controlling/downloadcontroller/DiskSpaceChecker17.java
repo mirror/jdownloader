@@ -52,15 +52,16 @@ public class DiskSpaceChecker17 extends DiskSpaceChecker {
         }
     }
 
+    @Override
     protected void log(Throwable e) {
-        if (e instanceof InvalidPathException) {
+        if (Exceptions.containsInstanceOf(e, InvalidPathException.class)) {
             if (invalidPathExceptionThrown) {
                 return;
             } else {
                 invalidPathExceptionThrown = true;
             }
         }
-        getLogger().log(e);
+        super.log(e);
     }
 
     @Override
