@@ -6,15 +6,16 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files17;
 import org.appwork.utils.StringUtils;
 
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+
 public class DiskSpaceChecker17 extends DiskSpaceChecker {
     protected static boolean MOUNT_POINT_NOT_FOUND_IN_FSTAB = false;
+    private boolean          invalidPathExceptionThrown     = false;
 
     public DiskSpaceChecker17(DiskSpaceReservation diskSpaceReservation, final Object requestor) {
         super(diskSpaceReservation, requestor);
@@ -51,6 +52,17 @@ public class DiskSpaceChecker17 extends DiskSpaceChecker {
         }
     }
 
+    protected void log(Throwable e) {
+        if (e instanceof InvalidPathException) {
+            if (invalidPathExceptionThrown) {
+                return;
+            } else {
+                invalidPathExceptionThrown = true;
+            }
+        }
+        getLogger().log(e);
+    }
+
     @Override
     protected void findRoots() {
         if (!MOUNT_POINT_NOT_FOUND_IN_FSTAB) {
@@ -82,7 +94,7 @@ public class DiskSpaceChecker17 extends DiskSpaceChecker {
                 if (e instanceof IOException && StringUtils.contains(e.getMessage(), "Mount point not found in fstab")) {
                     MOUNT_POINT_NOT_FOUND_IN_FSTAB = true;
                 }
-                getLogger().log(e);
+                log(e);
             }
         }
         if (roots.size() == 0) {
@@ -100,7 +112,7 @@ public class DiskSpaceChecker17 extends DiskSpaceChecker {
                     return ret.longValue();
                 }
             } catch (Throwable e) {
-                getLogger().log(e);
+                log(e);
             }
         }
         return super.getUsableSpace();

@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.extraction.bindings.file;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,8 +9,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -22,6 +21,8 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 import org.jdownloader.extensions.extraction.split.SplitType;
 import org.jdownloader.settings.GeneralSettings;
+
+import jd.plugins.DownloadLink;
 
 public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactory {
     private final Archive origin;
@@ -41,26 +42,29 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
 
     protected List<File> findFiles(Pattern pattern, File directory) {
         if (Application.getJavaVersion() >= Application.JAVA17) {
-            return new FileArchiveFactoryNIO().findFiles(pattern, directory);
-        } else {
-            final ArrayList<File> ret = new ArrayList<File>();
-            if (pattern != null && directory != null && directory.isDirectory()) {
-                final String[] directoryFiles = directory.list();
-                if (directoryFiles != null) {
-                    final String absoluteDirectoryPath = directory.getAbsolutePath();
-                    for (final String directoryFile : directoryFiles) {
-                        final String directoryFilePath = absoluteDirectoryPath + File.separator + directoryFile;
-                        if (pattern.matcher(directoryFilePath).matches()) {
-                            final File dFile = new File(directory, directoryFile);
-                            if (dFile.isFile()) {
-                                ret.add(dFile);
-                            }
+            try {
+                return FileArchiveFactoryNIO.findFiles(pattern, directory);
+            } catch (IOException e) {
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+            }
+        }
+        final ArrayList<File> ret = new ArrayList<File>();
+        if (pattern != null && directory != null && directory.isDirectory()) {
+            final String[] directoryFiles = directory.list();
+            if (directoryFiles != null) {
+                final String absoluteDirectoryPath = directory.getAbsolutePath();
+                for (final String directoryFile : directoryFiles) {
+                    final String directoryFilePath = absoluteDirectoryPath + File.separator + directoryFile;
+                    if (pattern.matcher(directoryFilePath).matches()) {
+                        final File dFile = new File(directory, directoryFile);
+                        if (dFile.isFile()) {
+                            ret.add(dFile);
                         }
                     }
                 }
             }
-            return ret;
         }
+        return ret;
     }
 
     public java.util.List<ArchiveFile> createPartFileList(String file, String patternString) {

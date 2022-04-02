@@ -43,18 +43,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.packagecontroller.PackageController;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkProperty;
-import jd.plugins.DownloadLinkStorable;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageProperty;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -97,6 +85,18 @@ import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GeneralSettings.CreateFolderTrigger;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.packagecontroller.PackageController;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.DownloadLinkStorable;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
     private final transient DownloadControllerEventSender eventSender         = new DownloadControllerEventSender();
@@ -440,7 +440,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 logger.log(e);
             }
         }
-        if (filesInCfg == null) {
+        if (filesInCfg == null || filesInCfg.length == 0) {
             filesInCfg = Application.getResource("cfg/").listFiles();
         }
         ArrayList<Long> sortedAvailable = new ArrayList<Long>();
