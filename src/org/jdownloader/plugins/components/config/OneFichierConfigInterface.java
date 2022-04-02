@@ -14,6 +14,8 @@ import org.jdownloader.translate._JDT;
 
 @PluginHost(host = "1fichier.com", type = Type.HOSTER)
 public interface OneFichierConfigInterface extends PluginConfigInterface {
+    public static final OneFichierConfigInterface.OneFichierConfigInterfaceTranslation TRANSLATION = new OneFichierConfigInterfaceTranslation();
+
     public static class OneFichierConfigInterfaceTranslation {
         public String getPreferReconnectEnabled_label() {
             return _JDT.T.lit_prefer_reconnect();
@@ -32,7 +34,7 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
         }
 
         public String getMaxPremiumChunks_label() {
-            return "Max number of chunks(premium account)? See https://1fichier.com/hlp.html#dllent";
+            return "Max number of chunks(premium account)? See 1fichier.com/hlp.html#dllent";
         }
 
         public String getGlobalRequestIntervalLimit1fichierComMilliseconds_label() {
@@ -43,8 +45,6 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
             return "Define global request limit for api.1fichier.com milliseconds";
         }
     }
-
-    public static final OneFichierConfigInterface.OneFichierConfigInterfaceTranslation TRANSLATION = new OneFichierConfigInterfaceTranslation();
 
     @AboutConfig
     @DefaultBooleanValue(false)
