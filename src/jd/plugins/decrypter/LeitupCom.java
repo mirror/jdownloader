@@ -63,15 +63,26 @@ public class LeitupCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(param.getCryptedUrl());
+        while (!isAbort()) {
+            final String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                break;
+            } else if (canHandle(redirect)) {
+                br.followRedirect();
+            } else {
+                decryptedLinks.add(this.createDownloadlink(redirect));
+                return decryptedLinks;
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
             /* E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String finallink = br.getRegex("type=\"text\" placeholder=\"(https?://[^\"]+)").getMatch(0);
+        final String finallink = br.getRegex("type\\s*=\\s*\"text\"\\s*placeholder\\s*=\\s*\"(https?://[^\"]+)").getMatch(0);
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
