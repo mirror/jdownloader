@@ -43,8 +43,12 @@ public class DiskSpaceChecker {
                 roots.addIfAbsent(realRoot.toString());
             }
         } catch (IOException e) {
-            getLogger().log(e);
+            log(e);
         }
+    }
+
+    protected void log(Throwable e) {
+        getLogger().log(e);
     }
 
     public List<String> getRoots() {
