@@ -84,7 +84,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private static final String                  TYPE_PROFILE          = "(?i)https?://[^/]+/([^/]+)(?:/.*)?";
     private static final String                  TYPE_PROFILE_TAGGED   = "(?i)https?://([^/]+)/tagged/?";
     private static final String                  TYPE_GALLERY          = "(?i).+/(?:p|tv|reel)/([A-Za-z0-9_-]+)/?";
-    private static final String                  TYPE_STORY            = "(?i)https?://[^/]+/stories/([^/]+)/(\\d+)/?";
+    private static final String                  TYPE_STORY            = "(?i)https?://[^/]+/stories/([^/]+)/(\\d+)?/?";
     private static final String                  TYPE_STORY_HIGHLIGHTS = "(?i)https?://[^/]+/stories/highlights/(\\d+)/?";
     private static final String                  TYPE_SAVED_OBJECTS    = "(?i)https?://[^/]+/([^/]+)/saved/?$";
     private static final String                  TYPE_TAGS             = "(?i)https?://[^/]+/explore/tags/([^/]+)/?$";
