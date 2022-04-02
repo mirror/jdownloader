@@ -3845,65 +3845,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Stored login-Cookies are available");
-                    br.setCookies(getMainPage(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust login-cookies without checking as they should still be fresh");
-                        return false;
-                    } else {
-                        logger.info("Verifying login-cookies");
-                        getPage(getMainPage() + getRelativeAccountInfoURL());
-                        if (isLoggedin(this.br)) {
-                            logger.info("Successfully logged in via cookies");
-                            account.saveCookies(br.getCookies(getMainPage()), "");
-                            return true;
-                        } else {
-                            logger.info("Cookie login failed");
-                        }
-                    }
-                }
-                /*
-                 * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a captcha.
-                 * Example: filejoker.net
-                 */
-                logger.info("Full login required");
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
-                if (userCookies != null) {
-                    /* Fallback */
-                    logger.info("Verifying user-login-cookies");
-                    br.clearCookies(this.getHost());
-                    br.setCookies(getMainPage(), userCookies);
-                    getPage(getMainPage() + getRelativeAccountInfoURL());
-                    if (isLoggedin(this.br)) {
-                        logger.info("Successfully logged in via cookies");
-                        account.saveCookies(br.getCookies(getMainPage()), "");
-                        String cookiesUsername = br.getCookie(br.getHost(), "login", Cookies.NOTDELETEDPATTERN);
-                        if (StringUtils.isEmpty(cookiesUsername)) {
-                            cookiesUsername = br.getCookie(br.getHost(), "email", Cookies.NOTDELETEDPATTERN);
-                        }
-                        if (!StringUtils.isEmpty(cookiesUsername)) {
-                            cookiesUsername = Encoding.htmlDecode(cookiesUsername).trim();
-                            /**
-                             * During cookie login, user can enter whatever he wants into username field.</br>
-                             * Most users will enter their real username but to be sure to have unique usernames we don't trust them and try
-                             * to get the real username out of our cookies.
-                             */
-                            if (!StringUtils.isEmpty(cookiesUsername) && !account.getUser().equals(cookiesUsername)) {
-                                account.setUser(cookiesUsername);
-                            }
-                        }
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException("Login cookies expired");
-                        } else {
-                            throw new AccountInvalidException("Login cookies invalid");
-                        }
-                    }
-                } else if (this.requiresCookieLogin()) {
+                if (userCookies == null && this.requiresCookieLogin()) {
                     /**
                      * Cookie login required but user did not put cookies into the password field: </br>
                      * Ask user to login via exported browser cookies e.g. xubster.com.
@@ -3911,6 +3854,63 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     showCookieLoginInformation();
                     throw new AccountInvalidException("Cookie login required");
                 }
+                if (userCookies != null) {
+                    br.setCookies(getMainPage(), userCookies);
+                    if (!validateCookies) {
+                        /* Trust cookies without check */
+                        return false;
+                    }
+                    if (this.verifyCookies(account, userCookies)) {
+                        /**
+                         * If user enters cookies to login he can enter whatever he wants into the "username" field but we want unique
+                         * usernames --> Try to find real username of added account and set it.
+                         */
+                        String cookiesUsername = br.getCookie(br.getHost(), "login", Cookies.NOTDELETEDPATTERN);
+                        if (StringUtils.isEmpty(cookiesUsername)) {
+                            cookiesUsername = br.getCookie(br.getHost(), "email", Cookies.NOTDELETEDPATTERN);
+                        }
+                        if (!StringUtils.isEmpty(cookiesUsername)) {
+                            cookiesUsername = Encoding.htmlDecode(cookiesUsername).trim();
+                        }
+                        /**
+                         * During cookie login, user can enter whatever he wants into username field.</br>
+                         * Most users will enter their real username but to be sure to have unique usernames we don't trust them and try to
+                         * get the real username out of our cookies.
+                         */
+                        if (StringUtils.isEmpty(cookiesUsername)) {
+                            /* Not a major problem but worth logging. */
+                            logger.warning("Failed to find username via cookie");
+                        } else {
+                            logger.info("Found username by cookie: " + cookiesUsername);
+                            if (!account.getUser().equals(cookiesUsername)) {
+                                logger.info("Setting new username by cookie | New: " + cookiesUsername + " | Old: " + account.getUser());
+                                account.setUser(cookiesUsername);
+                            }
+                        }
+                        return true;
+                    } else {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException("Login cookies expired");
+                        } else {
+                            throw new AccountInvalidException("Login cookies invalid");
+                        }
+                    }
+                } else if (cookies != null) {
+                    br.setCookies(getMainPage(), cookies);
+                    if (!validateCookies) {
+                        /* Trust cookies without check */
+                        return false;
+                    }
+                    if (this.verifyCookies(account, cookies)) {
+                        account.saveCookies(br.getCookies(getMainPage()), "");
+                        return true;
+                    }
+                }
+                logger.info("Full login required");
+                /*
+                 * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a captcha.
+                 * Example: filejoker.net
+                 */
                 int login_counter = 1;
                 final int maxLoginAttempts = 3;
                 br.clearCookies(getMainPage());
@@ -3999,6 +3999,20 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             } finally {
                 br.setFollowRedirects(followRedirects);
             }
+        }
+    }
+
+    /** Sets given cookies and checks if we can login with them. */
+    protected boolean verifyCookies(final Account account, final Cookies cookies) throws Exception {
+        br.setCookies(getMainPage(), cookies);
+        getPage(getMainPage() + getRelativeAccountInfoURL());
+        if (isLoggedin(this.br)) {
+            logger.info("Successfully logged in via cookies");
+            return true;
+        } else {
+            logger.info("Cookie login failed");
+            br.clearCookies(br.getHost());
+            return false;
         }
     }
 

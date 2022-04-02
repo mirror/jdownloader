@@ -1722,30 +1722,32 @@ public class YetiShareCore extends antiDDoSForHost {
                 prepBrowser(this.br, account.getHoster());
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                if (userCookies != null) {
+                    this.br.setCookies(this.getHost(), userCookies);
                     if (!force) {
-                        logger.info("Trust given login cookies");
+                        /* Trust cookies without checking */
                         return false;
                     }
-                    logger.info("Verifying login-cookies");
-                    getPage(this.getProtocol() + this.getHost());
-                    /* This is crucial!! */
-                    this.parseAndSetYetiShareVersion(br, account);
-                    getPage(this.getMainPage() + this.getAccountNameSpaceUpgrade(account));
-                    if (isLoggedin(this.br, account)) {
-                        /* Refresh stored cookies */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        /* Set/Update account-type */
-                        if (this.isPremiumAccount(account, br)) {
-                            setAccountLimitsByType(account, AccountType.PREMIUM);
-                        } else {
-                            setAccountLimitsByType(account, AccountType.FREE);
-                        }
-                        logger.info("Successfully logged in via cookies:" + account.getType());
+                    if (this.verifyCookies(account, userCookies)) {
                         return true;
                     } else {
-                        logger.info("Failed to login via cookies");
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException("Login cookies expired");
+                        } else {
+                            throw new AccountInvalidException("Login cookies invalid");
+                        }
+                    }
+                } else if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force) {
+                        /* Trust cookies without checking */
+                        return false;
+                    }
+                    if (this.verifyCookies(account, cookies)) {
+                        /* Refresh stored cookies */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
                     }
                 }
                 logger.info("Performing full login");
@@ -1844,12 +1846,41 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    /** Sets given cookies and checks if we can login with them. */
+    protected boolean verifyCookies(final Account account, final Cookies cookies) throws Exception {
+        this.br.setCookies(this.getHost(), cookies);
+        getPage(this.getProtocol() + this.getHost());
+        /* This is crucial!! */
+        this.parseAndSetYetiShareVersion(br, account);
+        getPage(this.getMainPage() + this.getAccountNameSpaceUpgrade(account));
+        if (isLoggedin(this.br, account)) {
+            /* Set/Update account-type */
+            if (this.isPremiumAccount(account, br)) {
+                setAccountLimitsByType(account, AccountType.PREMIUM);
+            } else {
+                setAccountLimitsByType(account, AccountType.FREE);
+            }
+            logger.info("Successfully logged in via cookies:" + account.getType());
+            return true;
+        } else {
+            logger.info("Failed to login via cookies");
+            br.clearCookies(br.getHost());
+            return false;
+        }
+    }
+
     public boolean isLoggedin(final Browser br, final Account account) throws PluginException {
         /**
-         * User is logged in when: 1. Logout button is visible or 2. When "Account Overview" Buttons is visible e.g. when on mainpage or
-         * trying to download a file.
+         * User is logged in when: 1. Logout button is visible or </br>
+         * 2. When "Account Overview" Buttons is visible e.g. when on mainpage or trying to download a file.
          */
-        return br.containsHTML(Pattern.quote(this.getAccountNameSpaceLogout(account)) + "\"") || br.containsHTML(Pattern.quote(this.getAccountNameSpaceHome(account)) + "\"");
+        if (br.containsHTML(Pattern.quote(this.getAccountNameSpaceLogout(account)) + "\"")) {
+            return true;
+        } else if (br.containsHTML(Pattern.quote(this.getAccountNameSpaceHome(account)) + "\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

@@ -87,7 +87,6 @@ public class OneFichierCom extends PluginForHost {
      * Max total connections for premium = 30 (RE: admin, updated 07.03.2019) --> See also their FAQ: https://1fichier.com/hlp.html#dllent
      */
     private static final boolean resume_account_premium            = true;
-    private static final int     maxchunks_account_premium         = -3;
     private static final int     maxdownloads_account_premium      = 10;
     /* 2015-07-10: According to admin, resume in free mode is not possible anymore. On attempt this will lead to 404 server error! */
     private static final int     maxchunks_free                    = 1;
@@ -539,7 +538,7 @@ public class OneFichierCom extends PluginForHost {
         } else if (ibr.getHttpConnection().getResponseCode() == 503 && ibr.containsHTML("(?i)>\\s*Our services are in maintenance\\.\\s*Please come back after")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster is in maintenance mode!", 20 * 60 * 1000l);
         } else {
-            ipBlockedErrorHandling(ibr);
+            ipBlockedErrorHandling(account, ibr);
         }
     }
 
@@ -567,11 +566,7 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /** Contains all errorhandling for IP related limits/errormessages. */
-    private static void ipBlockedErrorHandling(final Browser br) throws PluginException {
-        /**
-         * 2021-07-27: TODO: Maybe add a text-string representing a normalized English version of the actual errormessage. At this moment we
-         * show the same message no matter which errormessage is displayed on the 1fichier.com website.
-         */
+    private static void ipBlockedErrorHandling(final Account account, final Browser br) throws PluginException {
         String waittimeMinutesStr = br.getRegex("you must wait (at least|up to)\\s*(\\d+)\\s*minutes between each downloads").getMatch(1);
         if (waittimeMinutesStr == null) {
             waittimeMinutesStr = br.getRegex(">\\s*You must wait\\s*(\\d+)\\s*minutes").getMatch(0);
@@ -582,6 +577,7 @@ public class OneFichierCom extends PluginForHost {
         if (br.containsHTML("(?i)>\\s*IP Locked|>\\s*Will be unlocked within 1h\\.")) {
             waittimeMinutesStr = "60";
         }
+        final int defaultWaitMinutes = 5;
         boolean isBlocked = waittimeMinutesStr != null;
         isBlocked |= br.containsHTML("(?i)/>\\s*Téléchargements en cours");
         isBlocked |= br.containsHTML("(?i)En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier");
@@ -597,19 +593,29 @@ public class OneFichierCom extends PluginForHost {
         isBlocked |= br.containsHTML("(?i)Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.");
         isBlocked |= br.containsHTML("(?i)>\\s*Votre adresse IP ouvre trop de connexions vers le serveur");
         if (isBlocked) {
-            final boolean preferReconnect = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferReconnectEnabled();
-            if (waittimeMinutesStr != null && preferReconnect) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
-            } else if (waittimeMinutesStr != null && Integer.parseInt(waittimeMinutesStr) >= 10) {
-                /* High waittime --> Reconnect */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
-            } else if (preferReconnect) {
-                /* User prefers reconnect --> Throw Exception with LinkStatus to trigger reconnect */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-            } else if (waittimeMinutesStr != null) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
+            if (account != null) {
+                final long waitMilliseconds;
+                if (waittimeMinutesStr != null) {
+                    waitMilliseconds = Integer.parseInt(waittimeMinutesStr) * 60 * 1001l;
+                } else {
+                    waitMilliseconds = defaultWaitMinutes * 60 * 1000l;
+                }
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between downloads", waitMilliseconds);
             } else {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", 5 * 60 * 1001);
+                final boolean preferReconnect = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferReconnectEnabled();
+                if (waittimeMinutesStr != null && preferReconnect) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
+                } else if (waittimeMinutesStr != null && Integer.parseInt(waittimeMinutesStr) >= 10) {
+                    /* High waittime --> Reconnect */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
+                } else if (preferReconnect) {
+                    /* User prefers reconnect --> Throw Exception with LinkStatus to trigger reconnect */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, defaultWaitMinutes * 60 * 1000l);
+                } else if (waittimeMinutesStr != null) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", Integer.parseInt(waittimeMinutesStr) * 60 * 1001l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", defaultWaitMinutes * 60 * 1001);
+                }
             }
         }
     }
@@ -1241,12 +1247,7 @@ public class OneFichierCom extends PluginForHost {
                 }
             }
         }
-        try {
-            ipBlockedErrorHandling(br);
-        } catch (final PluginException e) {
-            /* Should be a very rare occurence in premium mode */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l, e);
-        }
+        ipBlockedErrorHandling(account, br);
         if (dllink == null) {
             /* The link is always SSL - based on user setting it will redirect to either https or http. */
             String postData = "did=0&";
