@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import org.appwork.utils.IO;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,6 +37,11 @@ public class Paste2Org extends PluginForHost {
     public Paste2Org(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.PASTEBIN };
     }
 
     @Override
@@ -81,10 +87,15 @@ public class Paste2Org extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
+        scanInfo(link, br);
+        return AvailableStatus.TRUE;
+    }
+
+    protected void scanInfo(final DownloadLink link, final Browser br) throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String textToSave = getPastebinText(this.br);
+        final String textToSave = getPastebinText(br);
         if (textToSave != null) {
             try {
                 link.setDownloadSize(textToSave.getBytes("UTF-8").length);
@@ -97,7 +108,6 @@ public class Paste2Org extends PluginForHost {
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-        return AvailableStatus.TRUE;
     }
 
     public static final String getPastebinText(final Browser br) {
