@@ -109,6 +109,8 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_internal_media_id               = "internal_media_id";
     public static final String  PROPERTY_orderid                         = "orderid";
     public static final String  PROPERTY_orderid_raw                     = "orderid_raw";
+    public static final String  PROPERTY_orderid_max_raw                 = "orderid_max_raw";                // number of items inside
+    // post/story
     public static final String  PROPERTY_shortcode                       = "shortcode";
     public static final String  PROPERTY_description                     = "description";
     public static final String  PROPERTY_uploader                        = "uploader";
@@ -476,16 +478,15 @@ public class InstaGramCom extends PluginForHost {
             }
         }
     }
-
-    public static String fixServerFilename(String server_filename, final String correctExtension) {
-        final String server_filename_ext = getFileNameExtensionFromString(server_filename, null);
-        if (correctExtension != null && server_filename_ext == null) {
-            server_filename += correctExtension;
-        } else if (correctExtension != null && !server_filename_ext.equalsIgnoreCase(correctExtension)) {
-            server_filename = server_filename.replace(server_filename_ext, correctExtension);
-        }
-        return server_filename;
-    }
+    // public static String fixServerFilename(String server_filename, final String correctExtension) {
+    // final String server_filename_ext = getFileNameExtensionFromString(server_filename, null);
+    // if (correctExtension != null && server_filename_ext == null) {
+    // server_filename += correctExtension;
+    // } else if (correctExtension != null && !server_filename_ext.equalsIgnoreCase(correctExtension)) {
+    // server_filename = server_filename.replace(server_filename_ext, correctExtension);
+    // }
+    // return server_filename;
+    // }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {

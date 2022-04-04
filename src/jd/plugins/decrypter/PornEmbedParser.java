@@ -979,18 +979,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // 2018-06-25 rapidvideo.com
-        externID = br.getRegex("(?:\\'|\")(https?://(?:www\\.)?rapidvideo.com/e/[A-Z0-9]+/?)(?:\\'|\")").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink(externID);
-            if (title != null) {
-                dl.setFinalFileName(title + ".mp4");
-            }
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         // 2018-01-07 Unknown? - directHTTP
         externID = br.getRegex("(https://cv.rdtcdn.com/[^\"]+)\"").getMatch(0);
         if (externID != null) {

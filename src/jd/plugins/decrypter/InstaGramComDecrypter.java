@@ -38,6 +38,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.FilenameType;
+import org.jdownloader.plugins.components.config.InstagramConfig.SinglePostPackagenameType;
 import org.jdownloader.plugins.components.instagram.Qdb;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -84,7 +86,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private static final String                  TYPE_PROFILE          = "(?i)https?://[^/]+/([^/]+)(?:/.*)?";
     private static final String                  TYPE_PROFILE_TAGGED   = "(?i)https?://([^/]+)/tagged/?";
     private static final String                  TYPE_GALLERY          = "(?i).+/(?:p|tv|reel)/([A-Za-z0-9_-]+)/?";
-    private static final String                  TYPE_STORY            = "(?i)https?://[^/]+/stories/([^/]+)/(\\d+)?/?";
+    private static final String                  TYPE_STORY            = "(?i)https?://[^/]+/stories/([^/]+)/((\\d+)/?)?";
     private static final String                  TYPE_STORY_HIGHLIGHTS = "(?i)https?://[^/]+/stories/highlights/(\\d+)/?";
     private static final String                  TYPE_SAVED_OBJECTS    = "(?i)https?://[^/]+/([^/]+)/saved/?$";
     private static final String                  TYPE_TAGS             = "(?i)https?://[^/]+/explore/tags/([^/]+)/?$";
@@ -1132,70 +1134,69 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (typename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type");
         }
-        String postID = (String) post.get("code");
-        if (postID == null) {
+        String mainContentID = (String) post.get("code");
+        if (mainContentID == null) {
             /* 2022-03-30: E.g. required when crawling posts in context of user-profile. */
-            postID = (String) post.get("shortcode");
+            mainContentID = (String) post.get("shortcode");
         }
-        if (StringUtils.isEmpty(postID)) {
+        if (StringUtils.isEmpty(mainContentID)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find postID");
         }
         boolean ownerHasPrivateProfile = false;
-        if (metadata == null || metadata.getUsername() == null) {
-            /* Find username if it is not pre-given. */
-            if (metadata == null) {
-                metadata = new InstagramMetadata();
+        if (metadata == null) {
+            metadata = new InstagramMetadata();
+        }
+        /* Find username if it is not pre-given. */
+        try {
+            Map<String, Object> ownerInfo = (Map<String, Object>) post.get("owner");
+            if (ownerInfo == null) {
+                // api
+                ownerInfo = (Map<String, Object>) post.get("user");
             }
-            try {
-                Map<String, Object> ownerInfo = (Map<String, Object>) post.get("owner");
-                if (ownerInfo == null) {
-                    // api
-                    ownerInfo = (Map<String, Object>) post.get("user");
-                }
-                String userID = StringUtils.valueOfOrNull(ownerInfo.get("id"));
-                if (userID == null) {
-                    // api
-                    userID = StringUtils.valueOfOrNull(ownerInfo.get("pk"));
-                }
-                if (userID == null) {
-                    /* Should always be given! */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                ownerHasPrivateProfile = ((Boolean) ownerInfo.get("is_private")).booleanValue();
-                /* Check if username is in json */
-                String username = (String) ownerInfo.get("username");
-                if (username != null) {
-                    /* Cache information for later usage just in case it isn't present in json the next time. */
-                    addCachedUserID(userID, username);
-                    metadata.setUsername(username);
-                } else if (cfg.isHashtagCrawlerFindUsernames()) {
-                    /* Find username "the hard way" */
-                    /* TODO: Check if this is still needed. This cannot work at this moment! */
-                    /* Check if we got this username cached */
-                    synchronized (ID_TO_USERNAME) {
-                        username = this.getCachedUserName(userID);
+            String userID = StringUtils.valueOfOrNull(ownerInfo.get("id"));
+            if (userID == null) {
+                // api
+                userID = StringUtils.valueOfOrNull(ownerInfo.get("pk"));
+            }
+            if (userID == null) {
+                /* Should always be given! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Boolean ownerHasPrivateProfileO = (Boolean) ownerInfo.get("is_private");
+            if (ownerHasPrivateProfileO != null) {
+                ownerHasPrivateProfile = ownerHasPrivateProfileO.booleanValue();
+            }
+            /* Check if username is in json */
+            String username = (String) ownerInfo.get("username");
+            if (username != null) {
+                /* Cache information for later usage just in case it isn't present in json the next time. */
+                addCachedUserID(userID, username);
+                metadata.setUsername(username);
+            } else {
+                /* Find username "the hard way" */
+                /* TODO: Not sure if this is still needed */
+                /* Check if we got this username cached */
+                synchronized (ID_TO_USERNAME) {
+                    username = this.getCachedUserName(userID);
+                    if (username == null) {
+                        /* HTTP request needed to find username! */
+                        username = this.getUsernameFromUserIDAltAPI(br, userID);
                         if (username == null) {
-                            /* HTTP request needed to find username! */
-                            username = this.getUsernameFromUserIDAltAPI(br, userID);
-                            if (username == null) {
-                                logger.warning("WTF failed to find username for userID: " + userID);
-                            }
+                            logger.warning("WTF failed to find username for userID: " + userID);
                         }
                     }
-                    if (username != null) {
-                        metadata.setUsername(username);
-                    }
-                } else {
-                    logger.info("Username not available for the following ID because this feature has been disabled by the user: " + postID);
                 }
-            } catch (final Throwable ignore) {
-                logger.log(ignore);
-                logger.warning("Error happened during username lookup");
+                if (username != null) {
+                    metadata.setUsername(username);
+                }
             }
+        } catch (final Throwable ignore) {
+            logger.log(ignore);
+            logger.warning("Error happened during username lookup");
         }
-        if (metadata.getUsername() == null && cfg.isHashtagCrawlerFindUsernames()) {
+        if (metadata.getUsername() == null) {
             /* This should never happen! */
-            logger.warning("WTF - failed to find username");
+            logger.warning("WTF - failed to find username for item: " + mainContentID);
         }
         final Object captionO = post.get("caption");
         String description = null;
@@ -1239,18 +1240,37 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported media type: " + typename);
         }
+        final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        final String dateFormatted = formatter.format(new Date(date * 1000));
         /* Create FilePackage if packagename is available */
         FilePackage fp = metadata.getFilePackage();
         if (fp == null) {
-            /* Fallback and handling for single posts */
+            /* Fallback + handling for single posts */
             fp = FilePackage.getInstance();
-            if (metadata.getUsername() != null) {
-                fp.setName(metadata.getUsername() + " - " + postID);
+            final String customPackageNameScheme = cfg.getPostCrawlerPackagenameScheme();
+            if (cfg.getPostCrawlerPackagenameType() == SinglePostPackagenameType.DEFAULT || StringUtils.isEmpty(customPackageNameScheme)) {
+                if (metadata.getUsername() != null) {
+                    fp.setName(metadata.getUsername() + " - " + mainContentID);
+                } else {
+                    fp.setName(mainContentID);
+                }
             } else {
-                fp.setName(postID);
+                /* Use User defined package names */
+                String customPackageName = customPackageNameScheme.replace("*date*", dateFormatted);
+                final String usernameForReplacer;
+                if (metadata.getUsername() != null) {
+                    usernameForReplacer = metadata.getUsername();
+                } else {
+                    usernameForReplacer = "-";
+                }
+                if (metadata.getUsername() != null) {
+                    customPackageName = customPackageName.replace("*uploader*", usernameForReplacer);
+                }
+                customPackageName = customPackageName.replace("*main_content_id*", mainContentID);
+                fp.setName(customPackageName);
             }
         }
-        final String postURL = this.generateURLPost(postID);
+        final String postURL = this.generateURLPost(mainContentID);
         final int padLength = StringUtils.getPadLength(mediaItems.size());
         int orderID = 1;
         for (Map<String, Object> media : mediaItems) {
@@ -1304,9 +1324,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final boolean isPartOfStory = Boolean.TRUE.equals(media.get("is_reel_media"));
             final DownloadLink dl = this.createDownloadlink(postURL);
             dl.setAvailable(true);
-            dl.setProperty(InstaGramCom.PROPERTY_main_content_id, postID);
-            final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-            final String dateFormatted = formatter.format(new Date(date * 1000));
+            dl.setProperty(InstaGramCom.PROPERTY_main_content_id, mainContentID);
             dl.setProperty(InstaGramCom.PROPERTY_date, dateFormatted);
             if (!StringUtils.isEmpty(shortcode)) {
                 dl.setProperty(InstaGramCom.PROPERTY_shortcode, shortcode);
@@ -1321,6 +1339,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             dl.setProperty(InstaGramCom.PROPERTY_orderid, String.format(Locale.US, "%0" + padLength + "d", orderID));
             dl.setProperty(InstaGramCom.PROPERTY_orderid_raw, orderID);
+            dl.setProperty(InstaGramCom.PROPERTY_orderid_max_raw, mediaItems.size());
             dl.setProperty(InstaGramCom.PROPERTY_internal_media_id, internalMediaID);
             if (!StringUtils.isEmpty(metadata.getUsername())) {
                 /* Packagizer Property */
@@ -1348,12 +1367,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             distribute(dl);
             orderID++;
         }
-        if (cfg.isAddPostDescriptionAsTextfile() && !StringUtils.isEmpty(description)) {
+        if (cfg.isPostCrawlerAddPostDescriptionAsTextfile() && !StringUtils.isEmpty(description)) {
             /* Download picture-description as .txt file */
             final DownloadLink lastAddedDownloadLink = decryptedLinks.get(decryptedLinks.size() - 1);
             final DownloadLink text = this.createDownloadlink(lastAddedDownloadLink.getPluginPatternMatcher() + "_description");
+            text.setProperties(lastAddedDownloadLink.getProperties());
             text.setProperty(InstaGramCom.PROPERTY_type, "text");
-            text.setProperty(InstaGramCom.PROPERTY_description, description);
+            /* Important!! This will be used in LinkID later! */
+            text.setProperty(InstaGramCom.PROPERTY_internal_media_id, mainContentID);
             /**
              * Determine filename based on whether or not we crawled a single media item or multiple ones. </br>
              * If there is only one media item we will use a filename that matches the one of this item otherwise we'll use "<main
@@ -1363,10 +1384,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             if (decryptedLinks.size() == 1) {
                 filename = lastAddedDownloadLink.getName().substring(0, lastAddedDownloadLink.getName().lastIndexOf(".")) + ".txt";
             } else if (metadata.getUsername() != null) {
-                filename = metadata.getUsername() + " - " + postID + ".txt";
+                filename = dateFormatted + "_" + metadata.getUsername() + " - " + mainContentID + ".txt";
             } else {
                 /* Fallback */
-                filename = postID + ".txt";
+                filename = mainContentID + ".txt";
             }
             text.setFinalFileName(filename);
             text.setProperty(InstaGramCom.PROPERTY_filename_from_crawler, filename);
@@ -1443,6 +1464,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             dl.setProperty(InstaGramCom.PROPERTY_orderid, String.format(Locale.US, "%0" + padLength + "d", orderID));
             dl.setProperty(InstaGramCom.PROPERTY_orderid_raw, orderID);
+            dl.setProperty(InstaGramCom.PROPERTY_orderid_max_raw, mediaItems.size());
             dl.setProperty(InstaGramCom.PROPERTY_internal_media_id, internalMediaID);
             dl.setProperty(InstaGramCom.PROPERTY_uploader, username);
             dl.setProperty(InstaGramCom.PROPERTY_is_part_of_story, true);
@@ -1460,6 +1482,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /** Returns filename for single media items --> Video/image as part of post/story. */
     public static String getFilename(final DownloadLink link) {
         /* Check for pre-defined filename */
         if (link.hasProperty(InstaGramCom.PROPERTY_filename_from_crawler)) {
@@ -1467,6 +1490,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final String dateFormatted = link.getStringProperty(InstaGramCom.PROPERTY_date);
         final String username = link.getStringProperty(InstaGramCom.PROPERTY_uploader);
+        final int orderid = link.getIntegerProperty(InstaGramCom.PROPERTY_orderid_raw);
+        final int orderid_max = link.getIntegerProperty(InstaGramCom.PROPERTY_orderid_max_raw);
         final String orderidFormatted = link.getStringProperty(InstaGramCom.PROPERTY_orderid);
         final String mainContentID = link.getStringProperty(InstaGramCom.PROPERTY_main_content_id);
         final String shortcode = link.getStringProperty(InstaGramCom.PROPERTY_shortcode);
@@ -1484,8 +1509,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } catch (final Throwable ignore) {
             }
         }
-        if (PluginJsonConfig.get(InstagramConfig.class).isPreferServerFilenames() && server_filename != null) {
-            server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
+        final InstagramConfig cfg = PluginJsonConfig.get(InstagramConfig.class);
+        final FilenameType ft = cfg.getFilenameType();
+        if (ft == FilenameType.SERVER && server_filename != null) {
+            // server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
             return server_filename;
         }
         String filename;
@@ -1535,7 +1562,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final boolean includeShortcodesInFilename;
             if (tryToAddOrderIDToFilename) {
                 /* Respect user-setting */
-                if (orderidFormatted != null) {
+                if (orderidFormatted != null && (orderid > 1 || orderid_max > 1)) {
+                    /*
+                     * Only add orderID to filename if mediaItem was added as part of multiple items e.g. story/post with more than 1 items.
+                     */
                     filename += " - " + orderidFormatted;
                 }
                 includeShortcodesInFilename = PluginJsonConfig.get(InstagramConfig.class).isAddShortcodeToFilenames();
@@ -1796,6 +1826,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return this.createOfflinelink(generateURLProfileSavedPosts(username), "PROFILE_CONTAINS_NO_SAVED_POSTS_" + username, "The following profile doesn't contain any saved posts: " + username);
     }
 
+    /** Crawls list of single /p/<postID> items. */
     private ArrayList<DownloadLink> crawlPostList(final CryptedLink param, List<Object> mediaItems, final InstagramMetadata metadata) throws PluginException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         for (final Object mediaItemO : mediaItems) {
@@ -1917,6 +1948,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             // fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
             fp.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, false);
             return fp;
+        }
+
+        public Object clone() throws CloneNotSupportedException {
+            return super.clone();
         }
     }
 
