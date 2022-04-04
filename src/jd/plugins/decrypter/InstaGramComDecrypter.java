@@ -121,6 +121,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final int maxtries = 30;
         long totalWaittime = 0;
         Request request = null;
+        boolean success = false;
         while (retry < maxtries && !isAbort()) {
             retry++;
             request = sourceRequest.cloneRequest();
@@ -148,7 +149,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } else if (responsecode == 403 || responsecode == 429) {
                 if (PluginJsonConfig.get(InstagramConfig.class).isCrawlerAbortOnRateLimitReached()) {
                     logger.info("abort_on_rate_limit_reached setting active --> Rate limit has been reached --> Aborting");
-                    break;
+                    throw new DecrypterRetryException(RetryReason.CAPTCHA, "RATE_LIMIT_REACHED_AND_ABORT_ON_RATE_LIMIT_ACTIVE_" + br._getURL().getPath(), "Rate limit has been reached and 'Abort on rate limit reached' is activated in plugin settings.");
                 } else {
                     final int waittime = 20000 + 15000 * retry;
                     totalWaittime += waittime;
@@ -156,11 +157,19 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     sleep(waittime, link);
                 }
             } else {
+                success = true;
                 break;
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 502) {
-            throw br.new BrowserException("ResponseCode: 502", br.getRequest(), null);
+        if (!success) {
+            if (br.getHttpConnection().getResponseCode() == 502) {
+                throw br.new BrowserException("ResponseCode: 502", br.getRequest(), null);
+            } else if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 429) {
+                throw new DecrypterRetryException(RetryReason.CAPTCHA, "RATE_LIMIT_REACHED_EXHAUSTED_RETRY_COUNT_" + br._getURL().getPath(), "Rate limit has been reached and crawler failed to avoid it. Try again later.");
+            } else {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else if (retry > 1) {
             logger.info("Total time waited to get around rate limit: " + TimeFormatter.formatMilliSeconds(totalWaittime, 0));
         }
@@ -603,26 +612,16 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         getPageAutoLogin(account, loggedIN, "/graphql/query", param, br, "/graphql/query/?query_hash=" + qdb.getQueryHash() + "&variables=" + URLEncode.encodeURIComponent(jsonString), rhxGis, jsonString);
                     } catch (final AccountRequiredException ar) {
                         logger.log(ar);
-                        /* Instagram blocks the amount of items a user can see based on */
+                        /* Instagram blocks the amount of items a user can see based on factors we don't know. */
                         if (loggedIN.get()) {
+                            /* We're logged in and still can't see the profile --> Something is wrong! */
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, ar);
                         } else {
                             final String errorText = "Account required to crawl more items of user " + username;
                             throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, errorText, errorText, ar);
                         }
                     }
-                    /* TODO: Move all of this errorhandling to one place */
-                    final int responsecode = br.getHttpConnection().getResponseCode();
-                    if (responsecode == 403 || responsecode == 429) {
-                        /* Stop on too many 403s as 403 is not a rate limit issue! */
-                        logger.warning("Failed to bypass rate-limit!");
-                        final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "FAILED_TO_BYPASS_RATE_LIMIT_" + username, "Failed to bypass rate-limit!");
-                        decryptedLinks.add(dummy);
-                        return decryptedLinks;
-                    } else if (responsecode == 439) {
-                        logger.info("Seems like user is using an unverified account - cannot grab more items");
-                        break;
-                    }
+                    InstaGramCom.checkErrors(br);
                     final Map<String, Object> response = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                     resource_data_list = (List) get(response, "data/user/edge_owner_to_timeline_media/edges", "data/user/edge_user_to_photos_of_you/edges");
                     nextid = (String) get(response, "data/user/edge_owner_to_timeline_media/page_info/end_cursor");
@@ -858,23 +857,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     }
                 }
                 InstaGramCom.checkErrors(br);
-                /*
-                 * 2020-11-06: TODO: Fix broken response: edge_owner_to_timeline_media instead of edge_saved_media ... Possibe reasons:
-                 * Wrong "end_cursor" String and/or wrong "query_hash".
-                 */
-                final int responsecode = br.getHttpConnection().getResponseCode();
-                if (responsecode == 404) {
-                    logger.warning("Error occurred: 404");
-                    return decryptedLinks;
-                } else if (responsecode == 403 || responsecode == 429) {
-                    /* Stop on too many 403s as 403 is not a rate limit issue! */
-                    final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "FAILED_TO_BYPASS_RATE_LIMIT_" + usernameURL, "Failed to bypass rate-limit!");
-                    decryptedLinks.add(dummy);
-                    return decryptedLinks;
-                } else if (responsecode == 439) {
-                    logger.info("Seems like user is using an unverified account - cannot grab more items");
-                    break;
-                }
                 entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 entries = (Map<String, Object>) entries.get("data");
             }
@@ -962,18 +944,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of hashtag " + hashtag, null, ar);
                     }
                 }
-                /* TODO: Move all of this errorhandling to one place */
-                final int responsecode = br.getHttpConnection().getResponseCode();
-                if (responsecode == 403 || responsecode == 429) {
-                    /* Stop on too many 403s as 403 is not a rate limit issue! */
-                    logger.warning("Failed to bypass rate-limit!");
-                    final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "FAILED_TO_BYPASS_RATE_LIMIT_" + hashtag, "Failed to bypass rate-limit!");
-                    decryptedLinks.add(dummy);
-                    return decryptedLinks;
-                } else if (responsecode == 439) {
-                    logger.info("Seems like user is using an unverified account - cannot grab more items");
-                    break;
-                }
+                InstaGramCom.checkErrors(br);
                 final Map<String, Object> paginationRoot = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 resource_data_list = (List<Object>) JavaScriptEngineFactory.walkJson(paginationRoot, "sections");
                 next_max_id = (String) get(paginationRoot, "next_max_id");
