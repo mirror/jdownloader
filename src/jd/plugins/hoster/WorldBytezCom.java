@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -60,7 +61,28 @@ public class WorldBytezCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return buildAnnotationUrlsWorldbytez(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrlsWorldbytez(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + XFileSharingProBasic.getDefaultAnnotationPatternPart();
+            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\?op=login\\&redirect=[a-z0-9]{12}";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static final String TYPE_SPECIAL = "https?://[^/]+/\\?op=login\\&redirect=([a-z0-9]+)";
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final Regex special = new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL);
+        if (special.matches()) {
+            link.setPluginPatternMatcher("https://" + this.getHost() + super.buildNormalURLPath(link, special.getMatch(0)));
+        }
+        super.correctDownloadLink(link);
     }
 
     @Override

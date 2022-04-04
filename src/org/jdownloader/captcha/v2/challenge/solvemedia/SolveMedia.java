@@ -29,6 +29,22 @@ public class SolveMedia {
     private boolean            clearReferer            = true;
     public Browser             smBr;
 
+    public static final boolean containsSolvemediaCaptcha(final Browser br) {
+        if (br == null) {
+            return false;
+        } else {
+            return containsSolvemediaCaptcha(br.toString());
+        }
+    }
+
+    public static final boolean containsSolvemediaCaptcha(final Form form) {
+        if (form == null) {
+            return false;
+        } else {
+            return containsSolvemediaCaptcha(form.getHtmlCode());
+        }
+    }
+
     public static final boolean containsSolvemediaCaptcha(final String str) {
         if (str == null) {
             return false;

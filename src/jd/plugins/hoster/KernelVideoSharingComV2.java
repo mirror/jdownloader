@@ -347,6 +347,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         prepBR(this.br);
+        if (link.getReferrerUrl() != null) {
+            /* E.g. embedded videos from camwhores.tv by camseek.com. */
+            br.getHeaders().put("Referer", link.getReferrerUrl());
+        }
         final String weakFilename = getWeakFilename(link);
         if (!link.isNameSet() && weakFilename != null) {
             /* Set this so that offline items have "nice" titles too. */

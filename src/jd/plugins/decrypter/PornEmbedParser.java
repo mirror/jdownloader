@@ -9,6 +9,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -671,13 +672,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("(?:'|\")((?:https?:)?//(?:www\\.)?camwhores\\.tv/embed/\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("(?:'|\")((?:https?:)?//(?:www\\.)?camwhoreshd\\.com/embed/\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
@@ -881,6 +875,31 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(dl);
             if (!processAll) {
                 return decryptedLinks;
+            }
+        }
+        /************************************************************************************************************/
+        // Now check for all existant URLs if they're supported by a specific plugin
+        /************************************************************************************************************/
+        /* TODO: Make this nicer */
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        final ArrayList<String> pornPluginDomains = new ArrayList<String>();
+        final ArrayList<PluginForHost> pornPlugins = new ArrayList<PluginForHost>();
+        pornPluginDomains.add(jd.plugins.hoster.CamwhoresTv.getPluginDomains().get(0)[0]);
+        for (final String pornPluginDomain : pornPluginDomains) {
+            pornPlugins.add(this.getNewPluginForHostInstance(pornPluginDomain));
+        }
+        for (final PluginForHost plg : pornPlugins) {
+            for (final String url : urls) {
+                if (plg.canHandle(url)) {
+                    final DownloadLink link = this.createDownloadlink(url);
+                    link.setReferrerUrl(br.getURL());
+                    decryptedLinks.add(link);
+                    if (!processAll) {
+                        return decryptedLinks;
+                    } else {
+                        break;
+                    }
+                }
             }
         }
         /************************************************************************************************************/
