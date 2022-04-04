@@ -478,15 +478,6 @@ public class InstaGramCom extends PluginForHost {
             }
         }
     }
-    // public static String fixServerFilename(String server_filename, final String correctExtension) {
-    // final String server_filename_ext = getFileNameExtensionFromString(server_filename, null);
-    // if (correctExtension != null && server_filename_ext == null) {
-    // server_filename += correctExtension;
-    // } else if (correctExtension != null && !server_filename_ext.equalsIgnoreCase(correctExtension)) {
-    // server_filename = server_filename.replace(server_filename_ext, correctExtension);
-    // }
-    // return server_filename;
-    // }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {

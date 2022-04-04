@@ -1037,6 +1037,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This service supports UseNet downloads (*.nzb files)" })
     String LazyHostPlugin_FEATURE_USENET_TOOLTIP();
 
+    @Default(lngs = { "en" }, values = { "Pastebin" })
+    String LazyHostPlugin_FEATURE_PASTEBIN();
+
+    @Default(lngs = { "en" }, values = { "This is a pastebin service which hosts user defined text-snippets." })
+    String LazyHostPlugin_FEATURE_PASTEBIN_TOOLTIP();
+
     @Default(lngs = { "en" }, values = { "This service supports downloads form multiple different hosters" })
     String LazyHostPlugin_FEATURE_MULTIHOST_TOOLTIP();
 

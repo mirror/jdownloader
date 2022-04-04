@@ -1512,7 +1512,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final InstagramConfig cfg = PluginJsonConfig.get(InstagramConfig.class);
         final FilenameType ft = cfg.getFilenameType();
         if (ft == FilenameType.SERVER && server_filename != null) {
-            // server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
             return server_filename;
         }
         String filename;

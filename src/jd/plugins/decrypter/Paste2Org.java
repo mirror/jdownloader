@@ -15,20 +15,21 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.html.HTMLParser;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = { "https?://(?:www\\.)?paste2\\.org/[A-Za-z0-9]+" })
-public class Paste2Org extends PluginForDecrypt {
+public class Paste2Org extends AbstractPastebinCrawler {
     public Paste2Org(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -64,29 +65,22 @@ public class Paste2Org extends PluginForDecrypt {
     /* DEV NOTES */
     // Tags: pastebin
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        final DownloadLink textfile = this.createDownloadlink(param.getCryptedUrl());
+        return super.decryptIt(param, progress);
+    }
+
+    @Override
+    protected String getPastebinText(final Browser br) throws PluginException, IOException {
+        return jd.plugins.hoster.Paste2Org.getPastebinText(br);
+    }
+
+    @Override
+    protected void checkAvailableStatus(final DownloadLink link, final Browser br) throws IOException, PluginException {
         /*
          * Use hosterplugin to check availablestatus. If this paste is e.g. offline, Exception will be thown during hosterplugin
          * availablecheck.
          */
-        ((jd.plugins.hoster.Paste2Org) plg).requestFileInformation(textfile);
-        textfile.setAvailable(true);
-        decryptedLinks.add(textfile);
-        final String plaintxt = jd.plugins.hoster.Paste2Org.getPastebinText(this.br);
-        if (plaintxt == null) {
-            logger.warning("Paste2 Decrypter: Could not find pastebin textfield");
-            return decryptedLinks;
-        }
-        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links.length > 0) {
-            for (final String link : links) {
-                decryptedLinks.add(createDownloadlink(link));
-            }
-        } else {
-            logger.info("Found no URLs in pastebin plaintext");
-        }
-        return decryptedLinks;
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        ((jd.plugins.hoster.Paste2Org) plg).requestFileInformation(link);
+        link.setAvailable(true);
     }
 }

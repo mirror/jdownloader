@@ -1,7 +1,5 @@
 package org.jdownloader.plugins.controller.host;
 
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.TooltipInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -9,6 +7,8 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.translate._JDT;
+
+import jd.plugins.PluginForHost;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     public static enum FEATURE implements LabelInterface, TooltipInterface {
@@ -34,6 +34,17 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 return _JDT.T.LazyHostPlugin_FEATURE_MULTIHOST_TOOLTIP();
             }
         },
+        PASTEBIN {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_PASTEBIN();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_PASTEBIN_TOOLTIP();
+            }
+        },
         GENERIC {
             @Override
             public String getLabel() {
@@ -56,6 +67,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 return "INTERNAL";
             }
         };
+
         public static final long CACHEVERSION = 04062017l; // change when you add/change enums!
 
         public boolean isSet(FEATURE[] features) {
