@@ -2,8 +2,11 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -16,12 +19,20 @@ public interface InstagramConfig extends PluginConfigInterface {
     public static final InstagramConfig.TRANSLATION TRANSLATION = new TRANSLATION();
 
     public static class TRANSLATION {
-        public String getAddPostDescriptionAsTextfile_label() {
-            return "Add post description as textfile?";
+        public String getPostCrawlerAddPostDescriptionAsTextfile_label() {
+            return "Post crawler: Add post description as textfile?";
         }
 
-        public String getPreferServerFilenames_label() {
-            return "Use server-filenames whenever possible?";
+        public String getPostCrawlerPackagenameType_label() {
+            return "Post crawler: Select package name type for instagram.com/p/<id> URLs";
+        }
+
+        public String getPostCrawlerPackagenameScheme_label() {
+            return "Post crawler: Enter custom package name scheme for instagram.com/p/<id>";
+        }
+
+        public String getFilenameType_label() {
+            return "Select filename type for all crawled media items";
         }
 
         public String getAddDateToFilenames_label() {
@@ -38,10 +49,6 @@ public interface InstagramConfig extends PluginConfigInterface {
 
         public String getAttemptToDownloadOriginalQuality_label() {
             return "Try to download original quality (bigger filesize, without image-effects)? [This can slow down the download-process!]";
-        }
-
-        public String getHashtagCrawlerFindUsernames_label() {
-            return "Crawl- and set usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (slows down crawl-process!)";
         }
 
         public String getProfileCrawlerMaxItemsLimit_label() {
@@ -79,20 +86,71 @@ public interface InstagramConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Add post description as textfile?")
-    @Order(5)
-    boolean isAddPostDescriptionAsTextfile();
+    @DescriptionForConfigEntry("Post crawler: Add post description as textfile?")
+    @Order(1)
+    boolean isPostCrawlerAddPostDescriptionAsTextfile();
 
-    void setAddPostDescriptionAsTextfile(boolean b);
+    void setPostCrawlerAddPostDescriptionAsTextfile(boolean b);
+
+    public static enum SinglePostPackagenameType implements LabelInterface {
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default";
+            }
+        },
+        CUSTOM {
+            @Override
+            public String getLabel() {
+                return "Custom";
+            }
+        };
+    }
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @TakeValueFromSubconfig("PREFER_SERVER_FILENAMES")
-    @DescriptionForConfigEntry("Use server-filenames whenever possible?")
-    @Order(10)
-    boolean isPreferServerFilenames();
+    @DefaultEnumValue("DEFAULT")
+    @Order(2)
+    @DescriptionForConfigEntry("Post crawler: Select package name type for instagram.com/p/<id> URLs")
+    SinglePostPackagenameType getPostCrawlerPackagenameType();
 
-    void setPreferServerFilenames(boolean b);
+    void setPostCrawlerPackagenameType(final SinglePostPackagenameType namingSchemeType);
+
+    @AboutConfig
+    @DefaultStringValue("*date*_*uploader* - *main_content_id*")
+    @DescriptionForConfigEntry("Post crawler: Enter custom package name scheme for instagram.com/p/<id>")
+    @Order(3)
+    String getPostCrawlerPackagenameScheme();
+
+    void setPostCrawlerPackagenameScheme(String packagenameScheme);
+
+    public static enum FilenameType implements LabelInterface {
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default";
+            }
+        },
+        SERVER {
+            @Override
+            public String getLabel() {
+                return "Server filenames";
+            }
+        };
+        // CUSTOM {
+        // @Override
+        // public String getLabel() {
+        // return "Custom";
+        // }
+        // };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    @Order(10)
+    @DescriptionForConfigEntry("Select filename type for all crawled media items")
+    FilenameType getFilenameType();
+
+    void setFilenameType(final FilenameType filenameNamingSchemeType);
 
     @AboutConfig
     @DefaultBooleanValue(false)
@@ -129,15 +187,6 @@ public interface InstagramConfig extends PluginConfigInterface {
     boolean isAttemptToDownloadOriginalQuality();
 
     void setAttemptToDownloadOriginalQuality(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @TakeValueFromSubconfig("HASHTAG_CRAWLER_FIND_USERNAMES")
-    @DescriptionForConfigEntry("Crawl- and set usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (slows down crawl-process!)")
-    @Order(60)
-    boolean isHashtagCrawlerFindUsernames();
-
-    void setHashtagCrawlerFindUsernames(boolean b);
 
     @AboutConfig
     @SpinnerValidator(min = -1, max = 1024, step = 1)
@@ -195,7 +244,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("QUIT_ON_RATE_LIMIT_REACHED")
     @DescriptionForConfigEntry("Crawler: Abort crawl process once rate limit is reached?")
-    @Order(100)
+    @Order(500)
     boolean isCrawlerAbortOnRateLimitReached();
 
     void setCrawlerAbortOnRateLimitReached(boolean b);
@@ -204,7 +253,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @SpinnerValidator(min = 0, max = 60000, step = 100)
     @DefaultIntValue(400)
     @DescriptionForConfigEntry("Define global request limit in milliseconds (0 = no limit)")
-    @Order(110)
+    @Order(510)
     int getGlobalRequestIntervalLimitMilliseconds();
 
     void setGlobalRequestIntervalLimitMilliseconds(int milliseconds);
