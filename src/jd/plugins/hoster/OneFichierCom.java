@@ -644,22 +644,18 @@ public class OneFichierCom extends PluginForHost {
             get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.setFollowRedirects(true);
             br.getPage(get);
-            final String validUntil = br.getRegex("subscription is valid until\\s*<[^<]*>(\\d+-\\d+-\\d+)").getMatch(0);
+            final String validUntil = br.getRegex("(?i)subscription is valid until\\s*<[^<]*>(\\d+-\\d+-\\d+)").getMatch(0);
             if (validUntil != null) {
                 final long validUntilTimestamp = TimeFormatter.getMilliSeconds(validUntil, "yyyy'-'MM'-'dd", Locale.FRANCE);
                 if (validUntilTimestamp > 0) {
                     setValidUntil(ai, validUntilTimestamp);
                 }
             }
-            /** TODO: Check for extra traffic */
-            // final String traffic=br.getRegex("Your account have ([^<>\"]*?) of CDN credits").getMatch(0);
             if (isPremium) {
                 accountStatus = "Premium Account";
-                ai.setStatus("Premium Account");
             } else {
                 accountStatus = "Access Account";
             }
-            ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(maxdownloads_account_premium);
             account.setConcurrentUsePossible(true);
@@ -672,8 +668,8 @@ public class OneFichierCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(get);
             accountStatus = "Free Account";
-            ai.setUnlimitedTraffic();
         }
+        ai.setUnlimitedTraffic();
         /* Credits are only relevant if usage of credits for downloads is enabled: https://1fichier.com/console/params.pl */
         final String creditsStr = br.getRegex("(?)>\\s*Your account have ([^<>\"]*?) of[^<]*credits").getMatch(0);
         final boolean useOwnCredits = StringUtils.equalsIgnoreCase("checked", br.getRegex("<input\\s*type=\"checkbox\"\\s*checked=\"(.*?)\"[^>]*name=\"own_credit\"").getMatch(0));
@@ -724,7 +720,7 @@ public class OneFichierCom extends PluginForHost {
         performAPIRequest(API_BASE + "/user/info.cgi", "");
         AccountInfo ai = new AccountInfo();
         final String apierror = this.getAPIErrormessage(br);
-        final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("Flood detected: (User|IP) Locked.*?");
+        final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("(?i)Flood detected: (User|IP) Locked.*?");
         if (apiTempBlocked) {
             if (account.lastUpdateTime() > 0) {
                 logger.info("Cannot get account details because of API limits but account has been checked before and is ok");
@@ -772,6 +768,7 @@ public class OneFichierCom extends PluginForHost {
         if (!StringUtils.isEmpty(subscription_end)) {
             validuntil = TimeFormatter.getMilliSeconds(subscription_end, "yyyy-MM-dd HH:mm:ss", Locale.FRANCE);
         }
+        ai.setUnlimitedTraffic();
         String accountStatus;
         if (validuntil > System.currentTimeMillis()) {
             /* Premium */
@@ -779,7 +776,6 @@ public class OneFichierCom extends PluginForHost {
             accountStatus = "Premium Account";
             account.setMaxSimultanDownloads(maxdownloads_account_premium);
             account.setConcurrentUsePossible(true);
-            ai.setUnlimitedTraffic();
             this.setValidUntil(ai, validuntil);
         } else {
             /* Free --> 2019-07-18: API Keys are only available for premium users so this should never happen! */
@@ -806,8 +802,6 @@ public class OneFichierCom extends PluginForHost {
                 creditsStatus += " [NOT using credits]";
             }
             accountStatus += creditsStatus;
-        } else {
-            ai.setUnlimitedTraffic();
         }
         ai.setStatus(accountStatus);
         return ai;
@@ -819,7 +813,12 @@ public class OneFichierCom extends PluginForHost {
      * @throws PluginException
      */
     private void handleErrorsAPI(final Account account) throws PluginException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = null;
+        try {
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        } catch (final Exception ignore) {
+            throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+        }
         final Object statusO = entries.get("status");
         if (statusO != null && "KO".equalsIgnoreCase((String) statusO)) {
             final String message = (String) entries.get("message");
@@ -955,11 +954,19 @@ public class OneFichierCom extends PluginForHost {
 
     /** Checks whether we're logged in via website. */
     private boolean isLoggedinWebsite(final Browser br) {
-        return isLoginCookieExists(br) && br.containsHTML("/logout\\.pl");
+        if (isLoginCookieExists(br) && br.containsHTML("/logout\\.pl")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean isLoginCookieExists(final Browser br) {
-        return br.getCookie(this.getHost(), "SID", Cookies.NOTDELETEDPATTERN) != null;
+        if (br.getCookie(this.getHost(), "SID", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
@@ -1077,7 +1084,7 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.1fichier.com/en/cgu.html";
+        return "https://www.1fichier.com/en/cgu.html";
     }
 
     @Override
@@ -1216,6 +1223,7 @@ public class OneFichierCom extends PluginForHost {
         }
         /* 2019-04-04: Downloadlink is officially only valid for 5 minutes */
         handleErrorsAPI(account);
+        /* TODO: Use json parser */
         dllink = PluginJSonUtils.getJson(br, "url");
         if (StringUtils.isEmpty(dllink)) {
             /* This should never happen */
@@ -1281,11 +1289,12 @@ public class OneFichierCom extends PluginForHost {
         String url = link.getStringProperty(property);
         if (StringUtils.isEmpty(url)) {
             return false;
+        }
+        final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
+        if (preferSSL) {
+            url = url.replaceFirst("http://", "https://");
         } else {
-            final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
-            if (preferSSL && url.startsWith("http://")) {
-                url = url.replace("http://", "https://");
-            }
+            url = url.replaceFirst("https://", "http://");
         }
         try {
             final Browser brc = br.cloneBrowser();
@@ -1425,6 +1434,7 @@ public class OneFichierCom extends PluginForHost {
         return formdata;
     }
 
+    /** Ends up in PluginException(LinkStatus.ERROR_PLUGIN_DEFECT). */
     private void handleErrorsLastResortWebsite(final DownloadLink link, final Account account) throws PluginException {
         if (account != null && !this.isLoggedinWebsite(this.br)) {
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
