@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -101,5 +102,15 @@ public class DaofileCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 10;
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        /* 2022-04-04 */
+        final String betterFilesize = new Regex(html, "style=\"[^\"]+\"[^>]*>[^<]*</b>\\s*\\[<b [^>]*>(\\d+ [^<]*)</b>\\]").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
+        return super.scanInfo(html, fileInfo);
     }
 }

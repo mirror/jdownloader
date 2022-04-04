@@ -18,10 +18,13 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -29,51 +32,89 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "https?://(?:www\\.)?compupaste\\.com/\\?v=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "https?://(?:[a-z0-9]+\\.)?compupaste\\.com/\\?v=[A-Za-z0-9]+" })
 public class CompuPasteCom extends PluginForDecrypt {
     public CompuPasteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Tags: Pastebin */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("no existe<")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)no existe\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.findID();
-            rc.load();
-            for (int i = 1; i <= 5; i++) {
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, param);
-                br.postPage(br.getURL(), "captcha=Soy+Humano&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    rc.reload();
-                    continue;
+        final Form captchaForm = br.getForm(0);
+        if (captchaForm != null && SolveMedia.containsSolvemediaCaptcha(captchaForm)) {
+            boolean success = false;
+            for (int i = 0; i <= 3; i++) {
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                File cf = null;
+                try {
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final InterruptedException e) {
+                    throw e;
+                } catch (final Exception e) {
+                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
+                    } else {
+                        throw e;
+                    }
                 }
-                break;
+                final String code = getCaptchaCode("solvemedia", cf, param);
+                String chid = null;
+                try {
+                    chid = sm.getChallenge(code);
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
+                        logger.info("Wrong captcha");
+                        continue;
+                    } else {
+                        throw e;
+                    }
+                }
+                captchaForm.put("adcopy_challenge", chid);
+                br.submitForm(captchaForm);
+                if (!SolveMedia.containsSolvemediaCaptcha(br)) {
+                    success = true;
+                    break;
+                } else {
+                    logger.info("Wrong captcha");
+                }
             }
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            if (!success) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        String[] links = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
-        if (links.length == 0) {
-            /* 2020-12-09 */
-            links = br.getRegex("Opcion\\s*\\d+\\s*</strong>([^<>\"]+)<").getColumn(0);
+        final String htmlToCrawlLinksFrom;
+        final String pasteText = br.getRegex("class=\"tab_content\">(.*?)<div id=\"wp-pagenavi\">").getMatch(0);
+        if (pasteText != null) {
+            htmlToCrawlLinksFrom = pasteText;
+        } else {
+            logger.warning("Failed to find pastebin text --> Using fallback");
+            htmlToCrawlLinksFrom = br.getRequest().getHtmlCode();
         }
-        if (links == null || links.length == 0) {
-            logger.info("Link offline (no links found): " + parameter);
-            return decryptedLinks;
-        }
+        final String[] links = HTMLParser.getHttpLinks(htmlToCrawlLinksFrom, br.getURL());
         for (final String singleLink : links) {
             if (!this.canHandle(singleLink)) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
+        }
+        /* Look for Clickv and Load Forms - those can contain additional mirrors. */
+        final Form[] forms = br.getForms();
+        if (forms.length > 0) {
+            final Browser brc = br.cloneBrowser();
+            for (final Form form : forms) {
+                if (form.getAction() != null && form.getAction().matches(".*127\\.0\\.0\\.1:\\d+.*")) {
+                    brc.submitForm(form);
+                }
+            }
+        }
+        if (decryptedLinks.isEmpty()) {
+            logger.info("Failed to find any results");
+            return decryptedLinks;
         }
         return decryptedLinks;
     }
