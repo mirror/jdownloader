@@ -29,6 +29,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -184,23 +185,9 @@ public class ArchiveOrg extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    br.setCookies(account.getHoster(), cookies);
-                    if (!force) {
-                        /* We trust these cookies --> Do not check them */
-                        logger.info("Trust login cookies without check");
-                        return;
-                    } else {
-                        if (this.checkCookies(this.br, account, cookies)) {
-                            account.saveCookies(br.getCookies(account.getHoster()), "");
-                            return;
-                        }
-                    }
-                } else if (userCookies != null) {
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null) {
                     if (this.checkCookies(this.br, account, userCookies)) {
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
                         /*
                          * User can entry anything into username field but we want unique strings --> Try to find "real username" in HTML
                          * code.
@@ -213,7 +200,25 @@ public class ArchiveOrg extends PluginForHost {
                         }
                         return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException("Login cookies expired");
+                        } else {
+                            throw new AccountInvalidException("Login cookies invalid");
+                        }
+                    }
+                }
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    br.setCookies(account.getHoster(), cookies);
+                    if (!force) {
+                        /* We trust these cookies --> Do not check them */
+                        logger.info("Trust login cookies without check");
+                        return;
+                    } else {
+                        if (this.checkCookies(this.br, account, cookies)) {
+                            account.saveCookies(br.getCookies(account.getHoster()), "");
+                            return;
+                        }
                     }
                 }
                 logger.info("Performing full login");

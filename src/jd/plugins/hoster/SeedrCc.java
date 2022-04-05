@@ -18,6 +18,17 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -36,17 +47,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https://(?:www\\.)?seedr\\.cc/download/(file/\\d+|archive/[a-fA-F0-9]+\\?token=[a-fA-F0-9]+&exp=\\d+)" })
 public class SeedrCc extends PluginForHost {
@@ -228,7 +228,6 @@ public class SeedrCc extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            boolean userCookiesFlag = false;
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
@@ -236,7 +235,6 @@ public class SeedrCc extends PluginForHost {
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 final Cookies cookies = account.loadCookies("");
                 if (userCookies != null) {
-                    userCookiesFlag = true;
                     logger.info("Attempting user cookie login");
                     br.setCookies(userCookies);
                     if (!force) {
@@ -257,7 +255,6 @@ public class SeedrCc extends PluginForHost {
                         }
                     }
                 }
-                userCookiesFlag = false;
                 if (cookieLoginOnly) {
                     showCookieLoginInformation();
                     throw new AccountInvalidException("Cookie login required");
@@ -303,9 +300,6 @@ public class SeedrCc extends PluginForHost {
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
-                    if (userCookiesFlag) {
-                        account.setPass(null);
-                    }
                 }
                 throw e;
             }

@@ -547,6 +547,15 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Renew/Extend Account now!" })
     String accountdialog_check_expired_renew();
 
+    @Default(lngs = { "en" }, values = { "Enter cookies to login" })
+    String accountdialog_check_cookies_required();
+
+    @Default(lngs = { "en" }, values = { "Login cookies expired" })
+    String accountdialog_check_cookies_expired();
+
+    @Default(lngs = { "en" }, values = { "Login cookies invalid" })
+    String accountdialog_check_cookies_invalid();
+
     @Default(lngs = { "en" }, values = { "Enter Username..." })
     String jd_gui_swing_components_AccountDialog_help_username();
 

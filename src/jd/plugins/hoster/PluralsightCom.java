@@ -192,7 +192,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 form.put("Username", URLEncoder.encode(account.getUser(), "UTF-8"));
                 form.put("Password", URLEncoder.encode(account.getPass(), "UTF-8"));
                 getRequest(br, this, br.createFormRequest(form));
-                if (br.containsHTML(">Invalid user name or password<")) {
+                if (br.containsHTML("(?i)>\\s*Invalid user name or password\\s*<")) {
                     throw new AccountInvalidException("Invalid user name or password");
                 }
                 if (br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) == null) {

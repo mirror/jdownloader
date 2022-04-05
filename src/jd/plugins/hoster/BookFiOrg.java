@@ -58,7 +58,7 @@ public class BookFiOrg extends antiDDoSForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "b-ok.cc", "b-ok.org", "bookfi.net", "bookfi.org", "bookzz.org", "de1lib.org", "pt1lib.org", "1lib.eu", "1lib.org", "2lib.org", "b-ok.xyz", "b-ok.global", "3lib.net", "4lib.org", "eu1lib.org", "1lib.limited", "1lib.education" });
+        ret.add(new String[] { "b-ok.cc", "b-ok.org", "bookfi.net", "bookfi.org", "bookzz.org", "de1lib.org", "pt1lib.org", "1lib.eu", "1lib.org", "2lib.org", "b-ok.xyz", "b-ok.global", "3lib.net", "4lib.org", "eu1lib.org", "1lib.limited", "1lib.education", "1lib.pl" });
         return ret;
     }
 
@@ -169,7 +169,11 @@ public class BookFiOrg extends antiDDoSForHost {
         }
         final String title = PluginJSonUtils.getJson(br, "title");
         if (!StringUtils.isEmpty(title)) {
-            link.setName(title + ".djvu");
+            String ext = br.getRegex("<i class=\"zlibicon-download\"[^>]*></i>\\s*[^<]*\\(([a-z0-9]+),\s*\\d+").getMatch(0);
+            if (ext == null) {
+                ext = "djvu";
+            }
+            link.setName(title + "." + ext);
         }
         // if (parameter.contains("/md5/")) {
         // // now everything is ok, we should correct to a single url/file uid
