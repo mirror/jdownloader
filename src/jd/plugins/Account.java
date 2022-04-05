@@ -192,6 +192,10 @@ public class Account extends Property {
         return null;
     }
 
+    public Cookies loadUserCookies() {
+        return Cookies.parseCookiesFromJsonString(this.getPass(), null);
+    }
+
     /**
      * @since JD2
      *

@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -22,15 +23,24 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         /* TODO: Implement logic of pastebin settings once available: https://svn.jdownloader.org/issues/90043 */
+        this.preProcess(param);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final DownloadLink textfile = getDownloadlinkForHosterplugin(param);
-        checkAvailableStatus(textfile, br);
-        decryptedLinks.add(textfile);
         final String plaintxt = getPastebinText(this.br);
         if (plaintxt == null) {
             logger.warning("Pastebin crawler: Could not find pastebin textfield");
             return decryptedLinks;
         }
+        final DownloadLink textfile = getDownloadlinkForHosterplugin(param);
+        if (plaintxt != null) {
+            try {
+                textfile.setDownloadSize(plaintxt.getBytes("UTF-8").length);
+            } catch (final UnsupportedEncodingException ignore) {
+                ignore.printStackTrace();
+            }
+        }
+        /* TODO: Set filename */
+        textfile.setAvailable(true);
+        decryptedLinks.add(textfile);
         /* TODO: Differentiate between URLs that we support and those we don't support. */
         final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links.length > 0) {
@@ -47,7 +57,8 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         return this.createDownloadlink(link.getCryptedUrl());
     }
 
-    protected abstract void checkAvailableStatus(final DownloadLink link, final Browser br) throws IOException, PluginException;
+    /** Accesses URL, checks if content looks like it's available and handles password/captcha until plaintext is available in HTML. */
+    protected abstract void preProcess(final CryptedLink param) throws IOException, PluginException;
 
     protected abstract String getPastebinText(final Browser br) throws PluginException, IOException;
 }

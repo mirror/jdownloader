@@ -25,6 +25,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -82,7 +83,7 @@ public class Paste2Org extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link));
+            link.setName(this.getFID(link) + ".txt");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -103,7 +104,7 @@ public class Paste2Org extends PluginForHost {
                 ignore.printStackTrace();
             }
         }
-        link.setFinalFileName(this.getFID(link) + ".txt");
+        link.setFinalFileName(getFilename(link));
         final String description = br.getRegex("class=\"desc\"[^>]*>\\s*<p>([^<]+)</p>").getMatch(0);
         if (description != null && link.getComment() == null) {
             link.setComment(description);
@@ -125,6 +126,15 @@ public class Paste2Org extends PluginForHost {
         link.setVerifiedFileSize(dest.length());
         /* Set progress to finished - the "download" is complete. */
         link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+    }
+
+    public String getFilename(final DownloadLink link) {
+        return this.getFID(link) + ".txt";
+    }
+
+    @Override
+    public boolean isResumeable(DownloadLink link, final Account account) {
+        return false;
     }
 
     @Override
