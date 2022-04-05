@@ -49,7 +49,7 @@ public class GooglePhotos extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "/share/([A-Za-z0-9\\-_]+)\\?key=([A-Za-z0-9\\-_]+)");
+        final Regex urlinfo = new Regex(br.getURL(), "/share/([A-Za-z0-9\\-_]+)\\?key=([A-Za-z0-9\\-_]+)");
         final String idMAIN = urlinfo.getMatch(0);
         final String key = urlinfo.getMatch(1);
         if (idMAIN == null || key == null) {
