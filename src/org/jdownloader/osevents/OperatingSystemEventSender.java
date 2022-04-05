@@ -30,20 +30,27 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
         try {
             signalEventSource = new SignalEventSource() {
                 @Override
-                public void onSignal(String name, int number) {
-                    if ("HUP".equals(name)) {
-                        fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL_HUP, name, number));
-                        onOperatingSystemTerm();
-                    } else if ("TERM".equals(name) || "INT".equals(name)) {
-                        fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL_TERM, name, number));
-                        onOperatingSystemTerm();
-                    }
+                public boolean onSignal(String name, int number) {
+                    return OperatingSystemEventSender.this.onSignal(name, number);
                 }
             };
         } catch (final Throwable e) {
-            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+            e.printStackTrace();
         }
         this.signalEventSource = signalEventSource;
+    }
+
+    protected boolean onSignal(String name, int number) {
+        if ("HUP".equals(name)) {
+            fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL_HUP, name, number));
+            onOperatingSystemTerm();
+        } else if ("TERM".equals(name) || "INT".equals(name)) {
+            fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL_TERM, name, number));
+            onOperatingSystemTerm();
+        } else {
+            fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL, name, number));
+        }
+        return true;
     }
 
     @Override
@@ -53,6 +60,7 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
         case SIGNAL_TERM:
             listener.onOperatingSystemTerm();
             break;
+        case SIGNAL:
         default:
             System.out.println("Unhandled Event: " + event);
             break;

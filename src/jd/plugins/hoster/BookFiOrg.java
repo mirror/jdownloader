@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -33,6 +28,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BookFiOrg extends antiDDoSForHost {
@@ -64,8 +64,7 @@ public class BookFiOrg extends antiDDoSForHost {
 
     private static final ArrayList<String> getDeadDomains() {
         /**
-         * Collect dead domains so we know when we have to alter the domain of added URLs! </br>
-         * KEEP THIS LIST UP2DATE!!
+         * Collect dead domains so we know when we have to alter the domain of added URLs! </br> KEEP THIS LIST UP2DATE!!
          */
         final ArrayList<String> deadDomains = new ArrayList<String>();
         deadDomains.add("bookfi.org");
@@ -169,7 +168,7 @@ public class BookFiOrg extends antiDDoSForHost {
         }
         final String title = PluginJSonUtils.getJson(br, "title");
         if (!StringUtils.isEmpty(title)) {
-            String ext = br.getRegex("<i class=\"zlibicon-download\"[^>]*></i>\\s*[^<]*\\(([a-z0-9]+),\s*\\d+").getMatch(0);
+            String ext = br.getRegex("<i class=\"zlibicon-download\"[^>]*></i>\\s*[^<]*\\(([a-z0-9]+),\\s*\\d+").getMatch(0);
             if (ext == null) {
                 ext = "djvu";
             }

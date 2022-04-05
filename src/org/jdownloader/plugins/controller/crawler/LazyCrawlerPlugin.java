@@ -4,6 +4,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.TooltipInterface;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -23,7 +24,7 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
                 return _JDT.T.LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
             }
         };
-        public static final long CACHEVERSION = 25082016l; // change when you add/change enums!
+        public static final long CACHEVERSION = StringUtils.join(values(), "<->").hashCode() + StringUtils.join(values(), ":").hashCode() + StringUtils.join(values(), "<=>").hashCode();
 
         public boolean isSet(FEATURE[] features) {
             if (features != null) {
@@ -58,8 +59,22 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
         return decrypts + pluginUsage;
     }
 
-    public boolean hasFeature(FEATURE feature) {
-        return feature != null && feature.isSet(getFeatures());
+    /**
+     * returns true if LazyCrawlerPlugin has one matching feature
+     *
+     * @param features
+     * @return
+     */
+    public boolean hasFeature(final FEATURE... features) {
+        final FEATURE[] pluginFeatures = getFeatures();
+        if (features != null && features.length > 0 && pluginFeatures != null && pluginFeatures.length > 0) {
+            for (final FEATURE feature : features) {
+                if (feature.isSet(pluginFeatures)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     protected void setFeatures(FEATURE[] features) {

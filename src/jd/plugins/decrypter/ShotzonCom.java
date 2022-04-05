@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,7 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shotzon.com" }, urls = { "https?://(?:www\\.)?(?:enagato\\.com|shotzon\\.com)/(?:full/\\?api=[a-f0-9]+\\&url=[a-zA-Z0-9_/\\+\\=\\-%]+|[A-Za-z0-9]{2,})" })
 public class ShotzonCom extends PluginForDecrypt {
@@ -45,8 +44,7 @@ public class ShotzonCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         } else {
-            final PluginForDecrypt templateCrawler = JDUtilities.getPluginForDecrypt("cut-urls.com");
-            templateCrawler.setBrowser(this.br);
+            final PluginForDecrypt templateCrawler = getNewPluginForDecryptInstance("cut-urls.com");
             decryptedLinks = templateCrawler.decryptIt(param, null);
             return decryptedLinks;
         }

@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,6 +32,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "researchgate.net" }, urls = { "https?://(?:www\\.)?researchgate\\.net/(publication/\\d+_[A-Za-z0-9\\-_]+|figure/[A-Za-z0-9\\-_]+_\\d+)" })
 public class ResearchgateNet extends PluginForHost {
     public ResearchgateNet(PluginWrapper wrapper) {
@@ -49,6 +49,12 @@ public class ResearchgateNet extends PluginForHost {
     private String dllink = null;
 
     @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         final String urlTitle = new Regex(link.getPluginPatternMatcher(), "(?:publication|figure)/(.+)").getMatch(0);
         if (!link.isNameSet()) {
@@ -58,8 +64,11 @@ public class ResearchgateNet extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(429);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (dl.getConnection().getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 429", 10 * 60 * 1000l);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getURL().length() <= 60) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -131,7 +140,9 @@ public class ResearchgateNet extends PluginForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (dl.getConnection().getResponseCode() == 429) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 429", 10 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
@@ -154,6 +165,11 @@ public class ResearchgateNet extends PluginForHost {
                 if (looksLikeDownloadableContent(con)) {
                     return dllink;
                 } else {
+                    try {
+                        br2.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     throw new IOException();
                 }
             } catch (final Exception e) {
@@ -176,7 +192,8 @@ public class ResearchgateNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        // avoid 429 Too Many Requests
+        return 5;
     }
 
     @Override

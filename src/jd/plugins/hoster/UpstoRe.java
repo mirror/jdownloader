@@ -29,13 +29,6 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -56,6 +49,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -168,6 +168,7 @@ public class UpstoRe extends antiDDoSForHost {
                 final Form f = br.getFormBySubmitvalue("Slow+download");
                 if (f != null) {
                     final Browser br2 = br.cloneBrowser();
+                    sleep(2000, link);
                     br2.getPage("/main/acceptterms/?s=" + f.getInputField("s").getValue() + "&ajax=1");
                     final String t = br2.getRegex("name=t\\]'\\)\\.val\\('(\\d+)").getMatch(0);
                     if (t == null) {
@@ -183,6 +184,7 @@ public class UpstoRe extends antiDDoSForHost {
                         final String oldHValue = oldH.getValue();
                         f.put("h", oldHValue.substring(0, Math.min(10, oldHValue.length())) + h);
                     }
+                    sleep(2000, link);
                     submitForm(f);
                 }
             }

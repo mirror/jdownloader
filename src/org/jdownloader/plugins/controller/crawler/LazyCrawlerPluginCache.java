@@ -16,10 +16,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.net.CountingInputStream;
 import org.jdownloader.plugins.controller.LazyPluginClass;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.LazyHostPluginCache;
 
 public class LazyCrawlerPluginCache {
-    private static final long CACHEVERSION = 16022021001l;
+    private static final long CACHEVERSION = 05042022001l;
 
     public static List<LazyCrawlerPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
@@ -65,6 +66,15 @@ public class LazyCrawlerPluginCache {
                         lazyCrawlerPlugin.setHasConfig((flags & (1 << 1)) != 0);
                         if ((flags & (1 << 4)) != 0) {
                             lazyCrawlerPlugin.setConfigInterface(is.readString(stringBuffer));
+                        }
+                        if ((flags & (1 << 2)) != 0) {
+                            final ArrayList<FEATURE> features = new ArrayList<FEATURE>(FEATURE.values().length);
+                            for (final FEATURE feature : FEATURE.values()) {
+                                if (is.readBoolean()) {
+                                    features.add(feature);
+                                }
+                            }
+                            lazyCrawlerPlugin.setFeatures(features.toArray(new FEATURE[0]));
                         }
                         ret.add(lazyCrawlerPlugin);
                     }
@@ -128,12 +138,21 @@ public class LazyCrawlerPluginCache {
                     if (plugin.isHasConfig()) {
                         flags |= (1 << 1);
                     }
+                    final FEATURE[] features = plugin.getFeatures();
+                    if (features != null && features.length > 0) {
+                        flags |= (1 << 2);
+                    }
                     if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
                         flags |= (1 << 4);
                     }
                     bos.write(flags);
                     if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
                         os.writeString(plugin.getConfigInterface());
+                    }
+                    if (features != null && features.length > 0) {
+                        for (final FEATURE feature : FEATURE.values()) {
+                            os.writeBoolean(feature.isSet(features));
+                        }
                     }
                 }
             }
