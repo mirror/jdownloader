@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -34,10 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.CloudMailRu;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloud.mail.ru" }, urls = { "https?://(?:www\\.)?cloud\\.mail\\.ru((?:/|%2F)public(?:/|%2F)[a-z0-9]+(?:/|%2F)[^<>\"]+|(?:/|%2F)(?:files(?:/|%2F))?[A-Z0-9]{32})" })
 public class CloudMailRuDecrypter extends PluginForDecrypt {
@@ -55,7 +55,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
     private String              parameter        = null;
 
     @SuppressWarnings({ "deprecation", "unchecked" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         prepBR();
         parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
@@ -101,9 +101,9 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             subfolder = title_of_current_folder;
         }
         final List<Object> ressourcelist = (List<Object>) entries.get("list");
-        if (ressourcelist == null || ressourcelist.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (ressourcelist.size() == 0) {
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subfolder, "This folder is empty."));
+            return decryptedLinks;
         }
         FilePackage fp = null;
         /* "/" is most likely a single file inside a (theoretical) folder [root] -> Do not assign packagenames in this case! */

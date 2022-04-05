@@ -192,6 +192,7 @@ public class Account extends Property {
         return null;
     }
 
+    /** Returns cookies provided by user, typically put into the "Password" field when adding an account. */
     public Cookies loadUserCookies() {
         return Cookies.parseCookiesFromJsonString(this.getPass(), null);
     }
