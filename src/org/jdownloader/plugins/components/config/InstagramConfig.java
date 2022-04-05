@@ -294,4 +294,25 @@ public interface InstagramConfig extends PluginConfigInterface {
     int getGlobalRequestIntervalLimitMilliseconds();
 
     void setGlobalRequestIntervalLimitMilliseconds(int milliseconds);
+
+    public static enum APIPreference implements LabelInterface {
+        API_WEBSITE {
+            @Override
+            public String getLabel() {
+                return "Prefer API over website";
+            }
+        },
+        API_ONLY {
+            @Override
+            public String getLabel() {
+                return "API only";
+            }
+        },
+        WEBSITE_ONLY {
+            @Override
+            public String getLabel() {
+                return "Website only";
+            }
+        };
+    }
 }
