@@ -33,6 +33,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -614,22 +615,20 @@ public class TwitterCom extends PluginForHost {
                 /* 2020-07-02: Only cookie login is supported! */
                 final boolean allowCookieLoginOnly = true;
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), this.getLogger());
-                if (userCookies != null && !userCookies.isEmpty()) {
+                if (allowCookieLoginOnly && (userCookies != null && !userCookies.isEmpty())) {
+                    showCookieLoginInformation();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                } else if (userCookies != null && !userCookies.isEmpty()) {
                     /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
                     br.setCookies(userCookies);
                     if (!checkLogin(br)) {
                         if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException("Cookies expired");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
-                            showCookieLoginInformation();
-                            throw new AccountInvalidException("Invalid user name or password");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
                 } else {
-                    if (allowCookieLoginOnly) {
-                        showCookieLoginInformation();
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Enter cookies to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
                     br.getPage("https://" + account.getHoster() + "/login");
                     String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
                     if (authenticytoken == null) {
