@@ -389,24 +389,24 @@ public abstract class PluginForDecrypt extends Plugin {
         return null;
     }
 
-    protected List<LazyCrawlerPlugin> findNextLazyCrawlerPlugins(final String url) {
+    protected List<LazyCrawlerPlugin> findNextLazyCrawlerPlugins(final String url, final LazyCrawlerPlugin.FEATURE... features) {
         final List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
         final LinkCrawler crawler = getCrawler();
         final List<LazyCrawlerPlugin> sortedLazyCrawlerPlugins = crawler.getSortedLazyCrawlerPlugins();
         for (final LazyCrawlerPlugin lazyCrawlerPlugin : sortedLazyCrawlerPlugins) {
-            if (crawler.canHandle(lazyCrawlerPlugin, url, getCurrentLink()) && !getLazyC().equals(lazyCrawlerPlugin) && !crawler.breakPluginForDecryptLoop(lazyCrawlerPlugin, getCurrentLink())) {
+            if ((features == null || features.length == 0 || lazyCrawlerPlugin.hasFeature(features)) && crawler.canHandle(lazyCrawlerPlugin, url, getCurrentLink()) && !getLazyC().equals(lazyCrawlerPlugin) && !crawler.breakPluginForDecryptLoop(lazyCrawlerPlugin, getCurrentLink())) {
                 ret.add(lazyCrawlerPlugin);
             }
         }
         return ret;
     }
 
-    protected List<LazyHostPlugin> findNextLazyHostPlugins(final String url) {
+    protected List<LazyHostPlugin> findNextLazyHostPlugins(final String url, final LazyHostPlugin.FEATURE... features) {
         final List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>();
         final LinkCrawler crawler = getCrawler();
         final List<LazyHostPlugin> sortedLazyHostPlugins = crawler.getSortedLazyHostPlugins();
         for (final LazyHostPlugin lazyHostPlugin : sortedLazyHostPlugins) {
-            if (crawler.canHandle(lazyHostPlugin, url, getCurrentLink())) {
+            if ((features == null || features.length == 0 || lazyHostPlugin.hasFeature(features)) && crawler.canHandle(lazyHostPlugin, url, getCurrentLink())) {
                 ret.add(lazyHostPlugin);
             }
         }

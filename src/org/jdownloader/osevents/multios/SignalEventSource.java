@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
@@ -17,6 +18,11 @@ public abstract class SignalEventSource {
     private final HashSet<String>         ignoredSignals = new HashSet<String>();
     private final Object                  signalHandler;
 
+    /**
+     * https://blogs.oracle.com/javamagazine/post/a-peek-into-java-17-continuing-the-drive-to-encapsulate-the-java-runtime-internals
+     *
+     * @throws Exception
+     */
     public SignalEventSource() throws Exception {
         logger = LogController.getInstance().getLogger(SignalEventSource.class.getName());
         signalHandler = Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { Class.forName("sun.misc.SignalHandler") }, new InvocationHandler() {
@@ -45,6 +51,10 @@ public abstract class SignalEventSource {
         }
     }
 
+    protected LogInterface getLogger() {
+        return logger;
+    }
+
     public boolean setIgnore(final String signalName, final boolean ignore) {
         try {
             final Class<?> signalClass = Class.forName("sun.misc.Signal");
@@ -57,25 +67,25 @@ public abstract class SignalEventSource {
                     ret = ignoredSignals.remove(sigName);
                 }
             }
-            logger.info("ignore(" + ignore + " signal: " + signalName + "->" + sigName + "=" + ret);
+            getLogger().info("ignore(" + ignore + " signal: " + signalName + "->" + sigName + "=" + ret);
             return ret;
         } catch (Throwable e) {
-            logger.exception("failed to change signal ignore:" + signalName + "|" + ignore, e);
+            getLogger().exception("failed to change signal ignore:" + signalName + "|" + ignore, e);
+            return false;
         }
-        return false;
     }
 
-    private boolean reg(final String signalName) {
+    protected boolean reg(final String signalName) {
         try {
             final Class<?> signalClass = Class.forName("sun.misc.Signal");
             final Object signal = signalClass.getConstructor(String.class).newInstance(signalName);
             synchronized (oldHandlers) {
                 oldHandlers.put(signalName, ReflectionUtils.invoke(signalClass, null, "handle", signal, void.class, new Class[] { signalClass, Class.forName("sun.misc.SignalHandler") }, signal, signalHandler));
             }
-            logger.info("register signal: " + signalName + "->" + signal);
+            getLogger().info("register signal: " + signalName + "->" + signal);
             return true;
         } catch (Throwable e) {
-            logger.exception("failed to register signal" + signalName, e);
+            getLogger().exception("failed to register signal" + signalName, e);
             return false;
         }
     }
@@ -89,11 +99,12 @@ public abstract class SignalEventSource {
                 ignored = ignoredSignals.contains(sigName);
             }
             if (ignored) {
-                logger.info("Signal handler ignored for signal:" + sigName + "|" + sigNumber);
+                getLogger().info("Signal handler ignored for signal:" + sigName + "|" + sigNumber);
             } else {
-                logger.info("Signal handler called for signal:" + sigName + "|" + sigNumber);
+                getLogger().info("Signal handler called for signal:" + sigName + "|" + sigNumber);
+                boolean invokeOldHandler = true;
                 try {
-                    onSignal(sigName, sigNumber.intValue());
+                    invokeOldHandler = onSignal(sigName, sigNumber.intValue());
                 } finally {
                     final Object oldHandler;
                     synchronized (oldHandlers) {
@@ -102,16 +113,16 @@ public abstract class SignalEventSource {
                     final Class<?> signalHandlerClass = Class.forName("sun.misc.SignalHandler");
                     final Object SIG_DFL = ReflectionUtils.getFieldValue(signalHandlerClass, "SIG_DFL", null, signalHandlerClass);
                     final Object SIG_IGN = ReflectionUtils.getFieldValue(signalHandlerClass, "SIG_IGN", null, signalHandlerClass);
-                    if (oldHandler != null && oldHandler != SIG_DFL && oldHandler != SIG_IGN) {
+                    if (invokeOldHandler && oldHandler != null && oldHandler != SIG_DFL && oldHandler != SIG_IGN) {
                         // Chain back to previous handler, if one exists
                         ReflectionUtils.invoke(signalHandlerClass, "handle", oldHandler, void.class, signal);
                     }
                 }
             }
         } catch (Exception e) {
-            logger.exception("failed to handle signal:" + signal, e);
+            getLogger().exception("failed to handle signal:" + signal, e);
         }
     }
 
-    public abstract void onSignal(String name, int number);
+    public abstract boolean onSignal(String name, int number);
 }

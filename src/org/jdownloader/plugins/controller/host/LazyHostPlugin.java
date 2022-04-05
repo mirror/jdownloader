@@ -1,14 +1,15 @@
 package org.jdownloader.plugins.controller.host;
 
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.TooltipInterface;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.translate._JDT;
-
-import jd.plugins.PluginForHost;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     public static enum FEATURE implements LabelInterface, TooltipInterface {
@@ -67,8 +68,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 return "INTERNAL";
             }
         };
-
-        public static final long CACHEVERSION = 04062017l; // change when you add/change enums!
+        public static final long CACHEVERSION = StringUtils.join(values(), "<->").hashCode() + StringUtils.join(values(), ":").hashCode() + StringUtils.join(values(), "<=>").hashCode();
 
         public boolean isSet(FEATURE[] features) {
             if (features != null) {
@@ -107,8 +107,22 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         return getClassName().endsWith("r.Offline");
     }
 
-    public boolean hasFeature(FEATURE feature) {
-        return feature != null && feature.isSet(getFeatures());
+    /**
+     * returns true if LazyHostPlugin has one matching feature
+     *
+     * @param features
+     * @return
+     */
+    public boolean hasFeature(final FEATURE... features) {
+        final FEATURE[] pluginFeatures = getFeatures();
+        if (features != null && features.length > 0 && pluginFeatures != null && pluginFeatures.length > 0) {
+            for (final FEATURE feature : features) {
+                if (feature.isSet(pluginFeatures)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     protected void setFeatures(FEATURE[] features) {
