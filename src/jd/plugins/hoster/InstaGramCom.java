@@ -464,7 +464,9 @@ public class InstaGramCom extends PluginForHost {
                 throw new IOException();
             } else {
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    /* 2022-04-05: Don't use con.getCompleteContentLength()! */
+                    // link.setVerifiedFileSize(con.getCompleteContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
                 return flink;
             }

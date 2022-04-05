@@ -35,16 +35,20 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Select filename type for all crawled media items";
         }
 
+        public String getFilenameScheme_label() {
+            return "Custom filenames: Enter filename scheme";
+        }
+
         public String getAddDateToFilenames_label() {
-            return "Include date (yyyy-MM-dd) in filenames?";
+            return "Default filenames: Include date (yyyy-MM-dd) in filenames?";
         }
 
         public String getAddOrderidToFilenames_label() {
-            return "Include order-ID in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.";
+            return "Default filenames: Include order-ID in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.";
         }
 
         public String getAddShortcodeToFilenames_label() {
-            return "Include 'shortcode' in filenames if it is available?";
+            return "Default filenames: Include 'shortcode' in filenames if it is available?";
         }
 
         public String getAttemptToDownloadOriginalQuality_label() {
@@ -68,11 +72,19 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getProfileCrawlerPreferAlternativeAPI_label() {
-            return "Profile crawler: Use alternative API? Can be slower, only works when an Instagram account is active and doesn't crawl reposts!";
+            return "Profile crawler: Prefer usage of alternative API? Can be slower, only works when an Instagram account is active!";
+        }
+
+        public String getProfileTaggedCrawledMaxItemsLimit_label() {
+            return "Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]";
         }
 
         public String getHashtagCrawlerMaxItemsLimit_label() {
-            return "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawling]";
+            return "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawler]";
+        }
+
+        public String getHashtagCrawlerUseAlternativeAPI_label() {
+            return "Hashtag crawler: Use alternative API? Can be slower, only works when an Instagram account is active!";
         }
 
         public String getCrawlerAbortOnRateLimitReached_label() {
@@ -121,7 +133,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @Order(3)
     String getPostCrawlerPackagenameScheme();
 
-    void setPostCrawlerPackagenameScheme(String packagenameScheme);
+    void setPostCrawlerPackagenameScheme(String str);
 
     public static enum FilenameType implements LabelInterface {
         DEFAULT {
@@ -135,13 +147,13 @@ public interface InstagramConfig extends PluginConfigInterface {
             public String getLabel() {
                 return "Server filenames";
             }
+        },
+        CUSTOM {
+            @Override
+            public String getLabel() {
+                return "Custom";
+            }
         };
-        // CUSTOM {
-        // @Override
-        // public String getLabel() {
-        // return "Custom";
-        // }
-        // };
     }
 
     @AboutConfig
@@ -153,9 +165,17 @@ public interface InstagramConfig extends PluginConfigInterface {
     void setFilenameType(final FilenameType filenameNamingSchemeType);
 
     @AboutConfig
+    @DefaultStringValue("*date*_*uploader* - *main_content_id* *orderid*_of_*orderid_max* - *shortcode**ext*")
+    @DescriptionForConfigEntry("Custom filenames: Enter filename scheme")
+    @Order(15)
+    String getFilenameScheme();
+
+    void setFilenameScheme(String str);
+
+    @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ADD_DATE_TO_FILENAMES")
-    @DescriptionForConfigEntry("Include date (yyyy-MM-dd) in filenames?")
+    @DescriptionForConfigEntry("Default filenames: Include date (yyyy-MM-dd) in filenames?")
     @Order(20)
     boolean isAddDateToFilenames();
 
@@ -164,7 +184,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ADD_ORDERID_TO_FILENAMES")
-    @DescriptionForConfigEntry("Include order-ID in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.")
+    @DescriptionForConfigEntry("Default filenames: Include order-ID in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.")
     @Order(30)
     boolean isAddOrderidToFilenames();
 
@@ -173,7 +193,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ADD_SHORTCODE_TO_FILENAMES")
-    @DescriptionForConfigEntry("Include 'shortcode' in filenames if it is available?")
+    @DescriptionForConfigEntry("Default filenames: Include 'shortcode' in filenames if it is available?")
     @Order(40)
     boolean isAddShortcodeToFilenames();
 
@@ -224,7 +244,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("PROFILE_CRAWLER_PREFER_ALTERNATIVE_API")
-    @DescriptionForConfigEntry("Profile crawler: Use alternative API? Can be slower, only works when an Instagram account is active and doesn't crawl reposts!")
+    @DescriptionForConfigEntry("Profile crawler: Prefer usage of alternative API? Can be slower, only works when an Instagram account is active!")
     @Order(80)
     boolean isProfileCrawlerPreferAlternativeAPI();
 
@@ -233,12 +253,29 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @SpinnerValidator(min = 0, max = 10000, step = 25)
     @DefaultIntValue(25)
+    @DescriptionForConfigEntry("Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]")
+    @Order(85)
+    int getProfileTaggedCrawledMaxItemsLimit();
+
+    void setProfileTaggedCrawledMaxItemsLimit(int items);
+
+    @AboutConfig
+    @SpinnerValidator(min = 0, max = 10000, step = 25)
+    @DefaultIntValue(25)
     @TakeValueFromSubconfig("ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER")
-    @DescriptionForConfigEntry("Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawling]")
+    @DescriptionForConfigEntry("Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawler]")
     @Order(90)
     int getHashtagCrawlerMaxItemsLimit();
 
     void setHashtagCrawlerMaxItemsLimit(int items);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Hashtag crawler: Use alternative API? Can be slower, only works when an Instagram account is active!")
+    @Order(100)
+    boolean isHashtagCrawlerUseAlternativeAPI();
+
+    void setHashtagCrawlerUseAlternativeAPI(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
