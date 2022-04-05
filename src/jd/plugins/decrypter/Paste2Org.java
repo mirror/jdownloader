@@ -25,8 +25,8 @@ import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = { "https?://(?:www\\.)?paste2\\.org/[A-Za-z0-9]+" })
 public class Paste2Org extends AbstractPastebinCrawler {
@@ -74,13 +74,10 @@ public class Paste2Org extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected void checkAvailableStatus(final DownloadLink link, final Browser br) throws IOException, PluginException {
-        /*
-         * Use hosterplugin to check availablestatus. If this paste is e.g. offline, Exception will be thown during hosterplugin
-         * availablecheck.
-         */
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        ((jd.plugins.hoster.Paste2Org) plg).requestFileInformation(link);
-        link.setAvailable(true);
+    protected void preProcess(final CryptedLink param) throws IOException, PluginException {
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 }

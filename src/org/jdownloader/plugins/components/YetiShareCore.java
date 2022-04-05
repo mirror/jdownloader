@@ -1722,7 +1722,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 prepBrowser(this.br, account.getHoster());
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
                     this.br.setCookies(this.getHost(), userCookies);
                     if (!force) {
