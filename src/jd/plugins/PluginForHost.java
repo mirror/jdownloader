@@ -56,6 +56,7 @@ import org.appwork.swing.action.BasicAction;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
 import org.appwork.uio.CloseReason;
+import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -77,6 +78,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -2880,5 +2882,42 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {
         return downloadProxySelector == candidateProxySelector && downloadAccount == candidateAccount;
+    }
+
+    protected Thread showCookieLoginInfo() {
+        final String host = this.getHost();
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - Login";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                        message += "Um deinen " + host + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = host + " - Login";
+                        message += "Hello dear " + host + " user\r\n";
+                        message += "In order to use an account of this service in JDownloader, please follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 }
