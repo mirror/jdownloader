@@ -2019,7 +2019,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         private String hashtag     = null;
         private String description = null;
         private String packageName = null;
-        // private boolean isFromAlternativeAPI = false;
 
         public InstagramMetadata() {
         }
