@@ -50,7 +50,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
@@ -212,7 +211,7 @@ public class UpstoRe extends antiDDoSForHost {
             final int waitFull = Integer.parseInt(waittimeStr);
             int wait = waitFull;
             logger.info("Detected total waittime: " + wait);
-            boolean firstWaitThenCaptcha = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+            final boolean firstWaitThenCaptcha = true;
             if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
                 if (firstWaitThenCaptcha) {
                     sleep(wait * 1000l, link);
@@ -250,6 +249,7 @@ public class UpstoRe extends antiDDoSForHost {
                 captchaForm.put("antispam", "spam");
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(captchaResponse));
                 captchaForm.put("h-captcha-response", Encoding.urlEncode(captchaResponse));
+                sleep(2000, link);
                 submitForm(captchaForm);
             } else {
                 logger.warning("No captchaForm present at all");

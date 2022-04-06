@@ -39,6 +39,7 @@ public class UploadedToFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("(www\\.)?(ul\\.to|uploaded\\to)/(f|folder)/", "uploaded.net/f/");
         br.setFollowRedirects(true);
+        final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         String baseURL = "http://uploaded.net/";
         if (parameter.contains("https://")) {
             baseURL = baseURL.replace("http://", "https://");
@@ -57,8 +58,15 @@ public class UploadedToFolder extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
-        final String[] links = br.getRegex("\"(/?file/[a-z0-9]+)/from/").getColumn(0);
-        final String[] folders = br.getRegex("\"(/?folder/[a-z0-9]+)\"").getColumn(0);
+        br.getPage("/list/" + fid + "/plain");
+        String[] links = br.getRegex("\"(/?file/[a-z0-9]+)/from/").getColumn(0);
+        if (links == null || links.length == 0) {
+            links = br.getRegex("(/file/[a-z0-9]+)").getColumn(0);
+        }
+        String[] folders = br.getRegex("\"(/?folder/[a-z0-9]+)\"").getColumn(0);
+        if (folders == null || folders.length == 0) {
+            folders = br.getRegex("(/folder/[a-z0-9]+)").getColumn(0);
+        }
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -70,7 +78,6 @@ public class UploadedToFolder extends PluginForDecrypt {
             }
         }
         if (folders != null && folders.length != 0) {
-            final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
             for (final String dl : folders) {
                 if (!dl.contains(fid)) {
                     decryptedLinks.add(createDownloadlink(URLHelper.parseLocation(url, dl)));

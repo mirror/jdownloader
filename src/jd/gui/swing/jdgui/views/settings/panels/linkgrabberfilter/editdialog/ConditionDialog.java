@@ -1,9 +1,11 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
@@ -12,6 +14,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -33,6 +36,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
+import javax.swing.text.Highlighter.HighlightPainter;
 
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.VariousCrawledLinkFlags;
@@ -47,6 +53,7 @@ import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.swing.components.ExtTextHighlighter;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -102,6 +109,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobFilename.setSelectedIndex(filter.getMatchType().ordinal());
         txtFilename.setText(filter.getRegex());
         cbRegFilename.setSelected(filter.isUseRegex());
+        addRegexHighlighter(txtFilename, cbRegFilename);
     }
 
     public void setPackagenameFilter(RegexFilter filter) {
@@ -112,6 +120,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobPackage.setSelectedIndex(filter.getMatchType().ordinal());
         txtPackage.setText(filter.getRegex());
         cbRegPackage.setSelected(filter.isUseRegex());
+        addRegexHighlighter(txtPackage, cbRegPackage);
     }
 
     public RegexFilter getFilenameFilter() {
@@ -243,6 +252,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtCustumMime.setText(f.getCustoms());
         cobType.setSelectedIndex(f.getMatchType().ordinal());
         cbRegFileType.setSelected(f.isUseRegex());
+        addRegexHighlighter(txtCustumMime, cbRegFileType);
     }
 
     protected boolean isResizable() {
@@ -261,6 +271,29 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         return new PluginStatusFilter(PluginStatusMatchtype.values()[cobPlugin.getSelectedIndex()], cbPlugin.isSelected(), PluginStatus.values()[cobPluginOptions.getSelectedIndex()]);
     }
 
+    protected void addRegexHighlighter(final ExtTextField txt, final JToggleButton toggle) {
+        final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+        txt.addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")) {
+            @Override
+            public boolean highlight(Highlighter highlighter, CharSequence charSequence) {
+                return toggle.isSelected() && super.highlight(highlighter, charSequence);
+            }
+        });
+        txt.addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")) {
+            @Override
+            public boolean highlight(Highlighter highlighter, CharSequence charSequence) {
+                return txt.isEnabled() && toggle.isSelected() && super.highlight(highlighter, charSequence);
+            }
+        });
+        toggle.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                txt.refreshTextHighlighter();
+            }
+        });
+        txt.refreshTextHighlighter();
+    }
+
     public void setSourceFilter(RegexFilter filter) {
         if (filter == null) {
             return;
@@ -269,6 +302,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobSource.setSelectedIndex(filter.getMatchType().ordinal());
         txtSource.setText(filter.getRegex());
         cbRegSource.setSelected(filter.isUseRegex());
+        addRegexHighlighter(txtSource, cbRegSource);
     }
 
     public RegexFilter getSourceFilter() {
@@ -283,6 +317,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobHoster.setSelectedIndex(filter.getMatchType().ordinal());
         txtHoster.setText(filter.getRegex());
         cbRegHoster.setSelected(filter.isUseRegex());
+        addRegexHighlighter(txtHoster, cbRegHoster);
     }
 
     public RegexFilter getHosterFilter() {

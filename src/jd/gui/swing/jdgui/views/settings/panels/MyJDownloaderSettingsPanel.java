@@ -117,7 +117,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                 final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
                 addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
                 addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
-                applyTextHighlighter(null);
+                refreshTextHighlighter();
             }
         };
         passWord = new PasswordInput(CFG_MYJD.PASSWORD) {
