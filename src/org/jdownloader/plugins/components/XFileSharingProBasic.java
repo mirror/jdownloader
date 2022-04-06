@@ -3844,8 +3844,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadUserCookies();
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies cookies = account.loadCookies("");
+                final Cookies userCookies = account.loadUserCookies();
                 if (userCookies == null && this.requiresCookieLogin()) {
                     /**
                      * Cookie login required but user did not put cookies into the password field: </br>
