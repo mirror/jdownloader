@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,42 +25,32 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "counterstrike.de" }, urls = { "http://[\\w\\.]*?4players\\.de/\\S*/download/[0-9]+/([01]/)?index\\.html?" }) 
-public class CntrstrkD extends PluginForDecrypt {
-
-    public CntrstrkD(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "https?://(?:www\\.)?4players\\.de/\\S*/download/([0-9]+)/([01]/)?index\\.html?" })
+public class FourPlayersDe extends PluginForDecrypt {
+    public FourPlayersDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
-        // Get fileid
-        final String fileid = new Regex(param.toString(), "http://[\\w\\.]*?4players\\.de/\\S*/download/([0-9]+)/([01]/)?index\\.html?").getMatch(0);
-
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String fileid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         // Open URL which redirects immediately to the file
         br.setFollowRedirects(false);
-        br.getPage("http://www.4players.de/cs.php/download_start/-/download/" + fileid + "/0/index.html");
-        br.getPage("http://www.4players.de/cs.php/download_start/-/download/" + fileid + "/1/index.html");
-
-        final String finallink = br.getRedirectLocation();
+        br.getPage("https://www.4players.de/cs.php/download_start/-/download/" + fileid + "/0/index.html");
+        br.getPage("/download_start/-/download/" + fileid + "/1/index.html");
+        // final String finallink = br.getRedirectLocation();
+        final String finallink = "https://www." + this.getHost() + "/cs.php/download_start/-/download/" + fileid + "/1/index.html";
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + param.toString());
             return null;
         }
-
         // Add to decrypted links - we use http://ftp.freenet instead of
         // ftp://freenet which works
         decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-
         return decryptedLinks;
     }
 
-    // @Override
-
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

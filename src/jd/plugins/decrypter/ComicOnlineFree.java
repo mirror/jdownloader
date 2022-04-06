@@ -57,22 +57,22 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
         String fpName = br.getRegex("<title>\\s*([^<]+)Comic\\s*-\\s*Read\\s*[^<]+\\s+Online\\s+For\\s+Free").getMatch(0);
         if (StringUtils.isEmpty(fpName)) {
             fpName = br.getRegex("<title>\\s*([^>]+)\\s+-\\s+Read\\s+[^<]+\\s+Online\\s+").getMatch(0);
-            if (StringUtils.isEmpty(fpName)) {
-                getLogger().warning("Unable to determine comic/issue title, can't proceed without one.");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
-        final FilePackage fp = FilePackage.getInstance();
+        FilePackage fp = null;
         if (StringUtils.isNotEmpty(fpName)) {
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fpName = Encoding.htmlDecode(fpName).trim();
+            fp = FilePackage.getInstance();
+            fp.setName(fpName);
         }
         final String[] links = br.getRegex("<a[^>]+class\\s*=\\s*\"ch-name\"[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0);
         if (links != null && links.length > 0) {
             for (String link : links) {
                 link = Encoding.htmlDecode(link);
-                DownloadLink dl = createDownloadlink(link);
-                fp.add(dl);
-                distribute(dl);
+                final DownloadLink dl = createDownloadlink(link);
+                if (fp != null) {
+                    dl._setFilePackage(fp);
+                }
+                decryptedLinks.add(dl);
             }
         }
         final String[] images = br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]+chapter_img\"[^>]+data-original\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0);
@@ -86,8 +86,16 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
                 final DownloadLink dl = createDownloadlink("directhttp://" + image);
                 String ext = getFileNameExtensionFromURL(image, ".jpg");
                 dl.setFinalFileName(chapter_name + "_" + page_formatted + ext);
-                fp.add(dl);
-                distribute(dl);
+                if (fp != null) {
+                    dl._setFilePackage(fp);
+                }
+                decryptedLinks.add(dl);
+            }
+        }
+        if (decryptedLinks.isEmpty()) {
+            if (!br.containsHTML("class=\"chapter_select_col\"")) {
+                /* Empty page e.g. https://comiconlinefree.net/moon-knight-2016/issue-190 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         return decryptedLinks;

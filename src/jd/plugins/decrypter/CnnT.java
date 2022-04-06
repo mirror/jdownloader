@@ -66,7 +66,7 @@ public class CnnT extends PluginForDecrypt {
     public static Object LOCK = new Object();
 
     @SuppressWarnings("deprecation")
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String host = new Regex(param.getCryptedUrl(), "https?://([^/]+)/").getMatch(0);
         final String kat_id = new Regex(param.getCryptedUrl(), "kat_id=(\\d+)").getMatch(0);
@@ -76,10 +76,12 @@ public class CnnT extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.containsHTML("(?i)>Versuche es in wenigen Minuten nochmals")) {
-            logger.info("Site overloaded at the moment: " + param.getCryptedUrl());
+            logger.info("Website overloaded at the moment: " + param.getCryptedUrl());
             return decryptedLinks;
         }
-        if (br.containsHTML("(?i)Es existiert kein Eintrag zu dieser ID") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)Es existiert kein (Eintrag|Upload) zu dieser ID")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final int maxAttempts = 5;
@@ -130,7 +132,7 @@ public class CnnT extends PluginForDecrypt {
             }
         }
         if (!valid) {
-            logger.info("Captcha for the following link was entered wrong for more than " + maxAttempts + " times: " + param.getCryptedUrl());
+            logger.info("Captcha for the following link was entered wrong for >= " + maxAttempts + " times: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         return decryptedLinks;
