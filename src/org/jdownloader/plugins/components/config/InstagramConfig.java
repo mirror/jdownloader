@@ -71,8 +71,8 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Profile crawler: Crawl profile picture?";
         }
 
-        public String getProfileCrawlerPreferAlternativeAPI_label() {
-            return "Profile crawler: Prefer usage of alternative API? Can be slower, only works when an Instagram account is active!";
+        public String getProfileCrawlerAPIPreference_label() {
+            return "Profile crawler: Set API preference";
         }
 
         public String getProfileTaggedCrawledMaxItemsLimit_label() {
@@ -83,8 +83,8 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawler]";
         }
 
-        public String getHashtagCrawlerUseAlternativeAPI_label() {
-            return "Hashtag crawler: Use alternative API? Can be slower, only works when an Instagram account is active!";
+        public String getHashtagCrawlerAPIPreference_label() {
+            return "Hashtag crawler: Set API preference";
         }
 
         public String getCrawlerAbortOnRateLimitReached_label() {
@@ -242,13 +242,12 @@ public interface InstagramConfig extends PluginConfigInterface {
     void setProfileCrawlerCrawlProfilePicture(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @TakeValueFromSubconfig("PROFILE_CRAWLER_PREFER_ALTERNATIVE_API")
-    @DescriptionForConfigEntry("Profile crawler: Prefer usage of alternative API? Can be slower, only works when an Instagram account is active!")
+    @DefaultEnumValue("API_WEBSITE")
     @Order(80)
-    boolean isProfileCrawlerPreferAlternativeAPI();
+    @DescriptionForConfigEntry("Profile crawler: Set API preference")
+    APIPreference getProfileCrawlerAPIPreference();
 
-    void setProfileCrawlerPreferAlternativeAPI(boolean b);
+    void setProfileCrawlerAPIPreference(final APIPreference apiPreference);
 
     @AboutConfig
     @SpinnerValidator(min = 0, max = 10000, step = 25)
@@ -270,12 +269,12 @@ public interface InstagramConfig extends PluginConfigInterface {
     void setHashtagCrawlerMaxItemsLimit(int items);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Hashtag crawler: Use alternative API? Can be slower, only works when an Instagram account is active!")
+    @DefaultEnumValue("API_WEBSITE")
     @Order(100)
-    boolean isHashtagCrawlerUseAlternativeAPI();
+    @DescriptionForConfigEntry("Hashtag crawler: Set API preference")
+    APIPreference getHashtagCrawlerAPIPreference();
 
-    void setHashtagCrawlerUseAlternativeAPI(boolean b);
+    void setHashtagCrawlerAPIPreference(final APIPreference apiPreference);
 
     @AboutConfig
     @DefaultBooleanValue(false)

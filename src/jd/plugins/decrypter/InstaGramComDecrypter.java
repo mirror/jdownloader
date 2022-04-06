@@ -39,6 +39,7 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.APIPreference;
 import org.jdownloader.plugins.components.config.InstagramConfig.FilenameType;
 import org.jdownloader.plugins.components.config.InstagramConfig.SinglePostPackagenameType;
 import org.jdownloader.plugins.components.instagram.Qdb;
@@ -509,7 +510,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             userSelectedCrawlTypes++;
         }
         if (crawlProfilePicture || crawlProfilePosts) {
-            if (account != null && PluginJsonConfig.get(InstagramConfig.class).isProfileCrawlerPreferAlternativeAPI()) {
+            final APIPreference pref = cfg.getProfileCrawlerAPIPreference();
+            if (pref == APIPreference.API_ONLY || (loggedIN.get() && pref == APIPreference.API_WEBSITE)) {
                 final String userID = findUserID(param, account, loggedIN, username);
                 decryptedLinks.addAll(this.crawlUserAltAPI(param, account, loggedIN, username, userID, crawlProfilePicture, crawlProfilePosts));
             } else {
@@ -700,7 +702,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             throw new IllegalArgumentException("crawlProfilePicture and crawlPosts cannot both be false");
         }
         final InstagramMetadata metadata = new InstagramMetadata(username);
-        metadata.setIsFromAlternativeAPI(true);
         metadata.setPackageName(username);
         InstaGramCom.prepBRAltAPI(this.br);
         String nextid = null;
@@ -1294,10 +1295,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
+            boolean isFromAltAPI = false;
             if (StringUtils.isEmpty(dllink)) {
                 try {
                     dllink = InstaGramCom.getBestQualityURLAltAPI(media);
-                    metadata.setIsFromAlternativeAPI(true);
+                    isFromAltAPI = true;
                 } catch (final Throwable ignore) {
                 }
             }
@@ -1314,7 +1316,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 dl.setProperty(InstaGramCom.PROPERTY_shortcode, shortcode);
             }
             dl.setProperty(InstaGramCom.PROPERTY_DIRECTURL, dllink);
-            if (metadata.isFromAlternativeAPI()) {
+            if (isFromAltAPI) {
                 dl.setProperty(InstaGramCom.PROPERTY_has_tried_to_crawl_original_url, true);
             }
             if (!StringUtils.isEmpty(description)) {
@@ -1359,7 +1361,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /** Crawls json objects of stories/stories-highlights */
-    private ArrayList<DownloadLink> crawlMediaObjectAltAPI(final CryptedLink param, final InstagramMetadata metadata, final Map<String, Object> item) throws PluginException {
+    private ArrayList<DownloadLink> crawlPostAltAPI(final CryptedLink param, final InstagramMetadata metadata, final Map<String, Object> item) throws PluginException {
         final String mainMediaID = item.get("id").toString();
         final Map<String, Object> user = (Map<String, Object>) item.get("user");
         final String username = user.get("username").toString();
@@ -1749,7 +1751,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             logger.info("Stopping because: User has disabled hashtag crawling");
             return new ArrayList<DownloadLink>();
         }
-        if (loggedIN.get() || cfg.isHashtagCrawlerUseAlternativeAPI()) {
+        final APIPreference pref = cfg.getHashtagCrawlerAPIPreference();
+        if (pref == APIPreference.API_ONLY || (loggedIN.get() && pref == APIPreference.API_WEBSITE)) {
             return this.crawlHashtagAltAPI(param, account, loggedIN);
         } else {
             return this.crawlHashtagWebsite(param, account, loggedIN);
@@ -1775,7 +1778,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final InstagramMetadata metadata = new InstagramMetadata();
         metadata.setHashtag(hashtag);
-        metadata.setIsFromAlternativeAPI(true);
         metadata.setPackageName(this.getPackagenameHashtag(metadata));
         String nextid = null;
         int page = 1;
@@ -1806,7 +1808,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 break;
             }
             for (final Map<String, Object> post : resource_data_list) {
-                decryptedLinks.addAll(this.crawlMediaObjectAltAPI(param, metadata, post));
+                decryptedLinks.addAll(this.crawlPostAltAPI(param, metadata, post));
             }
             numberofCrawledPostsTotal += numberofPostsOnThisPage;
             logger.info("Crawled page: " + page + " | Crawled posts so far: " + numberofCrawledPostsTotal + "/" + totalNumberofPosts);
@@ -1842,7 +1844,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         InstaGramCom.prepBRAltAPI(this.br);
         int totalNumberofPosts = -1;
         final InstagramMetadata metadata = new InstagramMetadata();
-        metadata.setIsFromAlternativeAPI(true);
         metadata.setPackageName(username + " - tagged");
         String nextid = null;
         int page = 1;
@@ -1914,9 +1915,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/feed/reels_media/?reel_ids=highlight%3A" + reelID);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final InstagramMetadata metadata = new InstagramMetadata();
-        metadata.setIsFromAlternativeAPI(true);
         final Map<String, Object> reel = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "reels/highlight:" + reelID);
-        return this.crawlMediaObjectAltAPI(param, metadata, reel);
+        return this.crawlPostAltAPI(param, metadata, reel);
     }
 
     private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
@@ -1934,7 +1934,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final InstagramMetadata metadata = new InstagramMetadata(username);
-        metadata.setIsFromAlternativeAPI(true);
         final String userID = findUserID(param, account, loggedIN, username);
         if (StringUtils.isEmpty(userID)) {
             /* Most likely that profile doesn't exist */
@@ -1947,7 +1946,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
         final Map<String, Object> reel = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        return this.crawlMediaObjectAltAPI(param, metadata, reel);
+        return this.crawlPostAltAPI(param, metadata, reel);
     }
 
     private DownloadLink getDummyDownloadlinkProfileEmpty(final String username) {
@@ -1966,7 +1965,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlPostListAltAPI(final CryptedLink param, final List<Map<String, Object>> mediaItems, final InstagramMetadata metadata) throws PluginException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         for (final Map<String, Object> mediaItem : mediaItems) {
-            decryptedLinks.addAll(this.crawlMediaObjectAltAPI(param, metadata, mediaItem));
+            decryptedLinks.addAll(this.crawlPostAltAPI(param, metadata, mediaItem));
         }
         return decryptedLinks;
     }
@@ -2016,25 +2015,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     protected class InstagramMetadata {
-        private String  username             = null;
-        private String  hashtag              = null;
-        private String  description          = null;
-        private String  packageName          = null;
-        private boolean isFromAlternativeAPI = false;
+        private String username    = null;
+        private String hashtag     = null;
+        private String description = null;
+        private String packageName = null;
+        // private boolean isFromAlternativeAPI = false;
 
         public InstagramMetadata() {
         }
 
         public InstagramMetadata(final String username) {
             this.username = username;
-        }
-
-        public boolean isFromAlternativeAPI() {
-            return isFromAlternativeAPI;
-        }
-
-        public void setIsFromAlternativeAPI(Boolean isFromAlternativeAPI) {
-            this.isFromAlternativeAPI = isFromAlternativeAPI;
         }
 
         public String getUsername() {
