@@ -15,24 +15,29 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -40,7 +45,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "https?://[\\w\\.]*?data.hu/get/(\\d+)/([^<>\"/%]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "https?://(?:www\\.)?data.hu/get/(\\d+)/([^<>\"/%]+)" })
 public class DataHu extends antiDDoSForHost {
     private int statuscode = 0;
 
@@ -55,8 +60,12 @@ public class DataHu extends antiDDoSForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://").replace(".html", ""));
+        /* Prefer https */
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://").replace(".html", ""));
     }
+
+    private static final String API_BASE             = "https://data.hu/api.php";
+    private static final String PROPERTY_PREMIUMONLY = "premiumonly";
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -81,6 +90,28 @@ public class DataHu extends antiDDoSForHost {
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private boolean isPremiumOnly(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_PREMIUMONLY)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Using API: http://data.hu/api.php */
@@ -108,40 +139,52 @@ public class DataHu extends antiDDoSForHost {
                     }
                 }
                 sb.delete(0, sb.capacity());
-                for (final DownloadLink dl : links) {
-                    checkurl = "https://" + this.getHost() + "/get/" + getFID(dl) + "/";
-                    sb.append(checkurl);
+                for (final DownloadLink link : links) {
+                    sb.append(link.getPluginPatternMatcher());
                     sb.append("%2C");
                 }
-                this.getAPISafe("https://" + this.getHost() + "/api.php?act=check_download_links&links=" + sb.toString());
+                this.getAPISafe(API_BASE + "?act=check_download_links&links=" + sb.toString());
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> link_info = (Map<String, Object>) entries.get("link_info");
                 br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
-                for (final DownloadLink dllink : links) {
-                    final String added_url = dllink.getDownloadURL();
-                    final String fid = getFID(dllink);
-                    checkurl = "https://" + this.getHost() + "/get/" + fid + "/";
-                    final String thisjson = br.getRegex("\"" + checkurl + "\":\\{(.*?)\\}").getMatch(0);
-                    if (thisjson == null || !"online".equals(PluginJSonUtils.getJsonValue(thisjson, "status"))) {
-                        dllink.setAvailable(false);
-                    } else {
-                        final String name = PluginJSonUtils.getJsonValue(thisjson, "filename");
-                        final String size = PluginJSonUtils.getJsonValue(thisjson, "filesize");
-                        final String md5 = PluginJSonUtils.getJsonValue(thisjson, "md5");
-                        final String sha1 = PluginJSonUtils.getJsonValue(thisjson, "sha1");
+                for (final DownloadLink link : links) {
+                    final Map<String, Object> info = (Map<String, Object>) link_info.get(link.getPluginPatternMatcher());
+                    if (info == null) {
+                        /* This should never happen! */
+                        link.setAvailable(false);
+                        continue;
+                    }
+                    final String status = info.get("status").toString();
+                    final String filename = (String) info.get("filename");
+                    final String filesize = (String) info.get("filesize");
+                    final String md5 = (String) info.get("md5");
+                    final String sha1 = (String) info.get("sha1");
+                    final String infoText = (String) info.get("info");
+                    if (!StringUtils.isEmpty(filename)) {
+                        link.setFinalFileName(filename);
                         /* Correct urls so when users copy them they can actually use them. */
-                        if (!added_url.contains("name")) {
-                            final String correctedurl = "http://data.hu/get/" + fid + "/" + name;
-                            dllink.setUrlDownload(correctedurl);
-                            dllink.setContentUrl(correctedurl);
+                        if (!link.getPluginPatternMatcher().contains(filename)) {
+                            link.setContentUrl("https://" + this.getHost() + "/get/" + this.getFID(link) + "/" + Encoding.urlEncode(filename));
                         }
-                        /* Names via API are good --> Use as final filenames */
-                        dllink.setFinalFileName(name);
-                        dllink.setDownloadSize(SizeFormatter.getSize(size));
-                        if (sha1 != null) {
-                            dllink.setSha1Hash(sha1);
-                        } else if (md5 != null) {
-                            dllink.setMD5Hash(md5);
-                        }
-                        dllink.setAvailable(true);
+                    }
+                    if (!StringUtils.isEmpty(filesize)) {
+                        link.setDownloadSize(SizeFormatter.getSize(filesize));
+                    }
+                    if (!StringUtils.isEmpty(sha1)) {
+                        link.setSha1Hash(sha1);
+                    }
+                    if (!StringUtils.isEmpty(checkurl)) {
+                        link.setMD5Hash(md5);
+                    }
+                    if (StringUtils.containsIgnoreCase(infoText, "only premium")) {
+                        link.setProperty(PROPERTY_PREMIUMONLY, true);
+                    } else {
+                        link.removeProperty(PROPERTY_PREMIUMONLY);
+                    }
+                    if (status.equalsIgnoreCase("online")) {
+                        link.setAvailable(true);
+                    } else {
+                        link.setAvailable(false);
                     }
                 }
                 if (index == urls.length) {
@@ -155,12 +198,12 @@ public class DataHu extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
         }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
@@ -170,46 +213,45 @@ public class DataHu extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        final String type = PluginJSonUtils.getJsonValue(br, "type");
+        login(account);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String type = entries.get("type").toString();
         if (!"premium".equalsIgnoreCase(type)) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (" + type + ")!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (" + type + ")!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (" + type + ")!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (" + type + ")!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        final String expiredate = PluginJSonUtils.getJsonValue(br, "expiration_date");
+        final String expiredate = (String) entries.get("expiration_date");
         if (expiredate != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd mm:HH:ss", Locale.ENGLISH), br);
         }
-        ai.setStatus("Premium Account");
-        account.setValid(true);
+        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "directlink");
-    }
-
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            getPage(downloadLink.getDownloadURL());
-            handleSiteErrors();
-            if (br.containsHTML("class='slow_dl_error_text'")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception {
+        final String directlinkproperty = "directlink";
+        final boolean resume = true;
+        final int maxchunks = 1;
+        if (!this.attemptStoredDownloadurlDownload(link, directlinkproperty, resume, maxchunks)) {
+            requestFileInformation(link);
+            if (isPremiumOnly(link)) {
+                throw new AccountRequiredException();
             }
+            getPage(link.getPluginPatternMatcher());
+            handleErrorsWebsite(br);
+            if (br.containsHTML("class='slow_dl_error_text'")) {
+                link.setProperty(PROPERTY_PREMIUMONLY, true);
+                throw new AccountRequiredException();
+            }
+            link.removeProperty(PROPERTY_PREMIUMONLY);
             final Form captcha = br.getFormbyProperty("id", "captcha_form");
+            final String dllink;
             if (captcha != null) {
-                // recaptchav2 by javascript
+                /* Captcha required */
                 logger.info("Detected captcha method \"reCaptchaV2\" for this host");
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -217,85 +259,100 @@ public class DataHu extends antiDDoSForHost {
                 ajax.getHeaders().put("Accept", "*/*");
                 ajax.getHeaders().put("X-Requested-With", " XMLHttpRequest");
                 submitForm(ajax, captcha);
-                dllink = PluginJSonUtils.getJson(ajax, "redirect");
+                final Map<String, Object> entries = JSonStorage.restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                dllink = (String) entries.get("redirect");
             } else {
-                dllink = br.getRegex("(\"|')(https?://ddl\\d+\\.data\\.hu/get/\\d+/\\d+/.*?)\\1").getMatch(1);
+                /* No captcha required */
+                dllink = br.getRegex("(\"|')(https?://ddl\\d+\\." + org.appwork.utils.Regex.escape(this.getHost()) + "/get/\\d+/\\d+/.*?)\\1").getMatch(1);
             }
-            if (dllink == null || dllink.equals("")) {
+            if (StringUtils.isEmpty(dllink)) {
                 final String message = PluginJSonUtils.getJsonValue(this.br, "message");
-                if (message != null && !message.equals("")) {
+                if (!StringUtils.isEmpty(message)) {
                     /* 2017-02-02: They have reCaptchaV2 so this should never happen ... */
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The finallink doesn't seem to be a file...");
+                handleServerErrors();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                handleErrorsWebsite(br);
+                if (br.getURL().contains("data.hu/only_premium.php")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            link.setProperty(directlinkproperty, dllink);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The finallink doesn't seem to be a file...");
-            handleServerErrors();
-            br.followConnection();
-            handleSiteErrors();
-            if (br.getURL().contains("data.hu/only_premium.php")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         final String directlinkproperty = "dllink_premium";
-        requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            getAPISafe("https://" + this.getHost() + "/api.php?act=get_direct_link&link=" + PluginJSonUtils.escape(downloadLink.getDownloadURL()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
-            dllink = PluginJSonUtils.getJsonValue(br, "direct_link");
-            if (dllink == null) {
+        final boolean resume = true;
+        final int maxchunks = -2;
+        if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resume, maxchunks)) {
+            requestFileInformation(link);
+            getAPISafe(API_BASE + "?act=get_direct_link&link=" + PluginJSonUtils.escape(link.getPluginPatternMatcher()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+            final String dllink = PluginJSonUtils.getJsonValue(br, "direct_link");
+            if (StringUtils.isEmpty(dllink)) {
                 /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -2);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The finallink doesn't seem to be a file...");
+                handleServerErrors();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                handleErrorsWebsite(br);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(directlinkproperty, dllink);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The finallink doesn't seem to be a file...");
-            handleServerErrors();
-            br.followConnection();
-            handleSiteErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
-    /**
-     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
-     * [NOT html]).
-     */
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(directlinkproperty);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        boolean valid = false;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
+                return true;
+            } else {
+                link.removeProperty(directlinkproperty);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return false;
+        } finally {
+            if (!valid) {
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
                 }
+                this.dl = null;
             }
         }
-        return dllink;
     }
 
     private void handleServerErrors() throws PluginException {
@@ -307,10 +364,10 @@ public class DataHu extends antiDDoSForHost {
         }
     }
 
-    private void handleSiteErrors() throws PluginException {
-        if (br.containsHTML("Az adott fájl nem létezik\\.")) {
+    private void handleErrorsWebsite(final Browser br) throws PluginException {
+        if (br.containsHTML("(?i)Az adott fájl nem létezik\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("Az adott fájl már nem elérhető\\.")) {
+        } else if (br.containsHTML("(?i)Az adott fájl már nem elérhető\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
@@ -318,11 +375,7 @@ public class DataHu extends antiDDoSForHost {
     public void login(final Account account) throws Exception {
         this.setBrowserExclusive();
         prepBR(this.br);
-        getAPISafe("https://data.hu/api.php?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
-    }
-
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        getAPISafe(API_BASE + "?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
     }
 
     private void getAPISafe(final String accesslink) throws Exception {
@@ -428,6 +481,15 @@ public class DataHu extends antiDDoSForHost {
         } catch (final PluginException e) {
             logger.info("Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
+        }
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (this.isPremiumOnly(link) && (account == null || account.getType() != AccountType.PREMIUM)) {
+            return false;
+        } else {
+            return true;
         }
     }
 

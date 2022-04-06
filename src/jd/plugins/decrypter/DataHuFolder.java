@@ -19,10 +19,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -36,15 +38,12 @@ public class DataHuFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
-        br.setCookie("http://data.hu", "lang", "en");
-        br.getPage(parameter);
-        if (br.containsHTML("class=\"error alert alert-danger\"|>Sajnos ez a megosztás már megszűnt")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        br.setCookie("https://" + this.getHost(), "lang", "en");
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)class=\"error alert alert-danger\"|>Sajnos ez a megosztás már megszűnt")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /** Password protected folders --> 2020-05-28: This doesn't work anymore */
         // if (br.containsHTML("Kérlek add meg a jelszót\\!<")) {
@@ -60,40 +59,58 @@ public class DataHuFolder extends PluginForDecrypt {
         // throw new DecrypterException(DecrypterException.PASSWORD);
         // }
         // }
+        final String currentFolderID = new Regex(param.getCryptedUrl(), "data\\.hu/(dir/.+)").getMatch(0);
         String nextpage = null;
+        String folderName = br.getRegex("id=\"main_big_content\">\\s*<h1>([^<]+)</h1>").getMatch(0);
+        FilePackage fp = null;
+        if (folderName != null) {
+            folderName = Encoding.htmlDecode(folderName).trim();
+            fp = FilePackage.getInstance();
+            fp.setName(folderName);
+        }
+        int page = 1;
         do {
-            String[] links = br.getRegex("(https?://[\\w\\.]*?data\\.hu/get/\\d+/[^<>\"\\']+)").getColumn(0);
-            String[] folders = br.getRegex("(https?://[\\w\\.]*?data\\.hu/dir/[0-9a-z]+)").getColumn(0);
-            if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
+            final String[] links = br.getRegex("(https?://[^/]+/get/\\d+/[^<>\"\\']+)").getColumn(0);
+            final String[] folders = br.getRegex("(https?://[^/]+/dir/[0-9a-z]+)").getColumn(0);
+            if (links.length == 0 && folders.length == 0) {
                 break;
             }
-            if (links != null && links.length != 0) {
-                for (String dl : links) {
-                    decryptedLinks.add(createDownloadlink(dl));
+            if (links.length > 0) {
+                for (final String fileURL : links) {
+                    final DownloadLink file = createDownloadlink(fileURL);
+                    if (fp != null) {
+                        file._setFilePackage(fp);
+                    }
+                    decryptedLinks.add(file);
+                    distribute(file);
                 }
             }
-            final String currentFolderID = new Regex(parameter, "data\\.hu/(dir/.+)").getMatch(0);
-            if (folders != null && folders.length != 0) {
-                for (String folderlink : folders) {
-                    if (!folderlink.contains(currentFolderID)) {
-                        decryptedLinks.add(createDownloadlink(folderlink));
+            if (folders.length > 0) {
+                for (final String folderURL : folders) {
+                    if (!folderURL.contains(currentFolderID)) {
+                        final DownloadLink subfolder = createDownloadlink(folderURL);
+                        decryptedLinks.add(subfolder);
+                        distribute(subfolder);
                     }
                 }
             }
-            nextpage = br.getRegex("class=\"next_page_link\" href=\"(\\?page=\\d+)\"").getMatch(0);
-            if (nextpage != null) {
-                br.getPage(nextpage);
-                /* Decode json answer */
-                br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+            logger.info("Crawled page " + page + " | Found items so far: " + decryptedLinks.size());
+            page++;
+            nextpage = br.getRegex("class=\"next_page_link\" href=\"(\\?page=" + page + ")\"").getMatch(0);
+            if (nextpage == null) {
+                logger.info("Stopping because: Reached last page");
+                break;
             }
-        } while (!this.isAbort() && nextpage != null);
-        if (decryptedLinks.size() == 0) {
+            br.getPage(nextpage);
+            /* Small workaround: Decode json answer */
+            br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+        } while (!this.isAbort());
+        if (decryptedLinks.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
