@@ -284,8 +284,9 @@ public class DataHu extends antiDDoSForHost {
                     logger.log(e);
                 }
                 handleErrorsWebsite(br);
-                if (br.getURL().contains("data.hu/only_premium.php")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                if (br.getURL().contains("/only_premium.php")) {
+                    link.setProperty(PROPERTY_PREMIUMONLY, true);
+                    throw new AccountRequiredException();
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
