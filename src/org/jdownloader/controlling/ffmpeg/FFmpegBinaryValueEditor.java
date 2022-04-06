@@ -3,19 +3,27 @@ package org.jdownloader.controlling.ffmpeg;
 import java.io.File;
 
 import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvandedValueEditor;
+
+import com.formdev.flatlaf.util.StringUtils;
 
 public class FFmpegBinaryValueEditor extends AdvandedValueEditor<String> {
     @Override
-    public String edit(String path) throws ValidationException {
-        final ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.LoadProxyProfileAction_actionPerformed_(), null, null);
+    public String edit(KeyHandler<String> keyHandler, String path) throws ValidationException {
+        final DescriptionForConfigEntry description = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
+        String title = description != null ? description.value() : null;
+        if (StringUtils.isEmpty(title)) {
+            title = keyHandler.getKey();
+        }
+        final ExtFileChooserDialog d = new ExtFileChooserDialog(0, title, null, null);
         d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
         if (path != null && new File(path).isFile()) {
             d.setPreSelection(new File(path));

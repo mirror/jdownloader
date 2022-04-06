@@ -72,6 +72,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.ffmpeg.AbstractFFmpegBinary;
+import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
@@ -102,6 +103,7 @@ import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.FilterList.Type;
 import org.jdownloader.updatev2.UpdateController;
+import org.jdownloader.updatev2.UpdateHandler;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -3379,15 +3381,19 @@ public class YoutubeHelper {
 
     protected void checkFFProbe(FFprobe ffmpeg, String reason) throws SkipReasonException, InterruptedException {
         if (!ffmpeg.isAvailable()) {
-            if (UpdateController.getInstance().getHandler() == null) {
+            final UpdateHandler handler = UpdateController.getInstance().getHandler();
+            if (handler == null) {
                 logger.warning("Please set FFMPEG: BinaryPath in advanced options");
                 throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
             }
-            FFmpegProvider.getInstance().install(null, reason);
+            final FFMpegInstallProgress progress = new FFMpegInstallProgress();
+            progress.setProgressSource(this);
+            FFmpegProvider.getInstance().install(progress, reason);
             ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
             if (!ffmpeg.isAvailable()) {
-                List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
+                final List<String> requestedInstalls = handler.getRequestedInstalls();
+                final String extensionID = org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName();
+                if (requestedInstalls != null && extensionID != null && requestedInstalls.contains(extensionID)) {
                     throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
                 } else {
                     throw new SkipReasonException(SkipReason.FFMPEG_MISSING);

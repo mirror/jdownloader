@@ -62,7 +62,7 @@ public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
                         @Override
                         public void actionPerformed(ActionEvent e) {
                             try {
-                                final Object newValue = advancedValueEditor.newInstance().edit(item.getValue());
+                                final Object newValue = advancedValueEditor.newInstance().edit(item.getKeyHandler(), item.getValue());
                                 item.setValue(newValue);
                                 repaint();
                             } catch (Throwable throwable) {

@@ -48,6 +48,47 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.Account.AccountError;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
@@ -142,47 +183,7 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
-
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.Account.AccountError;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
+import org.jdownloader.updatev2.UpdateHandler;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
@@ -192,10 +193,11 @@ import jd.plugins.download.Downloadable;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-            /**
-             * these patterns should split filename and fileextension (extension must include the point)
-             */
-            // multipart rar archives
+                                                  /**
+                                                   * these patterns should split filename and fileextension (extension must include the
+                                                   * point)
+                                                   */
+                                                  // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
@@ -1163,8 +1165,9 @@ public abstract class PluginForHost extends Plugin {
     public void checkFFmpeg(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
         final FFmpeg ffmpeg = getFFmpeg(null, downloadLink);
         if (!ffmpeg.isAvailable()) {
-            if (UpdateController.getInstance().getHandler() == null) {
-                getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
+            final UpdateHandler handler = UpdateController.getInstance().getHandler();
+            if (handler == null) {
+                getLogger().warning("Please set FFmpeg: BinaryPath in advanced options");
                 throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
             }
             final FFMpegInstallProgress progress = new FFMpegInstallProgress();
@@ -1177,8 +1180,9 @@ public abstract class PluginForHost extends Plugin {
             }
             ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
             if (!ffmpeg.isAvailable()) {
-                final List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
+                final List<String> requestedInstalls = handler.getRequestedInstalls();
+                final String extensionID = org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName();
+                if (requestedInstalls != null && extensionID != null && requestedInstalls.contains(extensionID)) {
                     throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
                 } else {
                     throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
@@ -1193,7 +1197,8 @@ public abstract class PluginForHost extends Plugin {
     public void checkFFProbe(final DownloadLink downloadLink, final String reason) throws SkipReasonException, InterruptedException {
         final FFprobe ffprobe = getFFProbe(null, downloadLink);
         if (!ffprobe.isAvailable()) {
-            if (UpdateController.getInstance().getHandler() == null) {
+            final UpdateHandler handler = UpdateController.getInstance().getHandler();
+            if (handler == null) {
                 getLogger().warning("Please set FFProbe: BinaryPath in advanced options");
                 throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
             }
@@ -1207,8 +1212,9 @@ public abstract class PluginForHost extends Plugin {
             }
             ffprobe.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPathProbe());
             if (!ffprobe.isAvailable()) {
-                final List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName())) {
+                final List<String> requestedInstalls = handler.getRequestedInstalls();
+                final String extensionID = org.jdownloader.controlling.ffmpeg.FFMpegInstallThread.getFFmpegExtensionName();
+                if (requestedInstalls != null && extensionID != null && requestedInstalls.contains(extensionID)) {
                     throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
                 } else {
                     throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
@@ -1292,16 +1298,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1666,10 +1672,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Determines whether or not mass- linkchecking is allowed. </br>
-     * If it is always possible, simply override PluginForHost.checkLinks(final DownloadLink[] urls). </br>
-     * If it is generally possible but not always e.g. depending whether an apikey is given or not, override this method. Example: </br>
-     * org.jdownloader.plugins.components.XFileSharingProBasic
+     * Determines whether or not mass- linkchecking is allowed. </br> If it is always possible, simply override
+     * PluginForHost.checkLinks(final DownloadLink[] urls). </br> If it is generally possible but not always e.g. depending whether an
+     * apikey is given or not, override this method. Example: </br> org.jdownloader.plugins.components.XFileSharingProBasic
      */
     public boolean internal_supportsMassLinkcheck() {
         return implementsCheckLinks(this);

@@ -83,7 +83,7 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
                     final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
                     addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
                     addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
-                    applyTextHighlighter(null);
+                    refreshTextHighlighter();
                 }
             });
             name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
