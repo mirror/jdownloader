@@ -136,7 +136,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
         if (contentID == null) {
             return null;
         }
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost hostPlugin = getNewPluginForHostInstance(this.getHost());
         /* Crawll all items */
         final HashMap<String, DownloadLink> qualities = crawlContentAPI(hostPlugin, this.br, contentID, acc);
         if (qualities.isEmpty()) {
@@ -198,7 +198,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
     }
 
     private Account getUserLogin() throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost hostPlugin = getNewPluginForHostInstance(this.getHost());
         Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa == null) {
             /*
@@ -208,12 +208,14 @@ public class PornportalComCrawler extends PluginForDecrypt {
             logger.info("Failed to find main account --> Looking for 'multihoster account'");
             final ArrayList<String> allowedPornportalHosts = PornportalCom.getAllSupportedPluginDomainsFlat();
             final List<Account> multihostAccounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
-            for (final Account multihostAcc : multihostAccounts) {
-                final String multiHostHost = multihostAcc.getHoster();
-                if (multihostAcc.isEnabled() && allowedPornportalHosts.contains(multiHostHost)) {
-                    logger.info("Found working multihost account: " + multihostAcc.getHoster());
-                    aa = multihostAcc;
-                    break;
+            if (multihostAccounts != null) {
+                for (final Account multihostAcc : multihostAccounts) {
+                    final String multiHostHost = multihostAcc.getHoster();
+                    if (multihostAcc.isEnabled() && allowedPornportalHosts.contains(multiHostHost)) {
+                        logger.info("Found working multihost account: " + multihostAcc.getHoster());
+                        aa = multihostAcc;
+                        break;
+                    }
                 }
             }
         }
@@ -222,12 +224,12 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 ((jd.plugins.hoster.PornportalCom) hostPlugin).login(this.br, aa, this.getHost(), false);
                 return aa;
             } catch (final PluginException e) {
+                logger.log(e);
                 // handleAccountException(aa, e);
                 logger.info("Login failure --> Continue without account / trailer download");
-                return null;
             }
         }
-        return aa;
+        return null;
     }
 
     public static HashMap<String, DownloadLink> crawlContentAPI(final PluginForHost plg, final Browser br, final String contentID, final Account account) throws Exception {
