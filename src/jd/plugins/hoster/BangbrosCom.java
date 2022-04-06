@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,20 +34,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com", "mygf.com" }, urls = { "bangbrosdecrypted://.+", "mygfdecrypted://.+" })
 public class BangbrosCom extends PluginForHost {
@@ -236,69 +232,82 @@ public class BangbrosCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null) {
+                    logger.info("Performing user-cookie login");
+                    br.setCookies(account.getHoster(), userCookies);
+                    if (!force) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
+                    if (checkLogin(br)) {
+                        logger.info("User cookie login successful");
+                        return;
+                    } else {
+                        logger.info("User cookie login failed");
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException("Cookies expired");
+                        } else {
+                            throw new AccountInvalidException("Cookies invalid");
+                        }
+                    }
+                }
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 if (cookies != null) {
                     /*
                      * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
-                    /* 2020-08-12: Allow re-usage of cookiees without checking but only every 30 seconds! */
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 30 * 1000l) {
+                    if (!force) {
                         logger.info("Trust cookies without check");
                         return;
                     }
-                    br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
-                    if (isLoggedin(br)) {
+                    if (checkLogin(br)) {
                         logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
-                        br.clearAll();
+                        br.clearCookies(br.getHost());
                         prepBR(br);
                     }
                 }
                 logger.info("Performing full login");
                 /* 2020-08-24: Cookie login is NEEDED for mygf.com and can be used for bangbros.com too but is not needed! */
                 if (account.getHoster().equals("mygf.com") && userCookies == null) {
-                    showCookieLoginInformation();
+                    if (!account.hasEverBeenValid()) {
+                        showCookieLoginInfo();
+                    }
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Enter cookies to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (userCookies != null) {
-                    logger.info("Performing user-cookie login");
-                    br.setCookies(userCookies);
-                    /* 2020-08-31: Special: no https possible! */
-                    br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
-                } else {
-                    logger.info("Performing normal user/password login");
-                    /*
-                     * 2020-08-21: Not all websites support https e.g. mygf.com doesn't so we rather use http here and let them redirect us
-                     * to https if available.
-                     */
-                    br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/login");
-                    final Form loginform = br.getForm(0);
-                    if (loginform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("Performing full login");
+                /*
+                 * 2020-08-21: Not all websites support https e.g. mygf.com doesn't so we rather use http here and let them redirect us to
+                 * https if available.
+                 */
+                br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/login");
+                final Form loginform = br.getForm(0);
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("login%5Busername%5D", Encoding.urlEncode(account.getUser()));
+                loginform.put("login%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
+                loginform.put("profiler_input", Integer.toString(new Random().nextInt(1000)));
+                if (loginform.containsHTML("g-recaptcha")) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    if (dlinkbefore == null) {
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                     }
-                    loginform.put("login%5Busername%5D", Encoding.urlEncode(account.getUser()));
-                    loginform.put("login%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
-                    loginform.put("profiler_input", Integer.toString(new Random().nextInt(1000)));
-                    if (loginform.containsHTML("g-recaptcha")) {
-                        final DownloadLink dlinkbefore = this.getDownloadLink();
-                        if (dlinkbefore == null) {
-                            this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
-                        }
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        if (dlinkbefore != null) {
-                            this.setDownloadLink(dlinkbefore);
-                        }
-                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    if (dlinkbefore != null) {
+                        this.setDownloadLink(dlinkbefore);
                     }
-                    br.submitForm(loginform);
-                    if (!br.getURL().contains("/library")) {
-                        br.getPage("/library");
-                    }
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                br.submitForm(loginform);
+                if (!br.getURL().contains("/library")) {
+                    br.getPage("/library");
                 }
                 if (!isLoggedin(br) || !br.getURL().contains("/library")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -311,48 +320,21 @@ public class BangbrosCom extends PluginForHost {
         }
     }
 
+    private boolean checkLogin(final Browser br) throws IOException {
+        br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
+        if (isLoggedin(br)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private boolean isLoggedin(final Browser br) {
         // final String logincookie = br.getCookie(account.getHoster(), "bangbros_remember_me");
         // final String logincookie2 = br.getCookie(account.getHoster(), "st_login");
         // final boolean isLoggedin = (logincookie != null && !"deleted".equalsIgnoreCase(logincookie)) || (logincookie2 != null &&
         // !"deleted".equalsIgnoreCase(logincookie2));
         return br.containsHTML("all_purchased_switcher") || br.getCookie(this.getHost(), "bangbros_remember_me", Cookies.NOTDELETEDPATTERN) != null;
-    }
-
-    private static Thread showCookieLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Mygf.com - Login";
-                        message += "Hallo liebe(r) Mygf NutzerIn\r\n";
-                        message += "Um deinen Mygf Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Mygf.com - Login";
-                        message += "Hello dear Mygf user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    // getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     @Override
@@ -364,7 +346,6 @@ public class BangbrosCom extends PluginForHost {
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium Account");
         return ai;
     }
 
