@@ -96,6 +96,8 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
             if (!br.containsHTML("class=\"chapter_select_col\"")) {
                 /* Empty page e.g. https://comiconlinefree.net/moon-knight-2016/issue-190 */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
         }
         return decryptedLinks;
