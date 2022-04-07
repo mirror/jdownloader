@@ -18,6 +18,19 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,6 +44,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,18 +55,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.DiskYandexNetFolder;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "http://yandexdecrypted\\.net/\\d+" })
 public class DiskYandexNet extends PluginForHost {
@@ -470,18 +472,7 @@ public class DiskYandexNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 /* Always try to re-use cookies to avoid login captchas! */
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
-                if (cookies != null) {
-                    this.setCookies(cookies);
-                    if (!force) {
-                        /* Trust cookies */
-                        logger.info("Trust cookies without check");
-                        return;
-                    }
-                    if (this.checkCookies(account)) {
-                        return;
-                    }
-                }
+                final Cookies userCookies = account.loadUserCookies();
                 /* 2021-02-15: Implemented cookie login for testing purposes */
                 if (userCookies != null) {
                     logger.info("Attempting cookie login...");
@@ -497,7 +488,23 @@ public class DiskYandexNet extends PluginForHost {
                         }
                         return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
+                if (cookies != null) {
+                    this.setCookies(cookies);
+                    if (!force) {
+                        /* Trust cookies */
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
+                    if (this.checkCookies(account)) {
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
                     }
                 }
                 try {
@@ -636,7 +643,6 @@ public class DiskYandexNet extends PluginForHost {
         if (br.containsHTML("mode=logout")) {
             /* Set new cookie timestamp */
             logger.info("Cookie login successful");
-            account.saveCookies(br.getCookies(this.getHost()), "");
             return true;
         } else {
             /* Failed - we have to perform a full login! */
@@ -737,9 +743,10 @@ public class DiskYandexNet extends PluginForHost {
                 if (internal_file_path == null) {
                     logger.info("MoveFileIntoAccount: No internal filepath available --> Trying to move file into account");
                     /**
-                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br> public_web_copy_limit is
-                     * usually used if the files is currently quota limited and cannot be downloaded at all at this moment. </br> Both will
-                     * work but we'll try to choose the one which would also be used via browser.
+                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br>
+                     * public_web_copy_limit is usually used if the files is currently quota limited and cannot be downloaded at all at this
+                     * moment. </br>
+                     * Both will work but we'll try to choose the one which would also be used via browser.
                      */
                     final String copySource;
                     if (this.isFileDownloadQuotaReached(link)) {
