@@ -143,7 +143,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     protected WeakHashMap<Request, String>    correctedBrowserRequestMap                                        = new WeakHashMap<Request, String>();
     /* don't touch the following! */
     private static Map<String, AtomicInteger> freeRunning                                                       = new HashMap<String, AtomicInteger>();
-    private static final String               PROPERTY_pw_required                                              = "password_requested_by_website";
     protected static final String             PROPERTY_captcha_required                                         = "captcha_requested_by_website";
     protected static final String             PROPERTY_ACCOUNT_apikey                                           = "apikey";
     private static final String               PROPERTY_PLUGIN_api_domain_with_protocol                          = "apidomain";
@@ -3070,7 +3069,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
 
     protected void handlePassword(final Form pwform, final DownloadLink link) throws PluginException {
         if (isPasswordProtectedHTML(this.br, pwform)) {
-            link.setProperty(PROPERTY_pw_required, true);
+            link.setPasswordProtected(true);
             if (pwform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -3088,7 +3087,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             pwform.put("password", Encoding.urlEncode(passCode));
             link.setDownloadPassword(passCode);
         } else {
-            link.setProperty(PROPERTY_pw_required, false);
+            link.setPasswordProtected(false);
         }
     }
 
@@ -3100,20 +3099,19 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(html, "(?i)>\\s*Wrong password").matches()) {
-                final boolean websiteDidAskForPassword = link.getBooleanProperty(PROPERTY_pw_required, false);
-                if (!websiteDidAskForPassword) {
-                    /*
-                     * 2020-03-26: Extremely rare case: Either plugin failure or serverside failure e.g. URL is password protected but
-                     * website does never ask for the password e.g. 2020-03-26: ddl.to. We cannot use link.getDownloadPassword() to check
-                     * this because users can enter download passwords at any time no matter whether they're required/used or not.
-                     */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'wrong password' but never prompted for one");
-                } else {
+                if (link.isPasswordProtected()) {
                     final String userEnteredPassword = link.getDownloadPassword();
                     /* handle password has failed in the past, additional try catching / resetting values */
                     logger.warning("Wrong password, the entered password \"" + userEnteredPassword + "\" is wrong, retrying...");
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else {
+                    /*
+                     * 2020-03-26: Extremely rare case: Either plugin failure or serverside failure e.g. URL is password protected but
+                     * website does never ask for the password e.g. 2020-03-26: ddl.to. We cannot use link.getDownloadPassword() to check
+                     * this because users can enter download passwords at any time no matter whether they're required/used or not.
+                     */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Got error 'wrong password' but website never prompted for one");
                 }
             } else if (new Regex(html, "(?i)>\\s*Wrong captcha").matches()) {
                 logger.warning("Wrong captcha (or wrong password as well)!");

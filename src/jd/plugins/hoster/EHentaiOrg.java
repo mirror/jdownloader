@@ -26,6 +26,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -42,6 +43,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -594,63 +596,37 @@ public class EHentaiOrg extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                final Cookies cookies2 = account.loadCookies("exhentai");
-                // final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null) {
+                    br.setCookies(MAINPAGE_ehentai, userCookies);
+                    if (!force) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
+                    if (verifyCookies(account, true)) {
+                        return;
+                    } else {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
                 if (cookies != null) {
                     br.setCookies(MAINPAGE_ehentai, cookies);
+                    final Cookies cookies2 = account.loadCookies("exhentai");
                     if (cookies2 != null) {
                         br.setCookies(MAINPAGE_exhentai, cookies2);
                     }
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                    if (!force) {
                         /* We trust these cookies --> Do not check them */
-                        logger.info("Trust login cookies as they're not yet that old:" + (cookies != null && !cookies.isEmpty()) + "|" + (cookies2 != null && !cookies2.isEmpty()));
                         return;
-                    } else {
-                        // getPage(br, MAINPAGE_ehentai + "/index.php?");
-                        getPage(br, MAINPAGE_ehentai + "/hathperks.php");
-                        if (this.isLoggedInEhentai(br)) {
-                            getPage(br, MAINPAGE_ehentai + "/home.php");
-                            if (this.isLoggedInEhentai(br)) {
-                                final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
-                                final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
-                                logger.info("Successfully logged in via cookies:" + items_downloadedStr + "/" + items_maxStr);
-                                account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
-                                /* Get- and save exhentai cookies too */
-                                this.getPage(br, MAINPAGE_exhentai);
-                                if (this.isLoggedInEhentaiOrExhentai(br)) {
-                                    logger.info("Successfully logged in exhentai -> Saving cookies");
-                                    account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
-                                } else {
-                                    logger.info("Failed to login in exhentai -> Ignoring cookies");
-                                }
-                                return;
-                            }
-                        }
-                        logger.info("Failed to login via cookies");
-                        br.clearAll();
+                    }
+                    if (verifyCookies(account, false)) {
+                        return;
                     }
                 }
-                /* 2020-11-09: Debug test */
-                // if (userCookies != null) {
-                // logger.info("Attempting user cookie login");
-                // br.setCookies(MAINPAGE, userCookies);
-                // br.setCookies("http://exhentai.org/", userCookies);
-                // if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
-                // /* We trust these cookies --> Do not check them */
-                // logger.info("Trust login cookies as they're not yet that old");
-                // return;
-                // }
-                // // getPage(br, "https://forums.e-hentai.org/index.php?");
-                // getPage(br, "https://e-hentai.org/hathperks.php");
-                // if (this.isLoggedIn(br)) {
-                // logger.info("Successfully logged in via cookies");
-                // account.saveCookies(br.getCookies(MAINPAGE), "");
-                // return;
-                // } else {
-                // logger.info("Failed to login via cookies");
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // }
-                // }
                 boolean failed = true;
                 /* Login page with params to redirect to /home.php */
                 getPage(br, MAINPAGE_ehentai + "/bounce_login.php?b=d&bt=1-1");
@@ -709,6 +685,37 @@ public class EHentaiOrg extends antiDDoSForHost {
                 br.setFollowRedirects(followRedirects);
             }
         }
+    }
+
+    /** Sets given cookies and checks if we can login with them. */
+    protected boolean verifyCookies(final Account account, final boolean isUserCookies) throws Exception {
+        // getPage(br, MAINPAGE_ehentai + "/index.php?");
+        getPage(br, MAINPAGE_ehentai + "/hathperks.php");
+        if (this.isLoggedInEhentai(br)) {
+            getPage(br, MAINPAGE_ehentai + "/home.php");
+            if (this.isLoggedInEhentai(br)) {
+                final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
+                final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
+                logger.info("Successfully logged in via cookies:" + items_downloadedStr + "/" + items_maxStr);
+                if (!isUserCookies) {
+                    account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
+                }
+                /* Get- and save exhentai cookies too */
+                this.getPage(br, MAINPAGE_exhentai);
+                if (this.isLoggedInEhentaiOrExhentai(br)) {
+                    logger.info("Successfully logged in exhentai -> Saving cookies");
+                    if (!isUserCookies) {
+                        account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
+                    }
+                } else {
+                    logger.info("Failed to login in exhentai -> Ignoring cookies");
+                }
+                return true;
+            }
+        }
+        logger.info("Failed to login via cookies");
+        br.clearAll();
+        return false;
     }
 
     private boolean isLoggedInEhentai(final Browser br) {

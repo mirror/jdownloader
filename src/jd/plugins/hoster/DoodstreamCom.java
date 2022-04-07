@@ -86,7 +86,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
                  * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a captcha.
                  * Example: filejoker.net
                  */
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 /**
                  * Important! Domains may change frequently! </br>
                  * Let it redirect us to their current main domain so we know which domain to set the cookies on.
