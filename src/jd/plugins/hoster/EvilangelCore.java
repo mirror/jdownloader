@@ -24,15 +24,11 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -49,6 +45,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -557,12 +554,30 @@ public abstract class EvilangelCore extends PluginForHost {
             try {
                 final String host_account = account.getHoster();
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 if (allowCookieLoginOnly() && userCookies == null) {
-                    showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 this.prepBrowser(br);
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
+                    br.setCookies(userCookies);
+                    br.getPage(getNamespaceMembersMain());
+                    if (this.isLoggedIn(br)) {
+                        /* Cookie login successful */
+                        logger.info("User cookie login successful");
+                        account.saveCookies(br.getCookies(host_account), "");
+                        account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
+                        return;
+                    } else {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
                 if (cookies != null) {
                     br.setCookies(host_account, cookies);
                     if (!verifyCookies) {
@@ -580,26 +595,6 @@ public abstract class EvilangelCore extends PluginForHost {
                     } else {
                         logger.info("Cookie login failed");
                         br.clearAll();
-                    }
-                }
-                if (userCookies != null) {
-                    logger.info("Attempting user cookie login");
-                    br.setCookies(userCookies);
-                    br.getPage(getNamespaceMembersMain());
-                    if (this.isLoggedIn(br)) {
-                        /* Cookie login successful */
-                        logger.info("User cookie login successful");
-                        account.saveCookies(br.getCookies(host_account), "");
-                        account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
-                        return;
-                    } else {
-                        if (!account.hasEverBeenValid()) {
-                            /* Only show this dialog when user is trying to add that account for the first time. */
-                            showCookieLoginInformation();
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
                     }
                 }
                 logger.info("Performing full login");
@@ -685,42 +680,6 @@ public abstract class EvilangelCore extends PluginForHost {
 
     protected String getNamespaceLogin() {
         return "https://freetour." + this.getHost() + "/en/login";
-    }
-
-    private Thread showCookieLoginInformation() {
-        final String host = this.getHost();
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Cookie Login";
-                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
-                        message += "Um einen Account dieses Anbieters in JDownloader verwenden zu können, beachte bitte die folgenden Schritte:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Cookie Login";
-                        message += "Hello dear " + host + " user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    // getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     private boolean isLoggedIn(final Browser br) {

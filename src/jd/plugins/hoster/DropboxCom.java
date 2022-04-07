@@ -16,27 +16,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DefaultEditAccountPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -54,11 +33,34 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.DropBoxConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.DefaultEditAccountPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -140,8 +142,8 @@ public class DropboxCom extends PluginForHost {
         br.setFollowRedirects(true);
         /**
          * 2019-09-24: Consider updating to the new/current website method: https://www.dropbox.com/sharing/fetch_user_content_link. See
-         * also handling for 'TYPE_SC' linktype! </br> This might not be necessary for any other linktype as the old '?dl=1' method is
-         * working just fine!
+         * also handling for 'TYPE_SC' linktype! </br>
+         * This might not be necessary for any other linktype as the old '?dl=1' method is working just fine!
          */
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             String url = link.getPluginPatternMatcher();
@@ -321,7 +323,7 @@ public class DropboxCom extends PluginForHost {
         account.setUser(null);
         account.setPass(null);
         try {
-            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final String given_name = (String) JavaScriptEngineFactory.walkJson(entries, "name/given_name");
             final String surname = (String) JavaScriptEngineFactory.walkJson(entries, "name/surname");
             if (!StringUtils.isEmpty(given_name)) {
@@ -772,7 +774,11 @@ public class DropboxCom extends PluginForHost {
             }
             /* 2020-09-30: Website login is not possible anymore for multiple reasons. We're using cookie-login as a workaround. */
             final boolean allowWebsiteLogin = false;
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies == null && !allowWebsiteLogin) {
+                showCookieLoginInformation();
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             if (userCookies != null) {
                 br.setCookies(userCookies);
                 /* 2020-09-30: This will redirect to login page if cookies are invalid! */
@@ -780,18 +786,18 @@ public class DropboxCom extends PluginForHost {
                 if (br.getURL().contains(br.getHost() + "/account")) {
                     // account.saveCookies(br.getCookies(br.getHost()), "");
                     logger.info("User cookie login successful");
-                    accountMap.put(account, br.getCookies("https://www.dropbox.com"));
+                    accountMap.put(account, br.getCookies(br.getHost()));
                     return;
                 } else {
                     logger.info("User cookie login failed");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
                 }
             }
             logger.info("Full login required");
-            if (!allowWebsiteLogin) {
-                showCookieLoginInformation();
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
             try {
                 br.getPage("https://www.dropbox.com/login");
                 final String lang = System.getProperty("user.language");
@@ -958,7 +964,8 @@ public class DropboxCom extends PluginForHost {
      * Sets Authorization header. Because once generated, an oauth token is valid 'forever' until user revokes access to application, it
      * must not necessarily be re-validated!
      *
-     * @return true = api_token found and set </br> false = no api_token found
+     * @return true = api_token found and set </br>
+     *         false = no api_token found
      */
     public static boolean setAPILoginHeaders(final Browser br, final Account account) {
         if (account == null || br == null) {
@@ -981,7 +988,8 @@ public class DropboxCom extends PluginForHost {
     }
 
     /**
-     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br> TODO: Change this to public static
+     * Also called App-key and can be found here: https://www.dropbox.com/developers/apps </br>
+     * TODO: Change this to public static
      */
     private String getAPIClientID() throws PluginException {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && force_dev_values) {

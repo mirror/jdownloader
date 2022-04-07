@@ -20,6 +20,16 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.EvilangelComConfig;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -31,26 +41,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.EvilangelComConfig;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com", "evilangelnetwork.com" }, urls = { "https?://members\\.evilangel.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/(?:download/\\d+/\\d+p/mp4|film/\\d+)|https?://(?:www\\.|members\\.)?evilangel\\.com/[a-z]{2}/video/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+/\\d+", "https?://members\\.evilangelnetwork\\.com/[a-z]{2}/video/[A-Za-z0-9\\-_]+/\\d+" })
 @Deprecated
@@ -149,7 +146,7 @@ public class EvilAngelCom extends antiDDoSForHost {
             String server = null;
             if (jsonPlayer != null) {
                 try {
-                    Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(jsonPlayer);
+                    Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(jsonPlayer);
                     entries = (Map<String, Object>) entries.get("playerOptions");
                     server = (String) entries.get("host");
                     final String sceneTitle = (String) entries.get("sceneTitle");
@@ -389,10 +386,10 @@ public class EvilAngelCom extends antiDDoSForHost {
                 final String url_main = "http://" + host_account + "/";
                 final boolean cookieLoginOnly = true;
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 if (cookieLoginOnly && userCookies == null) {
-                    showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 if (host_account.equals("evilangelnetwork.com")) {
                     getpage = "https://www.evilangelnetwork.com/en/login";
@@ -401,6 +398,22 @@ public class EvilAngelCom extends antiDDoSForHost {
                 } else {
                     /* getpage must have already been set via parameter */
                 }
+                if (userCookies != null) {
+                    br.setCookies(userCookies);
+                    getPage(br, getpage);
+                    if (this.isLoggedIn(html_loggedin)) {
+                        /* Cookie login successful */
+                        logger.info("User cookie login successful");
+                        return;
+                    } else {
+                        br.clearAll();
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
                 if (cookies != null) {
                     br.setCookies(host_account, cookies);
                     getPage(br, getpage);
@@ -408,7 +421,7 @@ public class EvilAngelCom extends antiDDoSForHost {
                         /* Cookie login successful */
                         logger.info("Cookie login successful");
                         /* Update cookies */
-                        account.saveCookies(br.getCookies(host_account), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         if (userCookies != null) {
@@ -417,19 +430,6 @@ public class EvilAngelCom extends antiDDoSForHost {
                         } else {
                             br.clearAll();
                         }
-                    }
-                } else if (userCookies != null) {
-                    br.setCookies(userCookies);
-                    getPage(br, getpage);
-                    if (this.isLoggedIn(html_loggedin)) {
-                        /* Cookie login successful */
-                        logger.info("User cookie login successful");
-                        account.saveCookies(br.getCookies(host_account), "");
-                        return;
-                    } else {
-                        br.clearAll();
-                        showCookieLoginInformation();
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 br.setFollowRedirects(true);
@@ -501,41 +501,6 @@ public class EvilAngelCom extends antiDDoSForHost {
                 throw e;
             }
         }
-    }
-
-    private static Thread showCookieLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Cookie Login";
-                        message += "Hallo liebe(r) Evilangel NutzerIn\r\n";
-                        message += "Um einen Account dieses Anbieters in JDownloader verwenden zu können, beachte bitte die folgenden Schritte:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Cookie Login";
-                        message += "Hello dear user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    // getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     private boolean isLoggedIn(String html_loggedin) {
