@@ -40,9 +40,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
@@ -52,8 +49,6 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.CaptchaHosterHelperInterface;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
@@ -61,6 +56,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.XFSConfig;
 import org.jdownloader.plugins.components.config.XFSConfigVideo;
@@ -3851,8 +3847,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                      * Cookie login required but user did not put cookies into the password field: </br>
                      * Ask user to login via exported browser cookies e.g. xubster.com.
                      */
-                    showCookieLoginInformation();
-                    throw new AccountInvalidException("Cookie login required");
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 if (userCookies != null) {
                     br.setCookies(getMainPage(), userCookies);
@@ -3890,9 +3886,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                         return true;
                     } else {
                         if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException("Login cookies expired");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
-                            throw new AccountInvalidException("Login cookies invalid");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
                 } else if (cookies != null) {
@@ -4032,43 +4028,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         } else {
             return false;
         }
-    }
-
-    protected Thread showCookieLoginInformation() {
-        final String host = this.getHost();
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = host + " - Login";
-                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
-                        message += "Um deinen " + host + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = host + " - Login";
-                        message += "Hello dear " + host + " user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     /**

@@ -23,6 +23,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,18 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.DailyMotionComDecrypter;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
 public class DailyMotionCom extends PluginForHost {
@@ -399,12 +395,12 @@ public class DailyMotionCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(br);
-        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+        final Cookies userCookies = account.loadUserCookies();
         if (userCookies == null || getAuthorizationCookieValue(userCookies) == null) {
-            if (account.getLastValidTimestamp() == -1) {
-                showCookieLoginInformation();
+            if (!account.hasEverBeenValid()) {
+                showCookieLoginInfo();
             }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
         }
         br.setCookies(userCookies);
         if (!verifyCookies) {
@@ -422,11 +418,10 @@ public class DailyMotionCom extends PluginForHost {
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.info("User Cookie login failed");
-                if (account.getLastValidTimestamp() == -1) {
-                    showCookieLoginInformation();
-                    throw new AccountInvalidException("Cookie login failed");
+                if (account.hasEverBeenValid()) {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                 } else {
-                    throw new AccountInvalidException("Cookies expired");
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                 }
             }
         }
@@ -456,42 +451,6 @@ public class DailyMotionCom extends PluginForHost {
         br.getHeaders().put("X-DM-AppInfo-Version", "v2022-01-17T10:14:03.307Z");
         br.getHeaders().put("X-DM-Neon-SSR", "0");
         br.getHeaders().put("X-DM-Preferred-Country", "de");
-    }
-
-    private Thread showCookieLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Dailymotion.com - Login";
-                        message += "Hallo liebe(r) Dailymotion NutzerIn\r\n";
-                        message += "Um deinen Dailymotion Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Dailymotion.com - Login";
-                        message += "Hello dear Dailymotion user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     private boolean isSubtitle(final DownloadLink dl) {
