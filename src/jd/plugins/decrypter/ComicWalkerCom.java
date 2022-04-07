@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comic-walker.com" }, urls = { "https?://(www\\.)?comic-walker\\.com/(viewer|contents/detail)/.+" })
 public class ComicWalkerCom extends antiDDoSForDecrypt {
@@ -38,18 +39,16 @@ public class ComicWalkerCom extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<title>([^<]+)\\s+-\\s+無料コミック\\s+ComicWalker").getMatch(0);
-        if (parameter.contains("/contents/detail/")) {
-            String[] links = br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]*/viewer/[^\"]+)\"").getColumn(0);
+        if (param.getCryptedUrl().contains("/contents/detail/")) {
+            final String[] links = br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]*/viewer/[^\"]+)\"").getColumn(0);
             if (links != null && links.length > 0) {
                 for (String link : links) {
                     decryptedLinks.add(createDownloadlink(br.getURL(Encoding.htmlDecode(link)).toString()));
@@ -60,17 +59,24 @@ public class ComicWalkerCom extends antiDDoSForDecrypt {
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
                 fp.addLinks(decryptedLinks);
             }
-        } else if (parameter.contains("/viewer/")) {
-            String[] apiData = br.getRegex("data-api-endpoint-url\\s*=\\s*\"([^\"]+)\"[^>]+data-episode-id\\s*=\\s*\"([^\"]+)\"").getRow(0);
-            if (apiData == null || apiData.length < 2) {
+        } else if (param.getCryptedUrl().contains("/viewer/")) {
+            final String apiBaseURL = br.getRegex("data-api-endpoint-urls?\\s*=\\s*\\'\\{\"nc\":\"(https?://[^\"]+)\"").getMatch(0);
+            final String episode_id = PluginJSonUtils.getJson(br, "episode_id");
+            if (apiBaseURL == null || episode_id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "No images found");
             }
-            final String apiURL = Encoding.htmlDecode(apiData[0]) + "/api/v1/comicwalker/episodes/" + Encoding.htmlDecode(apiData[1]) + "/frames";
+            final FilePackage fp = FilePackage.getInstance();
+            if (fpName != null) {
+                fp.setName(fpName);
+            } else {
+                /* Fallback */
+                fp.setName(episode_id);
+            }
+            final String apiURL = apiBaseURL + "/api/v1/comicwalker/episodes/" + Encoding.htmlDecode(episode_id) + "/frames";
             final Browser br2 = br.cloneBrowser();
             getPage(br2, apiURL);
             final String[] images = br2.getRegex("\\s*\"source_url\"\\s*:\\s*\"([^\"]+)\"").getColumn(0);
             final int padlength = StringUtils.getPadLength(images.length);
-            final FilePackage fp = FilePackage.getInstance();
             String ext = null;
             int page = 1;
             for (String image : images) {
@@ -80,11 +86,11 @@ public class ComicWalkerCom extends antiDDoSForDecrypt {
                     /* No general extension given? Get it from inside the URL. */
                     ext = getFileNameExtensionFromURL(imageURL, ".jpg");
                 }
-                String filename = "" + Encoding.htmlDecode(fpName.trim()) + "_" + page_formatted + ext;
-                DownloadLink dl = createDownloadlink(imageURL);
+                final String filename = "" + Encoding.htmlDecode(fpName.trim()) + "_" + page_formatted + ext;
+                final DownloadLink dl = createDownloadlink(imageURL);
                 dl._setFilePackage(fp);
                 dl.setFinalFileName(filename);
-                dl.setLinkID(filename);
+                dl.setLinkID(this.getHost() + "://" + filename);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
                 distribute(dl);

@@ -2,6 +2,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -12,10 +15,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comunidadmontepinar.es" }, urls = { "https?://(www\\.)?comunidadmontepinar\\.es/episodios/\\d+x\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comunidadmontepinar.es" }, urls = { "https?://(?:www\\.)?comunidadmontepinar\\.es/episodios/\\d+x\\d+" })
 public class ComunidadmontepinarEs extends antiDDoSForDecrypt {
     public ComunidadmontepinarEs(PluginWrapper wrapper) {
         super(wrapper);

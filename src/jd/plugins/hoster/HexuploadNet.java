@@ -18,13 +18,20 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.Time;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HexuploadNet extends XFileSharingProBasic {
@@ -90,6 +97,103 @@ public class HexuploadNet extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
+        }
+    }
+
+    @Override
+    public Form findFormDownload2Premium(final DownloadLink downloadLink, final Account account, final Browser br) throws Exception {
+        /* 2022-04-07: Special */
+        handleSecurityVerification(br);
+        return super.findFormDownload2Premium(downloadLink, account, br);
+    }
+
+    @Override
+    public Form findFormDownload1Free(final Browser br) throws Exception {
+        /* 2022-04-07: Special */
+        handleSecurityVerification(br);
+        return super.findFormDownload1Free(br);
+    }
+
+    @Override
+    protected void getPage(final String page) throws Exception {
+        /* 2022-04-07: Special */
+        super.getPage(page);
+        handleSecurityVerification(br);
+    }
+
+    @Override
+    protected void postPage(final String page, final String data) throws Exception {
+        /* 2022-04-07: Special */
+        super.postPage(page, data);
+        handleSecurityVerification(br);
+    }
+
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        /* 2022-04-07: Special */
+        super.submitForm(form);
+        handleSecurityVerification(br);
+    }
+
+    protected void handleSecurityVerification(final Browser br) throws Exception {
+        /* Usually this == FUID of DownloadLink. */
+        if (br.getURL() == null) {
+            return;
+        }
+        final String siteProtectionID = br.getRegex("class=\"cssbuttons-io-button fake-link\"[^>]*><span class=\"url\"[^>]*>([a-z0-9]{12})</span>").getMatch(0);
+        if (siteProtectionID == null) {
+            return;
+        }
+        if (!(Thread.currentThread() instanceof SingleDownloadController)) {
+            logger.info("We only handle site-protection during download");
+            return;
+        }
+        logger.info("Handling securityVerification");
+        final boolean oldFollowRedirectValue = br.isFollowingRedirects();
+        try {
+            // final String sourceURL = br.getURL();
+            final String sourceHost = br.getHost();
+            br.setFollowRedirects(true);
+            br.getPage("https://digiomo.com/het" + siteProtectionID + ".php");
+            final Form securityVerification = br.getFormbyKey("file_code");
+            if (securityVerification == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final long timeBeforeCaptcha = Time.systemIndependentCurrentJVMTimeMillis();
+            /* 2022-04-07: Waittime is skippable */
+            final boolean skipWaittime = true;
+            final String waitStr = br.getRegex("sec = (\\d+);").getMatch(0);
+            final long waitMillis = Long.parseLong(waitStr) * 1001l;
+            boolean captchaRequired = false;
+            /* 2022-04-07: Currently they require one reCaptchaV3 (invisible) + one hCaptcha to be solved. */
+            if (containsHCaptcha(securityVerification)) {
+                captchaRequired = true;
+                handleHCaptcha(getDownloadLink(), securityVerification);
+            }
+            if (containsRecaptchaV2Class(securityVerification)) {
+                captchaRequired = true;
+                handleRecaptchaV2(getDownloadLink(), securityVerification);
+            }
+            if (!captchaRequired) {
+                logger.warning("No captcha required --> Possible failure");
+            }
+            final long timePassedDuringCaptcha = Time.systemIndependentCurrentJVMTimeMillis() - timeBeforeCaptcha;
+            final long remainingWaittime = waitMillis - timePassedDuringCaptcha;
+            if (remainingWaittime > 0) {
+                logger.info("Remaining wait after captcha: " + (remainingWaittime / 1000));
+                if (!skipWaittime) {
+                    this.sleep(remainingWaittime, this.getDownloadLink());
+                }
+            }
+            submitForm(br, securityVerification);
+            final Form lookaheadDownload1Form = br.getFormbyActionRegex(".*" + Regex.escape(sourceHost) + ".*");
+            if (lookaheadDownload1Form != null) {
+                logger.info("SiteVerification result: Success");
+            } else {
+                logger.warning("SiteVerification result: Possible failure");
+            }
+        } finally {
+            br.setFollowRedirects(oldFollowRedirectValue);
         }
     }
 

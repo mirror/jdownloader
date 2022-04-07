@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:[^\\&]+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9%]+.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.(?:\\w+\\.)?wikimedia\\.org/wiki/File:[^\\&]+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9%]+.*" })
 public class CommonsWikimediaOrg extends PluginForHost {
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +54,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
     private static final int     free_maxdownloads = -1;
     private static final boolean use_api           = true;
     private String               dllink            = null;
-    private static final String  TYPE_WIKIPEDIA_1  = "https?://commons\\.wikimedia\\.org/wiki/(File:.+)";
+    private static final String  TYPE_WIKIPEDIA_1  = "https?://commons\\.[^/]+/wiki/(File:.+)";
     private static final String  TYPE_WIKIPEDIA_2  = "https?://([a-z]{2})\\.wikipedia\\.org/wiki/([^/]+/media/)?([A-Za-z0-9%]+.*)";
 
     @Override
