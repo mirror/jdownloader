@@ -17,13 +17,18 @@ package jd.plugins.hoster;
 
 import java.util.Arrays;
 
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,8 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "contasturbo.com" }, urls = { "" })
 public class ContasturboCom extends PluginForHost {
@@ -59,41 +62,35 @@ public class ContasturboCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
             if (userCookies != null) {
-                /* Developer debug test */
                 logger.info("Attempting user cookie login");
                 br.setCookies(userCookies);
-                if (!validateCookies && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
-                    logger.info("Trust cookies as they're not that old");
+                if (!validateCookies) {
+                    /* Do not validate cookies */
                     return false;
                 }
-                br.getPage("https://www." + account.getHoster() + "/gerador/");
-                if (this.isLoggedIN()) {
+                if (this.verifyCookies(account, userCookies)) {
                     logger.info("User cookie login successful");
-                    account.saveCookies(br.getCookies(this.getHost()), "");
                     return true;
                 } else {
-                    logger.info("User cookie login failed");
-                    /* Throw Exception as we do not have username + password and cannot refresh the session! */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
                 }
             }
-            final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
-                logger.info("Attempting cookie login");
-                br.setCookies(this.getHost(), cookies);
-                if (!validateCookies && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
-                    logger.info("Trust cookies as they're not that old");
+                br.setCookies(cookies);
+                if (!validateCookies) {
+                    /* Do not validate cookies */
                     return false;
                 }
-                br.getPage("https://www." + account.getHoster() + "/");
-                if (this.isLoggedIN()) {
-                    logger.info("Cookie login successful");
+                if (this.verifyCookies(account, cookies)) {
                     account.saveCookies(br.getCookies(this.getHost()), "");
                     return true;
-                } else {
-                    logger.info("Cookie login failed");
                 }
             }
             logger.info("Performing full login");
@@ -110,7 +107,7 @@ public class ContasturboCom extends PluginForHost {
             /* Makes cookies last longer */
             loginform.put("remember", "1");
             br.submitForm(loginform);
-            if (!isLoggedIN()) {
+            if (!isLoggedIN(br)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             account.saveCookies(br.getCookies(this.getHost()), "");
@@ -118,8 +115,25 @@ public class ContasturboCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN() {
-        return br.getCookie(br.getHost(), "ct_auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "ct_user", Cookies.NOTDELETEDPATTERN) != null;
+    protected boolean verifyCookies(final Account account, final Cookies cookies) throws Exception {
+        br.setCookies(this.getHost(), cookies);
+        br.getPage("https://www." + this.getHost() + "/gerador/");
+        if (isLoggedIN(this.br)) {
+            logger.info("Successfully logged in via cookies");
+            return true;
+        } else {
+            logger.info("Cookie login failed");
+            br.clearCookies(br.getHost());
+            return false;
+        }
+    }
+
+    private boolean isLoggedIN(final Browser br) {
+        if (br.getCookie(br.getHost(), "ct_auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "ct_user", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
