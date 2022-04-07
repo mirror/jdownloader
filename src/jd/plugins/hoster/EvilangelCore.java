@@ -563,11 +563,13 @@ public abstract class EvilangelCore extends PluginForHost {
                 if (userCookies != null) {
                     logger.info("Attempting user cookie login");
                     br.setCookies(userCookies);
-                    br.getPage(getNamespaceMembersMain());
-                    if (this.isLoggedIn(br)) {
+                    if (!verifyCookies) {
+                        /* Do not verify cookies */
+                        return;
+                    }
+                    if (verifyCookies(account, userCookies)) {
                         /* Cookie login successful */
                         logger.info("User cookie login successful");
-                        account.saveCookies(br.getCookies(host_account), "");
                         account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
                         return;
                     } else {
@@ -578,19 +580,18 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                     }
                 }
+                account.removeProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN);
                 if (cookies != null) {
                     br.setCookies(host_account, cookies);
                     if (!verifyCookies) {
-                        logger.info("Trust cookies without login");
+                        /* Do not verify cookies */
                         return;
                     }
-                    br.getPage(getNamespaceMembersMain());
-                    if (this.isLoggedIn(br)) {
+                    if (verifyCookies(account, cookies)) {
                         /* Cookie login successful */
                         logger.info("Cookie login successful");
                         /* Update cookies */
                         account.saveCookies(br.getCookies(host_account), "");
-                        account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -658,6 +659,20 @@ public abstract class EvilangelCore extends PluginForHost {
                 account.clearCookies("");
                 throw e;
             }
+        }
+    }
+
+    /** Sets given cookies and checks if we can login with them. */
+    protected boolean verifyCookies(final Account account, final Cookies cookies) throws Exception {
+        br.setCookies(account.getHoster(), cookies);
+        br.getPage(getNamespaceMembersMain());
+        if (isLoggedIn(this.br)) {
+            logger.info("Successfully logged in via cookies");
+            return true;
+        } else {
+            logger.info("Cookie login failed");
+            br.clearCookies(br.getHost());
+            return false;
         }
     }
 
