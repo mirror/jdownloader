@@ -8,8 +8,6 @@ import javax.swing.JLabel;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter.HighlightPainter;
 
-import jd.http.Cookies;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
@@ -18,6 +16,8 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
+import jd.http.Cookies;
 
 public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderInterface {
     /**
@@ -109,6 +109,7 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
         dummy.paste();
         final String clipboard = dummy.getText();
         if (StringUtils.isNotEmpty(clipboard)) {
+            /* Automatically put exported cookies json string into password field in case that's the current clipboard content. */
             if (Cookies.parseCookiesFromJsonString(clipboard, null) != null && pass != null) {
                 pass.setPassword(clipboard.toCharArray());
             } else if (name != null) {
