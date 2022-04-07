@@ -21,10 +21,13 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HighstreamTv extends XFileSharingProBasic {
@@ -119,5 +122,15 @@ public class HighstreamTv extends XFileSharingProBasic {
     protected boolean isVideohoster_enforce_video_filename() {
         /* 2019-08-13: Special */
         return true;
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        final String dllink = this.getDllink(link, account, br, html);
+        if (dllink != null && dllink.matches("(?i).*Fly-Up-1080p.*")) {
+            /* Dummy video --> Broken stream */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video");
+        }
     }
 }

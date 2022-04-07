@@ -12,6 +12,18 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "tiktok.com", type = Type.HOSTER)
 public interface TiktokConfig extends PluginConfigInterface {
+    public static final TiktokConfig.TRANSLATION TRANSLATION = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getEnableFastLinkcheck_label() {
+            return "Enable fast linkcheck? If enabled, filenames may contain less information and filesize will be missing until download is started.";
+        }
+
+        public String getMaxSimultaneousDownloads_label() {
+            return "Set max. simultaneous downloads. Don't set this value too much otherwise you might get blocked.";
+        }
+    }
+
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Enable fast linkcheck? If enabled, filenames may contain less information and filesize will be missing until download is started.")
