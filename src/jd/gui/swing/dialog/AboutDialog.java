@@ -94,10 +94,10 @@ public class AboutDialog extends AbstractDialog<Integer> {
         return false;
     }
 
-    public static void showNonBlocking() {
+    public static Thread showNonBlocking() {
         final AboutDialog aboutDialog = new AboutDialog();
         aboutDialog.setModalityType(ModalityType.MODELESS);
-        new Thread("AboutDialog") {
+        final Thread thread = new Thread("AboutDialog") {
             {
                 setDaemon(true);
             }
@@ -109,7 +109,14 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 } catch (DialogNoAnswerException e1) {
                 }
             }
-        }.start();
+        };
+        thread.start();
+        return thread;
+    }
+
+    public static void main(String[] args) throws Exception {
+        Application.setApplication(".jd_home");
+        showNonBlocking().join();
     }
 
     @Override
@@ -308,7 +315,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         } catch (Throwable t) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
         }
-        contentpane.add(lbl = new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_mopdules()), "gaptop 10, spanx");
+        contentpane.add(lbl = new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_mopdules()), "gaptop 5, spanx");
         stats = new MigPanel("ins 0 10 0 0,wrap 2", "[][grow,align right]", "[]");
         contentpane.add(stats, "pushx,growx,spanx");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "");
@@ -322,8 +329,10 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(new JLabel("UPNP:"), "");
         stats.add(createLink("Cling", "https://github.com/4thline/cling"));
         stats.add(new JLabel("Extraction:"));
-        stats.add(createLink("7ZipJBindings (" + get7ZipJBindingDetails() + ")", "https://github.com/borisbrodski/sevenzipjbinding"));
-        stats.add(createLink("Zip4J", "https://github.com/srikanth-lingala/zip4j"), "skip");
+        final JPanel extraction = new JPanel(new MigLayout("ins 0,wrap 2"));
+        extraction.add(createLink("7ZipJBindings (" + get7ZipJBindingDetails() + ")", "https://github.com/borisbrodski/sevenzipjbinding"));
+        extraction.add(createLink("Zip4J", "https://github.com/srikanth-lingala/zip4j"));
+        stats.add(extraction);
         final LookAndFeel laf = UIManager.getLookAndFeel();
         if (laf != null) {
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_laf()), "");
@@ -349,18 +358,20 @@ public class AboutDialog extends AbstractDialog<Integer> {
         }
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_icons()), "");
         stats.add(createLink("See /themes/* folder for Icon Licenses"), "");
-        stats.add(createLink("Icons8", "https://icons8.com"), "skip");
-        stats.add(createLink("Tango Icons", "https://en.wikipedia.org/wiki/Tango_Desktop_Project"), "skip");
-        stats.add(createLink("FatCow-Farm Fresh Icons", "https://www.fatcow.com/free-icons"), "skip");
-        stats.add(createLink("Mimi Glyphs Set", "http://salleedesign.com/blog/mimi-glyphs/"), "skip");
-        stats.add(createLink("Bright Mix Set", "http://brightmix.com/blog/brightmix-icon-set-free-for-all/"), "skip");
-        stats.add(createLink("Picol Icon Set", "http://www.picol.org/"), "skip");
-        stats.add(createLink("Aha Soft Icon Set", "http://www.aha-soft.com"), "skip");
-        stats.add(createLink("Oxygen Team", "https://techbase.kde.org/Projects/Oxygen/Licensing"), "skip");
-        stats.add(createLink("further icons by AppWork GmbH"), "skip");
-        stats.add(createLink("& the JDownloader Community"), "skip");
-        contentpane.add(links1stRow, "gaptop 15, growx, pushx, spanx");
-        contentpane.add(links2ndRow, "gaptop 15, growx, pushx, spanx");
+        final JPanel icons = new JPanel(new MigLayout("ins 0,wrap 3"));
+        icons.add(createLink("Icons8", "https://icons8.com"));
+        icons.add(createLink("Tango Icons", "https://en.wikipedia.org/wiki/Tango_Desktop_Project"));
+        icons.add(createLink("FatCow-Farm Fresh Icons", "https://www.fatcow.com/free-icons"));
+        icons.add(createLink("Mimi Glyphs Set", "http://salleedesign.com/blog/mimi-glyphs/"));
+        icons.add(createLink("Bright Mix Set", "http://brightmix.com/blog/brightmix-icon-set-free-for-all/"));
+        icons.add(createLink("Picol Icon Set", "http://www.picol.org/"));
+        icons.add(createLink("Aha Soft Icon Set", "http://www.aha-soft.com"));
+        icons.add(createLink("Oxygen Team", "https://techbase.kde.org/Projects/Oxygen/Licensing"));
+        icons.add(createLink("further icons by AppWork GmbH"), "skip 2");
+        icons.add(createLink("& the JDownloader Community"));
+        contentpane.add(icons);
+        contentpane.add(links1stRow, "gaptop 5, growx, pushx, spanx");
+        contentpane.add(links2ndRow, "growx, pushx, spanx");
         this.registerEscape(contentpane);
         return contentpane;
     }
