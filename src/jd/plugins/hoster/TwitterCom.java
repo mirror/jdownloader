@@ -21,25 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.TwitterConfigInterface;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -60,6 +41,25 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterCom extends PluginForHost {
@@ -239,8 +239,7 @@ public class TwitterCom extends PluginForHost {
                             for (final DownloadLink tmp : results) {
                                 /**
                                  * The check for filename-ending is only there for backward-compatibility to crawler revision 45677 and
-                                 * before. </br>
-                                 * TODO: Remove it after 08-2022
+                                 * before. </br> TODO: Remove it after 08-2022
                                  */
                                 if ((link.getName() != null && link.getName().endsWith(".mp4")) || StringUtils.equals(link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_TYPE), "video")) {
                                     result = tmp;
@@ -614,11 +613,8 @@ public class TwitterCom extends PluginForHost {
                 }
                 /* 2020-07-02: Only cookie login is supported! */
                 final boolean allowCookieLoginOnly = true;
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), this.getLogger());
-                if (allowCookieLoginOnly && (userCookies != null && !userCookies.isEmpty())) {
-                    showCookieLoginInformation();
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
-                } else if (userCookies != null && !userCookies.isEmpty()) {
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null && !userCookies.isEmpty()) {
                     /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
                     br.setCookies(userCookies);
                     if (!checkLogin(br)) {
@@ -628,6 +624,9 @@ public class TwitterCom extends PluginForHost {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
+                } else if (allowCookieLoginOnly) {
+                    showCookieLoginInformation();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 } else {
                     br.getPage("https://" + account.getHoster() + "/login");
                     String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
