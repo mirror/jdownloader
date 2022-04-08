@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
@@ -29,6 +30,11 @@ public class XvideosCom extends XvideosCore {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://xvideos.red/");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

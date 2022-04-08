@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -34,13 +33,10 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kvid.org" }, urls = { "http://(www\\.)?kvid\\.org/(?:watch|embed|v2/vid)\\-[A-Za-z0-9]+" })
 public class KvidOrg extends PluginForHost {
-
     public KvidOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
-    // Porn_Plugin
     // Tags:
     // protocol: no https
     // other:
@@ -49,7 +45,6 @@ public class KvidOrg extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -81,7 +76,6 @@ public class KvidOrg extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("file: \"([^<>\"]*?)\"").getMatch(0);
         }
-
         if (filename == null || dllink == null) {
             logger.info("filename: " + filename + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

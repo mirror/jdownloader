@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -53,6 +54,11 @@ public class ImageFap extends PluginForHost {
         super(wrapper);
         setConfigElements();
         // this.setStartIntervall(500l);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     private static final String               CUSTOM_FILENAME              = "CUSTOM_FILENAME";

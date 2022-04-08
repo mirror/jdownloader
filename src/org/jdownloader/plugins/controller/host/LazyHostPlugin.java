@@ -1,7 +1,5 @@
 package org.jdownloader.plugins.controller.host;
 
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.TooltipInterface;
 import org.appwork.utils.StringUtils;
@@ -11,8 +9,21 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.translate._JDT;
 
+import jd.plugins.PluginForHost;
+
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     public static enum FEATURE implements LabelInterface, TooltipInterface {
+        VIDEO_STREAMING {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING_TOOLTIP();
+            }
+        },
         USENET {
             @Override
             public String getLabel() {
@@ -46,6 +57,17 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 return _JDT.T.LazyHostPlugin_FEATURE_PASTEBIN_TOOLTIP();
             }
         },
+        XXX {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_XXX();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_XXX_TOOLTIP();
+            }
+        },
         GENERIC {
             @Override
             public String getLabel() {
@@ -68,6 +90,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 return "INTERNAL";
             }
         };
+
         public static final long CACHEVERSION = StringUtils.join(values(), "<->").hashCode() + StringUtils.join(values(), ":").hashCode() + StringUtils.join(values(), "<=>").hashCode();
 
         public boolean isSet(FEATURE[] features) {

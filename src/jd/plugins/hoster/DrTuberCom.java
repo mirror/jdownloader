@@ -23,6 +23,7 @@ import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -50,6 +51,11 @@ public class DrTuberCom extends PluginForHost {
     public DrTuberCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.drtuber.com/signup?track=top_menu");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* Similar sites: drtuber.com, proporn.com, viptube.com, tubeon.com, winporn.com */

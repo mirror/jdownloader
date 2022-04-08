@@ -13,11 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Random;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,13 +34,16 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornstarnetwork.com" }, urls = { "https?://(?:www\\.)?pornstarnetwork\\.com/video/(?:(?:[a-z0-9\\-_]+)?\\d+\\.html|embed\\?id=\\d+)" })
 public class PornStarNetworkCom extends PluginForHost {
-
     public PornStarNetworkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String type_embed = "http://(www\\.)?pornstarnetwork\\.com/video/embed\\?id=\\d+";
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
+    }
 
+    private static final String type_embed = "http://(www\\.)?pornstarnetwork\\.com/video/embed\\?id=\\d+";
     private String              dllink     = null;
 
     @Override

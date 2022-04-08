@@ -20,6 +20,7 @@ import java.util.Date;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -48,6 +49,11 @@ public class HighpornNet extends antiDDoSForHost {
     public HighpornNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

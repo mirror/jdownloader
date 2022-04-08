@@ -1,9 +1,11 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -185,13 +187,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         // drtuber.com embed v4
         externID = br.getRegex("\"((?:https?:)?//(www\\.)?drtuber\\.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"((?:https?:)?/?/?(?:www\\.)?xhamster\\.(?:com|xxx|desi)/(?:x?embed\\.php\\?video=|embed/)\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
@@ -644,16 +639,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             /* 2017-03-30: Added mydaddy.cc */
             final DownloadLink dl = createDownloadlink(externID);
             if (title != null) {
-                dl.setProperty("decryptertitle", title);
+                dl.setProperty(jd.plugins.hoster.MydaddyCc.PROPERTY_CRAWLER_TITLE, title);
             }
             decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("(?:'|\")((?:https?:)?//(?:www\\.)?hclips\\.com/embed/\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
             if (!processAll) {
                 return decryptedLinks;
             }
@@ -696,30 +684,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         /* RegExes for permanently offline websites go here */
         /* 2016-03-29: gasxxx.com --> xvid6.com */
         externID = br.getRegex("((?:https?:)?//(?:www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* 2016-03-25: xrabbit.com --> xpage.com */
-        externID = br.getRegex("\"((?:https?:)?//(www\\.)?xrabbit\\.com/video/embed/[A-Za-z0-9=]+/?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* 2016-03-25: foxytube.com == offline */
-        externID = br.getRegex("(foxytube\\.com/embedded/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("http://www." + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* 2017-01-27 fantasti.cc */
-        externID = br.getRegex("('|\")((?:https?:)?//(?:www\\.)?fantasti\\.cc/embed/\\d+/?)\\1").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
@@ -859,48 +823,26 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        /* 2021-03-15: anon-v.com */
-        externID = br.getRegex("\"(https?://(?:www\\.)?anon-v\\.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = this.createDownloadlink(externID);
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* 2021-08-06: trendyporn.com */
-        externID = br.getRegex("\"(https?://(?:www\\.)?trendyporn\\.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = this.createDownloadlink(externID);
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         /************************************************************************************************************/
-        // Now check for all existant URLs if they're supported by a specific plugin
+        // Now check for all existant URLs if they're supported by any plugin tagged as porn plugin
         /************************************************************************************************************/
-        /* TODO: Make this nicer */
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
-        final ArrayList<String> pornPluginDomains = new ArrayList<String>();
-        final ArrayList<PluginForHost> pornPlugins = new ArrayList<PluginForHost>();
-        pornPluginDomains.add(jd.plugins.hoster.CamwhoresTv.getPluginDomains().get(0)[0]);
-        for (final String pornPluginDomain : pornPluginDomains) {
-            pornPlugins.add(this.getNewPluginForHostInstance(pornPluginDomain));
-        }
-        for (final PluginForHost plg : pornPlugins) {
-            for (final String url : urls) {
-                if (plg.canHandle(url)) {
-                    final DownloadLink link = this.createDownloadlink(url);
-                    link.setReferrerUrl(br.getURL());
-                    decryptedLinks.add(link);
-                    if (!processAll) {
-                        return decryptedLinks;
-                    } else {
-                        break;
-                    }
-                }
+        int results = 0;
+        for (final String url : urls) {
+            /* TODO */
+            // final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyCrawlerPlugin.FEATURE.XXX);
+            // if (nextLazyCrawlerPlugins.size() > 0) {
+            // decryptedLinks.add(url);
+            // results++;
+            // }
+            final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyHostPlugin.FEATURE.XXX);
+            if (nextLazyHostPlugins.size() > 0) {
+                decryptedLinks.add(url);
+                results++;
             }
+        }
+        if (results > 0 && !processAll) {
+            return decryptedLinks;
         }
         /************************************************************************************************************/
         // filename needed for all IDs below
@@ -968,15 +910,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                         }
                     }
                 }
-            }
-        }
-        externID = br.getRegex("((?:https?:)?//(www\\.)?5ilthy\\.com/playerConfig\\.php\\?[a-z0-9]+\\.(flv|mp4))").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink(externID);
-            dl.setProperty("5ilthydirectfilename", title);
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
             }
         }
         // 2018-01-07 Unknown? - directHTTP

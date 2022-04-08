@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -27,14 +30,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Regex;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyhentai.com" }, urls = { "https?://\\w+\\.anyhentai\\.com/([^/]+)\\.mp4(?:\\?.*)?" })
 public class AnyhentaiCom extends PluginForHost {
     private String customFavIconHost = null;
 
     public AnyhentaiCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

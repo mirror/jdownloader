@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -59,6 +60,11 @@ public class PimpRollHostedTube extends PluginForHost {
             "soyouthinkyoucanscrew.com", "strapon.se", "straponlesbians.us", "stream-online-porn.com", "sugarmanga.com", "super-porno.com", "superxvideos.net", "swedexxx.com", "sweetchocolatepussy.com", "swesex.se", "swingersmag.com", "swingerstube.net", "swingersx.com", "syntheticheroin.com", "tastyblackpussy.com", "teabaggingpov.com", "teamforbidden.com", "teenbdtube.com", "teenporn2u.info", "teenpornocity.com", "teensteam.com", "teenvideos.com", "thefreeadult.com", "thefreeasian.com", "thefreepornreport.com", "thehotbabes.net", "themeatmen.com", "themostgay.com", "thepornlegacy.com", "thesexlotto.com", "thestagparty.com", "throatpokers.com", "thumblordstube.com", "ticklingpov.com", "tnaflix.eu", "toonfucksluts.com", "topfemales.com", "topsecretporn.net", "totalfetish.com", "totallytastelessvideos.com", "traileraddicts.com", "tramplepov.com", "tube4jizz.com", "tube75.com",
             "tubegalorexxx.com", "tubewetlook.com", "ultimatestripoff.com", "ultramoviemadness.com", "undercoverpussy.com", "usagirlfriends.com", "video18.com", "videofetish.com", "videolivesex.com", "videosp.com", "videoxxxltd.com", "vidsvidsvids.com", "vidxpose.com", "vidz.info", "vidzmobile.com", "vietnamsextube.com", "vip-babes-world.com", "vodporn.eu", "vudutube.com", "wankbucket.com", "watchbooty.com", "watchpornvideos.com", "watchsex.net", "wetandsticky.com", "whoores.com", "whorebrowser.com", "wltube.com", "worldsbestpornmovies.com", "x-movies.xxx", "x-video.xxx", "xblacktube.com", "xcon3.com", "xfree.xxx", "xmovielove.com", "xnxxltd.com", "xnxxx.eu", "xnxxxltd.com", "xpoko.com", "xpornografia.us", "xpornohd.com", "xporntube.us", "xsex.xxx", "xtube.mobi", "xxnxltd.com", "xxx-18.xxx", "xxx-con.com", "xxxbfs.com", "xxxcartoonz.com", "xxxcebu.com", "xxxcreampie.org", "xxxdn.com",
             "xxxfilms.xxx", "xxxgaytube.com", "xxxhardcore.us", "xxxhardcorexxx.com", "xxxhelp.com", "xxxin3d.com", "xxxlesbiansexvideos.org", "xxxlinkshunter.com", "xxxmobiletubes.com", "xxxpornvideos.us", "xxxpornx.xxx", "xxxpromos.com", "xxxslutty.com", "xxxthailand.net", "xxxvidz.org", "xxxxn.com", "youjizz.net", "youjizz66.com", "youjizzltd.com", "youlorn.com", "youpronltd.com", "yoursmutpass.com", "yozjizz.com", "zadmo.com", "zippyporn.com", "contentadult.com", "wankz.com" };
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
+    }
 
     /**
      * Returns the annotations names array

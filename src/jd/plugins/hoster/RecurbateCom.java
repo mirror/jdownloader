@@ -29,6 +29,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -51,6 +52,11 @@ public class RecurbateCom extends antiDDoSForHost {
     public RecurbateCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://recurbate.com/signup");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

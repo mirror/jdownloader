@@ -36,6 +36,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.FacebookConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -50,6 +51,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -68,7 +70,6 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
     private static final String TYPE_VIDEO_WITH_UPLOADER_NAME          = "(?i)https://[^/]+/([^/]+)/videos/(\\d+).*";
     // private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
-    private static final long   trust_cookie_age                       = 300000l;
     private int                 maxChunks                              = 0;
     private static final String PROPERTY_DATE_FORMATTED                = "date_formatted";
     private static final String PROPERTY_TITLE                         = "title";
@@ -1116,7 +1117,7 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
-    public void login(final Account account, final Browser br, final boolean force) throws Exception {
+    public void login(final Account account, final Browser br, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 prepBR(br);
@@ -1124,49 +1125,22 @@ public class FaceBookComVideos extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 /* 2020-10-9: Experimental login/test */
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 final boolean enforceCookieLogin = true;
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
-                        /* We trust these cookies --> Do not check them */
-                        logger.info("Trust login cookies");
-                        return;
-                    }
-                    final boolean follow = br.isFollowingRedirects();
-                    try {
-                        br.setFollowRedirects(true);
-                        br.getPage("https://" + this.getHost() + "/");
-                    } finally {
-                        br.setFollowRedirects(follow);
-                    }
-                    if (this.isLoggedinHTML()) {
-                        /* Save cookies to save new valid cookie timestamp */
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        /* Get rid of old cookies / headers */
-                        br.clearAll();
-                        prepBR(br);
-                    }
+                if (enforceCookieLogin && userCookies == null) {
+                    showCookieLoginInformation();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
-                logger.info("Full login required");
                 if (userCookies != null) {
                     logger.info("Trying to login via user-cookies");
                     br.setCookies(userCookies);
-                    final boolean follow = br.isFollowingRedirects();
-                    try {
-                        br.setFollowRedirects(true);
-                        br.getPage("https://" + this.getHost() + "/");
-                    } finally {
-                        br.setFollowRedirects(follow);
+                    if (!validateCookies) {
+                        /* Do not validate cookies */
+                        return;
                     }
-                    if (this.isLoggedinHTML()) {
+                    if (verifyCookies(account, userCookies, br)) {
                         /* Save cookies to save new valid cookie timestamp */
                         logger.info("User-cookie login successful");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
                         /*
                          * Try to make sure that username in JD is unique because via cookie login, user can enter whatever he wants into
                          * username field! 2020-11-16: Username can be "" (empty) for some users [rare case].
@@ -1182,15 +1156,31 @@ public class FaceBookComVideos extends PluginForHost {
                     } else {
                         logger.info("User-Cookie login failed");
                         if (account.hasEverBeenValid()) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
-                } else if (enforceCookieLogin) {
-                    showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                if (cookies != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    if (!validateCookies) {
+                        /* Do not validate cookies */
+                        return;
+                    }
+                    if (verifyCookies(account, cookies, br)) {
+                        /* Save cookies to save new valid cookie timestamp */
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        /* Get rid of old cookies / headers */
+                        br.clearAll();
+                        prepBR(br);
+                    }
+                }
+                logger.info("Full login required");
                 br.setFollowRedirects(true);
                 final boolean prefer_mobile_login = true;
                 // better use the website login. else the error handling below might be broken.
@@ -1338,7 +1328,7 @@ public class FaceBookComVideos extends PluginForHost {
                     br.getPage("https://" + this.getHost() + "/");
                     br.followRedirect();
                 }
-                if (!isLoggedinHTML()) {
+                if (!isLoggedinHTML(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* Save cookies */
@@ -1349,6 +1339,25 @@ public class FaceBookComVideos extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    protected boolean verifyCookies(final Account account, final Cookies cookies, final Browser br) throws Exception {
+        br.setCookies(this.getHost(), cookies);
+        final boolean follow = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            br.getPage("https://" + this.getHost() + "/");
+        } finally {
+            br.setFollowRedirects(follow);
+        }
+        if (this.isLoggedinHTML(br)) {
+            logger.info("Successfully logged in via cookies");
+            return true;
+        } else {
+            logger.info("Cookie login failed");
+            br.clearCookies(br.getHost());
+            return false;
         }
     }
 
@@ -1388,7 +1397,7 @@ public class FaceBookComVideos extends PluginForHost {
         return thread;
     }
 
-    private boolean isLoggedinHTML() {
+    private boolean isLoggedinHTML(final Browser br) {
         final boolean brContainsSecondaryLoggedinHint = br.containsHTML("settings_dropdown_profile_picture");
         final String logout_hash = PluginJSonUtils.getJson(br, "logout_hash");
         logger.info("logout_hash = " + logout_hash);

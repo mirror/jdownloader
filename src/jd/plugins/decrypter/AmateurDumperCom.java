@@ -86,12 +86,6 @@ public class AmateurDumperCom extends PornEmbedParser {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(http://(www\\.)?xxxhdd\\.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink(externID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         externID = br.getRegex("\\&file=(http://static\\.mofos\\.com/.*?)\\&enablejs").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + externID);
@@ -123,7 +117,6 @@ public class AmateurDumperCom extends PornEmbedParser {
         throw new DecrypterException("Decrypter broken for link: " + parameter);
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

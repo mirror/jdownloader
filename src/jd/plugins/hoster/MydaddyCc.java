@@ -24,6 +24,7 @@ import org.appwork.utils.DebugMode;
 import org.jdownloader.plugins.components.config.MydaddyCcConfig;
 import org.jdownloader.plugins.components.config.MydaddyCcConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,17 +43,24 @@ public class MydaddyCc extends PluginForHost {
     public MydaddyCc(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
+    }
     /* DEV NOTES */
     // Tags: porn plugin
     // protocol: no https
     // other:
 
     /* Connection stuff */
-    private static final boolean  free_resume             = true;
-    private static final int      free_maxchunks          = 0;
-    private static final int      free_maxdownloads       = -1;
-    private String                dllink                  = null;
-    protected static final String PROPERTY_CHOSEN_QUALITY = "chosen_quality";
+    private static final boolean  free_resume                 = true;
+    private static final int      free_maxchunks              = 0;
+    private static final int      free_maxdownloads           = -1;
+    private String                dllink                      = null;
+    protected static final String PROPERTY_CHOSEN_QUALITY     = "chosen_quality";
+    public static final String    PROPERTY_ACTRESS_NAME       = "actress_name";
+    public static final String    PROPERTY_CRAWLER_TITLE = "decryptertitle";
 
     @Override
     public String getAGBLink() {
@@ -76,8 +84,8 @@ public class MydaddyCc extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* Host itself has no filenames so if we know the title from the website which embedded the content, prefer that! */
-        final String actress_name = link.getStringProperty("actress_name");
-        String filename = link.getStringProperty("decryptertitle");
+        final String actress_name = link.getStringProperty(PROPERTY_ACTRESS_NAME);
+        String filename = link.getStringProperty(PROPERTY_CRAWLER_TITLE);
         if (filename == null) {
             /* Fallback to videoID is filename. */
             filename = getFID(link);

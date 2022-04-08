@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -37,6 +38,11 @@ import jd.plugins.PluginForHost;
 public class HqwoCc extends PluginForHost {
     public HqwoCc(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

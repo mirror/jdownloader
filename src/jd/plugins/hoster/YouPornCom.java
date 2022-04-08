@@ -29,6 +29,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.config.YoupornConfig;
 import org.jdownloader.plugins.components.config.YoupornConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -51,6 +52,11 @@ public class YouPornCom extends PluginForHost {
 
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     public String getAGBLink() {

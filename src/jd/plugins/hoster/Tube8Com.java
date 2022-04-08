@@ -26,6 +26,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,10 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "https?://(?:www\\.)?tube8\\.(?:com|fr)/(?!(cat|latest)/)(embed/)?[^/]+/[^/]+/([^/]+/)?([0-9]+)" })
 public class Tube8Com extends PluginForHost {
     /* DEV NOTES */
@@ -65,6 +66,11 @@ public class Tube8Com extends PluginForHost {
         super(wrapper);
         setConfigElements();
         this.enablePremium("http://www.tube8.com/signin.html");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override
