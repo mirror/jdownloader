@@ -545,7 +545,7 @@ public class InstaGramCom extends PluginForHost {
                 if (userCookies != null) {
                     br.setCookies(MAINPAGE, userCookies);
                     if (!force) {
-                        logger.info("Trust cookies without check");
+                        /* Don't verify cookies */
                         return;
                     }
                     if (verifyCookies(account, userCookies)) {
@@ -561,7 +561,7 @@ public class InstaGramCom extends PluginForHost {
                 if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
                     if (!force) {
-                        logger.info("Trust cookies without check");
+                        /* Don't verify cookies */
                         return;
                     }
                     if (verifyCookies(account, cookies)) {

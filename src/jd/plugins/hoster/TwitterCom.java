@@ -21,6 +21,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -41,25 +55,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.TwitterConfigInterface;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterCom extends PluginForHost {
@@ -239,7 +234,8 @@ public class TwitterCom extends PluginForHost {
                             for (final DownloadLink tmp : results) {
                                 /**
                                  * The check for filename-ending is only there for backward-compatibility to crawler revision 45677 and
-                                 * before. </br> TODO: Remove it after 08-2022
+                                 * before. </br>
+                                 * TODO: Remove it after 08-2022
                                  */
                                 if ((link.getName() != null && link.getName().endsWith(".mp4")) || StringUtils.equals(link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_TYPE), "video")) {
                                     result = tmp;
@@ -625,7 +621,7 @@ public class TwitterCom extends PluginForHost {
                         }
                     }
                 } else if (allowCookieLoginOnly) {
-                    showCookieLoginInformation();
+                    showCookieLoginInfo();
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 } else {
                     br.getPage("https://" + account.getHoster() + "/login");
@@ -660,42 +656,6 @@ public class TwitterCom extends PluginForHost {
         } else {
             return false;
         }
-    }
-
-    private static Thread showCookieLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Twitter - Login";
-                        message += "Hallo liebe(r) Twitter NutzerIn\r\n";
-                        message += "Um deinen Twitter Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Twitter - Login";
-                        message += "Hello dear Twitter user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    // getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     @Override

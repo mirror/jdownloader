@@ -21,7 +21,6 @@ import java.util.HashSet;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -194,9 +193,11 @@ public class FuxCom extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dllink.trim());
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            con = br.openHeadConnection(dllink.trim());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 server_issues = true;
             }
@@ -249,16 +250,20 @@ public class FuxCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -311,20 +316,19 @@ public class FuxCom extends PluginForHost {
         return mediaID;
     }
 
-    private String checkDirectLink(String directlink) {
+    private String checkDirectLink(final String directlink) {
         if (directlink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(directlink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    directlink = null;
+                URLConnectionAdapter con = br2.openHeadConnection(directlink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return directlink;
                 }
                 con.disconnect();
             } catch (final Exception e) {
-                directlink = null;
             }
         }
-        return directlink;
+        return null;
     }
 
     @Override

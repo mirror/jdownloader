@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "https?://((www\\.)?ah-me\\.com/videos/\\d+|embeds\\.ah\\-me\\.com/embed/\\s+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "https?://((?:www\\.)?ah-me\\.com/videos/\\d+|embeds\\.ah\\-me\\.com/embed/\\d+)" })
 public class AhMeCom extends PluginForHost {
     private String dllink = null;
 
@@ -58,33 +57,46 @@ public class AhMeCom extends PluginForHost {
         return -1;
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher("https://www.ah-me.com/videos/" + new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0));
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (!br.getURL().contains("ah-me.com/videos/") || br.containsHTML("This video has been deleted<") || br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage("https://www.ah-me.com/videos/" + this.getFID(link) + "/");
+        if (br.containsHTML("(?i)This video has been deleted\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String title = br.getRegex("\"mTitle\"[^>]*><span itemprop=\"name\"[^>]*>([^<]+)</span>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
         // <video src="http://ah-me.vstreamcdn.com/key=lGkvgzJE1Ds,end=1403083107/374070.flv"
         dllink = br.getRegex("<video src=\"(https?://.*?)\"").getMatch(0);
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(title + ".mp4");
         }
-        filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".flv");
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br2.openHeadConnection(dllink);
             if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
