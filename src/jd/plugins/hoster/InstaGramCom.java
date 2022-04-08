@@ -117,7 +117,8 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_type                            = "type";
     public static final String  PROPERTY_date                            = "date";
     public static final String  PROPERTY_hashtag                         = "hashtag";
-    public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";
+    @Deprecated
+    public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";              // used until crawler rev 45795
     public static final String  PROPERTY_main_content_id                 = "main_content_id";                // e.g.
                                                                                                              // instagram.com/p/<main_content_id>/
     public static final String  PROPERTY_forced_packagename              = "forced_packagename";
