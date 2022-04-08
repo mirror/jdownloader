@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,11 +33,14 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trannytube.tv" }, urls = { "https?://(?:www\\.)?trannytube\\.tv/(?:[a-z]{2}/)?movies/\\d+/[a-z0-9\\-]+" })
 public class TrannytubeTv extends PluginForHost {
-
     public TrannytubeTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
+    }
     /* DEV NOTES */
     // Tags: porn plugin
     // protocol: no https
@@ -48,7 +52,6 @@ public class TrannytubeTv extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 

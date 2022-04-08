@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,6 +40,11 @@ public class AncensoredCom extends PluginForHost {
     }
     /* DEV NOTES */
     // Tags: porn plugin
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
+    }
 
     /* Connection stuff */
     private static final boolean free_resume       = true;

@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -37,8 +38,12 @@ public class MediadeliveryNet extends antiDDoSForHost {
         super(wrapper);
     }
     /* DEV NOTES */
-    // Tags: Porn plugin
     // other: This plugin mostly handles embedded content from porn3dx.com.
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.VIDEO_STREAMING };
+    }
 
     /* Connection stuff */
     private static final int   free_maxdownloads        = -1;

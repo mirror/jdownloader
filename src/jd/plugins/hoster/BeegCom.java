@@ -24,6 +24,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -46,6 +47,11 @@ public class BeegCom extends PluginForHost {
 
     public BeegCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

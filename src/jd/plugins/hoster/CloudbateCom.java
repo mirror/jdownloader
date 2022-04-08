@@ -22,6 +22,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -37,6 +38,11 @@ import jd.plugins.PluginException;
 public class CloudbateCom extends antiDDoSForHost {
     public CloudbateCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
     /* DEV NOTES */
     // Tags: Porn plugin

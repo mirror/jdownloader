@@ -21,6 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.PornoneComConfig;
 import org.jdownloader.plugins.components.config.PornoneComConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -45,6 +46,11 @@ public class PornoneCom extends PluginForHost {
     public PornoneCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://pornone.com/register/");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

@@ -17,8 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -35,6 +36,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class TubeRampantTv extends PluginForHost {
     public TubeRampantTv(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* Using playerConfig script */
@@ -55,13 +61,13 @@ public class TubeRampantTv extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         premiumonly = false;
         String ext = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getURL().contains("404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -75,12 +81,12 @@ public class TubeRampantTv extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        dllink = checkDirectLink(downloadLink, "directlink");
+        dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             if (br.containsHTML("/premium/unleashed\\.php|\\&type=trial\\'")) {
                 premiumonly = true;
-                downloadLink.getLinkStatus().setStatusText("Only downloadable for premium users");
-                downloadLink.setName(filename + default_Extension);
+                link.getLinkStatus().setStatusText("Only downloadable for premium users");
+                link.setName(filename + default_Extension);
                 return AvailableStatus.TRUE;
             }
             final String playerConfigUrl = br.getRegex("(https?://[A-Za-z0-9]*?\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.(mp4|flv))").getMatch(0);
@@ -105,7 +111,7 @@ public class TubeRampantTv extends PluginForHost {
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }
-            downloadLink.setFinalFileName(filename);
+            link.setFinalFileName(filename);
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
@@ -116,12 +122,12 @@ public class TubeRampantTv extends PluginForHost {
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                downloadLink.setProperty("directlink", dllink);
+                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -134,13 +140,13 @@ public class TubeRampantTv extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (dllink == null && premiumonly) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (dllink == null) {
@@ -148,42 +154,50 @@ public class TubeRampantTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");
         } else {
             /* HTTP */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override

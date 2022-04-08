@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,8 +33,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(?:www\\.)?pornhost\\.com/([0-9]+/([0-9]+\\.html)?|[0-9]+|embed/\\d+)" })
 public class PornHostCom extends PluginForHost {
     private String ending = null;
@@ -39,6 +40,11 @@ public class PornHostCom extends PluginForHost {
 
     public PornHostCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

@@ -15,6 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,10 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz", "pornoid.cz" }, urls = { "https?://(?:www\\.)?datoid\\.(?:cz|sk)/([A-Za-z0-9]+)(/([^/]+))?", "https?://(?:www\\.)?pornoid\\.(?:cz|sk)/([A-Za-z0-9]+)(/([^/]+))?" })
 public class DatoidCz extends antiDDoSForHost {
     public DatoidCz(PluginWrapper wrapper) {
@@ -43,6 +46,11 @@ public class DatoidCz extends antiDDoSForHost {
         this.enablePremium("http://datoid.cz/cenik");
         // Prevents server errors
         this.setStartIntervall(2 * 1000);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override
@@ -186,7 +194,8 @@ public class DatoidCz extends antiDDoSForHost {
             }
             if (br.containsHTML("\"error\":\"IP in use\"")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            } else if (br.containsHTML("\"No anonymous free slots\"") || br.containsHTML("class=\"hidden free-slots-in-use\"") /* 2018-10-15 */) {
+            } else if (br.containsHTML("\"No anonymous free slots\"")
+                    || br.containsHTML("class=\"hidden free-slots-in-use\"") /* 2018-10-15 */) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
             } else if (br.containsHTML("class=\"hidden big\\-file\"")) {
                 /* 2019-07-31 e.g. "<span class="hidden big-file">Soubory větší než 1 GB můžou stahovat pouze <span" */
@@ -201,8 +210,12 @@ public class DatoidCz extends antiDDoSForHost {
         /* 2019-02-04: Waittime can be skipped */
         // sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -332,9 +345,13 @@ public class DatoidCz extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, -3);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

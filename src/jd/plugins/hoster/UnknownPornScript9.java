@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,15 +37,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com", "proporn.com", "vivatube.com", "tubeon.com", "viptube.com", "hd21.com", "iceporn.com", "nuvid.com", "yeptube.com" }, urls = { "https?://(?:www\\.)?winporn\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?proporn\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?vivatube\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?tubeon\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?viptube\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?hd21\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?iceporn\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?nuvid\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?",
         "https?://(?:www\\.)?yeptube\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class UnknownPornScript9 extends PluginForHost {
     public UnknownPornScript9(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* Similar sites but they use a different 'player_config' URL: drtuber.com, viptube.com */

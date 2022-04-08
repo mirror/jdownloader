@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -31,11 +32,14 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "poopeegirls.com" }, urls = { "https?://(?:www\\.)?poopeegirls\\.com/v\\-\\d+\\-[a-z0-9\\-]+\\.html" })
 public class PoopeegirlsCom extends PluginForHost {
-
     public PoopeegirlsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
+    }
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -47,7 +51,6 @@ public class PoopeegirlsCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 

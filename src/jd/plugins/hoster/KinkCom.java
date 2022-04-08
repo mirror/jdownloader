@@ -30,6 +30,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -59,6 +60,11 @@ public class KinkCom extends PluginForHost {
     public KinkCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.kink.com/join/kink");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

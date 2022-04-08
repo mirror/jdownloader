@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,13 +39,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotporn.com" }, urls = { "https?://(?:www\\.)?gotporn\\.com/[a-z0-9\\-]+/video\\-\\d+|https?://(?:www\\.)?gotporn\\.com/video/\\d+" })
 public class GotpornCom extends antiDDoSForHost {
     public GotpornCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.gotporn.com/");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

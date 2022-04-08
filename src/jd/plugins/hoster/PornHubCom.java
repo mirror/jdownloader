@@ -44,6 +44,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -123,6 +124,11 @@ public class PornHubCom extends PluginForHost {
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "pornhub.com", "pornhub.org", "pornhubpremium.com", "pornhubpremium.org" });
         return ret;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

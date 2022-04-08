@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -44,6 +46,11 @@ public class XyouCom extends PluginForHost {
     public XyouCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.xyou.com/en/s2/free-join/");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

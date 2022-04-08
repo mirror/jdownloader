@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -40,6 +41,11 @@ public class EroProfileCom extends PluginForHost {
     public EroProfileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

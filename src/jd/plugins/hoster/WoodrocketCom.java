@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,6 +37,11 @@ import jd.plugins.components.PluginJSonUtils;
 public class WoodrocketCom extends PluginForHost {
     public WoodrocketCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

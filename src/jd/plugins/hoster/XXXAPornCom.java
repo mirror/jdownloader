@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -39,6 +41,11 @@ public class XXXAPornCom extends PluginForHost {
             Browser.setBurstRequestIntervalLimitGlobal(getHost(), 100, 5, 1000);
         } catch (final Throwable e) {
         }
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

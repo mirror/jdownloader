@@ -23,6 +23,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -51,6 +52,11 @@ public class PornflipCom extends PluginForHost {
         super(wrapper);
         this.enablePremium();
         this.setConfigElements();
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     private String dllink = null;

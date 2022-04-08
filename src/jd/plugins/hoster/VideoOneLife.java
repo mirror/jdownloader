@@ -21,6 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,6 +38,11 @@ import jd.plugins.PluginForHost;
 public class VideoOneLife extends PluginForHost {
     public VideoOneLife(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
     /* DEV NOTES */
     // Tags: Porn plugin

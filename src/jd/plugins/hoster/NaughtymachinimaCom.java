@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -43,6 +44,11 @@ public class NaughtymachinimaCom extends PluginForHost {
     public NaughtymachinimaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.naughtymachinima.com/signup");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

@@ -2,6 +2,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -20,15 +25,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/([a-fA-F0-9]{13})(?:\\.html)?", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/post/([a-fA-F0-9]{13})(?:\\.html)?" })
 public class SxyprnCom extends antiDDoSForHost {
     public SxyprnCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://sxyprn.com/community/0.html");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

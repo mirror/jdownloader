@@ -26,6 +26,7 @@ import org.jdownloader.plugins.components.config.XtremestreamCoConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -40,6 +41,11 @@ import jd.plugins.PluginException;
 public class XtremestreamCo extends antiDDoSForHost {
     public XtremestreamCo(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
     /* DEV NOTES */
     // Tags: Porn plugin

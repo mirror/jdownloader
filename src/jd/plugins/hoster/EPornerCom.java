@@ -17,6 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,12 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.EpornerComConfig;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:\\w+\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
 public class EPornerCom extends PluginForHost {
     public String   dllink        = null;
@@ -50,6 +51,11 @@ public class EPornerCom extends PluginForHost {
     public EPornerCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.eporner.com/");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

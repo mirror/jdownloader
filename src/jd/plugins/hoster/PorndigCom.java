@@ -28,6 +28,7 @@ import org.jdownloader.plugins.components.config.PorndigComConfig.PreferredQuali
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -44,6 +45,11 @@ import jd.plugins.PluginForHost;
 public class PorndigCom extends PluginForHost {
     public PorndigCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

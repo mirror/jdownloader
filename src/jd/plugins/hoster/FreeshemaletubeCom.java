@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -33,6 +35,11 @@ import jd.plugins.PluginForHost;
 public class FreeshemaletubeCom extends PluginForHost {
     public FreeshemaletubeCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
     /* Static_tos_porn_script V0.1 */
     /* Tags: Script, template */

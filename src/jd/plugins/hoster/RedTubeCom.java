@@ -4,6 +4,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.RedtubeConfig;
+import org.jdownloader.plugins.components.config.RedtubeConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -22,19 +31,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.RedtubeConfig;
-import org.jdownloader.plugins.components.config.RedtubeConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?(?:redtube\\.(?:cn\\.com|com|tv|com\\.br)/|embed\\.redtube\\.(?:cn\\.com|com|tv|com\\.br)/[^<>\"]*?\\?id=)(\\d{4,})" })
 public class RedTubeCom extends PluginForHost {
     public RedTubeCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";

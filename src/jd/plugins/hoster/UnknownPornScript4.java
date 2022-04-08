@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,6 +37,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class UnknownPornScript4 extends PluginForHost {
     public UnknownPornScript4(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */

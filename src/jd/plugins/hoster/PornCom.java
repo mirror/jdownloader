@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,10 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(?:\\w+\\.)?porn\\.com/(?:videos/[a-z0-9\\-]*?-|videos/embed/)(\\d+)" })
 public class PornCom extends antiDDoSForHost {
@@ -67,6 +68,11 @@ public class PornCom extends antiDDoSForHost {
         super(wrapper);
         this.setConfigElements();
         this.enablePremium("https://www.porn.com/profile/premium");
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -39,6 +40,11 @@ import jd.plugins.PluginForHost;
 public class SexuCom extends PluginForHost {
     public SexuCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     public static List<String[]> getPluginDomains() {

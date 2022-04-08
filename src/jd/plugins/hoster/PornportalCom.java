@@ -23,6 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -47,21 +57,17 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PornportalComConfig;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornportalCom extends PluginForHost {
     public PornportalCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.pornportal.com/");
         // setConfigElements();
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     @Override
@@ -763,8 +769,8 @@ public class PornportalCom extends PluginForHost {
                     ai.setStatus("Free Account (Trial)");
                 } else {
                     /**
-                     * Premium accounts must not have any expire-date! </br> 2021-06-05: Only set expire-date if it is still valid. Premium
-                     * accounts are premium as long as "isExpired" != true.
+                     * Premium accounts must not have any expire-date! </br>
+                     * 2021-06-05: Only set expire-date if it is still valid. Premium accounts are premium as long as "isExpired" != true.
                      */
                     account.setType(AccountType.PREMIUM);
                     final String expiryDate = (String) map.get("expiryDate");
@@ -783,8 +789,8 @@ public class PornportalCom extends PluginForHost {
                 }
                 if (!foundValidExpireDate && map.containsKey("addons")) {
                     /**
-                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br> Each bundle can have
-                     * different expire-dates and also separate pricing and so on.
+                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
+                     * Each bundle can have different expire-dates and also separate pricing and so on.
                      */
                     logger.info("Looking for alternative expiredate");
                     long highestExpireTimestamp = -1;

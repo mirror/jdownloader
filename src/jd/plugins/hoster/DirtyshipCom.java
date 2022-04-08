@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -33,6 +34,11 @@ import jd.plugins.PluginException;
 public class DirtyshipCom extends antiDDoSForHost {
     public DirtyshipCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
     /* DEV NOTES */
     // Tags: Porn plugin

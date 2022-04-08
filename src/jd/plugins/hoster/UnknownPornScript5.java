@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,6 +40,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class UnknownPornScript5 extends PluginForHost {
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.XXX };
     }
 
     /* DEV NOTES */
