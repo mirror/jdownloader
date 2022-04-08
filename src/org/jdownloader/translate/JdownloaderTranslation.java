@@ -1043,10 +1043,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This is a pastebin service which hosts user defined text-snippets." })
     String LazyHostPlugin_FEATURE_PASTEBIN_TOOLTIP();
 
-    @Default(lngs = { "en" }, values = { "Porn" })
+    @Default(lngs = { "en" }, values = { "Adult content" })
     String LazyHostPlugin_FEATURE_XXX();
 
-    @Default(lngs = { "en" }, values = { "This is a porn streaming website" })
+    @Default(lngs = { "en" }, values = { "This is a adult content website" })
     String LazyHostPlugin_FEATURE_XXX_TOOLTIP();
 
     @Default(lngs = { "en" }, values = { "Streaming" })
