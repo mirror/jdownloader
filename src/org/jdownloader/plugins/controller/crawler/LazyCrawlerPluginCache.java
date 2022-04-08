@@ -15,12 +15,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.net.CountingInputStream;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.LazyPluginClass;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.LazyHostPluginCache;
 
 public class LazyCrawlerPluginCache {
-    private static final long CACHEVERSION = 05042022001l;
+    private static final long CACHEVERSION = 05042022001l + LazyPlugin.FEATURE.CACHEVERSION;
 
     public static List<LazyCrawlerPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();

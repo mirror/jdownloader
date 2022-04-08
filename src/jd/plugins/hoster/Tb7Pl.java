@@ -23,7 +23,8 @@ import java.util.Locale;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
@@ -55,8 +56,8 @@ public class Tb7Pl extends PluginForHost {
     }
 
     @Override
-    public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.MULTIHOST };
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     private void login(Account account, boolean force) throws PluginException, IOException {

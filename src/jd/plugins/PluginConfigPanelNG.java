@@ -89,10 +89,11 @@ import org.jdownloader.plugins.config.PluginConfigPanelEventSenderEvent;
 import org.jdownloader.plugins.config.PluginConfigPanelEventSenderEventSender;
 import org.jdownloader.plugins.config.PluginConfigPanelEventSenderListener;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -505,7 +506,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
                                     addPair(_GUI.T.lit_premium_points(), null, new Label(ai.getPremiumPoints() + ""));
                                 }
                             }
-                            if (acc.isMultiHost() && acc.getPlugin().getLazyP().hasFeature(FEATURE.MULTIHOST)) {
+                            if (acc.isMultiHost() && acc.getPlugin().getLazyP().hasFeature(LazyPlugin.FEATURE.MULTIHOST)) {
                                 initMultiHosterInfo(acc);
                             }
                             final Class<? extends AccountConfigInterface> accountConfig = plgh.getAccountConfigInterface(acc);

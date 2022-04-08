@@ -28,7 +28,8 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.components.config.IwaraTvConfig;
 import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameScheme;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -59,8 +60,8 @@ public class IwaraTv extends PluginForHost {
     }
 
     @Override
-    public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.XXX };
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /* DEV NOTES */

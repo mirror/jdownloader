@@ -22,7 +22,8 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.config.EpornerComConfig;
 import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -54,8 +55,8 @@ public class EPornerCom extends PluginForHost {
     }
 
     @Override
-    public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.XXX };
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     @Override

@@ -13,11 +13,106 @@ import jd.plugins.Plugin;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.TooltipInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.translate._JDT;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
+    public static enum FEATURE implements LabelInterface, TooltipInterface {
+        VIDEO_STREAMING {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING_TOOLTIP();
+            }
+        },
+        USENET {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_USENET();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_USENET_TOOLTIP();
+            }
+        },
+        MULTIHOST {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_MULTIHOST();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_MULTIHOST_TOOLTIP();
+            }
+        },
+        PASTEBIN {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_PASTEBIN();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_PASTEBIN_TOOLTIP();
+            }
+        },
+        XXX {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_XXX();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_XXX_TOOLTIP();
+            }
+        },
+        GENERIC {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
+            }
+        },
+        INTERNAL {
+            @Override
+            public String getLabel() {
+                return "INTERNAL";
+            }
+
+            @Override
+            public String getTooltip() {
+                return "INTERNAL";
+            }
+        };
+        public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());
+
+        public boolean isSet(FEATURE[] features) {
+            if (features != null) {
+                for (final FEATURE feature : features) {
+                    if (this.equals(feature)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
     private final static Charset                           UTF8            = Charset.forName("UTF-8");
     private final byte[]                                   patternBytes;
     private volatile MinTimeWeakReference<Pattern>         compiledPattern = null;

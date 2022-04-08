@@ -16,21 +16,24 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.net.URLDecoder;
 import java.util.ArrayList;
-
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "https?://(?:[a-z0-9]+\\.)?compupaste\\.com/\\?v=[A-Za-z0-9]+" })
 public class CompuPasteCom extends PluginForDecrypt {
@@ -89,7 +92,7 @@ public class CompuPasteCom extends PluginForDecrypt {
             }
         }
         final String htmlToCrawlLinksFrom;
-        final String pasteText = br.getRegex("class=\"tab_content\">(.*?)<div id=\"wp-pagenavi\">").getMatch(0);
+        final String pasteText = br.getRegex("class\\s*=\\s*\"tab_content\"[^>]*>\\s*(.*?)\\s*<div[^>]*id\\s*=\\s*\"wp-pagenavi\"\\s*>").getMatch(0);
         if (pasteText != null) {
             htmlToCrawlLinksFrom = pasteText;
         } else {
@@ -108,7 +111,14 @@ public class CompuPasteCom extends PluginForDecrypt {
             final Browser brc = br.cloneBrowser();
             for (final Form form : forms) {
                 if (form.getAction() != null && form.getAction().matches(".*127\\.0\\.0\\.1:\\d+.*")) {
-                    brc.submitForm(form);
+                    final InputField jk = form.getInputFieldByName("jk");
+                    final InputField crypted = form.getInputFieldByName("crypted");
+                    if (jk != null && StringUtils.isNotEmpty(jk.getValue()) && crypted != null && StringUtils.isNotEmpty(crypted.getValue())) {
+                        final DownloadLink dummyCnl = DummyCNL.createDummyCNL(URLDecoder.decode(crypted.getValue(), "UTF-8"), URLDecoder.decode(jk.getValue(), "UTF-8"), null, param.getCryptedUrl());
+                        decryptedLinks.add(dummyCnl);
+                    } else {
+                        brc.submitForm(form);
+                    }
                 }
             }
         }

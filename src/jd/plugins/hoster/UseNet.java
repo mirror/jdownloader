@@ -44,7 +44,8 @@ import org.jdownloader.plugins.components.usenet.UsenetFile;
 import org.jdownloader.plugins.components.usenet.UsenetFileSegment;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" })
 public class UseNet extends antiDDoSForHost {
@@ -273,8 +274,8 @@ public class UseNet extends antiDDoSForHost {
     }
 
     @Override
-    public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.USENET };
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USENET };
     }
 
     protected boolean setUseNetFileName(DownloadLink downloadLink, UsenetFile usenetFile, String bodyFileName) {

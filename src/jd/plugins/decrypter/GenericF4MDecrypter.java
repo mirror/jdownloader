@@ -39,7 +39,7 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*|#.*)" })
 public class GenericF4MDecrypter extends PluginForDecrypt {

@@ -17,11 +17,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.appwork.utils.IO;
 import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.net.CountingInputStream;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.LazyPluginClass;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 public class LazyHostPluginCache {
-    private static final long CACHEVERSION = 16022021001l + LazyHostPlugin.FEATURE.CACHEVERSION;
+    private static final long CACHEVERSION = 16022021001l + LazyPlugin.FEATURE.CACHEVERSION;
 
     public static ByteArrayOutputStream readFile(File file) throws IOException {
         final FileInputStream fis = new FileInputStream(file);
@@ -96,13 +97,13 @@ public class LazyHostPluginCache {
                             lazyHostPlugin.setConfigInterface(is.readString(stringBuffer));
                         }
                         if ((flags & (1 << 2)) != 0) {
-                            final ArrayList<FEATURE> features = new ArrayList<FEATURE>(FEATURE.values().length);
-                            for (final FEATURE feature : FEATURE.values()) {
+                            final ArrayList<LazyPlugin.FEATURE> features = new ArrayList<LazyPlugin.FEATURE>(LazyPlugin.FEATURE.values().length);
+                            for (final LazyPlugin.FEATURE feature : LazyPlugin.FEATURE.values()) {
                                 if (is.readBoolean()) {
                                     features.add(feature);
                                 }
                             }
-                            lazyHostPlugin.setFeatures(features.toArray(new FEATURE[0]));
+                            lazyHostPlugin.setFeatures(features.toArray(new LazyPlugin.FEATURE[0]));
                         }
                         ret.add(lazyHostPlugin);
                     }
@@ -168,7 +169,7 @@ public class LazyHostPluginCache {
                     if (plugin.isHasConfig()) {
                         flags |= (1 << 1);
                     }
-                    final FEATURE[] features = plugin.getFeatures();
+                    final LazyPlugin.FEATURE[] features = plugin.getFeatures();
                     if (features != null && features.length > 0) {
                         flags |= (1 << 2);
                     }
@@ -195,7 +196,7 @@ public class LazyHostPluginCache {
                         os.writeString(plugin.getConfigInterface());
                     }
                     if (features != null && features.length > 0) {
-                        for (final FEATURE feature : FEATURE.values()) {
+                        for (final LazyPlugin.FEATURE feature : LazyPlugin.FEATURE.values()) {
                             os.writeBoolean(feature.isSet(features));
                         }
                     }

@@ -18,7 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Random;
 
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,8 +40,8 @@ public class PornStarNetworkCom extends PluginForHost {
     }
 
     @Override
-    public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.XXX };
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private static final String type_embed = "http://(www\\.)?pornstarnetwork\\.com/video/embed\\?id=\\d+";

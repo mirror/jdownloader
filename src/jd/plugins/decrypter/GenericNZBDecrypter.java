@@ -21,8 +21,8 @@ import jd.plugins.components.NZBSAXHandler;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.container.NZB;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzb" }, urls = { "https?://.+/.*\\.nzb($|(\\?|&)[^\\s<>\"']*)" })

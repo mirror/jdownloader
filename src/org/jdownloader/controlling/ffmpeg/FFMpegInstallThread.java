@@ -80,7 +80,8 @@ public class FFMpegInstallThread extends Thread {
         WINDOWS("ffmpeg") {
             @Override
             protected boolean isSupported() {
-                return CrossSystem.isWindows() && CrossSystem.ARCHFamily.X86.equals(CrossSystem.getARCHFamily());
+                // Windows XP is no longer supported by bundled ffmpeg version
+                return CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_VISTA);
             }
 
             @Override
@@ -98,6 +99,17 @@ public class FFMpegInstallThread extends Thread {
                 default:
                     return null;
                 }
+            }
+        },
+        WINDOWS_XP(null) {
+            @Override
+            protected boolean isSupported() {
+                return CrossSystem.getOS().equals(OperatingSystem.WINDOWS_XP);
+            }
+
+            @Override
+            protected File getBundledBinaryPath(BINARY binary) {
+                return WINDOWS.getBundledBinaryPath(binary);
             }
         },
         GENERIC(null) {

@@ -2,42 +2,12 @@ package org.jdownloader.plugins.controller.crawler;
 
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.storage.config.annotations.TooltipInterface;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.translate._JDT;
 
 public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
-    public static enum FEATURE implements LabelInterface, TooltipInterface {
-        GENERIC {
-            @Override
-            public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC();
-            }
-
-            @Override
-            public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
-            }
-        };
-        public static final long CACHEVERSION = StringUtils.join(values(), "<->").hashCode() + StringUtils.join(values(), ":").hashCode() + StringUtils.join(values(), "<=>").hashCode();
-
-        public boolean isSet(FEATURE[] features) {
-            if (features != null) {
-                for (final FEATURE feature : features) {
-                    if (this.equals(feature)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
     public LazyCrawlerPlugin(LazyPluginClass lazyPluginClass, String pattern, String displayName, Class<PluginForDecrypt> pluginClass, PluginClassLoaderChild classLoaderChild) {
         super(lazyPluginClass, pattern, displayName, pluginClass, classLoaderChild);
     }
