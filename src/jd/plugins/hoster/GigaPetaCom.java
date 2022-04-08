@@ -147,7 +147,7 @@ public class GigaPetaCom extends PluginForHost {
         dl.startDownload();
     }
 
-    protected void handleErrors(Browser br, boolean downloading) throws PluginException {
+    protected void handleErrors(final Browser br, final boolean downloading) throws PluginException {
         if (br.containsHTML("All threads for IP")) {
             if (downloading) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
@@ -188,14 +188,14 @@ public class GigaPetaCom extends PluginForHost {
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                Form DLForm = br.getFormBySubmitvalue("Download");
-                if (DLForm == null) {
-                    DLForm = br.getForm(0);
+                Form dlform = br.getFormBySubmitvalue("Download");
+                if (dlform == null) {
+                    dlform = br.getForm(0);
                 }
-                if (DLForm == null) {
+                if (dlform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.submitForm(DLForm);
+                br.submitForm(dlform);
                 dllink = br.getRedirectLocation();
             }
             if (dllink == null) {

@@ -13,10 +13,10 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,27 +28,51 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))/([a-z]+/)?folders/.+" }) 
-public class DpstFlsCm extends PluginForDecrypt {
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class DepositfilesComFolder extends PluginForDecrypt {
     private static String MAINPAGE = null;
     private static String DOMAINS  = null;
 
-    public DpstFlsCm(PluginWrapper wrapper) {
+    public DepositfilesComFolder(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "depositfiles.com", "depositfiles.org", "dfiles.eu", "dfiles.ru" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]+/)?folders/(.+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (MAINPAGE == null || DOMAINS == null) {
             /* we first have to load the plugin, before we can reference it */
-            final PluginForHost depositfilesPlugin = JDUtilities.getPluginForHost("depositfiles.com");
+            final PluginForHost depositfilesPlugin = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.DepositFiles) depositfilesPlugin).setMainpage();
-
             MAINPAGE = jd.plugins.hoster.DepositFiles.MAINPAGE.get();
             DOMAINS = jd.plugins.hoster.DepositFiles.DOMAINS;
             if (MAINPAGE == null || DOMAINS == null) {
@@ -56,8 +80,8 @@ public class DpstFlsCm extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
-        String url = parameter.toString();
+        String url = param.getCryptedUrl();
+        final String folderSlug = new Regex(url, this.getSupportedLinks()).getMatch(0);
         int pagecount = 1;
         String id = new Regex(url, "folders/(.+)").getMatch(0);
         url = MAINPAGE + "/de/folders/" + id;
@@ -85,7 +109,8 @@ public class DpstFlsCm extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            logger.info("Folderlink is empty: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + folderSlug, "This folder is empty."));
+            return decryptedLinks;
         }
         return decryptedLinks;
     }
@@ -94,5 +119,4 @@ public class DpstFlsCm extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
