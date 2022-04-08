@@ -4,14 +4,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -25,6 +17,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:#download#|\\?c=|d/)([A-Za-z0-9\\-]+)$" })
 public class GoFileIo extends PluginForDecrypt {
     @Override
@@ -33,7 +33,7 @@ public class GoFileIo extends PluginForDecrypt {
         final String folderID = new Regex(parameter.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
-        query.add("websiteToken", "websiteToken");
+        query.add("websiteToken", jd.plugins.hoster.GofileIo.getWebsiteToken(this, br));
         query.add("cache", "true");
         String passCode = parameter.getDecrypterPassword();
         boolean passwordCorrect = true;
@@ -74,6 +74,9 @@ public class GoFileIo extends PluginForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
         if (!"ok".equals(response.get("status"))) {
+            if ("error-notPremium".equals(response.get("status"))) {
+                // {"status":"error-notPremium","data":{}}
+            }
             /* Assume that folder is offline. */
             /* E.g. {"status":"error-notFound","data":{}} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

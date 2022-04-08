@@ -23,15 +23,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +39,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=[a-f0-9]+)?" })
 public class GofileIo extends PluginForHost {
@@ -85,9 +85,31 @@ public class GofileIo extends PluginForHost {
         return this.requestFileInformation(link, false);
     }
 
-    protected static AtomicReference<String> TOKEN           = new AtomicReference<String>();
-    protected static AtomicLong              TOKEN_TIMESTAMP = new AtomicLong(-1);
-    protected final static long              TOKEN_EXPIRE    = 30 * 60 * 1000l;
+    protected static AtomicReference<String> TOKEN                   = new AtomicReference<String>();
+    protected static AtomicLong              TOKEN_TIMESTAMP         = new AtomicLong(-1);
+    protected final static long              TOKEN_EXPIRE            = 30 * 60 * 1000l;
+    protected static AtomicReference<String> WEBSITE_TOKEN           = new AtomicReference<String>();
+    protected static AtomicLong              WEBSITE_TOKEN_TIMESTAMP = new AtomicLong(-1);
+
+    public static String getWebsiteToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
+        synchronized (WEBSITE_TOKEN) {
+            String token = WEBSITE_TOKEN.get();
+            if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - WEBSITE_TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
+                return token;
+            } else {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("https://gofile.io/contents/files.html");
+                token = brc.getRegex("websiteToken\\s*:\\s*\"(.*?)\"").getMatch(0);
+                if (StringUtils.isEmpty(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    WEBSITE_TOKEN.set(token);
+                    WEBSITE_TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
+                    return token;
+                }
+            }
+        }
+    }
 
     public static String getToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
         synchronized (TOKEN) {
@@ -139,7 +161,7 @@ public class GofileIo extends PluginForHost {
         br.setReadTimeout(2 * 60 * 1000);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
-        query.add("websiteToken", "websiteToken");
+        query.add("websiteToken", getWebsiteToken(this, br));
         query.add("cache", "true");
         String passCode = null;
         boolean passwordCorrect = true;
