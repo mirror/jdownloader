@@ -15,12 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,10 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(?:www\\.)?stileproject\\.com/video/([a-z0-9\\-]+)-(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(?:www\\.)?stileproject\\.com/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)" })
 public class StileProjectCom extends PluginForHost {
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    private String dllink = null;
 
     public StileProjectCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,49 +57,73 @@ public class StileProjectCom extends PluginForHost {
         }
     }
 
+    private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
+    private static final String TYPE_NORMAL = "https?://(?:www\\.)?stileproject\\.com/video/([a-z0-9\\-]+)-(\\d+)\\.html";
+
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1);
+        }
     }
 
     private String getURLTitle(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return getURLTitle(link.getPluginPatternMatcher());
+    }
+
+    private String getWeakFilename(final DownloadLink link) {
+        final String urlTitle = getURLTitle(link.getPluginPatternMatcher());
+        if (urlTitle != null) {
+            return urlTitle.replace("-", " ").trim() + ".mp4";
+        } else {
+            return this.getFID(link) + ".mp4";
+        }
+    }
+
+    private String getURLTitle(final String url) {
+        return new Regex(url, TYPE_NORMAL).getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(getWeakFilename(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", "http://www.stileproject.com/");
+        br.getHeaders().put("Referer", "https://www." + this.getHost());
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Error Page") || br.containsHTML("video_removed_dmca\\.jpg\"|error\">We're sorry")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*404 Error Page") || br.containsHTML("video_removed_dmca\\.jpg\"|error\">We're sorry")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
-        if (filename == null) {
-            /* Fallback */
-            filename = getURLTitle(link).replace("-", " ");
+        if (br.getURL().matches(TYPE_EMBED)) {
+            final String realVideoURL = br.getRegex(TYPE_NORMAL).getMatch(-1);
+            if (realVideoURL == null || !realVideoURL.contains(this.getFID(link))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage(realVideoURL);
+        }
+        final String titleByURL = getURLTitle(br.getURL());
+        if (titleByURL != null) {
+            link.setFinalFileName(titleByURL.replace("-", " ").trim() + ".mp4");
         }
         // String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+).html$").getMatch(0);
         // String embedURL = "https://www.stileproject.com/embed/" + fid;
         // br.getPage(embedURL);
         getdllink();
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename.trim());
-        final String ext = ".mp4";
-        link.setFinalFileName(filename + ext);
         if (!StringUtils.isEmpty(dllink)) {
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (this.looksLikeDownloadableContent(con)) {
                     link.setDownloadSize(con.getCompleteContentLength());
                 } else {
-                    server_issues = true;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
                 }
             } finally {
                 try {
@@ -113,16 +136,18 @@ public class StileProjectCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

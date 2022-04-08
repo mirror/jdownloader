@@ -31,15 +31,11 @@ import java.util.Map.Entry;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -56,6 +52,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -951,96 +948,47 @@ public class FlickrCom extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
-                if (userCookies == null) {
-                    showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(getHost(), cookies);
-                } else {
-                    br.setCookies(getHost(), userCookies);
-                }
-                if (!force) {
-                    /* Trust cookies without check */
-                    return;
-                }
-                br.getPage("https://" + this.getHost() + "/");
-                final String loginjson = br.getRegex("root\\.auth\\s*=\\s*(\\{.*?\\});").getMatch(0);
-                final Map<String, Object> rootAuth = JavaScriptEngineFactory.jsonToJavaMap(loginjson);
-                final Map<String, Object> user = (Map<String, Object>) rootAuth.get("user");
-                if (!(Boolean) rootAuth.get("signedIn")) {
-                    if (account.hasEverBeenValid()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                final String csrf = (String) rootAuth.get("csrf");
-                final String usernameInternal = (String) user.get("nsid");
-                if (StringUtils.isEmpty(csrf) || StringUtils.isEmpty(usernameInternal)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (((Number) user.get("ispro")).intValue() == 1) {
-                    account.setType(AccountType.PREMIUM);
-                } else {
-                    account.setType(AccountType.FREE);
-                }
-                /*
-                 * User can put anything into the "username" field when doing cookie login but we want unique usernames so let's set his
-                 * internal username as username.
-                 */
-                account.setUser(usernameInternal);
-                /* Save cookies and special tokens */
-                account.setProperty(PROPERTY_ACCOUNT_CSRF, csrf);
-                account.setProperty(PROPERTY_ACCOUNT_USERNAME_INTERNAL, usernameInternal);
-                account.saveCookies(br.getCookies(getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+            br.setFollowRedirects(true);
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies == null) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
-        }
-    }
-
-    private Thread showCookieLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Flickr - Login";
-                        message += "Hallo liebe(r) Flickr NutzerIn\r\n";
-                        message += "Um deinen Flickr Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Flickr - Login";
-                        message += "Hello dear Flickr user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
+            br.setCookies(getHost(), userCookies);
+            if (!force) {
+                /* Trust cookies without check */
+                return;
+            }
+            br.getPage("https://" + this.getHost() + "/");
+            final String loginjson = br.getRegex("root\\.auth\\s*=\\s*(\\{.*?\\});").getMatch(0);
+            final Map<String, Object> rootAuth = JavaScriptEngineFactory.jsonToJavaMap(loginjson);
+            final Map<String, Object> user = (Map<String, Object>) rootAuth.get("user");
+            if (!(Boolean) rootAuth.get("signedIn")) {
+                if (account.hasEverBeenValid()) {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                } else {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                 }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
+            }
+            final String csrf = (String) rootAuth.get("csrf");
+            final String usernameInternal = (String) user.get("nsid");
+            if (StringUtils.isEmpty(csrf) || StringUtils.isEmpty(usernameInternal)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (((Number) user.get("ispro")).intValue() == 1) {
+                account.setType(AccountType.PREMIUM);
+            } else {
+                account.setType(AccountType.FREE);
+            }
+            /*
+             * User can put anything into the "username" field when doing cookie login but we want unique usernames so let's set his
+             * internal username as username.
+             */
+            account.setUser(usernameInternal);
+            /* Save cookies and special tokens */
+            account.setProperty(PROPERTY_ACCOUNT_CSRF, csrf);
+            account.setProperty(PROPERTY_ACCOUNT_USERNAME_INTERNAL, usernameInternal);
+        }
     }
 
     /** Returns formatted filename according to user preferences. */

@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -21,9 +25,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 /**
  * A plugin for downloading JPG galleries from plain HTML of configured sites. Single galleries are supported, but also all galleries for a
  * specific model. Each gallery will be put into an own folder with name like the "title" tag of the single gallery, with a best-effort
@@ -33,6 +34,11 @@ import org.appwork.utils.StringUtils;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
     protected static final String HTTPS_WWW_REGEX_PREFIX = "https?://(?:www\\.)?";
 
     protected static class SiteData {

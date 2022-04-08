@@ -13,10 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,19 +37,20 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fantasymassage.com" }, urls = { "https?://members\\.fantasymassage\\.com/[a-z]{2}/(?:video|picture)//[A-Za-z0-9\\-_]+/\\d+|https?://members\\.fantasymassage\\.com/[a-z]{2}/pornstar//\\d+/[A-Za-z0-9\\-_]+" })
 public class FantasymassageCom extends PluginForDecrypt {
-
     public FantasymassageCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private static final String TYPE_VIDEO            = ".+/video//[A-Za-z0-9\\-_]+/\\d+";
     private static final String TYPE_PHOTO            = ".+/picture//[A-Za-z0-9\\-_]+/\\d+";
     private static final String TYPE_MEMBER           = ".+/pornstar//\\d+/[A-Za-z0-9\\-_]+";
-
     public static String        DOMAIN_BASE           = "fantasymassage.com";
     public static String        DOMAIN_PREFIX_PREMIUM = "members.";
 
@@ -138,7 +141,6 @@ public class FantasymassageCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -202,5 +204,4 @@ public class FantasymassageCom extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.EvilAngelNetwork;
     }
-
 }

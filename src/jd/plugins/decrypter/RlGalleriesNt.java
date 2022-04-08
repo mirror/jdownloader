@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Random;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -41,6 +42,11 @@ public class RlGalleriesNt extends PluginForDecrypt {
 
     public RlGalleriesNt(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private static final String TYPE_SINGLE_PICTURE = "https?://[^/]+/porn-picture-.+";

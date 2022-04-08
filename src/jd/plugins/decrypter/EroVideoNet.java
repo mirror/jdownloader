@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,6 +37,11 @@ public class EroVideoNet extends PornEmbedParser {
 
     public EroVideoNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

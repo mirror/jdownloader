@@ -28,6 +28,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.NaughtyamericaConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -57,6 +58,11 @@ public class NaughtyamericaCom extends PluginForHost {
     public NaughtyamericaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://natour.naughtyamerica.com/signup/signup.php");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     @Override

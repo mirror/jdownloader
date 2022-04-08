@@ -21,6 +21,8 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -35,6 +37,11 @@ import jd.plugins.hoster.DailyMotionComV2;
 public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
     public DailyMotionComDecrypterV2(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override

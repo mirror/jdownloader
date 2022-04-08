@@ -38,6 +38,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.FshareVnConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -846,16 +847,31 @@ public class FShareVn extends PluginForHost {
             try {
                 prepBrowserWebsite(this.br);
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
-                if (cookies != null) {
-                    if (this.checkWebsiteCookies(account, cookies)) {
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null) {
+                    if (!force) {
+                        /* Don't verify cookies */
+                        br.setCookies(userCookies);
                         return;
                     }
-                } else if (userCookies != null) {
                     if (this.checkWebsiteCookies(account, userCookies)) {
                         return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                } else if (cookies != null) {
+                    if (!force) {
+                        /* Don't verify cookies */
+                        br.setCookies(userCookies);
+                        return;
+                    }
+                    if (this.checkWebsiteCookies(account, cookies)) {
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
                     }
                 }
                 logger.info("Performing full login");
@@ -958,7 +974,6 @@ public class FShareVn extends PluginForHost {
         br.getPage("https://www." + this.getHost() + "/account/profile");
         if (isLoggedinWebsite()) {
             logger.info("Cookie login successful");
-            account.saveCookies(br.getCookies(this.getHost()), "");
             return true;
         } else {
             logger.info("Cookie login failed");

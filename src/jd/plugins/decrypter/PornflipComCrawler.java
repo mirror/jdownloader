@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -50,6 +51,11 @@ import jd.utils.JDUtilities;
 public class PornflipComCrawler extends PluginForDecrypt {
     public PornflipComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /* 2017-01-25: Limited this to 1 - on too many requests we get HTTP/1.1 429 Too Many Requests. */

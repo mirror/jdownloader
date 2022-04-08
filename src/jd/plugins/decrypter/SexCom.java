@@ -19,6 +19,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import org.appwork.utils.Files;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +34,11 @@ import jd.plugins.DownloadLink;
 public class SexCom extends PornEmbedParser {
     public SexCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /* DEV NOTES */

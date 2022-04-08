@@ -64,6 +64,7 @@ import org.jdownloader.plugins.components.config.XFSConfigVideo.PreferredDownloa
 import org.jdownloader.plugins.components.config.XFSConfigVideo.PreferredStreamQuality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -156,6 +157,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         FILE,
         EMBED,
         IMAGE
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        /* TODO: Add "imagehoster" once we got a feature for that */
+        if (this.isVideohosterEmbed() || this.isVideohoster_enforce_video_filename()) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+        } else {
+            return new LazyPlugin.FEATURE[] {};
+        }
     }
 
     /* TODO: Maybe add thumbnail -> Fullsize support for all XFS plugins, see ImagetwistCom and ImgSpiceCom */
