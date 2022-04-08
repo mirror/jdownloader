@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +33,11 @@ import jd.plugins.DownloadLink;
 public class CamwhoresTv extends PornEmbedParser {
     public CamwhoresTv(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /** Sync this between camwhores hoster + crawler plugins!! */

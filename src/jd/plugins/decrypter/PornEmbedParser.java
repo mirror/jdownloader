@@ -16,9 +16,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -139,182 +137,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             title = encodeUnicode(title);
         }
         logger.info("PornEmbedParser is being executed...");
-        // xvideos.com 1
-        String externID = br.getRegex("xvideos\\.[^/]+/embedframe/(\\d+)\"").getMatch(0);
-        // xvideos.com 2
-        if (externID == null) {
-            externID = br.getRegex("\"(?:https?:)?//(?:www\\.)?flashservice\\.xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
-        }
-        // xvideos.com 3
-        if (externID == null) {
-            externID = br.getRegex("\"(?:https?:)?//(?:www\\.)?xvideos\\.com/video(\\d+)/[^<>\"]+\"").getMatch(0);
-        }
-        // xvideos.com 4
-        if (externID == null) {
-            externID = br.getRegex("name=\"flashvars\" value=\"id_video=(\\d+)\" /><embed src=\"(?:https?:)?//static\\.xvideos\\.com").getMatch(0);
-        }
-        if (externID != null) {
-            decryptedLinks.add("//www.xvideos.com/video" + externID + "/");
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)&").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)&").getMatch(0);
-        }
-        if (externID == null) {
-            externID = br.getRegex("(?:https?:)?//(?:www\\.)?embed\\.redtube\\.com/\\?id=(\\d+)").getMatch(0);
-        }
-        if (externID != null) {
-            decryptedLinks.add("//www.redtube.com/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // drtuber.com embed v3
-        externID = br.getRegex("((?:https?:)?//(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // drtuber.com embed v4
-        externID = br.getRegex("\"((?:https?:)?//(www\\.)?drtuber\\.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("pornerbros\\.com/content/(\\d+)\\.xml").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//www.pornerbros.com/" + externID + "/" + System.currentTimeMillis() + ".html");
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
-        }
-        if (externID != null) {
-            decryptedLinks.add("https://pornrabbit.com/embed/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* tnaflix.com handling #1 */
-        externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("//www.tnaflix.com/teen-porn/" + System.currentTimeMillis() + "/video" + externID);
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* tnaflix.com handling #2 */
-        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("https://www.tnaflix.com/embedding_player/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* tnaflix.com, other */
-        if (handleExtern("tnaflix.com", processAll, decryptedLinks)) {
-            return decryptedLinks;
-        }
-        /* TODO: Refactor this so generic handling down below can be used to auto-find all pornhub URLs */
-        // pornhub handling number #1
-        externID = br.getRegex("\"((?:https?:)?//(?:[a-z0-9]+\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // pornhub handling number #2
-        // externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[^<>\"]*?)\"").getMatch(0);
-        // if (externID != null) {
-        // decryptedLinks.add(externID);
-        // if (!processAll) {
-        // return decryptedLinks;
-        // }
-        // }
-        // pornhub handling number #3
-        externID = br.getRegex("name=\"FlashVars\" value=\"options=((?:https?:)?//(?:www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
-        if (externID != null) {
-            /* TODO: Check if this is still relevant */
-            final Browser ph = br.cloneBrowser();
-            getPage(ph, externID);
-            if (ph.containsHTML("<link_url>N/A</link_url>") || ph.containsHTML("No htmlCode read") || ph.containsHTML(">404 Not Found<")) {
-                decryptedLinks.add(createOfflinelink("//www.pornhub.com/view_video.php?viewkey=" + new Random().nextInt(10000000), externID));
-                if (!processAll) {
-                    return decryptedLinks;
-                }
-            } else {
-                externID = ph.getRegex("<link_url>((?:https?:)?//[^<>\"]*?)</link_url>").getMatch(0);
-                if (externID != null) {
-                    decryptedLinks.add(externID);
-                    if (!processAll) {
-                        return decryptedLinks;
-                    }
-                }
-            }
-        }
-        // myxvids.com 1
-        externID = br.getRegex("\"((?:https?:)?//(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // myxvids.com 2
-        externID = br.getRegex("('|\")((?:https?:)?//(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)\\1").getMatch(1);
-        if (externID != null) {
-            final Browser mv = br.cloneBrowser();
-            getPage(mv, externID);
-            final String finallink = mv.getRegex("\"((?:https?:)?//(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
-            if (finallink != null) {
-                decryptedLinks.add(finallink);
-                if (!processAll) {
-                    return decryptedLinks;
-                }
-            }
-        }
-        // empflix.com 1
-        externID = br.getRegex("player\\.empflix\\.com/video/(\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//www.empflix.com/videos/" + System.currentTimeMillis() + "-" + externID + ".html");
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // empflix.com 2
-        externID = br.getRegex("empflix\\.com/embedding_player/player[^<>\"/]*?\\.swf\".*?value=\"config=embedding_feed\\.php\\?viewkey=([^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//www.empflix.com/embedding_player/embedding_feed.php?viewkey=" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//stileproject.com/video/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("webdata\\.vidz\\.com/demo/swf/FlashPlayerV2\\.swf\".*?flashvars=\"id_scene=(\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//www.vidz.com/video/" + System.currentTimeMillis() + "/vidz_porn_videos/?s=" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
+        String externID = null;
         // youporn.com handling 1
         externID = br.getRegex("youporn\\.com/embed/(\\d+)").getMatch(0);
         if (externID != null) {
@@ -339,28 +162,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?spankwire\\.com/EmbedPlayer\\.aspx/?\\?ArticleId=[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("((?:https?:)?//(www\\.)?theamateurzone\\.info/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"((?:https?:)?//(www\\.)?embeds\\.sunporno\\.com/embed/[^<>\"]+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"((?:https?:)?//(www\\.)?fux\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
@@ -442,28 +244,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?xtube\\.com/watch\\.php\\?v=[a-z0-9_-]+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // not to be confused with xtube.com
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?xxxtube\\.com/embed/\\d+/?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"(?:https?:)?//(www\\.)?freeviewmovies\\.com/embed/(\\d+)/\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("https://www.freeviewmovies/video/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         /* keezmovies.com #1 */
         externID = br.getRegex("((?:https?:)?//(?:www\\.)?keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)\"").getMatch(0);
         if (externID != null) {
@@ -507,10 +287,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             if (!processAll) {
                 return decryptedLinks;
             }
-        }
-        // pornstar
-        if (handleExtern("pornstarnetwork.com", processAll, decryptedLinks)) {
-            return decryptedLinks;
         }
         externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?playvid\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
@@ -560,13 +336,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?alotporn\\.com/(?:embed\\.php\\?id=|embed/)\\d+[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
@@ -585,18 +354,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?(txxx|tubecup|videotxxx)\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?(?:bemywife|mydaddy)\\.cc/video/[a-z0-9]+)").getMatch(0);
-        if (externID != null) {
-            /* 2017-03-30: Added mydaddy.cc */
-            final DownloadLink dl = createDownloadlink(externID);
-            if (title != null) {
-                dl.setProperty(jd.plugins.hoster.MydaddyCc.PROPERTY_CRAWLER_TITLE, title);
-            }
-            decryptedLinks.add(dl);
             if (!processAll) {
                 return decryptedLinks;
             }
@@ -637,14 +394,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         /* RegExes for permanently offline websites go here */
-        /* 2016-03-29: gasxxx.com --> xvid6.com */
-        externID = br.getRegex("((?:https?:)?//(?:www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         /* 2017-01-27 porn.com */
         externID = br.getRegex("('|\")((?:https?:)?//(?:www\\.)?porn\\.com/videos/embed/\\d+?)\\1").getMatch(1);
         if (externID == null) {
@@ -655,14 +404,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             if (!processAll) {
                 return decryptedLinks;
             }
-        }
-        // 2017-07-09 bitporno
-        if (handleExtern("bitporno.com", processAll, decryptedLinks)) {
-            return decryptedLinks;
-        }
-        // 2017-07-09 vshare.io
-        if (handleExtern("vshare.io", processAll, decryptedLinks)) {
-            return decryptedLinks;
         }
         // 2018-01-07 hotmovs.com
         externID = br.getRegex("src=\"https?://www.hotmovs.com/embed/(\\d+)\"").getMatch(0);
@@ -883,22 +624,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
          * "embed URL" --> This will lose file title
          */
         return decryptedLinks;
-    }
-
-    private boolean handleExtern(final String host, final boolean processAll, DecrypterArrayList<DownloadLink> decryptedLinks) {
-        final PluginForHost plugin = JDUtilities.getPluginForHost(host);
-        if (plugin != null) {
-            final String externID = br.getRegex(plugin.getSupportedLinks()).getMatch(-1);
-            if (externID != null) {
-                decryptedLinks.add(externID);
-                if (!processAll) {
-                    return true;
-                }
-            }
-        } else {
-            logger.info("Plugin missing:" + host);
-        }
-        return false;
     }
 
     @Override

@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,11 +29,14 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(?:www\\.)?stolenvideos\\.net/(tube/video/[a-z0-9\\-]+\\-[A-Za-z0-9]+\\.html|\\d+/[A-Za-z0-9\\-_]+\\.html)" })
 public class StolenVideosNet extends PluginForDecrypt {
-
     public StolenVideosNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
     /* DEV NOTES */
     /* Porn_plugin */
 
@@ -60,7 +64,6 @@ public class StolenVideosNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Stolen XXX Videos - Daily Free XXX Porn Videos</title>").getMatch(0);
-
         tempID = br.getRegex("\"http://(www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-(\\d+)\\.html\"").getMatch(1);
         if (tempID == null) {
             tempID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[^<>\"]*?\\|(\\d+)\\|\\d+\"").getMatch(0);
@@ -116,5 +119,4 @@ public class StolenVideosNet extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

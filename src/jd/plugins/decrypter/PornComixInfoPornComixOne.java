@@ -3,6 +3,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -16,6 +17,11 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomixone.net" }, urls = { "https?://(?:www\\.)?porncomixone\\.net/comic/([a-z0-9\\-]+)" })
 /** Formerly known as: porncomix.one */
 public class PornComixInfoPornComixOne extends PluginForDecrypt {
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

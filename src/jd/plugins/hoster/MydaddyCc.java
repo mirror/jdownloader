@@ -25,7 +25,6 @@ import org.jdownloader.plugins.components.config.MydaddyCcConfig;
 import org.jdownloader.plugins.components.config.MydaddyCcConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -55,17 +54,17 @@ public class MydaddyCc extends PluginForHost {
     // other:
 
     /* Connection stuff */
-    private static final boolean  free_resume                 = true;
-    private static final int      free_maxchunks              = 0;
-    private static final int      free_maxdownloads           = -1;
-    private String                dllink                      = null;
-    protected static final String PROPERTY_CHOSEN_QUALITY     = "chosen_quality";
-    public static final String    PROPERTY_ACTRESS_NAME       = "actress_name";
-    public static final String    PROPERTY_CRAWLER_TITLE = "decryptertitle";
+    private static final boolean  free_resume             = true;
+    private static final int      free_maxchunks          = 0;
+    private static final int      free_maxdownloads       = -1;
+    private String                dllink                  = null;
+    protected static final String PROPERTY_CHOSEN_QUALITY = "chosen_quality";
+    public static final String    PROPERTY_ACTRESS_NAME   = "actress_name";
+    public static final String    PROPERTY_CRAWLER_TITLE  = "decryptertitle";
 
     @Override
     public String getAGBLink() {
-        return "http://bemywife.cc/";
+        return "http://mydaddy.cc/";
     }
 
     @Override

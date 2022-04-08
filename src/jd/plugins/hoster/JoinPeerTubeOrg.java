@@ -29,7 +29,6 @@ import org.jdownloader.plugins.components.config.JoinPeerTubeOrgConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -47,6 +46,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class JoinPeerTubeOrg extends antiDDoSForHost {
     public JoinPeerTubeOrg(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.GENERIC, LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     /* Connection stuff */
@@ -369,11 +373,6 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.PeerTube;
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.GENERIC };
     }
 
     @Override

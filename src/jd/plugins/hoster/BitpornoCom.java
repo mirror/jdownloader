@@ -24,7 +24,6 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -62,7 +61,7 @@ public class BitpornoCom extends PluginForHost {
     private static final boolean free_resume         = true;
     private static final int     free_maxchunks      = 0;
     private static final int     free_maxdownloads   = -1;
-    private static final String  html_video_encoding = ">This video is still in encoding progress";
+    private static final String  html_video_encoding = "(?i)>\\s*This video is still in encoding progress";
     private String               dllink              = null;
     private boolean              server_issues       = false;
 

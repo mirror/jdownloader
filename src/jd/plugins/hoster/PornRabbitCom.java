@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -94,7 +93,7 @@ public class PornRabbitCom extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has|video_removed_dmca\\.jpg\")")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -147,8 +146,10 @@ public class PornRabbitCom extends PluginForHost {
             final Browser brc = br2.cloneBrowser();
             brc.setFollowRedirects(true);
             con = brc.openHeadConnection(dllink);
-            if (con.getResponseCode() == 200 && !con.getContentType().contains("text")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -162,10 +163,10 @@ public class PornRabbitCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (!dl.getConnection().isOK() || dl.getConnection().getContentType().contains("text")) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {

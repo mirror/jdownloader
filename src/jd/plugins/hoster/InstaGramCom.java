@@ -31,6 +31,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.InstagramConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -38,6 +39,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
@@ -539,57 +541,31 @@ public class InstaGramCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBRWebsite(br);
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null) {
+                    br.setCookies(MAINPAGE, userCookies);
+                    if (!force) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
+                    if (verifyCookies(account, userCookies)) {
+                        return;
+                    } else {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
                 if (cookies != null) {
-                    logger.info("Attempting cookie login");
                     br.setCookies(MAINPAGE, cookies);
                     if (!force) {
                         logger.info("Trust cookies without check");
                         return;
                     }
-                    br.getPage(MAINPAGE + "/");
-                    if (!isLoggedIn()) {
-                        /* Full login required */
-                        logger.info("Cookie login failed");
-                        br.clearAll();
-                    } else {
-                        /* Saved cookies were valid */
-                        logger.info("Cookie login successful");
-                        final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-                        if (csrftoken == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        br.setCookie(MAINPAGE, "csrftoken", csrftoken);
+                    if (verifyCookies(account, cookies)) {
                         account.saveCookies(br.getCookies(MAINPAGE), "");
-                        return;
-                    }
-                }
-                if (userCookies != null) {
-                    /*
-                     * 2020-10-22: This can optionally be used as a workaround for login issues e.g. if a "security challenge" is demanded
-                     * on login and JD fails to handle it.
-                     */
-                    logger.info("Attempting User-Cookie login");
-                    br.setCookies(MAINPAGE, userCookies);
-                    br.getPage(MAINPAGE + "/");
-                    if (!isLoggedIn()) {
-                        /* Full login required */
-                        logger.info("User-Cookie login failed");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        /* Saved cookies were valid */
-                        logger.info("User-Cookie login successful");
-                        final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-                        if (csrftoken == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        br.setCookie(MAINPAGE, "csrftoken", csrftoken);
-                        account.saveCookies(br.getCookies(MAINPAGE), "");
-                        /* Make sure account has an unique username set. */
-                        final String fullname = PluginJSonUtils.getJson(br, "full_name");
-                        if (!StringUtils.isEmpty(fullname)) {
-                            account.setUser(fullname);
-                        }
                         return;
                     }
                 }
@@ -723,6 +699,30 @@ public class InstaGramCom extends PluginForHost {
         }
     }
 
+    protected boolean verifyCookies(final Account account, final Cookies cookies) throws Exception {
+        br.setCookies(MAINPAGE, cookies);
+        br.getPage(MAINPAGE + "/");
+        if (isLoggedIn(br)) {
+            /* Saved cookies were valid */
+            logger.info("Cookie login successful");
+            /* E.g. when user uses cookie login, this cookie should already be included in the imported cookies. */
+            final Cookie csrftokenCookie = cookies.get("csrftoken");
+            if (csrftokenCookie == null) {
+                final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                if (csrftoken == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.setCookie(MAINPAGE, "csrftoken", csrftoken);
+            }
+            account.saveCookies(br.getCookies(MAINPAGE), "");
+            return true;
+        } else {
+            logger.info("Cookie login failed");
+            br.clearCookies(br.getHost());
+            return false;
+        }
+    }
+
     @Deprecated
     public static void handleLoginChallenge(final Browser br) throws AccountUnavailableException {
         final String json = br.getRegex("window._sharedData = (\\{.*?\\})</script>").getMatch(0);
@@ -830,7 +830,7 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /** Checks loggedin state based on html code (NOT cookies!) */
-    private boolean isLoggedIn() {
+    private boolean isLoggedIn(final Browser br) {
         // return br.getCookies(MAINPAGE).get("sessionid", Cookies.NOTDELETEDPATTERN) != null && br.getCookies(MAINPAGE).get("ds_user_id",
         // Cookies.NOTDELETEDPATTERN) != null;
         final String fullname = PluginJSonUtils.getJson(br, "full_name");

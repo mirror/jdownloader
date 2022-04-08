@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import org.appwork.utils.Files;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -27,6 +28,11 @@ import jd.plugins.PluginForDecrypt;
 public class PornCom extends PluginForDecrypt {
     public PornCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private static final String TYPE_REDIRECT_BASE64 = "https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*";

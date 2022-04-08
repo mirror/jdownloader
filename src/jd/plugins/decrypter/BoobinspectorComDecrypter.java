@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,11 +27,14 @@ import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspector\\.com/videos/\\d+" })
 public class BoobinspectorComDecrypter extends PornEmbedParser {
-
     public BoobinspectorComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
     /* DEV NOTES */
     /* Porn_plugin */
 
@@ -64,5 +68,4 @@ public class BoobinspectorComDecrypter extends PornEmbedParser {
         decryptedLinks.add(main);
         return decryptedLinks;
     }
-
 }
