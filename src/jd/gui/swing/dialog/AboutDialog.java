@@ -118,7 +118,8 @@ public class AboutDialog extends AbstractDialog<Integer> {
         final JPanel contentpane = new JPanel();
         JLabel lbl = new JLabel("JDownloader® 2", JLabel.CENTER);
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
-        final JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
+        final JPanel links1stRow = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
+        final JPanel links2ndRow = new JPanel(new MigLayout("ins 0", "push[]push[]push"));
         try {
             final File file = Application.getResource("licenses/jdownloader.license");
             if (file.isFile()) {
@@ -139,12 +140,15 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     }
                 });
                 btn.setBorder(null);
-                links.add(btn);
+                links2ndRow.add(btn);
             }
-            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_homepage(), new AbstractIcon(IconKey.ICON_URL, 16), new URL("https://jdownloader.org/home")));
-            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://board.jdownloader.org/")));
-            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_ticket(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://support.jdownloader.org/")));
-            links.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_contributers(), new AbstractIcon(IconKey.ICON_CONTRIBUTER, 16), new URL("https://svn.jdownloader.org/projects/jd")));
+            links1stRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_homepage(), new AbstractIcon(IconKey.ICON_HOME, 16), new URL("https://jdownloader.org/home")));
+            links1stRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_forum(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://board.jdownloader.org/")));
+            links1stRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_ticket(), new AbstractIcon(IconKey.ICON_BOARD, 16), new URL("https://support.jdownloader.org/")));
+            links1stRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_uninstall(), new AbstractIcon(IconKey.ICON_CLEAR, 16), new URL("https://support.jdownloader.org/Knowledgebase/Article/View/how-can-i-uninstall-jdownloader")));
+            links2ndRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_contributers(), new AbstractIcon(IconKey.ICON_CONTRIBUTER, 16), new URL("https://support.jdownloader.org/Knowledgebase/Article/View/setup-ide-eclipse")));
+            links2ndRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_imprint(), new AbstractIcon(IconKey.ICON_ABOUT, 16), new URL("https://jdownloader.org/impressum")));
+            links2ndRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_privacy(), new AbstractIcon(IconKey.ICON_ABOUT, 16), new URL("https://my.jdownloader.org/legal/privacy.html")));
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
@@ -355,7 +359,8 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(createLink("Oxygen Team", "https://techbase.kde.org/Projects/Oxygen/Licensing"), "skip");
         stats.add(createLink("further icons by AppWork GmbH"), "skip");
         stats.add(createLink("& the JDownloader Community"), "skip");
-        contentpane.add(links, "gaptop 15, growx, pushx, spanx");
+        contentpane.add(links1stRow, "gaptop 15, growx, pushx, spanx");
+        contentpane.add(links2ndRow, "gaptop 15, growx, pushx, spanx");
         this.registerEscape(contentpane);
         return contentpane;
     }

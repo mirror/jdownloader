@@ -274,6 +274,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Contributors" })
     String jd_gui_swing_components_AboutDialog_contributers();
 
+    @Default(lngs = { "en", "de" }, values = { "Imprint", "Impressum" })
+    String jd_gui_swing_components_AboutDialog_imprint();
+
     @Default(lngs = { "en" }, values = { "Support board" })
     String jd_gui_swing_components_AboutDialog_forum();
 
@@ -282,6 +285,12 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Homepage" })
     String jd_gui_swing_components_AboutDialog_homepage();
+
+    @Default(lngs = { "en" }, values = { "How to uninstall?" })
+    String jd_gui_swing_components_AboutDialog_uninstall();
+
+    @Default(lngs = { "en" }, values = { "Privacy Policy" })
+    String jd_gui_swing_components_AboutDialog_privacy();
 
     @Default(lngs = { "en" }, values = { "Show license" })
     String jd_gui_swing_components_AboutDialog_license();
