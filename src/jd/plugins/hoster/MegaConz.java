@@ -71,7 +71,8 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.components.config.MegaConzConfig;
 import org.jdownloader.plugins.components.config.MegaConzConfig.LimitMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
@@ -1563,8 +1564,8 @@ public class MegaConz extends PluginForHost {
 
     private boolean isMULTIHOST(PluginForHost plugin) {
         if (plugin != null) {
-            for (FEATURE feature : plugin.getFeatures()) {
-                if (FEATURE.MULTIHOST.equals(feature)) {
+            for (LazyPlugin.FEATURE feature : plugin.getFeatures()) {
+                if (LazyPlugin.FEATURE.MULTIHOST.equals(feature)) {
                     return true;
                 }
             }

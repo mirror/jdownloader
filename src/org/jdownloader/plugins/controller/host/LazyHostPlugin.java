@@ -1,110 +1,13 @@
 package org.jdownloader.plugins.controller.host;
 
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.storage.config.annotations.TooltipInterface;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.translate._JDT;
 
 import jd.plugins.PluginForHost;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
-    public static enum FEATURE implements LabelInterface, TooltipInterface {
-        VIDEO_STREAMING {
-            @Override
-            public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING();
-            }
-
-            @Override
-            public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING_TOOLTIP();
-            }
-        },
-        USENET {
-            @Override
-            public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_USENET();
-            }
-
-            @Override
-            public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_USENET_TOOLTIP();
-            }
-        },
-        MULTIHOST {
-            @Override
-            public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_MULTIHOST();
-            }
-
-            @Override
-            public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_MULTIHOST_TOOLTIP();
-            }
-        },
-        PASTEBIN {
-            @Override
-            public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_PASTEBIN();
-            }
-
-            @Override
-            public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_PASTEBIN_TOOLTIP();
-            }
-        },
-        XXX {
-            @Override
-            public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_XXX();
-            }
-
-            @Override
-            public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_XXX_TOOLTIP();
-            }
-        },
-        GENERIC {
-            @Override
-            public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC();
-            }
-
-            @Override
-            public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
-            }
-        },
-        INTERNAL {
-            @Override
-            public String getLabel() {
-                return "INTERNAL";
-            }
-
-            @Override
-            public String getTooltip() {
-                return "INTERNAL";
-            }
-        };
-
-        public static final long CACHEVERSION = StringUtils.join(values(), "<->").hashCode() + StringUtils.join(values(), ":").hashCode() + StringUtils.join(values(), "<=>").hashCode();
-
-        public boolean isSet(FEATURE[] features) {
-            if (features != null) {
-                for (final FEATURE feature : features) {
-                    if (this.equals(feature)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
     private static enum PROPERTY {
         CONFIG,
         PREMIUM,
@@ -116,9 +19,9 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private String        premiumUrl;
     private volatile byte properties     = 0;
     private volatile long parsesLifetime = 0;
-    private FEATURE[]     features       = null;
+    private LazyPlugin.FEATURE[]     features       = null;
 
-    public FEATURE[] getFeatures() {
+    public LazyPlugin.FEATURE[] getFeatures() {
         return features;
     }
 
@@ -136,10 +39,10 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
      * @param features
      * @return
      */
-    public boolean hasFeature(final FEATURE... features) {
-        final FEATURE[] pluginFeatures = getFeatures();
+    public boolean hasFeature(final LazyPlugin.FEATURE... features) {
+        final LazyPlugin.FEATURE[] pluginFeatures = getFeatures();
         if (features != null && features.length > 0 && pluginFeatures != null && pluginFeatures.length > 0) {
-            for (final FEATURE feature : features) {
+            for (final LazyPlugin.FEATURE feature : features) {
                 if (feature.isSet(pluginFeatures)) {
                     return true;
                 }
@@ -148,7 +51,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         return false;
     }
 
-    protected void setFeatures(FEATURE[] features) {
+    protected void setFeatures(LazyPlugin.FEATURE[] features) {
         this.features = features;
     }
 

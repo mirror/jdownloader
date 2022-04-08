@@ -54,6 +54,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -227,7 +228,7 @@ public class FavIcons {
                 THREAD_POOL.execute(new Runnable() {
                     public void run() {
                         final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
-                        if (existingHostPlugin != null && existingHostPlugin.hasFeature(LazyHostPlugin.FEATURE.INTERNAL)) {
+                        if (existingHostPlugin != null && existingHostPlugin.hasFeature(LazyPlugin.FEATURE.INTERNAL)) {
                             synchronized (LOCK) {
                                 QUEUE.remove(host);
                                 if (!REFRESHED_ICONS.contains(host) && FAILED_ICONS.get(host) == null) {

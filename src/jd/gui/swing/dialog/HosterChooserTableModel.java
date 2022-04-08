@@ -26,8 +26,9 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
     /**
@@ -59,9 +60,9 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
                     if (pattern.matcher(clean(next.getHost())).find()) {
                         continue;
                     }
-                    final FEATURE[] features = next.getFeatures();
+                    final LazyPlugin.FEATURE[] features = next.getFeatures();
                     if (features != null) {
-                        for (final FEATURE f : features) {
+                        for (final LazyPlugin.FEATURE f : features) {
                             if (pattern.matcher(clean(f.getLabel())).find()) {
                                 continue main;
                             }
@@ -205,9 +206,9 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
             @Override
             protected String getTooltipText(LazyHostPlugin value) {
                 StringBuilder sb = new StringBuilder();
-                FEATURE[] features = value.getFeatures();
+                LazyPlugin.FEATURE[] features = value.getFeatures();
                 if (features != null) {
-                    for (FEATURE f : features) {
+                    for (LazyPlugin.FEATURE f : features) {
                         if (sb.length() > 0) {
                             sb.append("\r\n");
                         }
@@ -220,9 +221,9 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
             @Override
             public String getStringValue(LazyHostPlugin value) {
                 StringBuilder sb = new StringBuilder();
-                FEATURE[] features = value.getFeatures();
+                LazyPlugin.FEATURE[] features = value.getFeatures();
                 if (features != null) {
-                    for (FEATURE f : features) {
+                    for (LazyPlugin.FEATURE f : features) {
                         if (sb.length() > 0) {
                             sb.append("; ");
                         }

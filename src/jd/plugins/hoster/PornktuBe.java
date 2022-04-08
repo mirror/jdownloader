@@ -21,7 +21,8 @@ import java.util.List;
 
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,8 +38,8 @@ public class PornktuBe extends KernelVideoSharingComV2 {
     }
 
     @Override
-    public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.XXX };
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */

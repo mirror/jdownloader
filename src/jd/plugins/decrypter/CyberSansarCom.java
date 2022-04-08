@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -29,29 +28,31 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cybersansar.com" }, urls = { "http://(www\\.)?cybersansar\\.com(\\.np)?/((ev_)?thumbnail_view\\.php\\?gal_id=\\d+|wallpaper_download\\.php\\?wid=\\d+|video_download\\.php\\?vid=\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cybersansar.com" }, urls = { "https?://(www\\.)?cybersansar\\.com(\\.np)?/((ev_)?thumbnail_view\\.php\\?gal_id=\\d+|wallpaper_download\\.php\\?wid=\\d+|video_download\\.php\\?vid=\\d+)" })
 public class CyberSansarCom extends PluginForDecrypt {
-
     public CyberSansarCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String VIDEOLINK      = "http://(www\\.)?cybersansar\\.com/video_download\\.php\\?vid=\\d+";
-    private static final String THUMBNAILLINK  = "http://(www\\.)?cybersansar\\.com/thumbnail_view\\.php\\?gal_id=\\d+";
-    private static final String THUMBNAILLINK2 = "http://(www\\.)?cybersansar\\.com/ev_?thumbnail_view\\.php\\?gal_id=\\d+";
-    private static final String WALLPAPERLINK  = "http://(www\\.)?cybersansar\\.com/wallpaper_download\\.php\\?wid=\\d+";
+    private static final String VIDEOLINK      = "https?://(www\\.)?cybersansar\\.com/video_download\\.php\\?vid=\\d+";
+    private static final String THUMBNAILLINK  = "https?://(www\\.)?cybersansar\\.com/thumbnail_view\\.php\\?gal_id=\\d+";
+    private static final String THUMBNAILLINK2 = "https?://(www\\.)?cybersansar\\.com/ev_?thumbnail_view\\.php\\?gal_id=\\d+";
+    private static final String WALLPAPERLINK  = "https?://(www\\.)?cybersansar\\.com/wallpaper_download\\.php\\?wid=\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("cybersansar.com.np/", "cybersansar.com/");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (parameter.matches(WALLPAPERLINK)) {
             final String wallpaper1 = br.getRegex("\"(graphics/wallpaper/model/[^<>\"]*?\\.jpg)\"").getMatch(0);
             final String wallpaper2 = br.getRegex("\"(product_thumb\\.php\\?img=[^<>\"]*?\\.jpg\\&amp;w=\\d+\\&amp;h=\\d+)\"").getMatch(0);
             final String wallpaper_finalfilename = new Regex(wallpaper2, "(\\d+\\.jpg)").getMatch(0);
-            DownloadLink w2 = createDownloadlink("directhttp://http://cybersansar.com/" + Encoding.htmlDecode(wallpaper2));
-            if (wallpaper_finalfilename != null) w2.setFinalFileName(wallpaper_finalfilename);
-            decryptedLinks.add(createDownloadlink("directhttp://http://cybersansar.com/" + Encoding.htmlDecode(wallpaper1)));
+            DownloadLink w2 = createDownloadlink("directhttp://https://cybersansar.com/" + Encoding.htmlDecode(wallpaper2));
+            if (wallpaper_finalfilename != null) {
+                w2.setFinalFileName(wallpaper_finalfilename);
+            }
+            decryptedLinks.add(createDownloadlink("directhttp://https://cybersansar.com/" + Encoding.htmlDecode(wallpaper1)));
             decryptedLinks.add(w2);
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode("Wallpapers_" + new Regex(parameter, "(\\d+)$").getMatch(0)));
@@ -64,7 +65,7 @@ public class CyberSansarCom extends PluginForDecrypt {
             }
             externID = br.getRegex("\"(videos/[^<>\"/]*?)\">Download Now</a>").getMatch(0);
             if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.cybersansar.com" + externID));
+                decryptedLinks.add(createDownloadlink("https://www.cybersansar.com" + externID));
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
@@ -84,13 +85,12 @@ public class CyberSansarCom extends PluginForDecrypt {
             final DecimalFormat df = new DecimalFormat("0000");
             int counter = 1;
             for (String singleLink : thumbnails) {
-                final DownloadLink dl = createDownloadlink("directhttp://http://cybersansar.com/" + Encoding.htmlDecode(singleLink).replace("/thumb/", "/"));
+                final DownloadLink dl = createDownloadlink("directhttp://https://cybersansar.com/" + Encoding.htmlDecode(singleLink).replace("/thumb/", "/"));
                 dl.setFinalFileName(eventname + "_" + df.format(counter) + ".jpg");
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
                 counter++;
             }
-
         } else {
             final Regex fpName = br.getRegex(">Gallery </span><span class=\"model\\-title\\-grey\">(\\d+)</span> <span class=\"model\\-title\\-grey\\-small\">of</span> <span class=\"model\\-title\\-grey\">([^<>\"]*?)</span>");
             final String model_name = fpName.getMatch(1);
@@ -107,7 +107,7 @@ public class CyberSansarCom extends PluginForDecrypt {
             final DecimalFormat df = new DecimalFormat("0000");
             int counter = 1;
             for (String singleLink : thumbnails) {
-                final DownloadLink dl = createDownloadlink("directhttp://http://cybersansar.com/" + Encoding.htmlDecode(singleLink).replace("/thumb/", "/"));
+                final DownloadLink dl = createDownloadlink("directhttp://https://cybersansar.com/" + Encoding.htmlDecode(singleLink).replace("/thumb/", "/"));
                 dl.setFinalFileName(model_name + "_" + gallery_num + "_" + df.format(counter) + ".jpg");
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
@@ -121,5 +121,4 @@ public class CyberSansarCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
