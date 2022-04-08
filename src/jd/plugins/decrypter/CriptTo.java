@@ -26,16 +26,18 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cript.to" }, urls = { "https?://(?:www\\.)?cript\\.to/folder/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cript.to" }, urls = { "https?://(?:www\\.)?cript\\.to/folder/([A-Za-z0-9]+)" })
 public class CriptTo extends PluginForDecrypt {
     private final String NO_SOLVEMEDIA = "1";
 
@@ -50,11 +52,30 @@ public class CriptTo extends PluginForDecrypt {
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Inhalt im Usenet gefunden - Weiterleitung erfolgt sofort ...")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("(?i)Inhalt im Usenet gefunden - Weiterleitung erfolgt sofort ...")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+        // final String folderid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        Form pwform = getFolderpwForm(this.br);
+        if (pwform != null) {
+            for (int i = 0; i <= 2; i++) {
+                final String passCode = getUserInput("Password?", param);
+                pwform.put("password", Encoding.urlEncode(passCode));
+                br.submitForm(pwform);
+                pwform = getFolderpwForm(this.br);
+                if (pwform == null) {
+                    logger.info("User entered correct password: " + passCode);
+                    break;
+                } else {
+                    logger.info("User entered wrong password: " + passCode);
+                }
+            }
+            if (this.getFolderpwForm(br) != null) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+        }
         boolean failed = true;
         String code = null;
         for (int i = 0; i <= 3; i++) {
@@ -240,22 +261,32 @@ public class CriptTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private Form getFolderpwForm(final Browser br) {
+        final Form[] forms = br.getForms();
+        for (final Form form : forms) {
+            if (form.getAction() != null && this.canHandle(form.getAction()) && form.hasInputFieldByName("password")) {
+                return form;
+            }
+        }
+        return null;
+    }
+
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NO_SOLVEMEDIA, JDL.L("plugins.decrypter.cryptto.nosolvemedia", "No solvemedia?")).setDefaultValue(true));// It's
-                                                                                                                                                                                                        // true
-                                                                                                                                                                                                        // because
-                                                                                                                                                                                                        // solvemedia
-                                                                                                                                                                                                        // was
-                                                                                                                                                                                                        // always
-                                                                                                                                                                                                        // wrong
-                                                                                                                                                                                                        // with
-                                                                                                                                                                                                        // the
-                                                                                                                                                                                                        // code
-                                                                                                                                                                                                        // in
-                                                                                                                                                                                                        // this
-                                                                                                                                                                                                        // plugin
-                                                                                                                                                                                                        // in
-                                                                                                                                                                                                        // my
-                                                                                                                                                                                                        // tests
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NO_SOLVEMEDIA, "No solvemedia?").setDefaultValue(true));// It's
+                                                                                                                                                       // true
+                                                                                                                                                       // because
+                                                                                                                                                       // solvemedia
+                                                                                                                                                       // was
+                                                                                                                                                       // always
+                                                                                                                                                       // wrong
+                                                                                                                                                       // with
+                                                                                                                                                       // the
+                                                                                                                                                       // code
+                                                                                                                                                       // in
+                                                                                                                                                       // this
+                                                                                                                                                       // plugin
+                                                                                                                                                       // in
+                                                                                                                                                       // my
+                                                                                                                                                       // tests
     }
 }
