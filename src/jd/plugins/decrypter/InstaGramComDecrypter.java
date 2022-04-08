@@ -1233,7 +1233,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             /* Fallback + handling for single posts */
             fp = FilePackage.getInstance();
             final String customPackageNameScheme = cfg.getPostCrawlerPackagenameScheme();
-            if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.DEFAULT || StringUtils.isEmpty(customPackageNameScheme)) {
+            if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.UPLOADER || StringUtils.isEmpty(customPackageNameScheme)) {
                 if (metadata.getUsername() != null) {
                     fp.setName(metadata.getUsername());
                 } else {

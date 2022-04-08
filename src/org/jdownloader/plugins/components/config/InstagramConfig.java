@@ -105,10 +105,10 @@ public interface InstagramConfig extends PluginConfigInterface {
     void setPostCrawlerAddPostDescriptionAsTextfile(boolean b);
 
     public static enum SinglePostPackagenameSchemeType implements LabelInterface {
-        DEFAULT {
+        UPLOADER {
             @Override
             public String getLabel() {
-                return "Default";
+                return "*uploader*";
             }
         },
         UPLOADER_MAIN_CONTENT_ID {
@@ -126,7 +126,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("DEFAULT")
+    @DefaultEnumValue("UPLOADER")
     @Order(2)
     @DescriptionForConfigEntry("Post crawler: Select package name scheme type for instagram.com/p/<id> URLs")
     SinglePostPackagenameSchemeType getPostCrawlerPackagenameSchemeType();
