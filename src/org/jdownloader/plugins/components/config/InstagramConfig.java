@@ -23,8 +23,8 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Post crawler: Add post description as textfile?";
         }
 
-        public String getPostCrawlerPackagenameType_label() {
-            return "Post crawler: Select package name type for instagram.com/p/<id> URLs";
+        public String getPostCrawlerPackagenameSchemeType_label() {
+            return "Post crawler: Select package name scheme type for instagram.com/p/<id> URLs";
         }
 
         public String getPostCrawlerPackagenameScheme_label() {
@@ -104,11 +104,17 @@ public interface InstagramConfig extends PluginConfigInterface {
 
     void setPostCrawlerAddPostDescriptionAsTextfile(boolean b);
 
-    public static enum SinglePostPackagenameType implements LabelInterface {
+    public static enum SinglePostPackagenameSchemeType implements LabelInterface {
         DEFAULT {
             @Override
             public String getLabel() {
                 return "Default";
+            }
+        },
+        UPLOADER_MAIN_CONTENT_ID {
+            @Override
+            public String getLabel() {
+                return "*uploader* - *main_content_id*";
             }
         },
         CUSTOM {
@@ -122,10 +128,10 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
     @Order(2)
-    @DescriptionForConfigEntry("Post crawler: Select package name type for instagram.com/p/<id> URLs")
-    SinglePostPackagenameType getPostCrawlerPackagenameType();
+    @DescriptionForConfigEntry("Post crawler: Select package name scheme type for instagram.com/p/<id> URLs")
+    SinglePostPackagenameSchemeType getPostCrawlerPackagenameSchemeType();
 
-    void setPostCrawlerPackagenameType(final SinglePostPackagenameType namingSchemeType);
+    void setPostCrawlerPackagenameSchemeType(final SinglePostPackagenameSchemeType namingSchemeType);
 
     @AboutConfig
     @DefaultStringValue("*date*_*uploader* - *main_content_id*")

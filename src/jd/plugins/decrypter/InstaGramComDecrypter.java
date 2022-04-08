@@ -41,7 +41,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.InstagramConfig;
 import org.jdownloader.plugins.components.config.InstagramConfig.APIPreference;
 import org.jdownloader.plugins.components.config.InstagramConfig.FilenameType;
-import org.jdownloader.plugins.components.config.InstagramConfig.SinglePostPackagenameType;
+import org.jdownloader.plugins.components.config.InstagramConfig.SinglePostPackagenameSchemeType;
 import org.jdownloader.plugins.components.instagram.Qdb;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -1233,10 +1233,18 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             /* Fallback + handling for single posts */
             fp = FilePackage.getInstance();
             final String customPackageNameScheme = cfg.getPostCrawlerPackagenameScheme();
-            if (cfg.getPostCrawlerPackagenameType() == SinglePostPackagenameType.DEFAULT || StringUtils.isEmpty(customPackageNameScheme)) {
+            if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.DEFAULT || StringUtils.isEmpty(customPackageNameScheme)) {
+                if (metadata.getUsername() != null) {
+                    fp.setName(metadata.getUsername());
+                } else {
+                    /* Fallback */
+                    fp.setName(mainContentID);
+                }
+            } else if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.UPLOADER_MAIN_CONTENT_ID || StringUtils.isEmpty(customPackageNameScheme)) {
                 if (metadata.getUsername() != null) {
                     fp.setName(metadata.getUsername() + " - " + mainContentID);
                 } else {
+                    /* Fallback */
                     fp.setName(mainContentID);
                 }
             } else {
@@ -1499,41 +1507,30 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * previously crawled for current Instagram post.
      */
     private DownloadLink getTextDownloadlink(final ArrayList<DownloadLink> crawledPostItems) {
-        final DownloadLink lastAddedDownloadLink = crawledPostItems.get(crawledPostItems.size() - 1);
-        final DownloadLink text = this.createDownloadlink(lastAddedDownloadLink.getPluginPatternMatcher() + "_description");
-        text.setProperties(lastAddedDownloadLink.getProperties());
+        final DownloadLink firstAddedMediaItemOfThisPost = crawledPostItems.get(0);
+        final DownloadLink text = this.createDownloadlink(firstAddedMediaItemOfThisPost.getPluginPatternMatcher() + "_description");
+        /* Add all properties from previously added media. */
+        text.setProperties(firstAddedMediaItemOfThisPost.getProperties());
+        /* Remove properties that are not relevant or even wrong for our text item. */
+        text.removeProperty(InstaGramCom.PROPERTY_orderid);
+        text.removeProperty(InstaGramCom.PROPERTY_orderid_raw);
+        text.removeProperty(InstaGramCom.PROPERTY_orderid_max_raw);
+        text.removeProperty(InstaGramCom.PROPERTY_shortcode);
         text.setProperty(InstaGramCom.PROPERTY_type, "text");
         /* Important!! This will be used in LinkID later! */
-        final String mainContentID = lastAddedDownloadLink.getStringProperty(InstaGramCom.PROPERTY_main_content_id);
-        final String description = lastAddedDownloadLink.getStringProperty(InstaGramCom.PROPERTY_description);
-        final String username = lastAddedDownloadLink.getStringProperty(InstaGramCom.PROPERTY_uploader);
-        final String dateFormatted = lastAddedDownloadLink.getStringProperty(InstaGramCom.PROPERTY_date);
+        final String mainContentID = firstAddedMediaItemOfThisPost.getStringProperty(InstaGramCom.PROPERTY_main_content_id);
+        final String description = firstAddedMediaItemOfThisPost.getStringProperty(InstaGramCom.PROPERTY_description);
         text.setProperty(InstaGramCom.PROPERTY_internal_media_id, mainContentID);
-        /**
-         * Determine filename based on whether or not we crawled a single media item or multiple ones. </br>
-         * If there is only one media item we will use a filename that matches the one of this item otherwise we'll use one that fits the
-         * package.
-         */
-        final String filename;
-        if (crawledPostItems.size() == 1) {
-            filename = lastAddedDownloadLink.getName().substring(0, lastAddedDownloadLink.getName().lastIndexOf(".")) + ".txt";
-        } else if (username != null) {
-            /* Post contains multiple items: Name this textfile like the FilePackage it will go in to. */
-            filename = dateFormatted + "_" + username + " - " + mainContentID + ".txt";
-        } else {
-            /* Fallback */
-            filename = mainContentID + ".txt";
-        }
+        final String filename = getFilename(text);
         text.setFinalFileName(filename);
-        text.setProperty(InstaGramCom.PROPERTY_filename_from_crawler, filename);
         try {
             text.setDownloadSize(description.getBytes("UTF-8").length);
         } catch (final UnsupportedEncodingException ignore) {
             ignore.printStackTrace();
         }
-        if (lastAddedDownloadLink.getFilePackage() != null) {
+        if (firstAddedMediaItemOfThisPost.getFilePackage() != null) {
             /* Put this textfile into the same package the other posts will go into. */
-            text._setFilePackage(lastAddedDownloadLink.getFilePackage());
+            text._setFilePackage(firstAddedMediaItemOfThisPost.getFilePackage());
         }
         text.setAvailable(true);
         text.setComment(description);
@@ -1557,6 +1554,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final String ext;
         if (InstaGramCom.isVideo(link)) {
             ext = ".mp4";
+        } else if (InstaGramCom.isText(link)) {
+            ext = ".txt";
         } else {
             ext = ".jpg";
         }
