@@ -19,36 +19,9 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     private int           maxConcurrentInstances = Integer.MAX_VALUE;
     private boolean       hasConfig              = false;
     private String        configInterface        = null;
-    private FEATURE[]     features               = null;
-
-    public FEATURE[] getFeatures() {
-        return features;
-    }
 
     public long getPluginUsage() {
         return decrypts + pluginUsage;
-    }
-
-    /**
-     * returns true if LazyCrawlerPlugin has one matching feature
-     *
-     * @param features
-     * @return
-     */
-    public boolean hasFeature(final FEATURE... features) {
-        final FEATURE[] pluginFeatures = getFeatures();
-        if (features != null && features.length > 0 && pluginFeatures != null && pluginFeatures.length > 0) {
-            for (final FEATURE feature : features) {
-                if (feature.isSet(pluginFeatures)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    protected void setFeatures(FEATURE[] features) {
-        this.features = features;
     }
 
     public void setPluginUsage(long pluginUsage) {
@@ -57,6 +30,11 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
 
     public boolean isHasConfig() {
         return hasConfig;
+    }
+
+    @Override
+    protected void setFeatures(LazyPlugin.FEATURE[] features) {
+        super.setFeatures(features);
     }
 
     @Override

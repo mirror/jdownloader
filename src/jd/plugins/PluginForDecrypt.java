@@ -80,9 +80,10 @@ import org.jdownloader.gui.dialog.AskForCryptedLinkDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.translate._JDT;
@@ -401,7 +402,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return ret;
     }
 
-    protected List<LazyHostPlugin> findNextLazyHostPlugins(final String url, final LazyHostPlugin.FEATURE... features) {
+    protected List<LazyHostPlugin> findNextLazyHostPlugins(final String url, final LazyPlugin.FEATURE... features) {
         final List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>();
         final LinkCrawler crawler = getCrawler();
         final List<LazyHostPlugin> sortedLazyHostPlugins = crawler.getSortedLazyHostPlugins();

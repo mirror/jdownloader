@@ -113,6 +113,36 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         }
     }
 
+    /**
+     * returns true if LazyCrawlerPlugin has one matching feature
+     *
+     * @param features
+     * @return
+     */
+    public boolean hasFeature(final FEATURE... features) {
+        final FEATURE[] pluginFeatures = getFeatures();
+        if (features != null && features.length > 0 && pluginFeatures != null && pluginFeatures.length > 0) {
+            for (final FEATURE feature : features) {
+                if (feature.isSet(pluginFeatures)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public FEATURE[] getFeatures() {
+        return features;
+    }
+
+    protected void setFeatures(LazyPlugin.FEATURE[] features) {
+        if (features == null || features.length == 0) {
+            this.features = null;
+        } else {
+            this.features = features;
+        }
+    }
+
     private final static Charset                           UTF8            = Charset.forName("UTF-8");
     private final byte[]                                   patternBytes;
     private volatile MinTimeWeakReference<Pattern>         compiledPattern = null;
@@ -122,6 +152,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     /* PluginClassLoaderChild used to load this Class */
     private volatile WeakReference<PluginClassLoaderChild> classLoader;
     private volatile MinTimeWeakReference<Matcher>         matcher         = null;
+    private FEATURE[]                                      features        = null;
 
     public PluginWrapper getPluginWrapper() {
         return new PluginWrapper(this) {
