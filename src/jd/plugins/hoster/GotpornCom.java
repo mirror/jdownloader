@@ -15,12 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -176,7 +176,7 @@ public class GotpornCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         dllink = HTMLEntities.unhtmlentities(dllink);
         try {
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(dllink));
+            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
             if (this.looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -283,38 +283,39 @@ public class GotpornCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -335,9 +336,13 @@ public class GotpornCom extends antiDDoSForHost {
             link.setFinalFileName(link.getStringProperty("plain_title", null) + ext);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
@@ -345,7 +350,7 @@ public class GotpornCom extends antiDDoSForHost {
     }
 
     private String getVID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)/?$").getMatch(0);
+        return new Regex(dl.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
     }
 
     private String getEXT(final String finallink) {

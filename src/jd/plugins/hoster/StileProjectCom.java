@@ -58,7 +58,7 @@ public class StileProjectCom extends PluginForHost {
     }
 
     private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
-    private static final String TYPE_NORMAL = "https?://(?:www\\.)?stileproject\\.com/video/([a-z0-9\\-]+)-(\\d+)\\.html";
+    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
 
     private String getFID(final DownloadLink link) {
         if (link == null || link.getPluginPatternMatcher() == null) {
@@ -105,6 +105,7 @@ public class StileProjectCom extends PluginForHost {
             if (realVideoURL == null || !realVideoURL.contains(this.getFID(link))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            link.setPluginPatternMatcher(realVideoURL);
             br.getPage(realVideoURL);
         }
         final String titleByURL = getURLTitle(br.getURL());

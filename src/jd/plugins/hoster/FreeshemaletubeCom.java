@@ -18,10 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -58,11 +56,11 @@ public class FreeshemaletubeCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(downloadLink.getHost(), "googtrans", "/en/en");
-        br.getPage(downloadLink.getDownloadURL());
+        br.setCookie(link.getHost(), "googtrans", "/en/en");
+        br.getPage(link.getDownloadURL());
         if (br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found|id=\"video_access_message\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -72,7 +70,7 @@ public class FreeshemaletubeCom extends PluginForHost {
         }
         if (filename == null) {
             /* Fallback to url-filename */
-            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
         final String token = br.getRegex("'token',\\s*'([^<>\"]*?)'").getMatch(0);
         dllink = br.getRegex("'file'\\s*,\\s*'(http[^<>\"]*?)'").getMatch(0);
@@ -97,38 +95,39 @@ public class FreeshemaletubeCom extends PluginForHost {
         }
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            con = br.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", dllink);
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        link.setFinalFileName(Encoding.htmlDecode(filename));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
