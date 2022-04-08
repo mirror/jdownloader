@@ -1232,24 +1232,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (fp == null) {
             /* Fallback + handling for single posts */
             fp = FilePackage.getInstance();
-            final String customPackageNameScheme = cfg.getPostCrawlerPackagenameScheme();
-            if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.UPLOADER || StringUtils.isEmpty(customPackageNameScheme)) {
-                if (metadata.getUsername() != null) {
-                    fp.setName(metadata.getUsername());
-                } else {
-                    /* Fallback */
-                    fp.setName(mainContentID);
-                }
-            } else if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.UPLOADER_MAIN_CONTENT_ID || StringUtils.isEmpty(customPackageNameScheme)) {
-                if (metadata.getUsername() != null) {
-                    fp.setName(metadata.getUsername() + " - " + mainContentID);
-                } else {
-                    /* Fallback */
-                    fp.setName(mainContentID);
-                }
-            } else {
+            if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.UPLOADER && metadata.getUsername() != null) {
+                fp.setName(metadata.getUsername());
+            } else if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.UPLOADER_MAIN_CONTENT_ID && metadata.getUsername() != null) {
+                fp.setName(metadata.getUsername() + " - " + mainContentID);
+            } else if (cfg.getPostCrawlerPackagenameSchemeType() == SinglePostPackagenameSchemeType.CUSTOM && !StringUtils.isEmpty(cfg.getPostCrawlerPackagenameScheme())) {
                 /* Use User defined package names */
-                String customPackageName = customPackageNameScheme.replace("*date*", dateFormatted);
+                String customPackageName = cfg.getPostCrawlerPackagenameScheme().replace("*date*", dateFormatted);
                 final String usernameForReplacer;
                 if (metadata.getUsername() != null) {
                     usernameForReplacer = metadata.getUsername();
@@ -1261,6 +1250,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 }
                 customPackageName = customPackageName.replace("*main_content_id*", mainContentID);
                 fp.setName(customPackageName);
+            } else {
+                /* Fallback */
+                fp.setName(mainContentID);
             }
         }
         final String postURL = this.generateURLPost(mainContentID);
