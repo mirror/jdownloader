@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -14,10 +19,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -225,6 +226,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         if (handleExtern("tnaflix.com", processAll, decryptedLinks)) {
             return decryptedLinks;
         }
+        /* TODO: Refactor this so generic handling down below can be used to auto-find all pornhub URLs */
         // pornhub handling number #1
         externID = br.getRegex("\"((?:https?:)?//(?:[a-z0-9]+\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
         if (externID != null) {
@@ -234,16 +236,17 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         // pornhub handling number #2
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
+        // externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[^<>\"]*?)\"").getMatch(0);
+        // if (externID != null) {
+        // decryptedLinks.add(externID);
+        // if (!processAll) {
+        // return decryptedLinks;
+        // }
+        // }
         // pornhub handling number #3
         externID = br.getRegex("name=\"FlashVars\" value=\"options=((?:https?:)?//(?:www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
+            /* TODO: Check if this is still relevant */
             final Browser ph = br.cloneBrowser();
             getPage(ph, externID);
             if (ph.containsHTML("<link_url>N/A</link_url>") || ph.containsHTML("No htmlCode read") || ph.containsHTML(">404 Not Found<")) {
@@ -781,12 +784,11 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         int results = 0;
         for (final String url : urls) {
-            /* TODO */
-            // final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyCrawlerPlugin.FEATURE.XXX);
-            // if (nextLazyCrawlerPlugins.size() > 0) {
-            // decryptedLinks.add(url);
-            // results++;
-            // }
+            final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
+            if (nextLazyCrawlerPlugins.size() > 0) {
+                decryptedLinks.add(url);
+                results++;
+            }
             final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
             if (nextLazyHostPlugins.size() > 0) {
                 decryptedLinks.add(url);

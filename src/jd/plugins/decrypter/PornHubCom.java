@@ -32,6 +32,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -65,6 +66,11 @@ public class PornHubCom extends PluginForDecrypt {
                 Browser.setRequestIntervalLimitGlobal(pluginDomain, 333);
             }
         }
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
