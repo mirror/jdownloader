@@ -1,11 +1,11 @@
 package org.jdownloader.plugins.controller.host;
 
+import jd.plugins.PluginForHost;
+
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-
-import jd.plugins.PluginForHost;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private static enum PROPERTY {
@@ -19,11 +19,6 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private String        premiumUrl;
     private volatile byte properties     = 0;
     private volatile long parsesLifetime = 0;
-    private LazyPlugin.FEATURE[]     features       = null;
-
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return features;
-    }
 
     public boolean isFallbackPlugin() {
         return "UpdateRequired".equalsIgnoreCase(getDisplayName());
@@ -31,28 +26,6 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     public boolean isOfflinePlugin() {
         return getClassName().endsWith("r.Offline");
-    }
-
-    /**
-     * returns true if LazyHostPlugin has one matching feature
-     *
-     * @param features
-     * @return
-     */
-    public boolean hasFeature(final LazyPlugin.FEATURE... features) {
-        final LazyPlugin.FEATURE[] pluginFeatures = getFeatures();
-        if (features != null && features.length > 0 && pluginFeatures != null && pluginFeatures.length > 0) {
-            for (final LazyPlugin.FEATURE feature : features) {
-                if (feature.isSet(pluginFeatures)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    protected void setFeatures(LazyPlugin.FEATURE[] features) {
-        this.features = features;
     }
 
     public long getPluginUsage() {
@@ -69,6 +42,11 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     public long getAverageParseRuntime() {
         return averageRuntime;
+    }
+
+    @Override
+    protected void setFeatures(LazyPlugin.FEATURE[] features) {
+        super.setFeatures(features);
     }
 
     public synchronized void updateParseRuntime(long r) {
