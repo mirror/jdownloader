@@ -19,17 +19,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -67,7 +62,7 @@ public class DownloadGg extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file-(\\d+_[a-f0-9]{16})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:analyz|file|iframe)-(\\d+_[a-f0-9]{16})");
         }
         return ret.toArray(new String[0]);
     }
@@ -105,19 +100,16 @@ public class DownloadGg extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(getContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Skip ad page */
         if (br.getURL().contains("/analyz-")) {
-            br.getPage(link.getPluginPatternMatcher());
+            br.getPage(getContentURL(link));
         }
         String filename = br.getRegex("class=\"name\">([^<>\"]+)</div>").getMatch(0);
         String filesize = br.getRegex("class=\"file-size\">([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             /* 2020-10-29: Hoster is tagging filenames --> Try to avoid this */
@@ -138,20 +130,28 @@ public class DownloadGg extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getContentURL(final DownloadLink link) {
+        return "https://" + this.getHost() + "/file-" + this.getFID(link);
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (br.containsHTML("class=\"wrap-banned-txt\"")) {
+            /* 2022-04-11 */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP has been banned");
+        }
         final Form dlform = br.getFormbyActionRegex("download/.+");
         if (dlform == null) {
             logger.warning("Failed to find dlform");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -160,46 +160,11 @@ public class DownloadGg extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                link.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return dllink;
-    }
-
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 

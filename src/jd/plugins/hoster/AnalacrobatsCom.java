@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -42,6 +43,11 @@ public class AnalacrobatsCom extends antiDDoSForHost {
     public AnalacrobatsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://members.analacrobats.com/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     @Override

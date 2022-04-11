@@ -92,7 +92,7 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getGlobalRequestIntervalLimitMilliseconds_label() {
-            return "Define global request limit in milliseconds (0 = no limit)";
+            return "Define global request limit for domain 'instagram.com' in milliseconds (0 = no limit)";
         }
     }
 
@@ -294,7 +294,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @SpinnerValidator(min = 0, max = 60000, step = 100)
     @DefaultIntValue(400)
-    @DescriptionForConfigEntry("Define global request limit in milliseconds (0 = no limit)")
+    @DescriptionForConfigEntry("Define global request limit for domain 'instagram.com' in milliseconds (0 = no limit)")
     @Order(510)
     int getGlobalRequestIntervalLimitMilliseconds();
 

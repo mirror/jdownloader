@@ -26,6 +26,19 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,19 +71,8 @@ import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip|pdf).+|[rz][0-9]{2}.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|s/v1/doc/[A-Za-z0-9\\-_]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[a-f0-9]+(\\&dl=[a-f0-9]{18})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip|pdf).+|[rz][0-9]{2}.+)" })
 public class VKontakteRuHoster extends PluginForHost {
     /* Current main domain */
     private static final String DOMAIN                                                                      = "vk.com";
@@ -80,7 +82,8 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TYPE_VIDEOLINK                                                              = "(?i)https?://[^/]+/video([\\d\\-]+)_([\\d\\-]+)(#quality=(\\d+p|hls))?";
     private static final String TYPE_DIRECT                                                                 = "(?i)https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:[A-Za-z0-9]{1,5})(?:.*)";
     private static final String TYPE_PICTURELINK                                                            = "(?i)https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
-    private static final String TYPE_DOCLINK                                                                = "(?i)https?://[^/]+/doc([\\d\\-]+)_([\\d\\-]+)(\\?hash=[a-z0-9]+(\\&dl=[a-f0-9]{18})?)?";
+    public static final String  TYPE_DOCLINK_1                                                              = "(?i)https?://[^/]+/doc([\\d\\-]+)_([\\d\\-]+)(\\?hash=[a-z0-9]+(\\&dl=[a-f0-9]{18})?)?";
+    public static final String  TYPE_DOCLINK_2                                                              = "(?i)https?://[^/]+/s/v1/doc/([A-Za-z0-9\\-_]+)";
     public static final long    trust_cookie_age                                                            = 300000l;
     private static final String TEMPORARILYBLOCKED                                                          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
@@ -247,72 +250,55 @@ public class VKontakteRuHoster extends PluginForHost {
             } else {
                 logger.info("Account not available during availablecheck");
             }
-            if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
-                final String filenameIDString = "doc" + this.ownerID + "_" + this.contentID;
-                if (!link.isNameSet()) {
+            if (VKontakteRu.isTypeDocument(link.getPluginPatternMatcher())) {
+                if (!link.isNameSet() && this.ownerID != null && this.contentID != null) {
                     /* Set fallback filename */
-                    link.setName(filenameIDString + ".pdf");
+                    link.setName("doc" + this.ownerID + "_" + this.contentID + ".pdf");
                 }
                 br.setFollowRedirects(false);
                 br.getPage(link.getPluginPatternMatcher());
                 final String redirect = br.getRedirectLocation();
                 if (redirect != null && redirect.matches(TYPE_DIRECT)) {
+                    /* Check if we got a directURL. */
                     finalUrl = redirect;
                     setAndGetFileNameFromDirectURL(link, finalUrl);
                     return AvailableStatus.TRUE;
                 }
-                /* 2021-04-26: The handling below should not be needed anymore. Remove commented out lines of code after 2021-09. */
-                // if (br.getRedirectLocation() != null) {
-                // if (br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
-                // logger.info("Doc Link type redirect");
-                // br.getPage(br.getRedirectLocation());
-                // } else if (br.getRedirectLocation().matches(VKontakteRuHoster.TYPE_DIRECT)) {
-                // logger.info("Direct Link type redirect");
-                // finalUrl = br.getRedirectLocation();
-                // if (filename == null) {
-                // /* Use filename inside url */
-                // filename = extractFileNameFromURL(finalUrl);
-                // }
-                // checkstatus = linkOk(link, filename, isDownload);
-                // if (checkstatus != 1) {
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // }
-                // return AvailableStatus.TRUE;
-                // } else {
-                // // ??
-                // logger.info("Other redirect");
-                // br.followConnection();
-                // }
-                // }
-                if (br.containsHTML("File deleted")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (br.containsHTML("This document is available only to its owner\\.")) {
-                    if (account == null) {
-                        throw new AccountRequiredException();
-                    } else {
-                        throw new AccountRequiredException("This document is available only to its owner");
-                    }
+                if (br.containsHTML("(?i)This document is available only to its owner\\.")) {
+                    throw new AccountRequiredException("This document is available only to its owner");
                 }
-                finalUrl = PluginJSonUtils.getJson(this.br, "docUrl");
+                final String json = br.getRegex("Docs\\.initDoc\\((\\{.*?\\})\\);").getMatch(0);
+                if (json == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Map<String, Object> doc = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                finalUrl = (String) doc.get("docUrl");
                 if (StringUtils.isEmpty(finalUrl)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String filename_html = br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
+                if (link.getPluginPatternMatcher().matches(TYPE_DOCLINK_2)) {
+                    /* Het IDs from json as they're not provided inside given URL. */
+                    this.ownerID = doc.get("docOwnerId").toString();
+                    this.contentID = doc.get("docId").toString();
+                    link.setProperty(PROPERTY_GENERAL_owner_id, this.ownerID);
+                    link.setProperty(PROPERTY_GENERAL_content_id, this.contentID);
+                }
+                final String filenameFromHTML = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
                 /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
                 final String betterFilename = new Regex(finalUrl, "/([^<>\"/]+)\\?extra=.+$").getMatch(0);
-                String filename = null;
+                String title = null;
                 if (betterFilename != null) {
-                    filename = Encoding.htmlDecode(betterFilename).trim();
-                } else if (filename_html != null) {
-                    filename = Encoding.htmlDecode(filename_html.trim());
+                    title = Encoding.htmlDecode(betterFilename).trim();
+                } else if (filenameFromHTML != null) {
+                    title = Encoding.htmlDecode(filenameFromHTML).trim();
                 }
-                if (filename != null) {
-                    final String fileExtension = PluginJSonUtils.getJson(br, "docExt");
-                    filename = this.correctOrApplyFileNameExtension(filename, "." + fileExtension);
+                if (title != null) {
+                    final String fileExtension = (String) doc.get("docExt");
+                    title = this.correctOrApplyFileNameExtension(title, "." + fileExtension);
                     if (this.getPluginConfig().getBooleanProperty(VKDOCS_ADD_UNIQUE_ID, default_VKDOCS_ADD_UNIQUE_ID)) {
-                        link.setFinalFileName(filenameIDString + "_" + filename);
+                        link.setFinalFileName("doc" + this.ownerID + "_" + this.contentID + "_" + title);
                     } else {
-                        link.setFinalFileName(filename);
+                        link.setFinalFileName(title);
                     }
                 }
                 checkstatus = linkOk(link, isDownload);
@@ -1618,6 +1604,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 return "vkontakte://" + ownerID + "_" + contentID + "_" + link.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY, "noneYet");
             } else {
                 if (ownerID != null && contentID != null) {
+                    /* Non-video items */
                     return "vkontakte://" + ownerID + "_" + contentID;
                 } else {
                     /* Fallback */
@@ -1645,8 +1632,8 @@ public class VKontakteRuHoster extends PluginForHost {
             ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_AUDIOLINK).getMatch(0);
         } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_PICTURELINK)) {
             ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_PICTURELINK).getMatch(0);
-        } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_DOCLINK)) {
-            ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK).getMatch(0);
+        } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_DOCLINK_1)) {
+            ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK_1).getMatch(0);
         } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK)) {
             ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_VIDEOLINK).getMatch(0);
         } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK_LEGACY)) {
@@ -1665,8 +1652,8 @@ public class VKontakteRuHoster extends PluginForHost {
             contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_AUDIOLINK).getMatch(1);
         } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_PICTURELINK)) {
             contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_PICTURELINK).getMatch(1);
-        } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_DOCLINK)) {
-            contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK).getMatch(1);
+        } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_DOCLINK_1)) {
+            contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_DOCLINK_1).getMatch(1);
         } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK)) {
             contentID = new Regex(dl.getPluginPatternMatcher(), TYPE_VIDEOLINK).getMatch(1);
         } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK_LEGACY)) {
