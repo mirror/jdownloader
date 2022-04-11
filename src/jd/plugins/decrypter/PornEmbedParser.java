@@ -2,7 +2,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -130,7 +129,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return add(createDownloadlink(url));
             }
         };
-        // use plugin regex where possible... this means less maintaince required.
         /* Cleanup/Improve title */
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
@@ -138,39 +136,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         logger.info("PornEmbedParser is being executed...");
         String externID = null;
-        // youporn.com handling 3 2018-01-07 | legacy handling
-        externID = br.getRegex("ypncdn\\.com/[\\d]+/[\\d]+/(\\d+)/").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//www.youporn.com/watch/" + externID + "/" + System.currentTimeMillis());
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[a-z0-9]+\\.[a-z0-9\\.]+\\|(\\d+)").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("//www.pornyeah.com/videos/" + Integer.toString(new Random().nextInt(1000000)) + "-" + externID + ".html");
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        /* RegExes for permanently offline websites go here */
-        // 2019-01-15 share-videos.se
-        externID = br.getRegex("(embed\\.share\\-videos\\.se/auto/embed/\\d+\\?uid=\\d+)").getMatch(0);
-        if (externID != null) {
-            externID = "https://" + externID;
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         // 2019-01-16 javynow.com
         externID = br.getRegex("(javynow\\.com/player/\\d+/[^\"]+)").getMatch(0);
         if (externID != null) {

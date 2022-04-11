@@ -44,18 +44,14 @@ public class JavynowCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private static final int free_maxdownloads = -1;
+    private String           dllink            = null;
+    private boolean          server_issues     = false;
 
     @Override
     public String getAGBLink() {
-        return "http://javynow.com/tos.php";
+        return "https://javynow.com/tos.php";
     }
 
     @Override
@@ -77,9 +73,9 @@ public class JavynowCom extends PluginForHost {
         // br.getPage(br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0));
         // }
         final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
-        String filename = br.getRegex("<title>([^<>\"]+) JavyNow</title>").getMatch(0);
-        if (StringUtils.isEmpty(filename) || "no title".equals(filename)) {
-            filename = url_filename.replace("-", " ");
+        String title = br.getRegex("<title>([^<>\"]+) JavyNow</title>").getMatch(0);
+        if (StringUtils.isEmpty(title) || "no title".equals(title)) {
+            title = url_filename.replace("-", " ");
         }
         final String cryptedScripts[] = br.getRegex("eval\\s*\\((function\\(p,a,c,k,e,d\\).*?\\{\\}\\))\\)").getColumn(0);
         if (cryptedScripts.length != 0) {
@@ -99,12 +95,8 @@ public class JavynowCom extends PluginForHost {
                 }
             }
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        if (!filename.endsWith(default_Extension)) {
-            filename += default_Extension;
-        }
-        link.setFinalFileName(filename);
+        title = Encoding.htmlDecode(title).trim();
+        link.setFinalFileName(title + ".mp4");
         return AvailableStatus.TRUE;
     }
 

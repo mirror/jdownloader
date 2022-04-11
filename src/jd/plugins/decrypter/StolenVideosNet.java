@@ -96,21 +96,6 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("<iframe id=\"preview\" src=\"(http://gallys\\.nastydollars\\.com/[^<>\"]+)").getMatch(0);
-        if (tempID != null) {
-            br.getPage(tempID);
-            tempID = br.getRegex("<iframe src=\"(http://[^<>\"]+)").getMatch(0);
-            if (tempID != null) {
-                br.getPage(tempID);
-                tempID = br.getRegex("<a href=\"(http://[^<>]+\\.flv)\" id=\"media\"").getMatch(0);
-                if (tempID != null) {
-                    final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
-                    dl.setFinalFileName(filename + ".flv");
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
-                }
-            }
-        }
         logger.warning("Couldn't decrypt link: " + parameter);
         return decryptedLinks;
     }

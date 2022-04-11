@@ -25,6 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amateurdumper.com" }, urls = { "https?://(?:www\\.)?amateurdumper\\.com/[^/]{10,}" })
 public class AmateurDumperCom extends PornEmbedParser {
@@ -40,14 +42,13 @@ public class AmateurDumperCom extends PornEmbedParser {
     /* DEV NOTES */
     /* Porn_plugin */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No htmlCode read|>404 The page was not found!<")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*404 The page was not found") || br.getRequest().getHtmlCode().length() < 100) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String redirect = br.getRedirectLocation();
         if (redirect != null && !redirect.contains(this.getHost())) {
@@ -93,13 +94,7 @@ public class AmateurDumperCom extends PornEmbedParser {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("\\&file=(http://static\\.mofos\\.com/.*?)\\&enablejs").getMatch(0);
-        if (externID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
+        /* Check for selfhosted content */
         externID = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
         if (externID == null) {
             externID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
@@ -110,10 +105,6 @@ public class AmateurDumperCom extends PornEmbedParser {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("\"http://(www\\.)?seemybucks\\.com/flvexporter/flvplayer\\.swf\"")) {
-            logger.info("Link broken: " + parameter);
-            return decryptedLinks;
-        }
         externID = br.getRegex("<iframe[^<>]*?src=\"(https?://.*?)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
@@ -121,10 +112,10 @@ public class AmateurDumperCom extends PornEmbedParser {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        throw new DecrypterException("Decrypter broken for link: " + parameter);
+        return decryptedLinks;
     }
 
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
