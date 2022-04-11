@@ -187,20 +187,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // 2019-01-24 hqwo.cc (no main webpage, only works when you have URLs which lead to content!)
-        externID = br.getRegex("(//hqwo\\.cc/player/[^<>\"]+)").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = this.createDownloadlink(externID);
-            /* Filename is good to have but not necessarily required, */
-            if (title != null) {
-                title += ".mp4";
-                dl.setFinalFileName(title);
-            }
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("(https?://(?:www\\.)?camhub\\.(?:world|cc)/embed/\\d+)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = this.createDownloadlink(externID);

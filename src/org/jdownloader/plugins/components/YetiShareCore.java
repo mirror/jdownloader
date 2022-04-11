@@ -52,6 +52,7 @@ import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -1733,9 +1734,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         return true;
                     } else {
                         if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException("Login cookies expired");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
-                            throw new AccountInvalidException("Login cookies invalid");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
                 } else if (cookies != null) {
