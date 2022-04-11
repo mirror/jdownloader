@@ -16,18 +16,20 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamwhoresTv extends PornEmbedParser {
@@ -65,6 +67,18 @@ public class CamwhoresTv extends PornEmbedParser {
         return ret.toArray(new String[0]);
     }
 
+    @Override
+    public List<DownloadLink> convert(Browser br, String title, String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {
+        final Iterator<? extends LazyPlugin> it = lazyPlugins.iterator();
+        while (it.hasNext()) {
+            final LazyPlugin next = it.next();
+            if (getHost().equals(next.getDisplayName())) {
+                it.remove();
+            }
+        }
+        return super.convert(br, title, url, lazyPlugins);
+    }
+
     /* DEV NOTES */
     /* Porn_plugin */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -85,7 +99,8 @@ public class CamwhoresTv extends PornEmbedParser {
         final String fid = new Regex(param.getCryptedUrl(), "https?://[^/]+/videos/(\\d+)").getMatch(0);
         /* Avoid crawling embed URL of current item as this website doesn't allow embedding their own selfhosted content. */
         final boolean isSelfhostedContent = fid != null && br.containsHTML("/embed/" + fid);
-        if (!isSelfhostedContent) {
+        final boolean isPrivate = br.containsHTML(">\\s*This video is a private video uploaded");
+        if (!isSelfhostedContent && !isPrivate) {
             decryptedLinks.addAll(findEmbedUrls(filename));
         }
         if (decryptedLinks.size() == 0) {
