@@ -4,11 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -17,6 +12,11 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.DecrypterArrayList;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -348,19 +348,18 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         // Now check for all existant URLs if they're supported by any plugin tagged as porn plugin
         /************************************************************************************************************/
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
-        int results = 0;
+        final int before = decryptedLinks.size();
         for (final String url : urls) {
             final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
             if (nextLazyCrawlerPlugins.size() > 0) {
-                decryptedLinks.add(url);
-                results++;
+                decryptedLinks.addAll(convert(br, title, url, nextLazyCrawlerPlugins));
             }
             final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
             if (nextLazyHostPlugins.size() > 0) {
-                decryptedLinks.add(url);
-                results++;
+                decryptedLinks.addAll(convert(br, title, url, nextLazyHostPlugins));
             }
         }
+        final int results = decryptedLinks.size() - before;
         if (results > 0 && !processAll) {
             return decryptedLinks;
         }
@@ -449,6 +448,23 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
          * "embed URL" --> This will lose file title
          */
         return decryptedLinks;
+    }
+
+    public List<DownloadLink> convert(Browser br, String title, String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (lazyPlugins.size() > 0) {
+            final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
+            if (lazyPlugins.size() == 1) {
+                // TODO: better way for this
+                if ("mydaddy.cc".equals(lazyPlugins.get(0).getDisplayName())) {
+                    if (title != null) {
+                        dl.setProperty("decryptertitle", title);
+                    }
+                }
+            }
+            ret.add(dl);
+        }
+        return ret;
     }
 
     @Override

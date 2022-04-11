@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.FlexShareCore;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.plugins.Account;
@@ -28,6 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.FlexShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilePupNet extends FlexShareCore {
@@ -123,8 +123,8 @@ public class FilePupNet extends FlexShareCore {
     }
 
     @Override
-    protected void handleErrors() throws PluginException {
-        super.handleErrors();
+    protected void handleErrors(DownloadLink downloadLink, Account account) throws PluginException {
+        super.handleErrors(downloadLink, account);
         if (br.containsHTML("(?i)>\\s*This file does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

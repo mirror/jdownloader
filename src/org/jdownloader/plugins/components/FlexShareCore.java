@@ -157,7 +157,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
         String filename = fileInfo.getMatch(2);
         String filesize = fileInfo.getMatch(3);
         if (filename == null || filesize == null) {
-            handleErrors();
+            handleErrors(link, null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Set final filename here because hoster taggs files
@@ -176,13 +176,10 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     }
 
     protected void doFree(final DownloadLink link, Account account) throws Exception, PluginException {
-        if (br.containsHTML("(?i)(>\\s*Premium Only\\!|you have requested require a premium account for download)")) {
-            throw new AccountRequiredException();
-        }
         /** 2019-10-02: TODO: Add handling to re-use generated directurls */
         final String getLink = getLink();
         if (getLink == null) {
-            handleErrors();
+            handleErrors(link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // waittime
@@ -237,22 +234,22 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            handleGeneralServerErrors();
-            handleErrors();
+            handleGeneralServerErrors(dl.getConnection());
+            handleErrors(link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    protected void handleGeneralServerErrors() throws PluginException {
-        if (dl.getConnection().getResponseCode() == 403) {
+    protected void handleGeneralServerErrors(URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 404) {
+        } else if (con.getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
         }
     }
 
-    protected void handleErrors() throws PluginException {
+    protected void handleErrors(final DownloadLink downloadLink, final Account account) throws PluginException {
         if (br.containsHTML("Server is too busy for free users")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l);
         } else if (br.containsHTML("(files per hour for free users\\.</div>|>Los usuarios de Cuenta Gratis pueden descargar|hours for free users\\.|var time =)")) {
@@ -262,8 +259,16 @@ public abstract class FlexShareCore extends antiDDoSForHost {
         } else if (br.getURL().contains("error_503.html")) {
             /* 2020-11-17: E.g.: http://www.filepup.net/err/error_503.html */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 too many connections", 1 * 60 * 1000l);
+        } else if (br.containsHTML("(?i)(>\\s*Premium Only\\s*\\!|you have requested require a premium account for download\\.\\s*<)")) {
+            throw new AccountRequiredException();
+        } else if (br.containsHTML("(?i)<title>\\s*Site Maintenance\\s*</title>")) {
+            if (dl != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Maintenance", 30 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server Maintenance", 30 * 60 * 1000l);
+            }
         }
-        final String unknownError = br.getRegex("class=\"error\">(.*?)\"").getMatch(0);
+        final String unknownError = br.getRegex("class\\s*=\\s*\"error\"\\s*>\\s*(.*?)\"").getMatch(0);
         if (unknownError != null) {
             logger.warning("Unknown error occured: " + unknownError);
         }
@@ -417,11 +422,8 @@ public abstract class FlexShareCore extends antiDDoSForHost {
                 getLink = getLink();
             }
             if (getLink == null) {
-                if (br.containsHTML("(>Premium Only\\!|you have requested require a premium account for download\\.<)")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                handleErrors(link, account);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -431,7 +433,8 @@ public abstract class FlexShareCore extends antiDDoSForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                handleGeneralServerErrors();
+                handleGeneralServerErrors(dl.getConnection());
+                handleErrors(link, account);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

@@ -28,7 +28,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "LinkCrawlerRetry" }, urls = { "" })
 public class LinkCrawlerRetry extends PluginForHost {
@@ -66,15 +65,20 @@ public class LinkCrawlerRetry extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        return AvailableStatus.UNCHECKED;
+    public AvailableStatus requestFileInformation(DownloadLink parameter) {
+        final String reason = parameter.getStringProperty("reason", null);
+        if ("FILE_NOT_FOUND".equals(reason)) {
+            return AvailableStatus.FALSE;
+        } else {
+            return AvailableStatus.UNCHECKED;
+        }
     }
 
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls != null) {
             for (final DownloadLink link : urls) {
-                link.setAvailableStatus(AvailableStatus.UNCHECKED);
+                link.setAvailableStatus(requestFileInformation(link));
             }
         }
         return true;

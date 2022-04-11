@@ -26,6 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cybersansar.com" }, urls = { "https?://(www\\.)?cybersansar\\.com(\\.np)?/((ev_)?thumbnail_view\\.php\\?gal_id=\\d+|wallpaper_download\\.php\\?wid=\\d+|video_download\\.php\\?vid=\\d+)" })
@@ -68,8 +70,7 @@ public class CyberSansarCom extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("https://www.cybersansar.com" + externID));
                 return decryptedLinks;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (parameter.matches(THUMBNAILLINK2)) {
             String eventname = br.getRegex("class=\"title\\-event\">([^<>\"]*?)</td>").getMatch(0);
             final String[] thumbnails = br.getRegex("class=\"photolink\"><img src=\"(graphics/[^<>\"]*?\\.jpg)\"").getColumn(0);
