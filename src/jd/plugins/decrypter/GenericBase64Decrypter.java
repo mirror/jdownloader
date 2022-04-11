@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -55,6 +56,11 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
 
     public GenericBase64Decrypter(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.GENERIC };
     }
 
     @Override

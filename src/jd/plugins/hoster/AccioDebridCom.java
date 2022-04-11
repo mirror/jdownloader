@@ -27,7 +27,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -168,10 +168,11 @@ public class AccioDebridCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final Long expireTimestamp = (Long) root.get("vip_end");
-        if (expireTimestamp != null) {
+        /* 2022-04-11: Look like API is returning long values as string... */
+        final long expireTimestamp = JavaScriptEngineFactory.toLong(root.get("vip_end"), -1);
+        if (expireTimestamp != -1) {
             account.setType(AccountType.PREMIUM);
-            ai.setValidUntil(expireTimestamp.longValue() * 1000l);
+            ai.setValidUntil(expireTimestamp * 1000l);
         } else {
             account.setType(AccountType.FREE);
             ai.setExpired(true);

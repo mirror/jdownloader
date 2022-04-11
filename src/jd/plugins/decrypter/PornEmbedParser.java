@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -12,11 +17,6 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.DecrypterArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -230,22 +230,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // 2018-01-07 hotmovs.com
-        externID = br.getRegex("src=\"https?://www.hotmovs.com/embed/(\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("http://hotmovs.com/videos/" + externID + "/anything/");
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // 2018-01-08 mcfucker.com
-        externID = br.getRegex("<iframe [^<>]+ src=\"(https?://www.mcfucker.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         // 2018-06-16 cliphunter.com
         externID = br.getRegex("<iframe [^<>]+ src=(?:'|\")(https?://www.cliphunter.com/embed/\\d+)(?:'|\")").getMatch(0);
         if (externID != null) {
@@ -263,33 +247,11 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // 2019-01-15 asianclub.tv
-        externID = br.getRegex("(https?://asianclub\\.tv/v/[A-Za-z0-9\\-]+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         // 2019-01-16 javynow.com
         externID = br.getRegex("(javynow\\.com/player/\\d+/[^\"]+)").getMatch(0);
         if (externID != null) {
             externID = "https://" + externID;
             decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // 2019-01-24 flyflv.com
-        externID = br.getRegex("(//(?:www\\.)?flyflv\\.com/movies/player/\\d+)").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = this.createDownloadlink(externID);
-            /* Filename is good to have but not necessarily required, */
-            if (title != null) {
-                title += ".mp4";
-                dl.setFinalFileName(title);
-            }
-            decryptedLinks.add(dl);
             if (!processAll) {
                 return decryptedLinks;
             }
@@ -381,20 +343,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("src=\"(?:https?:)?//videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
-        if (externID != null) {
-            final Browser al = br.cloneBrowser();
-            getPage(al, "http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
-            externID = al.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
-            if (externID != null) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-                dl.setForcedFileName(title + ".flv");
-                decryptedLinks.add(dl);
-                if (!processAll) {
-                    return decryptedLinks;
-                }
-            }
-        }
         // youporn.com handling 2
         externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)&").getMatch(0);
         if (externID != null) {
@@ -429,18 +377,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                         }
                     }
                 }
-            }
-        }
-        // 2018-01-07 Unknown? - directHTTP
-        externID = br.getRegex("(https://cv.rdtcdn.com/[^\"]+)\"").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink(externID);
-            if (title != null) {
-                dl.setForcedFileName(title + ".mp4");
-            }
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
             }
         }
         /*

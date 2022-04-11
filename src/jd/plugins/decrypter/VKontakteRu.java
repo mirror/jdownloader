@@ -255,6 +255,10 @@ public class VKontakteRu extends PluginForDecrypt {
             final String finallink = new Regex(CRYPTEDLINK_ORIGINAL, "\\?to=(.+)").getMatch(0);
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
+        } else if (isTypeDocument(param.getCryptedUrl())) {
+            /* Pass to host plugin */
+            decryptedLinks.add(createDownloadlink(param.getCryptedUrl()));
+            return decryptedLinks;
         } else if (isTypeSinglePicture(this.CRYPTEDLINK_ORIGINAL)) {
             /**
              * Single photo links, those are just passed to the hoster plugin! Example:http://vk.com/photo125005168_269986868
@@ -2570,6 +2574,14 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 return hasPassed;
             }
+        }
+    }
+
+    public static boolean isTypeDocument(final String url) {
+        if (url.matches(VKontakteRuHoster.TYPE_DOCLINK_1) || url.matches(VKontakteRuHoster.TYPE_DOCLINK_2)) {
+            return true;
+        } else {
+            return false;
         }
     }
 

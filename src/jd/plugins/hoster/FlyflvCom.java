@@ -117,11 +117,10 @@ public class FlyflvCom extends PluginForHost {
         try {
             /* Do NOT use Head-Request for this website!! */
             con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                if (con.getLongContentLength() > 1000) {
-                    link.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 1000) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setProperty("directlink", dllink);
             } else {
                 server_issues = true;
             }
@@ -135,24 +134,24 @@ public class FlyflvCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

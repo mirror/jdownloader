@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -42,6 +43,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
     public GenericHTTPDirectoryIndexCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.GENERIC };
     }
 
     public enum DirectoryListingMode {
