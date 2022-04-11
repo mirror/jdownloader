@@ -381,6 +381,10 @@ public abstract class PluginForDecrypt extends Plugin {
                 if (StringUtils.isNotEmpty(retryException.getCustomComment())) {
                     ret.setComment(retryException.getCustomComment());
                 }
+                if (DecrypterRetryException.RetryReason.FILE_NOT_FOUND.equals(retryException.getReason())) {
+                    ret.setAvailable(false);
+                }
+                ret.setProperty("reason", retryException.getReason());
                 ret.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.TXT);
                 return ret;
             } catch (UpdateRequiredClassNotFoundException e) {
