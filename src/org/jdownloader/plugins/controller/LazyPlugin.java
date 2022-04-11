@@ -7,9 +7,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.PluginWrapper;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
@@ -20,8 +17,33 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.translate._JDT;
 
+import jd.PluginWrapper;
+import jd.plugins.Plugin;
+
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
     public static enum FEATURE implements LabelInterface, TooltipInterface {
+        IMAGE_HOST {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING_TOOLTIP();
+            }
+        },
+        AUDIO_STREAMING {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_AUDIO_STREAMING();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_AUDIO_STREAMING_TOOLTIP();
+            }
+        },
         VIDEO_STREAMING {
             @Override
             public String getLabel() {
@@ -99,6 +121,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
                 return "INTERNAL";
             }
         };
+
         public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());
 
         public boolean isSet(FEATURE[] features) {

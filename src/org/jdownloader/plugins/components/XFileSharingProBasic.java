@@ -162,7 +162,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         /* TODO: Add "imagehoster" once we got a feature for that */
-        if (this.isVideohosterEmbed() || this.isVideohoster_enforce_video_filename()) {
+        if (this.isImagehoster()) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST };
+        } else if (this.isVideohosterEmbed() || this.isVideohoster_enforce_video_filename()) {
             return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
         } else {
             return new LazyPlugin.FEATURE[] {};

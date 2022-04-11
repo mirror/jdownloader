@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,14 +31,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play.fm" }, urls = { "https?://(?:www\\.)?play\\.fm/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class PlayFm extends PluginForHost {
     private String DLLINK = null;
 
     public PlayFm(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     @Override

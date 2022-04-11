@@ -22,6 +22,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,11 +37,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  * Please do not mess with the following Regex! <br />
- * Do not use lazy regex. Make regex to support the features you need. Lazy regex will pick up false positives in other areas of the plugin. <br />
+ * Do not use lazy regex. Make regex to support the features you need. Lazy regex will pick up false positives in other areas of the plugin.
+ * <br />
  *
  * @author raztoki
  *
@@ -46,6 +48,11 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "promodj.com" }, urls = { "https?://((www\\.)?(((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|prelisten/\\d+/.+|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]*))|pdj\\.cc/\\w+))|https?://xml\\.(?:maases|promodj)\\.com/audio/\\d+\\.json" })
 public class ProDjCm extends PluginForDecrypt {
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
+    }
+
     // DEV NOTES
     // other: Because they have so many domains, Please becareful with the regex, \\w can not be used twice either side of (sub.)?domains as
     // it effectively lets all site links match.

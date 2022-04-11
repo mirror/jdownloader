@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,11 +30,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "http://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "http://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html" })
 public class FreeLoopsCom extends PluginForDecrypt {
-
     public FreeLoopsCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -61,9 +66,13 @@ public class FreeLoopsCom extends PluginForDecrypt {
         } else {
             br.getPage(parameter);
             String pagepiece = br.getRegex("<tr class=\"row-a\">(.*?)<td class=\"row-b\">").getMatch(0);
-            if (pagepiece == null) return null;
+            if (pagepiece == null) {
+                return null;
+            }
             String[] links = new Regex(pagepiece, "href='(download-free-loop-[0-9]+).*?'").getColumn(0);
-            if (links.length == 0) return null;
+            if (links.length == 0) {
+                return null;
+            }
             progress.setRange(links.length);
             for (String dl : links) {
                 String fileid = new Regex(dl, "download-free-loop-(\\d+)").getMatch(0);
@@ -93,5 +102,4 @@ public class FreeLoopsCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

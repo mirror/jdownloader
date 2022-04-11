@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,11 +31,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trntbl.me" }, urls = { "http://(www\\.)?trntbl\\.me/[a-z0-9\\-]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trntbl.me" }, urls = { "http://(www\\.)?trntbl\\.me/[a-z0-9\\-]+" })
 public class TrnTblMe extends PluginForDecrypt {
-
     public TrnTblMe(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     private final int TRACKSPERPAGE = 50;
@@ -45,7 +50,6 @@ public class TrnTblMe extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String user = new Regex(parameter, "trntbl\\.me/(.+)").getMatch(0);
         br.getHeaders().put("Accept", "*/*");
-
         final DecimalFormat df = new DecimalFormat("0000");
         int offset = 0;
         int request = 0;
@@ -58,7 +62,6 @@ public class TrnTblMe extends PluginForDecrypt {
                 }
             } catch (final Throwable e) {
             }
-
             br.getPage("http://" + user + ".tumblr.com/api/read/json?callback=Request.JSONP.request_map.request_" + request + "&type=audio&start=" + offset + "&num=" + TRACKSPERPAGE + "&cache_bust=" + df.format(new Random().nextInt(1000)));
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             final String listString = br.getRegex("type\":\"audio\",\"posts\":\\[(.*?)\\]\\}\\);").getMatch(0);
@@ -90,7 +93,6 @@ public class TrnTblMe extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink.trim())));
                         continue;
                     }
-
                 }
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -102,8 +104,12 @@ public class TrnTblMe extends PluginForDecrypt {
                 final String artist = new Regex(singleInfo, "\"id3-artist\":\"([^<>\"]*?)\"").getMatch(0);
                 final String album = new Regex(singleInfo, "\"id3-album\":\"([^<>\"]*?)\"").getMatch(0);
                 String title = new Regex(singleInfo, "\"id3-title\":\"([^<>\"]*?)\"").getMatch(0);
-                if (title == null) title = new Regex(singleInfo, "\"slug\":\"([^<>\"]*?)\"").getMatch(0);
-                if (title == null) title = postID;
+                if (title == null) {
+                    title = new Regex(singleInfo, "\"slug\":\"([^<>\"]*?)\"").getMatch(0);
+                }
+                if (title == null) {
+                    title = postID;
+                }
                 if (artist != null && album != null) {
                     filename = Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(album.trim()) + " - " + Encoding.htmlDecode(title.trim());
                 } else if (artist != null) {
@@ -111,7 +117,6 @@ public class TrnTblMe extends PluginForDecrypt {
                 } else {
                     filename = Encoding.htmlDecode(title.trim());
                 }
-
                 final DownloadLink dl = createDownloadlink(postLink);
                 dl.setProperty("audiodirectlink", finallink);
                 dl.setFinalFileName(filename + ".mp3");
@@ -126,11 +131,9 @@ public class TrnTblMe extends PluginForDecrypt {
                 break;
             }
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(user);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 }
