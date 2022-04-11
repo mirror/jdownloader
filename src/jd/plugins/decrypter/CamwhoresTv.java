@@ -20,16 +20,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamwhoresTv extends PornEmbedParser {
@@ -70,6 +70,7 @@ public class CamwhoresTv extends PornEmbedParser {
     @Override
     public List<DownloadLink> convert(Browser br, String title, String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {
         final Iterator<? extends LazyPlugin> it = lazyPlugins.iterator();
+        /* Special handling: Do not add items which would need to go through this crawler again. */
         while (it.hasNext()) {
             final LazyPlugin next = it.next();
             if (getHost().equals(next.getDisplayName())) {
@@ -99,7 +100,8 @@ public class CamwhoresTv extends PornEmbedParser {
         final String fid = new Regex(param.getCryptedUrl(), "https?://[^/]+/videos/(\\d+)").getMatch(0);
         /* Avoid crawling embed URL of current item as this website doesn't allow embedding their own selfhosted content. */
         final boolean isSelfhostedContent = fid != null && br.containsHTML("/embed/" + fid);
-        final boolean isPrivate = br.containsHTML(">\\s*This video is a private video uploaded");
+        final boolean isPrivate = br.containsHTML("(?i)>\\s*This video is a private video uploaded");
+        /* private = also an indicator that this is selfhosted content! */
         if (!isSelfhostedContent && !isPrivate) {
             decryptedLinks.addAll(findEmbedUrls(filename));
         }

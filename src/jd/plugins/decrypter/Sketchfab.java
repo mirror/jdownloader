@@ -54,8 +54,9 @@ public class Sketchfab extends PluginForDecrypt {
             /* Fallback */
             fpName = modelHash;
         }
-        String archiveLink = br.getRegex("(http[^#;]+ile.osgjs.gz)").getMatch(0);
+        String archiveLink = br.getRegex("(http[^#;]+ile\\.osgjs\\.gz)").getMatch(0);
         if (archiveLink != null && archiveLink.length() > 0) {
+            /* TODO: Check if this is still needed */
             String decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString();
             DownloadLink dl1 = createDownloadlink(decodedLink);
             decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString().replace("file.osgjs.gz", "model_file.bin.gz");
