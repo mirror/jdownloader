@@ -30,6 +30,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -58,6 +59,11 @@ import jd.plugins.components.PluginJSonUtils;
 public class FlickrCom extends PluginForDecrypt {
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     private static final String                  TYPE_FAVORITES           = "^https?://[^/]+/photos/([^<>\"/]+)/favorites(/.+)?";

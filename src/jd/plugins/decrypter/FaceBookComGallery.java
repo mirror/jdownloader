@@ -22,6 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -45,16 +51,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FaceBookComGallery extends PluginForDecrypt {
     public FaceBookComGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     @Override
@@ -108,13 +114,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private boolean                     fastLinkcheckPictures           = true;                                                                                                                 // jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;
     private boolean                     logged_in                       = false;
     private ArrayList<DownloadLink>     decryptedLinks                  = null;
-    private final LinkedHashSet<String> dupe                            = new LinkedHashSet<String>();                                                                                           ;
+    private final LinkedHashSet<String> dupe                            = new LinkedHashSet<String>();;
     private boolean                     debug                           = false;
 
     /**
      * Dear whoever is looking at this - this is a classic example of spaghetticode. If you like spaghettis, go ahead, and get you some
      * tomatoe sauce and eat it but if not, well have fun re-writing this from scratch ;) Wikipedia:
-     * http://en.wikipedia.org/wiki/Spaghetti_code </br> 2021-05-26: Nearly all functionality of this plugin is broken!
+     * http://en.wikipedia.org/wiki/Spaghetti_code </br>
+     * 2021-05-26: Nearly all functionality of this plugin is broken!
      */
     @Deprecated
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

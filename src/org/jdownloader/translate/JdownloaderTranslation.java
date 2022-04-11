@@ -1061,6 +1061,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This is a video streaming website" })
     String LazyHostPlugin_FEATURE_VIDEO_STREAMING_TOOLTIP();
 
+    @Default(lngs = { "en" }, values = { "Image gallery" })
+    String LazyHostPlugin_FEATURE_IMAGE_GALLERY();
+
+    @Default(lngs = { "en" }, values = { "This is an image gallery website" })
+    String LazyHostPlugin_FEATURE_IMAGE_GALLERY_TOOLTIP();
+
     @Default(lngs = { "en" }, values = { "Image host" })
     String LazyHostPlugin_FEATURE_IMAGE_HOST();
 

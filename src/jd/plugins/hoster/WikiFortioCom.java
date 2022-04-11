@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +39,11 @@ public class WikiFortioCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.wikifortio.com/contact/";
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.IMAGE_HOST };
     }
 
     @Override

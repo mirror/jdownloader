@@ -13,10 +13,11 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,26 +28,26 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hi-living.de" }, urls = { "http://(www\\.)?hi\\-living\\.de/galerie/thumbnails\\.php\\?album=[0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hi-living.de" }, urls = { "http://(www\\.)?hi\\-living\\.de/galerie/thumbnails\\.php\\?album=[0-9]+" })
 public class HiLvng extends PluginForDecrypt {
-
     public HiLvng(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         // This site is using a somehow modified CopperMine gallery which allows
         // us to get data from the AJAX-Slideshow feature
-
         String albumid = new Regex(param, "thumbnails.php\\?album=([0-9]+)").getMatch(0);
-
         br.getPage("http://www.hi-living.de/galerie/thumbnails.php?album=" + albumid);
         String albumName = br.getRegex("<title>(.+?) - hi-living Galerie</title>").getMatch(0, 0);
         int imageCount = Integer.valueOf(br.getRegex("([0-9]+) Dateien auf [0-9]+ Seite\\(n\\)</td>").getMatch(0, 0));
         progress.setRange(imageCount);
-
         // Threading would give a significant speedup, but lets spend our time
         // on more important things.
         for (int i = 0; i < imageCount; i++) {
@@ -55,7 +56,6 @@ public class HiLvng extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(url));
             progress.increase(1);
         }
-
         FilePackage fp = FilePackage.getInstance();
         fp.setName(albumName.trim());
         fp.addLinks(decryptedLinks);
@@ -66,5 +66,4 @@ public class HiLvng extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
