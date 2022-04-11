@@ -39,6 +39,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.FacebookConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -64,6 +65,11 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.IMAGE_HOST };
+    }
+
     private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/(?:photo\\.php|photo/)\\?fbid=(\\d+)";
     private static final String TYPE_PHOTO_PART_OF_ALBUM               = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
     /* Allow parameter 'v' to be anywhere in that URL. */

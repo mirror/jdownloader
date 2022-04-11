@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -34,10 +37,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "https?://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class EightTracksCom extends PluginForDecrypt {
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
+    }
+
     // NOTE: short link is within Rdrctr.
     private static final String  MAINPAGE          = "https://8tracks.com/";
     private static final String  UNSUPPORTEDLINKS  = "https?://(www\\.)?8tracks\\.com/((assets_js|explore|auth|settings|mixes|developers|users|job)/.+|[\\w\\-]+/homepage|sets/new|collections/.+|sonos/.+)";

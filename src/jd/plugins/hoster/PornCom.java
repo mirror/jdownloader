@@ -23,7 +23,6 @@ import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -303,8 +302,6 @@ public class PornCom extends antiDDoSForHost {
         /* free accounts can still have captcha */
         account.setMaxSimultanDownloads(maxPrem.get());
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 

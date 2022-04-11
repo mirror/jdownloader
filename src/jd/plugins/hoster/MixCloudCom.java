@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Cookies;
@@ -40,6 +41,11 @@ public class MixCloudCom extends antiDDoSForHost {
     public MixCloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.mixcloud.com/select/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
     /* DEV NOTES */
     // Tags:

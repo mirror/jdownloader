@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -36,6 +37,11 @@ public class MyzcloudMe extends antiDDoSForHost {
         super(wrapper);
         /* 2020-03-04: Try to avoid IP block: https://board.jdownloader.org/showthread.php?t=80894 */
         this.setStartIntervall(10 * 1000l);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     @Override

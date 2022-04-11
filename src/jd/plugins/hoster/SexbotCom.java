@@ -119,7 +119,7 @@ public class SexbotCom extends PluginForHost {
     private String getWeakFilename(final DownloadLink link) {
         final String urlTitle = getURLTitleCleaned(link.getPluginPatternMatcher());
         if (urlTitle != null) {
-            return urlTitle.replace("-", " ").trim() + ".mp4";
+            return urlTitle + ".mp4";
         } else {
             return this.getFID(link) + ".mp4";
         }

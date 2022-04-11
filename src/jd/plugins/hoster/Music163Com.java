@@ -26,6 +26,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+im
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,11 +44,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.PluginForHost;port org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:song|mv)\\?id=\\d+|decrypted://music\\.163\\.comcover\\d+" })
 public class Music163Com extends PluginForHost {
@@ -51,6 +52,11 @@ public class Music163Com extends PluginForHost {
     public Music163Com(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     @Override
@@ -396,23 +402,23 @@ public class Music163Com extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
-            put("GRAB_COVER", "For albums & playlists: Grab cover?");
-            put("CUSTOM_DATE", "Enter your custom date:");
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal id of the content e.g. '01485'\r\n*ext* = Extension of the file");
-            put("LABEL_FILENAME", "Define custom filename:");
-        }
-    };
+                                                  {
+                                                      put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
+                                                      put("GRAB_COVER", "For albums & playlists: Grab cover?");
+                                                      put("CUSTOM_DATE", "Enter your custom date:");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal id of the content e.g. '01485'\r\n*ext* = Extension of the file");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
-            put("GRAB_COVER", "Für Alben und Playlists: Cover auch herunterladen?");
-            put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-        }
-    };
+                                                  {
+                                                      put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
+                                                      put("GRAB_COVER", "Für Alben und Playlists: Cover auch herunterladen?");
+                                                      put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

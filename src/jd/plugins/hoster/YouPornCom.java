@@ -30,7 +30,6 @@ import org.jdownloader.plugins.components.config.YoupornConfig;
 import org.jdownloader.plugins.components.config.YoupornConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -48,8 +47,10 @@ import jd.plugins.PluginForHost;
 public class YouPornCom extends PluginForHost {
     /* DEV NOTES */
     /* Porn_plugin */
-    String          dllink        = null;
-    private boolean server_issues = false;
+    String                      dllink        = null;
+    private boolean             server_issues = false;
+    private static final String TYPE_ALL      = "(?:https?://[^/]+)?/(?:watch|embed)/(\\d+)(/([a-z0-9\\-]+)/?)?";
+    private static final String defaultEXT    = ".mp4";
 
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,7 +88,7 @@ public class YouPornCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:[a-z]{2}\\.|www\\.)?" + buildHostsPatternPart(domains) + "/(?:watch|embed)/(\\d+)(/([a-z0-9\\-]+)/?)?");
+            ret.add("https?://(?:[a-z]{2}\\.|www\\.)?" + buildHostsPatternPart(domains) + "/(?:watch|embed)/\\d+(/([a-z0-9\\-]+)/?)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -97,65 +98,59 @@ public class YouPornCom extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
+    public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
-        final String url_name = getURLTitle(link);
-        link.setLinkID(fid);
-        final String host_url = Browser.getHost(link.getPluginPatternMatcher());
-        final String final_host;
-        /*
-         * 2020-07-02: youporngay content is esssentially also youporn content but it will always redirect to youporngay.com --> Save some
-         * milliseconds by avoiding having to follow this redirect ;)
-         */
-        if (host_url.equals("youporngay.com")) {
-            final_host = "youporngay.com";
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
-            final_host = this.getHost();
-        }
-        if (url_name == null) {
-            link.setPluginPatternMatcher("https://www." + final_host + "/watch/" + fid + "/" + System.currentTimeMillis() + "/");
-        } else {
-            link.setPluginPatternMatcher("https://www." + final_host + "/watch/" + fid + "/" + url_name + "/");
+            return super.getLinkID(link);
         }
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-    }
-
-    private String getFallbackTitle(final DownloadLink link) {
-        final String fid = getFID(link);
-        final String url_name = getURLTitle(link);
-        if (url_name == null) {
-            return fid;
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
         } else {
-            return url_name;
+            return new Regex(link.getPluginPatternMatcher(), TYPE_ALL).getMatch(0);
         }
     }
 
     private String getURLTitle(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        return getURLTitleCleaned(link.getPluginPatternMatcher());
     }
 
-    private static final String defaultEXT = ".mp4";
+    private String getURLTitleCleaned(final String url) {
+        String title = new Regex(url, TYPE_ALL).getMatch(2);
+        if (title != null) {
+            return title.replace("-", " ").trim();
+        } else {
+            return null;
+        }
+    }
+
+    private String getWeakFilename(final DownloadLink link) {
+        final String urlTitle = getURLTitleCleaned(link.getPluginPatternMatcher());
+        if (urlTitle != null) {
+            return urlTitle + defaultEXT;
+        } else {
+            return this.getFID(link) + defaultEXT;
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         if (!link.isNameSet()) {
-            link.setName(this.getFallbackTitle(link) + defaultEXT);
+            link.setName(this.getWeakFilename(link));
         }
         this.dllink = null;
         this.server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://youporn.com/", "age_verified", "1");
-        br.setCookie("http://youporn.com/", "yp-device", "1");
-        br.setCookie("http://youporn.com/", "language", "en");
+        br.setCookie(this.getHost(), "age_verified", "1");
+        br.setCookie(this.getHost(), "yp-device", "1");
+        br.setCookie(this.getHost(), "language", "en");
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
-        }
         if (br.containsHTML("<div id=\"video-not-found-related\"|watchRemoved\"|class=\\'video-not-found\\'")) {
             /* Offline link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -189,28 +184,28 @@ public class YouPornCom extends PluginForHost {
         if (otherReasonForTempUnavailable != null) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, otherReasonForTempUnavailable, 5 * 60 * 1000l);
         }
-        String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos[^<>]+</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) Video \\- Youporn\\.com</title>").getMatch(0);
+        String title = br.getRegex("<title>(.*?) \\- Free Porn Videos[^<>]+</title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>(.*?) Video \\- Youporn\\.com</title>").getMatch(0);
         }
-        if (filename == null) {
-            filename = br.getRegex("addthis:title=\"YouPorn \\- (.*?)\"></a>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("addthis:title=\"YouPorn \\- (.*?)\"></a>").getMatch(0);
         }
-        if (filename == null) {
-            filename = br.getRegex("\\'video_title\\' : \"([^<>\"]*?)\"").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("\\'video_title\\'\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null) {
-            filename = br.getRegex("videoTitle: \'([^<>\']*?)\'").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("videoTitle\\s*:\\s*\'([^<>\']*?)\'").getMatch(0);
         }
-        if (filename == null) {
-            filename = this.getFID(link);
+        if (title == null) {
+            /* Final fallback */
+            title = this.getURLTitleCleaned(br.getURL());
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim().replaceAll("   ", "-");
+            link.setFinalFileName(title + defaultEXT);
         }
-        filename = Encoding.htmlDecode(filename).trim().replaceAll("   ", "-");
         if (br.getURL().contains("/private/") || br.containsHTML("for=\"privateLogin_password\"")) {
-            link.getLinkStatus().setStatusText("Password protected links are not yet supported, contact our support!");
             throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported, contact our support!");
         }
         /* Find highest quality */
@@ -311,7 +306,6 @@ public class YouPornCom extends PluginForHost {
             /* Do NOT htmldecode! */
             dllink = dllink.replace("&amp;", "&");
         }
-        link.setFinalFileName(filename + defaultEXT);
         if (fileSizeString != null) {
             link.setDownloadSize(SizeFormatter.getSize(fileSizeString));
         } else if (dllink != null) {

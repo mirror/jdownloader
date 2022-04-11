@@ -1049,11 +1049,23 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This is a adult content website" })
     String LazyHostPlugin_FEATURE_XXX_TOOLTIP();
 
-    @Default(lngs = { "en" }, values = { "Streaming" })
+    @Default(lngs = { "en" }, values = { "Audio streaming" })
+    String LazyHostPlugin_FEATURE_AUDIO_STREAMING();
+
+    @Default(lngs = { "en" }, values = { "This is an audio streaming website" })
+    String LazyHostPlugin_FEATURE_AUDIO_STREAMING_TOOLTIP();
+
+    @Default(lngs = { "en" }, values = { "Video streaming" })
     String LazyHostPlugin_FEATURE_VIDEO_STREAMING();
 
     @Default(lngs = { "en" }, values = { "This is a video streaming website" })
     String LazyHostPlugin_FEATURE_VIDEO_STREAMING_TOOLTIP();
+
+    @Default(lngs = { "en" }, values = { "Image host" })
+    String LazyHostPlugin_FEATURE_IMAGE_HOST();
+
+    @Default(lngs = { "en" }, values = { "This is an image hosting website" })
+    String LazyHostPlugin_FEATURE_IMAGE_HOST_TOOLTIP();
 
     @Default(lngs = { "en" }, values = { "This service supports downloads form multiple different hosters" })
     String LazyHostPlugin_FEATURE_MULTIHOST_TOOLTIP();

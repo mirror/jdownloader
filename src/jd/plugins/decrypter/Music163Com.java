@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+im
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -33,14 +36,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.utils.JDUtilities;port org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "https?://(?:www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=|artist/album\\?id=|playlist\\?id=)\\d+" })
 public class Music163Com extends PluginForDecrypt {
     public Music163Com(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     private static final String TYPE_SINGLE_ALBUM = "https?://[^/]+/(?:#/)?album\\?id=\\d+";
