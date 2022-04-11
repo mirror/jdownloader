@@ -20,14 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -46,6 +38,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|member_illust\\.php\\?mode=[a-z0-9]+\\&illust_id=\\d+|users/\\d+(/(?:artworks|illustrations|manga|bookmarks/artworks))?)" })
 public class PixivNetGallery extends PluginForDecrypt {
@@ -277,10 +277,10 @@ public class PixivNetGallery extends PluginForDecrypt {
                     }
                     for (final Object workO : works) {
                         final Map<String, Object> entries = (Map<String, Object>) workO;
-                        String galleryID = (String) entries.get("illustId");
+                        String galleryID = StringUtils.valueOfOrNull(entries.get("illustId"));
                         if (StringUtils.isEmpty(galleryID)) {
                             /* 2020-10-23 */
-                            galleryID = (String) entries.get("id");
+                            galleryID = StringUtils.valueOfOrNull(entries.get("id"));
                         }
                         if (!StringUtils.isEmpty(galleryID) && dups.add(galleryID)) {
                             itemcounter++;
