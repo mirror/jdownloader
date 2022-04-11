@@ -170,13 +170,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?sexbot\\.com/embed/\\d+/?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?boysfood\\.com/embed/\\d+/?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
@@ -185,13 +178,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             }
         }
         externID = br.getRegex("\"((?:https?:)?//video\\.fc2\\.com/a/flv2\\.swf\\?i=\\w+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?pornhd\\.com/video/embed/\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {
@@ -225,28 +211,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?eporner\\.com/hd-porn/\\d+/[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("(?:'|\")((?:https?:)?//(?:www\\.)?pornomovies\\.com/embed/\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("(?:'|\")((?:https?:)?//(?:www\\.)?borfos\\.com/embed/\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {

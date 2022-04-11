@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2017  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -16,8 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,22 +32,55 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(?:www\\.)?stileproject\\.com/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)" })
-public class StileProjectCom extends PluginForHost {
-    private String dllink = null;
-
-    public StileProjectCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class SexbotCom extends PluginForHost {
+    public SexbotCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://www.stileproject.com/page/tos.html";
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+    /* DEV NOTES */
+    // Tags: Porn plugin
+    // other:
+
+    /* Connection stuff */
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
+    private String               dllink            = null;
+    private static final String  TYPE_EMBED        = "(?:https?://[^/]+)?/embed/(\\d+)/?";
+    private static final String  TYPE_NORMAL       = "(?:https?://[^/]+)?/video/(\\d+)/([a-z0-9\\-]+)";
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "sexbot.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/\\d+/[a-z0-9\\-]+|embed/\\d+/?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "https://www.sexbot.com/page/tos/";
     }
 
     @Override
@@ -57,21 +93,27 @@ public class StileProjectCom extends PluginForHost {
         }
     }
 
-    private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
-    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
-
     private String getFID(final DownloadLink link) {
         if (link == null || link.getPluginPatternMatcher() == null) {
             return null;
         } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
             return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
         } else {
-            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1);
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
         }
     }
 
     private String getURLTitle(final DownloadLink link) {
         return getURLTitleCleaned(link.getPluginPatternMatcher());
+    }
+
+    private String getURLTitleCleaned(final String url) {
+        String title = new Regex(url, TYPE_NORMAL).getMatch(1);
+        if (title != null) {
+            return title.replace("-", " ").trim();
+        } else {
+            return null;
+        }
     }
 
     private String getWeakFilename(final DownloadLink link) {
@@ -83,15 +125,6 @@ public class StileProjectCom extends PluginForHost {
         }
     }
 
-    private String getURLTitleCleaned(final String url) {
-        String title = new Regex(url, TYPE_NORMAL).getMatch(0);
-        if (title != null) {
-            return title.replace("-", " ").trim();
-        } else {
-            return null;
-        }
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
@@ -99,10 +132,8 @@ public class StileProjectCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", "https://www." + this.getHost());
-        br.setReadTimeout(3 * 60 * 1000);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*404 Error Page") || br.containsHTML("video_removed_dmca\\.jpg\"|error\">We're sorry")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().matches(TYPE_EMBED)) {
@@ -110,31 +141,29 @@ public class StileProjectCom extends PluginForHost {
             if (realVideoURL == null || !realVideoURL.contains(this.getFID(link))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setPluginPatternMatcher(realVideoURL);
+            link.setPluginPatternMatcher(br.getURL(realVideoURL).toString());
             br.getPage(realVideoURL);
         }
         final String titleByURL = getURLTitleCleaned(br.getURL());
         if (titleByURL != null) {
-            link.setFinalFileName(titleByURL.replace("-", " ").trim() + ".mp4");
+            link.setFinalFileName(titleByURL + ".mp4");
         }
-        // String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+).html$").getMatch(0);
-        // String embedURL = "https://www.stileproject.com/embed/" + fid;
-        // br.getPage(embedURL);
-        getdllink();
+        dllink = br.getRegex("src=\"(https?://cdn[^\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
         if (!StringUtils.isEmpty(dllink)) {
-            br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                con = br.openHeadConnection(this.dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
                     con.disconnect();
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -147,36 +176,26 @@ public class StileProjectCom extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
         dl.startDownload();
     }
 
-    // Same code as for CelebrityCuntNet
-    private void getdllink() throws Exception {
-        dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)[^<>]+type='video/mp4'").getMatch(0);
-        if (StringUtils.isEmpty(dllink)) {
-            dllink = br.getRegex("var desktopFile\\s*=\\s*'(https?://[^<>\"\\']+)").getMatch(0);
-        }
-        if (dllink == null) {
-            final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
-            final String type = videoMETA.getMatch(0);
-            final String id = videoMETA.getMatch(1);
-            final String cb = br.getRegex("\\?cb=(\\d+)\\'").getMatch(0);
-            if (type == null || id == null || cb == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String postData = "cacheBuster=" + System.currentTimeMillis() + "&jsonRequest=%7B%22path%22%3A%22" + type + "%5F" + id + "%22%2C%22cb%22%3A%22" + cb + "%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22returnType%22%3A%22json%22%2C%22file%22%3A%22" + type + "%5F" + id + "%22%2C%22htmlHostDomain%22%3A%22www%2Estileproject%2Ecom%22%2C%22height%22%3A%22508%22%2C%22appdataurl%22%3A%22http%3A%2F%2Fwww%2Estileproject%2Ecom%2Fgetcdnurl%2F%22%2C%22playerOnly%22%3A%22true%22%2C%22request%22%3A%22getAllData%22%2C%22width%22%3A%22640%22%7D";
-            br.postPage("/getcdnurl/", postData);
-            dllink = br.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
-        }
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return free_maxdownloads;
     }
 
     @Override
@@ -184,10 +203,10 @@ public class StileProjectCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 }

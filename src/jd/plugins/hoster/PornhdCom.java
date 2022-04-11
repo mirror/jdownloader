@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -116,9 +115,9 @@ public class PornhdCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"player-container no-video\"|class=\"no\\-video\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]+)\\s*- HD porn video \\| PornHD\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^\"]+)\\s*- HD porn video \\| PornHD</title>").getMatch(0);
+        String title = br.getRegex("name=\"og:title\" content=\"([^<>\"]+)\\s*- HD porn video \\| PornHD\"").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>([^\"]+)\\s*- HD porn video \\| PornHD</title>").getMatch(0);
         }
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
         for (final String quality : qualities) {
@@ -135,22 +134,18 @@ public class PornhdCom extends PluginForHost {
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
         }
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = encodeUnicode(filename);
-            filename = filename.replaceAll("(?i) on pornhd", "");
-            final String ext = ".mp4";
-            if (!filename.endsWith(ext)) {
-                filename += ext;
-            }
-            link.setFinalFileName(filename);
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            title = encodeUnicode(title);
+            title = title.replaceAll("(?i) on pornhd", "");
+            link.setFinalFileName(title + ".mp4");
         }
         /* 2021-09-06: Disabled as their fileservers are very slow. */
         final boolean checkFilesize = false;
         if (!StringUtils.isEmpty(dllink) && checkFilesize) {
             dllink = Encoding.htmlDecode(dllink).replaceAll("\\\\", "");
-            link.setFinalFileName(filename);
+            link.setFinalFileName(title);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
