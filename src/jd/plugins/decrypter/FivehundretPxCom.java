@@ -8,6 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -19,17 +27,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/p/([^/\\?]+)(/galleries/[^/]+)?" })
 public class FivehundretPxCom extends PluginForDecrypt {
     public FivehundretPxCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     private static Map<String, String> USER_ID_MAP  = new HashMap<String, String>();

@@ -45,7 +45,7 @@ public class PornHubComGallery extends PluginForDecrypt {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

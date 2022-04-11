@@ -20,6 +20,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -39,18 +48,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|member_illust\\.php\\?mode=[a-z0-9]+\\&illust_id=\\d+|users/\\d+(/(?:artworks|illustrations|manga|bookmarks/artworks))?)" })
 public class PixivNetGallery extends PluginForDecrypt {
     public PixivNetGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     private static final String TYPE_GALLERY = ".+/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=|artworks/)(\\d+)";

@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -17,15 +22,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fuskator.com" }, urls = { "https?://(?:www\\.)?fuskator\\.com/(thumbs|expanded)/[^/]+/[^/]+\\.html" })
 public class FuskatorCom extends PluginForDecrypt {
     private enum RequestType {
         AUTH,
         IMAGES_JSON
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
 
     public FuskatorCom(PluginWrapper wrapper) {
@@ -46,9 +52,9 @@ public class FuskatorCom extends PluginForDecrypt {
         String filePackageName = getFilePackageName(hash);
         /*
          * fuskator performs these XHR and then updates the page HTML with the info from the JSON:
-         * 
+         *
          * 1. POST https://fuskator.com/ajax/auth.aspx -> WTzR0liw
-         * 
+         *
          * 2. POST https://fuskator.com/ajax/gal.aspx?X-Auth=WTzR0liw&hash=eZ3ETEmf4Dy ->
          * {"fuskerUrl":"https://www.imagefap.com/photo/2106672792/","hash":"eZ3ETEmf4Dy","hits":1908,"images":
          * [{"imageUrl":"//i10.fuskator.com/large/eZ3ETEmf4Dy/image-1.jpg","index":1,"height":1500,"width":889}, ....],

@@ -28,6 +28,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -57,6 +58,11 @@ import jd.utils.JDUtilities;
 public class ImgurComGallery extends PluginForDecrypt {
     public ImgurComGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     public static List<String[]> getPluginDomains() {

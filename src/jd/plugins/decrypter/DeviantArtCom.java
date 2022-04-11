@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -35,9 +39,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!(?:[^/]+/)?art/|status/)[^<>\"]+" })
 public class DeviantArtCom extends PluginForDecrypt {
     /**
@@ -45,6 +46,11 @@ public class DeviantArtCom extends PluginForDecrypt {
      */
     public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     // This plugin grabs range of content depending on parameter.

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,6 +36,11 @@ import jd.plugins.PluginForDecrypt;
 public class SmaleTubeComGallery extends PluginForDecrypt {
     public SmaleTubeComGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
 
     public static List<String[]> getPluginDomains() {

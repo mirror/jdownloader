@@ -22,15 +22,26 @@ import jd.plugins.Plugin;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
     public static enum FEATURE implements LabelInterface, TooltipInterface {
-        IMAGE_HOST {
+        IMAGE_GALLERY {
             @Override
             public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING();
+                return _JDT.T.LazyHostPlugin_FEATURE_IMAGE_GALLERY();
             }
 
             @Override
             public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_VIDEO_STREAMING_TOOLTIP();
+                return _JDT.T.LazyHostPlugin_FEATURE_IMAGE_GALLERY_TOOLTIP();
+            }
+        },
+        IMAGE_HOST {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_IMAGE_HOST();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_IMAGE_HOST_TOOLTIP();
             }
         },
         AUDIO_STREAMING {

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -46,6 +47,11 @@ import jd.plugins.PluginForHost;
 public class XHamsterGallery extends PluginForDecrypt {
     public XHamsterGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
 
     /** Make sure this is the same in classes XHamsterCom and XHamsterGallery! */

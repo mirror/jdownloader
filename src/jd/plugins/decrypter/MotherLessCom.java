@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,8 +33,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.|members\\.)?motherless\\.com/(g(i|v)?/[\\w\\-_]+/[A-Z0-9]{7}|[A-Z0-9]{6,9}(/[A-Z0-9]{7})?)|https?://(?:www\\.)?motherless\\.com/f/[^/]+/(?:images|videos|galleries)" })
 public class MotherLessCom extends PluginForDecrypt {
     private String      fpName = null;
@@ -39,6 +40,11 @@ public class MotherLessCom extends PluginForDecrypt {
 
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
 
     // DEV NOTES:

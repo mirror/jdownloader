@@ -35,6 +35,7 @@ import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenam
 import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
 import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -60,6 +61,11 @@ import jd.plugins.PluginForHost;
 public class RedditCom extends PluginForDecrypt {
     public RedditCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     @Override

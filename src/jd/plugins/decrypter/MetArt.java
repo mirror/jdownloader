@@ -41,7 +41,7 @@ public class MetArt extends PluginForDecrypt {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
 
     /** Sync this list for hoster + crawler plugin! */

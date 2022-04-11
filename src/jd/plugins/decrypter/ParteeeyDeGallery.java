@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,6 +39,11 @@ import jd.utils.JDUtilities;
 public class ParteeeyDeGallery extends PluginForDecrypt {
     public ParteeeyDeGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     @SuppressWarnings("deprecation")
