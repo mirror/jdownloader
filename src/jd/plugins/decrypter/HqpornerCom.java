@@ -39,7 +39,7 @@ public class HqpornerCom extends PornEmbedParser {
 
     /* DEV NOTES */
     /* Porn_plugin */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);

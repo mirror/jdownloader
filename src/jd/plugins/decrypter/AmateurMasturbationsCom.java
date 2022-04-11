@@ -25,6 +25,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "https?://(?:www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/[\\w\\-]+-\\d+\\.html)" })
 public class AmateurMasturbationsCom extends PornEmbedParser {
@@ -39,41 +41,34 @@ public class AmateurMasturbationsCom extends PornEmbedParser {
 
     /* DEV NOTES */
     /* Porn_plugin */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString();
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         while (true) {
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(this.getHost())) {
+            if (br.getRedirectLocation() != null && this.canHandle(br.getRedirectLocation())) {
                 br.followRedirect();
             } else {
                 break;
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page Not Found")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)Page Not Found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String externID = br.getRedirectLocation();
-        if (externID != null && !externID.contains("amateurmasturbations.com/")) {
-            decryptedLinks.add(createDownloadlink(externID));
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null && !this.canHandle(redirect)) {
+            decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
-        } else if (externID != null && externID.contains("/404.php")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        } else if (externID != null) {
-            br.getPage(externID);
+        } else if (redirect != null && redirect.contains("/404.php")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (redirect != null) {
+            br.setFollowRedirects(true);
+            br.getPage(redirect);
         }
-        if (!br.getURL().matches("https?://(?:www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/.*?\\.html)")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (!this.canHandle(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String filename = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }

@@ -54,28 +54,27 @@ public class ShareVideosSe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://share-videos.se/";
+        return "https://share-videos.se/";
     }
 
     public void correctDownloadLink(final DownloadLink link) {
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "(\\d+\\?uid=\\d+)");
         final String fid = urlinfo.getMatch(0);
-        link.setLinkID(fid);
+        link.setLinkID(this.getHost() + "://" + fid);
         link.setPluginPatternMatcher("https://share-videos.se/auto/video/" + fid);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex urlinfo = new Regex(link.getDownloadURL(), "video/(\\d+)\\?uid=(\\d+)");
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "video/(\\d+)\\?uid=(\\d+)");
         final String fid = urlinfo.getMatch(0);
         final String uid = urlinfo.getMatch(1);
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -132,9 +131,10 @@ public class ShareVideosSe extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html") && con.getLongContentLength() > 0) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     server_issues = true;
                 }
@@ -152,24 +152,24 @@ public class ShareVideosSe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -96,13 +96,6 @@ public class DreamAmateursCom extends PornEmbedParser {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("\\&file=(https?://static\\.mofos\\.com/scenes/[^<>\"]*?)\\&").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         externID = br.getRegex("so\\.addVariable\\(\\'file\\',\\'(http://(www\\.)?dreamamateurs\\.com/videos/[^<>\"]*?)\\'\\)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + externID);

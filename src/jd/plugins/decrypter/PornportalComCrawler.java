@@ -63,35 +63,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "babes.com" });
-        ret.add(new String[] { "bellesafilms.com" });
-        ret.add(new String[] { "biempire.com" });
-        /*
-         * 2020-04-30: Special: They have an old- and new sytem running in parallel. Old = https://ma.brazzers.com/access/login/ new
-         * (pornportal) = https://site-ma.brazzers.com/login
-         */
-        ret.add(new String[] { "brazzers.com" });
-        ret.add(new String[] { "digitalplayground.com" });
-        ret.add(new String[] { "erito.com", "eritos.com" });
-        ret.add(new String[] { "fakehub.com" });
-        ret.add(new String[] { "hentaipros.com" });
-        ret.add(new String[] { "lilhumpers.com" });
-        ret.add(new String[] { "milehighmedia.com", "sweetheartvideo.com", "realityjunkies.com" });
-        ret.add(new String[] { "metrohd.com", "familyhookups.com", "kinkyspa.com" });
-        ret.add(new String[] { "mofos.com", "publicpickups.com", "iknowthatgirl.com", "dontbreakme.com" });
-        ret.add(new String[] { "propertysex.com" });
-        ret.add(new String[] { "realitykings.com", "gfleaks.com", "inthevip.com", "mikesapartment.com", "8thstreetlatinas.com", "bignaturals.com", "cumfiesta.com", "happytugs.com", "milfhunter.com", "momsbangteens.com", "momslickteens.com", "moneytalks.com", "roundandbrown.com", "sneakysex.com", "teenslovehugecocks.com", "welivetogether.com" });
-        ret.add(new String[] { "sexyhub.com" });
-        ret.add(new String[] { "spankwirepremium.com" });
-        ret.add(new String[] { "squirted.com" });
-        ret.add(new String[] { "transangels.com" });
-        ret.add(new String[] { "transsensual.com" });
-        ret.add(new String[] { "trueamateurs.com" });
-        ret.add(new String[] { "twistys.com" });
-        ret.add(new String[] { "whynotbi.com" });
-        return ret;
+        return jd.plugins.hoster.PornportalCom.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
