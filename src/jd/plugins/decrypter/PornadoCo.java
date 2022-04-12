@@ -16,18 +16,22 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornado.co", "tubesafari.com" }, urls = { "https?://(?:www\\.)?pornado\\.co/video\\?id=[a-z0-9\\-_]+(?:\\&d=.+)?", "https?://(?:www\\.)?tubesafari\\.com/video\\?id=[a-z0-9\\-_]+(?:\\&d=.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornadoCo extends PornEmbedParser {
     public PornadoCo(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,10 +42,37 @@ public class PornadoCo extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /** E.g. more domains: xvirgo.com */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pornado.co" });
+        ret.add(new String[] { "tubesafari.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video\\?id=[a-z0-9\\-_]+(?:\\&d=.+)?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         final String id = query.get("id");
         final String d = query.get("d");
@@ -51,19 +82,28 @@ public class PornadoCo extends PornEmbedParser {
             return decryptedLinks;
         }
         br.getPage(param.getCryptedUrl());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+        if (isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]+) \\- [^<>\"/]+</title>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(param.getCryptedUrl(), "\\&d=(.+)$").getMatch(0);
-        }
-        decryptedLinks.addAll(findEmbedUrls(filename));
+        decryptedLinks.addAll(findEmbedUrls(getFileTitle(param, br)));
         return decryptedLinks;
     }
 
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    @Override
+    protected boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        String title = br.getRegex("<title>([^<>\"]+) \\- [^<>\"/]+</title>").getMatch(0);
+        if (title == null) {
+            title = new Regex(param.getCryptedUrl(), "\\&d=(.+)$").getMatch(0);
+        }
+        return title;
     }
 }
