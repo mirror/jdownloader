@@ -15,17 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
-
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boobinspector.com" }, urls = { "https?://(?:www\\.)?boobinspector\\.com/videos/\\d+" })
 public class BoobinspectorComDecrypter extends PornEmbedParser {
@@ -40,27 +35,42 @@ public class BoobinspectorComDecrypter extends PornEmbedParser {
     /* DEV NOTES */
     /* Porn_plugin */
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+    @Override
+    protected Browser prepareBrowser(final Browser br) {
+        br.setAllowedResponseCodes(410);
+        return br;
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
         final int status = br.getHttpConnection().getResponseCode();
         if (status == 404 || status == 410) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return true;
+        } else {
+            return false;
         }
-        if (!this.canHandle(br.getURL())) {
-            /* Redirect to external website */
-            decryptedLinks.add(createDownloadlink(br.getURL()));
-            return decryptedLinks;
+    }
+
+    protected boolean isSelfhosted(final Browser br) {
+        if (br.containsHTML("/videos/embed/\\d+")) {
+            return true;
+        } else {
+            return false;
         }
-        final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        if (!decryptedLinks.isEmpty()) {
-            return decryptedLinks;
-        }
-        /* No embed url found --> Probably video is selfhosted */
-        final DownloadLink main = createDownloadlink(param.getCryptedUrl());
-        decryptedLinks.add(main);
-        return decryptedLinks;
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+    }
+
+    @Override
+    protected boolean returnRedirectToUnsupportedLinkAsResult() {
+        return true;
+    }
+
+    @Override
+    protected boolean assumeSelfhostedContentOnNoResults() {
+        return true;
     }
 }

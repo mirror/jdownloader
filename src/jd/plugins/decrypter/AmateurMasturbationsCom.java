@@ -15,18 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
-
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "https?://(?:www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/[\\w\\-]+-\\d+\\.html)" })
 public class AmateurMasturbationsCom extends PornEmbedParser {
@@ -39,32 +34,25 @@ public class AmateurMasturbationsCom extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* DEV NOTES */
-    /* Porn_plugin */
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
-        br.getPage(param.getCryptedUrl());
-        while (true) {
-            if (br.getRedirectLocation() == null) {
-                break;
-            }
-            if (this.canHandle(br.getRedirectLocation())) {
-                br.followRedirect();
-            } else {
-                /* Redirect to external website */
-                decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-                return decryptedLinks;
-            }
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    protected boolean returnRedirectToUnsupportedLinkAsResult() {
+        return true;
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        final String offlineTrait = "/404.php";
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.getURL().contains(offlineTrait) || br.getRedirectLocation() != null && br.getRedirectLocation().contains(offlineTrait)) {
+            return true;
+        } else {
+            return false;
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)Page Not Found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.getURL().contains("/404.php")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String filename = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        return decryptedLinks;
     }
 }
