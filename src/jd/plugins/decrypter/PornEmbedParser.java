@@ -153,6 +153,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         return true;
     }
 
+    /** Enable this if DownloadLink.setFinalFilename should be used over DownloadLink.setName. */
     protected boolean selfhostedContentSetFinalFilename() {
         return false;
     }

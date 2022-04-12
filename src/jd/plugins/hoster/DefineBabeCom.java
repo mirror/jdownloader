@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.crypto.BadPaddingException;
@@ -26,6 +28,13 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.gui.UserIO;
@@ -40,18 +49,41 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "definebabe.com", "definefetish.com" }, urls = { "definebabedecrypted://(?:www\\.)?definebabes?\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/", "http://(www\\.)?definefetish\\.com/video/[a-z0-9]+/[a-z0-9\\-]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class DefineBabeCom extends PluginForHost {
     public DefineBabeCom(PluginWrapper wrapper) {
         super(wrapper);
         /* Don't overload the server. */
         this.setStartIntervall(3 * 1000l);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "definebabe.com", "definebabes.com" });
+        ret.add(new String[] { "definefetish.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([a-z0-9]+)/([a-z0-9\\-]+)/");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* Tags: TubeContext@Player */
@@ -65,30 +97,39 @@ public class DefineBabeCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.definebabe.com/about/privacy/";
+        return "https://www.definebabe.com/about/privacy/";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        /* Definebabes.com simply redirecty to definebabe.com */
-        link.setUrlDownload(link.getDownloadURL().replace("definebabes.com/", "definebabe.com/").replace("definebabedecrypted://", "http://"));
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* Set fallback-filename */
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Please, call later\\.")) {
-            link.getLinkStatus().setStatusText("Server is busy");
-            return AvailableStatus.UNCHECKABLE;
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is busy", 5 * 60 * 1000l);
         }
-        String filename = br.getRegex("<strong style=\"font:bold 18px Verdana;\">([^<>]*?)</strong>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
-        }
+        String title = jd.plugins.decrypter.DefinebabeComDecrypter.getURLTitleCleaned(br.getURL());
         String videoID = br.getRegex("video_id=(\\d+)").getMatch(0);
         if (videoID == null) {
             videoID = br.getRegex("id=\\'comment_object_id\\' value=\"(\\d+)\"").getMatch(0);
@@ -100,11 +141,6 @@ public class DefineBabeCom extends PluginForHost {
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* Set fallback-filename */
-        if (!link.isNameSet()) {
-            link.setName(videoID + ".mp4");
-        }
-        link.setLinkID(this.getHost() + "://" + videoID);
         final boolean useNewAPI = true;
         if (useNewAPI) {
             br.getPage("/player/config.php?id=" + videoID);
@@ -129,12 +165,10 @@ public class DefineBabeCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(title + ".mp4");
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim() + ".mp4";
-        link.setFinalFileName(filename);
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
@@ -171,10 +205,6 @@ public class DefineBabeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("Please, call later\\.")) {
-            link.getLinkStatus().setStatusText("Server is busy");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is busy", 5 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
