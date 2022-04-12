@@ -28,6 +28,11 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
     protected Browser prepareBrowser(final Browser br) {
         return br;
     }
@@ -42,10 +47,9 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }
-
-    protected final String getFileTitle(final Browser br) {
-        return getFileTitle(null, br);
-    }
+    // protected final String getFileTitle(final Browser br) {
+    // return getFileTitle(null, br);
+    // }
 
     protected String getFileTitle(final CryptedLink param, final Browser br) {
         return null;

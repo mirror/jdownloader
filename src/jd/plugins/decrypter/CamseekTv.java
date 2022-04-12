@@ -15,16 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
-
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camseek.tv" }, urls = { "https?://(?:www\\.)?camseek\\.tv/videos/(\\d+)/([a-z0-9\\-]+)/?" })
 public class CamseekTv extends PornEmbedParser {
@@ -37,30 +34,11 @@ public class CamseekTv extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /** E.g. more domains: xvirgo.com */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        final String filename = new Regex(parameter, this.getSupportedLinks()).getMatch(1).replace("-", " ");
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        if (decryptedLinks.size() == 0) {
-            /* Probably selfhosted content */
-            final DownloadLink dl = this.createDownloadlink(parameter);
-            if (jd.plugins.hoster.KamababaCom.isOffline(this.br)) {
-                dl.setAvailable(false);
-            } else {
-                dl.setAvailable(true);
-            }
-            dl.setName(filename + ".mp4");
-            decryptedLinks.add(dl);
-        }
-        return decryptedLinks;
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    protected boolean isOffline(final Browser br) {
+        return jd.plugins.hoster.KamababaCom.isOffline(br);
     }
 }

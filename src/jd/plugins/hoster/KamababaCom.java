@@ -16,26 +16,24 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kamababa.com" }, urls = { "https?://(?:www\\.)?kamababa2?\\.com/([a-z0-9\\-]+)/?" })
-public class KamababaCom extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class KamababaCom extends PluginForHost {
     public KamababaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,6 +41,33 @@ public class KamababaCom extends antiDDoSForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.KamababaComCrawler.getPluginDomains();
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-04-12: Main domain has changed from kamababa.com to kamababa.desi */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        return jd.plugins.decrypter.KamababaComCrawler.buildAnnotationUrls(pluginDomains);
     }
     /* DEV NOTES */
     // Tags: Porn plugin
@@ -55,7 +80,6 @@ public class KamababaCom extends antiDDoSForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -80,27 +104,29 @@ public class KamababaCom extends antiDDoSForHost {
         return br.getRegex("<meta itemprop=\\\"name\\\" content=\\\"([^<>\\\"]+)\\\" />").getMatch(0);
     }
 
+    public static final boolean isOfflineByErrorOrResponsecode(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public static final boolean isOffline(final Browser br) {
-        final boolean offline404 = br.getHttpConnection().getResponseCode() == 404;
         final boolean offlineNoVideoContent = !br.containsHTML("schema\\.org/VideoObject") && !br.containsHTML("class=\"video-player\"");
-        return offline404 || offlineNoVideoContent;
+        return isOfflineByErrorOrResponsecode(br) || offlineNoVideoContent;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        final String titleFromURL = this.getFID(link).replace("-", " ").trim();
+        link.setFinalFileName(titleFromURL + ".mp4");
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        String filename = getFiletitle(br);
-        if (StringUtils.isEmpty(filename)) {
-            filename = url_filename;
         }
         /* RegExes sometimes used for streaming */
         dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
@@ -108,12 +134,6 @@ public class KamababaCom extends antiDDoSForHost {
             /* 2020-07-03 */
             dllink = br.getRegex("itemprop=\"contentURL\"[^>]*content=\"(https?://[^<>\"]+)\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         String ext;
         if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
@@ -123,17 +143,14 @@ public class KamababaCom extends antiDDoSForHost {
         } else {
             ext = default_extension;
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                con = br.openHeadConnection(dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
-                    server_issues = true;
-                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
+                }
+                if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
@@ -149,9 +166,7 @@ public class KamababaCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
@@ -170,7 +185,7 @@ public class KamababaCom extends antiDDoSForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
         }
         dl.startDownload();
     }

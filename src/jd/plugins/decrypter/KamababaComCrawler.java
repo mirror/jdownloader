@@ -16,17 +16,15 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
+import jd.http.Browser;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kamababa.com" }, urls = { "https?://(?:www\\.)?kamababa2?\\.com/([a-z0-9\\-]+)/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KamababaComCrawler extends PornEmbedParser {
     public KamababaComCrawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,33 +35,40 @@ public class KamababaComCrawler extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /** E.g. more domains: xvirgo.com */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        String filename = jd.plugins.hoster.KamababaCom.getFiletitle(br);
-        if (filename == null) {
-            filename = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        }
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        if (decryptedLinks.size() == 0) {
-            /* Probably selfhosted content */
-            final DownloadLink dl = this.createDownloadlink(parameter);
-            if (jd.plugins.hoster.KamababaCom.isOffline(this.br)) {
-                dl.setAvailable(false);
-            } else {
-                dl.setAvailable(true);
-            }
-            dl.setName(filename + ".mp4");
-            decryptedLinks.add(dl);
-        }
-        return decryptedLinks;
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "kamababa.desi", "kamababa.com", "kamababa2.com" });
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-]+)/?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        return jd.plugins.hoster.KamababaCom.isOfflineByErrorOrResponsecode(br);
+    }
+
+    @Override
+    protected boolean assumeSelfhostedContentOnNoResults() {
+        return true;
     }
 }
