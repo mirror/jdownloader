@@ -22,6 +22,7 @@ import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -34,10 +35,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video(?:\\.php\\?id=|/)([A-Za-z0-9]+).*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/(video(?:\\.php\\?id=|/)[A-Za-z0-9]+.*|player/\\d+/?)" })
 public class JavynowCom extends PluginForHost {
     public JavynowCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /* DEV NOTES */
@@ -45,9 +51,11 @@ public class JavynowCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final int free_maxdownloads = -1;
-    private String           dllink            = null;
-    private boolean          server_issues     = false;
+    private static final int    free_maxdownloads = -1;
+    private String              dllink            = null;
+    private boolean             server_issues     = false;
+    private static final String TYPE_EMBED        = "https?://[^/]+/player/(\\d+)/?";
+    private static final String TYPE_NORMAL       = "https?://[^/]+/video(?:\\.php\\?id=|/)([A-Za-z0-9]+).*";
 
     @Override
     public String getAGBLink() {
@@ -55,7 +63,31 @@ public class JavynowCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
+        br.getPage("https://javynow.com/video/" + this.getFID(link) + "/");
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
@@ -67,15 +99,10 @@ public class JavynowCom extends PluginForHost {
             /* 2020-11-19: E.g. <div id="deleted">This video has been deleted.</div> */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // if (br.getRedirectLocation().contains("/cushion/")) {
-        // br.getPage(br.getRedirectLocation());
-        // // <a href="https://javynow.com/video/20805072/">
-        // br.getPage(br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0));
-        // }
-        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
         String title = br.getRegex("<title>([^<>\"]+) JavyNow</title>").getMatch(0);
-        if (StringUtils.isEmpty(title) || "no title".equals(title)) {
-            title = url_filename.replace("-", " ");
+        if (!StringUtils.isEmpty(title) && !"no title".equalsIgnoreCase(title)) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(title + ".mp4");
         }
         final String cryptedScripts[] = br.getRegex("eval\\s*\\((function\\(p,a,c,k,e,d\\).*?\\{\\}\\))\\)").getColumn(0);
         if (cryptedScripts.length != 0) {
@@ -95,8 +122,6 @@ public class JavynowCom extends PluginForHost {
                 }
             }
         }
-        title = Encoding.htmlDecode(title).trim();
-        link.setFinalFileName(title + ".mp4");
         return AvailableStatus.TRUE;
     }
 

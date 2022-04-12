@@ -13,6 +13,7 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
+import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.DecrypterArrayList;
@@ -90,13 +91,19 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
     }
 
     /**
-     * PornEmbedParser 0.3.2
-     *
-     *
+     * true = skip results with same domain of source URL. </br>
+     * Warning: Disabling this may have unwanted side-effects as a lot of video sites will show recommendations/similar videos on single
+     * video pages which would then also be grabbed!
+     */
+    protected boolean skipSamePluginResults() {
+        return true;
+    }
+
+    /**
      * porn_plugin
      *
      *
-     * This method is designed to find embedded porn urls in html code.
+     * This method is designed to find porn website urls in html code.
      *
      * @param pluginBrowser
      *            : Browser containing the sourceurl with the embed urls/codes *
@@ -132,19 +139,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         /* Cleanup/Improve title */
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
-            title = encodeUnicode(title);
         }
         logger.info("PornEmbedParser is being executed...");
         String externID = null;
-        // 2019-01-16 javynow.com
-        externID = br.getRegex("(javynow\\.com/player/\\d+/[^\"]+)").getMatch(0);
-        if (externID != null) {
-            externID = "https://" + externID;
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("(https?://(?:www\\.)?camhub\\.(?:world|cc)/embed/\\d+)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = this.createDownloadlink(externID);
@@ -186,64 +183,32 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // youporn.com handling 2
-        externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)&").getMatch(0);
-        if (externID != null) {
-            final Browser yp = br.cloneBrowser();
-            yp.setCookie("http://youporn.com/", "age_verified", "1");
-            yp.setCookie("http://youporn.com/", "is_pc", "1");
-            yp.setCookie("http://youporn.com/", "language", "en");
-            getPage(yp, Encoding.htmlDecode(externID));
-            if (yp.getRequest().getHttpConnection().getResponseCode() == 404) {
-                if (!processAll) {
-                    return decryptedLinks;
-                }
-            } else if (yp.containsHTML("download\\.youporn\\.com/agecheck")) {
-                if (!processAll) {
-                    return decryptedLinks;
-                }
-            } else {
-                externID = yp.getRegex("\"((?:https?:)?//(www\\.)?download\\.youporn.com/download/\\d+/\\?xml=1)\"").getMatch(0);
-                if (externID != null) {
-                    getPage(yp, externID);
-                    final String finallink = yp.getRegex("<location>((?:https?:)?//.*?)</location>").getMatch(0);
-                    if (finallink != null) {
-                        final DownloadLink dl = createDownloadlink("directhttp://" + Request.getLocation(Encoding.htmlDecode(finallink), br.getRequest()));
-                        String type = yp.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
-                        if (type == null) {
-                            type = "flv";
-                        }
-                        dl.setForcedFileName(title + "." + type);
-                        decryptedLinks.add(dl);
-                        if (!processAll) {
-                            return decryptedLinks;
-                        }
-                    }
-                }
-            }
-        }
-        /*
-         * 2020-07-21: Skip DownloadLinks of current host found in current html. E.g. pornrabbit.com --> Will find same pornrabbit URL as
-         * "embed URL" --> This will lose file title
-         */
         return decryptedLinks;
     }
 
-    public List<DownloadLink> convert(Browser br, String title, String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {
+    protected List<DownloadLink> convert(final Browser br, final String title, final String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (lazyPlugins.size() > 0) {
-            final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
-            if (lazyPlugins.size() == 1) {
-                // TODO: better way for this
-                if ("mydaddy.cc".equals(lazyPlugins.get(0).getDisplayName())) {
-                    if (title != null) {
-                        dl.setProperty("decryptertitle", title);
-                    }
+        if (lazyPlugins.size() == 0) {
+            return ret;
+        }
+        if (this.canHandle(url) && skipSamePluginResults()) {
+            return ret;
+        }
+        final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
+        if (lazyPlugins.size() == 1) {
+            // TODO: better way for this
+            if ("mydaddy.cc".equals(lazyPlugins.get(0).getDisplayName())) {
+                if (title != null) {
+                    dl.setProperty("decryptertitle", title);
                 }
             }
-            ret.add(dl);
         }
+        ret.add(dl);
         return ret;
+    }
+
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
+        return false;
     }
 
     @Override

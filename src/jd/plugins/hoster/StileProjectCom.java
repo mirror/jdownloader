@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -31,10 +32,17 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(?:www\\.)?stileproject\\.com/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)" })
 public class StileProjectCom extends PluginForHost {
-    private String dllink = null;
+    private String              dllink      = null;
+    private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
+    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
 
     public StileProjectCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     @Override
@@ -56,9 +64,6 @@ public class StileProjectCom extends PluginForHost {
             return super.getLinkID(link);
         }
     }
-
-    private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
-    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
 
     private String getFID(final DownloadLink link) {
         if (link == null || link.getPluginPatternMatcher() == null) {

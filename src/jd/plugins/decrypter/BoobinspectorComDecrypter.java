@@ -24,8 +24,10 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspector\\.com/videos/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boobinspector.com" }, urls = { "https?://(?:www\\.)?boobinspector\\.com/videos/\\d+" })
 public class BoobinspectorComDecrypter extends PornEmbedParser {
     public BoobinspectorComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,25 +40,18 @@ public class BoobinspectorComDecrypter extends PornEmbedParser {
     /* DEV NOTES */
     /* Porn_plugin */
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.addAllowedResponseCodes(410);
-        br.getPage(parameter);
-        {
-            final int status = br.getHttpConnection().getResponseCode();
-            if (status == 404 || status == 410) {
-                decryptedLinks.add(this.createOfflinelink(parameter, "Offline Content"));
-                return decryptedLinks;
-            }
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        final int status = br.getHttpConnection().getResponseCode();
+        if (status == 404 || status == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String externID = br.getRedirectLocation();
-        if (externID != null && !externID.contains("boobinspector.com/")) {
-            decryptedLinks.add(createDownloadlink(externID));
+        if (!this.canHandle(br.getURL())) {
+            /* Redirect to external website */
+            decryptedLinks.add(createDownloadlink(br.getURL()));
             return decryptedLinks;
-        } else if (externID != null) {
-            br.getPage(externID);
-            externID = null;
         }
         final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         decryptedLinks.addAll(findEmbedUrls(filename));
@@ -64,7 +59,7 @@ public class BoobinspectorComDecrypter extends PornEmbedParser {
             return decryptedLinks;
         }
         /* No embed url found --> Probably video is selfhosted */
-        final DownloadLink main = createDownloadlink(parameter.replace("boobinspector.com/", "boobinspectordecrypted.com/"));
+        final DownloadLink main = createDownloadlink(param.getCryptedUrl());
         decryptedLinks.add(main);
         return decryptedLinks;
     }

@@ -47,6 +47,7 @@ import org.jdownloader.plugins.components.config.WDRConfig;
 import org.jdownloader.plugins.components.config.WDRMausConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -83,6 +84,11 @@ public class Ardmediathek extends PluginForDecrypt {
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override

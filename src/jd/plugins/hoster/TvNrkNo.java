@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.text.DecimalFormat;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,15 +34,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tv.nrk.no" }, urls = { "https?://(?:www\\.)?tv\\.nrk\\.no/serie/[a-z0-9\\-]+(?:/[A-Z]{4}\\d{8})?/sesong(?:\\-|/)\\d+/episode(?:\\-|/)\\d+" })
 public class TvNrkNo extends PluginForHost {
     public TvNrkNo(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     /* DEV NOTES */
@@ -60,7 +66,8 @@ public class TvNrkNo extends PluginForHost {
     }
 
     /**
-     * Using API: http://v8.psapi.nrk.no/Help </br> 2019-09-16: Also added support for new API: https://psapi-ne.nrk.no/documentation/
+     * Using API: http://v8.psapi.nrk.no/Help </br>
+     * 2019-09-16: Also added support for new API: https://psapi-ne.nrk.no/documentation/
      */
     @SuppressWarnings({ "unchecked" })
     @Override

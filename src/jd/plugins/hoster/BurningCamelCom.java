@@ -16,9 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,12 +32,33 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "https?://(www\\.)?(?:burningcamel\\.com|camelstyle\\.net)/video/[a-z0-9\\-]+(/\\d+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BurningCamelCom extends PluginForHost {
-    private String DLLINK = null;
+    private String dllink = null;
 
     public BurningCamelCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.BurningCamelCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        return jd.plugins.decrypter.BurningCamelCom.buildAnnotationUrls(pluginDomains);
     }
 
     @Override
@@ -45,12 +66,9 @@ public class BurningCamelCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* DEV NOTES */
-    /* 2017-05-10: porn.to now redirects to burningcamel.com --> deleted porn.to decrypter- and hosterplugin. */
-    /* Porn_plugin */
     @Override
     public String getAGBLink() {
-        return "http://www.burningcamel.com/dmca";
+        return "https://www.burningcamel.com/dmca";
     }
 
     @Override
@@ -58,40 +76,57 @@ public class BurningCamelCom extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String filenameByURL = getFID(link).replace("-", " ").trim();
+        link.setFinalFileName(filenameByURL + ".mp4");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.burningcamel.com/") || br.containsHTML("<title>Amateur Porn and Free Amateur Sex Videos \\| Burning Camel</title>|<title>404: File Not Found") || this.br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(jd.plugins.decrypter.BurningCamelCom.getContentURL(this.getFID(link)));
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to somwehere else */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>(.*?)( \\| Burning Camel)?</title>").getMatch(0);
-        Regex basicRegex = br.getRegex("createPlayer\\(\"(http://.*?)\",\"http://.*?\",\"(.*?)\"");
-        DLLINK = basicRegex.getMatch(0);
+        Regex basicRegex = br.getRegex("createPlayer\\(\"(https?://.*?)\",\"http://.*?\",\"(.*?)\"");
+        dllink = basicRegex.getMatch(0);
         String token = basicRegex.getMatch(1);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(https?://burningcamel.com/media/videos/.*?)(\\'|\")").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(https?://burningcamel\\.com/media/videos/.*?)(\\'|\")").getMatch(0);
         }
         // if (filename == null || DLLINK == null || token == null) {
-        if (DLLINK == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
+        dllink = Encoding.htmlDecode(dllink);
         if (token != null) {
-            DLLINK += "?start=0&id=videoplayer&client=FLASH%20WIN%2010,3,181,26&version=4.2.95&width=662&token=" + token;
+            dllink += "?start=0&id=videoplayer&client=FLASH%20WIN%2010,3,181,26&version=4.2.95&width=662&token=" + token;
         }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            con = br2.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -105,11 +140,15 @@ public class BurningCamelCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
