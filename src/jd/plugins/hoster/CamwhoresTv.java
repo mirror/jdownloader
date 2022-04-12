@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -53,5 +54,16 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
     protected boolean enableFastLinkcheck() {
         /* 2020-10-30 */
         return true;
+    }
+
+    @Override
+    protected boolean isOfflineWebsite(final Browser br) {
+        if (super.isOfflineWebsite(br)) {
+            return true;
+        } else if (br.containsHTML("(?i)>\\s*404 / Page not found")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

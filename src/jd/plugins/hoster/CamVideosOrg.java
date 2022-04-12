@@ -3,10 +3,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamVideosOrg extends KernelVideoSharingComV2 {
@@ -40,6 +40,16 @@ public class CamVideosOrg extends KernelVideoSharingComV2 {
         if (StringUtils.isEmpty(fuid) || StringUtils.isEmpty(urlTitle)) {
             return null;
         }
-        return "https://www." + this.getHost() + "/" + fuid + "/" + urlTitle + "/";
+        return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
+    }
+
+    @Override
+    protected boolean useEmbedWorkaround() {
+        /**
+         * 2022-04-12: A lot of videos are not embeddable but have already been embedded by other websites. Website shows error "You are not
+         * allowed to watch this video.". </br>
+         * Using this workaround will fix that issue.
+         */
+        return true;
     }
 }

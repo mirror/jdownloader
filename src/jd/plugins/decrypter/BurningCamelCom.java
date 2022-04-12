@@ -6,13 +6,10 @@ import java.util.List;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "https?://(?:www\\.)?(?:burningcamel\\.com|camelstyle\\.net)/video/([a-z0-9\\-]+(/\\d+)?)" })
 public class BurningCamelCom extends PornEmbedParser {
@@ -53,31 +50,29 @@ public class BurningCamelCom extends PornEmbedParser {
         return ret.toArray(new String[0]);
     }
 
-    @Override
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        final String fid = new Regex(parameter.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        br.getPage(getContentURL(fid));
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    protected void correctCryptedLink(final CryptedLink param) {
+        final String fid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        /* Important as some of their domains are offline */
+        param.setCryptedUrl(getContentURL(fid));
+    }
+
+    protected boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
         } else if (!this.canHandle(br.getURL())) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return true;
+        } else {
+            return false;
         }
-        /* First scan for any standard extern embedded URLs. */
-        ret = this.findEmbedUrls(null);
-        if (!ret.isEmpty()) {
-            return ret;
+    }
+
+    @Override
+    protected boolean isSelfhosted(final Browser br) {
+        if (jd.plugins.hoster.BurningCamelCom.findDirectUrl(br) != null) {
+            return true;
+        } else {
+            return false;
         }
-        final String embedded = br.getRegex("class=\"inner-block embed-responsive\">\\s*<iframe\\s*[^<>]*src=\"(https?://.*?)\"").getMatch(0);
-        if (embedded != null) {
-            ret.add(createDownloadlink(embedded));
-        }
-        final Regex basicRegex = br.getRegex("createPlayer\\(\"(http://.*?)\",\"http://.*?\",\"(.*?)\"");
-        if (basicRegex.getMatch(0) != null || br.getRegex("(https?://burningcamel.com/media/videos/.*?)(\\'|\")").getMatch(0) != null) {
-            ret.add(createDownloadlink(parameter.getCryptedUrl()));
-        }
-        return ret;
     }
 
     public static final String getContentURL(final String fid) {

@@ -103,39 +103,46 @@ public class BurningCamelCom extends PluginForHost {
             /* E.g. redirect to somwehere else */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Regex basicRegex = br.getRegex("createPlayer\\(\"(https?://.*?)\",\"http://.*?\",\"(.*?)\"");
-        dllink = basicRegex.getMatch(0);
-        String token = basicRegex.getMatch(1);
+        dllink = findDirectUrl(this.br);
+        if (dllink != null) {
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    public static final String findDirectUrl(final Browser br) {
+        final Regex basicRegex = br.getRegex("createPlayer\\(\"(https?://.*?)\",\"http://.*?\",\"(.*?)\"");
+        String dllink = basicRegex.getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("(https?://burningcamel\\.com/media/videos/.*?)(\\'|\")").getMatch(0);
         }
-        // if (filename == null || DLLINK == null || token == null) {
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        if (token != null) {
-            dllink += "?start=0&id=videoplayer&client=FLASH%20WIN%2010,3,181,26&version=4.2.95&width=662&token=" + token;
-        }
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
+            final String token = basicRegex.getMatch(1);
+            if (token != null) {
+                dllink += "?start=0&id=videoplayer&client=FLASH%20WIN%2010,3,181,26&version=4.2.95&width=662&token=" + token;
             }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+            return dllink;
+        } else {
+            return null;
         }
     }
 

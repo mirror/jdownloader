@@ -15,18 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
-
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "caminspector.net" }, urls = { "https?://(?:www\\.)?caminspector\\.net/videos/\\d+/[a-z0-9\\-]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "caminspector.net" }, urls = { "https?://(?:www\\.)?caminspector\\.net/videos/\\d+/([a-z0-9\\-]+)/" })
 public class CaminspectorNet extends PornEmbedParser {
     public CaminspectorNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,25 +34,16 @@ public class CaminspectorNet extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(parameter, "([a-z0-9\\-]+)/$").getMatch(0);
-        }
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        return decryptedLinks;
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    protected boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
