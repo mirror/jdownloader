@@ -68,43 +68,11 @@ public class DreamAmateursCom extends PornEmbedParser {
             filename = name_url;
         }
         filename = filename.trim();
-        externID = br.getRegex("file=(http://hostave4\\.net/.*?)\\&screenfile").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        externID = br.getRegex("file=(.*?)\\&link=http%3A%2F%2F").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + "http://flash.serious-cash.com/" + externID + ".flv");
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        externID = br.getRegex("\\&file=(http://(www\\.)?revengetv\\.net/[^<>\"]*?)\\&beginimage").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        externID = br.getRegex("flashvars=\"file=(http://(www\\.)?hostave3\\.net/[^<>\"]*?)\\&screenfile=").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         externID = br.getRegex("so\\.addVariable\\(\\'file\\',\\'(http://(www\\.)?dreamamateurs\\.com/videos/[^<>\"]*?)\\'\\)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        if (br.containsHTML("\\&file=http://embed\\.kickassratios\\.com/")) {
-            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         /* 2020-07-20 */

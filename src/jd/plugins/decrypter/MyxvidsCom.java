@@ -15,16 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
-
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myxvids.com" }, urls = { "https?://(?:www\\.)?myxvids\\.com/([a-z0-9\\-]+)/?" })
 public class MyxvidsCom extends PornEmbedParser {
@@ -37,12 +34,16 @@ public class MyxvidsCom extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
-        final String title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(title));
-        return decryptedLinks;
+    @Override
+    protected boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
     }
 }
