@@ -37,7 +37,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -1024,7 +1023,7 @@ public class XHamsterCom extends PluginForHost {
                     }
                 }
                 /* Check whether or not we're logged in */
-                if (!isLoggedinFree()) {
+                if (!isLoggedinFree(br)) {
                     logger.info("Free login failed!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -1050,8 +1049,12 @@ public class XHamsterCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedinFree() {
-        return br.getCookie(br.getHost(), "UID", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "_id", Cookies.NOTDELETEDPATTERN) != null;
+    private boolean isLoggedinFree(final Browser br) {
+        if (br.getCookie(br.getHost(), "UID", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "_id", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean checkPremiumLogin() throws IOException {

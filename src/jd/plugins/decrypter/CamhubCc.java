@@ -27,9 +27,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "camhub.cc" }, urls = { "https?://(?:www\\.)?camhub\\.cc/videos/\\d+/([a-z0-9\\-]+)/" })
-public class CamhubCc extends PornEmbedParser {
+public class CamhubCc extends PluginForDecrypt {
     public CamhubCc(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,35 +43,32 @@ public class CamhubCc extends PornEmbedParser {
     /* Porn_plugin */
     /* Tags: camhub.world (sister-site - their "selfhosted content" is hosted there) */
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString();
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Get filename from URL */
-        String filename = new Regex(parameter, this.getSupportedLinks()).getMatch(0).replace("-", " ");
-        filename = filename.trim();
+        String title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
         /* Remove eventually existing hash from filename */
-        final String removeMe = new Regex(filename, "( ?[a-f0-9]{16})$").getMatch(0);
+        final String removeMe = new Regex(title, "( ?[a-f0-9]{16})$").getMatch(0);
         if (removeMe != null) {
-            filename = filename.replace(removeMe, "");
+            title = title.replace(removeMe, "");
         }
         final String selfEmbeddedURL = br.getRegex("(https?://(?:www\\.)?camhub\\.world/embed/\\d+)").getMatch(0);
         if (selfEmbeddedURL != null) {
             /* Selfhosted but embedded on sister-site. */
             final DownloadLink link = this.createDownloadlink(selfEmbeddedURL);
-            link.setFinalFileName(filename + ".mp4");
+            link.setFinalFileName(title + ".mp4");
             decryptedLinks.add(link);
         } else {
             /* Selfhosted without embed */
             final DownloadLink link = this.createDownloadlink(param.getCryptedUrl());
-            link.setName(filename + ".mp4");
+            link.setName(title + ".mp4");
             decryptedLinks.add(link);
         }
-        // decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }
 }

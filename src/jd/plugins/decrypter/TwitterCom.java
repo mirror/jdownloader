@@ -564,7 +564,7 @@ public class TwitterCom extends PornEmbedParser {
     private ArrayList<DownloadLink> crawlTweetViaMobileWebsite(final String tweetURL, final FilePackage fp) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         logger.info("Crawling mobile website tweet");
-        final String tweet_id = new Regex(param.getCryptedUrl(), "/(?:tweet|status)/(\\d+)").getMatch(0);
+        final String tweet_id = new Regex(tweetURL, "/(?:tweet|status)/(\\d+)").getMatch(0);
         if (br.containsHTML("/status/" + tweet_id + "/video/1")) {
             /* Video */
             final DownloadLink dl = createDownloadlink(createVideourl(tweet_id));
@@ -613,7 +613,7 @@ public class TwitterCom extends PornEmbedParser {
             }
             if (decryptedLinks.isEmpty()) {
                 logger.warning("Found nothing - either only text or plugin broken :(");
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+                decryptedLinks.add(this.createOfflinelink(tweetURL));
             }
         }
         return decryptedLinks;
@@ -982,7 +982,7 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     protected void getPage(final Browser br, final String url) throws Exception {
-        super.getPage(br, url);
+        br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 429) {
             logger.info("Error 429 too many requests - add less URLs and/or perform a reconnect!");
         }

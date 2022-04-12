@@ -21,15 +21,15 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "badjojo.com" }, urls = { "https?://(?:www\\.)?badjojo\\.com/(\\d+)/.{1}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "badjojo.com" }, urls = { "https?://(?:www\\.)?badjojo\\.com/(\\d+)/[a-z0-9\\-]+/?" })
 public class BadJoJoComDecrypter extends PornEmbedParser {
     public BadJoJoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,11 +41,10 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        final String fid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -54,7 +53,7 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
             return decryptedLinks;
         }
         if (br.containsHTML("(?i)<h4>Source</h4>")) {
-            /* 2017-03-21: New */
+            /* 2017-03-21: Handle special case */
             // <a href="/out.php?siteid=89&amp;id=14064863&amp;url=http%3A%2F%2Fnudez.com%2Fvideo%2F...-221490.html"
             String externID = br.getRegex("(?i)<h4>Source</h4>\\s*<a href=\"[^\"]+?url=([^\"]+)\"").getMatch(0);
             if (externID != null) {
@@ -64,13 +63,19 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
                 return decryptedLinks;
             }
         }
-        decryptedLinks = new ArrayList<DownloadLink>();
+        /* Looks like selfhosted content */
         decryptedLinks.add(createDownloadlink(param.getCryptedUrl()));
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    @Override
+    protected boolean isOffline(final Browser br) {
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (!this.canHandle(br.getURL())) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
