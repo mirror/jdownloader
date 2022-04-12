@@ -17,9 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspectordecrypted\\.com/videos/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boobinspector.com" }, urls = { "https?://(?:www\\.)?boobinspector\\.com/videos/(?:embed/)?(\\d+)" })
 public class BoobInspectorCom extends PluginForHost {
     public BoobInspectorCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,17 +51,29 @@ public class BoobInspectorCom extends PluginForHost {
         return "http://www.boobinspector.com/legal#terms";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("boobinspectordecrypted.com/", "boobinspector.com/"));
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Removed from Boob Inspector")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>Removed from Boob Inspector")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -69,18 +81,18 @@ public class BoobInspectorCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"\\d{3}p\":\"(https?://[^\"]+)\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ".mp4");
         }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         if (!StringUtils.isEmpty(this.dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -99,7 +111,7 @@ public class BoobInspectorCom extends PluginForHost {
         requestFileInformation(link);
         if (StringUtils.isEmpty(this.dllink)) {
             /* 2020-10-12: For some videos, no files are available although content is supposed to be online ... Example-ID: 415854 */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {

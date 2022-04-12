@@ -36,10 +36,38 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blockfilestore.com" }, urls = { "https?://(?:www\\.)?blockfilestore\\.com/folder/([a-f0-9\\-]+)" })
-public class BlockFilestoreCom extends PluginForDecrypt {
-    public BlockFilestoreCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class BlockfilestoreComFolder extends PluginForDecrypt {
+    public BlockfilestoreComFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "blockfilestore.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/([a-f0-9\\-]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -79,7 +107,7 @@ public class BlockFilestoreCom extends PluginForDecrypt {
                 dl.setRelativeDownloadFolderPath(path);
                 decryptedLinks.add(dl);
             } else {
-                final DownloadLink dl = this.createDownloadlink("directhttp://https://www." + this.getHost() + "/api/download?id=" + resource.get("id"));
+                final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/api/download?id=" + resource.get("id"));
                 dl.setFinalFileName(resource.get("name").toString());
                 dl.setVerifiedFileSize(((Number) resource.get("size")).longValue());
                 dl.setAvailable(true);

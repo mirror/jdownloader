@@ -46,26 +46,21 @@ public class AmateurMasturbationsCom extends PornEmbedParser {
         br.setFollowRedirects(false);
         br.getPage(param.getCryptedUrl());
         while (true) {
-            if (br.getRedirectLocation() != null && this.canHandle(br.getRedirectLocation())) {
+            if (br.getRedirectLocation() == null) {
+                break;
+            }
+            if (this.canHandle(br.getRedirectLocation())) {
                 br.followRedirect();
             } else {
-                break;
+                /* Redirect to external website */
+                decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+                return decryptedLinks;
             }
         }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)Page Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String redirect = br.getRedirectLocation();
-        if (redirect != null && !this.canHandle(redirect)) {
-            decryptedLinks.add(createDownloadlink(redirect));
-            return decryptedLinks;
-        } else if (redirect != null && redirect.contains("/404.php")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (redirect != null) {
-            br.setFollowRedirects(true);
-            br.getPage(redirect);
-        }
-        if (!this.canHandle(br.getURL())) {
+        if (br.getURL().contains("/404.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
