@@ -33,6 +33,11 @@ public class ChunkRange {
         return rangeRequested;
     }
 
+    public void reset() {
+        validLoaded.set(false);
+        loaded.set(0);
+    }
+
     public boolean isValidLoaded() {
         return validLoaded.get();
     }
