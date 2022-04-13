@@ -25,6 +25,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqporner.com", "hqpornerpro.com" }, urls = { "https?://(?:www\\.)?hqporner\\.com/hdporn/\\d+\\-([^/]+)\\.html", "https?://(?:www\\.)?hqpornerpro\\.com/([^/]+)" })
 public class HqpornerCom extends PornEmbedParser {
@@ -41,16 +43,14 @@ public class HqpornerCom extends PornEmbedParser {
     /* Porn_plugin */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         /* 2019-01-24: Important! some URLs will just display 404 if Referer is not set! */
         br.getHeaders().put("Referer", "https://" + this.getHost() + "/");
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String url_name = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String[][] parsedNames = br.getRegex("/actress/[^\"]+\"[^>]+>([^<>\"]+)</a>").getMatches();
         final StringBuilder names = new StringBuilder();
         if (parsedNames != null) {

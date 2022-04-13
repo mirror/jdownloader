@@ -44,7 +44,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.components.kvs.Script;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -310,6 +309,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /** Override this to allow attempting to auto-fix broken embed URLs. */
     protected String generateContentURL(final String fuid, final String urlTitle) {
+        /* TODO: Add ENUM for standard URL-types so that default/superclasses can auto-generate reasonable contentURLs here (?) */
         return null;
     }
 
@@ -363,18 +363,24 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* Set this so that offline items have "nice" titles too. */
             link.setName(weakFilename);
         }
+        /* Login if possible */
         if (account != null) {
             this.login(account, false);
         }
-        getPage(link.getPluginPatternMatcher());
-        if (isOfflineWebsite(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         if (link.getPluginPatternMatcher().matches(type_embedded) && this.useEmbedWorkaround()) {
+            /* Embed URL --> Build fake real URL and just go for it */
             final String fakeContentURL = this.generateContentURL(this.getFUID(link), "xyz");
             br.getPage(fakeContentURL);
+            if (isOfflineWebsite(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             logger.info("Embed workaround result: Presumed real ContentURL: " + br.getURL());
         } else if (link.getPluginPatternMatcher().matches(type_embedded)) {
+            /* Embed URL */
+            getPage(link.getPluginPatternMatcher());
+            if (isOfflineWebsite(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
             final String fuid = this.getFUID(link);
             /* Try to find URL-title */
@@ -460,6 +466,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
         } else {
+            /* Normal URL */
+            getPage(link.getPluginPatternMatcher());
+            if (isOfflineWebsite(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Look for real unique videoID just in case it is not present in our use-given URL. */
             String fuidInsideHTML = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
             if (fuidInsideHTML == null) {
                 /* E.g. for hosts which have embed support disabled or are using other embed URLs than default e.g. h2porn.com. */
@@ -472,7 +484,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* 2020-11-04: Other possible places: "videoId: '12345'" (without "") [e.g. privat-zapisi.biz] */
             /* 2020-11-04: Other possible places: name="video_id" value="12345" [e.g. privat-zapisi.biz] */
             if (fuidInsideHTML != null) {
-                logger.info("Successfully found fuid in html: " + fuidInsideHTML);
                 if (this.getFUID(link) == null) {
                     /** Most likely useful for URLs matching pattern {@link #type_normal_without_fuid}. */
                     logger.info("Setting FUID found inside HTML as DownloadLink FUID");

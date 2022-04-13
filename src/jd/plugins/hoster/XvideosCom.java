@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.jdownloader.plugins.components.config.XvideosComConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
@@ -40,16 +39,11 @@ public class XvideosCom extends XvideosCore {
 
     @Override
     public String getAGBLink() {
-        return "http://info.xvideos.com/legal/tos/";
+        return "https://info.xvideos.com/legal/tos/";
     }
 
     private static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xvideos.com", "xvideos.es", "xvideos2.com", "xvideos2.es", "xvideos3.com", "xvideos3.es", "xvideos4.com", "xvideos5.com", "xvideos.red" });
-        /* 2020-10-05: I've decided, not to add their "premium domain" as an extra host. */
-        // ret.add(new String[] { "xvideos.red" });
-        return ret;
+        return jd.plugins.decrypter.XvideosComProfile.getPluginDomains();
     }
 
     protected String[] getAllDomains() {

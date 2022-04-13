@@ -29,7 +29,9 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ero-video.net" }, urls = { "https?://(?:[a-z0-9]+\\.)?ero\\-video\\.net/movie/\\?mcd=[A-Za-z0-9]+" })
 public class EroVideoNet extends PornEmbedParser {
@@ -44,27 +46,25 @@ public class EroVideoNet extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.br.setCookiesExclusive(true);
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"meta__title\">([^<>\"]+)").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(?:Watch )?([^<>\"]*?)</title>").getMatch(0);
         }
         if (filename == null) {
-            filename = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+            filename = new Regex(param.getCryptedUrl(), "([A-Za-z0-9]+)$").getMatch(0);
         } else {
             filename = filename.replace("- Movie - Free Porn Video sharing site ero-video.net", "").trim();
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
-        if (decryptedLinks == null || decryptedLinks.isEmpty()) {
+        if (decryptedLinks.isEmpty()) {
             final String externID = this.br.getRegex("<a href=\"(http[^<>\"]+)\"[^>]+>[\t\n\r ]*?<i[^<>]+></i>Original URL</a>").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(this.createDownloadlink(externID));
@@ -101,7 +101,7 @@ public class EroVideoNet extends PornEmbedParser {
                             for (final String movieURL[] : movieURLs) {
                                 final DownloadLink link = createDownloadlink("directhttp://" + movieURL[2]);
                                 link.setFinalFileName(filename + "_" + movieURL[0] + Plugin.getFileNameExtensionFromURL(movieURL[2]));
-                                link.setContentUrl(parameter);
+                                link.setContentUrl(param.getCryptedUrl());
                                 decryptedLinks.add(link);
                             }
                         }

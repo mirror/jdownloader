@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -58,15 +57,14 @@ public class IndianPornVideosCom extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().matches("https?://(www.)?indianpornvideos.com/(account|categories|contact-us|dmca|faq|feed|login|privacy|report-abuse|terms|wp-content|wp-includes|wp-json)")) {
+        if (link.getPluginPatternMatcher().matches("https?://(www.)?indianpornvideos.com/(account|categories|contact-us|dmca|faq|feed|login|privacy|report-abuse|terms|wp-content|wp-includes|wp-json)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video (does not exist|Was Deleted)|video id not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -100,7 +98,9 @@ public class IndianPornVideosCom extends PluginForHost {
         try {
             con = br2.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setVerifiedFileSize(con.getLongContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -54,7 +53,7 @@ public class UnknownPornScript8 extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.pornziz.com/static/terms/";
+        return "https://www.pornziz.com/static/terms/";
     }
 
     @Override
@@ -107,7 +106,9 @@ public class UnknownPornScript8 extends PluginForHost {
         try {
             con = br.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 serverissue = true;
             }

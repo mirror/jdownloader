@@ -15,16 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
-
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(?:www\\.)?freeviewmovies\\.com/(?:porn|video)/(\\d+)/([a-z0-9\\-]+)" })
 public class FreeViewMoviesComCrawler extends PornEmbedParser {
@@ -37,34 +34,18 @@ public class FreeViewMoviesComCrawler extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // old /porn/ links redirect
-        br.setFollowRedirects(true);
-        String parameter = param.toString();
-        final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String name_url = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        br.getPage(parameter);
-        if (br.containsHTML("<div id=\"player\">\\s+This video has no trailer\\.\\s+</div>")) {
-            logger.info("No public trailer!: " + parameter);
-            return decryptedLinks;
-        } else if (br.containsHTML("No htmlCode read") || br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
-            logger.info("Link broken: " + parameter);
-            return decryptedLinks;
-        }
-        decryptedLinks.addAll(findEmbedUrls(name_url));
-        /* 2020-10-01: Prevent their own embed URLs from getting added as they do not contain a meaningful title inside URL. */
-        final String selfhostedDllink = br.getRegex("<source src=\"(http[^\"]+freeviewmovies[^\"]*)\" type=\"video/mp4").getMatch(0);
-        if (decryptedLinks.size() == 0 || selfhostedDllink != null) {
-            /* Must be selfhosted content */
-            decryptedLinks.clear();
-            decryptedLinks.add(this.createDownloadlink(parameter));
-        }
-        return decryptedLinks;
+    @Override
+    protected boolean isOffline(final Browser br) {
+        return jd.plugins.hoster.FreeViewMoviesCom.isOffline(br);
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1).replace("-", " ").trim();
+    }
+
+    @Override
+    protected boolean assumeSelfhostedContentOnNoResults() {
+        return true;
     }
 }

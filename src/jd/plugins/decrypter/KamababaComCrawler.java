@@ -18,10 +18,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -70,5 +72,10 @@ public class KamababaComCrawler extends PornEmbedParser {
     @Override
     protected boolean assumeSelfhostedContentOnNoResults() {
         return true;
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
     }
 }

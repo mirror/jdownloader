@@ -65,6 +65,11 @@ public class WoodrocketCom extends PornEmbedParser {
     }
 
     @Override
+    protected String getParseSource(final Browser br) {
+        return br.getRegex("<iframe(.*?)</iframe>").getMatch(0);
+    }
+
+    @Override
     protected boolean isOffline(final Browser br) {
         return jd.plugins.hoster.WoodrocketCom.isOffline(br);
     }
