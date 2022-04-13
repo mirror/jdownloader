@@ -127,8 +127,9 @@ public class GelbooruCom extends PluginForHost {
         try {
             con = br2.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

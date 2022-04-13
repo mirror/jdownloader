@@ -133,7 +133,8 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
     /**
      * Get source string to parse URLs from. Useful for websites which contain e.g. one video but also URLs to porn channels which would
      * otherwise be crawled by our auto handling e.g. woodrocket.com. </br>
-     * If this returns null, crawler will fail!!
+     * If this returns null, crawler will fail!! </br>
+     * By default this will scan the complete html code of given browser instance.
      */
     protected String getParseSource(final Browser br) {
         return br.getRequest().getHtmlCode();

@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.TiktokConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -39,9 +39,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
-public class TiktokCom extends antiDDoSForHost {
+public class TiktokCom extends PluginForHost {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
         try {
@@ -75,7 +76,6 @@ public class TiktokCom extends antiDDoSForHost {
     }
 
     private String              dllink                 = null;
-    private boolean             server_issues          = false;
     public static final String  PROPERTY_DIRECTURL     = "directurl";
     public static final String  PROPERTY_USERNAME      = "username";
     public static final String  PROPERTY_USER_ID       = "user_id";
@@ -134,6 +134,7 @@ public class TiktokCom extends antiDDoSForHost {
             }
         }
         String createDate = null;
+        String lastModifiedHeaderValue = null;
         if (PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck() && !isDownload) {
             br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -222,20 +223,21 @@ public class TiktokCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
                 }
                 final String videoJson = brc.getRegex("crossorigin=\"anonymous\">(.*?)</script>").getMatch(0);
-                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoData");
+                final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                final Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
                 /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
-                if (entries == null) {
+                if (videoData == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Map<String, Object> itemInfos = (Map<String, Object>) entries.get("itemInfos");
+                final Map<String, Object> itemInfos = (Map<String, Object>) videoData.get("itemInfos");
                 // entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
                 createDate = Long.toString(JavaScriptEngineFactory.toLong(itemInfos.get("createTime"), 0));
                 description = (String) itemInfos.get("text");
                 dllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
                 /* Always look for username --> Username given inside URL which user added can be wrong! */
-                if (entries.containsKey("authorInfos")) {
-                    final Map<String, Object> authorInfos = (Map<String, Object>) entries.get("authorInfos");
+                final Object authorInfosO = videoData.get("authorInfos");
+                if (authorInfosO != null) {
+                    final Map<String, Object> authorInfos = (Map<String, Object>) authorInfosO;
                     final String usernameTmp = (String) authorInfos.get("uniqueId");
                     if (!StringUtils.isEmpty(usernameTmp)) {
                         if (usernameTmp.startsWith("@")) {
@@ -284,14 +286,14 @@ public class TiktokCom extends antiDDoSForHost {
                 try {
                     final Browser brc = br.cloneBrowser();
                     brc.setFollowRedirects(true);
-                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+                    con = brc.openHeadConnection(dllink);
                     if (!this.looksLikeDownloadableContent(con)) {
-                        server_issues = true;
                         try {
                             brc.followConnection(true);
                         } catch (final IOException e) {
                             logger.log(e);
                         }
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 10 * 60 * 1000l);
                     } else {
                         /*
                          * 2020-05-04: Do not use header anymore as it seems like they've modified all files < December 2019 so their
@@ -303,6 +305,7 @@ public class TiktokCom extends antiDDoSForHost {
                         }
                         /* Save it for later usage */
                         link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                        lastModifiedHeaderValue = brc.getRequest().getResponseHeader("Last-Modified");
                     }
                 } finally {
                     try {
@@ -314,20 +317,26 @@ public class TiktokCom extends antiDDoSForHost {
         }
         String filename = "";
         String dateFormatted;
-        /* Try to make filename start with publish date of video. */
+        /* Try to make filename start with publish-date of video. */
         if (!StringUtils.isEmpty(createDate)) {
             dateFormatted = convertDateFormat(createDate);
             if (dateFormatted != null) {
-                filename = dateFormatted;
+                /* Save for later usage */
+                link.setProperty(PROPERTY_DATE, dateFormatted);
+            }
+        } else if (lastModifiedHeaderValue != null && !link.hasProperty(PROPERTY_DATE)) {
+            /* Last chance: Get date from response-header of video directURL. */
+            dateFormatted = convertDateFormat(lastModifiedHeaderValue);
+            if (dateFormatted != null) {
                 /* Save for later usage */
                 link.setProperty(PROPERTY_DATE, dateFormatted);
             }
         } else {
             /* Try to get saved value */
             dateFormatted = link.getStringProperty(PROPERTY_DATE);
-            if (dateFormatted != null) {
-                filename = dateFormatted;
-            }
+        }
+        if (dateFormatted != null) {
+            filename = dateFormatted;
         }
         if (!StringUtils.isEmpty(username)) {
             link.setProperty(PROPERTY_USERNAME, username);
@@ -391,18 +400,29 @@ public class TiktokCom extends antiDDoSForHost {
         return new URL(br.toString()).toString();
     }
 
-    private String convertDateFormat(final String sourceDate) {
-        if (sourceDate == null) {
+    private String convertDateFormat(final String sourceDateString) {
+        if (sourceDateString == null) {
             return null;
         }
         String result = null;
-        SimpleDateFormat target_format = new SimpleDateFormat("yyyy-MM-dd");
-        if (sourceDate.matches("\\d+")) {
+        final SimpleDateFormat target_format = new SimpleDateFormat("yyyy-MM-dd");
+        if (sourceDateString.matches("\\d+")) {
             /* Timestamp */
-            final Date theDate = new Date(Long.parseLong(sourceDate) * 1000);
+            final Date theDate = new Date(Long.parseLong(sourceDateString) * 1000);
             result = target_format.format(theDate);
+        } else if (sourceDateString.matches("[A-Za-z]{3}, \\d{1,2} [A-Za-z]{3} \\d{1,2}:\\d{1,2}:\\d{1,2} [A-Z]+")) {
+            /* E.g. "Last-Modified" header */
+            final SimpleDateFormat source_format = new SimpleDateFormat("DDD, dd MMM, yyyy HH:mm:ss ZZZ", Locale.ENGLISH);
+            Date date;
+            try {
+                date = source_format.parse(sourceDateString);
+                result = target_format.format(date);
+            } catch (final ParseException e) {
+                e.printStackTrace();
+                return null;
+            }
         } else {
-            final String sourceDatePart = new Regex(sourceDate, "^[A-Za-z]+, (\\d{1,2} \\w+ \\d{4})").getMatch(0);
+            final String sourceDatePart = new Regex(sourceDateString, "^[A-Za-z]+, (\\d{1,2} \\w+ \\d{4})").getMatch(0);
             if (sourceDatePart == null) {
                 return null;
             }
@@ -430,12 +450,10 @@ public class TiktokCom extends antiDDoSForHost {
             logger.info("Using stored directurl for downloading");
         } else {
             requestFileInformation(link, true);
-            if (server_issues) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-            } else if (StringUtils.isEmpty(dllink)) {
+            if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getHeaders().put("Referer", "https://www.tiktok.com/");
+            br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
@@ -464,7 +482,7 @@ public class TiktokCom extends antiDDoSForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("Referer", "https://www.tiktok.com/");
+            brc.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, RESUME, MAXCHUNKS);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
