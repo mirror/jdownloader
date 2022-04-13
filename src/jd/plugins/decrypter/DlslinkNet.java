@@ -45,7 +45,7 @@ public class DlslinkNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String fid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.setAllowedResponseCodes(new int[] { 500 });
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
@@ -53,17 +53,22 @@ public class DlslinkNet extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
-        br.getPage("https://dlvisit.com/" + fid);
+        br.getPage("https://" + this.getHost() + "/" + contentID);
         /* Set two important cookies. */
         final String expiryCookie = br.getRegex("SetCookieWith5MinutesExpiry\\(\"PageExpiryDate\", '([^<>\"\\']+)'\\);").getMatch(0);
         if (expiryCookie != null) {
             br.setCookie(br.getHost(), "PageExpiryDate", expiryCookie);
         }
         br.setCookie(br.getHost(), "PageNo", "3");
+        br.getPage("/go/" + contentID);
+        final String redirect = br.getRegex("window\\.location\\.replace\\('(https?://[^\\']+)").getMatch(0);
+        if (redirect != null) {
+            br.getPage(redirect);
+        }
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        brc.getPage("/Url/Page3/" + fid);
-        final Form captchaForm = brc.getFormbyActionRegex(".*ValidateCaptchaAndGetUrl");
+        // brc.getPage("/Url/Page3/" + fid);
+        final Form captchaForm = br.getFormbyActionRegex(".*ValidateCaptchaAndGetUrl");
         if (captchaForm == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
