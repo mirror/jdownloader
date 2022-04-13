@@ -18,14 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginDependencies;
+
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.decrypter.XvideosComProfile.class })
 public class XvideosCom extends XvideosCore {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);

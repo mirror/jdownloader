@@ -18,12 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,10 +26,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.decrypter.VideoOneLife.class })
 public class VideoOneLife extends PluginForHost {
     public VideoOneLife(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,11 +68,11 @@ public class VideoOneLife extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         return jd.plugins.decrypter.VideoOneLife.buildAnnotationUrls(pluginDomains);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String default_extension = ".mp4";
     /* Connection stuff */
