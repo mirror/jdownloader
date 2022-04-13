@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -28,10 +29,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com", "freesexyindians.com" }, urls = { "https?://(?:www\\.)?indianpornvideos2?\\.com/(video/)?[A-Za-z0-9\\-_]+(\\.html)?", "https?://(?:www\\.)?freesexyindians\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.decrypter.IndianpornvideosCom.class })
 public class IndianPornVideosCom extends PluginForHost {
     public IndianPornVideosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,38 +45,48 @@ public class IndianPornVideosCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.IndianpornvideosCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        return jd.plugins.decrypter.IndianpornvideosCom.buildAnnotationUrls(pluginDomains);
+    }
+
     private String dllink = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.indianpornvideos.com/terms/";
-    }
-
-    public static String findStream(Browser br) {
-        String dllink = br.getRegex("\"(https?://stream\\.indianpornvideos\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
-        }
-        return dllink;
+        return "https://www.indianpornvideos.com/privacy/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getPluginPatternMatcher().matches("https?://(www.)?indianpornvideos.com/(account|categories|contact-us|dmca|faq|feed|login|privacy|report-abuse|terms|wp-content|wp-includes|wp-json)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String titleFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (titleFromURL != null) {
+            titleFromURL = titleFromURL.replaceAll("(-|_)", " ").trim();
+            link.setFinalFileName(titleFromURL + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video (does not exist|Was Deleted)|video id not found")) {
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]+) \\- Indian Porn Videos</title>").getMatch(0);
-        }
-        String filename_url = new Regex(link.getPluginPatternMatcher(), "[^/]+/([a-z0-9\\-]+)(\\.html)?$").getMatch(0);
-        dllink = findStream(br);
+        dllink = findStreamURL(br);
         if (dllink == null) {
             if (!br.containsHTML("id=\"video_views_count\"")) {
                 /* Probably not a video-page e.g. '/about-us ' */
@@ -82,18 +95,7 @@ public class IndianPornVideosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        /* Prefer filenames via URL as they're nearly always given */
-        if (filename_url != null) {
-            filename_url = filename_url.replace("-", " ");
-            filename_url = filename_url.trim();
-            link.setFinalFileName(filename_url + ".mp4");
-        } else if (filename != null) {
-            filename = filename.trim();
-            link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
-        }
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        final Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
@@ -111,6 +113,22 @@ public class IndianPornVideosCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)This video (does not exist|Was Deleted)|video id not found")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static String findStreamURL(final Browser br) {
+        String dllink = br.getRegex("\"(https?://stream\\.indianpornvideos\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
+        }
+        return dllink;
     }
 
     @Override

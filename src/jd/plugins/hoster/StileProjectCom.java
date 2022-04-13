@@ -30,13 +30,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.decrypter.StileProjectComDecrypter.class })
 public class StileProjectCom extends PluginForHost {
     private String              dllink      = null;
-    private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
+    public static final String  TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
     private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
 
     public StileProjectCom(PluginWrapper wrapper) {
@@ -75,7 +77,7 @@ public class StileProjectCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.stileproject.com/page/tos.html";
+        return "https://www.stileproject.com/contact";
     }
 
     @Override
@@ -143,7 +145,9 @@ public class StileProjectCom extends PluginForHost {
             if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setPluginPatternMatcher(realVideoURL);
+            if (this.canHandle(br.getURL())) {
+                link.setPluginPatternMatcher(br.getURL());
+            }
         }
         final String titleByURL = getURLTitleCleaned(br.getURL());
         if (titleByURL != null) {
@@ -196,7 +200,6 @@ public class StileProjectCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // Same code as for CelebrityCuntNet
     private String getdllink() throws Exception {
         String directurl = br.getRegex("<source src=\"(https?://[^<>\"]+)[^<>]+type='video/mp4'").getMatch(0);
         if (StringUtils.isEmpty(directurl)) {

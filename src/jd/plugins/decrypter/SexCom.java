@@ -103,6 +103,8 @@ public class SexCom extends PornEmbedParser {
                 externID = br.getRegex("<div class=\"image_frame\"[^<>]*>\\s*(?:<[^<>]*>)?\\s*<img alt=[^<>]*?src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
             if (externID != null) {
+                /* Fix encoding */
+                externID = externID.replace("&amp;", "&");
                 final DownloadLink dl = createDownloadlink("directhttp://" + externID);
                 final String filePath = new URL(externID).getPath();
                 dl.setContentUrl(param.getCryptedUrl());

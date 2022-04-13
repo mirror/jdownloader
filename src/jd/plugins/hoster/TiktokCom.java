@@ -107,15 +107,16 @@ public class TiktokCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
-        String username = null;
         final String fid = getFID(link);
         if (fid == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(PROPERTY_VIDEO_ID, fid);
         if (!link.isNameSet()) {
             link.setName(fid + ".mp4");
         }
+        String username = null;
         if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
             username = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0);
         } else {
