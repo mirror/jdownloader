@@ -557,6 +557,7 @@ public class PluginClassLoader extends URLClassLoader {
         if (wcl != null && (cl = wcl.get()) != null) {
             return cl;
         }
+        // TODO: rewrite to remove ThreadGroup dependency, JEP 425
         ThreadGroup threadGroup = currentThread.getThreadGroup();
         while (threadGroup != null) {
             wcl = threadGroupPluginClassLoader.get(threadGroup);
@@ -570,6 +571,7 @@ public class PluginClassLoader extends URLClassLoader {
 
     public synchronized static void setThreadPluginClassLoaderChild(PluginClassLoaderChild threadChild, PluginClassLoaderChild groupChild) {
         final Thread currentThread = Thread.currentThread();
+        // TODO: rewrite to remove ThreadGroup dependency, JEP 425
         final ThreadGroup threadGroup = currentThread.getThreadGroup();
         threadPluginClassLoader.isEmpty();
         threadGroupPluginClassLoader.isEmpty();
