@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "http://(?:www\\.)?sexzindian\\.com/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "https?://(?:www\\.)?sexzindian\\.com/video/(\\d+)" })
 public class SexZindianCom extends PluginForHost {
     public SexZindianCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,13 +43,48 @@ public class SexZindianCom extends PluginForHost {
         return "http://www.sexzindian.com/static/terms";
     }
 
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.SexZindianComDecrypter.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        return jd.plugins.decrypter.SexZindianComDecrypter.buildAnnotationUrls(pluginDomains);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getURL().contains("/video_missing") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -58,12 +94,12 @@ public class SexZindianCom extends PluginForHost {
         }
         if (filename == null) {
             /* Fallback to url-filename */
-            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://www.sexzindian.com/media/nuevo/playlist.php?key=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        br.getPage("/media/nuevo/playlist.php?key=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         dllink = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -71,15 +107,17 @@ public class SexZindianCom extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         final String ext = getFileNameExtensionFromString(dllink, ".flv");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -93,17 +131,21 @@ public class SexZindianCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         // br.getPage("http://www.sexzindian.com/media/nuevo/playlist.php?key="
         // + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         // DLLINK = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
         // if (DLLINK == null) throw new
         // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // DLLINK = Encoding.htmlDecode(DLLINK);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

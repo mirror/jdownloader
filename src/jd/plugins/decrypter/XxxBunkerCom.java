@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -31,7 +32,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "https://(?:www\\.)?xxxbunker\\.com/([a-z0-9_\\-]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class XxxBunkerCom extends PornEmbedParser {
     public XxxBunkerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,6 +41,34 @@ public class XxxBunkerCom extends PornEmbedParser {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "xxxbunker.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9_\\-]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* DEV NOTES */
@@ -143,7 +172,7 @@ public class XxxBunkerCom extends PornEmbedParser {
                     externID = br.getRegex("window\\.location\\.href=(\"|')(http.*?)\\1").getMatch(1);
                 }
                 if (externID != null) {
-                    final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
+                    final DownloadLink dl = createDownloadlink(parameter);
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
@@ -194,7 +223,7 @@ public class XxxBunkerCom extends PornEmbedParser {
             } else { // Dead code?
                 externID = br.getRegex("player\\.swf\\?config=(https?%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
                 if (externID != null) {
-                    final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
+                    final DownloadLink dl = createDownloadlink(parameter);
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
@@ -202,7 +231,7 @@ public class XxxBunkerCom extends PornEmbedParser {
         }
         externID = br.getRegex("player\\.swf\\?config=(https?%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
+            final DownloadLink dl = createDownloadlink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -216,15 +245,29 @@ public class XxxBunkerCom extends PornEmbedParser {
         throw new DecrypterException("Decrypter broken for link: " + parameter);
     }
 
+    @Override
+    protected boolean isSelfhosted(final Browser br) {
+        if (br.containsHTML(org.appwork.utils.Regex.escape(br.getHost()) + "/embed/\\d+")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        return jd.plugins.hoster.XxxBunkerCom.isOffline(br);
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return jd.plugins.hoster.XxxBunkerCom.findFileTitle(br);
+    }
+
     private DownloadLink getOffline(final String parameter) {
         final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
         offline.setAvailable(false);
         offline.setProperty("offline", true);
         return offline;
-    }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 }

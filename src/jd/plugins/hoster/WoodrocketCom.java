@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "woodrocket.com" }, urls = { "https?://(?:www\\.)?woodrocket\\.com/videos/([a-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class WoodrocketCom extends PluginForHost {
     public WoodrocketCom(PluginWrapper wrapper) {
         super(wrapper);

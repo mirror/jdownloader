@@ -16,16 +16,17 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(www\\.)?stileproject\\.com/video/.*?\\d+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StileProjectComDecrypter extends PornEmbedParser {
     public StileProjectComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,20 +37,49 @@ public class StileProjectComDecrypter extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        final DownloadLink mainlink = createDownloadlink(parameter);
-        final String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
-        /* Check if the video is selfhosted */
-        final String externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null && this.br.getHttpConnection().getResponseCode() == 200) {
-            decryptedLinks.addAll(findEmbedUrls(filename));
-        } else {
-            decryptedLinks.add(mainlink);
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "stileproject.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([a-z0-9\\-]+)-(\\d+)\\.html");
         }
-        return decryptedLinks;
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        return jd.plugins.hoster.StileProjectCom.isOffline(br);
+    }
+
+    @Override
+    protected boolean isSelfhosted(final Browser br) {
+        if (br.containsHTML(Regex.escape(br.getHost()) + "/embed/\\d+")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

@@ -31,7 +31,6 @@ import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -170,7 +169,7 @@ public class RPNetBiz extends PluginForHost {
         ai.setValidUntil(expiryDate * 1000, br);
         final String hosts = br.getPage(api_base + "hostlist.php");
         if (hosts != null) {
-            ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts.split(",")));
+            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts.split(",")));
             ai.setMultiHostSupport(this, supportedHosts);
         }
         account.setType(AccountType.PREMIUM);

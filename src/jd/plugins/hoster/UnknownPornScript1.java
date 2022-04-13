@@ -16,7 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Pattern;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,9 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dansmovies.com", "pornsteep.com", "frigtube.com", "porndull.com" }, urls = { "https?://(?:www\\.)?dansmovies\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?pornsteep\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?frigtube\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?porndull\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UnknownPornScript1 extends PluginForHost {
     public UnknownPornScript1(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,6 +43,27 @@ public class UnknownPornScript1 extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.UnknownPornScript1Crawler.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        return jd.plugins.decrypter.UnknownPornScript1Crawler.buildAnnotationUrls(pluginDomains);
     }
 
     /* DEV NOTES */
@@ -55,29 +77,27 @@ public class UnknownPornScript1 extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
         return "http://www.dansmovies.com/tos/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
-        server_issues = false;
         final String host = link.getHost();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
-        String filename = regexStandardTitleWithHost(host);
-        if (filename == null) {
-            filename = url_filename;
+        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
+        String title = regexStandardTitleWithHost(host);
+        if (title == null) {
+            /* Fallback */
+            title = url_filename;
         }
         final String html_clip = br.getRegex("clip: \\{(.*?)\\},").getMatch(0);
         if (html_clip != null) {
@@ -97,31 +117,32 @@ public class UnknownPornScript1 extends PluginForHost {
             br.getPage(br.getRegex("(http[^<>\"]+/embed/[^<>\"]+)\"").getMatch(0));
             dllink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            title = encodeUnicode(title);
+            final String ext;
+            if (dllink != null) {
+                dllink = Encoding.htmlDecode(dllink);
+                ext = getFileNameExtensionFromString(dllink, default_extension);
+            } else {
+                ext = default_extension;
+            }
+            if (!title.endsWith(ext)) {
+                title += ext;
+            }
+            link.setFinalFileName(title);
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext;
-        if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
-                    server_issues = true;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
                 }
             } finally {
                 try {
@@ -147,9 +168,7 @@ public class UnknownPornScript1 extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);

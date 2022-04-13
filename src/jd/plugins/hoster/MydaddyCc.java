@@ -16,8 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.appwork.utils.DebugMode;
@@ -38,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydaddy.cc" }, urls = { "https?://(?:www\\.)?mydaddy\\.cc/video/([a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MydaddyCc extends PluginForHost {
     public MydaddyCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,6 +49,34 @@ public class MydaddyCc extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mydaddy.cc" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([a-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
     /* DEV NOTES */
     // Tags: porn plugin
@@ -64,7 +94,7 @@ public class MydaddyCc extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://mydaddy.cc/";
+        return "https://mydaddy.cc/";
     }
 
     @Override
@@ -84,16 +114,16 @@ public class MydaddyCc extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* Host itself has no filenames so if we know the title from the website which embedded the content, prefer that! */
-        final String actress_name = link.getStringProperty(PROPERTY_ACTRESS_NAME);
-        String filename = link.getStringProperty(PROPERTY_CRAWLER_TITLE);
-        if (filename == null) {
+        final String accressName = link.getStringProperty(PROPERTY_ACTRESS_NAME);
+        String title = link.getStringProperty(PROPERTY_CRAWLER_TITLE);
+        if (title == null) {
             /* Fallback to videoID is filename. */
-            filename = getFID(link);
+            title = getFID(link);
         }
-        if (actress_name != null && !filename.contains(actress_name)) {
-            filename = actress_name + " - " + filename;
+        if (accressName != null && !title.contains(accressName)) {
+            title = accressName + " - " + title;
         }
-        link.setFinalFileName(filename + ".mp4");
+        link.setFinalFileName(title + ".mp4");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
