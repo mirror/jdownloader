@@ -1006,40 +1006,38 @@ public class YoutubeHelper {
     }
 
     String descrambleThrottle(final String value) throws IOException, PluginException {
-        if (value == null) {
-            return null;
-        }
-        String function = null;
-        HashMap<String, String> cache = jsCache.get(vid.videoID);
-        if (cache != null && !cache.isEmpty()) {
-            function = cache.get("n_function");
-        }
-        if (function == null) {
-            if (cache == null) {
-                cache = new HashMap<String, String>();
-                jsCache.put(vid.videoID, cache);
-            }
-            final String html5PlayerSource = ensurePlayerSource();
-            function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)").getMatch(0);
-            cache.put("n_function", function);
-        }
-        if (function != null) {
-            try {
-                final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
-                final ScriptEngine engine = manager.getEngineByName("javascript");
-                final String js = "var calculate" + function + " var result=calculate(\"" + value + "\")";
-                engine.eval(js);
-                final String result = StringUtils.valueOfOrNull(engine.get("result"));
-                if (result != null) {
-                    return result;
-                } else {
-                    return value;
+        String ret = value;
+        if (ret != null) {
+            HashMap<String, String> cache = jsCache.get(vid.videoID);
+            String function = cache != null ? cache.get("n_function") : null;
+            if (function == null) {
+                if (cache == null) {
+                    cache = new HashMap<String, String>();
+                    jsCache.put(vid.videoID, cache);
                 }
-            } catch (Exception e) {
-                logger.log(e);
+                final String html5PlayerSource = ensurePlayerSource();
+                function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)").getMatch(0);
+                cache.put("n_function", function);
             }
+            if (function != null) {
+                try {
+                    final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    final String js = "var calculate" + function + " var result=calculate(\"" + value + "\")";
+                    engine.eval(js);
+                    final String result = StringUtils.valueOfOrNull(engine.get("result"));
+                    if (result != null) {
+                        ret = result;
+                    } else {
+                        throw new Exception();
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+            }
+            logger.info("nsig(" + (function != null) + "):" + value + "->" + ret);
         }
-        return value;
+        return ret;
     }
 
     String descrambleSignatureNew(final String sig) throws IOException, PluginException {
@@ -1104,6 +1102,7 @@ public class YoutubeHelper {
                         // not used by js but the failover.
                         cache.put("des", des);
                     }
+                    logger.info("sig:" + sig + "->" + result);
                     return result;
                 }
             } catch (final Throwable e) {
@@ -1138,6 +1137,7 @@ public class YoutubeHelper {
             for (final String line : t) {
                 s = YoutubeHelper.handleRule(s, line);
             }
+            logger.info("sig:" + sig + "->" + s);
             return s;
         } catch (final PluginException e) {
             logger.log(e);
@@ -1149,8 +1149,9 @@ public class YoutubeHelper {
         if (html5PlayerSource == null) {
             if (html5PlayerJs == null) {
                 throw new IOException("no html5 player js");
+            } else {
+                html5PlayerSource = br.cloneBrowser().getPage(html5PlayerJs);
             }
-            html5PlayerSource = br.cloneBrowser().getPage(html5PlayerJs);
         }
         return html5PlayerSource;
     }

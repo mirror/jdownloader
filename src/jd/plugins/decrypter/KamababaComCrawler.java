@@ -18,13 +18,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KamababaComCrawler extends PornEmbedParser {
@@ -59,7 +59,7 @@ public class KamababaComCrawler extends PornEmbedParser {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-]+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!tag|wp-content|wp-includes|wp-admin)([a-z0-9\\-]+)/?");
         }
         return ret.toArray(new String[0]);
     }

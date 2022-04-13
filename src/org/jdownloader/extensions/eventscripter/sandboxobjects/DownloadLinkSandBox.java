@@ -41,7 +41,6 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context download list link")
@@ -55,6 +54,14 @@ public class DownloadLinkSandBox {
 
     public DownloadLinkSandBox() {
         this(null);
+    }
+
+    public String getLinkID() {
+        if (downloadLink != null) {
+            return downloadLink.getLinkID();
+        } else {
+            return null;
+        }
     }
 
     public String getPriority() {

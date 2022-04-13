@@ -346,7 +346,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                         final String license = StringUtils.join(Arrays.asList((String[]) info), "\r");
                         final String Licensee = new Regex(license, "Licensee\\s*=\\s*([^\r\n]+)").getMatch(0);
                         final String LicenseRegistrationNumber = new Regex(license, "LicenseRegistrationNumber\\s*=\\s*([^\r\n]+)").getMatch(0);
-                        stats.add(createLink(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2(Licensee + "(#" + LicenseRegistrationNumber + ")")), "skip");
+                        stats.add(createLink(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2(Licensee + "(#" + LicenseRegistrationNumber + ")"), "https://www.jyloo.com/synthetica/license/"), "skip");
                     }
                 } catch (Throwable ignore) {
                 }

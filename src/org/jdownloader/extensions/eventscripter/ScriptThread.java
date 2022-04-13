@@ -183,7 +183,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             }
             // ProcessBuilderFactory.runCommand(commandline);
         } catch (Throwable e) {
-            logger.log(e);
+            logger.exception("An Error Occured:ID=" + script.getID() + "|Name=" + script.getName() + "|Trigger=" + script.getEventTrigger() + "|Message:" + e.getMessage(), e);
             notifyAboutException(e);
         } finally {
             try {

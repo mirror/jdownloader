@@ -15,6 +15,7 @@ import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -24,6 +25,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.usenet.InvalidAuthException;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -43,7 +45,7 @@ public class XsNewsNl extends UseNet {
     private boolean containsSessionCookie(Browser br) {
         final Cookies cookies = br.getCookies(getHost());
         for (final Cookie cookie : cookies.getCookies()) {
-            if (cookie.getKey().startsWith("sessid") && !"deleted".equals(cookie.getValue())) {
+            if (cookie.getKey().startsWith("sess") && !"deleted".equals(cookie.getValue())) {
                 return true;
             }
         }
@@ -60,9 +62,16 @@ public class XsNewsNl extends UseNet {
             final AccountInfo ai = new AccountInfo();
             br.setFollowRedirects(true);
             final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
             try {
-                if (cookies != null) {
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
+                    br.setCookies(userCookies);
+                } else if (cookies != null) {
+                    logger.info("Attempting normal cookie login");
                     br.setCookies(getHost(), cookies);
+                }
+                if (containsSessionCookie(br)) {
                     br.setCurrentURL("https://www.xsnews.nl/en/myxsnews.html");
                     final GetRequest request = br.createGetRequest("https://www.xsnews.nl/action/auth/status?_=" + System.currentTimeMillis());
                     request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -86,10 +95,18 @@ public class XsNewsNl extends UseNet {
                         } catch (InvalidAuthException e2) {
                         }
                     }
+                    if (userCookies != null) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
                     logger.info("Full login");
                     account.clearCookies("");
                     br.clearCookies(getHost());
                     br.setCookie(getHost(), "lang", "en");
+                    br.cloneBrowser().getPage("https://www.xsnews.nl/action/acct/status?_=" + System.currentTimeMillis());
                     br.getPage("https://www.xsnews.nl/en/myxsnews.html");
                     final CaptchaHelperHostPluginRecaptchaV2 captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LcZur0UAAAAAKgw3J_fWyW6Dip32vp3QIQwtyGo") {
                         @Override
@@ -97,7 +114,8 @@ public class XsNewsNl extends UseNet {
                             return TYPE.INVISIBLE;
                         }
                     };
-                    final PostRequest login = br.createPostRequest("https://www.xsnews.nl/action/auth/login&lang=en", "g-recaptcha-response=" + Encoding.urlEncode(captcha.getToken()) + "&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                    final PostRequest login = br.createPostRequest("https://www.xsnews.nl/action/auth/login&lang=en", "g_recaptcha_response=" + Encoding.urlEncode(captcha.getToken()) + "&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                    login.getHeaders().put("Accept", "application/json");
                     login.getHeaders().put("Origin", "https://www.xsnews.nl");
                     login.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getPage(login);
