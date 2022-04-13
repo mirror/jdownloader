@@ -22,7 +22,7 @@ import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyHostPluginCache {
-    private static final long CACHEVERSION = 16022021001l + LazyPlugin.FEATURE.CACHEVERSION;
+    private static final long CACHEVERSION = 13042022001l + LazyPlugin.FEATURE.CACHEVERSION;
 
     public static ByteArrayOutputStream readFile(File file) throws IOException {
         final FileInputStream fis = new FileInputStream(file);
@@ -44,6 +44,7 @@ public class LazyHostPluginCache {
     public static List<LazyHostPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(4096);
         if (file.exists()) {
+            final Map<List<FEATURE>, FEATURE[]> featureCache = new HashMap<List<FEATURE>, FEATURE[]>();
             final Map<Object, List<String>> dependenciesCache = new HashMap<Object, List<String>>();
             final ByteArrayOutputStream byteBuffer = readFile(file);
             final CountingInputStream bis = new CountingInputStream(new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size()));
@@ -103,7 +104,16 @@ public class LazyHostPluginCache {
                                     features.add(feature);
                                 }
                             }
-                            lazyHostPlugin.setFeatures(features.toArray(new LazyPlugin.FEATURE[0]));
+                            FEATURE[] cached = featureCache.get(features);
+                            if (cached == null && !featureCache.containsKey(features)) {
+                                if (features.size() == 0) {
+                                    cached = null;
+                                } else {
+                                    cached = features.toArray(new FEATURE[0]);
+                                }
+                                featureCache.put(features, cached);
+                            }
+                            lazyHostPlugin.setFeatures(cached);
                         }
                         ret.add(lazyHostPlugin);
                     }

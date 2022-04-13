@@ -21,11 +21,12 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.host.LazyHostPluginCache;
 
 public class LazyCrawlerPluginCache {
-    private static final long CACHEVERSION = 05042022001l + LazyPlugin.FEATURE.CACHEVERSION;
+    private static final long CACHEVERSION = 13042022001l + LazyPlugin.FEATURE.CACHEVERSION;
 
     public static List<LazyCrawlerPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
         if (file.exists()) {
+            final Map<List<FEATURE>, FEATURE[]> featureCache = new HashMap<List<FEATURE>, FEATURE[]>();
             final Map<Object, List<String>> dependenciesCache = new HashMap<Object, List<String>>();
             final ByteArrayOutputStream byteBuffer = LazyHostPluginCache.readFile(file);
             final CountingInputStream bis = new CountingInputStream(new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size()));
@@ -75,7 +76,16 @@ public class LazyCrawlerPluginCache {
                                     features.add(feature);
                                 }
                             }
-                            lazyCrawlerPlugin.setFeatures(features.toArray(new FEATURE[0]));
+                            FEATURE[] cached = featureCache.get(features);
+                            if (cached == null && !featureCache.containsKey(features)) {
+                                if (features.size() == 0) {
+                                    cached = null;
+                                } else {
+                                    cached = features.toArray(new FEATURE[0]);
+                                }
+                                featureCache.put(features, cached);
+                            }
+                            lazyCrawlerPlugin.setFeatures(cached);
                         }
                         ret.add(lazyCrawlerPlugin);
                     }

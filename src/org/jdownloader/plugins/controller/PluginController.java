@@ -5,15 +5,23 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.HostPlugin;
 import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
@@ -70,7 +78,40 @@ public abstract class PluginController<T extends Plugin> {
         }
     }
 
-    protected abstract CHECK_RESULT checkForChanges(Map<Object, List<String>> dependenciesCache, PluginClassLoaderChild classLoader, LazyPluginClass lazyPluginClass, long lastFileModification) throws Exception;
+    protected CHECK_RESULT checkForChanges(Map<Object, List<String>> dependenciesCache, PluginClassLoaderChild classLoader, LazyPluginClass lazyPluginClass, long lastFileModification) throws Exception {
+        if (lazyPluginClass.getLastModified() != lastFileModification) {
+            return CHECK_RESULT.FAILED_LASTMODIFIED;
+        } else if (lazyPluginClass.getDependencies() != null) {
+            if (dependenciesCache.containsKey(lazyPluginClass.getDependencies())) {
+                return CHECK_RESULT.SUCCESSFUL_DEPENDENCIES;
+            } else {
+                final Iterator<String> it = lazyPluginClass.getDependencies().iterator();
+                while (it.hasNext()) {
+                    final String className = it.next();
+                    final Class<?> checkClazz = classLoader.loadClass(className);
+                    final String revision;
+                    final HostPlugin hostPlugin = checkClazz.getAnnotation(HostPlugin.class);
+                    if (hostPlugin != null) {
+                        revision = hostPlugin.revision();
+                    } else {
+                        final DecrypterPlugin decrypterPlugin = checkClazz.getAnnotation(DecrypterPlugin.class);
+                        if (decrypterPlugin != null) {
+                            revision = decrypterPlugin.revision();
+                        } else {
+                            return CHECK_RESULT.FAILED_DEPENDENCIES;
+                        }
+                    }
+                    if (!StringUtils.equals(revision, it.next())) {
+                        return CHECK_RESULT.FAILED_DEPENDENCIES;
+                    }
+                }
+                dependenciesCache.put(lazyPluginClass.getDependencies(), lazyPluginClass.getDependencies());
+                return CHECK_RESULT.SUCCESSFUL_DEPENDENCIES;
+            }
+        } else {
+            return CHECK_RESULT.SUCCESSFUL;
+        }
+    }
 
     protected static byte[] getFileHashBytes(final File arg, final MessageDigest md, final byte[] mdCache) throws IOException {
         if (arg == null || !arg.isFile()) {
@@ -78,6 +119,69 @@ public abstract class PluginController<T extends Plugin> {
         } else {
             final FileInputStream fis = new FileInputStream(arg);
             return getFileHashBytes(fis, md, mdCache);
+        }
+    }
+
+    protected List<Class<?>> getClassHierarchy(List<Class<?>> dependencies, final Class<? extends Plugin> clazz) {
+        final boolean hierarchyStart;
+        if (dependencies == null) {
+            hierarchyStart = true;
+            dependencies = new ArrayList<Class<?>>();
+        } else {
+            hierarchyStart = false;
+        }
+        Class<?> currentClazz = clazz;
+        while (currentClazz != null) {
+            if (!dependencies.contains(currentClazz)) {
+                if (PluginForHost.class.isAssignableFrom(currentClazz) && currentClazz.getAnnotation(HostPlugin.class) != null) {
+                    dependencies.add(currentClazz);
+                } else if (PluginForDecrypt.class.isAssignableFrom(currentClazz) && currentClazz.getAnnotation(DecrypterPlugin.class) != null) {
+                    dependencies.add(currentClazz);
+                }
+                final PluginDependencies pluginDependencies = currentClazz.getAnnotation(PluginDependencies.class);
+                if (pluginDependencies != null) {
+                    for (Class<? extends Plugin> dependency : pluginDependencies.dependencies()) {
+                        if (!dependencies.contains(dependency)) {
+                            getClassHierarchy(dependencies, dependency);
+                        }
+                    }
+                }
+            }
+            currentClazz = currentClazz.getSuperclass();
+        }
+        if (hierarchyStart) {
+            dependencies.remove(clazz);
+        }
+        return dependencies;
+    }
+
+    protected List<String> getClassDependencies(Map<Object, List<String>> dependenciesCache, Class<? extends Plugin> clazz) throws Exception {
+        final List<Class<?>> clazzHierarchy = getClassHierarchy(null, clazz);
+        List<String> dependencies = new ArrayList<String>();
+        for (final Class<?> dependency : clazzHierarchy) {
+            final HostPlugin hostPlugin = dependency.getAnnotation(HostPlugin.class);
+            if (hostPlugin != null) {
+                dependencies.add(dependency.getName());
+                dependencies.add(hostPlugin.revision());
+                continue;
+            }
+            final DecrypterPlugin decryptPlugin = dependency.getAnnotation(DecrypterPlugin.class);
+            if (decryptPlugin != null) {
+                dependencies.add(dependency.getName());
+                dependencies.add(decryptPlugin.revision());
+            }
+        }
+        if (dependencies.size() > 0) {
+            if (dependenciesCache.containsKey(dependencies)) {
+                dependencies = dependenciesCache.get(dependencies);
+            } else {
+                dependenciesCache.put(dependencies, dependencies);
+            }
+        }
+        if (dependencies.size() > 0) {
+            return dependencies;
+        } else {
+            return null;
         }
     }
 
