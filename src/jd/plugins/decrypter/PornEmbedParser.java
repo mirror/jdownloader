@@ -3,10 +3,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -21,6 +17,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.DecrypterArrayList;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends PluginForDecrypt {
@@ -47,10 +47,10 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }
+
     // protected final String getFileTitle(final Browser br) {
     // return getFileTitle(null, br);
     // }
-
     protected String getFileTitle(final CryptedLink param, final Browser br) {
         return null;
     }
@@ -62,8 +62,8 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
     }
 
     /**
-     * Override this if it is possible to recognize selfhosted content before looking for external URLs. </br>
-     * Example plugin: boobinspector.com
+     * Override this if it is possible to recognize selfhosted content before looking for external URLs. </br> Example plugin:
+     * boobinspector.com
      */
     protected boolean isSelfhosted(final Browser br) {
         return false;
@@ -132,17 +132,15 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
 
     /**
      * Get source string to parse URLs from. Useful for websites which contain e.g. one video but also URLs to porn channels which would
-     * otherwise be crawled by our auto handling e.g. woodrocket.com. </br>
-     * If this returns null, complete HTML source will be used as fallback! </br>
-     * (Better crawl too much than nothing...)
+     * otherwise be crawled by our auto handling e.g. woodrocket.com. </br> If this returns null, complete HTML source will be used as
+     * fallback! </br> (Better crawl too much than nothing...)
      */
     protected String getParseSource(final Browser br) {
-        return null;
+        return br.getRequest().getHtmlCode();
     }
 
     /**
-     * Use this to allow/skip found URLs by pattern. </br>
-     * Does by default not allow items that would go back into current crawler plugin.
+     * Use this to allow/skip found URLs by pattern. </br> Does by default not allow items that would go back into current crawler plugin.
      */
     protected boolean allowResult(final String url) {
         if (this.canHandle(url)) {
@@ -302,26 +300,28 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         /************************************************************************************************************/
         // Now check for all existant URLs if they're supported by any plugin tagged as porn plugin
         /************************************************************************************************************/
-        String parseSource = getParseSource(br);
-        if (parseSource == null) {
-            /* Fallback- and default handling */
-            parseSource = br.getRequest().getHtmlCode();
-        }
-        final String[] urls = HTMLParser.getHttpLinks(parseSource, br.getURL());
-        for (final String url : urls) {
-            if (!allowResult(url)) {
-                continue;
-            }
-            final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
-            if (nextLazyCrawlerPlugins.size() > 0) {
-                decryptedLinks.addAll(convert(br, title, url, nextLazyCrawlerPlugins));
-            }
-            final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
-            if (nextLazyHostPlugins.size() > 0) {
-                decryptedLinks.addAll(convert(br, title, url, nextLazyHostPlugins));
+        final String[] urls = getEmbedURLs(br);
+        if (urls != null) {
+            for (final String url : urls) {
+                if (allowResult(url)) {
+                    final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
+                    if (nextLazyCrawlerPlugins.size() > 0) {
+                        decryptedLinks.addAll(convert(br, title, url, nextLazyCrawlerPlugins));
+                    }
+                    final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
+                    if (nextLazyHostPlugins.size() > 0) {
+                        decryptedLinks.addAll(convert(br, title, url, nextLazyHostPlugins));
+                    }
+                }
             }
         }
         return decryptedLinks;
+    }
+
+    protected String[] getEmbedURLs(Browser br) throws Exception {
+        final String parseSource = getParseSource(br);
+        final String[] urls = HTMLParser.getHttpLinks(parseSource, br.getURL());
+        return urls;
     }
 
     protected List<DownloadLink> convert(final Browser br, final String title, final String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {

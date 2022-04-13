@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,9 +25,13 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "https?://(?:www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" })
 public class PrtctdScdvntCm extends antiDDoSForDecrypt {
@@ -60,34 +61,49 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String title = br.getRegex("<title>\\s*(?:Links protector:)?\\s*(.*?)\\s*</title>").getMatch(0);
+        final FilePackage fp;
+        if (title != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(title);
+        } else {
+            fp = null;
+        }
         final String cpPage = br.getRegex("\"(plugin/.*?)\"").getMatch(0);
         final String sendCaptcha = "/ksl.php";
         final String getList = "/llinks.php";
         xhrPostPage(getList, "LinkName=" + postvar);
-        final String[] linksCount = xhr.getRegex("(moc\\.tenvdacos\\.detcetorp//:s?ptth)").getColumn(0);
+        String[] linksCount = xhr.getRegex("(ten\\.selifylf//:s?ptth)").getColumn(0);
+        if (linksCount == null || linksCount.length == 0) {
+            linksCount = xhr.getRegex("(moc\\.tenvdacos\\.detcetorp//:s?ptth)").getColumn(0);
+        }
         if (linksCount == null || linksCount.length == 0) {
             return null;
         }
         final int linkCounter = linksCount.length;
         if (cpPage != null) {
+            Browser r = xhr;
             for (int i = 0; i <= 3; i++) {
                 final String equals = this.getCaptchaCode(MAINPAGE + cpPage, param);
-                xhrPostPage(sendCaptcha, "res_code=" + equals);
-                if (!br.toString().trim().equals("1") && !br.toString().trim().equals("0")) {
+                r = xhrPostPage(sendCaptcha, "res_code=" + equals);
+                if (!r.toString().trim().equals("1") && !r.toString().trim().equals("0")) {
                     logger.warning("Error in doing the maths for link: " + parameter);
-                    return null;
-                }
-                if (!br.toString().trim().equals("1")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (!r.toString().trim().equals("1")) {
                     continue;
+                } else {
+                    break;
                 }
-                break;
             }
-            if (!br.toString().trim().equals("1")) {
+            if (!xhr.toString().trim().equals("1")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else if (true) {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            xhrPostPage(sendCaptcha, "recaptcha_code=" + Encoding.urlEncode(recaptchaV2Response));
+            final Browser r = xhrPostPage(sendCaptcha, "recaptcha_code=" + Encoding.urlEncode(recaptchaV2Response));
+            if (!r.toString().trim().equals("1")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
         }
         logger.info("Found " + linkCounter + " links, decrypting now...");
         br.setFollowRedirects(false);
@@ -99,7 +115,7 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
                 logger.info("Found one offline link for link " + parameter + " linkid:" + i);
                 continue;
             }
-            String finallink = br.getRegex("http-equiv=\"refresh\" content=\"0;url=(http[^\"]+)\"").getMatch(0);
+            String finallink = br.getRegex("http-equiv\\s*=\\s*\"refresh\" content\\s*=\\s*\"0;url\\s*=\\s*(https?[^\"]+)\"").getMatch(0);
             if (finallink == null) {
                 // Handlings for more hosters will come soon i think
                 if (br.containsHTML("turbobit\\.net")) {
@@ -107,12 +123,12 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
                     getPage(br, singleProtectedLink);
                     if (br.getRedirectLocation() == null) {
                         logger.warning("Redirect location for this link is null: " + parameter);
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String turboId = new Regex(br.getRedirectLocation(), "http://turbobit\\.net/download/free/(.+)").getMatch(0);
+                    final String turboId = new Regex(br.getRedirectLocation(), "https?://turbobit\\.net/download/free/(.+)").getMatch(0);
                     if (turboId == null) {
                         logger.warning("There is a problem with the link: " + br.getURL());
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     finallink = "http://turbobit.net/" + turboId + ".html";
                 }
@@ -120,14 +136,20 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
             if (finallink == null) {
                 logger.warning("Finallink for the following link is null: " + parameter);
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            final DownloadLink link = createDownloadlink(finallink);
+            if (fp != null) {
+                fp.add(link);
+            }
+            decryptedLinks.add(link);
+            distribute(link);
         }
         return decryptedLinks;
     }
 
-    private void xhrPostPage(String page, String param) throws Exception {
+    private Browser xhrPostPage(String page, String param) throws Exception {
         xhr = br.cloneBrowser();
         postPage(xhr, page, param);
+        return xhr;
     }
 
     /* NO OVERRIDE!! */

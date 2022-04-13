@@ -66,7 +66,7 @@ public class ResearchgateNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(429);
         br.getPage(link.getPluginPatternMatcher());
-        if (dl.getConnection().getResponseCode() == 429) {
+        if (br.getHttpConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 429", 10 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

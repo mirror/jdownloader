@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -20,12 +21,55 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkDatabindingInterface;
+import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+import jd.plugins.download.raf.ChunkRange;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -105,47 +149,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.BrowserAdapter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.DownloadLinkDatabindingInterface;
-import jd.plugins.FilePackage;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
@@ -1112,7 +1115,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         dashLink.setLivePlugin(this);
         final LinkStatus videoLinkStatus = new LinkStatus(dashLink);
         final String host = Browser.getHost(streamData.getBaseUrl());
-        Downloadable dashDownloadable = new DownloadLinkDownloadable(dashLink) {
+        final Downloadable dashDownloadable = new DownloadLinkDownloadable(dashLink) {
             volatile long[] chunkProgress = null;
             {
                 final Object ret = downloadLink.getProperty(dashChunksProperty, null);
@@ -1333,8 +1336,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             }
         };
         final YoutubeConfig youtubeConfig = PluginJsonConfig.get(YoutubeConfig.class);
-        final String[] segments = streamData.getSegments();
-        if (segments != null) {
+        if (streamData.getSegments() != null) {
+            final String[] segments = streamData.getSegments();
+            dashDownloadable.setResumeable(false);
             dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, new URL(streamData.getBaseUrl()), segments) {
                 @Override
                 protected boolean retrySegmentConnection(Browser br, Segment segment, int retryCounter) throws InterruptedException, PluginException {
@@ -1346,20 +1350,88 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
             };
         } else {
-            final GetRequest request = new GetRequest(streamData.getBaseUrl());
-            final List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
-            request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
-            dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream(youtubeConfig));
-            if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+            final int maxChunkSize = 1024 * 1024 * 10;
+            if (streamData.getContentLength() > 0 && streamData.getContentLength() > maxChunkSize && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                final List<Segment> segments = new ArrayList<Segment>();
+                long position = 0;
+                long[] chunkProgress = dashDownloadable.getChunksProgress();
+                if (chunkProgress == null || chunkProgress.length != 1 || chunkProgress[0] > streamData.getContentLength()) {
+                    chunkProgress = null;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    chunkProgress[0] = Math.min(new File(dashDownloadable.getFileOutputPart()).length(), chunkProgress[0]);
+                }
+                final Random rnd = new Random();
+                while (true) {
+                    final long remaining = streamData.getContentLength() - position;
+                    if (remaining == 0) {
+                        break;
+                    }
+                    final int rndFactor = rnd.nextInt(100 - 90 + 1) + 90;
+                    final int chunkLength = (int) Math.min(remaining, (long) (rndFactor / 100.0d * maxChunkSize));
+                    final long chunk_to = position + chunkLength - 1;
+                    if (chunkProgress == null || chunkProgress[0] < chunk_to) {
+                        final Segment segment = new Segment(streamData.getBaseUrl(), position, chunk_to);
+                        segments.add(segment);
+                    }
+                    position += chunkLength;
+                }
+                dashDownloadable.setResumeable(true);
+                dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, segments) {
+                    @Override
+                    protected Request createSegmentRequest(Segment seg) throws IOException {
+                        final Request ret = super.createSegmentRequest(seg);
+                        ret.getHeaders().put(new HTTPHeader("Connection", "close"));
+                        return ret;
+                    }
+
+                    @Override
+                    public boolean isResumedDownload() {
+                        final ChunkRange firstChunkRange = segments.get(0).getChunkRange();
+                        return firstChunkRange.isRangeRequested() && firstChunkRange.getFrom() > 0;
+                    }
+
+                    @Override
+                    protected long onSegmentStart(FileOutputStream outputStream, Segment segment, URLConnectionAdapter con) throws IOException {
+                        final long ret = super.onSegmentStart(outputStream, segment, con);
+                        outputStream.flush();
+                        dashDownloadable.setChunksProgress(new long[] { ret });
+                        return ret;
+                    }
+
+                    @Override
+                    protected boolean isSegmentConnectionValid(Segment segment, URLConnectionAdapter con) throws IOException, PluginException {
+                        final boolean ret = super.isSegmentConnectionValid(segment, con);
+                        if (ret && con.getCompleteContentLength() > 0 && streamData.getContentLength() != con.getCompleteContentLength()) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        return ret;
+                    }
+
+                    @Override
+                    protected boolean retrySegmentConnection(Browser br, Segment segment, int retryCounter) throws InterruptedException, PluginException {
+                        final boolean ret = super.retrySegmentConnection(br, segment, retryCounter);
+                        if (ret) {
+                            YoutubeDashV2.this.sleep(2000, downloadLink);
+                        }
+                        return ret;
+                    }
+                };
+            } else {
+                final GetRequest request = new GetRequest(streamData.getBaseUrl());
+                final List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
+                request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
+                dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream(youtubeConfig));
+                if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    if (dl.getConnection().getResponseCode() == 500) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
@@ -1655,10 +1727,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             newView = new DefaultDownloadLinkViewImpl() {
                 @Override
                 public long getBytesLoaded() {
-                    if (data.isDashVideoFinished()) {
-                        return super.getBytesLoaded() + data.getDashVideoSize();
+                    final long video = data.getDashVideoBytesLoaded();
+                    if (!data.isDashVideoFinished()) {
+                        return video;
                     } else {
-                        return super.getBytesLoaded();
+                        final long audio = data.getDashAudioBytesLoaded();
+                        return video + audio;
                     }
                 }
             };
@@ -1713,21 +1787,14 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     loadVideo = false;
                 } else {
                     loadVideo |= Boolean.FALSE.equals(videoStreamLoaded);
-                }
-                if (loadVideo) {
-                    /* videoStream not finished yet, resume/download it */
-                    final Boolean ret = downloadDashStream(downloadLink, data, true);
-                    if (ret == null) {
-                        return;
-                    } else if (!ret) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (loadVideo) {
+                        data.setDashVideoFinished(false);
                     }
                 }
-                /* videoStream is finished */
                 final String audioStreamPath = getAudioStreamPath(downloadLink);
                 final File audioStreamFile = audioStreamPath != null ? new File(audioStreamPath) : null;
                 final Boolean audioStreamLoaded;
-                if (audioStreamFile != null && audioStreamFile.isFile()) {
+                if (audioStreamFile != null) {
                     if (audioStreamFile.isFile() && audioStreamFile.length() > 0) {
                         audioStreamLoaded = true;
                         data.setDashAudioFinished(true);
@@ -1740,6 +1807,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 boolean loadAudio = !data.isDashAudioFinished();
                 loadAudio |= Boolean.FALSE.equals(audioStreamLoaded);
                 if (loadAudio) {
+                    data.setDashAudioFinished(false);
+                }
+                if (loadVideo) {
+                    /* videoStream not finished yet, resume/download it */
+                    final Boolean ret = downloadDashStream(downloadLink, data, true);
+                    if (ret == null) {
+                        return;
+                    } else if (!ret) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                if (loadAudio) {
                     /* audioStream not finished yet, resume/download it */
                     final Boolean ret = downloadDashStream(downloadLink, data, false);
                     if (ret == null) {
@@ -1748,6 +1827,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                logger.info("LoadVideo:" + loadVideo + "|File:" + videoStreamFile + "|Size:" + (videoStreamFile != null ? videoStreamFile.length() : "~"));
+                logger.info("LoadAudio:" + loadAudio + "|File:" + audioStreamFile + "|Size:" + (audioStreamFile != null ? audioStreamFile.length() : "~"));
                 if (audioStreamFile != null && audioStreamFile.isFile() && !new File(downloadLink.getFileOutput()).exists()) {
                     downloadLink.setAvailable(true);
                     if (!PluginJsonConfig.get(YoutubeConfig.class).isDASHMuxingEnabled()) {

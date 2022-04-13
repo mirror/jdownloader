@@ -27,7 +27,6 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveVal
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context linkgrabber list link")
@@ -146,6 +145,16 @@ public class CrawledLinkSandbox {
         }
     }
 
+    public String getPluginURL() {
+        if (link != null) {
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null) {
+                return downloadLink.getPluginPatternMatcher();
+            }
+        }
+        return null;
+    }
+
     private DownloadLinkSandBox downloadLinkSandbox = null;
 
     public DownloadLinkSandBox getDownloadLink() {
@@ -234,6 +243,11 @@ public class CrawledLinkSandbox {
         } else {
             return null;
         }
+    }
+
+    public String getLinkID() {
+        final DownloadLinkSandBox downloadLinkSandBox = getDownloadLink();
+        return downloadLinkSandBox != null ? downloadLinkSandBox.getLinkID() : null;
     }
 
     public String getHashInfo() {

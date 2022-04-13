@@ -113,7 +113,7 @@ public class DlcryptNet extends PluginForDecrypt {
     private void crawlViews(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException, DecrypterException {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Link Removed or Expaired")) {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return;
         }
