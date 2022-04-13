@@ -131,12 +131,25 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
     }
 
     /**
-     * true = skip results with same domain of source URL. </br>
-     * Warning: Disabling this may have unwanted side-effects as a lot of video sites will show recommendations/similar videos on single
-     * video pages which would then also be grabbed!
+     * Get source string to parse URLs from. Useful for websites which contain e.g. one video but also URLs to porn channels which would
+     * otherwise be crawled by our auto handling e.g. woodrocket.com. </br>
+     * If this returns null, complete HTML source will be used as fallback! </br>
+     * (Better crawl too much than nothing...)
      */
-    protected boolean skipSamePluginResults() {
-        return true;
+    protected String getParseSource(final Browser br) {
+        return null;
+    }
+
+    /**
+     * Use this to allow/skip found URLs by pattern.
+     */
+    protected boolean allowResult(final String url) {
+        if (this.canHandle(url)) {
+            /* Do not allow results that this plugin would handle by default. */
+            return false;
+        } else {
+            return true;
+        }
     }
 
     /** Example where it makes sense to enable this: amateurmasturbations.com. */
@@ -288,9 +301,17 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         /************************************************************************************************************/
         // Now check for all existant URLs if they're supported by any plugin tagged as porn plugin
         /************************************************************************************************************/
-        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        String parseSource = getParseSource(br);
+        if (parseSource == null) {
+            /* Fallback & default handling */
+            parseSource = br.getRequest().getHtmlCode();
+        }
+        final String[] urls = HTMLParser.getHttpLinks(parseSource, br.getURL());
         final int before = decryptedLinks.size();
         for (final String url : urls) {
+            if (!allowResult(url)) {
+                continue;
+            }
             final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
             if (nextLazyCrawlerPlugins.size() > 0) {
                 decryptedLinks.addAll(convert(br, title, url, nextLazyCrawlerPlugins));
@@ -318,9 +339,6 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
     protected List<DownloadLink> convert(final Browser br, final String title, final String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (lazyPlugins.size() == 0) {
-            return ret;
-        }
-        if (this.canHandle(url) && skipSamePluginResults()) {
             return ret;
         }
         final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));

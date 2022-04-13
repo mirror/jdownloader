@@ -23,7 +23,6 @@ import java.util.Map;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -76,14 +75,14 @@ public class TrendypornCom extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed/\\d+|video/[a-z0-9\\-]+-\\d+\\.html)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed/\\d+|video/([a-z0-9\\-]+)?-\\d+\\.html)");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "https://www.trendyporn.com/static/tos.html";
     }
 
     @Override
@@ -108,13 +107,16 @@ public class TrendypornCom extends antiDDoSForHost {
         }
     }
 
-    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
+    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)?-(\\d+)\\.html";
     private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
 
     private String getWeakFilename(final DownloadLink link) {
-        final String weakTitle;
+        String weakTitle;
         if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
-            weakTitle = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0).replace("-", " ");
+            weakTitle = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+            if (weakTitle != null) {
+                weakTitle = weakTitle.replace("-", " ").trim();
+            }
         } else {
             weakTitle = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
         }
@@ -142,15 +144,16 @@ public class TrendypornCom extends antiDDoSForHost {
         String filename;
         final String filenameURLFromHTML = br.getRegex(TYPE_NORMAL).getMatch(0);
         if (filenameURLFromHTML != null) {
-            filename = filenameURLFromHTML.replace("-", " ");
+            filename = filenameURLFromHTML.replace("-", " ").trim();
         } else if (link.getPluginPatternMatcher().matches(TYPE_NORMAL)) {
-            filename = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0).replace("-", " ");
+            /* Fallback */
+            filename = new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0).replace("-", " ").trim();
         } else {
             /* Last chance fallback */
             filename = this.getFID(link);
         }
         /* RegExes sometimes used for streaming */
-        final String jssource = br.getRegex("sources(?:\")?\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
+        final String jssource = br.getRegex("sources(?:\")?\\s*:\\s*(\\[.*?\\])").getMatch(0);
         if (jssource != null) {
             try {
                 Map<String, Object> entries = null;
@@ -196,6 +199,9 @@ public class TrendypornCom extends antiDDoSForHost {
             } catch (final Throwable e) {
                 logger.info("BEST handling for multiple video source failed");
             }
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("source src=\"(https?://[^\"]+)\"[^>]*type='video/mp4'").getMatch(0);
         }
         final String ext = ".mp4";
         if (filename != null) {

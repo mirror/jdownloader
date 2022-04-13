@@ -18,9 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -69,7 +69,56 @@ public class FreeViewMoviesCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
+        if (isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1).replace("-", " ").trim();
+        dllink = br.getRegex("<source src=\"(http[^\"]+freeviewmovies[^\"]*)\" type=\"video/mp4").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.trim();
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        if (this.dllink != null) {
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.containsHTML("(?i)>\\s*404 Error Page")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (this.dllink == null) {
             if (br.containsHTML("id=\"reportabuse\"")) {
@@ -87,45 +136,6 @@ public class FreeViewMoviesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // old /porn/ links redirect
-        br.setFollowRedirects(true);
-        final String fid = getFID(link);
-        br.getPage(link.getPluginPatternMatcher());
-        if (!br.getURL().contains(fid) || br.containsHTML(">404 Error Page")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1).replace("-", " ");
-        dllink = br.getRegex("<source src=\"(http[^\"]+freeviewmovies[^\"]*)\" type=\"video/mp4").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = filename.trim();
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
-        if (this.dllink != null) {
-            br.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                } else if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override

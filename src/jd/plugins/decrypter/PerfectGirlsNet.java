@@ -21,6 +21,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -38,13 +39,18 @@ public class PerfectGirlsNet extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    @Override
+    protected void correctCryptedLink(final CryptedLink param) {
         final String newurl = correctURL(param.getCryptedUrl());
         param.setCryptedUrl(newurl);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        correctCryptedLink(param);
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 100) {
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
@@ -70,7 +76,13 @@ public class PerfectGirlsNet extends PornEmbedParser {
         return input.replaceAll("(ipad|m)\\.perfectgirls\\.net/", "perfectgirls.net/").replace("perfektdamen.co/", "perfectgirls.net/");
     }
 
-    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
-        return false;
+    protected boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.getRedirectLocation() != null && br.toString().length() <= 100) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

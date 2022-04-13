@@ -16,22 +16,49 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.hoster.UnknownPornScript8;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornziz.com", "xnhub.com" }, urls = { "https?://(?:www\\.)?pornziz\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?xnhub\\.com/video/[a-z0-9\\-]+\\-\\d+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UnknownPornScript8Crawler extends PornEmbedParser {
     public UnknownPornScript8Crawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pornziz.com" });
+        ret.add(new String[] { "xnhub.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([a-z0-9\\-]+)\\-\\d+\\.html");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -39,20 +66,31 @@ public class UnknownPornScript8Crawler extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* DEV NOTES */
-    /* Porn_plugin */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
-        if (UnknownPornScript8.isOffline(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    @Override
+    protected boolean isOffline(final Browser br) {
+        return jd.plugins.hoster.UnknownPornScript8.isOffline(this.br);
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
+    }
+
+    @Override
+    protected boolean assumeSelfhostedContentOnNoResults() {
+        return true;
+    }
+
+    @Override
+    protected boolean allowResult(final String url) {
+        if (url.matches(".*" + org.appwork.utils.Regex.escape(this.getHost()) + "/embed/\\d+.*")) {
+            /* Do not allow results that this plugin would handle by default. */
+            return false;
+        } else if (this.canHandle(url)) {
+            /* Do not allow items that would get handled by this crawler. */
+            return false;
+        } else {
+            return true;
         }
-        decryptedLinks.addAll(findEmbedUrls(null));
-        if (decryptedLinks.isEmpty()) {
-            /* Nothing found? Probably selfhosted content --> Pass to hosterplugin. */
-            decryptedLinks.add(this.createDownloadlink(param.getCryptedUrl()));
-        }
-        return decryptedLinks;
     }
 }

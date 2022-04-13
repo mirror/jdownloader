@@ -16,8 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -32,9 +33,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "https?://(?:www\\.)?pornrabbit\\.com/(video/[a-z0-9\\-]+\\-(\\d+)\\.html|embed/(\\d+))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornRabbitCom extends PluginForHost {
-    private String dllink = null;
+    private String              dllink      = null;
+    private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
+    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)\\-(\\d+)\\.html";
 
     public PornRabbitCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,6 +46,31 @@ public class PornRabbitCom extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.PornRabbitComDecrypter.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/[a-z0-9\\-]+\\-\\d+\\.html|embed/\\d+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -57,63 +85,70 @@ public class PornRabbitCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
-        if (fid != null) {
-            return this.getHost() + "://" + fid;
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
     }
 
     private String getFID(final DownloadLink link) {
-        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        if (fid == null) {
-            /* E.g. embed URLs */
-            fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(1);
         }
-        return fid;
     }
 
-    public static String getTitleFromURL(final Browser br, final String url) {
-        String title = new Regex(br != null ? br.getURL() : url, "pornrabbit\\.com/video/(.*?)\\-\\d+\\.html$").getMatch(0);
-        if (title == null) {
-            title = new Regex(url, "pornrabbit\\.com/video/(.*?)\\-\\d+\\.html$").getMatch(0);
+    private String getURLTitleCleaned(final DownloadLink link) {
+        return getURLTitleCleaned(link.getPluginPatternMatcher());
+    }
+
+    private String getWeakFilename(final DownloadLink link) {
+        final String urlTitle = getURLTitleCleaned(link.getPluginPatternMatcher());
+        if (urlTitle != null) {
+            return urlTitle.replace("-", " ").trim() + ".mp4";
+        } else {
+            return this.getFID(link) + ".mp4";
         }
+    }
+
+    public static String getURLTitleCleaned(final String url) {
+        String title = new Regex(url, TYPE_NORMAL).getMatch(0);
         if (title != null) {
-            /* Make title "nicer" */
-            title = title.replace("-", " ");
+            return title.replace("-", " ").trim();
+        } else {
+            return null;
         }
-        return title;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(getWeakFilename(link));
+        }
         dllink = null;
         final Browser br2 = br.cloneBrowser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has|video_removed_dmca\\.jpg\")")) {
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?): Porn Rabbit</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-            if (filename == null) {
-                final String canonical = br.getRegex("<link\\s*rel\\s*=\\s*[^>]*href\\s*=\\s*\"(https?://[^\"]*?" + getFID(link) + "\\.html)").getMatch(0);
-                filename = getTitleFromURL(null, canonical);
+        if (br.getURL().matches(TYPE_EMBED)) {
+            final String realVideoURL = br.getRegex(TYPE_NORMAL).getMatch(-1);
+            if (realVideoURL == null || !realVideoURL.contains(this.getFID(link))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            link.setPluginPatternMatcher(realVideoURL);
+            br.getPage(realVideoURL);
         }
-        if (filename == null) {
-            /* Fallback */
-            filename = getTitleFromURL(this.br, link.getPluginPatternMatcher());
-            if (filename == null) {
-                filename = this.getFID(link);
-            }
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String titleByURL = getURLTitleCleaned(br.getURL());
+        if (titleByURL != null) {
+            link.setFinalFileName(titleByURL.replace("-", " ").trim() + ".mp4");
         }
         String path = br.getRegex("path=(VideoFile_\\d+)\\&").getMatch(0);
         final String cb = br.getRegex("\\?cb=(\\d+)\\'").getMatch(0);
@@ -121,44 +156,47 @@ public class PornRabbitCom extends PluginForHost {
             // Try to get stream link first as downloadlinks might be broken (4 KB files)
             path = Encoding.urlEncode(path);
             try {
-                br2.postPage("http://www.pornrabbit.com/getcdnurl/", "jsonRequest=%7B%22playerOnly%22%3A%22true%22%2C%22height%22%3A%22412%22%2C%22file%22%3A%22" + path + "%22%2C%22htmlHostDomain%22%3A%22www%2Epornrabbit%2Ecom%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22path%22%3A%22" + path + "%22%2C%22request%22%3A%22getAllData%22%2C%22cb%22%3A%22" + cb + "%22%2C%22appdataurl%22%3A%22http%3A%2F%2Fwww%2Epornrabbit%2Ecom%2Fgetcdnurl%2F%22%2C%22width%22%3A%22744%22%2C%22returnType%22%3A%22json%22%7D&cacheBuster=" + System.currentTimeMillis());
-                dllink = br2.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
+                br2.postPage("https://www." + this.getHost() + "/getcdnurl/", "jsonRequest=%7B%22playerOnly%22%3A%22true%22%2C%22height%22%3A%22412%22%2C%22file%22%3A%22" + path + "%22%2C%22htmlHostDomain%22%3A%22www%2Epornrabbit%2Ecom%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22path%22%3A%22" + path + "%22%2C%22request%22%3A%22getAllData%22%2C%22cb%22%3A%22" + cb + "%22%2C%22appdataurl%22%3A%22http%3A%2F%2Fwww%2Epornrabbit%2Ecom%2Fgetcdnurl%2F%22%2C%22width%22%3A%22744%22%2C%22returnType%22%3A%22json%22%7D&cacheBuster=" + System.currentTimeMillis());
+                dllink = br2.getRegex("\"file\"\\s*:\\s*\"(http://[^<>\"]*?)\"").getMatch(0);
             } catch (final Exception e) {
             }
         }
         if (dllink == null) {
             dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("var desktopFile = '(https?://[^<>\"\\']+)';").getMatch(0);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        String ext = ".mp4";
-        if (dllink.contains(".flv")) {
-            ext = ".flv";
-        }
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            final Browser brc = br2.cloneBrowser();
-            brc.setFollowRedirects(true);
-            con = brc.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+        if (dllink != null) {
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                final Browser brc = br2.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)(>Page Not Found<|>Sorry but the page you are looking for has|video_removed_dmca\\.jpg\")")) {
+            return true;
+        } else {
+            return false;
         }
     }
 

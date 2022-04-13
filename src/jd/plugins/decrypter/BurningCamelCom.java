@@ -11,7 +11,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "burningcamel.com" }, urls = { "https?://(?:www\\.)?(?:burningcamel\\.com|camelstyle\\.net)/video/([a-z0-9\\-]+(/\\d+)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BurningCamelCom extends PornEmbedParser {
     public BurningCamelCom(PluginWrapper wrapper) {
         super(wrapper);

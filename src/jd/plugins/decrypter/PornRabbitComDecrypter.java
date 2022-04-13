@@ -16,17 +16,17 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
 //Mods: removed pornrabbit decrypt, added youporn.com decrypt
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "https?://(?:www\\.)?pornrabbit\\.com/video/[a-z0-9\\-]+\\-(\\d+)\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornRabbitComDecrypter extends PornEmbedParser {
     public PornRabbitComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,38 +37,50 @@ public class PornRabbitComDecrypter extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* DEV NOTES */
-    /* Porn_plugin */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        // Link offline? Add it to the hosterplugin so the user can see it.
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has|>Sorry, this video was not found|video_removed_dmca\\.jpg\")")) {
-            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
-            return decryptedLinks;
-        }
-        String filename = br.getRegex("<title>([^<>\"]*?): Porn Rabbit</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-        }
-        if (filename == null) {
-            /* Fallbacks - get filename from URL */
-            /* Fallback 1 */
-            filename = jd.plugins.hoster.PornRabbitCom.getTitleFromURL(this.br, parameter);
-        }
-        decryptedLinks.addAll(findEmbedUrls(filename));
-        if (!decryptedLinks.isEmpty()) {
-            return decryptedLinks;
-        }
-        decryptedLinks = new ArrayList<DownloadLink>();
-        decryptedLinks.add(createDownloadlink(parameter));
-        return decryptedLinks;
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pornrabbit.com" });
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/[a-z0-9\\-]+\\-(\\d+)\\.html");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        return jd.plugins.hoster.PornRabbitCom.isOffline(br);
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return jd.plugins.hoster.PornRabbitCom.getURLTitleCleaned(param.getCryptedUrl());
+    }
+
+    @Override
+    protected boolean isSelfhosted(final Browser br) {
+        if (br.containsHTML("/embed/\\d+")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

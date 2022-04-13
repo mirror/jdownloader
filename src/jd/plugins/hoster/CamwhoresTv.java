@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
@@ -31,10 +30,7 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
 
     /** Sync this between camwhores hoster + crawler plugins!! */
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "camwhores.tv", "camwhores.video", "camwhores.biz", "camwhores.sc", "camwhores.io", "camwhores.adult", "camwhores.cc", "camwhores.org", "camwhores.lol", "camwhorestv.co", "camwhorestv.org" });
-        return ret;
+        return jd.plugins.decrypter.CamwhoresTv.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -60,10 +56,34 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
     protected boolean isOfflineWebsite(final Browser br) {
         if (super.isOfflineWebsite(br)) {
             return true;
+        } else if (isOfflineStatic(br)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static final boolean isOfflineStatic(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
         } else if (br.containsHTML("(?i)>\\s*404 / Page not found")) {
             return true;
         } else {
             return false;
         }
+    }
+
+    @Override
+    protected boolean useEmbedWorkaround() {
+        /*
+         * 2022-04-13: A lot of videos embedded by other websites either aren't allowed to be embedded at all or can only be embedded using
+         * a specific refered --> This workaround should fix both of these issues!
+         */
+        return true;
+    }
+
+    @Override
+    protected String generateContentURL(final String fuid, final String urlTitle) {
+        return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
     }
 }

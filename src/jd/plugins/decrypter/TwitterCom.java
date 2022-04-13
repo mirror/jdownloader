@@ -63,11 +63,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class TwitterCom extends PornEmbedParser {
+public class TwitterCom extends PluginForDecrypt {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -188,6 +189,7 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
+    @Deprecated
     private ArrayList<DownloadLink> crawlCard(final CryptedLink param, final Account account) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String tweetID = new Regex(param.getCryptedUrl(), TYPE_CARD).getMatch(0);
@@ -200,8 +202,6 @@ public class TwitterCom extends PornEmbedParser {
         } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* First check for external urls */
-        decryptedLinks.addAll(this.findEmbedUrls(null)); // TODO: Check if this is still needed
         String externID = br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
         if (externID == null) {
             externID = br.getRegex("\"card_ur(?:i|l)\"\\s*:\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
