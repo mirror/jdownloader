@@ -16,16 +16,18 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superhqporn.com" }, urls = { "http://www\\.superhqporn\\.com/\\?v=[A-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SuperhqpornComDecrypter extends PornEmbedParser {
     public SuperhqpornComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -34,6 +36,34 @@ public class SuperhqpornComDecrypter extends PornEmbedParser {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "superhqporn.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\?v=([A-Z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @SuppressWarnings("deprecation")
@@ -66,5 +96,25 @@ public class SuperhqpornComDecrypter extends PornEmbedParser {
         /* No extern id found --> Add main-link */
         decryptedLinks.add(main);
         return decryptedLinks;
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return jd.plugins.hoster.SuperHqPornCom.getFileTitle(br);
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        return jd.plugins.hoster.SuperHqPornCom.isOffline(br);
+    }
+
+    @Override
+    protected boolean returnRedirectToUnsupportedLinkAsResult() {
+        return true;
+    }
+
+    @Override
+    protected boolean assumeSelfhostedContentOnNoResults() {
+        return false;
     }
 }

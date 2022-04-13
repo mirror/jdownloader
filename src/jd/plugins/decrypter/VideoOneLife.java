@@ -16,17 +16,21 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.life" }, urls = { "https?://(?:www\\.)?video\\-one\\.(?:com|life)/((?:[a-z]+/)?pornvideo/[a-z0-9]+|player/[^/]+/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VideoOneLife extends PornEmbedParser {
     public VideoOneLife(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,17 +41,42 @@ public class VideoOneLife extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        String fuid = new Regex(parameter, "/([^/]+)/?$").getMatch(0);
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (!br.getURL().contains(fuid) || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "video-one.com", "video-one.life" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:[a-z]+/)?pornvideo/[a-z0-9]+|player/[^/]+/)");
         }
-        final boolean isOffline = jd.plugins.hoster.VideoOneLife.isOffline(this.br);
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String fuid = new Regex(param.getCryptedUrl(), "/([^/]+)/?$").getMatch(0);
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("embedframe")) {
             String xvl = br.getRegex("src=\"(https://www.xvideos.com/embedframe/\\d+)\"").getMatch(0);
             if (xvl != null) {
@@ -55,12 +84,9 @@ public class VideoOneLife extends PornEmbedParser {
                 return decryptedLinks;
             }
         }
-        if (br.containsHTML("<source src=\\'[^']+m3u8\\'") || isOffline) {
+        if (br.containsHTML("<source src=\\'[^']+m3u8\\'")) {
             /* --> To hosterplugin - most of all '/player/' URLs will have this but also 'pornvideo/' URLs . */
-            final DownloadLink dl = createDownloadlink(parameter);
-            if (isOffline) {
-                dl.setAvailable(false);
-            }
+            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -69,19 +95,19 @@ public class VideoOneLife extends PornEmbedParser {
         String t = th.getMatch(0);
         String h = th.getMatch(1);
         if (t == null || h == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             return null;
         }
         br.getPage("http://m.8-d.com/in?r=&p=http://video-one.com/video/" + fuid + ".html&t=" + t + "&h=" + h);
         t = br.getRegex("var t=\\'(\\d+)\\';").getMatch(0);
         h = br.getRegex("var h=\\'([a-z0-9]+)\\';").getMatch(0);
         if (t == null || h == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             return null;
         }
         br.getPage("http://video-one.com/newvid/" + fuid + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
         if (br.containsHTML(">Video Content Not Available<|No htmlCode read")) {
-            logger.info("Link offline: " + parameter);
+            logger.info("Link offline: " + param.getCryptedUrl());
             return decryptedLinks;
         }
         String externID = null;
@@ -98,11 +124,10 @@ public class VideoOneLife extends PornEmbedParser {
             }
             final String embedID = new Regex(continueURL, "\\.html\\?(.+)$").getMatch(0);
             if (externID != null && embedID == null) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
                 return null;
             }
             if (externID.contains("seabliss.com/")) {
@@ -119,12 +144,10 @@ public class VideoOneLife extends PornEmbedParser {
                 externID = br.getRegex("<url>([^<>]*?)</url>").getMatch(0);
                 if (externID == null) {
                     /* Chances are very high that that url is simply offline. */
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (!externID.startsWith("http")) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 externID = "directhttp://" + externID;
             }
@@ -150,13 +173,23 @@ public class VideoOneLife extends PornEmbedParser {
                  * E.g. empty document: <html xmlns="http://www.w3.org/1999/xhtml"><head> <meta http-equiv="Content-Type"
                  * content="text/html; charset=iso-8859-1" /></body></html>
                  */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return null;
         }
         decryptedLinks.add(createDownloadlink(iframe));
         return decryptedLinks;
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (!this.canHandle(br.getURL())) {
+            return false;
+        } else {
+            return false;
+        }
     }
 
     private String jsString() {

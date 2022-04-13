@@ -141,7 +141,8 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
     }
 
     /**
-     * Use this to allow/skip found URLs by pattern.
+     * Use this to allow/skip found URLs by pattern. </br>
+     * Does by default not allow items that would go back into current crawler plugin.
      */
     protected boolean allowResult(final String url) {
         if (this.canHandle(url)) {
@@ -303,11 +304,10 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         /************************************************************************************************************/
         String parseSource = getParseSource(br);
         if (parseSource == null) {
-            /* Fallback & default handling */
+            /* Fallback- and default handling */
             parseSource = br.getRequest().getHtmlCode();
         }
         final String[] urls = HTMLParser.getHttpLinks(parseSource, br.getURL());
-        final int before = decryptedLinks.size();
         for (final String url : urls) {
             if (!allowResult(url)) {
                 continue;
@@ -319,18 +319,6 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
             final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
             if (nextLazyHostPlugins.size() > 0) {
                 decryptedLinks.addAll(convert(br, title, url, nextLazyHostPlugins));
-            }
-        }
-        final int results = decryptedLinks.size() - before;
-        if (results > 0 && !processAll) {
-            return decryptedLinks;
-        }
-        /************************************************************************************************************/
-        // filename needed for all IDs below
-        /************************************************************************************************************/
-        if (title == null) {
-            if (!processAll) {
-                return decryptedLinks;
             }
         }
         return decryptedLinks;

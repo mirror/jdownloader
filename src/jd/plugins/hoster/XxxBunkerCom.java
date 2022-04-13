@@ -15,8 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxbunker.com" }, urls = { "https?://(?:www\\.)?xxxbunkerdecrypted\\.com/([a-z0-9_\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XxxBunkerCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public XxxBunkerCom(PluginWrapper wrapper) {
@@ -39,6 +42,32 @@ public class XxxBunkerCom extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.XxxBunkerCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            /* TODO: Add support for embed URLs */
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9_\\-]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* DEV NOTES */
@@ -57,38 +86,20 @@ public class XxxBunkerCom extends PluginForHost {
         return "https://xxxbunker.com/tos.php";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("xxxbunkerdecrypted.com/", "xxxbunker.com/"));
-    }
-
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
-        br = new Browser();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">FILE NOT FOUND<|>this video is no longer available")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getURL().equals("http://xxxbunker.com/")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">your video is being loaded, please wait")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("<strong>SITE MAINTENANCE</strong>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=vpVideoTitle><h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "xxxbunker\\.com/(.+)").getMatch(0);
+        String title = findFileTitle(br);
+        if (title == null) {
+            /* Final fallback */
+            title = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         }
         String externID_extern = br.getRegex("postbackurl(?:=|%3D)([^<>\"\\&]*?)%26amp%3B").getMatch(0);
         String externID = br.getRegex("player\\.swf\\?config=(https?%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
@@ -112,74 +123,65 @@ public class XxxBunkerCom extends PluginForHost {
             }
         } else {
             // html5!
-            br.getPage("https://xxxbunker.com/html5player.php?videoid=" + externID3 + "&autoplay=false&index=false");
+            br.getPage("/html5player.php?videoid=" + externID3 + "&autoplay=false&index=false");
             dllink = br.getRegex("<source src=(\"|')(http[^<>\"]*?)\\1").getMatch(1);
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink != null) {
+            dllink = Encoding.htmlOnlyDecode(dllink);
         }
-        dllink = Encoding.htmlOnlyDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        title = Encoding.htmlDecode(title).trim();
+        title = title.trim();
         String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (ext.equals(".php")) {
             ext = ".mp4";
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(title + ext);
         br.getHeaders().put("Accept-Encoding", "identity");
         return AvailableStatus.TRUE;
-        // // In case the link redirects to the finallink
-        // br.setFollowRedirects(true);
-        // URLConnectionAdapter con = null;
-        // try {
-        // try {
-        // con = br.openHeadConnection(DLLINK);
-        // /* Very important! Get the FINAL url! */
-        // DLLINK = con.getRequest().getUrl();
-        // } catch (final BrowserException e) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        // if (!con.getContentType().contains("html")) {
-        // downloadLink.setDownloadSize(con.getLongContentLength());
-        // } else {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        // downloadLink.setProperty("directlink", DLLINK);
-        // return AvailableStatus.TRUE;
-        // } finally {
-        // try {
-        // con.disconnect();
-        // } catch (final Throwable e) {
-        // }
-        // }
+    }
+
+    public static String findFileTitle(final Browser br) {
+        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("class=vpVideoTitle><h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
+        }
+        return title;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Referer", "");
         br.setCookie(br.getURL(), "ageconfirm", "20150302");
         br.setCookie(br.getURL(), "autostart", "1");
-        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        link.setProperty("ServerComaptibleForByteRangeRequest", true);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
-            }
-            if (br.containsHTML(">SITE MAINTENANCE<")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Site maintenance'", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

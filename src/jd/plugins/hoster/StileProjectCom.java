@@ -16,11 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(?:www\\.)?stileproject\\.com/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StileProjectCom extends PluginForHost {
     private String              dllink      = null;
     private static final String TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
@@ -43,6 +46,31 @@ public class StileProjectCom extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.StileProjectComDecrypter.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -107,7 +135,7 @@ public class StileProjectCom extends PluginForHost {
         br.getHeaders().put("Referer", "https://www." + this.getHost());
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*404 Error Page") || br.containsHTML("video_removed_dmca\\.jpg\"|error\">We're sorry")) {
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().matches(TYPE_EMBED)) {
@@ -144,6 +172,14 @@ public class StileProjectCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*404 Error Page") || br.containsHTML("video_removed_dmca\\.jpg\"|error\">We're sorry")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

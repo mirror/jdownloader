@@ -84,9 +84,13 @@ public class UnknownPornScript8Crawler extends PornEmbedParser {
     @Override
     protected boolean allowResult(final String url) {
         if (url.matches(".*" + org.appwork.utils.Regex.escape(this.getHost()) + "/embed/\\d+.*")) {
-            /* Do not allow results that this plugin would handle by default. */
+            /*
+             * Do not allow results that hoster-plugin of this plugin would handle by default. Basically their html contains embed URLs of
+             * their own content which would end up offline in our host plugin --> Skip those!
+             */
             return false;
-        } else if (this.canHandle(url)) {
+        }
+        if (this.canHandle(url)) {
             /* Do not allow items that would get handled by this crawler. */
             return false;
         } else {
