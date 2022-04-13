@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexzindian.com" }, urls = { "https?://(?:www\\.)?sexzindian\\.com/video/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SexZindianCom extends PluginForHost {
     public SexZindianCom(PluginWrapper wrapper) {
         super(wrapper);
