@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "https?://(?:www\\.)?(homemade\\-voyeur|yourvoyeurvideos)\\.com/(?:(?:tube/)?video/|tube/gallery/|\\d+/)[A-Za-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemade-voyeur.com" }, urls = { "https?://(?:www\\.)?(homemade\\-voyeur|yourvoyeurvideos)\\.com/(?:(?:tube/)?video/|tube/gallery/|\\d+/)[^/]+\\.html" })
 public class HomemadeVoyeurCom extends PluginForDecrypt {
     public HomemadeVoyeurCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,20 +42,19 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
 
     /* DEV NOTES */
     /* Porn_plugin */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         String tempID = br.getRedirectLocation();
         // Invalid link
         if ("http://www.homemade-voyeur.com/".equals(tempID) || br.containsHTML(">404 Not Found<") || br.containsHTML("<title>Homemade Voyeur - Hosted Voyeur Videos - Biggest Voyeur Vids Archive on the Net</title>") || this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
         // Offline link
         if (br.containsHTML("This video does not exist\\!< | >\\s+Video Not Found\\s+<")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
         if (tempID != null) {
@@ -74,9 +73,9 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
         }
         if (filename == null) {
             /* Fallback to url-filename */
-            filename = new Regex(parameter, "([A-Za-z0-9\\-]+)\\.html$").getMatch(0);
+            filename = new Regex(param.getCryptedUrl(), "([A-Za-z0-9\\-]+)\\.html$").getMatch(0);
         }
-        if (parameter.contains("/tube/gallery/")) {
+        if (param.getCryptedUrl().contains("/tube/gallery/")) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(filename.trim());
             final DecimalFormat df = new DecimalFormat("0000");
@@ -93,11 +92,11 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             if (tempID != null) {
                 br.getPage(tempID);
                 if (br.containsHTML(">404 Not Found<")) {
-                    logger.info("Link offline: " + parameter);
+                    logger.info("Link offline: " + param.getCryptedUrl());
                     return decryptedLinks;
                 }
                 logger.warning("Cannot handle link: " + tempID);
-                logger.warning("Mainlink: " + parameter);
+                logger.warning("Mainlink: " + param.getCryptedUrl());
                 return null;
             }
             tempID = br.getRegex("var playlist = \\[ \\{ url: escape\\(\\'(http://[^<>\"]*?)\\'\\) \\} \\]").getMatch(0);
@@ -112,7 +111,7 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             }
             if (tempID != null && tempID.contains(".jpg")) {
                 logger.info("This url is only advertising --> Offline");
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
                 return decryptedLinks;
             }
             /* Last chance - directurl */
@@ -124,7 +123,7 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             }
             if (tempID == null || filename == null) {
                 logger.info("filename: " + filename + ", tempID: " + tempID);
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
                 return null;
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + tempID);

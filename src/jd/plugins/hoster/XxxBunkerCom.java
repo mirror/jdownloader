@@ -65,7 +65,7 @@ public class XxxBunkerCom extends PluginForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             /* TODO: Add support for embed URLs */
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9_\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/" + jd.plugins.decrypter.XxxBunkerCom.REGEX_EXCLUDES_HOSTER_AND_CRAWLER + "(embed/\\d+|player/\\d+|[a-z0-9_\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -80,6 +80,9 @@ public class XxxBunkerCom extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
+    private static final String  TYPE_EMBED        = "https?://[^/]+/(?:embed|player)/(\\d+)";
+    private static final String  TYPE_NORMAL       = "https?://[^/]+/([a-z0-9_\\-]+)";
+    private static final String  PROPERTY_FID      = "fid";
 
     @Override
     public String getAGBLink() {
@@ -87,7 +90,50 @@ public class XxxBunkerCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.hasProperty(PROPERTY_FID)) {
+            return link.getStringProperty(PROPERTY_FID);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else {
+            return null;
+        }
+    }
+
+    private String getWeakFilename(final DownloadLink link) {
+        final String urlTitle = getURLTitleCleaned(link.getPluginPatternMatcher());
+        if (urlTitle != null) {
+            return urlTitle.replaceAll("(-|_)", " ").trim() + ".mp4";
+        } else {
+            return this.getFID(link) + ".mp4";
+        }
+    }
+
+    private String getURLTitleCleaned(final String url) {
+        String title = new Regex(url, TYPE_NORMAL).getMatch(0);
+        if (title != null) {
+            return title.replace("-", " ").trim();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getWeakFilename(link));
+        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -96,55 +142,43 @@ public class XxxBunkerCom extends PluginForHost {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.getURL().matches(TYPE_EMBED)) {
+            final String realVideoURL = br.getRegex("rel=\"canonical\" href=\"(" + TYPE_NORMAL + ")").getMatch(0);
+            if (realVideoURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(realVideoURL);
+            if (isOffline(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setPluginPatternMatcher(realVideoURL);
+        }
+        final String fidFromHTML = findInternalID(br);
+        if (fidFromHTML == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        link.setProperty(PROPERTY_FID, fidFromHTML);
+        final String titleByURL = getURLTitleCleaned(br.getURL());
+        if (titleByURL != null) {
+            link.setFinalFileName(titleByURL.replace("-", " ").trim() + ".mp4");
+        }
         String title = findFileTitle(br);
         if (title == null) {
             /* Final fallback */
-            title = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        }
-        String externID_extern = br.getRegex("postbackurl(?:=|%3D)([^<>\"\\&]*?)%26amp%3B").getMatch(0);
-        String externID = br.getRegex("player\\.swf\\?config=(https?%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
-        final String externID3 = br.getRegex("lvid=(\\d+)").getMatch(0);
-        if (externID_extern == null && externID == null && externID3 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // leads to incorrect shit.
-        if (false && externID_extern != null) {
-            /* E.g. http://xxxbunker.com/3568499 pornhub direct */
-            externID_extern = Encoding.htmlDecode(externID_extern);
-            externID_extern = Encoding.htmlDecode(externID_extern);
-            dllink = Encoding.Base64Decode(externID_extern);
-            // this.sleep(3000, downloadLink);
-        } else if (externID != null) {
-            br.getPage(Encoding.htmlDecode(externID));
-            dllink = br.getRegex("<relayurl>([^<>\"]*?)</relayurl>").getMatch(0);
-            externID = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
-            if (dllink == null) {
-                dllink = externID;
-            }
-        } else {
-            // html5!
-            br.getPage("/html5player.php?videoid=" + externID3 + "&autoplay=false&index=false");
-            dllink = br.getRegex("<source src=(\"|')(http[^<>\"]*?)\\1").getMatch(1);
-        }
-        if (dllink != null) {
-            dllink = Encoding.htmlOnlyDecode(dllink);
+            title = getURLTitleCleaned(br.getURL());
         }
         title = Encoding.htmlDecode(title).trim();
-        title = title.trim();
-        String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (ext.equals(".php")) {
-            ext = ".mp4";
-        }
-        link.setFinalFileName(title + ext);
+        link.setFinalFileName(title + ".mp4");
         br.getHeaders().put("Accept-Encoding", "identity");
         return AvailableStatus.TRUE;
     }
 
+    public static String findInternalID(final Browser br) {
+        return br.getRegex(org.appwork.utils.Regex.escape(br.getHost()) + "/(?:embed|player)/(\\d+)").getMatch(0);
+    }
+
     public static String findFileTitle(final Browser br) {
         String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("class=vpVideoTitle><h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-        }
         return title;
     }
 
@@ -159,6 +193,8 @@ public class XxxBunkerCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        br.getPage("/player/" + this.getFID(link));
+        dllink = br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

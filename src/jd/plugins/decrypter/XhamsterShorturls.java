@@ -18,17 +18,20 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
+import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class CamwhoresTv extends PornEmbedParser {
-    public CamwhoresTv(PluginWrapper wrapper) {
+public class XhamsterShorturls extends PluginForDecrypt {
+    public XhamsterShorturls(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -37,11 +40,10 @@ public class CamwhoresTv extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /** Sync this between camwhores hoster + crawler plugins!! */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "camwhores.tv", "camwhores.video", "camwhores.biz", "camwhores.sc", "camwhores.io", "camwhores.adult", "camwhores.cc", "camwhores.org", "camwhores.lol", "camwhorestv.co", "camwhorestv.org" });
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "xh.video" });
         return ret;
     }
 
@@ -55,35 +57,28 @@ public class CamwhoresTv extends PornEmbedParser {
     }
 
     public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/(?:\\d+/[a-z0-9\\-]+/|private/[a-z0-9\\-]+/)");
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:p|v)/[A-Za-z0-9]+");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
-    protected boolean isOffline(final Browser br) {
-        if (jd.plugins.hoster.CamwhoresTv.isOfflineStatic(br)) {
-            return true;
-        } else {
-            return false;
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
+        br.setFollowRedirects(false);
+        br.getPage(param.getCryptedUrl());
+        final String finallink = br.getRedirectLocation();
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-    }
-
-    @Override
-    protected boolean isSelfhosted(final Browser br) {
-        final boolean isSelfhostedContent = br.containsHTML(Regex.escape(br.getHost()) + "/embed/\\d+");
-        final boolean isPrivate = br.containsHTML("(?i)>\\s*This video is a private video uploaded");
-        if (isSelfhostedContent || isPrivate) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    protected String getFileTitle(final CryptedLink param, final Browser br) {
-        return new Regex(param.getCryptedUrl(), "/videos/(?:\\d+/|private/)([^/]+)/$").getMatch(0).replace("-", " ").trim();
+        decryptedLinks.add(createDownloadlink(finallink));
+        return decryptedLinks;
     }
 }

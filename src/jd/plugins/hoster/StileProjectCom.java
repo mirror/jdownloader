@@ -103,10 +103,6 @@ public class StileProjectCom extends PluginForHost {
         }
     }
 
-    private String getURLTitle(final DownloadLink link) {
-        return getURLTitleCleaned(link.getPluginPatternMatcher());
-    }
-
     private String getWeakFilename(final DownloadLink link) {
         final String urlTitle = getURLTitleCleaned(link.getPluginPatternMatcher());
         if (urlTitle != null) {

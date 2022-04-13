@@ -3,6 +3,10 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -17,10 +21,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.DecrypterArrayList;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends PluginForDecrypt {
@@ -62,8 +62,8 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
     }
 
     /**
-     * Override this if it is possible to recognize selfhosted content before looking for external URLs. </br> Example plugin:
-     * boobinspector.com
+     * Override this if it is possible to recognize selfhosted content before looking for external URLs. </br>
+     * Example plugin: boobinspector.com
      */
     protected boolean isSelfhosted(final Browser br) {
         return false;
@@ -132,15 +132,16 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
 
     /**
      * Get source string to parse URLs from. Useful for websites which contain e.g. one video but also URLs to porn channels which would
-     * otherwise be crawled by our auto handling e.g. woodrocket.com. </br> If this returns null, complete HTML source will be used as
-     * fallback! </br> (Better crawl too much than nothing...)
+     * otherwise be crawled by our auto handling e.g. woodrocket.com. </br>
+     * If this returns null, crawler will fail!!
      */
     protected String getParseSource(final Browser br) {
         return br.getRequest().getHtmlCode();
     }
 
     /**
-     * Use this to allow/skip found URLs by pattern. </br> Does by default not allow items that would go back into current crawler plugin.
+     * Use this to allow/skip found URLs by pattern. </br>
+     * Does by default not allow items that would go back into current crawler plugin.
      */
     protected boolean allowResult(final String url) {
         if (this.canHandle(url)) {
@@ -318,7 +319,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    protected String[] getEmbedURLs(Browser br) throws Exception {
+    protected String[] getEmbedURLs(final Browser br) throws Exception {
         final String parseSource = getParseSource(br);
         final String[] urls = HTMLParser.getHttpLinks(parseSource, br.getURL());
         return urls;
