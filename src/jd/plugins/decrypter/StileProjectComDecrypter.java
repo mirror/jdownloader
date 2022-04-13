@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.hoster.StileProjectCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StileProjectComDecrypter extends PornEmbedParser {
@@ -39,6 +40,7 @@ public class StileProjectComDecrypter extends PornEmbedParser {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "pornrabbit.com" });
         ret.add(new String[] { "stileproject.com" });
         return ret;
     }
@@ -71,12 +73,13 @@ public class StileProjectComDecrypter extends PornEmbedParser {
 
     @Override
     protected boolean isOffline(final Browser br) {
-        return jd.plugins.hoster.StileProjectCom.isOffline(br);
+        return StileProjectCom.isOffline(br);
     }
 
     @Override
     protected boolean isSelfhosted(final Browser br) {
-        if (br.containsHTML(Regex.escape(br.getHost()) + "/embed/\\d+")) {
+        final String embedURL = br.getRegex(StileProjectCom.TYPE_EMBED).getMatch(-1);
+        if (embedURL != null && embedURL.contains(br.getHost())) {
             return true;
         } else {
             return false;
