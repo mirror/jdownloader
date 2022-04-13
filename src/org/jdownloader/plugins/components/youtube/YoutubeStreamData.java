@@ -104,15 +104,15 @@ public class YoutubeStreamData {
     }
 
     public void setAverageBitrate(int averageBitrate) {
-        this.averageBitrate = averageBitrate;
+        this.averageBitrate = Math.max(-1, bitrate);
     }
 
     public void setContentLength(long contentLength) {
-        this.contentLength = contentLength;
+        this.contentLength = Math.max(-1, contentLength);
     }
 
     public void setBitrate(int bitrate) {
-        this.bitrate = bitrate;
+        this.bitrate = Math.max(-1, bitrate);
     }
 
     public String getSrc() {
@@ -128,7 +128,7 @@ public class YoutubeStreamData {
             try {
                 final String cLenString = query.get("clen");
                 if (cLenString != null) {
-                    contentLength = Long.parseLong(cLenString);
+                    setContentLength(Long.parseLong(cLenString));
                 }
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
@@ -136,7 +136,7 @@ public class YoutubeStreamData {
             try {
                 final String bitrateString = query.get("bitrate");
                 if (bitrateString != null) {
-                    bitrate = Integer.parseInt(bitrateString);
+                    setBitrate(Integer.parseInt(bitrateString));
                 }
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
