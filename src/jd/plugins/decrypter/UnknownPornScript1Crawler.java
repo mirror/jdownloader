@@ -39,7 +39,6 @@ public class UnknownPornScript1Crawler extends PornEmbedParser {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "pornsteep.com" });
         ret.add(new String[] { "frigtube.com" });
         ret.add(new String[] { "vidxporn.com" });
@@ -68,25 +67,6 @@ public class UnknownPornScript1Crawler extends PornEmbedParser {
         }
         return ret.toArray(new String[0]);
     }
-    // public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-    // final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-    // final String parameter = param.toString();
-    // br.setFollowRedirects(true);
-    // br.getPage(parameter);
-    // if (jd.plugins.hoster.UnknownPornScript1.isOffline(this.br)) {
-    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // }
-    // final String title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
-    // decryptedLinks.addAll(findEmbedUrls(title));
-    // if (decryptedLinks.size() == 0) {
-    // /* Probably selfhosted content --> Pass to hostplugin */
-    // final DownloadLink selfhosted = this.createDownloadlink(param.getCryptedUrl());
-    // selfhosted.setAvailable(true);
-    // selfhosted.setName(title + ".mp4");
-    // decryptedLinks.add(selfhosted);
-    // }
-    // return decryptedLinks;
-    // }
 
     @Override
     protected boolean isOffline(final Browser br) {

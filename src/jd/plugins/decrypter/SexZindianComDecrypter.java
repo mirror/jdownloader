@@ -62,22 +62,6 @@ public class SexZindianComDecrypter extends PornEmbedParser {
         }
         return ret.toArray(new String[0]);
     }
-    // public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-    // ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-    // br.setFollowRedirects(true);
-    // br.getPage(param.getCryptedUrl());
-    // if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 Not Found<|Page not
-    // found")) {
-    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // }
-    // decryptedLinks.addAll(findEmbedUrls(null));
-    // if (!decryptedLinks.isEmpty()) {
-    // return decryptedLinks;
-    // }
-    // decryptedLinks = new ArrayList<DownloadLink>();
-    // decryptedLinks.add(createDownloadlink(param.getCryptedUrl()));
-    // return decryptedLinks;
-    // }
 
     @Override
     protected boolean isOffline(final Browser br) {
