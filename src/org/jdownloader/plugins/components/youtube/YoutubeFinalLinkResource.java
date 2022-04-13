@@ -71,7 +71,7 @@ public class YoutubeFinalLinkResource implements Storable {
     }
 
     public void setContentLength(long contentLength) {
-        this.contentLength = contentLength;
+        this.contentLength = Math.max(-1, contentLength);
     }
 
     public YoutubeFinalLinkResource(/* Storable */) {
@@ -85,7 +85,7 @@ public class YoutubeFinalLinkResource implements Storable {
         height = si.getHeight();
         width = si.getWidth();
         fps = si.getFps();
-        contentLength = si.getContentLength();
+        setContentLength(si.getContentLength());
     }
 
     public String getFps() {
