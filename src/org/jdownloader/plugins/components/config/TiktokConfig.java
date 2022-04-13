@@ -20,7 +20,7 @@ public interface TiktokConfig extends PluginConfigInterface {
         }
 
         public String getMaxSimultaneousDownloads_label() {
-            return "Set max. simultaneous downloads. Don't set this value too much otherwise you might get blocked.";
+            return "Set max. simultaneous downloads. The higher the value the higher is the chance that your IP gets blocked by tiktok!";
         }
     }
 
@@ -36,7 +36,7 @@ public interface TiktokConfig extends PluginConfigInterface {
     @DefaultIntValue(1)
     @SpinnerValidator(min = 1, max = 20, step = 1)
     @Order(20)
-    @DescriptionForConfigEntry("Set max. simultaneous downloads. Don't set this value too much otherwise you might get blocked.")
+    @DescriptionForConfigEntry("Set max. simultaneous downloads. The higher the value the higher is the chance that your IP gets blocked by tiktok!")
     int getMaxSimultaneousDownloads();
 
     void setMaxSimultaneousDownloads(int i);

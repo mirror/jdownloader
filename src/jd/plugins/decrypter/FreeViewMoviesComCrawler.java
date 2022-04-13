@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -23,7 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(?:www\\.)?freeviewmovies\\.com/(?:porn|video)/(\\d+)/([a-z0-9\\-]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FreeViewMoviesComCrawler extends PornEmbedParser {
     public FreeViewMoviesComCrawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -32,6 +35,34 @@ public class FreeViewMoviesComCrawler extends PornEmbedParser {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "freeviewmovies.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/(\\d+)/([a-z0-9\\-]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -45,7 +76,12 @@ public class FreeViewMoviesComCrawler extends PornEmbedParser {
     }
 
     @Override
-    protected boolean assumeSelfhostedContentOnNoResults() {
-        return true;
+    protected boolean isSelfhosted(final Browser br) {
+        final String embedURL = br.getRegex(jd.plugins.hoster.FreeViewMoviesCom.TYPE_EMBED).getMatch(-1);
+        if (embedURL != null && embedURL.contains(br.getHost())) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

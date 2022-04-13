@@ -16,24 +16,29 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(?:www\\.)?freeviewmovies\\.com/(?:porn|video)/(\\d+)/([a-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.decrypter.FreeViewMoviesComCrawler.class })
 public class FreeViewMoviesCom extends PluginForHost {
-    private String dllink = null;
+    private String              dllink      = null;
+    public static final String  TYPE_EMBED  = "(?:https?://[^/]+)?/embed/(\\d+)/?";
+    private static final String TYPE_NORMAL = "(?:https?://[^/]+)?/video/(\\d+)/([a-z0-9\\-]+)";
 
     public FreeViewMoviesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,9 +49,34 @@ public class FreeViewMoviesCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.FreeViewMoviesComCrawler.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/\\d+/[a-z0-9\\-]+|embed/\\d+/?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String getAGBLink() {
-        return "http://www.freeviewmovies.com/dmca.php";
+        return "https://www.freeviewmovies.com/page/tos/";
     }
 
     @Override
@@ -65,24 +95,63 @@ public class FreeViewMoviesCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
+        }
+    }
+
+    private String getWeakFilename(final DownloadLink link) {
+        final String urlTitle = getURLTitleCleaned(link.getPluginPatternMatcher());
+        if (urlTitle != null) {
+            return urlTitle.replace("-", " ").trim() + ".mp4";
+        } else {
+            return this.getFID(link) + ".mp4";
+        }
+    }
+
+    private String getURLTitleCleaned(final String url) {
+        String title = new Regex(url, TYPE_NORMAL).getMatch(1);
+        if (title != null) {
+            return title.replace("-", " ").trim();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(getWeakFilename(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1).replace("-", " ").trim();
-        dllink = br.getRegex("<source src=\"(http[^\"]+freeviewmovies[^\"]*)\" type=\"video/mp4").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getURL().matches(TYPE_EMBED)) {
+            final String realVideoURL = br.getRegex(TYPE_NORMAL).getMatch(-1);
+            if (realVideoURL == null || !realVideoURL.contains(this.getFID(link))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage(realVideoURL);
+            /* Double-check */
+            if (isOffline(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (this.canHandle(br.getURL())) {
+                link.setPluginPatternMatcher(br.getURL());
+            }
         }
-        filename = filename.trim();
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        final String titleByURL = getURLTitleCleaned(br.getURL());
+        if (titleByURL != null) {
+            link.setFinalFileName(titleByURL.replace("-", " ").trim() + ".mp4");
+        }
+        dllink = br.getRegex("<source src=\"(https?://[^\"]+freeviewmovies[^\"]+)\"[^>]*type=\"video/mp4").getMatch(0);
         if (this.dllink != null) {
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;

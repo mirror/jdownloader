@@ -234,10 +234,10 @@ public class DanbooruDonmaiUs extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (!looksLikeDownloadableContent(con)) {
-                    throw new IOException();
-                } else {
+                if (looksLikeDownloadableContent(con)) {
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
@@ -285,6 +285,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
+                link.removeProperty(directlinkproperty);
                 brc.followConnection(true);
                 throw new IOException();
             }
@@ -446,7 +447,11 @@ public class DanbooruDonmaiUs extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable e) {
