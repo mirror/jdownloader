@@ -18,10 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TxxxCom extends KernelVideoSharingComV2 {
@@ -50,7 +50,7 @@ public class TxxxCom extends KernelVideoSharingComV2 {
 
     @Override
     public String rewriteHost(final String host) {
-        /* 2022-02-21: Moved txxx.tube from KernelVideoSharingComV2HostsDefault into this one. */
+        /* 2022-02-21 : Moved txxx.tube from KernelVideoSharingComV2HostsDefault into this one. */
         return this.rewriteHost(getPluginDomains(), host);
     }
 
@@ -70,19 +70,13 @@ public class TxxxCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String getAPIParam1(final String videoID) {
-        if (videoID.length() >= 2) {
-            return videoID.substring(0, 1) + "000000";
-        } else {
-            return null;
-        }
+        final String ret = videoID.replaceFirst("(.{6})$", "000000");
+        return ret;
     }
 
     @Override
     protected String getAPICroppedVideoID(final String videoID) {
-        if (videoID.length() > 4) {
-            return videoID.substring(0, 4) + "000";
-        } else {
-            return null;
-        }
+        final String ret = videoID.replaceFirst("(.{3})$", "000");
+        return ret;
     }
 }

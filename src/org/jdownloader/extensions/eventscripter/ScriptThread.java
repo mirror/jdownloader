@@ -474,6 +474,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             } catch (ClassNotFoundException e) {
                 logger.log(e);
             }
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Security Violation " + className);
             final EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
             throw ret;
         }

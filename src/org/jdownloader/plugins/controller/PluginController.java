@@ -8,8 +8,10 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.DecrypterPlugin;
@@ -122,26 +124,32 @@ public abstract class PluginController<T extends Plugin> {
         }
     }
 
-    protected List<Class<?>> getClassHierarchy(List<Class<?>> dependencies, final Class<? extends Plugin> clazz) {
+    protected LinkedHashMap<Class<?>, String> getClassHierarchy(LinkedHashMap<Class<?>, String> dependencies, final Class<? extends Plugin> clazz) {
         final boolean hierarchyStart;
         if (dependencies == null) {
             hierarchyStart = true;
-            dependencies = new ArrayList<Class<?>>();
+            dependencies = new LinkedHashMap<Class<?>, String>();
         } else {
             hierarchyStart = false;
         }
         Class<?> currentClazz = clazz;
         while (currentClazz != null) {
-            if (!dependencies.contains(currentClazz)) {
-                if (PluginForHost.class.isAssignableFrom(currentClazz) && currentClazz.getAnnotation(HostPlugin.class) != null) {
-                    dependencies.add(currentClazz);
-                } else if (PluginForDecrypt.class.isAssignableFrom(currentClazz) && currentClazz.getAnnotation(DecrypterPlugin.class) != null) {
-                    dependencies.add(currentClazz);
+            if (PluginForHost.class.equals(currentClazz) || PluginForDecrypt.class.equals(currentClazz)) {
+                break;
+            } else if (!dependencies.containsKey(currentClazz)) {
+                final HostPlugin hostPlugin = PluginForHost.class.isAssignableFrom(currentClazz) ? currentClazz.getAnnotation(HostPlugin.class) : null;
+                final DecrypterPlugin decryptPlugin = PluginForDecrypt.class.isAssignableFrom(currentClazz) ? currentClazz.getAnnotation(DecrypterPlugin.class) : null;
+                if (hostPlugin != null) {
+                    dependencies.put(currentClazz, hostPlugin.revision());
+                } else if (decryptPlugin != null) {
+                    dependencies.put(currentClazz, decryptPlugin.revision());
+                } else {
+                    dependencies.put(currentClazz, null);
                 }
                 final PluginDependencies pluginDependencies = currentClazz.getAnnotation(PluginDependencies.class);
                 if (pluginDependencies != null) {
                     for (Class<? extends Plugin> dependency : pluginDependencies.dependencies()) {
-                        if (!dependencies.contains(dependency)) {
+                        if (!dependencies.containsKey(dependency)) {
                             getClassHierarchy(dependencies, dependency);
                         }
                     }
@@ -156,19 +164,12 @@ public abstract class PluginController<T extends Plugin> {
     }
 
     protected List<String> getClassDependencies(Map<Object, List<String>> dependenciesCache, Class<? extends Plugin> clazz) throws Exception {
-        final List<Class<?>> clazzHierarchy = getClassHierarchy(null, clazz);
+        final LinkedHashMap<Class<?>, String> clazzHierarchy = getClassHierarchy(null, clazz);
         List<String> dependencies = new ArrayList<String>();
-        for (final Class<?> dependency : clazzHierarchy) {
-            final HostPlugin hostPlugin = dependency.getAnnotation(HostPlugin.class);
-            if (hostPlugin != null) {
-                dependencies.add(dependency.getName());
-                dependencies.add(hostPlugin.revision());
-                continue;
-            }
-            final DecrypterPlugin decryptPlugin = dependency.getAnnotation(DecrypterPlugin.class);
-            if (decryptPlugin != null) {
-                dependencies.add(dependency.getName());
-                dependencies.add(decryptPlugin.revision());
+        for (final Entry<Class<?>, String> dependency : clazzHierarchy.entrySet()) {
+            if (dependency.getValue() != null) {
+                dependencies.add(dependency.getKey().getName());
+                dependencies.add(dependency.getValue());
             }
         }
         if (dependencies.size() > 0) {

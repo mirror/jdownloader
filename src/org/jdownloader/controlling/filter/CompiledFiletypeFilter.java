@@ -515,6 +515,7 @@ public class CompiledFiletypeFilter {
         JPG,
         JP2("(jp2|j2k|jpf|jpg2|jpx|jpm|mj2|mjp2)"),
         JPEG("(jpe|jpeg|jfif)"),
+        AVIF,
         GIF,
         EPS,
         PNG,
