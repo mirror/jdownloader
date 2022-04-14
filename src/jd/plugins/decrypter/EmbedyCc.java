@@ -60,8 +60,8 @@ public class EmbedyCc extends PluginForDecrypt {
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         /* Pretend that we're using their browser-extension -> Adds 1080p quality for some streams. */
         this.br.getHeaders().put("embedyExt", "1");
-        /* 2020-05-29: New */
-        final boolean forceOfficialDownload = true;
+        /* 2020-05-29: New , 2022-04-14, doesn't work reliable */
+        final boolean forceOfficialDownload = false;
         if (forceOfficialDownload) {
             Browser brc = br.cloneBrowser();
             brc.postPage("https://embedy.cc/down/", "id=" + Encoding.urlEncode(linkid));
