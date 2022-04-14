@@ -3,9 +3,9 @@ package jd.plugins.hoster;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -1350,8 +1350,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
             };
         } else {
-            final int maxChunkSize = 1024 * 1024 * 10;
-            if (streamData.getContentLength() > 0 && streamData.getContentLength() > maxChunkSize && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            final int maxChunkSize = 1024 * 1024 * 10;// large(r?) requests cause connection to be throttled
+            if (streamData.getContentLength() > 0 && streamData.getContentLength() > maxChunkSize) {
                 final List<Segment> segments = new ArrayList<Segment>();
                 long position = 0;
                 long[] chunkProgress = dashDownloadable.getChunksProgress();
@@ -1375,6 +1375,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     }
                     position += chunkLength;
                 }
+                if (segments.size() == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 dashDownloadable.setResumeable(true);
                 dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, segments) {
                     @Override
@@ -1387,13 +1390,14 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     @Override
                     public boolean isResumedDownload() {
                         final ChunkRange firstChunkRange = segments.get(0).getChunkRange();
-                        return firstChunkRange.isRangeRequested() && firstChunkRange.getFrom() > 0;
+                        final boolean ret = firstChunkRange.isRangeRequested() && firstChunkRange.getFrom() > 0;
+                        return ret;
                     }
 
                     @Override
-                    protected long onSegmentStart(FileOutputStream outputStream, Segment segment, URLConnectionAdapter con) throws IOException {
+                    protected long onSegmentStart(RandomAccessFile outputStream, Segment segment, URLConnectionAdapter con) throws IOException {
                         final long ret = super.onSegmentStart(outputStream, segment, con);
-                        outputStream.flush();
+                        outputStream.getChannel().force(true);
                         dashDownloadable.setChunksProgress(new long[] { ret });
                         return ret;
                     }

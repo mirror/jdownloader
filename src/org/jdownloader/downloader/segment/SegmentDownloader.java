@@ -3,9 +3,9 @@ package org.jdownloader.downloader.segment;
 import java.awt.Color;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,7 +150,7 @@ public class SegmentDownloader extends DownloadInterface {
         return connection.getInputStream();
     }
 
-    protected int writeSegment(Segment segment, URLConnectionAdapter con, FileOutputStream outputStream, byte[] buf, int index, int len) throws IOException {
+    protected int writeSegment(Segment segment, URLConnectionAdapter con, RandomAccessFile outputStream, byte[] buf, int index, int len) throws IOException {
         outputStream.write(buf, index, len);
         segment.getChunkRange().incLoaded(len);
         return len;
@@ -160,16 +160,13 @@ public class SegmentDownloader extends DownloadInterface {
         return is.read(buf);
     }
 
-    protected void onSegmentClose(Segment segment, URLConnectionAdapter con) {
+    protected void onSegmentClose(RandomAccessFile outputStream, Segment segment, URLConnectionAdapter con) throws IOException {
     }
 
-    protected long onSegmentStart(FileOutputStream outputStream, Segment segment, URLConnectionAdapter con) throws IOException {
-        final long[] range = HTTPConnectionUtils.parseRequestRange(currentConnection);
+    protected long onSegmentStart(RandomAccessFile outputStream, Segment segment, URLConnectionAdapter con) throws IOException {
+        final long[] range = HTTPConnectionUtils.parseRequestRange(con);
         if (range != null && range[0] != -1) {
-            if (range[0] > outputStream.getChannel().position()) {
-                throw new WTFException("Filesize:" + outputStream.getChannel().position() + "<Position:" + range[0]);
-            }
-            outputStream.getChannel().position(range[0]);
+            outputStream.seek(range[0]);
             bytesWritten = range[0];
         }
         return bytesWritten;
@@ -178,16 +175,18 @@ public class SegmentDownloader extends DownloadInterface {
     public void run() throws Exception {
         link.setDownloadSize(-1);
         final boolean isResumedDownload = isResumedDownload();
-        final FileOutputStream outputStream;
+        final RandomAccessFile outputStream;
         try {
-            outputStream = new FileOutputStream(outputPartFile, isResumedDownload);
+            outputStream = new RandomAccessFile(outputPartFile, "rw");
         } catch (IOException e) {
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }
         final MeteredThrottledInputStream meteredThrottledInputStream = new MeteredThrottledInputStream(new NullInputStream(), new AverageSpeedMeter(10));
         boolean localIO = false;
         try {
-            outputStream.getChannel().position(0);
+            if (!isResumedDownload) {
+                outputStream.getChannel().truncate(0);
+            }
             final String cust = link.getCustomExtension();
             link.setCustomExtension(null);
             link.setCustomExtension(cust);
@@ -218,7 +217,7 @@ public class SegmentDownloader extends DownloadInterface {
                         currentConnection = null;
                         if (lCurrentConnection != null) {
                             try {
-                                onSegmentClose(segment, lCurrentConnection);
+                                onSegmentClose(outputStream, segment, lCurrentConnection);
                             } finally {
                                 lCurrentConnection.disconnect();
                             }

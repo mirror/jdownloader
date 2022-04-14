@@ -26,16 +26,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.FunctionObject;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -49,6 +39,16 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.FunctionObject;
 
 /**
  *
@@ -118,7 +118,10 @@ public class HitomiLa extends antiDDoSForDecrypt {
             }
             // get the image host.
             // retval = subdomain_from_galleryid(g) + retval;
-            final String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + gallery_id + "\\.js)\"").getMatch(0);
+            String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + gallery_id + "\\.js)\"").getMatch(0);
+            if (js == null) {
+                js = br.getURL("//ltn.hitomi.la/galleries/" + gallery_id + ".js").toExternalForm();
+            }
             if (js == null) {
                 logger.info("Seems like this is no downloadable/supported content");
                 decryptedLinks.add(createOfflinelink(parameter));
@@ -142,29 +145,18 @@ public class HitomiLa extends antiDDoSForDecrypt {
             for (final Object picO : ressourcelist) {
                 ++i;
                 final Map<String, String> picInfo = (Map<String, String>) picO;
-                boolean use_new_way = true;
                 final String ext;
                 final String url;
-                if (use_new_way) {
-                    url = url_from_url_from_hash(gallery_id, picInfo, null, null, null);
-                    ext = Plugin.getFileNameExtensionFromURL(url);
+                final long haswebp = JavaScriptEngineFactory.toLong(picInfo.get("haswebp"), 0);
+                final long hasavif = JavaScriptEngineFactory.toLong(picInfo.get("hasavif"), 0);
+                if (haswebp == 1) {
+                    url = url_from_url_from_hash(gallery_id, picInfo, "webp", null, "a");
+                } else if (hasavif == 1) {
+                    url = url_from_url_from_hash(gallery_id, picInfo, "avif", null, "a");
                 } else {
-                    entries = (Map<String, Object>) picO;
-                    final String hash = (String) entries.get("hash");
-                    final long haswebp = JavaScriptEngineFactory.toLong(entries.get("haswebp"), 0);
-                    final String type;
-                    if (haswebp == 1) {
-                        type = "webp";
-                        ext = ".webp";
-                    } else {
-                        type = "images";
-                        ext = ".jpg";
-                        imghost = "ba";
-                    }
-                    final String last_char_two = hash.substring(hash.length() - 3, hash.length() - 1);
-                    final String last_char = hash.substring(hash.length() - 1);
-                    url = String.format("https://%s.hitomi.la/%s/%s/%s/%s.%s", imghost, type, last_char, last_char_two, hash, ext);
+                    url = url_from_url_from_hash(gallery_id, picInfo, null, null, null);
                 }
+                ext = Plugin.getFileNameExtensionFromURL(url);
                 final Integer existing = dupCheck.put(url, i);
                 if (existing != null) {
                     logger.info("Dupe URL:" + url + "|" + existing + "," + i);
@@ -307,6 +299,9 @@ public class HitomiLa extends antiDDoSForDecrypt {
     }
 
     private String url_from_url_from_hash(String galleryid, Map<String, String> image, String dir, String ext, String base) throws Exception {
+        if ("tn".equals(base)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return url_from_url(url_from_hash(galleryid, image, dir, ext), base);
     }
 

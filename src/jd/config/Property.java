@@ -197,19 +197,15 @@ public class Property implements Serializable {
     }
 
     public <T> T getObjectProperty(String key, TypeRef<T> typeRef) {
-        Object ret = getProperty(key);
-        if (ret == null) {
+        final Object raw = getProperty(key);
+        if (raw == null) {
             return null;
-        } else if (typeRef.getType().equals(ret.getClass())) {
-            return (T) ret;
+        } else if (typeRef.getType().equals(raw.getClass())) {
+            return (T) raw;
         } else {
-            // if (ret instanceof String) {
-            // ret = JSonStorage.restoreFromString((String) ret, typeRef);
-            // } else {
-            ret = JSonStorage.convert(ret, typeRef);
-            // }
+            final T ret = JSonStorage.convert(raw, typeRef);
             setProperty(key, ret);
-            return (T) ret;
+            return ret;
         }
     }
 
