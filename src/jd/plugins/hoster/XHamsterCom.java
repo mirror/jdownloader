@@ -605,11 +605,16 @@ public class XHamsterCom extends PluginForHost {
                         /* We found the quality we were looking for. */
                         url = br.getURL(url).toString();
                         fallback = fallback != null ? br.getURL(fallback).toString() : null;
-                        if (!verifyURL(url) && fallback != null && verifyURL(fallback)) {
-                            url = fallback;
+                        if (verifyURL(url)) {
+                            logger.info("Sources(url):" + quality + "->" + url);
+                            return url;
+                        } else if (fallback != null && verifyURL(fallback)) {
+                            logger.info("Sources(fallback):" + quality + "->" + fallback);
+                            return fallback;
+                        } else {
+                            logger.info("Sources(failed):" + quality);
+                            break;
                         }
-                        logger.info("Sources:" + quality + "->" + url);
-                        return url;
                     }
                 }
             }
