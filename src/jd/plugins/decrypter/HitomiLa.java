@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -26,9 +27,19 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.FunctionObject;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -39,16 +50,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.FunctionObject;
 
 /**
  *
@@ -67,6 +68,9 @@ public class HitomiLa extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            engine = null;
+        }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         String gallery_id = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
@@ -145,28 +149,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             for (final Object picO : ressourcelist) {
                 ++i;
                 final Map<String, String> picInfo = (Map<String, String>) picO;
-                final String ext;
-                final String url;
-                final long haswebp = JavaScriptEngineFactory.toLong(picInfo.get("haswebp"), 0);
-                final long hasavif = JavaScriptEngineFactory.toLong(picInfo.get("hasavif"), 0);
-                if (haswebp == 1) {
-                    url = url_from_url_from_hash(gallery_id, picInfo, "webp", null, "a");
-                } else if (hasavif == 1) {
-                    url = url_from_url_from_hash(gallery_id, picInfo, "avif", null, "a");
-                } else {
-                    url = url_from_url_from_hash(gallery_id, picInfo, null, null, null);
-                }
-                ext = Plugin.getFileNameExtensionFromURL(url);
-                final Integer existing = dupCheck.put(url, i);
-                if (existing != null) {
-                    logger.info("Dupe URL:" + url + "|" + existing + "," + i);
-                }
-                final DownloadLink dl = createDownloadlink("directhttp://" + url);
-                dl.setLinkID("hitomi.la://" + gallery_id + "/" + i);
-                dl.setProperty("Referer", br.getURL());
-                dl.setProperty("requestType", "GET");
-                dl.setAvailable(true);
-                dl.setFinalFileName(df.format(i) + ext);
+                final DownloadLink dl = getImage(df, dupCheck, gallery_id, picInfo, i);
                 decryptedLinks.add(dl);
             }
         }
@@ -176,6 +159,50 @@ public class HitomiLa extends antiDDoSForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    protected DownloadLink getImage(DecimalFormat df, Map<String, Integer> dupCheck, final String gallery_id, Map<String, String> picInfo, int i) throws Exception {
+        final String ext;
+        final String url;
+        final long haswebp = JavaScriptEngineFactory.toLong(picInfo.get("haswebp"), 0);
+        final long hasavif = JavaScriptEngineFactory.toLong(picInfo.get("hasavif"), 0);
+        if (haswebp == 1) {
+            url = url_from_url_from_hash(gallery_id, picInfo, "webp", null, "a");
+        } else if (hasavif == 1) {
+            url = url_from_url_from_hash(gallery_id, picInfo, "avif", null, "a");
+        } else {
+            url = url_from_url_from_hash(gallery_id, picInfo, null, null, null);
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && i == 1) {
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openHeadConnection(url);
+                if (!looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                con.disconnect();
+            } catch (final IOException e) {
+                logger.log(e);
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        ext = Plugin.getFileNameExtensionFromURL(url);
+        final Integer existing = dupCheck.put(url, i);
+        if (existing != null) {
+            logger.info("Dupe URL:" + url + "|" + existing + "," + i);
+        }
+        final DownloadLink dl = createDownloadlink("directhttp://" + url);
+        dl.setLinkID("hitomi.la://" + gallery_id + "/" + i);
+        dl.setProperty("Referer", br.getURL());
+        dl.setProperty("requestType", "GET");
+        dl.setAvailable(true);
+        dl.setFinalFileName(df.format(i) + ext);
+        return dl;
     }
 
     /**
@@ -237,6 +264,14 @@ public class HitomiLa extends antiDDoSForDecrypt {
         return URL_FROM_URL_PATTERN.matcher(url).replaceAll("//" + subdomain_from_url(url, base) + ".hitomi.la/");
     }
 
+    protected String fetchGG(Browser br) throws IOException {
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
+        String gg = brc.getPage("https://ltn.hitomi.la/gg.js");
+        gg = gg.replaceFirst("('use strict';\\s*)", "var ");
+        return gg;
+    }
+
     private void initEngine() throws Exception {
         if (engine == null) {
             Browser brc = br.cloneBrowser();
@@ -260,7 +295,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
                 engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
                 engine.eval(js);
-                final String gg = IO.readInputStreamToString(getClass().getResourceAsStream("/org/jdownloader/plugins/components/hitomi-gg.js"));
+                final String gg = fetchGG(br);
                 engine.eval(gg);
             } catch (final Exception e) {
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
