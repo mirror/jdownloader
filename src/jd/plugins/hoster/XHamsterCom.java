@@ -585,7 +585,7 @@ public class XHamsterCom extends PluginForHost {
         case 1:
             qualities.add("240p");
         }
-        String hlsMaster = null;
+        Map<String, Object> hlsMaster = null;
         try {
             final Map<String, Object> json = JSonStorage.restoreFromString(br.getRegex(">\\s*window\\.initials\\s*=\\s*(\\{.*?\\})\\s*;\\s*<").getMatch(0), TypeRef.HASHMAP);
             final List<Map<String, Object>> sources = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(json, "xplayerSettings/sources/standard/mp4");
@@ -594,14 +594,20 @@ public class XHamsterCom extends PluginForHost {
                     for (Map<String, Object> source : sources) {
                         final String qualityTmp = (String) source.get("quality");
                         String url = (String) source.get("url");
-                        if (!StringUtils.equalsIgnoreCase(quality, qualityTmp) || StringUtils.isEmpty(url)) {
-                            continue;
-                        } else if (hlsMaster == null && url.contains(".m3u8")) {
-                            hlsMaster = url;
+                        if (hlsMaster == null && StringUtils.containsIgnoreCase(url, ".m3u8")) {
+                            hlsMaster = source;
                             continue;
                         }
+                        if (!StringUtils.equalsIgnoreCase(quality, qualityTmp) || StringUtils.isEmpty(url)) {
+                            continue;
+                        }
+                        String fallback = (String) source.get("fallback");
                         /* We found the quality we were looking for. */
                         url = br.getURL(url).toString();
+                        fallback = fallback != null ? br.getURL(fallback).toString() : null;
+                        if (!verifyURL(url) && fallback != null && verifyURL(fallback)) {
+                            url = fallback;
+                        }
                         logger.info("Sources:" + quality + "->" + url);
                         return url;
                     }
@@ -610,10 +616,11 @@ public class XHamsterCom extends PluginForHost {
         } catch (JSonMapperException e) {
             logger.log(e);
         }
+        logger.info("did not find any matching quality:" + qualities);
         if (hlsMaster != null) {
             /* 2021-02-01 */
             logger.info("Fallback to HLS download -> " + hlsMaster);
-            return hlsMaster;
+            return (String) hlsMaster.get("url");
         }
         final String newPlayer = Encoding.htmlDecode(br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0));
         if (newPlayer != null) {
@@ -754,6 +761,7 @@ public class XHamsterCom extends PluginForHost {
             if (looksLikeDownloadableContent(con)) {
                 return true;
             } else {
+                br2.followConnection(true);
                 throw new IOException();
             }
         } catch (final IOException e) {
