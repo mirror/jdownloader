@@ -181,8 +181,9 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 con = br2.openHeadConnection(url);
                 if (!looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    con.disconnect();
                 }
-                con.disconnect();
             } catch (final IOException e) {
                 logger.log(e);
             } finally {
