@@ -35,6 +35,12 @@ public interface XtremestreamCoConfig extends PluginConfigInterface {
             public String getLabel() {
                 return "1080p";
             }
+        },
+        Q2160 {
+            @Override
+            public String getLabel() {
+                return "2160p";
+            }
         };
     }
 

@@ -20,14 +20,12 @@ import java.util.List;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.FEmbedComConfig;
-import org.jdownloader.plugins.components.config.FEmbedComConfig.Quality;
 import org.jdownloader.plugins.components.config.XtremestreamCoConfig;
+import org.jdownloader.plugins.components.config.XtremestreamCoConfig.Quality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -175,7 +173,7 @@ public class XtremestreamCo extends antiDDoSForHost {
     }
 
     private int getUserPreferredQualityHeight() {
-        final Quality quality = PluginJsonConfig.get(FEmbedComConfig.class).getPreferredStreamQuality();
+        final Quality quality = PluginJsonConfig.get(XtremestreamCoConfig.class).getPreferredStreamQuality();
         switch (quality) {
         case Q360:
             return 360;
@@ -185,9 +183,11 @@ public class XtremestreamCo extends antiDDoSForHost {
             return 720;
         case Q1080:
             return 1080;
+        case Q2160:
+            return 2160;
         default:
             /* E.g. BEST */
-            return 1080;
+            return 2160;
         }
     }
 }

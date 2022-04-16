@@ -74,6 +74,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
     }
 
     protected ArrayList<DownloadLink> preProcessCryptedLink(final CryptedLink param) throws Exception {
+        prepareBrowser(br);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (returnRedirectToUnsupportedLinkAsResult()) {
             br.getPage(param.getCryptedUrl());
@@ -102,16 +103,16 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         }
         if (this.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (isSelfhosted(br)) {
+        } else if (isSelfhosted(br)) {
             ret.add(getDownloadLinkSelfhosted(param, br));
             return ret;
+        } else {
+            ret.addAll(this.findEmbedUrl(br, getFileTitle(param, br)));
+            if (ret.isEmpty() && assumeSelfhostedContentOnNoResults()) {
+                ret.add(getDownloadLinkSelfhosted(param, br));
+            }
+            return ret;
         }
-        ret.addAll(this.findEmbedUrl(br, getFileTitle(param, br)));
-        if (ret.isEmpty() && assumeSelfhostedContentOnNoResults()) {
-            ret.add(getDownloadLinkSelfhosted(param, br));
-        }
-        return ret;
     }
 
     protected DownloadLink getDownloadLinkSelfhosted(final CryptedLink param, final Browser br) {
