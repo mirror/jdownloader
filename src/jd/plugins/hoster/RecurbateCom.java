@@ -20,6 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,17 +46,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RecurbateCom extends antiDDoSForHost {
@@ -170,12 +170,13 @@ public class RecurbateCom extends antiDDoSForHost {
             brc.getPage("/api/get.php?" + query.toString());
             final String dllink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
             if (dllink == null) {
-                if (StringUtils.containsIgnoreCase(br.toString(), "shall_signin")) {
+                if (StringUtils.containsIgnoreCase(brc.toString(), "shall_signin")) {
                     /**
-                     * Free users can watch one video per IP per X time. </br> This error should only happen in logged-out state.
+                     * Free users can watch one video per IP per X time. </br>
+                     * This error should only happen in logged-out state.
                      */
                     errorDailyDownloadlimitReached(account);
-                } else if (StringUtils.containsIgnoreCase(br.toString(), "shall_subscribe")) {
+                } else if (StringUtils.containsIgnoreCase(brc.toString(), "shall_subscribe")) {
                     errorDailyDownloadlimitReached(account);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -248,8 +249,8 @@ public class RecurbateCom extends antiDDoSForHost {
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
                 if (userCookies == null) {
                     /**
-                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br> Login
-                     * page: https://recurbate.com/signin
+                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br>
+                     * Login page: https://recurbate.com/signin
                      */
                     /* Only display cookie login instructions on first login attempt */
                     if (!account.hasEverBeenValid()) {
