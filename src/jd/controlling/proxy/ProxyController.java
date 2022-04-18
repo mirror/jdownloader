@@ -23,23 +23,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.http.Browser;
-import jd.http.ClonedProxy;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -98,6 +81,23 @@ import com.btr.proxy.util.Logger;
 import com.btr.proxy.util.Logger.LogBackEnd;
 import com.btr.proxy.util.Logger.LogLevel;
 
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
+import jd.http.ClonedProxy;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 //import com.btr.proxy.search.ProxySearchStrategy;
 //import com.btr.proxy.search.browser.firefox.FirefoxProxySearchStrategy;
 //import com.btr.proxy.search.desktop.DesktopProxySearchStrategy;
@@ -132,9 +132,15 @@ public class ProxyController implements ProxySelectorInterface {
                                                                                                 @Override
                                                                                                 public void killQueue() {
                                                                                                     LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                    /*
-                                                                                                     * this queue can ' t be killed
-                                                                                                     */
+                                                                                                                                                                          /*
+                                                                                                                                                                           * this
+                                                                                                                                                                           * queue
+                                                                                                                                                                           * can
+                                                                                                                                                                           * '
+                                                                                                                                                                           * t
+                                                                                                                                                                           * be
+                                                                                                                                                                           * killed
+                                                                                                                                                                           */
                                                                                                 }
                                                                                             };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
@@ -195,16 +201,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                                                  @Override
-                                                  public void delayedrun() {
-                                                      ProxyController.this.saveProxySettings();
-                                                  }
+                @Override
+                public void delayedrun() {
+                    ProxyController.this.saveProxySettings();
+                }
 
-                                                  @Override
-                                                  public String getID() {
-                                                      return "ProxyController";
-                                                  }
-                                              };
+                @Override
+                public String getID() {
+                    return "ProxyController";
+                }
+            };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -277,7 +283,7 @@ public class ProxyController implements ProxySelectorInterface {
                         if (index != -1) {
                             if (index + 1 < entry.length()) {
                                 final String host = entry.substring(index + 1);
-                                if (host.matches("^[a-zA-Z0-9.-_]+$") && host.contains(".") && host.length() >= 3) {
+                                if (host.matches("^[a-zA-Z0-9.\\-_]+$") && host.contains(".") && host.length() >= 3) {
                                     final String username = entry.substring(0, index);
                                     final String assignedHost = assignHost(pluginFinder, mapping, host);
                                     if (assignedHost != null && !StringUtils.equals(host, assignedHost)) {
@@ -289,7 +295,7 @@ public class ProxyController implements ProxySelectorInterface {
                                 }
                             }
                         } else {
-                            if (entry.matches("^[a-zA-Z0-9.-_]+$") && entry.contains(".") && entry.length() >= 3) {
+                            if (entry.matches("^[a-zA-Z0-9.\\-_]+$") && entry.contains(".") && entry.length() >= 3) {
                                 final String assignedHost = assignHost(pluginFinder, mapping, entry);
                                 if (assignedHost != null && !StringUtils.equals(entry, assignedHost)) {
                                     updatedEntries.add("#auto assigned correct plugin:" + entry + "->" + assignedHost);

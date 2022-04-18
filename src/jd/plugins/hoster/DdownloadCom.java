@@ -276,7 +276,7 @@ public class DdownloadCom extends XFileSharingProBasic {
     @Override
     public boolean loginWebsite(final DownloadLink downloadLink, final Account account, final boolean validateCookies) throws Exception {
         try {
-            super.loginWebsite(downloadLink, account, validateCookies);
+            return super.loginWebsite(downloadLink, account, validateCookies);
         } catch (final PluginException e) {
             Form twoFAForm = null;
             final String formKey2FA = "code6";
@@ -321,8 +321,8 @@ public class DdownloadCom extends XFileSharingProBasic {
                 }
             }
             account.saveCookies(br.getCookies(getMainPage()), "");
+            return true;
         }
-        return true;
     }
 
     @Override

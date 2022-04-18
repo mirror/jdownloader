@@ -115,11 +115,6 @@ public class HitomiLa extends antiDDoSForDecrypt {
             if (extra_redirect != null) {
                 this.getPage(Encoding.htmlOnlyDecode(extra_redirect));
             }
-            fpName = br.getRegex("<title>([^<>\"]*?)\\s*-\\s*Read\\s*Online.*?\\| Hitomi\\.la</title>").getMatch(0);
-            if (fpName == null) {
-                /* Fallback */
-                fpName = URLEncode.decodeURIComponent(url_name);
-            }
             // get the image host.
             // retval = subdomain_from_galleryid(g) + retval;
             String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + gallery_id + "\\.js)\"").getMatch(0);
@@ -134,12 +129,18 @@ public class HitomiLa extends antiDDoSForDecrypt {
             final Browser brc = br.cloneBrowser();
             getPage(brc, js);
             Map<String, Object> entries = null;
-            final Object picsO = JavaScriptEngineFactory.jsonToJavaObject(brc.toString().replace("var galleryinfo = ", ""));
+            final Object map = JavaScriptEngineFactory.jsonToJavaObject(brc.toString().replaceFirst("(var\\s*galleryinfo\\s*=\\s*)", ""));
+            fpName = (String) JavaScriptEngineFactory.walkJson(map, "title");
+            if (fpName == null) {
+                /* fallback from URL */
+                fpName = URLEncode.decodeURIComponent(url_name);
+                fpName = fpName != null ? fpName.replaceFirst("^([^/]+/)", "") : null;
+            }
             final List<Object> ressourcelist;
-            if (picsO instanceof List) {
-                ressourcelist = (List<Object>) picsO;
+            if (map instanceof List) {
+                ressourcelist = (List<Object>) map;
             } else {
-                entries = (Map<String, Object>) picsO;
+                entries = (Map<String, Object>) map;
                 ressourcelist = (List<Object>) entries.get("files");
             }
             numberOfPages = ressourcelist.size();
