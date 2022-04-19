@@ -17,10 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,6 +32,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(?:www\\.)?eroprofile\\.com/m/(?:videos|photos)/view/([A-Za-z0-9\\-_]+)" })
 public class EroProfileCom extends PluginForHost {
@@ -80,7 +79,7 @@ public class EroProfileCom extends PluginForHost {
      * "Access denied - This video can only be viewed by the owner.",
      * "Access denied - This video can only be viewed by friends of the owner.", "Access denied - This video can only be viewed by members."
      */
-    public static final String  NOACCESS    = "(>You do not have the required privileges to view this page|>No access<|>\\s*Access denied)";
+    public static final String  NOACCESS    = "(>\\s*You do not have the required privileges to view this page|>\\s*No access\\s*<|>\\s*Access denied)";
     private static final String PREMIUMONLY = "The video could not be processed";
 
     @SuppressWarnings("deprecation")
@@ -102,7 +101,7 @@ public class EroProfileCom extends PluginForHost {
                 /* <h1 class="capMultiLine">Video processing failed</h1> */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = getFilename();
+            String filename = getFilename(br);
             if (filename == null) {
                 /* Fallback */
                 filename = fid;
@@ -112,31 +111,31 @@ public class EroProfileCom extends PluginForHost {
                 link.getLinkStatus().setStatusText("This file is only available to premium members");
                 return AvailableStatus.TRUE;
             }
-            dllink = br.getRegex("file:\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("file\\s*:\\s*\\'(https?://[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<source src=(?:'|\")([^<>\"\\']*?)/?(?:'|\")").getMatch(0);
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dllink.startsWith("//")) {
-                dllink = "https:" + dllink;
+                dllink = br.getRegex("<source\\s*src\\s*=\\s*(?:'|\")([^<>\"\\']*?)/?(?:'|\")").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             dllink = Encoding.htmlDecode(dllink);
             final String ext = getFileNameExtensionFromString(dllink, ".m4v");
             link.setFinalFileName(filename + ext);
         } else {
-            if (br.containsHTML("(>Photo not found|>The photo could not be found|<title>EroProfile</title>)")) {
+            if (br.containsHTML("(>\\s*Photo not found|>\\s*The photo could not be found|<title>\\s*EroProfile\\s*</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = getFilename();
+            String filename = getFilename(br);
             if (filename == null) {
                 /* Fallback */
                 filename = fid;
             }
             dllink = br.getRegex("<\\s*div\\s+class=\"viewPhotoContainer\">\\s*<\\s*a\\s+href=\"((?:https?:)?//[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRegex("class\\s*=\\s*\"photoPlayer\"\\s*src\\s*=\\s*\"((?:https?:)?//[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             dllink = Encoding.htmlDecode(dllink);
             final String ext = getFileNameExtensionFromString(dllink, ".jpg");
@@ -148,8 +147,10 @@ public class EroProfileCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -176,8 +177,12 @@ public class EroProfileCom extends PluginForHost {
     public void doFree(DownloadLink downloadLink) throws Exception {
         // Resume & chunks works but server will only send 99% of the data if used
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -215,11 +220,7 @@ public class EroProfileCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Free Account");
         account.setType(AccountType.FREE);
@@ -240,10 +241,10 @@ public class EroProfileCom extends PluginForHost {
         return -1;
     }
 
-    private String getFilename() throws PluginException {
+    public static String getFilename(Browser br) throws PluginException {
         String filename = br.getRegex("<tr><th>Title:</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>EroProfile \\- ([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>(?:EroProfile\\s*-\\s*)?([^<>\"]*?)(?:\\s*-\\s*EroProfile\\s*)?</title>").getMatch(0);
         }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename.trim());

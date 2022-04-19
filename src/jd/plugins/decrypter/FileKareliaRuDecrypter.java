@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,6 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "https?://(?:www\\.)?file\\.(?:karelia|sampo)\\.ru/[a-z0-9]+/" })
 public class FileKareliaRuDecrypter extends PluginForDecrypt {
@@ -62,6 +62,7 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
+            dl.setContentUrl(parameter);
             filename = Encoding.htmlDecode(filename);
             dl.setFinalFileName(filename);
             dl.setProperty("plainfilename", filename);

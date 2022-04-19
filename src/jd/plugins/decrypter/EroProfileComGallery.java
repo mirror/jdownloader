@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -32,7 +30,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.EroProfileCom;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/m/photos/album/[A-Za-z0-9\\-_]+" })
 public class EroProfileComGallery extends PluginForDecrypt {
@@ -74,7 +75,10 @@ public class EroProfileComGallery extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
+        String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
+        if (fpName == null) {
+            fpName = EroProfileCom.getFilename(br);
+        }
         final List<String> pagesDones = new ArrayList<String>();
         final List<String> pagesLeft = new ArrayList<String>();
         pagesLeft.add("1");
@@ -100,7 +104,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
                     }
                 }
             }
-            String[][] links = br.getRegex("<table cellspacing=\"0\"><tr><td><a href=\"(/m/photos/view/([A-Za-z0-9\\-_]+))\"").getMatches();
+            String[][] links = br.getRegex("<a href=\"(/m/photos/view/([A-Za-z0-9\\-_]+))\"").getMatches();
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

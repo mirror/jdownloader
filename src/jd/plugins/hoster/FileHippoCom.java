@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -28,6 +26,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "https?://(?:www\\.)?filehippo\\.com(?:/(?:es|en|pl|jp|de))?/download_[^<>/\"]+(?:(?:/tech)?/\\d+/)?" })
 public class FileHippoCom extends PluginForHost {
@@ -126,9 +127,6 @@ public class FileHippoCom extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         final String downloadImpossibleURL = br.getRegex("(https?://[^\"]+/post_download/\\?nodl=1)").getMatch(0);
-        if (downloadImpossibleURL != null) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "No mirrors available");
-        }
         final String continueURL = br.getRegex("\"(https?://[^\"]+/post_download/?)\"").getMatch(0);
         if (continueURL != null) {
             /* 2020-11-12 */
@@ -144,7 +142,11 @@ public class FileHippoCom extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (StringUtils.containsIgnoreCase(br.getHost(), "filehippo")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible - download-url points to external site");
+                }
             }
             link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
             dl.startDownload();
@@ -183,21 +185,25 @@ public class FileHippoCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
-                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                    br.followConnection();
+                    br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
                 if (!br.getURL().contains("filehippo.com")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible - download-url points to external site");
+                } else {
+                    continue;
                 }
-                continue;
             }
             link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
             dl.startDownload();
             return;
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadImpossibleURL != null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "No mirrors available");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override

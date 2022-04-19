@@ -1,25 +1,25 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "decryptedforFEmbedHosterPlugin://.*" })
 public class FEmbedCom extends PluginForHost {
@@ -59,36 +59,26 @@ public class FEmbedCom extends PluginForHost {
             logger.info("Linkcheck via directurly SUCCESS");
             return AvailableStatus.TRUE;
         }
-        String fileID = new Regex(link.getPluginPatternMatcher(), "/(?:f|v)/([a-zA-Z0-9_-]+)").getMatch(0);
         final String fembedHost = link.getStringProperty("fembedHost", getHost());
+        final List<LazyCrawlerPlugin> lazyCrawlerPlugins = findNextLazyCrawlerPlugins(link.getPluginPatternMatcher());
+        if (lazyCrawlerPlugins.size() != 1) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final PluginForDecrypt decrypter = getNewPluginInstance(lazyCrawlerPlugins.get(0));
         jd.plugins.decrypter.FEmbedDecrypter.setRequestLimit(fembedHost);
-        br.setFollowRedirects(true);
-        final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + fileID);
-        final Map<String, Object> response = JSonStorage.restoreFromString(br.getPage(postRequest), TypeRef.HASHMAP);
-        if (!Boolean.TRUE.equals(response.get("success"))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final List<Map<String, Object>> videos;
-        if (response.get("data") instanceof String) {
-            videos = (List<Map<String, Object>>) JSonStorage.restoreFromString((String) response.get("data"), TypeRef.OBJECT);
-        } else {
-            videos = (List<Map<String, Object>>) response.get("data");
-        }
+        final ArrayList<DownloadLink> videos = decrypter.decryptIt(new CrawledLink(new CryptedLink(link)));
         final String searchLabel = link.getStringProperty("label");
         final boolean isDownload = (Thread.currentThread() instanceof SingleDownloadController);
-        for (Map<String, Object> video : videos) {
-            final String label = (String) video.get("label");
-            final String file = (String) video.get("file");
-            if (StringUtils.equals(label, searchLabel) && StringUtils.isNotEmpty(file)) {
-                url = file;
-                if (url.startsWith("/")) {
-                    url = "https://www." + fembedHost + url;
-                }
+        for (final DownloadLink video : videos) {
+            final String label = video.getStringProperty("label");
+            if (StringUtils.equals(label, searchLabel)) {
+                url = video.getStringProperty(PROPERTY_DIRECTURL);
                 if (!isDownload) {
-                    final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
+                    final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(url);
                     try {
                         if (this.looksLikeDownloadableContent(con)) {
                             if (con.getCompleteContentLength() > 0) {
+                                link.setProperty(PROPERTY_DIRECTURL, url);
                                 link.setVerifiedFileSize(con.getCompleteContentLength());
                             }
                         } else {

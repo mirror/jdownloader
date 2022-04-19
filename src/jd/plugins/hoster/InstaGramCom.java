@@ -21,21 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -63,6 +48,21 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram.com/p/[A-Za-z0-9_-]+/" })
 public class InstaGramCom extends PluginForHost {
@@ -120,9 +120,10 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_date                            = "date";
     public static final String  PROPERTY_hashtag                         = "hashtag";
     @Deprecated
-    public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";              // used until crawler rev 45795
+    public static final String  PROPERTY_filename_from_crawler           = "decypter_filename";              // used until crawler rev
+    // 45795
     public static final String  PROPERTY_main_content_id                 = "main_content_id";                // e.g.
-                                                                                                             // instagram.com/p/<main_content_id>/
+    // instagram.com/p/<main_content_id>/
     public static final String  PROPERTY_forced_packagename              = "forced_packagename";
     public static final String  PROPERTY_is_private                      = "is_private";
 
@@ -200,7 +201,11 @@ public class InstaGramCom extends PluginForHost {
                 link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                 /* Only do this extra request if the user triggered a single linkcheck! */
                 if (!isDownload) {
-                    this.checkLinkAndSetFilesize(link, this.dllink);
+                    dllink = this.checkLinkAndSetFilesize(link, this.dllink);
+                    if (this.dllink == null) {
+                        /* This should never happen */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
+                    }
                 }
             }
             final String filename = InstaGramComDecrypter.getFilename(link);
@@ -287,8 +292,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br>
-     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
+     * grab best quality but keep effects/filters.
      */
     private String getHighesQualityDownloadlinkAltAPI(final DownloadLink link, final boolean removePictureEffects) throws IOException, PluginException {
         // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
@@ -458,6 +463,9 @@ public class InstaGramCom extends PluginForHost {
     }
 
     private String checkLinkAndSetFilesize(final DownloadLink link, final String flink) throws IOException, PluginException {
+        if (StringUtils.isEmpty(flink)) {
+            return null;
+        }
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);

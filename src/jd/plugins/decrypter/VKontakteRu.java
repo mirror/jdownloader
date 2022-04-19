@@ -26,15 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -65,6 +56,15 @@ import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1181,28 +1181,53 @@ public class VKontakteRu extends PluginForDecrypt {
         if (http_url != null && http_quality != null) {
             foundQualities.put(http_quality + "p", http_url);
         }
-        if (foundQualities.isEmpty()) {
-            /* Now try more fallbacks */
-            /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
-            final String[][] qualities = { { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" }, { "cache144", "url144", "144p" } };
-            for (final String[] qualityInfo : qualities) {
-                String finallink = (String) video.get(qualityInfo[0]);
-                if (finallink == null) {
-                    finallink = (String) video.get(qualityInfo[1]);
-                }
-                if (finallink != null) {
-                    foundQualities.put(qualityInfo[2], finallink);
-                }
+        /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
+        final String[][] qualities = { { "cache2160", "url2160", "2160p" }, { "cache1440", "url1440", "1440p" }, { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" }, { "cache144", "url144", "144p" } };
+        for (final String[] qualityInfo : qualities) {
+            String finallink = (String) video.get(qualityInfo[0]);
+            if (finallink == null) {
+                finallink = (String) video.get(qualityInfo[1]);
             }
-            /* 2020-08-13: Last resort - only download HLS stream if nothing else is available! */
-            if (foundQualities.isEmpty()) {
-                final String hls_master = (String) video.get("hls");
-                if (!StringUtils.isEmpty(hls_master)) {
-                    foundQualities.put("HLS", hls_master);
+            if (finallink != null && !foundQualities.containsKey(qualityInfo[2])) {
+                foundQualities.put(qualityInfo[2], finallink);
+            }
+        }
+        final String manifest = (String) video.get("manifest");
+        if (manifest != null) {
+            // mpd doesn't use split video/audio, 2021-04-19
+            String representations[] = new Regex(manifest, "(<Representation.*?</Representation>)").getColumn(0);
+            for (final String[] qualityInfo : qualities) {
+                if (!foundQualities.containsKey(qualityInfo[2])) {
+                    for (final String representation : representations) {
+                        final int height = Integer.parseInt(qualityInfo[2].replaceAll("[^\\d]", ""));
+                        if (representation.contains("height=\"" + height + "\"")) {
+                            String url = new Regex(representation, "<BaseURL>\\s*(.*?)\\s*</BaseURL>").getMatch(0);
+                            if (url != null) {
+                                url = Encoding.htmlOnlyDecode(url);
+                                foundQualities.put(qualityInfo[2], url);
+                            }
+                        }
+                    }
                 }
             }
         }
-        return foundQualities;
+        /* 2020-08-13: Last resort - only download HLS stream if nothing else is available! */
+        if (foundQualities.isEmpty()) {
+            final String hls_master = (String) video.get("hls");
+            if (!StringUtils.isEmpty(hls_master)) {
+                foundQualities.put("HLS", hls_master);
+            }
+            return foundQualities;
+        }
+        // create sorted linkedHashMap with best->worse quality sort order, see getSelectedVideoQualities
+        final Map<String, String> ret = new LinkedHashMap<String, String>();
+        for (final String[] qualityInfo : qualities) {
+            final String url = foundQualities.get(qualityInfo[2]);
+            if (url != null) {
+                ret.put(qualityInfo[2], url);
+            }
+        }
+        return ret;
     }
 
     public static Map<String, String> getSelectedVideoQualities(final Map<String, String> availableVideoQualities, final QualitySelectionMode mode, final String preferredVideoQuality) {

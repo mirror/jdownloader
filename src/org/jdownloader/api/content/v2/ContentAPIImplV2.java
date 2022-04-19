@@ -1,9 +1,13 @@
 package org.jdownloader.api.content.v2;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.Icon;
 
@@ -17,11 +21,15 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.APIFileNotFoundException;
 import org.appwork.remoteapi.exceptions.BadRequestException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.IDIcon;
+import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
@@ -34,16 +42,73 @@ import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface;
 import org.jdownloader.myjdownloader.client.json.IconDescriptor;
 
 public class ContentAPIImplV2 implements ContentAPIV2 {
-    private final String                          usedByWebInterface = IconKey.ICON_FOLDER_OPEN + IconKey.ICON_DOWNLOADPASSWORD + IconKey.ICON_ADDCONTAINER;
-    private final HashMap<String, IconDescriptor> descriptorMap;
+    private final String                                      usedByWebInterface     = IconKey.ICON_FOLDER_OPEN + IconKey.ICON_DOWNLOADPASSWORD + IconKey.ICON_ADDCONTAINER;
+    private final File                                        descriptorMapCacheFile = Application.getResource("tmp/iconIDMapCache");
+    private final static TypeRef<Map<String, IconDescriptor>> TYPE_REF               = new TypeRef<Map<String, IconDescriptor>>() {
+                                                                                     };
+    private final HashMap<String, IconDescriptor>             descriptorMap          = new HashMap<String, IconDescriptor>();
 
     public ContentAPIImplV2() {
         RemoteAPIController.validateInterfaces(ContentAPIV2.class, ContentInterface.class);
-        descriptorMap = new HashMap<String, IconDescriptor>();
+        final Map<String, IconDescriptor> cache = loadDescriptorMap();
+        if (cache != null) {
+            descriptorMap.putAll(cache);
+        }
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            @Override
+            public void onShutdown(ShutdownRequest shutdownRequest) {
+                saveDescriptorMap();
+            }
+
+            @Override
+            public String toString() {
+                return "save iconID cache to disk";
+            }
+        });
+    }
+
+    private Map<String, IconDescriptor> loadDescriptorMap() {
+        if (descriptorMapCacheFile.isFile()) {
+            try {
+                final FileInputStream fis = new FileInputStream(descriptorMapCacheFile);
+                try {
+                    final Map<String, IconDescriptor> map = JSonStorage.restoreFromInputStream(fis, TYPE_REF);
+                    return map;
+                } finally {
+                    fis.close();
+                }
+            } catch (Throwable e) {
+                descriptorMapCacheFile.delete();
+                LogController.CL().log(e);
+            }
+        }
+        return null;
+    }
+
+    private void saveDescriptorMap() {
+        try {
+            if (!descriptorMapCacheFile.getParentFile().isDirectory()) {
+                descriptorMapCacheFile.getParentFile().mkdirs();
+            }
+            final FileOutputStream fos = new FileOutputStream(descriptorMapCacheFile);
+            try {
+                final byte[] bytes;
+                synchronized (descriptorMap) {
+                    bytes = JSonStorage.serializeToJsonByteArray(descriptorMap);
+                }
+                fos.write(bytes);
+            } finally {
+                fos.close();
+            }
+        } catch (Throwable e) {
+            descriptorMapCacheFile.delete();
+            LogController.CL().log(e);
+        }
     }
 
     public void getFavIcon(RemoteAPIRequest request, RemoteAPIResponse response, String hostername) throws InternalApiException, APIFileNotFoundException {
