@@ -8,14 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -26,6 +18,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/p/([^/\\?]+)(/galleries/[^/]+)?" })
 public class FivehundretPxCom extends PluginForDecrypt {
@@ -71,7 +71,7 @@ public class FivehundretPxCom extends PluginForDecrypt {
         return null;
     }
 
-    protected String getUserID(final Browser br, String username) throws Exception {
+    protected String getUserID(final Browser br, final String url, String username) throws Exception {
         if (username == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -94,7 +94,7 @@ public class FivehundretPxCom extends PluginForDecrypt {
                 USER_ID_MAP.put(username, userID);
             }
             if (StringUtils.isEmpty(userID)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 return userID;
             }
@@ -138,7 +138,7 @@ public class FivehundretPxCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String userName = new Regex(parameter.toString(), this.getSupportedLinks()).getMatch(0);
-        final String userID = getUserID(br, userName);
+        final String userID = getUserID(br, parameter.toString(), userName);
         userName = getUserName(userID);
         if (parameter.toString().matches(".+/galleries/.+")) {
             /* Crawl a gallery of a user */
