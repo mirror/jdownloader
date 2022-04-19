@@ -662,6 +662,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         } else {
             displayName = view.getDisplayName();
         }
+        LinkInfo linkInfo = null;
         if (isEnabled) {
             if (finalLinkState == null || FinalLinkState.PLUGIN_DEFECT.equals(finalLinkState)) {
                 tmp.allFinished = false;
@@ -670,7 +671,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             if (conditionalSkipReason instanceof MirrorLoading) {
                 final MirrorLoading mirrorLoading = (MirrorLoading) conditionalSkipReason;
                 final DownloadLink downloadLink = mirrorLoading.getDownloadLink();
-                LinkInfo linkInfo = tmp.linkInfos.get(displayName);
+                linkInfo = tmp.linkInfos.get(displayName);
                 if (linkInfo == null || linkInfo.link != downloadLink) {
                     linkInfo = new LinkInfo();
                     linkInfo.link = downloadLink;
@@ -689,7 +690,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     tmp.linkInfos.put(displayName, linkInfo);
                 }
             } else {
-                LinkInfo linkInfo = tmp.linkInfos.get(displayName);
+                linkInfo = tmp.linkInfos.get(displayName);
                 if (linkInfo == null) {
                     linkInfo = new LinkInfo();
                     linkInfo.link = link;
@@ -718,7 +719,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 }
             }
         } else {
-            LinkInfo linkInfo = tmp.linkInfos.get(displayName);
+            linkInfo = tmp.linkInfos.get(displayName);
             if (linkInfo == null) {
                 linkInfo = new LinkInfo();
                 linkInfo.link = link;
@@ -732,6 +733,15 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 if (linkInfo.bytesDone < view.getBytesLoaded()) {
                     linkInfo.bytesDone = view.getBytesLoaded();
                 }
+            }
+        }
+        if (linkInfo != null && FinalLinkState.OFFLINE.equals(finalLinkState) || FinalLinkState.PLUGIN_DEFECT.equals(finalLinkState)) {
+            // ignore missing filesize of offline/plugin defect files
+            if (linkInfo.bytesTotal < 0) {
+                linkInfo.bytesTotal = 0;
+            }
+            if (linkInfo.bytesDone < 0) {
+                linkInfo.bytesDone = 0;
             }
         }
         if (tmp.allFinished && link.getFinishedDate() > tmp.newFinishedDate) {

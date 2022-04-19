@@ -22,6 +22,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tiny.cc" }, urls = { "https?://(www\\.)?tiny\\.cc/[0-9a-zA-Z]+" })
@@ -37,26 +39,18 @@ public class TinyCc extends PluginForDecrypt {
         final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("Sorry, we weren't able to locate that URL")) {
+        if (br.containsHTML(" we weren't able to locate that URL")) {
             logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;

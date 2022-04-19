@@ -18,11 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.IwaraTvConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,6 +32,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.IwaraTvConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+(/videos)?)" })
 public class IwaraTv extends PluginForDecrypt {
@@ -71,7 +71,7 @@ public class IwaraTv extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Change "/user/<usernameSlug>" url to "/user/<usernameSlug>/videos" if the user has a certain amount of videos. */
-            final String viewMore = br.getRegex("class=\"more-link\">\\s*<a href=\"(/users/[^/]+/videos)\"").getMatch(0);
+            final String viewMore = br.getRegex("class\\s*=\\s*\"more-link\"\\s*>\\s*<a href\\s*=\\s*\"(/users/[^/]+/videos).*\"").getMatch(0);
             if (viewMore != null) {
                 logger.info("Seems like the user has videos spread over multiple pages -> Using: " + viewMore);
                 param.setCryptedUrl(br.getURL(viewMore).toString());
@@ -113,7 +113,7 @@ public class IwaraTv extends PluginForDecrypt {
             final String[] videoIDs = br.getRegex("/videos/([A-Za-z0-9]+)").getColumn(0);
             int foundNumberofNewItemsThisPage = 0;
             for (final String videoID : videoIDs) {
-                if (!dupes.add(videoID)) {
+                if (!dupes.add(videoID) || "thumbnails".equals(videoID)) {
                     continue;
                 }
                 /* Assume all items are selfhosted and thus do not have to go through this crawler again. */

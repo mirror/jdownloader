@@ -39,15 +39,23 @@ public abstract class AbstractChan extends antiDDoSForDecrypt {
             getPage(br, parameter.getCryptedUrl());
             singlePage = false;
         }
-        final String title = br.getRegex("<header>\\s*<h\\d+>\\s*(.*?)</h").getMatch(0);
+        String title = br.getRegex("<header>\\s*<h\\d+>\\s*(.*?)</h").getMatch(0);
+        if (title == null) {
+            // finalchan.net
+            title = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         final Set<String> pages = new HashSet<String>();
         while (!isAbort()) {
-            final String files[][] = br.getRegex("<div class=\"(?:file|[^\"]*postContainer[^\"]*)\"[^>]*>(.*?)</div").getMatches();
+            final String files[][] = br.getRegex("<div class=\"(?:file|uploadDetails|[^\"]*postContainer[^\"]*)\"[^>]*>(.*?)</div").getMatches();
             if (files != null) {
                 for (String file[] : files) {
-                    final String href = new Regex(file[0], "href\\s*=\\s*\"([^\"]*/src/\\d+(-\\d+)?\\.[^\"]*)\"").getMatch(0);
+                    String href = new Regex(file[0], "href\\s*=\\s*\"([^\"]*/src/\\d+(-\\d+)?\\.[^\"]*)\"").getMatch(0);
+                    if (href == null) {
+                        // finalchan.net
+                        href = new Regex(file[0], "href\\s*=\\s*\"([^\"]*/\\.media/[^\"]+)\"").getMatch(0);
+                    }
                     if (href == null) {
                         if (file[0].matches("(?i).+post-image\\s*deleted.+")) {
                             continue;
@@ -59,15 +67,20 @@ public abstract class AbstractChan extends antiDDoSForDecrypt {
                     }
                     String postfilename = new Regex(file[0], "\"postfilename\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
                     if (postfilename == null) {
-                        postfilename = new Regex(file[0], "class\\s*=\\s*\"post-filename\".*?download\\s*=\\s*\"(.*?)\"").getMatch(0);
+                        // finalchan.net
+                        postfilename = new Regex(file[0], "class\\s*=\\s*\"(?:post-filename|originalNameLink)\".*?download\\s*=\\s*\"(.*?)\"").getMatch(0);
                     }
-                    final String size = new Regex(file[0], ">\\s*\\(\\s*([0-9\\.]+\\s*[KGTBM]{1,2})").getMatch(0);
+                    String size = new Regex(file[0], ">\\s*\\(\\s*([0-9\\.]+\\s*[KGTBM]{1,2})").getMatch(0);
+                    if (size == null) {
+                        // finalchan.net
+                        size = new Regex(file[0], "class\\s*=\\s*\"sizeLabel\"\\s*>\\s*([0-9\\.]+\\s*[KGTBM]{1,2})").getMatch(0);
+                    }
                     final DownloadLink downloadLink = createDownloadlink("directhttp://" + br.getURL(href).toString());
-                    final String uploadID = new Regex(href, ".+/(.*?)\\.[^/]*$").getMatch(0);
                     if (size != null) {
                         downloadLink.setDownloadSize(SizeFormatter.getSize(size));
                     }
                     if (postfilename != null) {
+                        final String uploadID = new Regex(href, ".+/(.*?)\\.[^/]*$").getMatch(0);
                         downloadLink.setFinalFileName(uploadID + "_" + Encoding.htmlOnlyDecode(postfilename));
                     }
                     downloadLink.setAvailable(true);

@@ -719,38 +719,22 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 } else {
-                    final String wait_seconds_str = PluginJSonUtils.getJsonValue(br, "time_wait");
-                    if (wait_seconds_str == null || !wait_seconds_str.matches("\\d+")) {
-                        this.handleErrors(account, link, this.br);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        /*
-                         * 2020-02-18: Add 2 extra seconds else this might happen after sending captcha answer:
-                         * {"status":"success","code":200,"message"
-                         * :"Captcha accepted, please wait","free_download_key":"CENSORED","time_wait":1}
-                         */
-                        final int wait_seconds = Integer.parseInt(wait_seconds_str) + 2;
-                        if (wait_seconds > 180) {
-                            if (account != null) {
-                                /*
-                                 * 2020-05-11: Account traffic will be reset after reconnect too but without reconnect, user will have to
-                                 * wait that time until he can start new DLs with a free account!
-                                 */
-                                throw new AccountUnavailableException("Downloadlimit reached", wait_seconds * 1000l);
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
-                            }
-                        }
-                        sleep(wait_seconds * 1000l, link);
-                        getURL.put("free_download_key", free_download_key);
-                        getURL.remove("captcha_challenge");
-                        getURL.remove("captcha_response");
-                        postPageRaw(br, "/geturl", JSonStorage.toString(getURL), account, link);
-                    }
+                    handleFreeDownloadKey(link, account, br, getURL, fuid, free_download_key);
                 }
             } else {
                 // premium download
                 postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account, link) + "\",\"file_id\":\"" + fuid + "\"}", account, link);
+                final String free_download_key = PluginJSonUtils.getJsonValue(br, "free_download_key");
+                if (StringUtils.isNotEmpty(free_download_key)) {
+                    // most likely subscription only file and free download
+                    try {
+                        handleFreeDownloadKey(link, account, br, null, fuid, free_download_key);
+                        chunks = 1;
+                        isFree = true;
+                    } catch (AccountUnavailableException e) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_ONLY, e);
+                    }
+                }
                 // private error files happen here, because we can't identify the owner until download sequence starts!
             }
             dllink = PluginJSonUtils.getJsonValue(br, "url");
@@ -803,6 +787,40 @@ public abstract class K2SApi extends PluginForHost {
         } finally {
             // remove download slot
             controlSlot(-1, account);
+        }
+    }
+
+    protected void handleFreeDownloadKey(final DownloadLink link, final Account account, final Browser br, Map<String, Object> request, final String fuid, final String free_download_key) throws Exception {
+        final String wait_seconds_str = PluginJSonUtils.getJsonValue(br, "time_wait");
+        if (wait_seconds_str == null || !wait_seconds_str.matches("\\d+") || free_download_key == null) {
+            this.handleErrors(account, link, this.br);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            /*
+             * 2020-02-18: Add 2 extra seconds else this might happen after sending captcha answer: {"status":"success","code":200,"message"
+             * :"Captcha accepted, please wait","free_download_key":"CENSORED","time_wait":1}
+             */
+            final int wait_seconds = Integer.parseInt(wait_seconds_str) + 2;
+            if (wait_seconds > 180) {
+                if (account != null) {
+                    /*
+                     * 2020-05-11: Account traffic will be reset after reconnect too but without reconnect, user will have to wait that time
+                     * until he can start new DLs with a free account!
+                     */
+                    throw new AccountUnavailableException("Downloadlimit reached", wait_seconds * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
+                }
+            }
+            sleep(wait_seconds * 1000l, link);
+            if (request == null) {
+                request = new HashMap<String, Object>();
+            }
+            request.put("file_id", fuid);
+            request.put("free_download_key", free_download_key);
+            request.remove("captcha_challenge");
+            request.remove("captcha_response");
+            postPageRaw(br, "/geturl", JSonStorage.toString(request), account, link);
         }
     }
 

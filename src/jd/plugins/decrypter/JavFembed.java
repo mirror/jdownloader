@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,6 +31,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(av-th|javhd|javr|javrave|javnew)\\.(club|net|today)/[a-z0-9\\-_%]{5,}/" })
 public class JavFembed extends PluginForDecrypt {
@@ -93,6 +93,7 @@ public class JavFembed extends PluginForDecrypt {
     }
 
     private void crawlFembedLink(final ArrayList<DownloadLink> crawledLinks, final String fembed) throws Exception {
+        // TODO: update to use FEmbedDecrypter, see FEmbedCom
         // Copied from FEmbedDecrypter, thanks to Sebbu.
         String fembedHost = Browser.getHost(fembed);
         // logger.info("Debug info: fembedHost: " + fembedHost);

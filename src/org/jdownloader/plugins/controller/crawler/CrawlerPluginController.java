@@ -317,7 +317,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     *
+     * 
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
@@ -333,7 +333,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             /* Controller is not initiated */
             if (ensureLoaded) {
                 /* init the controller */
-                return getInstance().list;
+                return getInstance().ensureLoaded();
             } else {
                 /* return null */
                 return null;
