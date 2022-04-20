@@ -62,8 +62,8 @@ public interface YoutubeConfig extends PluginConfigInterface {
     class DefaultConvertSubtitleVariantMode extends AbstractDefaultFactory<SubtitleVariantMode> {
         @Override
         public SubtitleVariantMode getDefaultValue(KeyHandler<SubtitleVariantMode> keyHandler) {
-            Storage storage = null;
-            if (keyHandler != null && (storage = keyHandler.getStorageHandler().getPrimitiveStorage()) != null) {
+            final Storage storage;
+            if (keyHandler != null && (storage = keyHandler.getStorageHandler().getPrimitiveStorage(keyHandler)) != null) {
                 final String oldKey = "subtitlecopyforeachvideovariant";
                 final Object oldValue = storage.get(oldKey, null);
                 if (oldValue != null && StringUtils.equalsIgnoreCase("false", oldValue.toString())) {

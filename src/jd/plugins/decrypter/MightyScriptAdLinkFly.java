@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -76,6 +76,25 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     protected String regexAppVars(final Browser br) {
         return br.getRegex("var (app_vars.*?)</script>").getMatch(0);
+    }
+
+    protected Form getContinueForm(CryptedLink param, final Browser br) {
+        /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
+        Form f2 = br.getFormbyKey("_Token[fields]");
+        if (f2 == null) {
+            f2 = br.getFormbyKey("_Token%5Bfields%5D");
+        }
+        if (f2 == null) {
+            f2 = getLinksGoForm(param, br);
+        }
+        if (f2 == null) {
+            f2 = br.getForm(0);
+        }
+        return f2;
+    }
+
+    protected Form getLinksGoForm(CryptedLink param, final Browser br) {
+        return br.getFormbyAction("/links/go");
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -140,14 +159,12 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         key = getAppVarsResult("invisible_reCAPTCHA_site_key");
                     }
                     if (StringUtils.isEmpty(key)) {
-                        logger.warning("Failed to find reCaptchaV2 key");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find reCaptchaV2 key");
                     }
                     /**
                      * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                     * </br>
-                     * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as the
-                     * Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
+                     * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
+                     * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
                      */
                     final String reCaptchaSiteURL;
                     if (this.getSpecialReferer() != null) {
@@ -181,8 +198,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 } else if (captchaType == CaptchaType.solvemedia) {
                     final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
                     if (StringUtils.isEmpty(solvemediaChallengeKey)) {
-                        logger.warning("Failed to find solvemedia_challenge_key");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find solvemedia_challenge_key");
                     }
                     requiresCaptchaWhichCanFail = true;
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
@@ -193,16 +209,18 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     form.put("adcopy_response", "manual_challenge");
                 } else {
                     /* This should never happen */
-                    logger.warning("Unsupported captcha type!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported captcha type!");
                 }
                 submitForm(form);
-                if (requiresCaptchaWhichCanFail && this.br.containsHTML("(?i)The CAPTCHA was incorrect")) {
+                if (getLinksGoForm(param, br) != null) {
+                    captchaFailed = false;
+                    break;
+                } else if (requiresCaptchaWhichCanFail && this.br.containsHTML("(?i)The CAPTCHA was incorrect")) {
                     captchaFailed = true;
                     continue;
                 } else {
-                    captchaFailed = false;
-                    break;
+                    // another captcha round? iir.ai
+                    continue;
                 }
             }
             if (requiresCaptchaWhichCanFail && captchaFailed) {
@@ -220,17 +238,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         hookAfterCaptcha(this.br);
         final boolean skipWait = waittimeIsSkippable(sourceHost);
         /** TODO: Fix waittime-detection for tmearn.com */
-        /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
-        Form f2 = br.getFormbyKey("_Token[fields]");
-        if (f2 == null) {
-            f2 = br.getFormbyKey("_Token%5Bfields%5D");
-        }
-        if (f2 == null) {
-            f2 = br.getFormbyAction("/links/go");
-        }
-        if (f2 == null) {
-            f2 = br.getForm(0);
-        }
+        Form f2 = getContinueForm(param, br);
         if (f2 != null) {
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
