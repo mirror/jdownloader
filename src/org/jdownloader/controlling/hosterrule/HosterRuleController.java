@@ -28,7 +28,11 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
+import org.appwork.storage.Storage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.handler.ListHandler;
+import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -42,6 +46,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class HosterRuleController implements AccountControllerListener {
     private static final HosterRuleController INSTANCE = new HosterRuleController();
@@ -98,6 +103,48 @@ public class HosterRuleController implements AccountControllerListener {
                 save();
             }
         });
+        final StorageHandler<HosterRuleConfig> storageHandler = new StorageHandler<HosterRuleConfig>(HosterRuleConfig.class) {
+            private final String keyHandlerKey = "rules";
+
+            @Override
+            public Storage getPrimitiveStorage() {
+                return null;
+            }
+
+            @Override
+            protected Object readObject(ListHandler keyHandler, AtomicBoolean readFlag) {
+                if (isInitialized() && keyHandlerKey.equals(keyHandler.getKey())) {
+                    readFlag.set(true);
+                    return toStorable();
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            public boolean isObjectCacheEnabled() {
+                return false;
+            }
+
+            @Override
+            public void write() {
+            }
+
+            @Override
+            protected void writeObject(ListHandler keyHandler, Object object) {
+                if (isInitialized() && keyHandlerKey.equals(keyHandler.getKey())) {
+                    final List<AccountUsageRule> rules = fromStorable((List<AccountRuleStorable>) object);
+                    setList(rules);
+                }
+            }
+        };
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+            @Override
+            public void run() {
+                final HosterRuleConfig config = JsonConfig.put(HosterRuleConfig.class.getName(), HosterRuleConfig.class, storageHandler);
+                AdvancedConfigManager.getInstance().register(config);
+            }
+        });
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
             @Override
             public void run() {
@@ -117,29 +164,44 @@ public class HosterRuleController implements AccountControllerListener {
         });
     }
 
+    protected boolean isInitialized() {
+        return SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached() && initDone.get();
+    }
+
+    protected List<AccountUsageRule> fromStorable(List<AccountRuleStorable> list) {
+        final List<AccountUsageRule> rules = new ArrayList<AccountUsageRule>();
+        if (list != null && list.size() > 0) {
+            final ArrayList<Account> availableAccounts = AccountController.getInstance().list(null);
+            final PluginFinder pluginFinder = new PluginFinder(logger);
+            for (final AccountRuleStorable ars : list) {
+                try {
+                    final AccountUsageRule rule = ars.restore(availableAccounts);
+                    rule.setOwner(this);
+                    final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
+                    final PluginForHost plugin = pluginFinder.assignPlugin(link, false);
+                    assignPlugin(rule, plugin);
+                    rules.add(rule);
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
+            }
+            try {
+                validateRules(rules);
+            } catch (Throwable e) {
+                logger.log(e);
+            }
+        }
+        return rules;
+    }
+
     private void load() {
         if (configFile.exists()) {
             try {
                 final ArrayList<AccountRuleStorable> loaded = JSonStorage.restoreFromString(IO.readFileToString(configFile), new TypeRef<ArrayList<AccountRuleStorable>>() {
                 }, null);
                 if (loaded != null && loaded.size() > 0) {
-                    final ArrayList<Account> availableAccounts = AccountController.getInstance().list(null);
-                    final PluginFinder pluginFinder = new PluginFinder(logger);
-                    final List<AccountUsageRule> rules = new ArrayList<AccountUsageRule>();
-                    for (AccountRuleStorable ars : loaded) {
-                        try {
-                            final AccountUsageRule rule = ars.restore(availableAccounts);
-                            rule.setOwner(this);
-                            final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
-                            final PluginForHost plugin = pluginFinder.assignPlugin(link, false);
-                            assignPlugin(rule, plugin);
-                            rules.add(rule);
-                        } catch (Throwable e) {
-                            logger.log(e);
-                        }
-                    }
+                    final List<AccountUsageRule> rules = fromStorable(loaded);
                     this.loadedRules.addAll(rules);
-                    validateRules();
                 }
             } catch (Throwable e) {
                 logger.log(e);
@@ -167,12 +229,14 @@ public class HosterRuleController implements AccountControllerListener {
         return false;
     }
 
-    private void validateRules() {
-        queue.add(new QueueAction<Void, RuntimeException>() {
+    private void validateRules(final List<AccountUsageRule> loadedRules) {
+        queue.addWait(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
-                for (AccountUsageRule hr : loadedRules) {
-                    validateRule(hr);
+                if (loadedRules != null) {
+                    for (AccountUsageRule hr : loadedRules) {
+                        validateRule(hr);
+                    }
                 }
                 return null;
             }
@@ -180,7 +244,7 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     public void checkPluginUpdates() {
-        if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached() && initDone.get()) {
+        if (isInitialized()) {
             queue.add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
@@ -330,13 +394,22 @@ public class HosterRuleController implements AccountControllerListener {
         }
     }
 
+    protected List<AccountRuleStorable> toStorable() {
+        if (isInitialized()) {
+            final ArrayList<AccountRuleStorable> saveList = new ArrayList<AccountRuleStorable>();
+            for (AccountUsageRule hr : loadedRules) {
+                saveList.add(new AccountRuleStorable(hr));
+            }
+            return saveList;
+        } else {
+            return null;
+        }
+    }
+
     protected void save() {
-        if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached() && initDone.get()) {
+        if (isInitialized()) {
             try {
-                final ArrayList<AccountRuleStorable> saveList = new ArrayList<AccountRuleStorable>();
-                for (AccountUsageRule hr : loadedRules) {
-                    saveList.add(new AccountRuleStorable(hr));
-                }
+                final List<AccountRuleStorable> saveList = toStorable();
                 final SimpleMapper mapper = new SimpleMapper();
                 mapper.setPrettyPrintEnabled(false);
                 IO.secureWrite(configFile, mapper.objectToByteArray((saveList)));
@@ -352,7 +425,7 @@ public class HosterRuleController implements AccountControllerListener {
 
     @Override
     public void onAccountControllerEvent(AccountControllerEvent event) {
-        validateRules();
+        validateRules(loadedRules);
     }
 
     public List<AccountUsageRule> list() {

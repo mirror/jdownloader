@@ -1,7 +1,9 @@
 package org.jdownloader.plugins.components;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -309,8 +311,15 @@ public class TurbobitCore extends antiDDoSForHost {
             expire = br.getRegex("'/premium(?:/info)?'\\s*>\\s*(\\d+\\.\\d+\\.\\d+)\\s*<").getMatch(0);
         }
         if (expire != null) {
-            if (br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || ((br.containsHTML("You have reached") && br.containsHTML("limit of premium downloads")))) {
-                throw new AccountUnavailableException("You have reached limit of premium downloads", 30 * 60 * 1000l);
+            long endBlockingTime = -1;
+            if (br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || (endBlockingTime = getBlockingEndTime(br, account)) > 0) {
+                if (endBlockingTime > 0) {
+                    final String readableTime = new SimpleDateFormat("yyyy-MM-dd' 'HH':'mm':'ss", Locale.ENGLISH).format(new Date(endBlockingTime));
+                    final long wait = Math.max(5 * 60 * 1000l, Math.min(endBlockingTime - System.currentTimeMillis(), 30 * 60 * 1000l));
+                    throw new AccountUnavailableException("You have reached limit of premium downloads:" + readableTime, wait);
+                } else {
+                    throw new AccountUnavailableException("You have reached limit of premium downloads", 30 * 60 * 1000l);
+                }
             }
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.ENGLISH));
             account.setType(AccountType.PREMIUM);
@@ -318,6 +327,20 @@ public class TurbobitCore extends antiDDoSForHost {
             account.setType(AccountType.FREE);
         }
         return ai;
+    }
+
+    protected static long getBlockingEndTime(final Browser br, final Account account) {
+        final String[] endTimes = br.getRegex("Blocking end time\\s*:\\s*(\\d{4}-\\d{2}-\\d{2}\\s*\\d{2}:\\d{2}:\\d{2})\\s*<").getColumn(0);
+        if (endTimes != null && endTimes.length > 0) {
+            final long now = System.currentTimeMillis();
+            for (final String endTime : endTimes) {
+                final long timeStamp = TimeFormatter.getMilliSeconds(endTime, "yyyy-MM-dd' 'HH':'mm':'ss", Locale.ENGLISH);
+                if (timeStamp > 0 && timeStamp > now) {
+                    return timeStamp;
+                }
+            }
+        }
+        return -1;
     }
 
     @Override

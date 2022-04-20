@@ -17,20 +17,22 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "http://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html" })
+import org.jdownloader.plugins.controller.LazyPlugin;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "https?://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html" })
 public class FreeLoopsCom extends PluginForDecrypt {
     public FreeLoopsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,56 +45,41 @@ public class FreeLoopsCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        if (parameter.matches("http://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html")) {
-            String fileid = new Regex(parameter, "free\\-loops\\.com/(\\d+)").getMatch(0);
-            String finallink = "http://free-loops.com/force-audio.php?id=" + fileid;
-            URLConnectionAdapter con = br.openGetConnection(finallink);
-            if ((con.getContentType().contains("html"))) {
-                br.followConnection();
+        final String parameter = param.toString();
+        final String fileid = new Regex(parameter, "free\\-loops\\.com/(\\d+)").getMatch(0);
+        final String finallink = "https://free-loops.com/force-audio.php?id=" + fileid;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(finallink);
+            if (!looksLikeDownloadableContent(con)) {
+                br.followConnection(true);
                 if (br.containsHTML("The file doesn't seem to be here") || br.containsHTML("Go back and try another file")) {
-                    logger.warning("The requested document was not found on this server.");
-                    logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                    return new ArrayList<DownloadLink>();
-                }
-                return null;
-            } else {
-                final DownloadLink l = createDownloadlink("directhttp://" + finallink);
-                l.setFinalFileName(Plugin.getFileNameFromHeader(con));
-                l.setDownloadSize(con.getLongContentLength());
-                decryptedLinks.add(l);
-                con.disconnect();
-            }
-        } else {
-            br.getPage(parameter);
-            String pagepiece = br.getRegex("<tr class=\"row-a\">(.*?)<td class=\"row-b\">").getMatch(0);
-            if (pagepiece == null) {
-                return null;
-            }
-            String[] links = new Regex(pagepiece, "href='(download-free-loop-[0-9]+).*?'").getColumn(0);
-            if (links.length == 0) {
-                return null;
-            }
-            progress.setRange(links.length);
-            for (String dl : links) {
-                String fileid = new Regex(dl, "download-free-loop-(\\d+)").getMatch(0);
-                String finallink = "http://free-loops.com/force-audio.php?id=" + fileid;
-                URLConnectionAdapter con = br.openGetConnection(finallink);
-                if ((con.getContentType().contains("html"))) {
-                    br.followConnection();
-                    if (br.containsHTML("The file doesn't seem to be here") || br.containsHTML("Go back and try another file")) {
-                        logger.warning("The requested document was not found on this server.");
-                        logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                    }
-                    progress.increase(1);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    DownloadLink l;
-                    decryptedLinks.add(l = createDownloadlink("directhttp://" + finallink));
-                    l.setFinalFileName(Plugin.getFileNameFromHeader(con));
-                    l.setDownloadSize(con.getLongContentLength());
-                    con.disconnect();
-                    progress.increase(1);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+            } else {
+                con.disconnect();
+                final DownloadLink l = createDownloadlink("directhttp://" + finallink);
+                l.setContentUrl(parameter);
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                brc.getPage(parameter);
+                final String fileName = brc.getRegex("File:\\s*(.*?)\\s*<br/>").getMatch(0);
+                final String serverFileName = Plugin.getFileNameFromHeader(con);
+                if (fileName != null) {
+                    l.setFinalFileName(fileName + getFileNameExtensionFromString(serverFileName, ".wav"));
+                } else {
+                    l.setFinalFileName(serverFileName);
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    l.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                decryptedLinks.add(l);
+            }
+        } finally {
+            if (con != null) {
+                con.disconnect();
             }
         }
         return decryptedLinks;
