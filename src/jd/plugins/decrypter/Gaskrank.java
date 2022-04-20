@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,8 +24,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaskrank.tv" }, urls = { "https?://(?:www\\.)?gaskrank\\.tv/tv/[^/]+/[^/]+\\.htm" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaskrank.tv" }, urls = { "https?://(?:www\\.)?gaskrank\\.tv/tv/.*?(/filme[^/]+\\.htm|/$)" })
 public class Gaskrank extends antiDDoSForDecrypt {
     public Gaskrank(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,19 +40,13 @@ public class Gaskrank extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        toString();
-        String fpName = br.getRegex("<title>([^<]+)").getMatch(0);
-        String[] links = br.getRegex("<source[^>]+src\\s*=\\s*\"([^\"]+)").getColumn(0);
-        if (links != null && links.length > 1) {
-            for (String link : links) {
-                link = Encoding.htmlOnlyDecode(link);
-                if (link.contains(br.getHost())) {
-                    link = "directhttp://" + link;
-                }
-                decryptedLinks.add(createDownloadlink(link));
-            }
-        } else {
-            decryptedLinks.add(this.createDownloadlink(parameter));
+        final String fpName = br.getRegex("<title>([^<]+)").getMatch(0);
+        final String[] clips = br.getRegex("class\\s*=\\s*\"gkVidPu\\d+\"\\s*href\\s*=\\s*\"(/[^\"]*.htm)\"\\s*>").getColumn(0);
+        if (clips.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        for (final String clip : clips) {
+            decryptedLinks.add(createDownloadlink(br.getURL(clip).toString()));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
