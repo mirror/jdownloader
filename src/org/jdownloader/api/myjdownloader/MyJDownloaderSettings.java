@@ -73,6 +73,8 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     @Deprecated
     public String getUniqueDeviceID();
 
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
     public String getUniqueDeviceIDV2();
 
     public String getUniqueDeviceIDSaltV2();
