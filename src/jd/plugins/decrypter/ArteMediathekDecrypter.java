@@ -25,6 +25,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -37,13 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ArteTv;
-
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/(guide/[a-z]{2}/|[a-z]{2}/videos/)\\d+-\\d+-[ADF]+/[^/]+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
@@ -206,8 +206,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             /* v2 requires bearer-authentication, we stick to v1 as long as it works */
             // final String apiurl = "https://api.arte.tv/api/player/v2/config/" + selectedLanguage + "/" + videoID;
             final String apiurl = "https://api.arte.tv/api/player/v1/config/" + selectedLanguage + "/" + videoID;
-            br.getPage(apiurl);
-            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+            ArteTv.requestAPIURL(br, apiurl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 /* In most cases this simply means that one of the selected languages is not available so let's go on. */
                 logger.info("This language is not available");
                 continue;
@@ -511,6 +511,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         FRANCAIS,
         GERMAN,
         OTHER;
+
         private static VideoLanguage parse(final String apiosCode) {
             final String originalVersion = new Regex(apiosCode, "^VO(F|A)($|-)").getMatch(0);
             if (originalVersion != null) {
@@ -546,6 +547,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         ITALIAN,
         ENGLISH,
         OTHER;
+
         private static SubtitleLanguage parse(final String apiosCode) {
             final String subtitleLanguage = new Regex(apiosCode, "-STM?(A|F)").getMatch(0);
             if (subtitleLanguage != null) {
@@ -575,6 +577,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
+
         private static SubtitleType parse(final String apiosCode) {
             if (StringUtils.equalsIgnoreCase(apiosCode, "VF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VA-STA") || StringUtils.equalsIgnoreCase(apiosCode, "VOF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VOA-STA")) {
                 return PARTIAL;
@@ -595,6 +598,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         NON_ORIGINAL_FRANCAIS,
         NON_ORIGINAL_GERMAN,
         FOREIGN;
+
         private static VersionType parse(final String apiosCode) {
             if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
                 return ORIGINAL_FRANCAIS;

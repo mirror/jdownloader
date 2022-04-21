@@ -16,17 +16,21 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -35,8 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "http://arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://concert\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://creative\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://future\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://cinema\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://theoperaplatform\\.eu\\.artejd_decrypted_jd/\\d+", "http://info\\.arte\\.tv\\.artejd_decrypted_jd/\\d+" })
 public class ArteTv extends PluginForHost {
@@ -105,6 +107,29 @@ public class ArteTv extends PluginForHost {
         return "http://www.arte.tv/de/Allgemeine-Nutzungsbedingungen/3664116.html";
     }
 
+    public static GetRequest requestAPIURL(final Browser br, final String apiurl) throws PluginException, IOException {
+        GetRequest apiRequest = new GetRequest(br.getURL(apiurl)) {
+            @Override
+            protected boolean isKeepAlivePermitted(URLConnectionAdapter con) {
+                return con != null && con.getResponseCode() != 500;
+            }
+        };
+        // this server responds with 500 internal server error
+        // apiRequest.setCustomInetAddress(InetAddress.getByName("104.121.133.101"));
+        br.getPage(apiRequest);
+        if (br.getHttpConnection().getResponseCode() == 500) {
+            apiRequest.resetConnection();
+            // disable keep-alive to allow customInetAddress
+            // apiRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_CONNECTION, "close");
+            apiRequest.setCustomInetAddress(InetAddress.getByName("23.54.96.216"));
+            br.getPage(apiRequest);
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        return apiRequest;
+    }
+
     /** Important information: RTMP player: http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -118,8 +143,8 @@ public class ArteTv extends PluginForHost {
         final String lang = link.getStringProperty("langShort", null);
         String expiredBefore = null, expiredAfter = null, status = null, fileName = null, ext = "";
         this.br.setAllowedResponseCodes(new int[] { 410, 500, 503 });
-        br.getPage(apiurl);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+        ArteTv.requestAPIURL(br, apiurl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         expiredBefore = link.getStringProperty("VRA", null);
