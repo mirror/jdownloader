@@ -12,51 +12,41 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
 
 public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable implements Storable {
-
     public AdvancedConfigAPIEntry(AdvancedConfigEntry entry, boolean returnDescription, boolean addValue, boolean defaultValues) {
         KeyHandler<?> kh = entry.getKeyHandler();
         if (returnDescription && StringUtils.isNotEmpty(entry.getDescription())) {
             setDocs(entry.getDescription());
         }
-
         setType(kh.getTypeString());
-        String i = kh.getStorageHandler().getConfigInterface().getName();
-        setInterfaceName(i);
-
+        final String configInterfaceName = kh.getStorageHandler().getConfigInterface().getName();
+        setInterfaceName(configInterfaceName);
         setKey(createKey(kh));
-
         try {
             AbstractType abstractType = AbstractType.valueOf(kh.getAbstractType().name());
             setAbstractType(abstractType);
         } catch (Exception e) {
             throw new WTFException(e);
-
         }
-
-        File expectedPath = Application.getResource("cfg/" + i);
+        final File expectedPath = Application.getResource("cfg/" + configInterfaceName);
         String storage = null;
-        if (!expectedPath.equals(kh.getStorageHandler().getPath())) {
-            storage = Files.getRelativePath(Application.getTemp().getParentFile(), kh.getStorageHandler().getPath());
+        final File storagePath = kh.getStorageHandler().getPath();
+        if (storagePath != null && !expectedPath.equals(storagePath)) {
+            storage = Files.getRelativePath(Application.getTemp().getParentFile(), storagePath);
             if (StringUtils.isEmpty(storage)) {
-                storage = kh.getStorageHandler().getPath().getAbsolutePath();
+                storage = storagePath.getAbsolutePath();
             }
         }
         if (storage != null) {
             setStorage(storage);
-
         }
         Object value = kh.getValue();
         if (addValue) {
             setValue(value);
-
         }
         if (defaultValues) {
             Object def = entry.getDefault();
-
             setDefaultValue(def);
-
         }
-
     }
 
     protected String createKey(KeyHandler<?> kh) {
@@ -85,5 +75,4 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
     public AdvancedConfigAPIEntry(/* Storable */) {
         super();
     }
-
 }
