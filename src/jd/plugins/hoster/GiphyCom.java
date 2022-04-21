@@ -68,7 +68,7 @@ public class GiphyCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/gifs/([A-Za-z0-9\\-]+)-([A-Za-z0-9]+)$");
+            ret.add("https?://(?:www\\.|media\\d+\\.)?" + buildHostsPatternPart(domains) + "/(gifs/(([A-Za-z0-9\\-]+)-)?([A-Za-z0-9]+)|media/([A-Za-z0-9])+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -89,18 +89,31 @@ public class GiphyCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        String fid = new Regex(link.getPluginPatternMatcher(), "/gifs/(?:[A-Za-z0-9\\-]+-)?([A-Za-z0-9]+)").getMatch(0);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), "/media/([A-Za-z0-9]+)").getMatch(0);
+        }
+        return fid;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
-        link.setFinalFileName(filename + ".gif");
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        final String fid = getFID(link);
+        if (link.getPluginPatternMatcher().matches("(?i).*/media/.+")) {
+            // rewrite direct/media urls to normal url format
+            br.getPage("https://giphy.com/gifs/" + fid);
+            if (br.getURL().contains(fid)) {
+                link.setPluginPatternMatcher(br.getURL());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        String filename = null;
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         final boolean useOembedAPI = true;
         if (useOembedAPI) {
             br.getPage("https://" + this.getHost() + "/services/oembed?url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
@@ -109,6 +122,11 @@ public class GiphyCom extends PluginForHost {
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             this.dllink = (String) entries.get("url");
+            final String title = (String) entries.get("title");
+            if (title != null) {
+                filename = title.replaceAll("(\\s*-\\s*Find\\s*&\\s*Share\\s*on\\s*GIPHY)", "");
+                filename = filename + getFileNameExtensionFromURL(dllink, ".gif");
+            }
         } else {
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -116,6 +134,15 @@ public class GiphyCom extends PluginForHost {
             }
             dllink = br.getRegex("property=\"og:image\" content=\"(https://[^\"]+)").getMatch(0);
         }
+        if (filename == null) {
+            filename = new Regex(link.getPluginPatternMatcher(), "/gifs/([A-Za-z0-9\\-]+)-").getMatch(0);
+            if (filename == null) {
+                filename = fid;
+            }
+            filename = filename.replace("-", " ");
+        }
+        filename = filename + ".gif";
+        link.setFinalFileName(filename);
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
@@ -148,17 +175,18 @@ public class GiphyCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
         }
         dl.startDownload();
     }
