@@ -29,48 +29,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.BrowserAdapter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.DownloadLinkDatabindingInterface;
-import jd.plugins.FilePackage;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.ChunkRange;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
@@ -149,6 +107,48 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkDatabindingInterface;
+import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+import jd.plugins.download.raf.ChunkRange;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
@@ -445,12 +445,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                 cache = new YoutubeFinalLinkResource(si);
                                 if (cache.getSegments() != null) {
                                     verifiedSize = false;
-                                    final Long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
-                                    if (estimatedSize != null && estimatedSize == -1) {
-                                        if (firstException == null) {
-                                            firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                    Long estimatedSize = si.getContentLength();
+                                    if (estimatedSize == -1) {
+                                        estimatedSize = si.estimatedContentLength();
+                                    }
+                                    if (estimatedSize == -1) {
+                                        estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
+                                        if (estimatedSize != null && estimatedSize == -1) {
+                                            if (firstException == null) {
+                                                firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                            }
+                                            continue;
                                         }
-                                        continue;
                                     }
                                     workingVideoStream = cache;
                                     // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
@@ -511,19 +517,25 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                 cache = new YoutubeFinalLinkResource(si);
                                 if (cache.getSegments() != null) {
                                     verifiedSize = false;
-                                    final Long estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
-                                    if (estimatedSize != null && estimatedSize == -1) {
-                                        // if (i == 0) {
-                                        // resetStreamUrls(downloadLink);
-                                        // continue;
-                                        // }
-                                        if (si.getSrc() != null) {
-                                            logger.info("Stream Source: " + si.getSrc());
+                                    Long estimatedSize = si.getContentLength();
+                                    if (estimatedSize == -1) {
+                                        estimatedSize = si.estimatedContentLength();
+                                    }
+                                    if (estimatedSize == -1) {
+                                        estimatedSize = guessTotalSize(cache.getBaseUrl(), cache.getSegments());
+                                        if (estimatedSize != null && estimatedSize == -1) {
+                                            // if (i == 0) {
+                                            // resetStreamUrls(downloadLink);
+                                            // continue;
+                                            // }
+                                            if (si.getSrc() != null) {
+                                                logger.info("Stream Source: " + si.getSrc());
+                                            }
+                                            if (firstException == null) {
+                                                firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                            }
+                                            continue;
                                         }
-                                        if (firstException == null) {
-                                            firstException = new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                                        }
-                                        continue;
                                     }
                                     if (estimatedSize != null) {
                                         totalSize += estimatedSize;
@@ -1339,7 +1351,15 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         if (streamData.getSegments() != null) {
             final String[] segments = streamData.getSegments();
             dashDownloadable.setResumeable(false);
+            // TODO: add resume
             dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, new URL(streamData.getBaseUrl()), segments) {
+                @Override
+                protected Request createSegmentRequest(Segment seg) throws IOException {
+                    Request ret = super.createSegmentRequest(seg);
+                    ret.getHeaders().put(new HTTPHeader("Connection", "close"));
+                    return ret;
+                }
+
                 @Override
                 protected boolean retrySegmentConnection(Browser br, Segment segment, int retryCounter) throws InterruptedException, PluginException {
                     final boolean ret = super.retrySegmentConnection(br, segment, retryCounter);
@@ -1424,6 +1444,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 final GetRequest request = new GetRequest(streamData.getBaseUrl());
                 final List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
                 request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
+                br.getHeaders().put(new HTTPHeader("Connection", "close", false));
                 dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream(youtubeConfig));
                 if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
                     try {
@@ -2143,6 +2164,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             this.br.setDebug(true);
             // downloadLink.setInternalTmpFilenameAppend(fileName);
             final YoutubeFinalLinkResource sd = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_VIDEO);
+            br.getHeaders().put(new HTTPHeader("Connection", "close", false));
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, sd.getBaseUrl(), resume, getChunksPerStream(PluginJsonConfig.get(YoutubeConfig.class)));
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application")) {
                 try {
