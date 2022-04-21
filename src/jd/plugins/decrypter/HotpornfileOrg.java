@@ -49,6 +49,10 @@ public class HotpornfileOrg extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+        String fpName = br.getRegex("<title>\\s*(.*?)\\s*(\\s*-\\s*Hotpornfile\\s*)?</title>").getMatch(0);
+        if (fpName == null) {
+            fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        }
         final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -80,7 +84,6 @@ public class HotpornfileOrg extends PluginForDecrypt {
             /* Fallback */
             src = br.toString();
         }
-        String fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String[] links = new Regex(src, "\"(https?://[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

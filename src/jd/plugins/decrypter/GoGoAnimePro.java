@@ -38,7 +38,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.pro" }, urls = { "https?://(www\\d*\\.)?gogoanime\\.pro/anime/[^/]+\\d+.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.nl" }, urls = { "https?://(www\\d*\\.)?gogoanime\\.(pro|nl)/anime/[^/]+\\d+.+" })
 public class GoGoAnimePro extends antiDDoSForDecrypt {
     public GoGoAnimePro(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +49,7 @@ public class GoGoAnimePro extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String fpName = br.getRegex("<title>(?:Gogoanime - Watch\\s*)([^<]+)\\s+in\\s+HD\\s+-\\s+GogoAnime").getMatch(0);
+        String fpName = br.getRegex("<title>(?:Gogoanime\\s*-\\s*Watch\\s*)([^<]+)(\\s+in\\s+HD\\s+-\\s+GogoAnime)?").getMatch(0);
         String[] details = br.getRegex("<div[^>]+id\\s*=\\s*\"watch\"[^>]+data-id\\s*=\\s*\"([^\"]*)\"[^>]+data-ep-base-name\\s*=\\s*\"([^\"]*)\"[^>]*>").getRow(0);
         String titleID = details[0];
         String episodeID = details[1];
