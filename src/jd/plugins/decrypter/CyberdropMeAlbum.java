@@ -20,11 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -35,6 +30,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -83,6 +84,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(TYPE_VIDEO) || param.getCryptedUrl().matches(TYPE_VIDEO_2)) {
             final String directurl = correctDirecturl(param.getCryptedUrl());
             final DownloadLink dl = this.createDownloadlink(directurl);
+            dl.setProperty(DirectHTTP.PROPERTY_RATE_LIMIT, 500);
             decryptedLinks.add(dl);
         } else {
             /* TYPE_ALBUM */
@@ -114,6 +116,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 final String filesizeBytes = new Regex(html, "class=\"(?:is-hidden)?\\s*file-size\"[^>]*>(\\d+) B").getMatch(0);
                 if (dups.add(directurl)) {
                     final DownloadLink dl = this.createDownloadlink(directurl);
+                    dl.setProperty(DirectHTTP.PROPERTY_RATE_LIMIT, 500);
                     dl.setAvailable(true);
                     if (filename != null) {
                         dl.setFinalFileName(filename);
@@ -134,6 +137,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                         final String subHtml = (String) photo.get("subHtml");
                         final String filesizeStr = new Regex(subHtml, "(\\d+(\\.\\d+)? [A-Za-z]{2,5})$").getMatch(0);
                         final DownloadLink dl = this.createDownloadlink(downloadUrl);
+                        dl.setProperty(DirectHTTP.PROPERTY_RATE_LIMIT, 500);
                         dl.setAvailable(true);
                         if (filesizeStr != null) {
                             dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));

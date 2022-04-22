@@ -95,6 +95,9 @@ public class DirectHTTP extends antiDDoSForHost {
     public static final String POSSIBLE_URLPARAM        = "POSSIBLE_GETPARAM";
     public static final String BYPASS_CLOUDFLARE_BGJ    = "bpCfBgj";
     public static final String PROPERTY_COOKIES         = "COOKIES";
+    public static final String PROPERTY_MAX_CONCURRENT  = "PROPERTY_MAX_CONCURRENT";
+    public static final String PROPERTY_RATE_LIMIT      = "PROPERTY_RATE_LIMIT";
+    public static final String PROPERTY_RATE_LIMIT_TLD  = "PROPERTY_RATE_LIMIT_TLD";
 
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
@@ -296,8 +299,12 @@ public class DirectHTTP extends antiDDoSForHost {
 
     @Override
     protected int getMaxSimultanDownload(DownloadLink link, Account account) {
-        // add support for custom property to limit max simultan downloads
-        return super.getMaxSimultanDownload(link, account);
+        final int max = link != null ? link.getIntegerProperty(PROPERTY_MAX_CONCURRENT, -1) : -1;
+        if (max > 0) {
+            return max;
+        } else {
+            return super.getMaxSimultanDownload(link, account);
+        }
     }
 
     @Override
@@ -604,6 +611,21 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
+    private void applyRateLimits(final DownloadLink downloadLink, Browser br) {
+        int limit = downloadLink != null ? downloadLink.getIntegerProperty(PROPERTY_RATE_LIMIT_TLD) : -1;
+        if (limit > 0) {
+            final String host = Browser.getHost(downloadLink.getPluginPatternMatcher(), false);
+            logger.info("Apply RateLimit:" + host + "|" + limit);
+            Browser.setRequestIntervalLimitGlobal(host, false, limit);
+        }
+        limit = downloadLink != null ? downloadLink.getIntegerProperty(PROPERTY_RATE_LIMIT) : -1;
+        if (limit > 0) {
+            final String host = Browser.getHost(downloadLink.getPluginPatternMatcher(), true);
+            logger.info("Apply RateLimit:" + host + "|" + limit);
+            Browser.setRequestIntervalLimitGlobal(host, true, limit);
+        }
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws Exception {
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
@@ -612,6 +634,7 @@ public class DirectHTTP extends antiDDoSForHost {
         if (retry == 5) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        applyRateLimits(downloadLink, br);
         final int ioExceptions = downloadLink.getIntegerProperty(IOEXCEPTIONS, 0);
         downloadLink.removeProperty(IOEXCEPTIONS);
         // if (true) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
