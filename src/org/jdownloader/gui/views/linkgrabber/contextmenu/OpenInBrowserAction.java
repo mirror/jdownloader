@@ -30,6 +30,21 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
         setName(_GUI.T.gui_table_contextmenu_browselink());
     }
 
+    private int delay = 1000;
+
+    public static String getTranslationOpenDelay() {
+        return _GUI.T.gui_table_contextmenu_browselink_delay();
+    }
+
+    @Customizer(link = "#getTranslationOpenDelay")
+    public int getOpenDelay() {
+        return delay;
+    }
+
+    public void setOpenDelay(int delay) {
+        this.delay = Math.max(100, delay);
+    }
+
     private int threshold = 50;
 
     public static String getTranslationMaxOpenThreshold() {
@@ -83,11 +98,12 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
         }
         new Thread("OpenInBrowserAction") {
             public void run() {
+                final int delay = getOpenDelay();
                 final Set<String> urls = LinkTreeUtils.getURLs(lselection, true);
                 if (urls.size() < 5) {
                     for (String url : urls) {
                         try {
-                            Thread.sleep(500);
+                            Thread.sleep(delay);
                         } catch (InterruptedException e) {
                             return;
                         }
@@ -106,7 +122,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
                         for (String url : urls) {
                             CrossSystem.openURL(url);
                             current++;
-                            Thread.sleep(1000);
+                            Thread.sleep(delay);
                         }
                     }
 

@@ -208,6 +208,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open in Browser" })
     String gui_table_contextmenu_browselink();
 
+    @Default(lngs = { "en" }, values = { "Open in Browser delay (in ms)" })
+    String gui_table_contextmenu_browselink_delay();
+
     @Default(lngs = { "en" }, values = { "Max URLs to open" })
     String gui_table_contextmenu_browselink_maxurls();
 
