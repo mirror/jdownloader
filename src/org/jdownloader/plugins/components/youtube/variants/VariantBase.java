@@ -978,6 +978,34 @@ public enum VariantBase {
     final private YoutubeITAG  iTagData;
     final private YoutubeITAG  iTagVideo;
     final private DownloadType type;
+    private String             uniqueIDString = null;
+
+    public synchronized String _getUniqueId() {
+        if (uniqueIDString == null) {
+            final StringBuilder sb = new StringBuilder();
+            if (hasConverter(null)) {
+                sb.append("x.");
+            }
+            final YoutubeITAG audio = getiTagAudio();
+            if (audio != null) {
+                sb.append("a").append(audio.getITAG()).append(".");
+            }
+            final YoutubeITAG data = getiTagData();
+            if (data != null) {
+                sb.append("d").append(data.getITAG()).append(".");
+            }
+            final YoutubeITAG video = getiTagVideo();
+            if (video != null) {
+                sb.append("v").append(video.getITAG()).append(".");
+            }
+            final FileContainer container = getContainer();
+            if (container != null) {
+                sb.append("c").append(container.name());
+            }
+            uniqueIDString = sb.toString();
+        }
+        return uniqueIDString;
+    }
 
     private VariantBase(final VariantGroup group, final DownloadType type, FileContainer container, final YoutubeITAG video, final YoutubeITAG audio, YoutubeITAG data, YoutubeConverter converter) {
         this.group = group;
