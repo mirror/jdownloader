@@ -41,7 +41,7 @@ import org.jdownloader.translate._JDT;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class SegmentDownloader extends DownloadInterface {
-    private volatile long                           bytesWritten      = 0l;
+    protected volatile long                         bytesWritten      = 0l;
     private final Downloadable                      downloadable;
     private final DownloadLink                      link;
     private long                                    startTimeStamp    = -1;
@@ -56,7 +56,7 @@ public class SegmentDownloader extends DownloadInterface {
     protected final List<Segment>                   segments          = new ArrayList<Segment>();
 
     @Deprecated
-    private static List<Segment> buildSegments(URL baseURL, String[] segments) {
+    public static List<Segment> buildSegments(URL baseURL, String[] segments) {
         final List<Segment> ret = new ArrayList<Segment>();
         for (final String segment : segments) {
             ret.add(new Segment(URLHelper.parseLocation(baseURL, segment)));

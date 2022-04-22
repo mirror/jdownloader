@@ -16,6 +16,13 @@ public class FFMpegException extends Exception {
         return error;
     }
 
+    public FFMpegException(final String string, Throwable cause) {
+        super(string, cause);
+        this.stderr = null;
+        this.stdout = null;
+        this.error = ERROR.UNKNOWN;
+    }
+
     public FFMpegException(final String string) {
         this(string, null, null);
     }

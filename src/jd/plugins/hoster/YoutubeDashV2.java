@@ -29,6 +29,48 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkDatabindingInterface;
+import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+import jd.plugins.download.raf.ChunkRange;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
@@ -42,6 +84,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogInterface;
@@ -108,48 +151,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.BrowserAdapter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.DownloadLinkDatabindingInterface;
-import jd.plugins.FilePackage;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.ChunkRange;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
     private static final String    YT_ALTERNATE_VARIANT = "YT_ALTERNATE_VARIANT";
@@ -188,8 +189,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     @Override
     public boolean assignPlugin(DownloadLink link) {
         final boolean ret = super.assignPlugin(link);
-        final long convertTimestamp = 1645833600000l;
-        if (ret && (link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) != 2)) {
+        final long convertTimestamp = 1650639863343l;
+        if (ret && (link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) != 3)) {
             try {
                 final AbstractVariant variant = getVariant(link, false);
                 if (variant != null && !(variant instanceof SubtitleVariant)) {
@@ -201,7 +202,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                         if (StringUtils.isNotEmpty(linkID)) {
                             link.setLinkID(linkID);
                             link.setPluginPatternMatcher(linkID);
-                            link.setProperty("assignPlugin", 2);
+                            link.setProperty("assignPlugin", 3);
                         }
                     }
                 }
@@ -935,6 +936,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     private VariantInfo getAndUpdateVariantInfo(final DownloadLink downloadLink, final boolean allowCache) throws Exception {
+        return getAndUpdateVariantInfo(downloadLink, allowCache, true);
+    }
+
+    private VariantInfo getAndUpdateVariantInfo(final DownloadLink downloadLink, final boolean allowCache, final boolean storeTempProperty) throws Exception {
         final YoutubeFinalLinkResource video = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, YoutubeFinalLinkResource.TYPE_REF);
         final YoutubeFinalLinkResource audio = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, YoutubeFinalLinkResource.TYPE_REF);
         final YoutubeFinalLinkResource data = downloadLink.getObjectProperty(YoutubeHelper.YT_STREAM_DATA_DATA, YoutubeFinalLinkResource.TYPE_REF);
@@ -961,7 +966,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             } else {
                 lstData = null;
             }
-            final VariantInfo ret = new VariantInfo(getVariant(downloadLink), lstAudio, lstVideo, lstData);
+            final VariantInfo ret = new VariantInfo(getVariant(downloadLink, storeTempProperty), lstAudio, lstVideo, lstData);
             if (ret.isValid()) {
                 return ret;
             }
@@ -1349,14 +1354,61 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         };
         final YoutubeConfig youtubeConfig = PluginJsonConfig.get(YoutubeConfig.class);
         if (streamData.getSegments() != null) {
-            final String[] segments = streamData.getSegments();
-            dashDownloadable.setResumeable(false);
-            // TODO: add resume
-            dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, new URL(streamData.getBaseUrl()), segments) {
+            final String[] streamSegments = streamData.getSegments();
+            final List<Segment> allSegments = SegmentDownloader.buildSegments(new URL(streamData.getBaseUrl()), streamSegments);
+            final List<Segment> downloadSegments = new ArrayList<Segment>(allSegments);
+            final String resumeSegmentInfo = downloadLink.getStringProperty(dashChunksProperty + "_segment", null);
+            final String resumeSegmentInfos[] = new Regex(resumeSegmentInfo, "^(\\d+)_(\\d+)_(\\d+)_(.+)$").getRow(0);
+            int resumeSegmentIndex = -1;
+            long resumePosition = -1;
+            if (resumeSegmentInfos != null && resumeSegmentInfos.length == 4) {
+                final int numSegments = Integer.parseInt(resumeSegmentInfos[0]);
+                resumeSegmentIndex = Integer.parseInt(resumeSegmentInfos[1]);
+                resumePosition = Long.parseLong(resumeSegmentInfos[2]);
+                final String segment = streamSegments[resumeSegmentIndex];
+                boolean resume = numSegments == streamSegments.length;
+                resume &= resumeSegmentIndex < streamSegments.length;
+                resume &= StringUtils.contains(segment, "sq/" + (resumeSegmentIndex) + "/");
+                final File resumeFile = new File(dashDownloadable.getFileOutputPart());
+                final long resumeFileLength = resumeFile.length();
+                resume &= resumeFileLength >= resumePosition;
+                if (resume) {
+                    downloadSegments.clear();
+                    downloadSegments.addAll(allSegments.subList(resumeSegmentIndex, allSegments.size()));
+                } else {
+                    resumeSegmentIndex = -1;
+                    resumePosition = -1;
+                }
+            }
+            final int finalResumeSegmentIndex = resumeSegmentIndex;
+            final long finalResumePosition = resumePosition;
+            dashDownloadable.setResumeable(true);
+            dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, downloadSegments) {
                 @Override
                 protected Request createSegmentRequest(Segment seg) throws IOException {
-                    Request ret = super.createSegmentRequest(seg);
+                    final Request ret = super.createSegmentRequest(seg);
                     ret.getHeaders().put(new HTTPHeader("Connection", "close"));
+                    return ret;
+                }
+
+                @Override
+                public boolean isResumedDownload() {
+                    return segments.size() < allSegments.size();
+                }
+
+                @Override
+                protected long onSegmentStart(RandomAccessFile outputStream, Segment segment, URLConnectionAdapter con) throws IOException {
+                    final int segmentIndex = allSegments.indexOf(segment);
+                    if (finalResumeSegmentIndex > 0 && finalResumeSegmentIndex == segmentIndex) {
+                        outputStream.seek(finalResumePosition);
+                        bytesWritten = finalResumePosition;
+                    }
+                    final long ret = bytesWritten;
+                    outputStream.getChannel().force(true);
+                    if (segmentIndex > 0) {
+                        downloadLink.setProperty(dashChunksProperty + "_segment", streamSegments.length + "_" + segmentIndex + "_" + ret + "_" + streamSegments[segmentIndex]);
+                    }
+                    dashDownloadable.setChunksProgress(new long[] { ret });
                     return ret;
                 }
 

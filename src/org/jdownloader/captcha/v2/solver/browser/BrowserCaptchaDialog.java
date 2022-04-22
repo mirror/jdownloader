@@ -68,8 +68,10 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.gui.Header;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
@@ -674,16 +676,23 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // images[0].getHeight(null) + headerPanel.getPreferredSize().height));
         }
         if (BrowserSolverService.getInstance().getConfig().isAutoOpenBrowserEnabled()) {
-            if (CFG_GUI.CFG.getNewDialogFrameState() != FrameState.TO_BACK) {
-                new Thread() {
-                    public void run() {
-                        try {
-                            Thread.sleep(1000);
+            final Thread openBrowseThread = new Thread("BrowserCaptcha:AutoOpen:" + challenge) {
+                {
+                    setDaemon(true);
+                }
+
+                public void run() {
+                    try {
+                        autoOpenDelay();
+                        if (isAutoOpenStillRequired()) {
                             openBrowser();
-                        } catch (InterruptedException e) {
                         }
-                    };
-                }.start();
+                    } catch (InterruptedException ignore) {
+                    }
+                };
+            };
+            if (CFG_GUI.CFG.getNewDialogFrameState() != FrameState.TO_BACK) {
+                openBrowseThread.start();
             } else {
                 getDialog().addWindowFocusListener(openBrowserFocusListener = new WindowFocusListener() {
                     @Override
@@ -692,13 +701,37 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
                     @Override
                     public void windowGainedFocus(WindowEvent e) {
-                        openBrowser();
+                        openBrowseThread.start();
                         getDialog().removeWindowFocusListener(this);
                     }
                 });
             }
         }
         return panel;
+    }
+
+    protected boolean isAutoOpenStillRequired() {
+        if (!CFG_BROWSER_CAPTCHA_SOLVER.AUTO_OPEN_BROWSER_ENABLED.isEnabled()) {
+            return false;
+        } else {
+            final SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(challenge.getId().getID());
+            if (challenge.isSolved() || job == null || job.isDone() || BrowserSolver.getInstance().isJobDone(job)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
+    protected void autoOpenDelay() throws InterruptedException {
+        int autoOpenDelay = Math.max(100, BrowserSolverService.getInstance().getConfig().getAutoOpenDelay());
+        while (autoOpenDelay > 0 && isAutoOpenStillRequired()) {
+            Thread.sleep(100);
+            autoOpenDelay = autoOpenDelay - 100;
+        }
+        if (!isAutoOpenStillRequired()) {
+            throw new InterruptedException("Challenge is no longer required");
+        }
     }
 
     public void actionPerformed(final ActionEvent e) {

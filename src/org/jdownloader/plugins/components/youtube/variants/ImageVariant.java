@@ -45,14 +45,8 @@ public class ImageVariant extends AbstractVariant<ImageGenericInfo> {
         return _GUI.T.Youtube_imagevariant_name(getBaseVariant().getiTagData().getImageQuality().getLocaleName());
     }
 
-    // @Override
-    // public double getQualityRating() {
-    // return super.getQualityRating();
-    // }
-
     @Override
     public String getFileNameQualityTag() {
-
         return getBaseVariant().getiTagData().getImageQuality().getLocaleTag();
     }
 
@@ -71,11 +65,9 @@ public class ImageVariant extends AbstractVariant<ImageGenericInfo> {
             return 1280;
         case IMAGE_MQ:
             return 320;
-
         default:
             throw new WTFException();
         }
-
     }
 
     public int getHeight() {
@@ -88,10 +80,8 @@ public class ImageVariant extends AbstractVariant<ImageGenericInfo> {
             return 720;
         case IMAGE_MQ:
             return 180;
-
         default:
             throw new WTFException();
         }
     }
-
 }

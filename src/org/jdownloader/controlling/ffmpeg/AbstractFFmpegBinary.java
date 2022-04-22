@@ -39,6 +39,7 @@ import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.ARCHFamily;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -799,7 +800,18 @@ public abstract class AbstractFFmpegBinary {
             logger.info("unset SysEnv:http_proxy=" + env.remove("http_proxy"));
         }
         logger.info("runCommand(ProcessBuilder):" + pb.command());
-        final Process process = pb.start();
+        final Process process;
+        try {
+            process = pb.start();
+        } catch (IOException e) {
+            if (CrossSystem.isMac() && ARCHFamily.ARM.equals(CrossSystem.getARCHFamily()) && StringUtils.contains(e.getMessage(), "Bad CPU type in executable")) {
+                // check if rosetta is installed: "/usr/bin/pgrep oahd" returns process id if installed
+                // install: /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+                throw new FFMpegException("Rosetta required to use intel ffmpeg binary", e);
+            } else {
+                throw e;
+            }
+        }
         final AccessibleByteArrayOutputStream stdout = new AccessibleByteArrayOutputStream();
         final AccessibleByteArrayOutputStream stderr = new AccessibleByteArrayOutputStream();
         final AtomicBoolean processExitedFlag = new AtomicBoolean(false);
