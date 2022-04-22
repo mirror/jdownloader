@@ -194,7 +194,13 @@ public class FaceBookComVideos extends PluginForHost {
         final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
         if (link.getPluginPatternMatcher().matches(TYPE_GROUP_PERMALINK)) {
             br.getPage(link.getPluginPatternMatcher());
-            final String video = br.getRegex("href\\s*=\\s*(https://www.facebook.com/[^/]+/videos/\\d+)").getMatch(0);
+            String video = br.getRegex("href\\s*=\\s*(https://www.facebook.com/[^/]+/videos/\\d+)").getMatch(0);
+            if (video == null) {
+                video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/\\d+)").getMatch(0);
+                if (video != null) {
+                    video = JSonStorage.restoreFromString("\"" + video + "\"", TypeRef.STRING);
+                }
+            }
             if (video != null) {
                 logger.info("Rewriting:" + link.getPluginPatternMatcher() + "->" + video);
                 link.setPluginPatternMatcher(video);

@@ -1053,8 +1053,8 @@ public enum VariantBase {
         case DESCRIPTION:
             return StringUtils.isNotEmpty(vid.description);
         default:
+            return true;
         }
-        return true;
     }
 
     /**
@@ -1065,19 +1065,19 @@ public enum VariantBase {
     public boolean isVideoToolRequired() {
         if (iTagVideo != null && iTagAudio != null) {
             return true;
-        }
-        if (iTagVideo != null && iTagVideo.name().contains("DASH")) {
+        } else if (iTagVideo != null && iTagVideo.name().contains("DASH")) {
             return true;
-        }
-        if (iTagAudio != null && iTagAudio.name().contains("DASH")) {
+        } else if (iTagAudio != null && iTagAudio.name().contains("DASH")) {
             return true;
-        }
-        if (converter != null) {
+        } else if (converter != null) {
             if (converter instanceof ExternalToolRequired) {
                 return true;
+            } else {
+                return false;
             }
+        } else {
+            return false;
         }
-        return false;
     }
 
     public List<File> listProcessFiles(DownloadLink link) {

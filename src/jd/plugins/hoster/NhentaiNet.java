@@ -100,9 +100,9 @@ public class NhentaiNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 final String urlExtension = getFileNameExtensionFromURL(dllink);
-                final String fileExtension = getFileNameExtensionFromString(link.getFinalFileName());
+                final String fileExtension = getFileNameExtensionFromString(link.getName());
                 if (urlExtension != null && !StringUtils.equalsIgnoreCase(urlExtension, fileExtension)) {
-                    final String fixExtension = link.getFinalFileName().replaceFirst(fileExtension + "$", urlExtension);
+                    final String fixExtension = link.getName().replaceFirst(fileExtension + "$", urlExtension);
                     link.setFinalFileName(fixExtension);
                 }
             }

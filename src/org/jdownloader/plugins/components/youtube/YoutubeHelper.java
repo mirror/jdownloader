@@ -3368,7 +3368,8 @@ public class YoutubeHelper {
     }
 
     public static String createLinkID(String videoID, AbstractVariant variant) {
-        return "youtubev2://" + videoID + "/" + Hash.getMD5(Encoding.urlEncode(variant._getUniqueId()));
+        final String ret = "youtubev2://" + videoID + "/" + Hash.getMD5(Encoding.urlEncode(variant._getUniqueId()));
+        return ret;
     }
 
     public static void writeVariantToDownloadLink(DownloadLink downloadLink, AbstractVariant v) {
