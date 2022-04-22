@@ -25,23 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.FacebookConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -63,6 +46,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.FacebookConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
     @Override
@@ -71,6 +71,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/(?:photo\\.php|photo/)\\?fbid=(\\d+)";
+    private static final String TYPE_GROUP_PERMALINK                   = "(?i)https://[^/]+/groups/\\d+/permalink/\\d+";
     private static final String TYPE_PHOTO_PART_OF_ALBUM               = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
     /* Allow parameter 'v' to be anywhere in that URL. */
     private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
@@ -115,6 +116,7 @@ public class FaceBookComVideos extends PluginForHost {
             regex += ".*?video\\.php\\?v=\\d+|";
             regex += "video/embed\\?video_id=\\d+|";
             regex += ".*?/videos/(?:[^/]+/)?\\d+|";
+            regex += "groups/\\d+/permalink/\\d+|";
             regex += "watch/\\?.*v=\\d+|";
             regex += "watch/live/\\?.*v=\\d+";
             /* Photo RegExes */
@@ -188,6 +190,18 @@ public class FaceBookComVideos extends PluginForHost {
                 logger.info("Availablecheck via saved directurl failed -> Doing full availablecheck");
             }
         }
+        final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
+        final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
+        if (link.getPluginPatternMatcher().matches(TYPE_GROUP_PERMALINK)) {
+            br.getPage(link.getPluginPatternMatcher());
+            final String video = br.getRegex("href\\s*=\\s*(https://www.facebook.com/[^/]+/videos/\\d+)").getMatch(0);
+            if (video != null) {
+                logger.info("Rewriting:" + link.getPluginPatternMatcher() + "->" + video);
+                link.setPluginPatternMatcher(video);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         if (link.getPluginPatternMatcher().matches(TYPE_PHOTO) || link.getPluginPatternMatcher().matches(TYPE_PHOTO_PART_OF_ALBUM)) {
             return this.requestFileInformationPhoto(link, isDownload);
         } else {
@@ -197,8 +211,6 @@ public class FaceBookComVideos extends PluginForHost {
             if (account != null) {
                 login(account, this.br, false);
             }
-            final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
-            final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
             /* Embed only = no nice filenames given */
             final boolean useEmbedOnly = false;
             if (useEmbedOnly) {
@@ -277,9 +289,8 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Check video via https://m.facebook.com/watch/?v=<fid> </br>
-     * In some cases, this may also work for videos for which an account is required otherwise. </br>
-     * Not all videos can be accessed via this way!
+     * Check video via https://m.facebook.com/watch/?v=<fid> </br> In some cases, this may also work for videos for which an account is
+     * required otherwise. </br> Not all videos can be accessed via this way!
      */
     @Deprecated
     private AvailableStatus requestFileInformationMobile(final DownloadLink link, final boolean isDownload) throws PluginException, IOException {
@@ -429,13 +440,9 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * 2021-03-18: "plugin embed" method. </br>
-     * Not all videos are embeddable via this method thus make sure to have a fallback and do NOT trust offline status if this fails with
-     * exception! </br>
-     * This sometimes enables us to: </br>
-     * 1. Check content that is otherwise only available when logedIN. </br>
-     * 2. Get higher video quality. </br>
-     * 3. Do superfast linkcheck as it's much faster than the FB website.
+     * 2021-03-18: "plugin embed" method. </br> Not all videos are embeddable via this method thus make sure to have a fallback and do NOT
+     * trust offline status if this fails with exception! </br> This sometimes enables us to: </br> 1. Check content that is otherwise only
+     * available when logedIN. </br> 2. Get higher video quality. </br> 3. Do superfast linkcheck as it's much faster than the FB website.
      */
     @Deprecated
     private AvailableStatus requestFileInformationPluginEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -445,9 +452,9 @@ public class FaceBookComVideos extends PluginForHost {
         /* TODO: Improve offline detection */
         if (videoO == null) {
             /**
-             * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br>
-             * They do return an errormessage for non-embeddable videos but it's language-dependant and thus not easy to parse so we don't
-             * try to catch it here!
+             * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br> They do
+             * return an errormessage for non-embeddable videos but it's language-dependant and thus not easy to parse so we don't try to
+             * catch it here!
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -527,8 +534,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Normal linkcheck via website. </br>
-     * Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
+     * Normal linkcheck via website. </br> Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
      * For other URL-types, website can be quite different depending on the video the user wants to download - it can redirect to random
      * other URLs!
      *
@@ -573,10 +579,9 @@ public class FaceBookComVideos extends PluginForHost {
             }
         }
         /**
-         * Try to find extra data for nicer filenames. </br>
-         * Do not trust this source 100% so only set properties which haven't been set before! </br>
-         * This source (video schema object) is not always given!! </br>
-         * Example: https://www.facebook.com/socialchefs/videos/326580738743639
+         * Try to find extra data for nicer filenames. </br> Do not trust this source 100% so only set properties which haven't been set
+         * before! </br> This source (video schema object) is not always given!! </br> Example:
+         * https://www.facebook.com/socialchefs/videos/326580738743639
          */
         try {
             logger.info("Set filename info via findSchemaJsonVideoObject");
@@ -859,8 +864,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Linkcheck via embed URL. </br>
-     * Not all videos are embeddable!
+     * Linkcheck via embed URL. </br> Not all videos are embeddable!
      */
     public AvailableStatus requestFileInformationEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
         br.getPage("https://www." + this.getHost() + "/video/embed?video_id=" + this.getFID(link));

@@ -18,18 +18,19 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WrzucajplikiPl extends XFileSharingProBasic {
@@ -41,8 +42,7 @@ public class WrzucajplikiPl extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-09-09: Untested because they do not allow any free downloads and a premium account for testing was not available!
-     * <br />
+     * limit-info: 2019-09-09: Untested because they do not allow any free downloads and a premium account for testing was not available! <br />
      * captchatype-info: 2019-09-09: Untested because they do not allow any free downloads! null<br />
      * other:<br />
      */
@@ -95,6 +95,16 @@ public class WrzucajplikiPl extends XFileSharingProBasic {
     }
 
     @Override
+    protected String findExpireDate(Browser br) throws Exception {
+        final String ret = super.findExpireDate(br);
+        if (ret == null && br.containsHTML(">\\s*Please enter your e-mail\\s*<")) {
+            // <div class="alert alert-success">Please enter your e-mail</div>
+            throw new AccountUnavailableException("Please visit website and enter your e-mail in account settings!", 30 * 60 * 1000l);
+        }
+        return ret;
+    }
+
+    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         return 1;
     }
@@ -113,6 +123,11 @@ public class WrzucajplikiPl extends XFileSharingProBasic {
     protected boolean websiteSupportsHTTPS() {
         /* 2019-08-09: Special */
         return false;
+    }
+
+    @Override
+    protected String[] supportsPreciseExpireDate() {
+        return new String[] { "/premium" };
     }
 
     @Override
