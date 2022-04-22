@@ -6,6 +6,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.FEmbedComConfig;
+import org.jdownloader.plugins.components.config.FEmbedComConfig.Quality;
+import org.jdownloader.plugins.components.config.FEmbedComConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
@@ -20,16 +30,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.FEmbedComConfig;
-import org.jdownloader.plugins.components.config.FEmbedComConfig.Quality;
-import org.jdownloader.plugins.components.config.FEmbedComConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FEmbedDecrypter extends PluginForDecrypt {
     public FEmbedDecrypter(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
         /* Always add current domain to first position! */
         ret.add(new String[] { "fembed.com", "there.to", "gcloud.live", "plycdn.xyz", "hlsmp4.com", "svpri.xyz", "asianclub.nl", "asianclub.tv", "javcl.me", "javjav.top", "feurl.com", "zidiplay.com", "embed.media", "javideo.pw", "playvideo.best", "ffem.club", "dunbed.xyz", "embed.casa", "sexhd.co", "fileone.tv", "luxubu.review", "anime789.com", "femax20.com", "smartshare.tv", "cercafilm.net", "watchjavnow.xyz", "layarkacaxxi.icu", "mycloudzz.com", "purefiles.in", "rapidplay.org", "2tazhfx9vrx4jnvaxt87sknw5eqbd6as.club" });
         /* 2021-11-16 */
-        ret.add(new String[] { "watch-jav-english.live", "dutrag.com", "nekolink.site", "pornhole.club", "javip.pro", "javlove.club", "javguru.tk", "diasfem.com", "cloudrls.com", "embedaio.com", "fakyutube.com", "javhdfree.icu", "fembed-hd.com" });
+        ret.add(new String[] { "watch-jav-english.live", "dutrag.com", "nekolink.site", "pornhole.club", "javip.pro", "javlove.club", "javguru.tk", "diasfem.com", "cloudrls.com", "embedaio.com", "fakyutube.com", "javhdfree.icu", "fembed-hd.com", "suzihaza.com", "mambast.tk", "javpoll.com" });
         return ret;
     }
 
