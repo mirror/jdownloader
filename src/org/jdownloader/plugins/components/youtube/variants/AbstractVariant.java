@@ -154,43 +154,14 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         baseVariant = v;
     }
 
-    private String uniqueIDString = null;
-
     @Override
     public String _getUniqueId() {
-        String ret = uniqueIDString;
-        if (ret == null) {
-            final VariantBase variantBase = this.getBaseVariant();
-            if (variantBase != null) {
-                synchronized (this) {
-                    final StringBuilder sb = new StringBuilder();
-                    if (variantBase.hasConverter(null)) {
-                        sb.append("x.");
-                    }
-                    final YoutubeITAG audio = variantBase.getiTagAudio();
-                    if (audio != null) {
-                        sb.append("a").append(audio.getITAG()).append(".");
-                    }
-                    final YoutubeITAG data = variantBase.getiTagData();
-                    if (data != null) {
-                        sb.append("d").append(data.getITAG()).append(".");
-                    }
-                    final YoutubeITAG video = variantBase.getiTagVideo();
-                    if (video != null) {
-                        sb.append("v").append(video.getITAG()).append(".");
-                    }
-                    final FileContainer container = variantBase.getContainer();
-                    if (container != null) {
-                        sb.append("c").append(container.name());
-                    }
-                    ret = sb.toString();
-                    uniqueIDString = Property.dedupeString(ret);
-                }
-            } else {
-                throw new WTFException();
-            }
+        final VariantBase variantBase = this.getBaseVariant();
+        if (variantBase != null) {
+            return variantBase._getUniqueId();
+        } else {
+            throw new WTFException();
         }
-        return ret;
     }
 
     public String createAdvancedName() {
@@ -295,25 +266,25 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     private static final SimpleMapper MAPPER = new SimpleMapper() {
-                                                 @Override
-                                                 protected JSonFactory newJsonFactory(String jsonString) {
-                                                     return new JSonFactory(jsonString) {
-                                                         @Override
-                                                         protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
-                                                             return null;
-                                                         };
-                                                     };
-                                                 }
+        @Override
+        protected JSonFactory newJsonFactory(String jsonString) {
+            return new JSonFactory(jsonString) {
+                @Override
+                protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
+                    return null;
+                };
+            };
+        }
 
-                                                 @Override
-                                                 protected void initMapper() {
-                                                 }
+        @Override
+        protected void initMapper() {
+        }
 
-                                                 @Override
-                                                 public boolean isPrettyPrintEnabled() {
-                                                     return false;
-                                                 }
-                                             };
+        @Override
+        public boolean isPrettyPrintEnabled() {
+            return false;
+        }
+    };
 
     public String getStorableString() {
         String ret = storableString;
