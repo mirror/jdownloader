@@ -1840,6 +1840,7 @@ gui_plugin_settings_share_online_traffic_workaround_max=<html>Ativar solução p
 gui_reconnect_confirm=Você deseja reconectar com a Internet?
 gui_settings_advanced_title=Configurações Avançadas
 gui_table_contextmenu_browselink=Abrir no navegador
+gui_table_contextmenu_browselink_delay=Atraso para abrir no navegador (em ms)
 gui_table_contextmenu_browselink_maxurls=Máximo de URLs para abrir
 gui_table_contextmenu_check=Checar Status online
 gui_table_contextmenu_dlc=Criar DLC
