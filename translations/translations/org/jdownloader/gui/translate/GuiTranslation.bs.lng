@@ -1840,6 +1840,7 @@ gui_plugin_settings_share_online_traffic_workaround_max=Omogućiti zaobilaženje
 gui_reconnect_confirm=Želite li obnoviti vašu konekciju?
 gui_settings_advanced_title=Napredne Postavke
 gui_table_contextmenu_browselink=Otvori u pretraživaču
+gui_table_contextmenu_browselink_delay=Odgoda otvaranja u pregledniku (u ms)
 gui_table_contextmenu_browselink_maxurls=Max broj URL-ova za otvaranje
 gui_table_contextmenu_check=Provjeri online status
 gui_table_contextmenu_dlc=Kreiraj DLC
