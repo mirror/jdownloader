@@ -475,6 +475,16 @@ public class DownloadLinkSandBox {
         }
     }
 
+    public HTTPProxySandbox getDownloadProxy() {
+        if (downloadLink != null) {
+            final SingleDownloadController controller = downloadLink.getDownloadLinkController();
+            if (controller != null) {
+                return new HTTPProxySandbox(controller.getProxySelector());
+            }
+        }
+        return null;
+    }
+
     public boolean isSkipped() {
         return downloadLink != null && downloadLink.isSkipped();
     }
