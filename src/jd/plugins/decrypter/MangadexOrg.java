@@ -23,15 +23,15 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(?:www\\.)?mangadex\\.(?:org|cc)/(chapter/[a-f0-9\\-]+|title/[a-f0-9\\-]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(?:www\\.)?mangadex\\.(?:org|cc)/(chapter/[a-f0-9\\-]+|title/[a-f0-9\\-]+)(/[^/]*\\?tab=(art|chapters))?" })
 public class MangadexOrg extends antiDDoSForDecrypt {
     public MangadexOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_CHAPTER = "^https?://[^/]+/chapter/([a-f0-9\\-]+)$";
+    private static final String TYPE_CHAPTER = "^https?://[^/]+/chapter/([a-f0-9\\-]+).*";
     private static final String TYPE_LEGACY  = "^https?://[^/]+/chapter/(\\d+)$";
-    private static final String TYPE_TITLE   = "^https?://[^/]+/title/([a-f0-9\\-]+)$";
+    private static final String TYPE_TITLE   = "^https?://[^/]+/title/([a-f0-9\\-]+).*";
     private final String        apiBase      = "https://api.mangadex.org/";
 
     @Override
@@ -53,6 +53,8 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else if (param.getCryptedUrl().matches(TYPE_TITLE)) {
+            final boolean artTab = StringUtils.containsIgnoreCase(param.getCryptedUrl(), "tab=art");
+            final boolean chapterTab = StringUtils.containsIgnoreCase(param.getCryptedUrl(), "tab=chapters");
             final String mangaID = new Regex(param.getCryptedUrl(), TYPE_TITLE).getMatch(0);
             getPage(apiBase + "manga/" + mangaID + "/?includes[]=artist&includes[]=author&includes[]=cover_art");
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -70,7 +72,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             } else {
                 fp = null;
             }
-            {
+            if (artTab || !chapterTab) {
                 // add cover art
                 final HashSet<String> dups = new HashSet<String>();
                 int offset = 0;
@@ -118,7 +120,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                     }
                 }
             }
-            {
+            if (chapterTab || !artTab) {
                 // add chapter
                 final HashSet<String> dups = new HashSet<String>();
                 int offset = 0;
