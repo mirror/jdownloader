@@ -23,11 +23,11 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     private String                tempPass;
 
     public ProxyData toProxyData() {
-        ProxyData ret = super.toProxyData();
-        HTTPProxyStorable storable = HTTPProxy.getStorable(getProxy());
+        final HTTPProxyStorable storable = HTTPProxy.getStorable(getProxy());
         storable.setUsername(username);
         storable.setPassword(password);
         storable.setPreferNativeImplementation(isPreferNativeImplementation());
+        final ProxyData ret = super.toProxyData(storable);
         ret.setProxy(storable);
         ret.setReconnectSupported(isReconnectSupported());
         return ret;
@@ -155,7 +155,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         }
     }
 
-    private String _getPassword() {
+    public String _getPassword() {
         final String ret = tempPass;
         if (ret != null) {
             return ret;
@@ -164,7 +164,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         }
     }
 
-    private String _getUsername() {
+    public String _getUsername() {
         final String ret = tempUser;
         if (ret != null) {
             return ret;

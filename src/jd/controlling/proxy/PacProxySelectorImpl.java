@@ -237,13 +237,12 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public ProxyData toProxyData() {
-        ProxyData ret = super.toProxyData();
-        HTTPProxyStorable proxy = new HTTPProxyStorable();
+        final HTTPProxyStorable proxy = new HTTPProxyStorable();
         proxy.setUsername(getUser());
         proxy.setPassword(getPassword());
         proxy.setAddress(getPACUrl());
         proxy.setPreferNativeImplementation(isPreferNativeImplementation());
-        ret.setProxy(proxy);
+        final ProxyData ret = super.toProxyData(proxy);
         ret.setPac(true);
         ret.setReconnectSupported(isReconnectSupported());
         return ret;
