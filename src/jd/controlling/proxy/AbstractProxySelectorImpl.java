@@ -20,6 +20,7 @@ import jd.plugins.Plugin;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.ProxyData;
@@ -73,8 +74,10 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         this.filter = filter;
     }
 
-    public ProxyData toProxyData() {
-        final ProxyData ret = new ProxyData();
+    public abstract ProxyData toProxyData();
+
+    protected ProxyData toProxyData(HTTPProxyStorable proxy) {
+        final ProxyData ret = new ProxyData(proxy);
         ret.setEnabled(isEnabled());
         ret.setFilter(getFilter());
         ret.setRangeRequestsSupported(isResumeAllowed());
