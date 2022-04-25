@@ -47,7 +47,6 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     private JScrollPane                           scrollpane;
     private EventScripterExtension                extension;
     private TriggerSetupPanel                     settingsPanel;
-    private Map<String, Object>                   settingsMap;
 
     public JavaScriptEditorDialog(EventScripterExtension extension, ScriptEntry entry) {
         super(Dialog.STYLE_HIDE_ICON, T.T.script_editor_title(entry.getName()), null, _GUI.T.lit_save(), null);
@@ -72,6 +71,22 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         return 1024;
     }
 
+    public TriggerSetupPanel createDefaultTriggerSetupPanel(final ScriptEntry entry) {
+        final TriggerSetupPanel settingsPanel = new TriggerSetupPanel(0);
+        if (entry.getEventTrigger().isSynchronousSupported()) {
+            final Map<String, Object> settingsMap = entry.getEventTriggerSettings();
+            final Checkbox synchronousCheckBox = new Checkbox(entry.getEventTrigger().isSynchronous(settingsMap));
+            settingsPanel.addDescriptionPlain(T.T.synchronous_desc());
+            settingsPanel.addPair(T.T.synchronous(), null, synchronousCheckBox);
+            settingsPanel.executeOnSave(new Runnable() {
+                public void run() {
+                    entry.getEventTrigger().setSynchronous(entry.getEventTriggerSettings(), synchronousCheckBox.isSelected());
+                };
+            });
+        }
+        return settingsPanel;
+    }
+
     @Override
     public JComponent layoutDialogContent() {
         // dummy. @see #relayout
@@ -81,19 +96,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         toolbar.setFloatable(false);
         toolbar.setPreferredSize(new Dimension(-1, 22));
         p.add(toolbar);
-        settingsMap = entry.getEventTriggerSettings();
-        settingsPanel = entry.getEventTrigger().createSettingsPanel(settingsMap);
-        if (settingsPanel == null) {
-            final Checkbox checkBox = new Checkbox(entry.getEventTrigger().isSynchronous(settingsMap));
-            settingsPanel = new TriggerSetupPanel(0) {
-                @Override
-                public void save() {
-                    entry.getEventTrigger().setSynchronous(settingsMap, checkBox.isSelected());
-                }
-            };
-            settingsPanel.addDescriptionPlain(T.T.synchronous_desc());
-            settingsPanel.addPair(T.T.synchronous(), null, checkBox);
-        }
+        settingsPanel = entry.getEventTrigger().createSettingsPanel(entry, this);
         final JEditorPane defaults = new JEditorPane();
         final JavaSyntaxKit javaSyntaxKit = new JavaSyntaxKit();
         defaults.setEditorKit(javaSyntaxKit);
@@ -308,8 +311,9 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     public Map<String, Object> getEventTriggerSetup() {
         if (settingsPanel != null) {
             settingsPanel.save();
-            return settingsMap;
+            return entry.getEventTriggerSettings();
+        } else {
+            return null;
         }
-        return null;
     }
 }
