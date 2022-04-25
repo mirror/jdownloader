@@ -1801,15 +1801,22 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         DownloadLinkView oldView = null;
         DefaultDownloadLinkViewImpl newView = null;
         try {
+            final AbstractVariant variant = getVariant(downloadLink);
+            final boolean isDashAudioOnly = variant.getType() == DownloadType.DASH_AUDIO;
             newView = new DefaultDownloadLinkViewImpl() {
                 @Override
                 public long getBytesLoaded() {
-                    final long video = data.getDashVideoBytesLoaded();
-                    if (!data.isDashVideoFinished()) {
-                        return video;
-                    } else {
+                    if (isDashAudioOnly) {
                         final long audio = data.getDashAudioBytesLoaded();
-                        return video + audio;
+                        return audio;
+                    } else {
+                        final long video = data.getDashVideoBytesLoaded();
+                        if (!data.isDashVideoFinished()) {
+                            return video;
+                        } else {
+                            final long audio = data.getDashAudioBytesLoaded();
+                            return video + audio;
+                        }
                     }
                 }
             };
@@ -1857,9 +1864,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 } else {
                     videoStreamLoaded = null;
                 }
-                final AbstractVariant variant = getVariant(downloadLink);
                 boolean loadVideo = !data.isDashVideoFinished();
-                if (videoStreamPath == null || variant.getType() == DownloadType.DASH_AUDIO) {
+                if (videoStreamPath == null || isDashAudioOnly) {
                     /* Skip video if just audio should be downloaded */
                     loadVideo = false;
                 } else {

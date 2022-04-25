@@ -17,9 +17,8 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
-
-import org.appwork.utils.Files;
-import org.jdownloader.plugins.controller.LazyPlugin;
+import java.util.HashSet;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,7 +32,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "https?://(?:www\\.)?sex\\.com/(?:pin/\\d+|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+|link/out\\?id=\\d+)" })
+import org.appwork.utils.Files;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "https?://(?:www\\.)?sex\\.com/(?:pin/\\d+|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+|link/out\\?id=\\d+|user/[^/]+/[^/]+)" })
 public class SexCom extends PornEmbedParser {
     public SexCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,10 +76,30 @@ public class SexCom extends PornEmbedParser {
         if (redirect != null) {
             br.getPage(redirect);
         }
-        if (br.getURL().matches(TYPE_VIDEO) || br.containsHTML("<h1>\\s*Video\\s*.*?Pin")) {
+        if (br.getURL().matches("(?i).*/user/[^/]+/[^/]+/?")) {
+            // find all pins
+            final Set<String> dups = new HashSet<String>();
+            final String userProfilePin = br.getRegex("\"user_profile_picture\"\\s*>\\s*<a\\s*href\\s*=\\s*\"(/pin/\\d+)").getMatch(0);
+            dups.add(userProfilePin);
+            while (!isAbort()) {
+                final String items[] = br.getRegex("(/(pin|picture|video)/\\d+)").getColumn(0);
+                for (String item : items) {
+                    if (dups.add(item)) {
+                        final DownloadLink dl = createDownloadlink(br.getURL(item).toString());
+                        decryptedLinks.add(dl);
+                    }
+                }
+                final String next = br.getRegex("rel\\s*=\\s*\"next\"\\s*href\\s*=\\s*\"(https?://[^\"]*page=\\d+)").getMatch(0);
+                if (next != null && dups.add(next)) {
+                    br.getPage(next);
+                } else {
+                    break;
+                }
+            }
+        } else if (br.getURL().matches(TYPE_VIDEO) || br.containsHTML("<h1>\\s*Video\\s*.*?Pin")) {
             decryptedLinks.addAll(this.findLink());
         } else {
-            filename = br.getRegex("<title>([^<>\"]*?) \\| Sex Videos and Pictures \\| Sex\\.com</title>").getMatch(0);
+            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(?:\\|\\s*Sex Videos and Pictures\\s*\\|\\s*Sex\\.com)?\\s*</title>").getMatch(0);
             if (filename == null || filename.length() <= 2) {
                 filename = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);
             }
@@ -89,6 +111,10 @@ public class SexCom extends PornEmbedParser {
             }
             if (filename == null || filename.length() <= 2) {
                 filename = new Regex(param.getCryptedUrl(), "(\\d+)/?$").getMatch(0);
+            }
+            final String name = br.getRegex("(?:Picture|Video|Gif)\\s*-\\s*<span itemprop\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*</span>").getMatch(0);
+            if (name != null) {
+                filename = name;
             }
             filename = Encoding.htmlDecode(filename.trim());
             filename = filename.replace("#", "");
@@ -136,6 +162,10 @@ public class SexCom extends PornEmbedParser {
         }
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
+        final String name = br.getRegex("(?:Picture|Video|Gif)\\s*-\\s*<span itemprop\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*</span>").getMatch(0);
+        if (name != null) {
+            filename = name;
         }
         if (Encoding.isHtmlEntityCoded(filename)) {
             filename = Encoding.htmlDecode(filename);

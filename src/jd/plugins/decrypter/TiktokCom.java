@@ -40,6 +40,8 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://[A-Za-z0-9]+\\.tiktok\\.com/.+" })
@@ -179,7 +181,10 @@ public class TiktokCom extends PluginForDecrypt {
             fp.setName(usernameSlug);
             try {
                 /* First try the "hard" way */
-                final String json = br.getRegex("window\\['SIGI_STATE'\\]\\s*=\\s*(\\{.*?\\});").getMatch(0);
+                String json = br.getRegex("window\\['SIGI_STATE'\\]\\s*=\\s*(\\{.*?\\});").getMatch(0);
+                if (json == null) {
+                    json = br.getRegex("<script\\s*id\\s*=\\s*\"SIGI_STATE\"[^>]*>\\s*(\\{.*?\\});?\\s*</script>").getMatch(0);
+                }
                 final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                 final Map<String, Map<String, Object>> itemModule = (Map<String, Map<String, Object>>) entries.get("ItemModule");
                 final Collection<Map<String, Object>> videos = itemModule.values();
@@ -213,6 +218,7 @@ public class TiktokCom extends PluginForDecrypt {
                     distribute(dl);
                 }
             } catch (final Throwable e) {
+                logger.log(e);
             }
             if (decryptedLinks.isEmpty()) {
                 /* Last chance fallback */
@@ -221,7 +227,7 @@ public class TiktokCom extends PluginForDecrypt {
                 for (final String videoID : videoIDs) {
                     final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID);
                     dl.setName("@" + usernameSlug + "_" + videoID + ".mp4");
-                    dl.setAvailable(true);
+                    dl.setAvailable(PluginJsonConfig.get(TiktokConfig.class).isEnableFastLinkcheck());
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);
                 }

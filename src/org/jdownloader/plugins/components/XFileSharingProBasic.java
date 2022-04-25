@@ -1090,10 +1090,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             if (StringUtils.isEmpty(fileInfo[0])) {
                 fileInfo[0] = new Regex(html, "name=\"fname\" (?:type=\"hidden\" )?value=\"(.*?)\"").getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[0])) {
-                    fileInfo[0] = new Regex(html, "<h2>.*?Download File(?:<span>)?\\s*(.*?)\\s*(</span>)?\\s*</h2>").getMatch(0);
-                    /* traits from download1 page below */
+                    /* vipfile.cc */
+                    fileInfo[0] = new Regex(html, "<h2>.*?Download File\\s*(?:<br\\s*/>\\s*</span>\\s*)?<span[^>]*>\\s*(.*?)\\s*</span>").getMatch(0);
                     if (StringUtils.isEmpty(fileInfo[0])) {
-                        fileInfo[0] = new Regex(html, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
+                        fileInfo[0] = new Regex(html, "<h2>.*?Download File\\s*(?:<span[^>]*>)?\\s*(.*?)\\s*(</span>)?\\s*</h2>").getMatch(0);
+                        /* traits from download1 page below */
+                        if (StringUtils.isEmpty(fileInfo[0])) {
+                            fileInfo[0] = new Regex(html, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
+                        }
                     }
                 }
             }
@@ -4216,6 +4220,37 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    /**
+     * rewrite/fix wrong protocol from http to https if required
+     *
+     * @param link
+     * @param account
+     * @param br
+     * @param dllink
+     * @return
+     * @throws Exception
+     */
+    protected String fixProtocol(final DownloadLink link, final Account account, final Browser br, final String dllink) throws Exception {
+        if (dllink != null && !StringUtils.startsWithCaseInsensitive(dllink, "rtmp")) {
+            final URL url = br.getURL(dllink);
+            if (url.getPort() != -1 && StringUtils.equalsIgnoreCase(url.getProtocol(), "http")) {
+                try {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setAllowedResponseCodes(400);
+                    brc.getPage(url.getProtocol() + "://" + url.getHost() + ":" + url.getPort() + "/");
+                    if (brc.getHttpConnection().getResponseCode() == 400 && brc.containsHTML("The plain HTTP request was sent to HTTPS port")) {
+                        final String ret = url.toString().replaceFirst("(?i)^(http://)", "https://");
+                        logger.info("fixProtocol downloadlink = " + dllink + "->" + ret);
+                        return ret;
+                    }
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+            }
+        }
+        return dllink;
+    }
+
     protected void handleDownload(final DownloadLink link, final Account account, String dllink, final Request req) throws Exception {
         final boolean resume = this.isResumeable(link, account);
         int maxChunks = getMaxChunks(account);
@@ -4236,11 +4271,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
              * connections) --> Should work fine after the next try.
              */
             final String location = req.getLocation();
+            // TODO: add fixProtocol support
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, req, resume, maxChunks);
             if (location != null) {
                 /* E.g. redirect to downloadurl --> We can save that URL */
                 storeDirecturl(link, account, location);
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, req, resume, maxChunks);
             handleDownloadErrors(dl.getConnection(), link, account);
             try {
                 fixFilename(dl.getConnection(), link);
@@ -4261,6 +4297,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 checkErrorsLastResort(br, account);
             }
+            dllink = fixProtocol(link, account, br, dllink);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             if (dllink.startsWith("rtmp")) {
                 /* 2022-01-27: rtmp is not supported anymore */

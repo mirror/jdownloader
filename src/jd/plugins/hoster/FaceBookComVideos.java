@@ -194,11 +194,28 @@ public class FaceBookComVideos extends PluginForHost {
         final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
         if (link.getPluginPatternMatcher().matches(TYPE_GROUP_PERMALINK)) {
             br.getPage(link.getPluginPatternMatcher());
-            String video = br.getRegex("href\\s*=\\s*(https://www.facebook.com/[^/]+/videos/\\d+)").getMatch(0);
-            if (video == null) {
-                video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/\\d+)").getMatch(0);
-                if (video != null) {
-                    video = JSonStorage.restoreFromString("\"" + video + "\"", TypeRef.STRING);
+            String video = null;
+            boolean search = true;
+            while (search) {
+                search = false;
+                video = br.getRegex("href\\s*=\\s*(https://www.facebook.com/[^/]+/videos/\\d+)").getMatch(0);
+                if (video == null) {
+                    video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/\\d+)").getMatch(0);
+                    if (video != null) {
+                        video = JSonStorage.restoreFromString("\"" + video + "\"", TypeRef.STRING);
+                    }
+                }
+                if (video == null && br.containsHTML("When this happens, it's usually because the owner only shared it")) {
+                    if (account != null) {
+                        login(account, this.br, false);
+                        br.getPage(link.getPluginPatternMatcher());
+                    }
+                    if (br.containsHTML("When this happens, it's usually because the owner only shared it")) {
+                        throw new AccountRequiredException();
+                    } else {
+                        search = true;
+                        continue;
+                    }
                 }
             }
             if (video != null) {
