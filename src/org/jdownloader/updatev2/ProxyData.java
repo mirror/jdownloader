@@ -9,6 +9,10 @@ public class ProxyData implements Storable {
         // required by Storable
     }
 
+    public ProxyData(HTTPProxyStorable proxy) {
+        this.proxy = proxy;
+    }
+
     private HTTPProxyStorable proxy                  = null;
     // private String ID = null;
     private boolean           rangeRequestsSupported = true;

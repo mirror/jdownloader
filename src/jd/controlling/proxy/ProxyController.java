@@ -132,9 +132,9 @@ public class ProxyController implements ProxySelectorInterface {
         @Override
         public void killQueue() {
             LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
-                                                                                                    /*
-                                                                                                     * this queue can ' t be killed
-                                                                                                     */
+            /*
+             * this queue can ' t be killed
+             */
         }
     };
     private final ConfigEventSender<Object>                                 customProxyListEventSender;
@@ -195,16 +195,16 @@ public class ProxyController implements ProxySelectorInterface {
         });
         getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             final DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
-                                                  @Override
-                                                  public void delayedrun() {
-                                                      ProxyController.this.saveProxySettings();
-                                                  }
+                @Override
+                public void delayedrun() {
+                    ProxyController.this.saveProxySettings();
+                }
 
-                                                  @Override
-                                                  public String getID() {
-                                                      return "ProxyController";
-                                                  }
-                                              };
+                @Override
+                public String getID() {
+                    return "ProxyController";
+                }
+            };
 
             @Override
             public void onEvent(final ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -304,6 +304,19 @@ public class ProxyController implements ProxySelectorInterface {
             }
             filter.setEntries(updatedEntries.toArray(new String[0]));
         }
+    }
+
+    public int indexOf(final AbstractProxySelectorImpl proxy) {
+        return proxy != null ? QUEUE.addWait(new QueueAction<Integer, RuntimeException>() {
+            @Override
+            protected Integer run() throws RuntimeException {
+                return _getList().indexOf(proxy);
+            }
+        }) : -1;
+    }
+
+    public boolean containsProxy(final AbstractProxySelectorImpl proxy) {
+        return proxy != null && indexOf(proxy) >= 0;
     }
 
     public void addProxy(final AbstractProxySelectorImpl proxy) {
