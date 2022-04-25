@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -37,6 +32,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.HidriveCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hidrive.com" }, urls = { "https?://(?:my\\.hidrive\\.com/share/|(?:www\\.)?hidrive\\.strato\\.com/share/)(.+)" })
 public class HidriveComCrawler extends PluginForDecrypt {
@@ -106,7 +107,7 @@ public class HidriveComCrawler extends PluginForDecrypt {
                 final DownloadLink file = this.createDownloadlink("https://my.hidrive.com/share/" + baseFolderID + "#file_id=" + ressource.get("id"));
                 /* There is no file-specific URL available --> Set url added by the user */
                 file.setContentUrl(param.getCryptedUrl());
-                file.setFinalFileName(ressource.get("name").toString());
+                file.setFinalFileName(URLEncode.decodeURIComponent(ressource.get("name").toString()));
                 file.setVerifiedFileSize(((Number) ressource.get("size")).longValue());
                 file.setAvailable(true);
                 file.setProperty(HidriveCom.PROPERTY_ACCESS_TOKEN, access_token);
