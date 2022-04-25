@@ -85,6 +85,7 @@ import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandB
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadlistSelectionSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.EventSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.HTTPProxySandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.LinkgrabberSelectionSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
 import org.jdownloader.extensions.extraction.ExtractionEvent;
@@ -404,9 +405,10 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     @Override
-    public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
+    public void onDownloadControllerStart(final SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
         DownloadLinkSandBox downloadLinkSandBox = null;
         FilePackageSandBox filePackageSandBox = null;
+        HTTPProxySandbox proxySandbox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_DOWNLOAD_CONTROLLER_START.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
@@ -417,8 +419,12 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                     if (downloadLinkSandBox == null) {
                         downloadLinkSandBox = new DownloadLinkSandBox(downloadController.getDownloadLink());
                     }
+                    if (proxySandbox != null) {
+                        proxySandbox = new HTTPProxySandbox(downloadController.getProxySelector());
+                    }
                     props.put("link", downloadLinkSandBox);
                     props.put("package", filePackageSandBox);
+                    props.put("proxy", proxySandbox);
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -440,6 +446,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         DownloadLinkSandBox downloadLinkSandBox = null;
+        HTTPProxySandbox proxySandbox = null;
         final DownloadLink dlLink = downloadController.getDownloadLink();
         final FilePackage fp = dlLink.getParentNode();
         final FilePackageSandBox filePackageSandBox = new FilePackageSandBox(fp);
@@ -451,8 +458,12 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                         if (downloadLinkSandBox == null) {
                             downloadLinkSandBox = new DownloadLinkSandBox(dlLink);
                         }
+                        if (proxySandbox != null) {
+                            proxySandbox = new HTTPProxySandbox(downloadController.getProxySelector());
+                        }
                         props.put("link", downloadLinkSandBox);
                         props.put("package", filePackageSandBox);
+                        props.put("proxy", proxySandbox);
                         runScript(script, props);
                     } catch (Throwable e) {
                         getLogger().log(e);
@@ -837,6 +848,8 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onJobDone(SolverJob<?> job) {
+        final Challenge<?> captchaChallenge = job.getChallenge();
+        DownloadLinkSandBox downloadLinkSandbox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.CAPTCHA_CHALLENGE_AFTER.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
@@ -845,13 +858,20 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                     for (ChallengeSolver<?> s : job.getSolverList()) {
                         solver.add(s.getService().getID() + "." + s.getClass().getSimpleName());
                     }
-                    props.put("hasPendingJobs", ChallengeResponseController.getInstance().hasPendingJobs());
-                    Challenge<String> captchaChallenge = (Challenge<String>) job.getChallenge();
-                    props.put("getCaptchaName", captchaChallenge.getTypeID() + "");
                     props.put("solved", job.isSolved());
                     props.put("solver", solver.toArray(new String[] {}));
-                    ResponseList<?> resp = job.getResponse();
+                    final ResponseList<?> resp = job.getResponse();
                     props.put("result", resp == null ? null : resp.getValue());
+                    props.put("hasPendingJobs", ChallengeResponseController.getInstance().hasPendingJobs());
+                    props.put("getCaptchaName", captchaChallenge.getTypeID());
+                    props.put("getCaptchaHost", captchaChallenge.getHost());
+                    props.put("isAccountCheck", captchaChallenge.isCreatedInsideAccountChecker());
+                    if (captchaChallenge.getDownloadLink() != null) {
+                        if (downloadLinkSandbox == null) {
+                            downloadLinkSandbox = new DownloadLinkSandBox(captchaChallenge.getDownloadLink());
+                        }
+                        props.put("link", downloadLinkSandbox);
+                    }
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -862,13 +882,22 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onNewJob(SolverJob<?> job) {
+        final Challenge<?> captchaChallenge = job.getChallenge();
+        DownloadLinkSandBox downloadLinkSandbox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.CAPTCHA_CHALLENGE_BEFORE.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
                     final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("hasPendingJobs", ChallengeResponseController.getInstance().hasPendingJobs());
-                    Challenge<String> captchaChallenge = (Challenge<String>) job.getChallenge();
-                    props.put("getCaptchaName", captchaChallenge.getTypeID() + "");
+                    props.put("getCaptchaName", captchaChallenge.getTypeID());
+                    props.put("getCaptchaHost", captchaChallenge.getHost());
+                    props.put("isAccountCheck", captchaChallenge.isCreatedInsideAccountChecker());
+                    if (captchaChallenge.getDownloadLink() != null) {
+                        if (downloadLinkSandbox == null) {
+                            downloadLinkSandbox = new DownloadLinkSandBox(captchaChallenge.getDownloadLink());
+                        }
+                        props.put("link", downloadLinkSandbox);
+                    }
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
