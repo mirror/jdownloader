@@ -2,6 +2,7 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.SingleBasicProxySelectorImpl;
 
 public class HTTPProxySandbox {
@@ -21,6 +22,31 @@ public class HTTPProxySandbox {
 
     public String toExportString() {
         return proxy != null ? proxy.toExportString() : "none://";
+    }
+
+    public boolean isEnabled() {
+        return proxy != null && proxy.isEnabled();
+    }
+
+    public void setEnabled(boolean enabled) {
+        ProxyController.getInstance().setEnabled(proxy, enabled);
+    }
+
+    public int indexOf() {
+        if (proxy != null) {
+            return ProxyController.getInstance().indexOf(proxy);
+        } else {
+            return -1;
+        }
+    }
+
+    public boolean remove() {
+        if (ProxyController.getInstance().containsProxy(proxy)) {
+            ProxyController.getInstance().remove(proxy);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public String getUsername() {
