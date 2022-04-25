@@ -41,7 +41,7 @@ public class HTTPProxySandbox {
     }
 
     public boolean remove() {
-        if (ProxyController.getInstance().containsProxy(proxy)) {
+        if (indexOf() >= 0) {
             ProxyController.getInstance().remove(proxy);
             return true;
         } else {

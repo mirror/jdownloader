@@ -315,10 +315,6 @@ public class ProxyController implements ProxySelectorInterface {
         }) : -1;
     }
 
-    public boolean containsProxy(final AbstractProxySelectorImpl proxy) {
-        return proxy != null && indexOf(proxy) >= 0;
-    }
-
     public void addProxy(final AbstractProxySelectorImpl proxy) {
         if (proxy != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
