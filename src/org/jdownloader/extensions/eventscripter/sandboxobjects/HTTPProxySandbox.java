@@ -16,8 +16,8 @@ public class HTTPProxySandbox {
         this.proxy = proxy;
     }
 
-    public AbstractProxySelectorImpl.Type getType() {
-        return proxy != null ? proxy.getType() : AbstractProxySelectorImpl.Type.NONE;
+    public String getType() {
+        return proxy != null ? String.valueOf(proxy.getType()) : AbstractProxySelectorImpl.Type.NONE.name();
     }
 
     public String toExportString() {

@@ -419,7 +419,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                     if (downloadLinkSandBox == null) {
                         downloadLinkSandBox = new DownloadLinkSandBox(downloadController.getDownloadLink());
                     }
-                    if (proxySandbox != null) {
+                    if (proxySandbox == null) {
                         proxySandbox = new HTTPProxySandbox(downloadController.getProxySelector());
                     }
                     props.put("link", downloadLinkSandBox);
@@ -458,7 +458,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                         if (downloadLinkSandBox == null) {
                             downloadLinkSandBox = new DownloadLinkSandBox(dlLink);
                         }
-                        if (proxySandbox != null) {
+                        if (proxySandbox == null) {
                             proxySandbox = new HTTPProxySandbox(downloadController.getProxySelector());
                         }
                         props.put("link", downloadLinkSandBox);
