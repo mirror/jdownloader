@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
 
 import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
 import net.lingala.zip4j.core.ZipFile;
@@ -151,8 +152,9 @@ public class Zip4J extends IExtraction {
         final Archive archive = getExtractionController().getArchive();
         String itemPath = item.getFileName();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
-        if (isFiltered(itemPath)) {
-            logger.info("Filtering item:" + itemPath + " from " + firstArchiveFile);
+        Matcher filter = null;
+        if ((filter = isFiltered(itemPath)) != null) {
+            logger.info("Filtering item:" + itemPath + " from " + firstArchiveFile + "|pattern:" + filter.pattern());
             skipped.set(true);
             return null;
         }
@@ -406,7 +408,7 @@ public class Zip4J extends IExtraction {
                     final FileHeader fileHeader = (FileHeader) fileHeaders.get(index);
                     if (fileHeader != null) {
                         final String itemPath = fileHeader.getFileName();
-                        if (StringUtils.isEmpty(itemPath) || isFiltered(itemPath)) {
+                        if (StringUtils.isEmpty(itemPath) || isFiltered(itemPath) != null) {
                             continue;
                         }
                         newView.add(new PackedFile(fileHeader.isDirectory(), itemPath, fileHeader.getUncompressedSize()));

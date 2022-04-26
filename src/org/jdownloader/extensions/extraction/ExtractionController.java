@@ -247,7 +247,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
             archive.onStartExtracting();
             logger.info("Date:" + new Date());
             logger.info("Start Extracting");
-            logger.info("Extension Setup: \r\n" + extension.getSettings().toString());
             logger.info("Archive Setup: \r\n" + JSonStorage.toString(archive.getSettings()));
             logger.info("Start unpacking of " + firstArchiveFile.getFilePath());
             for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {

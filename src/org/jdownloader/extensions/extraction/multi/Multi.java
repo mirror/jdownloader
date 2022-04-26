@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
 
 import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
 import jd.plugins.DownloadLink;
@@ -710,8 +711,9 @@ public class Multi extends IExtraction {
                 itemPath = newItemPath;
             }
         }
-        if (isFiltered(itemPath)) {
-            logger.info("Filtering item:" + itemPath + " from " + firstArchiveFile);
+        Matcher filter = null;
+        if ((filter = isFiltered(itemPath)) != null) {
+            logger.info("Filtering item:" + itemPath + " from " + firstArchiveFile + "|pattern:" + filter.pattern());
             skipped.set(true);
             return null;
         }
@@ -1425,7 +1427,7 @@ public class Multi extends IExtraction {
                 for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
                     try {
                         final String itemPath = item.getPath();
-                        if (StringUtils.isEmpty(itemPath) || isFiltered(itemPath)) {
+                        if (StringUtils.isEmpty(itemPath) || isFiltered(itemPath) != null) {
                             continue;
                         }
                         newView.add(new PackedFile(item.isFolder(), itemPath, item.getSize()));
