@@ -20,13 +20,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -39,7 +32,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?(?:bc\\.vc|bcvc\\.live)/(\\d+/.+|[A-Za-z0-9]{5,7})" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?(?:bc\\.vc|bcvc\\.live|bcvc\\.xyz)/(\\d+/.+|[A-Za-z0-9]{5,7})" })
 public class BcVc extends antiDDoSForDecrypt {
     public BcVc(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +48,7 @@ public class BcVc extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         {
-            final String linkInsideLink = new Regex(param.getCryptedUrl(), "bc\\.vc/\\d+/(.+)").getMatch(0);
+            final String linkInsideLink = new Regex(param.getCryptedUrl(), "(?:bc\\.vc|bcvc\\.live|bcvc\\.xyz)/\\d+/(.+)").getMatch(0);
             if (linkInsideLink != null) {
                 final String finalLinkInsideLink;
                 if (StringUtils.startsWithCaseInsensitive(linkInsideLink, "http") || StringUtils.startsWithCaseInsensitive(linkInsideLink, "ftp")) {
@@ -67,8 +67,7 @@ public class BcVc extends antiDDoSForDecrypt {
             }
         }
         /**
-         * we have to rename them here because we can damage urls within urls.</br>
-         * URLs containing www. will always be offline.
+         * we have to rename them here because we can damage urls within urls.</br> URLs containing www. will always be offline.
          */
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("://www.", "://").replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);
@@ -76,7 +75,7 @@ public class BcVc extends antiDDoSForDecrypt {
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
-            redirect = br.getRegex("top\\.location\\.href = \"((?:http|ftp)[^<>\"]*?)\"").getMatch(0);
+            redirect = br.getRegex("top\\.location\\.href = \"((?:https?|ftp)[^<>\"]*?)\"").getMatch(0);
         }
         if (redirect != null && !this.canHandle(redirect)) {
             decryptedLinks.add(createDownloadlink(redirect));
@@ -112,7 +111,7 @@ public class BcVc extends antiDDoSForDecrypt {
         final String timeBlock3 = new Random().nextInt(10000) + "";
         // String time = "851,262:261.171875,35.609375:" + new Random().nextInt(10000);
         String time = timeBlock1 + ":" + timeBlock2 + ":" + timeBlock3;
-        form1.setAction("https://bcvc.live/ln.php?wds=" + xyz + "&time=" + Encoding.urlEncode(time));
+        form1.setAction("/ln.php?wds=" + xyz + "&time=" + Encoding.urlEncode(time));
         form1.setMethod(MethodType.POST);
         /* See https://bcvc.live/dist/js/bcvcv3.js */
         form1.put(Encoding.urlEncode("xdf[afg]"), new Random().nextInt(300) + ""); // new Date().getTimezoneOffset() / -1

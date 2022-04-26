@@ -9,8 +9,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -98,7 +97,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
                 public void run() {
                     final int delay = getOpenDelay();
                     final Set<String> urls = LinkTreeUtils.getURLs(selection, true);
-                    if (urls.size() < 5) {
+                    if (urls.size() < 5 && delay < 1000) {
                         for (String url : urls) {
                             try {
                                 Thread.sleep(delay);
@@ -145,9 +144,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
                     }, 0, _GUI.T.OpenInBrowserAction_actionPerformed_open_in_browser__multi(), _GUI.T.OpenInBrowserAction_actionPerformed_open_in_browser__multi_msg(urls.size()), NewTheme.I().getIcon(IconKey.ICON_BROWSE, 32), null, null);
                     try {
                         Dialog.getInstance().showDialog(pg);
-                    } catch (DialogClosedException e) {
-                        e.printStackTrace();
-                    } catch (DialogCanceledException e) {
+                    } catch (DialogNoAnswerException e) {
                         e.printStackTrace();
                     }
                 }

@@ -25,9 +25,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotfil.es" }, urls = { "http://(?:www\\.)?hotfil\\.es/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotfil.es" }, urls = { "https?://(?:www\\.)?hotfil\\.es/\\d+" })
 public class HotfilEs extends PluginForDecrypt {
     public HotfilEs(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,8 +52,7 @@ public class HotfilEs extends PluginForDecrypt {
         String fpName = new Regex(parameter, "/download/([^/]+)/\\d+").getMatch(0);
         final String[] hosts = br.getRegex("data-host=\"([^\"]+)\"").getColumn(0);
         if (hosts.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         for (final String singleHost : hosts) {
             this.br.getPage("/fisier/redirect/" + singleHost + "/" + fid);

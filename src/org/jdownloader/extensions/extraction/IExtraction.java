@@ -59,18 +59,18 @@ public abstract class IExtraction {
     }
 
     /* TODO: add support for different path delimiter, eg replace delimiter and check twice */
-    protected boolean isFiltered(final String path) {
+    protected Matcher isFiltered(final String path) {
         final String check = "/".concat(path);
         for (final Matcher regex : filters) {
             try {
                 if (regex.reset(check).matches()) {
-                    return true;
+                    return regex;
                 }
             } catch (final Throwable e) {
                 getLogger().log(e);
             }
         }
-        return false;
+        return null;
     }
 
     public void setLastAccessedArchiveFile(ArchiveFile lastAccessedArchiveFile) {
