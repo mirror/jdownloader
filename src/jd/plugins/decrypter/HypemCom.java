@@ -25,11 +25,13 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hypem.com" }, urls = { "http://(www\\.)?hypem\\.com/((track|item)/[a-z0-9]+|go/[a-z0-9]+/[A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hypem.com" }, urls = { "https?://(www\\.)?hypem\\.com/((track|item)/[a-z0-9]+|go/[a-z0-9]+/[A-Za-z0-9]+)" })
 public class HypemCom extends PluginForDecrypt {
     public HypemCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,22 +46,16 @@ public class HypemCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (parameter.matches(type_redirect)) {
             final String finallink = br.getRedirectLocation();
             if (finallink == null || finallink.contains("hypem.com/")) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            String js = br.getRegex("id=\"displayList\\-data\">(.*?)<script").getMatch(0);
+            String js = br.getRegex("id=\"displayList\\-data\">\\s*(.*?)\\s*</script").getMatch(0);
             Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
             final List<Object> ressourcelist = (List) entries.get("tracks");
             entries = (Map<String, Object>) ressourcelist.get(0);
@@ -68,15 +64,13 @@ public class HypemCom extends PluginForDecrypt {
             final String artist = (String) entries.get("artist");
             final String key = (String) entries.get("key");
             if (title == null || artist == null || key == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("http://hypem.com/serve/source/" + fid + "/" + key + "?_=" + System.currentTimeMillis());
+            br.getPage("https://hypem.com/serve/source/" + fid + "/" + key + "?_=" + System.currentTimeMillis());
             entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             String finallink = (String) entries.get("url");
             if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (!finallink.contains("soundcloud.com/")) {
                 finallink = "directhttp://" + finallink;

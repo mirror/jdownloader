@@ -1497,6 +1497,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 final List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
                 request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
                 br.getHeaders().put(new HTTPHeader("Connection", "close", false));
+                dashLink.setProperty("ServerComaptibleForByteRangeRequest", true);
                 dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream(youtubeConfig));
                 if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
                     try {
@@ -1806,17 +1807,22 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             newView = new DefaultDownloadLinkViewImpl() {
                 @Override
                 public long getBytesLoaded() {
-                    if (isDashAudioOnly) {
-                        final long audio = data.getDashAudioBytesLoaded();
-                        return audio;
-                    } else {
-                        final long video = data.getDashVideoBytesLoaded();
-                        if (!data.isDashVideoFinished()) {
-                            return video;
-                        } else {
+                    final SingleDownloadController dlc = link.getDownloadLinkController();
+                    if (dlc.getDownloadInstance() instanceof SegmentDownloader) {
+                        if (isDashAudioOnly) {
                             final long audio = data.getDashAudioBytesLoaded();
-                            return video + audio;
+                            return audio;
+                        } else {
+                            final long video = data.getDashVideoBytesLoaded();
+                            if (!data.isDashVideoFinished()) {
+                                return video;
+                            } else {
+                                final long audio = data.getDashAudioBytesLoaded();
+                                return video + audio;
+                            }
                         }
+                    } else {
+                        return super.getBytesLoaded();
                     }
                 }
             };
@@ -2223,6 +2229,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             // downloadLink.setInternalTmpFilenameAppend(fileName);
             final YoutubeFinalLinkResource sd = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_VIDEO);
             br.getHeaders().put(new HTTPHeader("Connection", "close", false));
+            downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, sd.getBaseUrl(), resume, getChunksPerStream(PluginJsonConfig.get(YoutubeConfig.class)));
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application")) {
                 try {
