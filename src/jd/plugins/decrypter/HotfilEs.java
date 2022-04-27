@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotfil.es" }, urls = { "https?://(?:www\\.)?hotfil\\.es/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotfiles.eu" }, urls = { "https?://(?:www\\.)?(hotfil\\.es/\\d+|hotfiles\\.eu/download/[^/]+/\\d+)" })
 public class HotfilEs extends PluginForDecrypt {
     public HotfilEs(PluginWrapper wrapper) {
         super(wrapper);

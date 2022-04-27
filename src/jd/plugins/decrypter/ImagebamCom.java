@@ -20,8 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +34,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImagebamCom extends PluginForDecrypt {
@@ -166,6 +166,7 @@ public class ImagebamCom extends PluginForDecrypt {
             }
             final String originalFilename = br.getRegex(galleryID + "\\?full=1\"[^<>]*title=\"([^\"]+)\"").getMatch(0);
             final DownloadLink direct = this.createDownloadlink(finallink);
+            direct.setContentUrl(param.getCryptedUrl());
             final String filenameURL = Plugin.getFileNameFromURL(new URL(finallink));
             if (originalFilename != null) {
                 direct.setFinalFileName(originalFilename);
@@ -282,6 +283,7 @@ public class ImagebamCom extends PluginForDecrypt {
         }
         finallink = Encoding.htmlDecode(finallink);
         final DownloadLink dl = createDownloadlink(finallink);
+        dl.setContentUrl(param.getCryptedUrl());
         String originalFilename = br.getRegex(imageID + "\\?full=1\"[^<>]*title=\"([^\"]+)\"").getMatch(0);
         String urlFilename = extractFileNameFromURL(finallink);
         if (urlFilename != null) {

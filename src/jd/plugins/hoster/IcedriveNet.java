@@ -35,7 +35,9 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IcedriveNet extends PluginForHost {
@@ -68,14 +70,15 @@ public class IcedriveNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:0/[A-Za-z0-9]+|file/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/\\d+");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_OLD                  = "https?://[^/]+/0/([A-Za-z0-9]+)";
-    private static final String TYPE_NEW                  = "https?://[^/]+/file/(\\d+)";
-    public static final String  PROPERTY_INTERNAL_FILE_ID = "internal_file_id";
+    private static final String TYPE_OLD                    = "https?://[^/]+/0/([A-Za-z0-9]+)";
+    private static final String TYPE_NEW                    = "https?://[^/]+/file/(\\d+)";
+    public static final String  PROPERTY_INTERNAL_FILE_ID   = "internal_file_id";
+    public static final String  PROPERTY_INTERNAL_FOLDER_ID = "internal_folder_id";
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -127,12 +130,19 @@ public class IcedriveNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (link.getPluginPatternMatcher().matches(TYPE_OLD)) {
+            // Deprecated/old
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = br.getRegex("<title>([^<>\"]+) - Icedrive</title>").getMatch(0);
-            String filesize = br.getRegex("<p>Size</p>\\s*<p class=\"value\">([^<>\"]+)</p>").getMatch(0);
+            final String folderID = br.getRegex("downloadFolderZip\\((.*?)\\)").getMatch(0);
+            /* Name of current/root folder */
+            String filename = br.getRegex(">\\s*Filename\\s*</p>\\s*<p\\s*class\\s*=\\s*\"value\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
+            final String type = br.getRegex(">\\s*Type\\s*</p>\\s*<p\\s*class\\s*=\\s*\"value\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
+            final String filesize = br.getRegex(">\\s*Size\\s*</p>\\s*<p\\s*class\\s*=\\s*\"value\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
+            if ("Folder".equals(type) || folderID != null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (!StringUtils.isEmpty(filename)) {
                 filename = Encoding.htmlDecode(filename).trim();
                 link.setName(filename);
@@ -140,20 +150,19 @@ public class IcedriveNet extends PluginForHost {
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
-            final String internalFileID = regexFileID(this.br);
-            if (internalFileID == null) {
+            final String fileID = br.getRegex("previewItem\\('(.*?)'").getMatch(0);
+            if (fileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+            link.setProperty(PROPERTY_INTERNAL_FILE_ID, fileID);
             return AvailableStatus.TRUE;
         } else {
+            if (link.getFinalFileName() == null) {
+                requestFileInformation(link, br);
+            }
             /* 2022-02-08: Don't check at all. */
             return AvailableStatus.TRUE;
         }
-    }
-
-    public static String regexFileID(final Browser br) {
-        return br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
     }
 
     @Override
@@ -161,30 +170,49 @@ public class IcedriveNet extends PluginForHost {
         this.handleDownload(link);
     }
 
+    private String requestFileInformation(final DownloadLink link, final Browser br) throws IOException, PluginException {
+        final String internalFileID = this.getInternalFileID(link);
+        if (internalFileID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        brc.getPage("https://icedrive.net/API/Internal/V1/?request=download-multi&items=file-" + URLEncode.encodeURIComponent(internalFileID) + "&public=1&sess=1");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Boolean error = (Boolean) entries.get("error");
+        if (error == Boolean.TRUE) {
+            final String message = (String) entries.get("message");
+            if ("No files found".equals(message)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
+        }
+        final List<Map<String, Object>> mirrors = (List<Map<String, Object>>) entries.get("urls");
+        if (mirrors.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any download mirror");
+        }
+        final Map<String, Object> mirror = mirrors.get(0);
+        final String dllink = (String) mirror.get("url");
+        final long fileSize = JavaScriptEngineFactory.toLong(mirror.get("filesize"), -1);
+        if (fileSize >= 0) {
+            link.setVerifiedFileSize(fileSize);
+        }
+        final String filename = (String) mirror.get("filename");
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(filename);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return dllink;
+        }
+    }
+
     private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         final String directlinkproperty = "free_directlink";
         if (!attemptStoredDownloadurlDownload(link, "free_directlink")) {
-            requestFileInformation(link);
-            final String internalFileID = this.getInternalFileID(link);
-            if (internalFileID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            brc.getPage("https://" + this.getHost() + "/dashboard/ajax/get?req=public-download&id=file-" + internalFileID);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-            final Boolean error = (Boolean) entries.get("error");
-            if (error == Boolean.TRUE) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
-            }
-            /* 2020-07-22: Usually, only one URL/mirror is given */
-            final List<String> mirrors = (List<String>) entries.get("urls");
-            if (mirrors.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any download mirror");
-            }
-            final String dllink = mirrors.get(0);
+            final String dllink = requestFileInformation(link, br);
             if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, null), this.getMaxChunks(null));
@@ -198,8 +226,9 @@ public class IcedriveNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }

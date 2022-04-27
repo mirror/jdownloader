@@ -43,7 +43,6 @@ import org.jdownloader.updatev2.gui.HorizontalPostion;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
-
     /**
      *
      */
@@ -53,7 +52,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     private RenderLabel       lblDeterminded;
     private HorizontalPostion textPosition;
     private NumberFormat      df;
-
     private RenderLabel       lblIndeterminded;
     private RenderLabel       lbl;
     private boolean           percentEnabled;
@@ -185,7 +183,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     public boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
         SwingUtilities.invokeLater(new Runnable() {
-
             public void run() {
                 ToolTipController.getInstance().show(getModel().getTable().createExtTooltip(null));
             }
@@ -216,7 +213,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
              */
             public void onShow() {
                 this.timer = new Timer(1000, new ActionListener() {
-
                     public void actionPerformed(ActionEvent e) {
                         updateRanges(obj, mpb);
                         repaint();
@@ -351,9 +347,12 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return 100;
             } else {
                 if (view.getUnknownFileSizes() > 0) {
+                    // number of files
                     return view.size();
+                } else {
+                    // complete size in bytes
+                    return Math.max(0, view.getSize());
                 }
-                return Math.max(0, view.getSize());
             }
         } else {
             final DownloadLink dLink = (DownloadLink) value;
@@ -391,9 +390,12 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return 100;
             } else {
                 if (view.getUnknownFileSizes() > 0) {
+                    // number of final files
                     return view.getFinalCount();
+                } else {
+                    // downloaded size in bytes
+                    return Math.max(0, view.getDone());
                 }
-                return Math.max(0, view.getDone());
             }
         } else {
             final DownloadLink dLink = (DownloadLink) value;
@@ -411,5 +413,4 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             }
         }
     }
-
 }
