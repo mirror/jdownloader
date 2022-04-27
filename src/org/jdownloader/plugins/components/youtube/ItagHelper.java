@@ -366,8 +366,8 @@ public class ItagHelper {
                 System.out.println("Write " + vi.baseName + " replace " + existingVariant);
                 // appendToSrc(vi.generateVariantSource(dupes), "// ###APPEND###");
                 // removeFromSrc("\r\n\\s+" + existingVariant.name() + "\\(.*?\\}\\s*[,;]", "");
-                // appendToSrc("COMPATIBILITY_MAP.put(\"" + existingVariant.name() + "\"," + vi.createName() + ");", "//
-                // ###APPEND_COMPATIBILITY_MAP###");
+                // appendToSrc("COMPATIBILITY_MAP.put(\"" + existingVariant.name() + "\"," + vi.createName() + ");",
+                // "// ###APPEND_COMPATIBILITY_MAP###");
             }
         }
     }
@@ -403,13 +403,16 @@ public class ItagHelper {
         }
         for (VariantBase v : VariantBase.values()) {
             if (StringUtils.equalsIgnoreCase(v.getContainer().getExtension(), vi.container.getExtension()) && vi.group == v.getGroup() && vi.videoItag == v.getiTagVideo() && vi.audioItag == v.getiTagAudio() && vi.dataItag == v.getiTagData()) {
+                System.out.println(v.getiTagVideo());
+                System.out.println(v.getiTagAudio());
+                System.out.println(v.getiTagData());
                 return v;
             }
         }
         return null;
     }
 
-    private static boolean validCombination(VideoCodec videoCodec, AudioCodec audioCodec) {
+    public static boolean validCombination(VideoCodec videoCodec, AudioCodec audioCodec) {
         switch (videoCodec) {
         case H263:
         case H264:

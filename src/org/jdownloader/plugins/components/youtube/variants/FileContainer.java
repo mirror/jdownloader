@@ -45,9 +45,13 @@ public enum FileContainer implements LabelInterface, TooltipInterface {
     }
 
     public static FileContainer getVideoContainer(YoutubeITAG dashVideo, YoutubeITAG dashAudio) {
+        return getAllVideoContainer(dashVideo, dashAudio)[0];
+    }
+
+    public static FileContainer[] getAllVideoContainer(YoutubeITAG dashVideo, YoutubeITAG dashAudio) {
         switch (dashVideo.getVideoCodec()) {
         case AV1:
-            return FileContainer.MP4;
+            return new FileContainer[] { FileContainer.MP4, FileContainer.MKV };
         default:
             break;
         }
@@ -55,29 +59,29 @@ public enum FileContainer implements LabelInterface, TooltipInterface {
         case DASH_VIDEO:
             switch (dashVideo.getVideoCodec()) {
             case H264:
-                return FileContainer.MP4;
+                return new FileContainer[] { FileContainer.MP4, FileContainer.MKV };
             case AV1:
-                return FileContainer.MP4;
+                return new FileContainer[] { FileContainer.MP4, FileContainer.MKV };
             case H263:
                 throw new WTFException("Unsupported:" + dashVideo.getVideoCodec());
             default:
-                switch (dashAudio.getAudioCodec()) {
-                case AAC:
-                case AAC_SPATIAL:
-                case MP3:
-                    return FileContainer.MKV;
-                default:
-                    return FileContainer.WEBM;
+                final boolean isOpus = dashAudio.getAudioCodec().name().startsWith("OPUS");
+                final boolean isVorbis = dashAudio.getAudioCodec().name().startsWith("VORBIS");
+                final boolean isVPx = dashVideo.getVideoCodec().name().startsWith("VP");
+                if (isVPx && (isOpus || isVorbis)) {
+                    // Only VP8 or VP9 video and Vorbis or Opus audio and WebVTT subtitles are supported for WebM.
+                    return new FileContainer[] { FileContainer.WEBM, FileContainer.MKV };
                 }
+                return new FileContainer[] { FileContainer.MKV };
             }
         case FLV:
-            return FileContainer.FLV;
+            return new FileContainer[] { FileContainer.FLV };
         case MP4:
-            return FileContainer.MP4;
+            return new FileContainer[] { FileContainer.MP4 };
         case THREEGP:
-            return FileContainer.THREEGP;
+            return new FileContainer[] { FileContainer.THREEGP };
         case WEBM:
-            return FileContainer.WEBM;
+            return new FileContainer[] { FileContainer.WEBM };
         default:
             throw new WTFException("Unsupported:" + dashVideo.getVideoCodec());
         }
