@@ -1840,6 +1840,7 @@ gui_plugin_settings_share_online_traffic_workaround_max=<html>启用最大流量
 gui_reconnect_confirm=您是否想重新连接您的互联网连接?
 gui_settings_advanced_title=高级设置
 gui_table_contextmenu_browselink=在浏览器中打开
+gui_table_contextmenu_browselink_delay=在浏览器中打开延时(毫秒)
 gui_table_contextmenu_browselink_maxurls=打开的最多 URLs 数
 gui_table_contextmenu_check=检查在线状态
 gui_table_contextmenu_dlc=创建 DLC
