@@ -20,9 +20,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImageVenueCom extends PluginForHost {
@@ -65,10 +65,29 @@ public class ImageVenueCom extends PluginForHost {
         for (final String[] domains : pluginDomains) {
             String regex = "https?://(?:www\\.)?img[0-9]+\\." + buildHostsPatternPart(domains) + "img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}";
             regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/view/o/\\?i=[^\\&]+\\&h=[^\\&]+";
-            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z0-9]+";
+            // galleries start with GA, images with ME?
+            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!GA)[A-Za-z0-9]+";
+            regex += "|https?://cdn-images\\." + buildHostsPatternPart(domains) + "/[^/]+/[^/]+/[^/]+/[A-Za-z0-9]+[^/\\?]*(\\.png|\\.jpe?g)";
+            regex += "|https?://cdno-data\\." + buildHostsPatternPart(domains) + "/html\\.[^/]+/upload\\d+/loc\\d+/[^/]+(\\.png|\\.jpe?g)";
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        final String url = link != null ? link.getPluginPatternMatcher() : null;
+        final String cdnImageD = new Regex(url, "https?://cdn-images\\.[^/]*/[^/]+/[^/]+/[^/]+/([A-Za-z0-9]+)").getMatch(0);
+        if (cdnImageD != null) {
+            // rewrite cdn-images to normal urls
+            link.setPluginPatternMatcher("https://www." + getHost() + "/" + cdnImageD);
+        } else {
+            final String cdnodata[] = new Regex(url, "https?://cdno-data\\.[^/]*/html\\.([^/]+)/upload\\d+/loc\\d+/([^/]+(?:\\.png|\\.jpe?g))").getRow(0);
+            if (cdnodata != null) {
+                // rewrite cdno-data to normal urls
+                link.setPluginPatternMatcher("https://www." + getHost() + "/view/o/?i=" + cdnodata[1] + "&h=" + cdnodata[0]);
+            }
+        }
     }
 
     @Override
@@ -124,17 +143,21 @@ public class ImageVenueCom extends PluginForHost {
             if (dllink == null) {
                 if (br.containsHTML("tempval\\.focus\\(\\)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    logger.warning("Could not find finallink reference");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                logger.warning("Could not find finallink reference");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String server = new Regex(link.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
-            dllink = "http://" + server + dllink;
+            final String server = new Regex(link.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
+            dllink = "https://" + server + dllink;
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String filename = br.getRegex("src=\"https?://[^\"]+\"[^>]*alt=\"([^<>\"]+)\"").getMatch(0);
+        String filename = br.getRegex("<title>\\s*(?:ImageVenue.com\\s*-)?\\s*(.*?)\\s*</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("src=\"https?://[^\"]+\"[^>]*alt=\"([^<>\"]+)\"").getMatch(0);
+        }
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
@@ -143,14 +166,14 @@ public class ImageVenueCom extends PluginForHost {
             con = br.openHeadConnection(dllink);
             if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (con.getCompleteContentLength() == 14396) {
+            } else if (con.getCompleteContentLength() == 14396) {
                 /* 2021-08-27: Special "404 not image unavailable" dummy picture. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final long size = con.getCompleteContentLength();
-            if (size > 0) {
-                link.setVerifiedFileSize(size);
+            } else {
+                final long size = con.getCompleteContentLength();
+                if (size > 0) {
+                    link.setVerifiedFileSize(size);
+                }
             }
         } finally {
             try {

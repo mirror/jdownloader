@@ -17,18 +17,19 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pic5you.ru", "image2you.ru", "imagecurl.com", "twitpic.com", "pic4you.ru", "freeimagehosting.net", "girlswithmuscle.com" }, urls = { "http://pic5you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(?:www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagecurl.com", "twitpic.com", "girlswithmuscle.com" }, urls = { "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -41,91 +42,30 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
         br.setFollowRedirects(false);
         String finallink = null;
         String finalfilename = null;
-        if (parameter.contains("freeimagehosting.net")) {
-            br.getPage(parameter);
-            /* Error handling */
-            if (!br.containsHTML("uploads/")) {
-                return decryptedLinks;
-            }
-            finallink = parameter.replace("image.php?", "uploads/");
-        } else if (parameter.contains("sharenxs.com/")) {
-            br.getPage(parameter + "&offset=original");
-            finallink = br.getRegex("<img[^>]+class=\"view_photo\" src=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("<a\\s+href=\"#\" onclick='imgsize\\(\\)' ><img[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = br.getRegex("\"(http://cache\\.sharenxs\\.com/images/[^<>\"]*?)\"").getMatch(0);
-                }
-            }
-            finallink = Request.getLocation(finallink, br.getRequest());
-            if (finallink == null && br.containsHTML(">\\(Unnamed Gallery\\)<")) {
-                return decryptedLinks;
-            }
-        } else if (parameter.contains("picsapart.com/")) {
-            finallink = parameter.replace("/photo/", "/download/");
-            finalfilename = new Regex(parameter, "picsapart\\.com/photo/(\\d+)").getMatch(0) + ".jpg";
-        } else if (parameter.contains("pic4you.ru/")) {
-            br.getPage(parameter);
-            finallink = br.getRegex("\"(http://s\\d+\\.pic4you\\.ru/[^<>\"]+\\-thumb\\.[A-Za-z]+)\"").getMatch(0);
-            if (finallink != null) {
-                finallink = finallink.replace("-thumb", "");
-            }
-            if (this.br.getRedirectLocation() != null) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-        } else if (parameter.contains("twitpic.com/")) {
+        if (parameter.contains("twitpic.com/")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             finallink = br.getRedirectLocation();
         } else if (parameter.contains("imagecurl.com/")) {
+            br.setFollowRedirects(true);
             br.getPage(parameter);
-            finallink = br.getRegex("\\('<br/><a href=\"(http://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">").getMatch(0);
+            finallink = br.getRegex("\\('<br/><a href=\"(https?://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("To view its <a href=\"(http://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">true size<").getMatch(0) + finallink;
-            }
-        } else if (parameter.contains("image2you.ru/")) {
-            br.getPage(parameter);
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            } else if (br.containsHTML(">\\s*Такой картинки нет в базе или она была")) {
-                /* 2021-02-15 */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            finallink = br.getRegex("\"(/allimages/[^<>\"]*?)\"><br /><br /><br />").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("\"(/allimages/[^<>\"]*?)\"").getMatch(0);
-            }
-            if (finallink != null) {
-                finallink = finallink.replace("allimages/2_", "allimages/");
-                finallink = "http://image2you.ru" + finallink;
-            }
-        } else if (parameter.contains("pic5you.ru/")) {
-            br.getPage(parameter);
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            br.getPage(parameter + "/1");
-            finallink = this.br.getRegex("<img src=\"(https?://s\\d+\\.pic4you\\.ru/[^<>\"]*?)\"").getMatch(0);
-            if (finallink != null) {
-                finallink = finallink.replace("-thumb", "");
+                finallink = br.getRegex("To view its <a href=\"(https?://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">true size<").getMatch(0) + finallink;
             }
         } else if (parameter.contains("girlswithmuscle.com/")) {
             String fuid = new Regex(parameter, "([\\d+]+)/?$").getMatch(0);
             if (!parameter.endsWith("/")) {
                 parameter = parameter + "/";
             }
+            br.setFollowRedirects(true);
             br.getPage(parameter);
             finallink = br.getRegex("<a href=\"([^\"]+)\">Link to full-size").getMatch(0);
             String ext = new Regex(finallink, "(\\.[a-z0-9]+$)").getMatch(0);
             finalfilename = fuid + " " + br.getRegex("<title>([^<>]+)</title>").getMatch(0) + ext;
         }
         if (finallink == null) {
-            logger.warning("Imagehoster-Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         finallink = Encoding.htmlDecode("directhttp://" + finallink);
         final DownloadLink dl = createDownloadlink(finallink);

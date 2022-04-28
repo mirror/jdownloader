@@ -38,6 +38,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.UrlProtection;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IcedriveNetFolder extends PluginForDecrypt {
@@ -112,6 +113,7 @@ public class IcedriveNetFolder extends PluginForDecrypt {
                 final long filesize = ((Number) resource.get("filesize")).longValue();
                 final DownloadLink dl = this.createDownloadlink(createContentURL(id));
                 dl.setProperty(IcedriveNet.PROPERTY_INTERNAL_FOLDER_ID, folderID);
+                dl.setUrlProtection(UrlProtection.PROTECTED_DECRYPTER);
                 dl.setFinalFileName(Encoding.htmlDecode(filename));
                 dl.setVerifiedFileSize(filesize);
                 dl.setAvailable(true);

@@ -195,6 +195,7 @@ public class FaceBookComVideos extends PluginForHost {
         if (link.getPluginPatternMatcher().matches(TYPE_GROUP_PERMALINK)) {
             br.getPage(link.getPluginPatternMatcher());
             String video = null;
+            boolean loggedIn = false;
             boolean search = true;
             while (search) {
                 search = false;
@@ -205,16 +206,14 @@ public class FaceBookComVideos extends PluginForHost {
                         video = JSonStorage.restoreFromString("\"" + video + "\"", TypeRef.STRING);
                     }
                 }
-                if (video == null && br.containsHTML("When this happens, it's usually because the owner only shared it")) {
-                    if (account != null) {
-                        login(account, this.br, false);
-                        br.getPage(link.getPluginPatternMatcher());
-                    }
-                    if (br.containsHTML("When this happens, it's usually because the owner only shared it")) {
+                if (video == null && (br.containsHTML("When this happens, it's usually because the owner only shared it") || br.containsHTML("\"Private group\""))) {
+                    if (loggedIn || account == null) {
                         throw new AccountRequiredException();
                     } else {
+                        login(account, this.br, false);
+                        loggedIn = true;
+                        br.getPage(link.getPluginPatternMatcher());
                         search = true;
-                        continue;
                     }
                 }
             }

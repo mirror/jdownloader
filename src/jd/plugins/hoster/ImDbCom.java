@@ -99,9 +99,6 @@ public class ImDbCom extends PluginForHost {
         br.setFollowRedirects(true);
         this.br.setLoadLimit(this.br.getLoadLimit() * 3);
         br.getPage(link.getPluginPatternMatcher());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         String ending = null;
         String filename = null;
         if (link.getPluginPatternMatcher().matches(TYPE_PHOTO)) {
@@ -109,7 +106,7 @@ public class ImDbCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* 2020-11-03 */
-            final String json = br.getRegex("id=\"__NEXT_DATA__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
+            final String json = br.getRegex("__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(\\{.*?\\});?\\s*</script").getMatch(0);
             // final String id_main = new Regex(link.getDownloadURL(), "([a-z]{2}\\d+)/mediaviewer").getMatch(0);
             Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             /* Now let's find the specific object ... */
@@ -123,17 +120,9 @@ public class ImDbCom extends PluginForHost {
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dllink == null || !dllink.startsWith("http")) {
+            } else if (dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* 2020-02-17: Not required anymore? This may cripple final downloadurls! */
-            // if (dllink.contains("@@")) {
-            // final String qualityPart = dllink.substring(dllink.lastIndexOf("@@") + 2);
-            // if (qualityPart != null) {
-            // dllink = dllink.replace(qualityPart, "");
-            // }
-            // }
             filename = Encoding.htmlDecode(filename.trim());
             final String fid = new Regex(link.getDownloadURL(), "rm(\\d+)").getMatch(0);
             String artist = br.getRegex("itemprop=\\'url\\'>([^<>\"]*?)</a>").getMatch(0);
@@ -153,44 +142,41 @@ public class ImDbCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            final String json = br.getRegex("\\.querySelector\\(\\'#imdb-video-root-[^\\']+'\\),\\s*(\\{.+\\})\\];").getMatch(0);
+            final String json = br.getRegex("__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(\\{.*?\\});?\\s*</script").getMatch(0);
             Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             /* json inside json */
-            final String json2 = (String) JavaScriptEngineFactory.walkJson(entries, "playbackData/{0}");
-            final List<Object> videoObjects = JSonStorage.restoreFromString(json2, TypeRef.LIST);
+            final List<Map<String, Object>> videoObjects = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoPlaybackData/video/playbackURLs");
             String dllink_http = null;
             String dllink_hls_master = null;
-            for (final Object videoO : videoObjects) {
-                entries = (Map<String, Object>) videoO;
-                final List<Object> qualitiesO = (List<Object>) entries.get("videoLegacyEncodings");
-                for (final Object qualityO : qualitiesO) {
-                    entries = (Map<String, Object>) qualityO;
-                    final String mimeType = (String) entries.get("mimeType");
-                    final String url = (String) entries.get("url");
-                    // final String definition = (String) entries.get("definition"); // E.g. AUTO, 480p, SD
-                    if (StringUtils.isEmpty(mimeType) || StringUtils.isEmpty(url)) {
-                        /* Skip invalid items */
-                        continue;
-                    }
-                    if (mimeType.equalsIgnoreCase("video/mp4")) {
-                        dllink_http = url;
-                    } else if (mimeType.equalsIgnoreCase("application/x-mpegurl")) {
-                        dllink_hls_master = url;
-                    } else {
-                        logger.info("Unsupported mimeType: " + mimeType);
-                    }
+            for (final Map<String, Object> videoO : videoObjects) {
+                final String mimeType = (String) videoO.get("mimeType");
+                final String url = (String) videoO.get("url");
+                // final String definition = (String) entries.get("definition"); // E.g. AUTO, 480p, SD
+                if (StringUtils.isEmpty(mimeType) || StringUtils.isEmpty(url)) {
+                    /* Skip invalid items */
+                    continue;
                 }
-                /* 2020-11-03: Stop after first element - we expect this to contain only one element anyways! */
-                break;
+                if (mimeType.equalsIgnoreCase("video/mp4")) {
+                    if (dllink_http == null) {
+                        // TODO: add quality selection support
+                        dllink_http = url;
+                    }
+                } else if (mimeType.equalsIgnoreCase("application/x-mpegurl")) {
+                    if (dllink_hls_master == null) {
+                        dllink_hls_master = url;
+                    }
+                } else {
+                    logger.info("Unsupported mimeType: " + mimeType);
+                }
             }
             if (filename == null) {
                 filename = this.getFID(link);
             } else {
                 filename = this.getFID(link) + "_" + filename;
             }
-            if (!StringUtils.isEmpty(dllink_hls_master)) {
-                dllink = dllink_hls_master;
-            } else {
+            dllink = dllink_hls_master;
+            if (StringUtils.isEmpty(dllink)) {
+                // TODO: add quality selection support
                 dllink = dllink_http;
             }
             filename = filename.trim();
@@ -290,16 +276,6 @@ public class ImDbCom extends PluginForHost {
         return null;
     }
 
-    /* Simple wrapper due to unexpected LinkedHashMap/HashMap results. */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> getJsonMap(final Object jsono) {
-        if (jsono instanceof Map) {
-            return (Map<String, Object>) jsono;
-        } else {
-            return null;
-        }
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
@@ -316,7 +292,6 @@ public class ImDbCom extends PluginForHost {
         if (dllink.contains(".m3u8")) {
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, dllink);
-            dl.startDownload();
         } else {
             int maxChunks = 0;
             if (link.getDownloadURL().matches(TYPE_VIDEO)) {
@@ -331,8 +306,8 @@ public class ImDbCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
         }
+        dl.startDownload();
     }
 
     private String getConfiguredVideoResolution() {
