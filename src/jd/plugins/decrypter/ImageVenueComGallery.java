@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -26,9 +24,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "https?://(www\\.)?img\\d+\\.imagevenue\\.com/galshow\\.php\\?gal=gallery_.+" })
+import org.jdownloader.plugins.controller.LazyPlugin;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "https?://(www\\.)?(img\\d+\\.)?imagevenue\\.com/(galshow\\.php\\?gal=gallery_.+|GA[A-Za-z0-9]+)" })
 public class ImageVenueComGallery extends PluginForDecrypt {
     public ImageVenueComGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,16 +65,32 @@ public class ImageVenueComGallery extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String[] links = br.getRegex("<a href=\"(https?://img\\d+\\.imagevenue\\.com/img\\.php\\?image=[^<>\"]*?)\" target=\"_blank\"><img src=\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (links != null) {
+            for (String singleLink : links) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
         }
-        for (String singleLink : links) {
-            decryptedLinks.add(createDownloadlink(singleLink));
+        final String images[][] = br.getRegex("<a href\\s*=\\s*\"(https:?//(?:www\\.)?" + getHost() + "/[A-Za-z0-9]+)\"\\s*>\\s*<img[^>]*>\\s*<span>\\s*(.*?)\\s*</span>").getMatches();
+        if (images != null) {
+            for (String image[] : images) {
+                final DownloadLink link = createDownloadlink(image[0]);
+                link.setAvailable(true);
+                link.setName(image[1]);
+                decryptedLinks.add(link);
+            }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "gal=gallery_(.+)").getMatch(0));
-        fp.addLinks(decryptedLinks);
+        if (decryptedLinks.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String title = br.getRegex("<title>\\s*(?:ImageVenue.com\\s*-)?\\s*(.*?)\\s*</title>").getMatch(0);
+        if (title == null) {
+            title = new Regex(parameter, "gal=gallery_(.+)").getMatch(0);
+        }
+        if (title != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 

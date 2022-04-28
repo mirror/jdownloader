@@ -14,6 +14,17 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
+
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -37,17 +48,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     // private static final String COOKIES2 = "googleComCookies";
@@ -463,7 +463,10 @@ public class GoogleHelper {
          */
         if (account.getHoster().equals("youtube.com")) {
             br.getPage("https://www.youtube.com/");
-            return br.containsHTML("\"key\":\"logged_in\",\"value\":\"1\"");
+            br.followRedirect(true);
+            boolean ret = br.containsHTML("\"key\"\\s*:\\s*\"logged_in\"\\s*,\\s*\"value\"\\s*:\\s*\"1\"");
+            ret |= br.containsHTML("\"LOGGED_IN\"\\s*:\\s*true");
+            return ret;
         } else {
             final boolean useTwoLoginValidations = false;
             boolean loggedIN = false;
