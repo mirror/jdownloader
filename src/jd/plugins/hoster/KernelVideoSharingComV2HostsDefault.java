@@ -128,6 +128,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "moviesand.com" });
         /* 2022-04-19 */
         ret.add(new String[] { "goodporn.to" });
+        /* 2022-04-29 */
+        ret.add(new String[] { "xfreehd.com" });
         return ret;
     }
 

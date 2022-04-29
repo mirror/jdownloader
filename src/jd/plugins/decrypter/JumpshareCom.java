@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,7 +29,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jumpshare.com" }, urls = { "https?://(?:www\\.)?(?:jmp\\.sh/(?!v/)[A-Za-z0-9]+|jumpshare\\.com/b/[A-Za-z0-9]+)" })
 public class JumpshareCom extends PluginForDecrypt {
-
     public JumpshareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,12 +42,10 @@ public class JumpshareCom extends PluginForDecrypt {
         if (parameter.matches(TYPE_FOLDER)) {
             this.br.setFollowRedirects(true);
             br.getPage(parameter);
-
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Folder Not Found|The folder you are looking for does not exist")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-
             final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             String fpName = br.getRegex("property=\"og:title\" content=\"([^<>]+)\"").getMatch(0);
             if (fpName == null) {
@@ -69,7 +65,6 @@ public class JumpshareCom extends PluginForDecrypt {
                 dl.setContentUrl(url_content);
                 decryptedLinks.add(dl);
             }
-
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
@@ -91,8 +86,6 @@ public class JumpshareCom extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }
-
         return decryptedLinks;
     }
-
 }

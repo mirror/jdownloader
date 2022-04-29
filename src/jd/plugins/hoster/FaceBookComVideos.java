@@ -71,7 +71,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/(?:photo\\.php|photo/)\\?fbid=(\\d+)";
-    private static final String TYPE_GROUP_PERMALINK                   = "(?i)https://[^/]+/groups/\\d+/permalink/\\d+";
+    private static final String TYPE_GROUP_PERMALINK                   = "(?i)https://[^/]+/groups/[^/]+/permalink/\\d+";
     private static final String TYPE_PHOTO_PART_OF_ALBUM               = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
     /* Allow parameter 'v' to be anywhere in that URL. */
     private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
@@ -116,7 +116,7 @@ public class FaceBookComVideos extends PluginForHost {
             regex += ".*?video\\.php\\?v=\\d+|";
             regex += "video/embed\\?video_id=\\d+|";
             regex += ".*?/videos/(?:[^/]+/)?\\d+|";
-            regex += "groups/\\d+/permalink/\\d+|";
+            regex += "groups/[^/]+/permalink/\\d+|";
             regex += "watch/\\?.*v=\\d+|";
             regex += "watch/live/\\?.*v=\\d+";
             /* Photo RegExes */
