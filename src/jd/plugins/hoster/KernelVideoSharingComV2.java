@@ -125,7 +125,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?videos/\\d+/[a-z0-9\\-]+/|embed/\\d+/?)|https?://(?:m|member)\\." + buildHostsPatternPart(domains) + "/videos/\\d+/[a-z0-9\\-]+/");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?videos?/\\d+/[a-z0-9\\-]+/?|embed/\\d+/?)|https?://(?:m|member)\\." + buildHostsPatternPart(domains) + "/videos?/\\d+/[a-z0-9\\-]+/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -151,7 +151,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+/?|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos?/[a-z0-9\\-]+/?|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -163,7 +163,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+-\\d+/|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos?/[a-z0-9\\-]+-\\d+/|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -218,7 +218,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getPluginPatternMatcher().matches(type_mobile)) {
             /* Correct mobile urls --> Normal URLs | 2020-10-30: This is old but still needed for some sites! */
-            final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)");
+            final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos?/)?\\d+/[a-z0-9\\-]+/?$)");
             link.setPluginPatternMatcher(String.format("%swww.%s", info.getMatch(0), info.getMatch(1)));
         }
     }
@@ -919,7 +919,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         *
+         * 
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);

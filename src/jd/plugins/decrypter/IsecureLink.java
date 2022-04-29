@@ -35,14 +35,20 @@ public class IsecureLink extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String finallink = this.br.getRegex("<iframe src=\"(https?://[^\"]+)\"").getMatch(0);
+        String finallink = br.getRedirectLocation();
+        if (finallink != null && canHandle(finallink)) {
+            br.followRedirect();
+        }
         if (finallink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            finallink = this.br.getRegex("<iframe src=\"(https?://[^\"]+)\"").getMatch(0);
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;

@@ -28,6 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jumpshare.com" }, urls = { "https?://(?:www\\.)?jumpshare\\.com/v/[A-Za-z0-9]+" })
 public class JumpshareCom extends PluginForHost {
     public JumpshareCom(PluginWrapper wrapper) {
@@ -48,17 +50,21 @@ public class JumpshareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0");
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*File Not Found\\s*</h1>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("data\\-gridname=\"([^<>\"]+)\"").getMatch(0);
         String filesize = br.getRegex("data\\-item\\-size=\"(\\d+)\"").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("data\\-item\\-size=\"\">\\s*(.*?)\\s*</").getMatch(0);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(Long.parseLong(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

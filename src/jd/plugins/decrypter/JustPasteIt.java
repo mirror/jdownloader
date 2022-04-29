@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Set;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
@@ -27,6 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 /**
  *
@@ -45,10 +45,11 @@ public class JustPasteIt extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setLoadLimit(3 * br.getLoadLimit());
+        br.setAllowedResponseCodes(451);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Page Not Found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("Page Not Found") || br.containsHTML("<strong>\\s*Article unavailable\\s*</") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 451) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
