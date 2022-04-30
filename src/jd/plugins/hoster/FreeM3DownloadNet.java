@@ -212,6 +212,9 @@ public class FreeM3DownloadNet extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getPage(continueURL);
                 dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    dllink = br.getRegex("(https?://.+(?:mp3|flac))").getMatch(0);
+                }
                 if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Failed to find final downloadurl");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
