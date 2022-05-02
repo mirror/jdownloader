@@ -62,9 +62,6 @@ public class Captcha9kwSolverMultiClick extends AbstractCaptcha9kwSolver<MultiCl
             final String ext = Files.getExtension(captchaChallenge.getImageFile().getName());
             // Animations with non default delays between frames are untested
             boolean gifok = false;
-            if (StringUtils.equalsIgnoreCase("kissanime.to", solverJob.getChallenge().getTypeID()) && ext.equalsIgnoreCase("gif")) {
-                gifok = true;
-            }
             // image size generic handling for png and jpg if it's too big for 9kw.eu
             // Width+Height=max.800px, width under 620px, height under 600px
             if (ext.equalsIgnoreCase("png") || ext.equalsIgnoreCase("jpg") || gifok == true) {
