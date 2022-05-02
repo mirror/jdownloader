@@ -23,10 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -39,6 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spon.de" }, urls = { "https?://(?:www\\.)?spiegel\\.de/.+", "https?://(?:www\\.)?spon\\.de/[A-Za-z0-9]+" })
 public class SpiegelDe extends PluginForDecrypt {
@@ -93,7 +93,7 @@ public class SpiegelDe extends PluginForDecrypt {
             int index = 0;
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(title.trim());
-            final String[] images = br.getRegex("class=\"block w-auto h-full mx-auto\"[^>]*src=\"(https?://[^\"]+)").getColumn(0);
+            final String[] images = br.getRegex("<img \\s*data-image-el[^>]*class=\"[^\"]*mx-auto[^\"]*\"[^>]*src\\s*=\\s*\"(https?://[^\"]+)").getColumn(0);
             for (final String image : images) {
                 final String ending = getFileNameExtensionFromString(image);
                 final DownloadLink dl = this.createDownloadlink(image);
