@@ -24,13 +24,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FreeM3DownloadNetConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -43,6 +36,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FreeM3DownloadNetConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FreeM3DownloadNet extends PluginForHost {
@@ -213,11 +213,15 @@ public class FreeM3DownloadNet extends PluginForHost {
                 br.getPage(continueURL);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    dllink = br.getRegex("(https?://.+(?:mp3|flac))").getMatch(0);
+                    dllink = br.getRegex("(https?://.+\\.(?:mp3|flac))").getMatch(0);
                 }
                 if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Failed to find final downloadurl");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (br.containsHTML("^https?://free-mp3-download.net/?$")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        logger.warning("Failed to find final downloadurl");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 if (captchaRequired) {
                     antiCaptchaCookies.put(this.getHost(), br.getCookies(br.getHost()));
