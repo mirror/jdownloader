@@ -73,14 +73,15 @@ public class SpiegelDe extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawlGallery(final CryptedLink param) throws IOException {
+    private ArrayList<DownloadLink> crawlGallery(final CryptedLink param) throws IOException, PluginException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Picture galleries */
         br.setFollowRedirects(true);
         this.br.getPage(param.getCryptedUrl());
         final String title = new Regex(param.getCryptedUrl(), PATTERN_SUPPORTED_FOTOSTRECKE).getMatch(0).replace("-", " ").trim();
-        if (new Regex(param.getCryptedUrl(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE_SINGLE).matches()) {
-            final String finallink = br.getRegex("<div class=\"biga\\-image\".*?<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (new Regex(br.getURL(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE_SINGLE).matches()) {
+            // did not find a working *single* link, all are redirected to normal links?
+            final String finallink = br.getRegex("<div class=\"biga\\-image\".*?<img src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + param.toString());
                 return null;
@@ -89,7 +90,7 @@ public class SpiegelDe extends PluginForDecrypt {
             final DownloadLink dlLink = this.createDownloadlink(finallink);
             dlLink.setFinalFileName(finalname);
             decryptedLinks.add(dlLink);
-        } else if (new Regex(param.getCryptedUrl(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
+        } else if (new Regex(br.getURL(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
             int index = 0;
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(title.trim());
@@ -103,6 +104,8 @@ public class SpiegelDe extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 index++;
             }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return decryptedLinks;
     }
