@@ -19,14 +19,6 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -45,6 +37,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts/(\\d+)" })
 public class DanbooruDonmaiUs extends PluginForHost {
@@ -300,8 +300,8 @@ public class DanbooruDonmaiUs extends PluginForHost {
     }
 
     /**
-     * Using API: https://danbooru.donmai.us/wiki_pages/help:api </br>
-     * Account types and associated API limits: https://danbooru.donmai.us/wiki_pages/help%3Ausers
+     * Using API: https://danbooru.donmai.us/wiki_pages/help:api </br> Account types and associated API limits:
+     * https://danbooru.donmai.us/wiki_pages/help%3Ausers
      */
     public boolean loginAPI(final Account account, final boolean force) throws Exception {
         synchronized (account) {
@@ -362,6 +362,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
         thread.start();
         return thread;
     }
+
     // /** 2021-04-19: We can't use this due to them using Cloudflare! */
     // public boolean loginWebsite(final Account account, final boolean force) throws Exception {
     // synchronized (account) {
@@ -413,7 +414,6 @@ public class DanbooruDonmaiUs extends PluginForHost {
     // private boolean isLoggedinWebsite() {
     // return br.containsHTML("/logout\"");
     // }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -421,9 +421,11 @@ public class DanbooruDonmaiUs extends PluginForHost {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         /* Level == AccountType --> https://danbooru.donmai.us/user_upgrades/new */
         final String levelString = (String) entries.get("level_string");
-        final int tagQueryLimit = ((Number) entries.get("tag_query_limit")).intValue();
-        account.setProperty(PROPERTY_ACCOUNT_QUERY_LIMIT, tagQueryLimit);
-        if (levelString.matches("Gold|Platinum")) {
+        final Number tagQueryLimit = ((Number) entries.get("tag_query_limit"));
+        if (tagQueryLimit != null) {
+            account.setProperty(PROPERTY_ACCOUNT_QUERY_LIMIT, tagQueryLimit.intValue());
+        }
+        if (levelString != null && levelString.matches("Gold|Platinum")) {
             account.setType(AccountType.PREMIUM);
         } else {
             account.setType(AccountType.FREE);
@@ -435,8 +437,8 @@ public class DanbooruDonmaiUs extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2021-04-19: Account benefits are only used in crawler and not required for downloading single items! </br>
-         * Also, website is used for downloading and API is only used for crawling.
+         * 2021-04-19: Account benefits are only used in crawler and not required for downloading single items! </br> Also, website is used
+         * for downloading and API is only used for crawling.
          */
         if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, resume, maxchunks)) {
             this.loginAPI(account, false);
