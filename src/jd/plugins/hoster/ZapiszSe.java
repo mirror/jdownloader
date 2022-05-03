@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -42,7 +37,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zapisz.se" }, urls = { "" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zapisz.se" }, urls = { "https?://zapisz.se/files/\\d+/([^/]+)?" })
 public class ZapiszSe extends PluginForHost {
     private static final String          WEBSITE_BASE = "https://zapisz.se";
     private static MultiHosterManagement mhm          = new MultiHosterManagement("zapisz.se");
@@ -79,7 +79,22 @@ public class ZapiszSe extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        this.loginWebsite(account, false);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resume, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (br.getURL().matches("https?://zapisz.se/?")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
+            }
+        }
+        this.dl.startDownload();
     }
 
     private void handleDLMultihoster(final Account account, final DownloadLink link, final String dllink) throws Exception {
@@ -167,6 +182,10 @@ public class ZapiszSe extends PluginForHost {
         /* 2020-10-20: I wasn't able to determine any kind of account type ... */
         account.setType(AccountType.PREMIUM);
         ai.setStatus("Premium account");
+        final String trafficLeft = br.getRegex("Pozostały transfer\\s*</div>\\s*<div class\\s*=\\s*\"data-value\"\\s*>\\s*([0-9,\\.TKGBM ]+)\\s*</div>").getMatch(0);
+        if (trafficLeft != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft));
+        }
         // final String premiumDaysStr = br.getRegex("VIP\\sexpires\\sin\\s*(\\d+)\\s*<small").getMatch(0);
         // String trafficleftStr = br.getRegex("</small>((<b>(\\d+(\\.|)\\d{1,2}
         // [A-Za-z]+)</b>)|<strong>([A-Za-zé]+)</strong>)").getMatch(0);

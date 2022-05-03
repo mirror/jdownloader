@@ -216,19 +216,26 @@ public class ORFMediathek extends PluginForHost {
             link.setProperty("FLVFIXER", true);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         } else {
+            boolean isSRT = false;
             if (link.getName().endsWith(".srt")) {
+                isSRT = true;
                 /* Workaround for old downloadcore bug that can lead to incomplete files */
                 br.getHeaders().put("Accept-Encoding", "identity");
             }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, !isSRT, isSRT ? 1 : 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
+                final URLConnectionAdapter con = dl.getConnection();
+                if (isSRT && con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
+                    // valid subtitle
+                } else {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
