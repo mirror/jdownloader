@@ -164,18 +164,17 @@ public class ImgurComHoster extends PluginForHost {
                 } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                entries = (Map<String, Object>) entries.get("data");
-                /** TODO: Check if we can find the uploaders name- and upload-date here too */
-                String title = (String) entries.get("title");
-                final String description = (String) entries.get("description");
-                final long sizeNormal = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
-                final Number sizeMP4 = (Number) entries.get("mp4_size");
-                final String directurlMP4 = (String) entries.get("mp4");
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                String title = (String) data.get("title");
+                final String description = (String) data.get("description");
+                final long sizeNormal = JavaScriptEngineFactory.toLong(data.get("size"), -1);
+                final Number sizeMP4 = (Number) data.get("mp4_size");
+                final String directurlMP4 = (String) data.get("mp4");
                 if (directurlMP4 != null && userPrefersMp4()) {
                     this.dllink = directurlMP4;
                 } else {
-                    dllink = (String) entries.get("link");
+                    dllink = (String) data.get("link");
                 }
                 long filesize;
                 if (userPrefersMp4() && sizeMP4 != null) {
