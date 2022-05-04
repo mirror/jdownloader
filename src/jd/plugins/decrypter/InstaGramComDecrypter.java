@@ -43,6 +43,7 @@ import org.jdownloader.plugins.components.config.InstagramConfig.APIPreference;
 import org.jdownloader.plugins.components.config.InstagramConfig.FilenameType;
 import org.jdownloader.plugins.components.config.InstagramConfig.SinglePostPackagenameSchemeType;
 import org.jdownloader.plugins.components.config.InstagramConfig.StoriesHighlightsPackagenameSchemeType;
+import org.jdownloader.plugins.components.config.InstagramConfig.StoryPackagenameSchemeType;
 import org.jdownloader.plugins.components.instagram.Qdb;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -1388,14 +1389,23 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             /* Story */
             final String reel_type = reel_typeO.toString();
             final List<Map<String, Object>> mediaItems = (List<Map<String, Object>>) item.get("items");
-            final long created_at = ((Number) item.get("created_at")).longValue();
+            final long created_at;
             final String packagenameScheme;
             String title = "";
+            /* Different packagenames for different types of stories and based on user plugin settings. */
             if (reel_type.equals("user_reel")) {
                 /* Story */
-                packagenameScheme = "story - *uploader*";
+                created_at = ((Number) item.get("latest_reel_media")).longValue();
+                final StoryPackagenameSchemeType schemeType = cfg.getStoryPackagenameSchemeType();
+                final String customPackagenameScheme = cfg.getStoryPackagenameScheme();
+                if (schemeType == StoryPackagenameSchemeType.DEFAULT_1 || StringUtils.isEmpty(customPackagenameScheme)) {
+                    packagenameScheme = "story - *uploader*";
+                } else {
+                    packagenameScheme = customPackagenameScheme;
+                }
             } else if (reel_type.equals("highlight_reel")) {
                 /* Story highlight */
+                created_at = ((Number) item.get("created_at")).longValue();
                 title = item.get("title").toString();
                 final StoriesHighlightsPackagenameSchemeType schemeType = cfg.getStoriesHighlightsPackagenameSchemeType();
                 final String customPackagenameScheme = cfg.getStoriesHighlightsPackagenameScheme();

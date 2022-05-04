@@ -28,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "manga.fascans.com" }, urls = { "https?://(?:www\\.)?manga\\.fascans\\.com/manga/[^/]+/\\d+(?:\\.\\d+)?" })
 public class MangaFascansCom extends antiDDoSForDecrypt {
@@ -43,8 +45,7 @@ public class MangaFascansCom extends antiDDoSForDecrypt {
         br.setAllowedResponseCodes(new int[] { 500 });
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex urlinfo = new Regex(parameter, "/manga/([^/]+)/(.+)");
         final String url_name = urlinfo.getMatch(0);
