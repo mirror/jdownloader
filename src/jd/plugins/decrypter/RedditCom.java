@@ -496,7 +496,9 @@ public class RedditCom extends PluginForDecrypt {
                         logger.info("Failed to find selfhosted image(s)");
                     }
                 }
-                if (!StringUtils.isEmpty(postText)) {
+                /* If this != null the post was removed. Still we might be able to find an external image URL sometimes (field "url"). */
+                final String removed_by_category = (String) data.get("removed_by_category");
+                if (!StringUtils.isEmpty(postText) && removed_by_category == null) {
                     /* Look for URLs inside post text. Field 'selftext' is always present but empty when not used. */
                     final String[] urls = HTMLParser.getHttpLinks(postText, null);
                     if (cfg.isCrawlUrlsInsidePostText()) {
@@ -521,8 +523,10 @@ public class RedditCom extends PluginForDecrypt {
                         if (lastAddedMediaItem != null) {
                             /* Use filename that matches other found media item. */
                             filename = lastAddedMediaItem.getName().substring(0, lastAddedMediaItem.getName().lastIndexOf(".")) + ".txt";
-                        } else {
+                        } else if (filenameBeginning != null) {
                             filename = filenameBeginning + ".txt";
+                        } else {
+                            filename = fp.getName();
                         }
                         text.setFinalFileName(filename);
                         try {
@@ -536,7 +540,6 @@ public class RedditCom extends PluginForDecrypt {
                     }
                 }
                 if (thisCrawledLinks.isEmpty() && skippedItems == 0) {
-                    final String removed_by_category = (String) data.get("removed_by_category");
                     if (removed_by_category != null) {
                         final String subredditURL = "https://" + this.getHost() + permalink;
                         final DownloadLink dummy = this.createOfflinelink(subredditURL, "REMOVED_BY_" + removed_by_category + "_" + postID, "This post has been removed by " + removed_by_category + ".");
