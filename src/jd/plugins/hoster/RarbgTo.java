@@ -59,7 +59,7 @@ public class RarbgTo extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rarbg.to", "rarbgproxied.org", "rarbgproxy.org" });
+        ret.add(new String[] { "rarbg.to", "rarbg.com", "rarbgproxied.org", "rarbgproxy.org", "rarbgp2p.org", "proxyrarbg.org", "rarbgaccessed.org", "rarbgaccess.org", "rarbgget.org", "rarbggo.org", "rarbg.is", "rarbgmirror.com", "rarbgmirrored.org", "rarbgmirror.org", "rarbgprx.org", "rarbgto.org", "rarbgunblock.com", "rarbgway.org" });
         return ret;
     }
 

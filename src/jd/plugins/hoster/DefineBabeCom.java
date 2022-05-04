@@ -130,14 +130,7 @@ public class DefineBabeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is busy", 5 * 60 * 1000l);
         }
         String title = jd.plugins.decrypter.DefinebabeComDecrypter.getURLTitleCleaned(br.getURL());
-        String videoID = br.getRegex("video_id=(\\d+)").getMatch(0);
-        if (videoID == null) {
-            videoID = br.getRegex("id=\\'comment_object_id\\' value=\"(\\d+)\"").getMatch(0);
-        }
-        if (videoID == null) {
-            /* 2021-07-26 */
-            videoID = br.getRegex("'video_id'\\s*:\\s*(\\d+)").getMatch(0);
-        }
+        final String videoID = getVideoID(br);
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -192,6 +185,18 @@ public class DefineBabeCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static final String getVideoID(final Browser br) {
+        String videoID = br.getRegex("video_id=(\\d+)").getMatch(0);
+        if (videoID == null) {
+            videoID = br.getRegex("id=\\'comment_object_id\\' value=\"(\\d+)\"").getMatch(0);
+        }
+        if (videoID == null) {
+            /* 2021-07-26 */
+            videoID = br.getRegex("'video_id'\\s*:\\s*(\\d+)").getMatch(0);
+        }
+        return videoID;
     }
 
     public static boolean isOffline(final Browser br) {
