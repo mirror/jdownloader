@@ -324,6 +324,7 @@ public class RedditCom extends PluginForDecrypt {
                 /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
                 boolean addedRedditSelfhostedVideo = false;
                 String externalURL = (String) data.get("url");
+                DownloadLink lastAddedMediaItem = null;
                 if (!StringUtils.isEmpty(externalURL) && !this.canHandle(externalURL)) {
                     if (Encoding.isHtmlEntityCoded(externalURL)) {
                         externalURL = Encoding.htmlDecode(externalURL);
@@ -343,6 +344,7 @@ public class RedditCom extends PluginForDecrypt {
                         }
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
+                        lastAddedMediaItem = dl;
                     } else if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
                         serverFilename = applyFilenameExtension(serverFilename, ".jpg");
                         if (filenameBase != null) {
@@ -354,6 +356,7 @@ public class RedditCom extends PluginForDecrypt {
                         }
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
+                        lastAddedMediaItem = dl;
                     }
                     thisCrawledLinks.add(dl);
                 }
@@ -403,6 +406,7 @@ public class RedditCom extends PluginForDecrypt {
                             image.setComment(caption);
                         }
                         thisCrawledLinks.add(image);
+                        lastAddedMediaItem = image;
                         imageNumber++;
                     }
                     break;
@@ -485,6 +489,7 @@ public class RedditCom extends PluginForDecrypt {
                             }
                             image.setAvailable(true);
                             thisCrawledLinks.add(image);
+                            lastAddedMediaItem = image;
                             imageNumber++;
                         }
                     } else {
@@ -492,6 +497,26 @@ public class RedditCom extends PluginForDecrypt {
                     }
                 }
                 if (!StringUtils.isEmpty(postText)) {
+                    final TextCrawlerMode mode = cfg.getCrawlerTextDownloadMode();
+                    if (mode == TextCrawlerMode.ALWAYS || (mode == TextCrawlerMode.ONLY_IF_NO_MEDIA_AVAILABLE && !postContainsRealMedia)) {
+                        final DownloadLink text = this.createDownloadlink("reddidtext://" + postID);
+                        final String filename;
+                        if (lastAddedMediaItem != null) {
+                            /* Use filename that matches other found media item. */
+                            filename = lastAddedMediaItem.getName().substring(0, lastAddedMediaItem.getName().lastIndexOf(".")) + ".txt";
+                        } else {
+                            filename = filenameBeginning + ".txt";
+                        }
+                        text.setFinalFileName(filename);
+                        try {
+                            text.setDownloadSize(postText.getBytes("UTF-8").length);
+                        } catch (final UnsupportedEncodingException ignore) {
+                            ignore.printStackTrace();
+                        }
+                        text.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
+                        text.setAvailable(true);
+                        thisCrawledLinks.add(text);
+                    }
                     /* Look for URLs inside post text. Field 'selftext' is always present but empty when not used. */
                     final String[] urls = HTMLParser.getHttpLinks(postText, null);
                     if (cfg.isCrawlUrlsInsidePostText()) {
@@ -508,27 +533,6 @@ public class RedditCom extends PluginForDecrypt {
                         }
                     } else {
                         skippedItems += urls.length;
-                    }
-                    final TextCrawlerMode mode = cfg.getCrawlerTextDownloadMode();
-                    if (mode == TextCrawlerMode.ALWAYS || (mode == TextCrawlerMode.ONLY_IF_NO_MEDIA_AVAILABLE && !postContainsRealMedia)) {
-                        final DownloadLink text = this.createDownloadlink("reddidtext://" + postID);
-                        final String filename;
-                        if (thisCrawledLinks.size() == 1) {
-                            /* Use filename that matches other found media item. */
-                            final DownloadLink lastAddedDownloadLink = thisCrawledLinks.get(0);
-                            filename = lastAddedDownloadLink.getName().substring(0, lastAddedDownloadLink.getName().lastIndexOf(".")) + ".txt";
-                        } else {
-                            filename = filenameBeginning + ".txt";
-                        }
-                        text.setFinalFileName(filename);
-                        try {
-                            text.setDownloadSize(postText.getBytes("UTF-8").length);
-                        } catch (final UnsupportedEncodingException ignore) {
-                            ignore.printStackTrace();
-                        }
-                        text.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
-                        text.setAvailable(true);
-                        thisCrawledLinks.add(text);
                     }
                 }
                 if (thisCrawledLinks.isEmpty() && skippedItems == 0) {
