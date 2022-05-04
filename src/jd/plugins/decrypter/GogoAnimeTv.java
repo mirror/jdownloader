@@ -25,15 +25,17 @@ import jd.controlling.ProgressController;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
 
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.tv" }, urls = { "https?://(\\w+\\.)?(?:gogoanime\\.(?:tv|io|vc|sh)|gogodramaonline\\.com|gogodrama\\.us|vidstreaming\\.io)/(?:(?:watch/)?[-A-Za-z0-9]+-episode-\\d+|(?:embed|streaming|load)\\.php\\?id=[a-zA-Z0-9_/\\+=\\-%]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.tv" }, urls = { "https?://(\\w+\\.)?(?:gogoanime\\.(?:tv|io|vc|sh|gg)|gogodramaonline\\.com|gogodrama\\.us)/[a-z0-9\\-]+" })
 @SuppressWarnings("deprecation")
 public class GogoAnimeTv extends antiDDoSForDecrypt {
     public GogoAnimeTv(final PluginWrapper wrapper) {
@@ -69,6 +71,14 @@ public class GogoAnimeTv extends antiDDoSForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
+            }
+        }
+        /* 2022-05-04 */
+        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance("gogoplay4.com");
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : urls) {
+            if (plg.canHandle(url)) {
+                decryptedLinks.add(this.createDownloadlink(url));
             }
         }
         return decryptedLinks;

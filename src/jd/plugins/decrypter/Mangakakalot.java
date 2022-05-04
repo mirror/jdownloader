@@ -28,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangakakalot.com" }, urls = { "https?://(www\\.)?mangakakalot\\.com/(manga|chapter)/.*" })
 public class Mangakakalot extends antiDDoSForDecrypt {
@@ -40,17 +42,15 @@ public class Mangakakalot extends antiDDoSForDecrypt {
         return 1;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> cryptedLinks = new ArrayList<String>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 503 });
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 NOT FOUND")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 NOT FOUND")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 503) {
             logger.info("Too many requests - try again later");
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -97,7 +97,7 @@ public class Mangakakalot extends antiDDoSForDecrypt {
         // break;
         // }
         // }
-        final String[] pics = br.getRegex("<img src=\"(https?://[^\"]+\\d+\\.jpg)\"").getColumn(0);
+        final String[] pics = br.getRegex("<img src=\"(https?://[^\"]+/img/[^\"]+\\.jpg)\"").getColumn(0);
         final DecimalFormat df = new DecimalFormat("000");
         int pageCounter = 0;
         for (final String pic : pics) {
