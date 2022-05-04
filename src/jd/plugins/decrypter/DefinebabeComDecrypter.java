@@ -23,6 +23,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.hoster.DefineBabeCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "definebabe.com" }, urls = { "https?://(?:www\\.)?definebabes?\\.com/video/([a-z0-9]+)/([a-z0-9\\-]+)/" })
 public class DefinebabeComDecrypter extends PornEmbedParser {
@@ -37,7 +38,7 @@ public class DefinebabeComDecrypter extends PornEmbedParser {
 
     @Override
     protected boolean isOffline(final Browser br) {
-        return jd.plugins.hoster.DefineBabeCom.isOffline(this.br);
+        return DefineBabeCom.isOffline(this.br);
     }
 
     public static String getURLTitleCleaned(final String url) {
@@ -62,7 +63,12 @@ public class DefinebabeComDecrypter extends PornEmbedParser {
     }
 
     @Override
-    protected boolean assumeSelfhostedContentOnNoResults() {
-        return true;
+    protected boolean isSelfhosted(final Browser br) {
+        final String videoID = DefineBabeCom.getVideoID(br);
+        if (videoID != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

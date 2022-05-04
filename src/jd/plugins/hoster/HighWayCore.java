@@ -40,7 +40,6 @@ import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -607,7 +606,7 @@ public abstract class HighWayCore extends UseNet {
             link.removePluginProgress(waitProgress);
         }
         logger.info("Cache handling: Timeout");
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, (String) entries.get("for_jd"), ((Integer) entries.get("retry_in_seconds")).intValue() * 1000l);
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, (String) entries.get("for_jd"), ((Number) entries.get("retry_in_seconds")).intValue() * 1000l);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
