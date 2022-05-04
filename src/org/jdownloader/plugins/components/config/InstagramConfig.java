@@ -31,6 +31,14 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Post crawler: Enter custom package name scheme for instagram.com/p/<id>";
         }
 
+        public String getStoriesHighlightsPackagenameSchemeType_label() {
+            return "Story highlights crawler: Select package name scheme type for instagram.com/stories/highlights/123456789..../ URLs";
+        }
+
+        public String getStoriesHighlightsPackagenameScheme_label() {
+            return "Story highlights crawler: Enter custom package name scheme for instagram.com/stories/highlights/123456789..../";
+        }
+
         public String getFilenameType_label() {
             return "Select filename type for all crawled media items";
         }
@@ -140,6 +148,37 @@ public interface InstagramConfig extends PluginConfigInterface {
     String getPostCrawlerPackagenameScheme();
 
     void setPostCrawlerPackagenameScheme(String str);
+
+    public static enum StoriesHighlightsPackagenameSchemeType implements LabelInterface {
+        DEFAULT_1 {
+            @Override
+            public String getLabel() {
+                return "story highlights - *uploader* - *title*";
+            }
+        },
+        CUSTOM {
+            @Override
+            public String getLabel() {
+                return "Custom";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT_1")
+    @Order(6)
+    @DescriptionForConfigEntry("Story highlights crawler: Select package name scheme type for instagram.com/stories/highlights/123456789..../ URLs")
+    StoriesHighlightsPackagenameSchemeType getStoriesHighlightsPackagenameSchemeType();
+
+    void setStoriesHighlightsPackagenameSchemeType(final StoriesHighlightsPackagenameSchemeType namingSchemeType);
+
+    @AboutConfig
+    @DefaultStringValue("*date*_*uploader* - *title*")
+    @DescriptionForConfigEntry("Story highlights crawler: Enter custom package name scheme for instagram.com/stories/highlights/123456789..../")
+    @Order(7)
+    String getStoriesHighlightsPackagenameScheme();
+
+    void setStoriesHighlightsPackagenameScheme(String str);
 
     public static enum FilenameType implements LabelInterface {
         DEFAULT {
