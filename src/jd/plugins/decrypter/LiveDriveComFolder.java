@@ -33,7 +33,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String FOLDERLINK = "http://[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32}";
+    private static final String FOLDERLINK = "https?://[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32}";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
