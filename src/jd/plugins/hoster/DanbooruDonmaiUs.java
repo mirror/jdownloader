@@ -102,8 +102,12 @@ public class DanbooruDonmaiUs extends PluginForHost {
             logger.info("Availablecheck via directurl successful");
             return AvailableStatus.TRUE;
         }
+        br.setAllowedResponseCodes(451);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 451) {
+            // Unavailable For Legal Reasons
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*The artist requested removal of this page")) {
             /* 2021-04-19 */

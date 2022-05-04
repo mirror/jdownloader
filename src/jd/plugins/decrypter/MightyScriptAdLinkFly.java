@@ -34,6 +34,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -49,6 +50,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     public enum CaptchaType {
+        hCaptcha,
         reCaptchaV2,
         reCaptchaV2_invisible,
         solvemedia,
@@ -148,68 +150,99 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 if (form == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /* Captcha type will usually stay the same even on bad solve attempts! */
-                // captchaType = getCaptchaType();
-                if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
-                    requiresCaptchaWhichCanFail = false;
-                    final String key;
-                    if (captchaType == CaptchaType.reCaptchaV2) {
-                        key = getAppVarsResult("reCAPTCHA_site_key");
-                    } else {
-                        key = getAppVarsResult("invisible_reCAPTCHA_site_key");
-                    }
-                    if (StringUtils.isEmpty(key)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find reCaptchaV2 key");
-                    }
-                    /**
-                     * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                     * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
-                     * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
-                     */
-                    final String reCaptchaSiteURL;
-                    if (this.getSpecialReferer() != null) {
-                        /* Required e.g. for sh2rt.com. */
-                        reCaptchaSiteURL = br.getBaseURL();
-                    } else {
-                        /* Fine for most of all websites. */
-                        reCaptchaSiteURL = br.getURL();
-                    }
-                    recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
-                        @Override
-                        public TYPE getType() {
-                            if (captchaType == CaptchaType.reCaptchaV2_invisible) {
-                                return TYPE.INVISIBLE;
-                            } else {
-                                return TYPE.NORMAL;
+                final InputField action = form.getInputField("action");
+                if (action == null || !"continue".equals(action.getValue()) || "captcha".equals(action.getValue())) {
+                    /* Captcha type will usually stay the same even on bad solve attempts! */
+                    // captchaType = getCaptchaType();
+                    if (captchaType == CaptchaType.hCaptcha) {
+                        requiresCaptchaWhichCanFail = false;
+                        final String key = getAppVarsResult("hcaptcha_checkbox_site_key");
+                        if (StringUtils.isEmpty(key)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find reCaptchaV2 key");
+                        }
+                        final String siteURL;
+                        if (this.getSpecialReferer() != null) {
+                            /* Required e.g. for sh2rt.com. */
+                            siteURL = br.getBaseURL();
+                        } else {
+                            /* Fine for most of all websites. */
+                            siteURL = br.getURL();
+                        }
+                        final String hCaptchaResponse = new CaptchaHelperCrawlerPluginHCaptcha(this, br, key) {
+                            @Override
+                            protected String getSiteUrl() {
+                                return siteURL;
                             }
+                        }.getToken();
+                        form.put("g-recaptcha-response", Encoding.urlEncode(hCaptchaResponse));
+                        form.put("h-captcha-response", Encoding.urlEncode(hCaptchaResponse));
+                        /* Small workaround, see https://svn.jdownloader.org/issues/89825 */
+                        final InputField submit = form.getInputField("submit");
+                        if (submit != null && submit.getValue() == null) {
+                            form.put("submit", "");
                         }
+                    } else if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
+                        requiresCaptchaWhichCanFail = false;
+                        final String key;
+                        if (captchaType == CaptchaType.reCaptchaV2) {
+                            key = getAppVarsResult("reCAPTCHA_site_key");
+                        } else {
+                            key = getAppVarsResult("invisible_reCAPTCHA_site_key");
+                        }
+                        if (StringUtils.isEmpty(key)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find reCaptchaV2 key");
+                        }
+                        /**
+                         * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
+                         * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another
+                         * website as the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from
+                         * happening.
+                         */
+                        final String reCaptchaSiteURL;
+                        if (this.getSpecialReferer() != null) {
+                            /* Required e.g. for sh2rt.com. */
+                            reCaptchaSiteURL = br.getBaseURL();
+                        } else {
+                            /* Fine for most of all websites. */
+                            reCaptchaSiteURL = br.getURL();
+                        }
+                        recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
+                            @Override
+                            public TYPE getType() {
+                                if (captchaType == CaptchaType.reCaptchaV2_invisible) {
+                                    return TYPE.INVISIBLE;
+                                } else {
+                                    return TYPE.NORMAL;
+                                }
+                            }
 
-                        @Override
-                        protected String getSiteUrl() {
-                            return reCaptchaSiteURL;
+                            @Override
+                            protected String getSiteUrl() {
+                                return reCaptchaSiteURL;
+                            }
+                        }.getToken();
+                        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                        /* Small workaround, see https://svn.jdownloader.org/issues/89825 */
+                        final InputField submit = form.getInputField("submit");
+                        if (submit != null && submit.getValue() == null) {
+                            form.put("submit", "");
                         }
-                    }.getToken();
-                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    /* Small workaround, see https://svn.jdownloader.org/issues/89825 */
-                    final InputField submit = form.getInputField("submit");
-                    if (submit != null && submit.getValue() == null) {
-                        form.put("submit", "");
+                    } else if (captchaType == CaptchaType.solvemedia) {
+                        final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
+                        if (StringUtils.isEmpty(solvemediaChallengeKey)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find solvemedia_challenge_key");
+                        }
+                        requiresCaptchaWhichCanFail = true;
+                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                        sm.setChallengeKey(solvemediaChallengeKey);
+                        final String code = getCaptchaCode("solvemedia", sm.downloadCaptcha(getLocalCaptchaFile()), param);
+                        final String chid = sm.getChallenge(code);
+                        form.put("adcopy_challenge", chid);
+                        form.put("adcopy_response", "manual_challenge");
+                    } else {
+                        /* This should never happen */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported captcha type!");
                     }
-                } else if (captchaType == CaptchaType.solvemedia) {
-                    final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
-                    if (StringUtils.isEmpty(solvemediaChallengeKey)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find solvemedia_challenge_key");
-                    }
-                    requiresCaptchaWhichCanFail = true;
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    sm.setChallengeKey(solvemediaChallengeKey);
-                    final String code = getCaptchaCode("solvemedia", sm.downloadCaptcha(getLocalCaptchaFile()), param);
-                    final String chid = sm.getChallenge(code);
-                    form.put("adcopy_challenge", chid);
-                    form.put("adcopy_response", "manual_challenge");
-                } else {
-                    /* This should never happen */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported captcha type!");
                 }
                 submitForm(form);
                 if (getLinksGoForm(param, br) != null) {
@@ -430,7 +463,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /* No captcha or plugin broken */
             return null;
         }
-        if (captchaTypeStr.equalsIgnoreCase("recaptcha")) {
+        if (captchaTypeStr.equalsIgnoreCase("hcaptcha_checkbox")) {
+            return CaptchaType.hCaptcha;
+        } else if (captchaTypeStr.equalsIgnoreCase("recaptcha")) {
             /*
              * 2018-07-18: For 'recaptcha', key is in "reCAPTCHA_site_key"; for 'invisible-recaptcha', key is in
              * "invisible_reCAPTCHA_site_key" --> We can usually use "reCAPTCHA_site_key" as well (tested with urle.co) ... but it is better
