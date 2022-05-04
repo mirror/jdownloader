@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -37,6 +31,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "https?://(www\\.)?livestream\\.com/[^<>\"]+/videos/\\d+" })
 public class LiveStreamCom extends PluginForHost {
@@ -103,7 +103,7 @@ public class LiveStreamCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("window\\.config[\t\n\r ]*?=[\t\n\r ]*?(\\{.+);</script>").getMatch(0);
+        final String json = br.getRegex("window\\.config[\t\n\r ]*?=[\t\n\r ]*?(\\{.+?);</script>").getMatch(0);
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -163,7 +163,9 @@ public class LiveStreamCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, -1, e);
                 }
                 if (!con.getContentType().contains("text") && con.isOK()) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        downloadLink.setDownloadSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -205,7 +207,7 @@ public class LiveStreamCom extends PluginForHost {
         requestFileInformation(link);
         if (StringUtils.isNotEmpty(progressive_url)) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, progressive_url, free_resume, free_maxchunks);
-            if (dl.getConnection().getContentType().contains("text")) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {

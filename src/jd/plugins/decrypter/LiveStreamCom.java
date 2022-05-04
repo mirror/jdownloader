@@ -6,10 +6,12 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -24,11 +26,20 @@ public class LiveStreamCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
+        final String title = br.getRegex("<title>\\s*(.*?)\\s*(?:on\\s*Livestream)?\\s*</title>").getMatch(0);
         final String eventsID = new Regex(parameter.getCryptedUrl(), "/events/(\\d+)").getMatch(0);
         final String accountID = br.getRegex("/accounts/(\\d+)/events/" + eventsID).getMatch(0);
         if (accountID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final FilePackage fp;
+        if (title != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlOnlyDecode(title));
+        } else {
+            fp = null;
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         Long lastEntryID = null;
@@ -51,6 +62,7 @@ public class LiveStreamCom extends PluginForDecrypt {
                 final long entryID = JavaScriptEngineFactory.toLong(entryData.get("id"), -1);
                 final String type = (String) entry.get("type");
                 if (type == null || !type.equals("video")) {
+                    logger.info("Unsupported type:" + type + "|id:" + entryID);
                     continue;
                 }
                 if (entryID != -1) {
@@ -62,6 +74,7 @@ public class LiveStreamCom extends PluginForDecrypt {
                     link.setName(caption + ".mp4");
                     link.setAvailable(true);
                     ret.add(link);
+                    fp.add(link);
                 }
             }
             final long total = JavaScriptEngineFactory.toLong(entries.get("total"), -1);
