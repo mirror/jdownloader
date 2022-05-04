@@ -497,6 +497,23 @@ public class RedditCom extends PluginForDecrypt {
                     }
                 }
                 if (!StringUtils.isEmpty(postText)) {
+                    /* Look for URLs inside post text. Field 'selftext' is always present but empty when not used. */
+                    final String[] urls = HTMLParser.getHttpLinks(postText, null);
+                    if (cfg.isCrawlUrlsInsidePostText()) {
+                        if (!StringUtils.isEmpty(postText)) {
+                            if (urls.length > 0) {
+                                logger.info(String.format("Found %d URLs in selftext", urls.length));
+                                for (final String url : urls) {
+                                    final DownloadLink dl = this.createDownloadlink(url);
+                                    thisCrawledLinks.add(dl);
+                                }
+                            } else {
+                                logger.info("Failed to find any URLs in selftext");
+                            }
+                        }
+                    } else {
+                        skippedItems += urls.length;
+                    }
                     final TextCrawlerMode mode = cfg.getCrawlerTextDownloadMode();
                     if (mode == TextCrawlerMode.ALWAYS || (mode == TextCrawlerMode.ONLY_IF_NO_MEDIA_AVAILABLE && !postContainsRealMedia)) {
                         final DownloadLink text = this.createDownloadlink("reddidtext://" + postID);
@@ -516,23 +533,6 @@ public class RedditCom extends PluginForDecrypt {
                         text.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
                         text.setAvailable(true);
                         thisCrawledLinks.add(text);
-                    }
-                    /* Look for URLs inside post text. Field 'selftext' is always present but empty when not used. */
-                    final String[] urls = HTMLParser.getHttpLinks(postText, null);
-                    if (cfg.isCrawlUrlsInsidePostText()) {
-                        if (!StringUtils.isEmpty(postText)) {
-                            if (urls.length > 0) {
-                                logger.info(String.format("Found %d URLs in selftext", urls.length));
-                                for (final String url : urls) {
-                                    final DownloadLink dl = this.createDownloadlink(url);
-                                    thisCrawledLinks.add(dl);
-                                }
-                            } else {
-                                logger.info("Failed to find any URLs in selftext");
-                            }
-                        }
-                    } else {
-                        skippedItems += urls.length;
                     }
                 }
                 if (thisCrawledLinks.isEmpty() && skippedItems == 0) {
