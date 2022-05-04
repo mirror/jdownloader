@@ -215,6 +215,9 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             if (timeRemaining != null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not yet released, cannot download");
             }
+            if (br.containsHTML("(?i)>\\s*This is a member only download")) {
+                throw new AccountRequiredException();
+            }
             Form dlform = br.getFormbyProperty("id", "downloadform");
             if (dlform == null) {
                 /* 2021-02-25: E.g. for single mp3 files */

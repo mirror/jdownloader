@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,59 +28,84 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lhtranslation.net" }, urls = { "https?://(?:www\\.)?lhtranslation\\.(?:com|net)/read\\-([a-z0-9\\-]+)\\-chapter\\-(\\d+)\\.html" })
-public class Lhtranslation extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lhtranslation.net" }, urls = { "https?://(?:www\\.)?lhtranslation\\.(?:com|net)/manga/([a-z0-9\\-]+)/(chapter-(\\d+)/?)?" })
+public class Lhtranslation extends PluginForDecrypt {
     public Lhtranslation(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
+    }
+
     /* Tags: MangaPictureCrawler */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         final String extension_fallback = ".jpg";
         br.setFollowRedirects(true);
-        getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex urlinfo = new Regex(parameter, this.getSupportedLinks());
-        String name_chapter = br.getRegex("<h1><font color=\"white\">([^<>\"]+) Chapter \\d+</font></h1>").getMatch(0);
-        final String url_chapter = urlinfo.getMatch(1);
-        final String url_name = urlinfo.getMatch(0);
-        String ext = null;
-        final String[] images = br.getRegex("data-original='(https?://[^<>\"\\']+)'").getColumn(0);
-        if (images == null || images.length == 0) {
-            return null;
-        }
-        if (name_chapter == null) {
-            /* Fallback */
-            name_chapter = url_name;
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(name_chapter + "_" + url_chapter);
-        final int padLength = StringUtils.getPadLength(images.length);
-        int page = 0;
-        for (final String finallink : images) {
-            page++;
-            final String page_formatted = String.format(Locale.US, "%0" + padLength + "d", page);
-            if (finallink == null) {
-                return null;
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
+        final String url_mangaTitle = urlinfo.getMatch(0);
+        final String url_chapterNumber = urlinfo.getMatch(2);
+        if (url_chapterNumber == null) {
+            /* Crawl all chapters */
+            final String realMangaURL = br.getURL();
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            // br.getHeaders().put("", "");
+            // br.getHeaders().put("", "");
+            br.postPage("/manga/" + url_mangaTitle + "/ajax/chapters/", "");
+            final String[] chapters = br.getRegex("(" + org.appwork.utils.Regex.escape(realMangaURL) + "/?chapter-\\d+/?)").getColumn(0);
+            logger.info("Found " + chapters.length + " chapters");
+            if (chapters.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            ext = getFileNameExtensionFromURL(finallink, extension_fallback);
-            if (ext == null) {
-                ext = extension_fallback;
+            for (final String url : chapters) {
+                decryptedLinks.add(this.createDownloadlink(url));
             }
-            final String filename = name_chapter + "_" + url_chapter + "_" + page_formatted + ext;
-            final DownloadLink dl = this.createDownloadlink(finallink);
-            dl._setFilePackage(fp);
-            dl.setFinalFileName(filename);
-            dl.setLinkID(filename);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            distribute(dl);
+        } else {
+            /* Crawl single chapter */
+            String title_chapter = br.getRegex("<h1><font color=\"white\">([^<>\"]+) Chapter \\d+</font></h1>").getMatch(0);
+            String ext = null;
+            final String[] images = br.getRegex("id=\"image-\\d+\" data-src=\"\\s*(https?://[^<>\"\\']+)").getColumn(0);
+            if (images.length == 0) {
+                /* Assume that content is offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (title_chapter == null) {
+                /* Fallback */
+                title_chapter = url_mangaTitle;
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title_chapter + "_" + url_chapterNumber);
+            final int padLength = StringUtils.getPadLength(images.length);
+            int page = 0;
+            for (final String finallink : images) {
+                page++;
+                final String page_formatted = String.format(Locale.US, "%0" + padLength + "d", page);
+                if (finallink == null) {
+                    return null;
+                }
+                ext = getFileNameExtensionFromURL(finallink, extension_fallback);
+                if (ext == null) {
+                    ext = extension_fallback;
+                }
+                final String filename = title_chapter + "_" + url_chapterNumber + "_" + page_formatted + ext;
+                final DownloadLink dl = this.createDownloadlink(finallink);
+                dl._setFilePackage(fp);
+                dl.setFinalFileName(filename);
+                dl.setLinkID(filename);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                distribute(dl);
+            }
         }
         return decryptedLinks;
     }

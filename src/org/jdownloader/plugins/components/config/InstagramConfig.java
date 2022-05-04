@@ -31,6 +31,14 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Post crawler: Enter custom package name scheme for instagram.com/p/<id>";
         }
 
+        public String getStoryPackagenameSchemeType_label() {
+            return "Story crawler: Select package name scheme type for instagram.com/stories/username/123456789..../ URLs";
+        }
+
+        public String getStoryPackagenameScheme_label() {
+            return "Story crawler: Enter custom package name scheme for instagram.com/stories/username/123456789..../";
+        }
+
         public String getStoriesHighlightsPackagenameSchemeType_label() {
             return "Story highlights crawler: Select package name scheme type for instagram.com/stories/highlights/123456789..../ URLs";
         }
@@ -148,6 +156,37 @@ public interface InstagramConfig extends PluginConfigInterface {
     String getPostCrawlerPackagenameScheme();
 
     void setPostCrawlerPackagenameScheme(String str);
+
+    public static enum StoryPackagenameSchemeType implements LabelInterface {
+        DEFAULT_1 {
+            @Override
+            public String getLabel() {
+                return "story - *uploader*";
+            }
+        },
+        CUSTOM {
+            @Override
+            public String getLabel() {
+                return "Custom";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT_1")
+    @Order(4)
+    @DescriptionForConfigEntry("Story crawler: Select package name scheme type for instagram.com/stories/username/123456789..../ URLs")
+    StoryPackagenameSchemeType getStoryPackagenameSchemeType();
+
+    void setStoryPackagenameSchemeType(final StoryPackagenameSchemeType namingSchemeType);
+
+    @AboutConfig
+    @DefaultStringValue("*date*_*uploader*")
+    @DescriptionForConfigEntry("Story crawler: Enter custom package name scheme for instagram.com/stories/username/123456789..../")
+    @Order(5)
+    String getStoryPackagenameScheme();
+
+    void setStoryPackagenameScheme(String str);
 
     public static enum StoriesHighlightsPackagenameSchemeType implements LabelInterface {
         DEFAULT_1 {

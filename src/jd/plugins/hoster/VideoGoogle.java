@@ -1,5 +1,15 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.plugins.components.RefreshSessionLink;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.URLConnectionAdapter;
@@ -14,15 +24,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.plugins.components.RefreshSessionLink;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://(?!translate\\.)\\w+\\.googleusercontent\\.com/.+|https?://[\\w\\-\\.]+drive\\.google\\.com/videoplayback\\?.+" })
 public class VideoGoogle extends PluginForHost {
@@ -55,13 +56,17 @@ public class VideoGoogle extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, dllink, true, 0);
-        if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("video")) {
-            br.followConnection();
-            if (br.containsHTML("No htmlCode read")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.videogoogle.videotemporaryunavailable", "This video is temporary unavailable!"), 60 * 60 * 1000l);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = new jd.plugins.BrowserAdapter().openDownload(this.br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (br.getRequest().toString().length() < 100) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This media item is temporary unavailable!", 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -103,7 +108,7 @@ public class VideoGoogle extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(Encoding.unicodeDecode(dllink));
-            if (!con.getContentType().contains("video")) {
+            if (!looksLikeDownloadableContent(con)) {
                 logger.info("Directurl seems to have expired - trying to refresh it");
                 dllink = refreshDirectlink(link);
                 if (dllink == null) {
@@ -117,8 +122,10 @@ public class VideoGoogle extends PluginForHost {
                 con = br.openGetConnection(dllink);
             }
             String fileName = null;
-            if (con.getContentType().contains("video")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
                 if (link.isNameSet()) {
                     // maybe we set a filename but doesn't have extension yet!
                     fileName = link.getName();
@@ -158,12 +165,22 @@ public class VideoGoogle extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        final String contentType = urlConnection.getContentType();
+        if (contentType.contains("video") || contentType.contains("image")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
