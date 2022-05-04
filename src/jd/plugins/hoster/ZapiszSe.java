@@ -81,7 +81,8 @@ public class ZapiszSe extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.loginWebsite(account, false);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resume, maxchunks);
+        // looks like those files cannot be resumed!?
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
