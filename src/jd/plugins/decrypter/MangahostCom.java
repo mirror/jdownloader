@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,16 +30,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MangahostCom extends antiDDoSForDecrypt {
     public MangahostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    final static String[] domains = { "mangahost.com", "mangahost.net", "mangahost.me", "mangahost.org", "mangahost.cc", "yesmangas.net", "mangahosts.com", "mangahost1.com", "mangahost2.com", "mangahosted.com" };
+    final static String[] domains = { "mangahost.com", "mangahost4.com", "mangahost.net", "mangahost.me", "mangahost.org", "mangahost.cc", "yesmangas.net", "mangahosts.com", "mangahost1.com", "mangahost2.com", "mangahosted.com" };
 
     /**
      * returns the annotation pattern array

@@ -32,7 +32,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -62,7 +61,7 @@ public class TransferChomikujPl extends PluginForHost {
     @SuppressWarnings("deprecation")
     public TransferChomikujPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://transfer-chomikuj.pl/");
+        this.enablePremium("https://allegro.pl/uzytkownik/TransferChomikuj");
     }
 
     @Override

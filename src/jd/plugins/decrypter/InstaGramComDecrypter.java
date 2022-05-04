@@ -1398,10 +1398,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 /* Story highlight */
                 title = item.get("title").toString();
                 final StoriesHighlightsPackagenameSchemeType schemeType = cfg.getStoriesHighlightsPackagenameSchemeType();
-                if (schemeType == StoriesHighlightsPackagenameSchemeType.DEFAULT_1) {
+                final String customPackagenameScheme = cfg.getStoriesHighlightsPackagenameScheme();
+                if (schemeType == StoriesHighlightsPackagenameSchemeType.DEFAULT_1 || StringUtils.isEmpty(customPackagenameScheme)) {
                     packagenameScheme = "story highlights - *uploader* - *title*";
                 } else {
-                    packagenameScheme = cfg.getStoriesHighlightsPackagenameScheme();
+                    packagenameScheme = customPackagenameScheme;
                 }
             } else {
                 /* Unknown/Unsupported reel_type */
