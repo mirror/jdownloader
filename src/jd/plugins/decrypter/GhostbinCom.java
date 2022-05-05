@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -24,6 +26,8 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ghostbin.com" }, urls = { "https?://(?:www\\.)?ghostbin\\.com/paste/[a-z0-9]+" })
@@ -32,16 +36,20 @@ public class GhostbinCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.PASTEBIN };
+    }
+
     /* DEV NOTES */
     // Tags: pastebin
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    // Notes: 2022-05-05: Doesn't work in most of all cases due to Cloudflare
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String plaintxt = br.getRegex("class=\"code\" id=\"code\">([^<]+)<").getMatch(0);
         if (plaintxt == null) {
@@ -50,7 +58,7 @@ public class GhostbinCom extends PluginForDecrypt {
         // Find all those links
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
-            logger.info("Found no links in link: " + parameter);
+            logger.info("Found no links in link: " + param.getCryptedUrl());
             return decryptedLinks;
         }
         for (final String dl : links) {

@@ -89,6 +89,7 @@ public class AvThNet extends PluginForDecrypt {
                 if (urlTitleCleaned != null) {
                     video.setProperty(AvThXyz.PROPERTY_TITLE, urlTitleCleaned);
                 }
+                video.setReferrerUrl(br.getURL());
                 decryptedLinks.add(video);
             }
         }
