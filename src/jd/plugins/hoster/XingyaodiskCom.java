@@ -22,18 +22,13 @@ import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,21 +38,21 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class RosefileNet extends PluginForHost {
-    public RosefileNet(PluginWrapper wrapper) {
+public class XingyaodiskCom extends PluginForHost {
+    public XingyaodiskCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://rosefile.net/vip.php");
+        // this.enablePremium("http://xingyaodisk.com/vip.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://rosefile.net/";
+        return "http://www.xingyaodisk.com/";
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rosefile.net" });
+        ret.add(new String[] { "xingyaodisk.com", "xingyaopan.com" });
         return ret;
     }
 
@@ -73,21 +68,15 @@ public class RosefileNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d/)?([a-z0-9]{10})(/([^/]+)\\.html)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:fs|down)/([a-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME       = true;
+    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXDOWNLOADS = 20;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -105,6 +94,10 @@ public class RosefileNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -112,16 +105,12 @@ public class RosefileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2021-04-12: Trust filename inside URL. */
-        String filename = br.getRegex("<title>\\s*(.*?)\\s*-\\s*RoseFile\\s*</title>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-            filename = Encoding.htmlDecode(filename);
-        }
+        String filename = br.getRegex("(?i)>\\s*文件下载\\s*:([^<]+)<").getMatch(0);
         if (filename != null) {
-            link.setName(filename.trim());
-        } else if (!link.isNameSet()) {
-            /* Fallback */
-            link.setName(this.getFID(link));
+            final String fileExtension = br.getRegex("src='images/filetype_\\d+/([a-z0-9]+)\\.gif'").getMatch(0);
+            filename = Encoding.htmlDecode(filename).trim();
+            filename = this.correctOrApplyFileNameExtension(filename, "." + fileExtension);
+            link.setName(filename);
         }
         String filesize = br.getRegex("<span class=\"h4\">(\\d+[^<>\"]+)</span>").getMatch(0);
         if (filesize != null) {
@@ -141,14 +130,14 @@ public class RosefileNet extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             this.requestFileInformation(link);
-            if (account != null) {
-                this.login(account, false);
-                /* Extra check! */
-                br.getPage(link.getPluginPatternMatcher());
-                if (!this.isLoggedin(br)) {
-                    throw new AccountUnavailableException("Session expired?", 30 * 1000l);
-                }
-            }
+            // if (account != null) {
+            // this.login(account, false);
+            // /* Extra check! */
+            // br.getPage(link.getPluginPatternMatcher());
+            // if (!this.isLoggedin(br)) {
+            // throw new AccountUnavailableException("Session expired?", 30 * 1000l);
+            // }
+            // }
             final String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
             if (internalFileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -166,14 +155,19 @@ public class RosefileNet extends PluginForHost {
             // if (br.toString().equals("false")) {
             // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             // }
-            ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + internalFileID);
-            String dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
+            ajax.postPage("/ajax.php", "action=load_down_addr5&file_id=" + internalFileID);
+            String dllink = ajax.getRegex("true\\|.*?a href=\"(https?://[^/]+/dl2\\.php[^\"]+)").getMatch(0);
+            if (dllink == null) {
+                dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
+            }
             if (dllink == null) {
                 dllink = ajax.getRegex("true\\|(http[^<>\"]+)").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dllink.startsWith("vip.php")) {
+                throw new AccountRequiredException();
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -182,8 +176,10 @@ public class RosefileNet extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                if (br.containsHTML("(?i)The file does not exist")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /* Limit waittime / time needed until start of more downloads is allowed. */
+                final String waitSecsStr = br.getRegex("var seconds?_left = (\\d+);").getMatch(0);
+                if (waitSecsStr != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitSecsStr) * 1001l);
                 }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
@@ -202,6 +198,7 @@ public class RosefileNet extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        /* Captcha can be skipped */
         return false;
     }
 
@@ -227,98 +224,6 @@ public class RosefileNet extends PluginForHost {
             }
             return false;
         }
-    }
-
-    private boolean login(final Account account, final boolean force) throws Exception {
-        synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                /*
-                 * 2021-11-09: Warning: They only allow one active session per account so user logging in via browser may end JDs session!
-                 */
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
-                        return false;
-                    }
-                    br.getPage("https://" + this.getHost() + "/");
-                    if (this.isLoggedin(br)) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
-                }
-                logger.info("Performing full login");
-                br.getPage("https://" + this.getHost() + "/account.php?action=login");
-                final Form loginform = br.getFormbyProperty("name", "user_form");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
-                br.getPage("/mydisk.php?item=profile&menu=cp");
-                if (!isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
-            }
-        }
-    }
-
-    private boolean isLoggedin(final Browser br) {
-        return br.containsHTML("action=logout");
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        if (!br.getURL().contains("/mydisk.php?item=profile&menu=cp")) {
-            br.getPage("/mydisk.php?item=profile&menu=cp");
-        }
-        ai.setUnlimitedTraffic();
-        final String premiumExpire = br.getRegex("<td>Account type</td>\\s*<td>\\s*<b class=\"text-danger\">\\s*Premium\\s*<small>\\((\\d{4}-\\d{2}-\\d{2})\\)</small>").getMatch(0);
-        if (premiumExpire == null) {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) user");
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumExpire, "yyyy-MM-dd", Locale.ENGLISH), br);
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account");
-        }
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (account.getType() == AccountType.PREMIUM) {
-            this.handleDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "premium_directlink");
-        } else {
-            this.handleDownload(link, account, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_free_directlink");
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
