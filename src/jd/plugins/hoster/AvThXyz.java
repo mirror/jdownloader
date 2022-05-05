@@ -105,9 +105,19 @@ public class AvThXyz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String fid = this.getFID(link);
-        br.getHeaders().put("Referer", "https://www.av-th.net/%e0%b8%99%e0%b8%a7%e0%b8%94%e0%b9%80%e0%b8%87%e0%b8%b5%e0%b9%89%e0%b8%a2%e0%b8%a7%e0%b8%81%e0%b8%a3%e0%b8%b0%e0%b9%80%e0%b8%88%e0%b8%b5%e0%b8%a2%e0%b8%a7%e0%b8%9d%e0%b8%a3%e0%b8%b1%e0%b9%88%e0%b8%87-c/");
+        if (link.getReferrerUrl() != null) {
+            br.getHeaders().put("Referer", link.getReferrerUrl());
+        } else {
+            br.getHeaders().put("Referer", "https://www.av-th.net/");
+        }
         br.postPage("https://" + this.getHost() + "/player/index.php?data=" + fid + "&do=getVideo", "hash=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getRequest().getHtmlCode().startsWith("{")) {
+            /*
+             * No json response --> Content must be offline. They do not return the correct json Content-Type header so this is the only way
+             * we can check.
+             */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;

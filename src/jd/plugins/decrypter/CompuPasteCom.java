@@ -19,6 +19,10 @@ import java.io.File;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,16 +36,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "https?://(?:[a-z0-9]+\\.)?compupaste\\.com/\\?v=[A-Za-z0-9]+" })
 public class CompuPasteCom extends PluginForDecrypt {
     public CompuPasteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /** Tags: Pastebin */
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.PASTEBIN };
+    }
+
+    /**
+     * This plugin is purposely not using AbstractPastebinCrawler because although it looks like a pastebin website, it works more like a
+     * linkcrypter.
+     */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
