@@ -29,8 +29,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.YoutubeDashV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MegaDpUaFolder extends PluginForDecrypt {
@@ -61,57 +64,66 @@ public class MegaDpUaFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]{2}/)?([A-Za-z0-9]{3,})");
+            final String hostsPatternPart = buildHostsPatternPart(domains);
+            String regex = "https?://(?:www\\.)?" + hostsPatternPart + "/(?:[a-z]{2}/)?([A-Za-z0-9]{3,})";
+            regex += "|https?://video\\." + hostsPatternPart + "/\\?video=[A-Za-z0-9\\-_]+";
+            ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    private static final String TYPE_VIDEO = "https?://video\\.[^/]+/\\?video=([A-Za-z0-9\\-_]+)";
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        final String parameter = param.toString();
-        br.getPage(parameter);
-        if (jd.plugins.hoster.MegaDpUa.isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        String passCode = null;
-        if (this.getPasswordProtectedForm() != null) {
-            final Form pwform = this.getPasswordProtectedForm();
-            passCode = getUserInput("Password?", param);
-            pwform.put("pass", Encoding.urlEncode(passCode));
-            br.submitForm(pwform);
+        final Regex video = new Regex(param.getCryptedUrl(), TYPE_VIDEO);
+        if (video.matches()) {
+            final String videoID = video.getMatch(0);
+            decryptedLinks.add(this.createDownloadlink(YoutubeDashV2.generateContentURL(videoID)));
+        } else {
+            br.getPage(param.getCryptedUrl());
+            if (jd.plugins.hoster.MegaDpUa.isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String passCode = null;
             if (this.getPasswordProtectedForm() != null) {
-                throw new DecrypterException(DecrypterException.PASSWORD);
+                final Form pwform = this.getPasswordProtectedForm();
+                passCode = getUserInput("Password?", param);
+                pwform.put("pass", Encoding.urlEncode(passCode));
+                br.submitForm(pwform);
+                if (this.getPasswordProtectedForm() != null) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
             }
-        }
-        final String[] folderHTMLs = br.getRegex("<tr><td><div class=\"urlfile\"(.*?)</td></tr>").getColumn(0);
-        for (final String folderHTML : folderHTMLs) {
-            final String filename = new Regex(folderHTML, ">([^<>\"]+)</div>").getMatch(0);
-            final String filesize = new Regex(folderHTML, "<td style=[^>]*>([^<>\"]+)</td>").getMatch(0);
-            final String url = new Regex(folderHTML, plg.getSupportedLinks()).getMatch(-1);
-            final String directurl = new Regex(folderHTML, "class=\"hidden-link\"[^>]*data-link=\"(https://[^<>\"]+)").getMatch(0);
-            if (url == null) {
-                /* Skip invalid items */
-                continue;
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            final String[] folderHTMLs = br.getRegex("<tr><td><div class=\"urlfile\"(.*?)</td></tr>").getColumn(0);
+            for (final String folderHTML : folderHTMLs) {
+                final String filename = new Regex(folderHTML, ">([^<>\"]+)</div>").getMatch(0);
+                final String filesize = new Regex(folderHTML, "<td style=[^>]*>([^<>\"]+)</td>").getMatch(0);
+                final String url = new Regex(folderHTML, plg.getSupportedLinks()).getMatch(-1);
+                final String directurl = new Regex(folderHTML, "class=\"hidden-link\"[^>]*data-link=\"(https://[^<>\"]+)").getMatch(0);
+                if (url == null) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                final DownloadLink dl = this.createDownloadlink(url);
+                if (filename != null) {
+                    /* 2021-02-26: They're tagging their filenames -> Prefer the ones we find here */
+                    dl.setFinalFileName(Encoding.htmlDecode(filename).trim());
+                }
+                if (filesize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
+                dl.setAvailable(true);
+                if (passCode != null) {
+                    dl.setDownloadPassword(passCode);
+                }
+                /* Saving this directurl will help us later so we can skip the password form ;) */
+                if (directurl != null) {
+                    dl.setProperty("free_directlink", directurl);
+                }
+                decryptedLinks.add(dl);
             }
-            final DownloadLink dl = this.createDownloadlink(url);
-            if (filename != null) {
-                /* 2021-02-26: They're tagging their filenames -> Prefer the ones we find here */
-                dl.setFinalFileName(Encoding.htmlDecode(filename).trim());
-            }
-            if (filesize != null) {
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-            }
-            dl.setAvailable(true);
-            if (passCode != null) {
-                dl.setDownloadPassword(passCode);
-            }
-            /* Saving this directurl will help us later so we can skip the password form ;) */
-            if (directurl != null) {
-                dl.setProperty("free_directlink", directurl);
-            }
-            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }

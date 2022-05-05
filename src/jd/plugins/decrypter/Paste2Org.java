@@ -19,19 +19,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = { "https?://(?:www\\.)?paste2\\.org/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class Paste2Org extends AbstractPastebinCrawler {
     public Paste2Org(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    String getFID(final String url) {
+        return new Regex(url, this.getSupportedLinks()).getMatch(0);
     }
 
     public static List<String[]> getPluginDomains() {
@@ -60,12 +65,6 @@ public class Paste2Org extends AbstractPastebinCrawler {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
-    }
-
-    /* DEV NOTES */
-    // Tags: pastebin
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        return super.decryptIt(param, progress);
     }
 
     @Override

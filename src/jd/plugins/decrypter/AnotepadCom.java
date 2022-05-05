@@ -1,78 +1,93 @@
-//jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.parser.html.HTMLParser;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
+import java.util.List;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anotepad.com" }, urls = { "https?://(?:www\\.)?anotepad\\.com/notes/[a-z0-9]+" })
-public class AnotepadCom extends PluginForDecrypt {
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class AnotepadCom extends AbstractPastebinCrawler {
     public AnotepadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* DEV NOTES */
-    // Tags: pastebin
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)This note either is private or has been deleted")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+    @Override
+    String getFID(final String url) {
+        return new Regex(url, this.getSupportedLinks()).getMatch(0);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "anotepad.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/notes/([a-z0-9]+)");
         }
-        /* Single link */
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected String getPastebinText(final Browser br) throws PluginException, IOException {
         String plaintxt = br.getRegex("href\\s*=\\s*\"(https?[^<>\"]+)\">\\s*Download Link\\s*:\\s*Click Here").getMatch(0);
         if (plaintxt == null) {
             /* Plaintext containing multiple links (?) */
-            plaintxt = br.getRegex("<div class\\s*=\\s*\"plaintext\">([^<>]+)</div>").getMatch(0);
+            plaintxt = br.getRegex("<div class\\s*=\\s*\"plaintext[^\"]*\">([^<>]+)</div>").getMatch(0);
             if (plaintxt == null) {
-                plaintxt = br.getRegex("<div class\\s*=\\s*\"note_content\">(.*?)class\\s*=\\s*\"sub-header\"").getMatch(0);
-                plaintxt = new Regex(plaintxt, "<div class\\s*=\\s*\"richtext\">(.*?)</div>").getMatch(0);
+                final String plaintxtTmp = br.getRegex("<div class\\s*=\\s*\"note_content\">(.*?)class\\s*=\\s*\"sub-header\"").getMatch(0);
+                if (plaintxtTmp != null) {
+                    plaintxt = new Regex(plaintxtTmp, "<div class\\s*=\\s*\"richtext\">(.*?)</div>").getMatch(0);
+                }
             }
         }
-        if (plaintxt == null) {
-            /* Fallback */
-            logger.info("Failed to find exact html, scanning full html code of website for downloadable content");
-            plaintxt = br.toString();
+        return plaintxt;
+    }
+
+    @Override
+    protected void preProcess(final CryptedLink param) throws IOException, PluginException {
+        br.getPage(param.getCryptedUrl());
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)This note either is private or has been deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* Find URLs inside plaintext/html code */
-        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links == null || links.length == 0) {
-            logger.info("Found no links in plaintext: " + parameter);
-            return decryptedLinks;
-        }
-        logger.info("Found " + links.length + " URLs in total");
-        for (String dl : links) {
-            if (!dl.contains(parameter) && this.canHandle(parameter)) {
-                final DownloadLink link = createDownloadlink(dl);
-                decryptedLinks.add(link);
-            }
-        }
-        logger.info("Added " + decryptedLinks.size() + " URLs in total");
-        return decryptedLinks;
     }
 }
