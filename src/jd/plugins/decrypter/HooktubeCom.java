@@ -24,6 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.YoutubeDashV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hooktube.com" }, urls = { "https?://(?:www\\.)?hooktube\\.com/watch\\?v=([A-Za-z0-9\\-_]+)" })
 public class HooktubeCom extends PluginForDecrypt {
@@ -34,9 +35,8 @@ public class HooktubeCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String linkid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String finallink = String.format("https://youtube.com/watch?v=%s", linkid);
-        decryptedLinks.add(createDownloadlink(finallink));
+        final String videoID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        decryptedLinks.add(createDownloadlink(YoutubeDashV2.generateContentURL(videoID)));
         return decryptedLinks;
     }
 }

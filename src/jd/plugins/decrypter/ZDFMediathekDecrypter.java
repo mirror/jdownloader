@@ -52,6 +52,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
 
@@ -325,7 +326,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (type.equals("video-youtube")) {
                 /* Embedded youtube video */
                 final String youtubeVideoID = (String) video.get("id");
-                ret.add(super.createDownloadlink("https://www.youtube.com/watch?v=" + youtubeVideoID));
+                ret.add(super.createDownloadlink(YoutubeDashV2.generateContentURL(youtubeVideoID)));
             } else if (type.equals("video-smubl")) {
                 /* "Selfhosted" content --> Hosted on zdf.de */
                 final String zdfContentID = video.get("content").toString();

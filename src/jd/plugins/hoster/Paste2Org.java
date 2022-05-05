@@ -21,7 +21,6 @@ import java.io.UnsupportedEncodingException;
 
 import org.appwork.utils.IO;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,10 +30,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.decrypter.Paste2Org.class })
 public class Paste2Org extends PluginForHost {
     public Paste2Org(PluginWrapper wrapper) {
         super(wrapper);
@@ -78,8 +79,6 @@ public class Paste2Org extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    /* DEV NOTES */
-    // Tags: pastebin
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {

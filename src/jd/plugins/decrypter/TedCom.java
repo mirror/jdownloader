@@ -24,6 +24,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.YoutubeDashV2;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "https?://(?:www\\.)?ted\\.com/(talks/(?:lang/[a-zA-Z\\-]+/)?[\\w_]+|[\\w_]+\\?language=\\w+|playlists/\\d+/[^/]+)" })
@@ -178,7 +179,7 @@ public class TedCom extends PluginForDecrypt {
                 final String mediaCode = (String) externalMedia.get("code");
                 final String service = (String) externalMedia.get("service");
                 if (!StringUtils.isEmpty(service) && !StringUtils.isEmpty(mediaCode) && service.equalsIgnoreCase("youtube")) {
-                    decryptedLinks.add(createDownloadlink("https://www.youtube.com/watch?v=" + mediaCode));
+                    decryptedLinks.add(createDownloadlink(YoutubeDashV2.generateContentURL(mediaCode)));
                 }
                 final String uri = (String) externalMedia.get("uri");
                 if (!StringUtils.isEmpty(uri)) {

@@ -57,7 +57,7 @@ public class ManganatoCom extends antiDDoSForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            String imgSrc = br.getRegex("<div class=\"container-chapter-reader\">(.+)").getMatch(0);
+            String imgSrc = br.getRegex("<div class=\"container-chapter-reader\">\\s+(.*?)\n").getMatch(0);
             if (imgSrc == null) {
                 /* Fallback */
                 imgSrc = br.getRequest().getHtmlCode();
@@ -89,25 +89,6 @@ public class ManganatoCom extends antiDDoSForDecrypt {
                 distribute(link);
                 pageNumber++;
             }
-            // String images[][] = br.getRegex("(?i)img\\s*src\\s*=\\s*\"(https?://[^\"]*?/(\\d+)\\.(jpe?g|png))\"").getMatches();
-            // if (images == null || images.length == 0) {
-            // images = br.getRegex("(?i)img\\s*src\\s*=\\s*\"(https?://[^\"]*?/img/[^\"]*/(\\d+)[^/]*\\.(jpe?g|png))\"").getMatches();
-            // }
-            // if (images == null || images.length == 0) {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // for (final String image[] : images) {
-            // if (dups.add(image[0])) {
-            // final DownloadLink link = createDownloadlink("directhttp://" + image[0]);
-            // if (title != null) {
-            // link.setFinalFileName(title + "-Page_" + String.format(Locale.US, "%0" + padLength + "d", pageNumber) + "." + image[2]);
-            // }
-            // link.setAvailable(true);
-            // link._setFilePackage(fp);
-            // ret.add(link);
-            // distribute(link);
-            // }
-            // }
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

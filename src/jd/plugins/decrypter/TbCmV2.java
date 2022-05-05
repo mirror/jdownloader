@@ -93,6 +93,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.hoster.YoutubeDashV2;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|shorts/|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?index=\\d+)?(.*?page=\\d+)?(.*?list=[%A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
@@ -484,12 +485,12 @@ public class TbCmV2 extends PluginForDecrypt {
                     vid.error = emsg;
                 }
                 if (vid.streams == null || StringUtils.isNotEmpty(vid.error)) {
-                    decryptedLinks.add(createOfflinelink("http://youtube.com/watch?v=" + vid.videoID, "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
+                    decryptedLinks.add(createOfflinelink(YoutubeDashV2.generateContentURL(vid.videoID), "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
                     continue;
                 }
             }
             if (vid.streams == null || StringUtils.isNotEmpty(vid.error)) {
-                decryptedLinks.add(createOfflinelink("http://youtube.com/watch?v=" + vid.videoID, "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
+                decryptedLinks.add(createOfflinelink(YoutubeDashV2.generateContentURL(vid.videoID), "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
                 if (vid.streams == null) {
                     continue;
                 }
