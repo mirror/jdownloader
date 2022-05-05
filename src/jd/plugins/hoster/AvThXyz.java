@@ -108,6 +108,7 @@ public class AvThXyz extends PluginForHost {
         if (link.getReferrerUrl() != null) {
             br.getHeaders().put("Referer", link.getReferrerUrl());
         } else {
+            /* Fallback: Use most common Referer */
             br.getHeaders().put("Referer", "https://www.av-th.net/");
         }
         br.postPage("https://" + this.getHost() + "/player/index.php?data=" + fid + "&do=getVideo", "hash=" + fid);
