@@ -125,8 +125,8 @@ public class File2Me extends PluginForDecrypt {
                 }
             }
             final String filename = Encoding.htmlDecode(textColumns[1]).trim();
-            String url = new Regex(tableRow, "(?i)(/Act/fileDown/[a-f0-9]{32})").getMatch(0);
-            final DownloadLink link = this.createDownloadlink("directhttp://" + br.getURL(url).toString());
+            final String fileID = new Regex(tableRow, "(?i)/Act/fileDown/([a-f0-9]{32})").getMatch(0);
+            final DownloadLink link = this.createDownloadlink("directhttp://" + br.getURL("/Act/fileDown/" + fileID).toString());
             link.setFinalFileName(filename);
             link.setProperty(DirectHTTP.FIXNAME, filename);
             link.setDownloadSize(SizeFormatter.getSize(textColumns[2]));
@@ -134,6 +134,8 @@ public class File2Me extends PluginForDecrypt {
             if (passCode != null) {
                 link.setDownloadPassword(passCode);
             }
+            /* Set linkID as same file can e.g. be available via different links/different subdomains. */
+            link.setLinkID(this.getHost() + "://" + fileID);
             link._setFilePackage(fp);
             decryptedLinks.add(link);
         }
