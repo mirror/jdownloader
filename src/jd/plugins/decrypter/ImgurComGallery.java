@@ -200,23 +200,27 @@ public class ImgurComGallery extends PluginForDecrypt {
         }
     }
 
-    public static String getURLMp4Download(final String imgUID) {
-        return getDirectURL(imgUID, "mp4");
+    public static String generateURLMp4Download(final String imgUID) {
+        return generateUrlDirect(imgUID, "mp4");
     }
 
-    public static String getURLGifDownload(final String imgUID) {
-        return getDirectURL(imgUID, "gif");
+    public static String generateURLGifDownload(final String imgUID) {
+        return generateUrlDirect(imgUID, "gif");
     }
 
-    public static String getDirectURL(final String imgUID, String ext) {
+    public static String generateUrlDirect(final String imgUID, String ext) {
         if (ext.contains(".")) {
             ext = ext.replace(".", "");
         }
         return "https://i.imgur.com/" + imgUID + "." + ext;
     }
 
-    private String getHostpluginurl(final String lid) {
+    private static String generateUrlDownload(final String lid) {
         return "https://imgur.com/download/" + lid;
+    }
+
+    public static String generateUrlContent(final String lid) {
+        return "https://imgur.com/" + lid;
     }
 
     /**
@@ -225,16 +229,16 @@ public class ImgurComGallery extends PluginForDecrypt {
      */
     private DownloadLink handleSingleItem(final String url, final String contentID) throws ParseException {
         /* Single images --> Host plugin without requiring any HTTP requests */
-        final DownloadLink dl = createDownloadlink(getHostpluginurl(contentID));
+        final DownloadLink dl = createDownloadlink(generateUrlDownload(contentID));
         if (url.matches("https?://i\\.imgur\\.com/[A-Za-z0-9]+\\.(gif|gifv|mp4)")) {
             /* Direct-URL video */
             final String directurl;
             /* Obey user plugin setting. */
             if (jd.plugins.hoster.ImgurComHoster.userPrefersMp4()) {
-                directurl = getURLMp4Download(contentID);
+                directurl = generateURLMp4Download(contentID);
             } else {
                 /* .gifv --> .gif */
-                directurl = getURLGifDownload(contentID);
+                directurl = generateURLGifDownload(contentID);
             }
             dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, directurl);
         } else if (this.parameter.matches("https?://i\\.imgur\\.com/[A-Za-z0-9]+\\.[a-z0-9]+")) {
@@ -310,12 +314,12 @@ public class ImgurComGallery extends PluginForDecrypt {
             if (user_prefers_mp4 && size_mp4 > 0) {
                 filesize = size_mp4;
                 filetype = "mp4";
-                directlink = getDirectURL(imgUID, "mp4");
+                directlink = generateUrlDirect(imgUID, "mp4");
             } else {
                 filesize = size;
                 directlink = (String) item.get("link");
             }
-            final DownloadLink dl = createDownloadlink(this.getHostpluginurl(imgUID));
+            final DownloadLink dl = createDownloadlink(generateUrlDownload(imgUID));
             dl.setAvailable(true);
             if (!StringUtils.isEmpty(directlink)) {
                 dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, directlink);
@@ -390,13 +394,13 @@ public class ImgurComGallery extends PluginForDecrypt {
                 } else {
                     final String url;
                     if (postInfo.contains("animated")) {
-                        url = getDirectURL(contentID, "mp4");
+                        url = generateUrlDirect(contentID, "mp4");
                     } else {
                         /*
                          * Assume we got a single .jpg image. It could also be another file-extension such as .png in some cases but this
                          * will be corrected on download-attempt.
                          */
-                        url = getDirectURL(contentID, "jpg");
+                        url = generateUrlDirect(contentID, "jpg");
                     }
                     dl = this.handleSingleItem(url, contentID);
                     if (!StringUtils.isEmpty(title)) {
@@ -525,11 +529,11 @@ public class ImgurComGallery extends PluginForDecrypt {
                 if (html.contains("schema.org/VideoObject")) {
                     // itemscope itemtype="http://schema.org/VideoObject"
                     /* single gif/mp4 */
-                    url = getDirectURL(contentID, "gif");
+                    url = generateUrlDirect(contentID, "gif");
                 } else {
                     // itemscope itemtype="http://schema.org/ImageObject"
                     /* single jpg or an other type of image */
-                    url = getDirectURL(contentID, "jpg");
+                    url = generateUrlDirect(contentID, "jpg");
                 }
                 final DownloadLink dl = this.handleSingleItem(url, contentID);
                 if (!StringUtils.isEmpty(title)) {
@@ -583,7 +587,7 @@ public class ImgurComGallery extends PluginForDecrypt {
              */
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             plg.setBrowser(brc);
-            final DownloadLink single = this.createDownloadlink("https://" + this.getHost() + "/download/" + albumID);
+            final DownloadLink single = this.createDownloadlink(generateUrlDownload(albumID));
             ((jd.plugins.hoster.ImgurComHoster) plg).websiteParseAndSetData(single);
             final String tempFilename = ImgurComHoster.getFormattedFilename(single);
             if (tempFilename != null) {
@@ -678,7 +682,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!(dataO instanceof Map)) {
             /* Very rare case: Single image and not a gallery: {"data":[],"success":true,"status":200} */
-            this.decryptedLinks.add(this.createDownloadlink(this.getHostpluginurl(this.itemID)));
+            this.decryptedLinks.add(this.createDownloadlink(generateUrlDownload(this.itemID)));
             return;
         }
         /* 2020-09-29: Returns the following response on invalid albumID: {"data":[],"success":true,"status":200} */
@@ -754,14 +758,14 @@ public class ImgurComGallery extends PluginForDecrypt {
         if (ext.matches("\\.?(gif|mp4)")) {
             /* Respect user-setting */
             if (user_prefers_mp4) {
-                directlink = getDirectURL(imgUID, "mp4");
+                directlink = generateUrlDirect(imgUID, "mp4");
             } else {
-                directlink = getDirectURL(imgUID, "gif");
+                directlink = generateUrlDirect(imgUID, "gif");
             }
         } else {
-            directlink = getDirectURL(imgUID, ext.replace(".", ""));
+            directlink = generateUrlDirect(imgUID, ext.replace(".", ""));
         }
-        final DownloadLink dl = createDownloadlink(this.getHostpluginurl(imgUID));
+        final DownloadLink dl = createDownloadlink(generateUrlDownload(imgUID));
         dl.setDownloadSize(filesize);
         dl.setAvailable(true);
         dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, directlink);
