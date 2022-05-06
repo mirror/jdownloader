@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -35,12 +37,13 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
     protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);
-        /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
+        // /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
         getPage(param.getCryptedUrl());
         String location = br.getRequest().getLocation();
-        location = Encoding.Base64Decode(new Regex(location, "k=([^&]+)").getMatch(0));
-        String timestampBase64 = new Regex(location, "d=([^&]+)").getMatch(0);
-        String timestamp = Encoding.Base64Decode(timestampBase64);
+        final UrlQuery query = UrlQuery.parse(location);
+        final String urlBase64Decoded = Encoding.Base64Decode(query.get("k"));
+        final String timestampBase64 = new Regex(urlBase64Decoded, "d=([^&]+)").getMatch(0);
+        final String timestamp = Encoding.Base64Decode(timestampBase64);
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl() + "/?d=" + timestamp);
         if (this.regexAppVars(this.br) == null) {

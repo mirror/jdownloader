@@ -17,10 +17,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -36,9 +37,12 @@ public class MiklproCom extends MightyScriptAdLinkFly {
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);
         getPage(param.getCryptedUrl());
-        String location = br.getRequest().getLocation();
-        String timestampBase64 = new Regex(location, "d=(.*)").getMatch(0);
-        String timestamp = Encoding.Base64Decode(timestampBase64);
+        final String location = br.getRequest().getLocation();
+        final UrlQuery query = UrlQuery.parse(location);
+        final String base64Str = query.get("k");
+        final String urlContainingTimestamp = Encoding.Base64Decode(base64Str);
+        final UrlQuery query2 = UrlQuery.parse(urlContainingTimestamp);
+        final String timestamp = query2.get("d");
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl() + "/?d=" + timestamp);
         if (this.regexAppVars(this.br) == null) {

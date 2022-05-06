@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,9 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class File2Me extends PluginForDecrypt {
@@ -129,7 +129,7 @@ public class File2Me extends PluginForDecrypt {
             link.setProperty(DirectHTTP.FIXNAME, filename);
             link.setDownloadSize(SizeFormatter.getSize(textColumns[2]));
             link.setAvailable(true);
-            link.setContentUrl(param.getCryptedUrl());
+            link.setContentUrl(br.getURL());
             if (passCode != null) {
                 link.setDownloadPassword(passCode);
             }
