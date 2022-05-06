@@ -53,11 +53,10 @@ public class CtDiskComFolder extends PluginForDecrypt {
     private static Object      LOCK                = new Object();
     public static final String PROPERTY_PARENT_DIR = "parent_dir";
 
-    /** Important!! Sync this between hoster- and crawler plugin! */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc", "72k.us", "tc5.us", "545c.com", "sn9.us", "089u.com", "474b.com", "590m.com" });
+        ret.add(new String[] { "ctfile.com", "ctdisk.com", "400gb.com", "pipipan.com", "t00y.com", "bego.cc", "72k.us", "tc5.us", "545c.com", "sn9.us", "089u.com", "474b.com", "590m.com", "n802.com" });
         return ret;
     }
 

@@ -1109,9 +1109,18 @@ public class Multi extends IExtraction {
                 // throw any exceptions if we use - for example - their archive name as password.
                 // in this case, the archive opens fine, but does not show any contents. let's catch this case here
                 if (archive.isPasswordRequiredToOpen() && items != null && items.length > 0) {
-                    // archive is open. password seems to be ok.
-                    passwordFound.set(new Signature("UNKNOWN:ArchiveOpen:" + items.length, null, null, null));
-                    return true;
+                    ISimpleInArchiveItem itemWithPassword = null;
+                    for (final ISimpleInArchiveItem item : items) {
+                        if (item.isEncrypted()) {
+                            itemWithPassword = item;
+                            break;
+                        }
+                    }
+                    if (itemWithPassword == null) {
+                        // archive is open. password seems to be ok.
+                        passwordFound.set(new Signature("UNKNOWN:ArchiveOpen:" + items.length, null, null, null));
+                        return true;
+                    }
                 }
                 for (final ISimpleInArchiveItem item : items) {
                     final Long size = item.getSize();
@@ -1214,25 +1223,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);

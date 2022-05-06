@@ -253,6 +253,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @since JD2
      * @author raztoki
      */
+    @Deprecated
     protected DownloadLink createOfflinelink(final String link) {
         return createOfflinelink(link, null, null);
     }
@@ -266,6 +267,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @since JD2
      * @author raztoki
      */
+    @Deprecated
     protected DownloadLink createOfflinelink(final String link, final String message) {
         return createOfflinelink(link, null, message);
     }
@@ -279,22 +281,13 @@ public abstract class PluginForDecrypt extends Plugin {
      * @since JD2
      * @author raztoki
      */
+    @Deprecated
     protected DownloadLink createOfflinelink(final String link, final String filename, final String message) {
         if (logger != null) {
             logger.log(new Exception("createOfflinelink:" + link + "|name:" + filename + "|message:" + message));
         }
-        final DownloadLink dl = new DownloadLink(null, null, getHost(), "directhttp://" + Encoding.urlDecode(link, true), true);
-        dl.setProperty("OFFLINE", true);
-        dl.setAvailable(false);
-        if (filename != null) {
-            dl.setName(filename.trim());
-        }
-        if (message != null) {
-            dl.setComment(message);
-            logger.info("Offline Link: " + link + " :: " + message);
-        } else {
-            logger.info("Offline Link: " + link);
-        }
+        final DownloadLink dl = createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, filename, message));
+        dl.setProperty("deprecatedOffline", link);
         return dl;
     }
 
