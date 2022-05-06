@@ -4003,9 +4003,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    protected void throwAccountInvalidException(final Account account) {
-    }
-
     /** Sets given cookies and checks if we can login with them. */
     protected boolean verifyCookies(final Account account, final Cookies cookies) throws Exception {
         br.setCookies(getMainPage(), cookies);
