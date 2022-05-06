@@ -18,6 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,11 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -176,11 +176,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }.getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(hCaptchaResponse));
                         form.put("h-captcha-response", Encoding.urlEncode(hCaptchaResponse));
-                        /* Small workaround, see https://svn.jdownloader.org/issues/89825 */
-                        final InputField submit = form.getInputField("submit");
-                        if (submit != null && submit.getValue() == null) {
-                            form.put("submit", "");
-                        }
+                        form.setNullFieldValuesToEmptyFields();
                     } else if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
                         requiresCaptchaWhichCanFail = false;
                         final String key;
@@ -194,9 +190,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         /**
                          * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                         * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another
-                         * website as the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from
-                         * happening.
+                         * </br>
+                         * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
+                         * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
                          */
                         final String reCaptchaSiteURL;
                         if (this.getSpecialReferer() != null) {
@@ -222,11 +218,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                             }
                         }.getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        /* Small workaround, see https://svn.jdownloader.org/issues/89825 */
-                        final InputField submit = form.getInputField("submit");
-                        if (submit != null && submit.getValue() == null) {
-                            form.put("submit", "");
-                        }
+                        form.setNullFieldValuesToEmptyFields();
                     } else if (captchaType == CaptchaType.solvemedia) {
                         final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
                         if (StringUtils.isEmpty(solvemediaChallengeKey)) {
