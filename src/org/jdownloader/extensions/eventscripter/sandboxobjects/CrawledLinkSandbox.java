@@ -345,12 +345,35 @@ public class CrawledLinkSandbox {
         }
     }
 
+    public long getBytesTotalVerified() {
+        final DownloadLinkSandBox downloadLinkSandBox = getDownloadLink();
+        return downloadLinkSandBox != null ? downloadLinkSandBox.getBytesTotalVerified() : -1;
+    }
+
     public String getName() {
         if (link == null) {
             return "Test.txt";
         } else {
             return link.getName();
         }
+    }
+
+    public String getForcedName() {
+        if (isNameSet()) {
+            return getName();
+        } else {
+            final DownloadLinkSandBox downloadLinkSandBox = getDownloadLink();
+            return downloadLinkSandBox != null ? downloadLinkSandBox.getForcedName() : null;
+        }
+    }
+
+    public String getFinalName() {
+        final DownloadLinkSandBox downloadLinkSandBox = getDownloadLink();
+        return downloadLinkSandBox != null ? downloadLinkSandBox.getFinalName() : null;
+    }
+
+    public boolean isNameSet() {
+        return link != null && link.isNameSet();
     }
 
     public CrawledPackageSandbox getPackage() {

@@ -15,6 +15,7 @@ import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -36,6 +37,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.Highlighter.HighlightPainter;
@@ -283,6 +285,23 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             @Override
             public boolean highlight(Highlighter highlighter, CharSequence charSequence) {
                 return txt.isEnabled() && toggle.isSelected() && super.highlight(highlighter, charSequence);
+            }
+        });
+        txt.addTextHighlighter(new ExtTextHighlighter(new DefaultHighlighter.DefaultHighlightPainter(Color.red), Pattern.compile("(.+)")) {
+            @Override
+            public boolean highlight(Highlighter highlighter, CharSequence charSequence) {
+                if (txt.isEnabled() && toggle.isSelected()) {
+                    try {
+                        Pattern.compile(txt.getText());
+                    } catch (PatternSyntaxException e) {
+                        try {
+                            highlighter.addHighlight(0, txt.getDocument().getLength(), painter);
+                        } catch (BadLocationException ignore) {
+                        }
+                        return true;
+                    }
+                }
+                return false;
             }
         });
         toggle.addActionListener(new ActionListener() {

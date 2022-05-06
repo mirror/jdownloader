@@ -185,7 +185,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 stats.add(new JLabel("Java:"), "");
                 java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
                 ExtButton comp;
-                stats.add(comp = createLink(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit)" : "(32bit)")));
+                stats.add(comp = createLink(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit," : "(32bit,") + CrossSystem.getARCHFamily() + ")"));
                 comp.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -222,7 +222,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
                 }
                 stats.add(new JLabel("OS:"), "");
-                stats.add(createLink(CrossSystem.getOSFamily() + "(" + CrossSystem.getOS() + ")"));
+                stats.add(createLink(CrossSystem.getOSFamily() + "(" + CrossSystem.getOS() + ")" + (CrossSystem.is64BitOperatingSystem() ? "(64bit)" : "(32bit)")));
                 stats.add(new JLabel("Memory:"), "");
                 stats.add(comp = createLink("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
                 try {
