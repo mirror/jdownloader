@@ -79,10 +79,10 @@ public class TheSupCm extends PluginForDecrypt {
             }
             final String image = (String) JavaScriptEngineFactory.walkJson(resource, "images/full");
             final String name = (String) JavaScriptEngineFactory.walkJson(resource, "page_title");
-            final Integer index = (Integer) JavaScriptEngineFactory.walkJson(resource, "index");
+            final Number index = (Number) JavaScriptEngineFactory.walkJson(resource, "index");
             if (image != null && name != null && index != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + image.replaceFirst("-compressed\\.", "."));
-                dl.setForcedFileName(df.format((index + 1)) + " - " + name.replaceFirst("(?:_?\\d+\\s+Jpg)?\\s*-\\s*\\d+\\s*$", "") + getFileNameExtensionFromString(image, ".jpg"));
+                dl.setForcedFileName(df.format((index.intValue() + 1)) + " - " + name.replaceFirst("(?:_?\\d+\\s+Jpg)?\\s*-\\s*\\d+\\s*$", "") + getFileNameExtensionFromString(image, ".jpg"));
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }

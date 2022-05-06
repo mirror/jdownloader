@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class File2Me extends PluginForDecrypt {
@@ -81,7 +81,6 @@ public class File2Me extends PluginForDecrypt {
         }
         String passCode = null;
         if (getPasswordProtectedForm(br) != null) {
-            boolean success = false;
             for (int i = 0; i <= 2; i++) {
                 final Form pwform = this.getPasswordProtectedForm(br);
                 /* Password InputField key is different each time --> We need to find it */
@@ -93,16 +92,15 @@ public class File2Me extends PluginForDecrypt {
                 pwfield.setValue(Encoding.urlEncode(passCode));
                 br.submitForm(pwform);
                 if (this.getPasswordProtectedForm(br) == null) {
-                    success = true;
                     break;
                 }
             }
-            if (!success) {
+            if (this.getPasswordProtectedForm(br) != null) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
         final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        final String title = br.getRegex("<h5 class=\"title\">([^<]+)</h5>").getMatch(0);
+        final String title = br.getRegex("<h5 class=\"title\">\\s*([^<]+)\\s*</h5>").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         if (title != null) {
             fp.setName(Encoding.htmlDecode(title).trim());
@@ -131,6 +129,7 @@ public class File2Me extends PluginForDecrypt {
             link.setProperty(DirectHTTP.FIXNAME, filename);
             link.setDownloadSize(SizeFormatter.getSize(textColumns[2]));
             link.setAvailable(true);
+            link.setContentUrl(param.getCryptedUrl());
             if (passCode != null) {
                 link.setDownloadPassword(passCode);
             }

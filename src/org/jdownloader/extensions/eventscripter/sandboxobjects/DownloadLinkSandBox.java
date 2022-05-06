@@ -419,11 +419,35 @@ public class DownloadLinkSandBox {
         }
     }
 
+    public long getBytesTotalVerified() {
+        if (downloadLink == null) {
+            return -1;
+        } else {
+            return downloadLink.getView().getBytesTotalVerified();
+        }
+    }
+
     public String getName() {
         if (downloadLink == null) {
             return "Test.txt";
         } else {
             return downloadLink.getName();
+        }
+    }
+
+    public String getForcedName() {
+        if (downloadLink == null) {
+            return "Test.txt";
+        } else {
+            return downloadLink.getForcedFileName();
+        }
+    }
+
+    public String getFinalName() {
+        if (downloadLink == null) {
+            return "Test.txt";
+        } else {
+            return downloadLink.getFinalFileName();
         }
     }
 
@@ -544,19 +568,11 @@ public class DownloadLinkSandBox {
     }
 
     public boolean isRunning() {
-        if (downloadLink != null) {
-            return downloadLink.getDownloadLinkController() != null;
-        } else {
-            return false;
-        }
+        return downloadLink != null && downloadLink.getDownloadLinkController() != null;
     }
 
     public boolean isEnabled() {
-        if (downloadLink != null) {
-            return downloadLink.isEnabled();
-        } else {
-            return false;
-        }
+        return downloadLink != null && downloadLink.isEnabled();
     }
 
     @Override
@@ -612,11 +628,7 @@ public class DownloadLinkSandBox {
     }
 
     public boolean isResumeable() {
-        if (downloadLink != null) {
-            return downloadLink.isResumeable();
-        } else {
-            return false;
-        }
+        return downloadLink != null && downloadLink.isResumeable();
     }
 
     @Override
@@ -625,11 +637,7 @@ public class DownloadLinkSandBox {
     }
 
     public boolean isFinished() {
-        if (downloadLink != null) {
-            return FinalLinkState.CheckFinished(downloadLink.getFinalLinkState());
-        } else {
-            return false;
-        }
+        return downloadLink != null && FinalLinkState.CheckFinished(downloadLink.getFinalLinkState());
     }
 
     public String getExtractionStatus() {

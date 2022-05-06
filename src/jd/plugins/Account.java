@@ -194,7 +194,15 @@ public class Account extends Property {
 
     /** Returns cookies provided by user, typically put into the "Password" field when adding an account. */
     public Cookies loadUserCookies() {
-        return Cookies.parseCookiesFromJsonString(this.getPass(), LogController.getRebirthLogger());
+        return loadUserCookies(true);
+    }
+
+    public Cookies loadUserCookies(final boolean loadUserAgent) {
+        final Cookies ret = Cookies.parseCookiesFromJsonString(this.getPass(), LogController.getRebirthLogger());
+        if (ret != null && !loadUserAgent) {
+            ret.setUserAgent(null);
+        }
+        return ret;
     }
 
     /**
