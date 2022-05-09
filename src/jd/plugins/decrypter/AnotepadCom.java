@@ -68,7 +68,7 @@ public class AnotepadCom extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) throws PluginException, IOException {
+    protected String getPastebinText(final Browser br) {
         String plaintxt = br.getRegex("href\\s*=\\s*\"(https?[^<>\"]+)\">\\s*Download Link\\s*:\\s*Click Here").getMatch(0);
         if (plaintxt == null) {
             /* Plaintext containing multiple links (?) */

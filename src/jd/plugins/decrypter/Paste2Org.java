@@ -68,7 +68,7 @@ public class Paste2Org extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) throws PluginException, IOException {
+    protected String getPastebinText(final Browser br) {
         return jd.plugins.hoster.Paste2Org.getPastebinText(br);
     }
 

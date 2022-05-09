@@ -24,11 +24,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixotic.net" }, urls = { "(http://(www\\.)?mixotic\\.net/dj\\-sets/.*)|(http://(www\\.)?mixotic\\.net/dj\\-mixes/.*)|(http://feedproxy\\.google\\.com/~r/mixotic/.*)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixotic.net" }, urls = { "https?://(?:www\\.)?mixotic\\.net/dj\\-(sets|mixes)/.*" })
 public class MixoticNet extends PluginForDecrypt {
-
     public MixoticNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -37,48 +38,39 @@ public class MixoticNet extends PluginForDecrypt {
         // Logger logDebug = JDLogger.getLogger();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String strParameter = param.toString();
-        if (strParameter.startsWith("http://feedproxy.google.com")) {
-            br.getPage(strParameter);
-            strParameter = br.getRedirectLocation();
-        }
         if (strParameter.contains("?")) {
             int iPosition = strParameter.indexOf('?');
             if (iPosition > 0) {
                 strParameter = strParameter.substring(0, iPosition);
             }
         }
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(strParameter);
-
         // Offline1
         if (br.containsHTML("(An error has occurred|The article cannot be found)")) {
-            logger.info("Link offline: " + strParameter);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Offline2
         if (br.containsHTML("Sorry, this page is not existing|<title>Error \\- Page not found</title>")) {
-            logger.info("Link offline: " + strParameter);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         int iIndex = strParameter.lastIndexOf("/");
         String strMixNumber = strParameter.substring(iIndex + 1);
-
         String strMixName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         jd.parser.Regex rgMixDate = br.getRegex(">(19|20\\d\\d)[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])<");
         String strMixDate = rgMixDate.getMatch(2) + "-" + rgMixDate.getMatch(1) + "-" + rgMixDate.getMatch(0);
         String strName = strMixNumber + " - " + strMixName + " (Mixotic Mix " + strMixNumber + ") (" + strMixDate + ")";
-
         String strRedirect = strParameter.replace("dj-sets", "dj-set-download");
         strRedirect = strRedirect.replace("dj-mixes", "dj-mix-download");
         br.getPage(strRedirect);
-
         String[] links = br.getRegex("<a href=\"/?files/(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + strParameter);
             return null;
         }
-
         // Added links
         for (String redirectlink : links) {
             redirectlink = "http://mixotic.net/files/" + redirectlink;
@@ -93,7 +85,6 @@ public class MixoticNet extends PluginForDecrypt {
             }
             decryptedLinks.add(DLLink);
         }
-
         // Add all link in a package
         if (strName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -107,5 +98,4 @@ public class MixoticNet extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

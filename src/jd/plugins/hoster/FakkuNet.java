@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -24,7 +23,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -58,8 +56,6 @@ public class FakkuNet extends antiDDoSForHost {
     private static final boolean ACCOUNT_FREE_RESUME       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
     private String               dllink                    = null;
 
     @SuppressWarnings("deprecation")
@@ -82,16 +78,13 @@ public class FakkuNet extends antiDDoSForHost {
         this.br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                /* Dont do HEAD requests here! */
-                con = br.openGetConnection(dllink);
-            } catch (final BrowserException e) {
+            /* Dont do HEAD requests here! */
+            con = br.openGetConnection(dllink);
+            if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             }
             link.setProperty("directlink", dllink);
         } finally {
@@ -115,25 +108,29 @@ public class FakkuNet extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(TYPE_PREMIUM)) {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (link.getDownloadURL().matches(TYPE_PREMIUM)) {
             /* Account only */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        prepBRForLink(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        prepBRForLink(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -207,22 +204,15 @@ public class FakkuNet extends antiDDoSForHost {
         return br.getCookie(MAINPAGE, "fakku_sid", Cookies.NOTDELETEDPATTERN) != null;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Free Account");
-        account.setValid(true);
         return ai;
     }
 
