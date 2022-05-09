@@ -16,12 +16,27 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.SrfChConfig;
+import org.jdownloader.plugins.components.config.SrfChConfig.Quality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,15 +45,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SrfCh extends PluginForHost {
@@ -74,7 +80,7 @@ public class SrfCh extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/play/(.+)\\?(?:id=[A-Za-z0-9\\-]+|urn=[A-Za-z0-9\\-:]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:audio|play)/.+\\?(?:id=[A-Za-z0-9\\-]+|urn=[a-z0-9\\-:]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -84,8 +90,14 @@ public class SrfCh extends PluginForHost {
         return "http://www.srf.ch/allgemeines/impressum";
     }
 
+    private final String OFFICIAL_DOWNLOADURL = "official_downloadurl";
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(new int[] { 410 });
@@ -93,96 +105,158 @@ public class SrfCh extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String urn = getURN(link, false);
+        if (urn != null) {
+            link.setLinkID(this.getHost() + "://" + urn);
+        }
+        String officialDownloadurl = null;
         final String json = br.getRegex(">\\s*window\\.__SSR_VIDEO_DATA__ = (\\{.*?\\})</script>").getMatch(0);
-        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initialData/videoDetail");
-        if (entries == null) {
-            logger.info("This is no downloadable content");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (json != null) {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> videoDetail = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initialData/videoDetail");
+            String title = (String) videoDetail.get("title");
+            String dateFormatted = null;
+            final String date = (String) videoDetail.get("publishDate");
+            if (!StringUtils.isEmpty(date)) {
+                dateFormatted = new Regex(date, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            }
+            if (!StringUtils.isEmpty(title)) {
+                title = Encoding.htmlDecode(title.trim());
+                if (dateFormatted != null) {
+                    link.setFinalFileName(dateFormatted + "_" + title + ".mp4");
+                } else {
+                    link.setFinalFileName(title + ".mp4");
+                }
+            }
+            final String description = (String) videoDetail.get("description");
+            if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
+                link.setComment(description);
+            }
+            officialDownloadurl = (String) videoDetail.get("downloadUrl");
+        } else {
+            /* E.g. audio items */
+            if (urn == null) {
+                logger.info("This is no downloadable content");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            this.accessAPI(urn);
+            final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Map<String, Object> mediaInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "chapterList/{0}");
+            final String title = mediaInfo.get("title").toString();
+            final String dateFormatted = new Regex(mediaInfo.get("date"), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            final String ext;
+            if (mediaInfo.get("mediaType").toString().equalsIgnoreCase("AUDIO")) {
+                ext = ".mp3";
+            } else {
+                ext = ".mp4";
+            }
+            link.setFinalFileName(dateFormatted + "_" + title + ext);
+            final String description = mediaInfo.get("description").toString();
+            if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
+                link.setComment(description);
+            }
         }
-        String filename = (String) entries.get("title");
-        final String description = (String) entries.get("description");
-        String dateFormatted = null;
-        final String date = (String) entries.get("publishDate");
-        if (filename == null) {
-            /* Fallback: Obtain filename from url */
-            filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-            filename = filename.replace("-", " ");
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!StringUtils.isEmpty(date)) {
-            dateFormatted = new Regex(date, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-        }
-        filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
-        filename = encodeUnicode(filename);
-        if (dateFormatted != null) {
-            filename = dateFormatted + "_" + filename;
-        }
-        link.setFinalFileName(filename);
-        if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
-            link.setComment(description);
+        if (!StringUtils.isEmpty(officialDownloadurl)) {
+            link.setProperty(OFFICIAL_DOWNLOADURL, officialDownloadurl);
+            /* Only check for filesize if user wants BEST quality anyways. */
+            if (!isDownload && getUserPreferredqualityHeight() == null) {
+                URLConnectionAdapter con = null;
+                try {
+                    /* 2022-05-09: HEAD request is not possible. */
+                    con = br.openGetConnection(officialDownloadurl);
+                    if (!this.looksLikeDownloadableContent(con)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media file broken?");
+                    } else {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
         }
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        /* 2020-07-29: E.g. "blockReason" : "ENDDATE" or "blockReason" : "GEOBLOCK" */
-        String blockReason = br.getRegex("geoblock\\s*?:\\s*?\\{\\s*?(?:audio|video)\\:\\s*?\"([^\"]+)\"").getMatch(0);
-        final String domainpart = new Regex(link.getDownloadURL(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
-        final String videoid = new Regex(link.getDownloadURL(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
+    private String getURN(final DownloadLink link, final boolean allowFallback) throws MalformedURLException {
+        final String domainpart = new Regex(link.getPluginPatternMatcher(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
+        final String videoid = new Regex(link.getPluginPatternMatcher(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
         final String channelname = convertDomainPartToShortChannelName(domainpart);
-        /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
-        final boolean useV2 = true;
         /* 2020-09-09: New URLs will contain this parameter */
         String urn = UrlQuery.parse(link.getPluginPatternMatcher()).get("urn");
         if (StringUtils.isEmpty(urn)) {
-            /* E.g. for older URLs --> We have to generate that parameter on our own. */
+            /* E.g. for audio files */
+            urn = br.getRegex("data-assetid=\"(urn:[^\"]+)\"").getMatch(0);
+        }
+        if (StringUtils.isEmpty(urn) && allowFallback) {
+            /* Final fallback e.g. for older URLs --> We have to generate that parameter on our own. */
             urn = "urn:" + channelname + ":video:" + videoid;
         }
-        if (useV2) {
-            this.br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/" + urn + ".json?onlyChapters=true&vector=portalplay");
-        } else {
-            this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".json");
+        return urn;
+    }
+
+    private void accessAPI(final String urn) throws IOException, PluginException {
+        /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
+        this.br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/" + urn + ".json?onlyChapters=true&vector=portalplay");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    @SuppressWarnings({ "deprecation", "unchecked" })
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        final String urn = this.getURN(link, true);
+        if (urn == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Integer preferredQualityHeight = getUserPreferredqualityHeight();
+        /* 2020-07-29: E.g. "blockReason" : "ENDDATE" or "blockReason" : "GEOBLOCK" */
+        String blockReason = br.getRegex("geoblock\\s*?:\\s*?\\{\\s*?(?:audio|video)\\:\\s*?\"([^\"]+)\"").getMatch(0);
+        if (!br.getURL().contains("/byUrn/")) {
+            accessAPI(urn);
         }
         String url_http_download = null;
         String url_hls_master = null;
         String url_rtmp = null;
-        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        List<Object> ressourcelist;
-        try {
-            if (useV2) {
+        if (preferredQualityHeight == null && link.hasProperty(OFFICIAL_DOWNLOADURL)) {
+            /* User prefers BEST quality && official downloadurl is available --> Use that */
+            url_http_download = link.getStringProperty(OFFICIAL_DOWNLOADURL);
+        } else {
+            final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            try {
                 final Map<String, String> hlsMap = new HashMap<String, String>();
-                final Map<String, String> mp4Map = new HashMap<String, String>();
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "chapterList/{0}");
+                final Map<String, String> httpDownloadsMap = new HashMap<String, String>();
+                final Map<String, Object> mediaInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "chapterList/{0}");
                 if (StringUtils.isEmpty(blockReason)) {
                     /* 2020-07-29: New */
-                    blockReason = (String) entries.get("blockReason");
+                    blockReason = (String) mediaInfo.get("blockReason");
                 }
                 // final String id = (String) entries.get("id");
-                ressourcelist = (List<Object>) entries.get("resourceList");
+                final List<Object> ressourcelist = (List<Object>) mediaInfo.get("resourceList");
                 for (final Object ressourceO : ressourcelist) {
-                    entries = (Map<String, Object>) ressourceO;
-                    final String protocol = (String) entries.get("protocol");
-                    if (protocol.equals("HTTP")) {
-                        final String url = (String) entries.get("url");
-                        final String quality = (String) entries.get("quality");
+                    final Map<String, Object> resourceInfo = (Map<String, Object>) ressourceO;
+                    final String protocol = (String) resourceInfo.get("protocol");
+                    if (protocol.equals("HTTP") || protocol.equals("HTTPS")) {
+                        final String url = (String) resourceInfo.get("url");
+                        final String quality = (String) resourceInfo.get("quality");
                         if (StringUtils.isNotEmpty(url)) {
-                            mp4Map.put(quality, url);
+                            httpDownloadsMap.put(quality, url);
                         }
                     } else if (protocol.equals("HLS")) {
-                        final String url = (String) entries.get("url");
-                        final String quality = (String) entries.get("quality");
+                        final String url = (String) resourceInfo.get("url");
+                        final String quality = (String) resourceInfo.get("quality");
                         if (StringUtils.isNotEmpty(url)) {
                             hlsMap.put(quality, url);
                         }
                     } else {
                         /* Skip unsupported protocol */
-                        logger.info("Skipping protocol: " + entries);
+                        logger.info("Skipping protocol: " + resourceInfo);
                         continue;
                     }
                 }
@@ -196,14 +270,14 @@ public class SrfCh extends PluginForHost {
                         url_hls_master = hlsMap.entrySet().iterator().next().getValue();
                     }
                 }
-                if (mp4Map.size() > 0) {
-                    if (mp4Map.containsKey("HD")) {
-                        url_http_download = mp4Map.get("HD");
+                if (httpDownloadsMap.size() > 0) {
+                    if (httpDownloadsMap.containsKey("HD")) {
+                        url_http_download = httpDownloadsMap.get("HD");
                     } else if (hlsMap.containsKey("SD")) {
-                        url_http_download = mp4Map.get("SD");
+                        url_http_download = httpDownloadsMap.get("SD");
                     } else {
-                        logger.info("unknown qualities(mp4):" + mp4Map);
-                        url_http_download = mp4Map.entrySet().iterator().next().getValue();
+                        logger.info("unknown qualities(mp4):" + httpDownloadsMap);
+                        url_http_download = httpDownloadsMap.entrySet().iterator().next().getValue();
                     }
                 }
                 if (!StringUtils.isEmpty(url_hls_master)) {
@@ -215,10 +289,9 @@ public class SrfCh extends PluginForHost {
                     }
                     acl += "/*";
                     br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
-                    entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    entries = (Map<String, Object>) entries.get("token");
-                    /* 2019-08-09: TODO: Cleanup this encoding mess ... */
-                    String authparams = (String) entries.get("authparams");
+                    final Map<String, Object> signInfoRoot = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    final Map<String, Object> authMap = (Map<String, Object>) signInfoRoot.get("token");
+                    String authparams = (String) authMap.get("authparams");
                     if (StringUtils.isEmpty(authparams)) {
                         logger.warning("Failed to find authparams");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -236,66 +309,12 @@ public class SrfCh extends PluginForHost {
                         url_hls_master = url_hls_master.replace(param_caption, param_caption_new);
                     }
                 }
-            } else {
-                entries = (Map<String, Object>) entries.get("Video");
-                Map<String, Object> temp = null;
-                /* Try to find http downloadurl (not always available) */
-                try {
-                    ressourcelist = (List) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
-                    for (final Object streamtypeo : ressourcelist) {
-                        temp = (Map<String, Object>) streamtypeo;
-                        final String protocol = (String) temp.get("@protocol");
-                        if (protocol == null) {
-                            continue;
-                        }
-                        if (protocol.equals("HTTP")) {
-                            url_http_download = this.findBestQualityForStreamtype(temp);
-                            break;
-                        }
-                    }
-                } catch (final Exception e) {
-                    logger.log(e);
+            } catch (final Exception e) {
+                if (!StringUtils.isEmpty(blockReason)) {
+                    contentBlocked(blockReason);
+                } else {
+                    throw e;
                 }
-                /* Try to find hls master (usually available) */
-                try {
-                    ressourcelist = (List) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
-                    for (final Object streamtypeo : ressourcelist) {
-                        temp = (Map<String, Object>) streamtypeo;
-                        final String protocol = (String) temp.get("@protocol");
-                        if (protocol == null) {
-                            continue;
-                        }
-                        if (protocol.equals("HTTP-HLS")) {
-                            url_hls_master = this.findBestQualityForStreamtype(temp);
-                            break;
-                        }
-                    }
-                } catch (final Exception e) {
-                    logger.log(e);
-                }
-                /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
-                try {
-                    ressourcelist = (List) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
-                    for (final Object streamtypeo : ressourcelist) {
-                        temp = (Map<String, Object>) streamtypeo;
-                        final String protocol = (String) temp.get("@protocol");
-                        if (protocol == null) {
-                            continue;
-                        }
-                        if (protocol.equals("RTMP")) {
-                            url_rtmp = findBestQualityForStreamtype(temp);
-                            break;
-                        }
-                    }
-                } catch (final Exception e) {
-                    logger.log(e);
-                }
-            }
-        } catch (final Exception e) {
-            if (!StringUtils.isEmpty(blockReason)) {
-                contentBlocked(blockReason);
-            } else {
-                throw e;
             }
         }
         if (url_http_download == null && url_hls_master == null && url_rtmp == null) {
@@ -304,8 +323,12 @@ public class SrfCh extends PluginForHost {
         if (url_http_download != null) {
             /* Prefer http download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url_http_download, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
                 } else if (br.getHttpConnection().getResponseCode() == 404) {
@@ -331,11 +354,30 @@ public class SrfCh extends PluginForHost {
             // "/clicked.xml");
             // } catch (final Throwable e) {
             // }
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
+            /* Pick user preferred quality */
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(this.br);
+            if (qualities == null || qualities.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String url_hls = hlsbest.getDownloadurl();
+            HlsContainer chosenQuality = null;
+            if (preferredQualityHeight == null) {
+                chosenQuality = HlsContainer.findBestVideoByBandwidth(qualities);
+                logger.info("Using best quality: " + chosenQuality.getHeight() + "p");
+                ;
+            } else {
+                for (final HlsContainer quality : qualities) {
+                    if (quality.getHeight() == preferredQualityHeight.intValue()) {
+                        logger.info("Using user preferred quality: " + quality.getHeight() + "p");
+                        chosenQuality = quality;
+                        break;
+                    }
+                }
+                if (chosenQuality == null) {
+                    chosenQuality = HlsContainer.findBestVideoByBandwidth(qualities);
+                    logger.info("Using best quality as fallback: " + chosenQuality.getHeight() + "p");
+                }
+            }
+            final String url_hls = chosenQuality.getDownloadurl();
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, url_hls);
             dl.startDownload();
@@ -357,6 +399,27 @@ public class SrfCh extends PluginForHost {
             userReadableBlockedReason = "Unknown reason:" + blockReason;
         }
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content not downloadable because " + userReadableBlockedReason);
+    }
+
+    private Integer getUserPreferredqualityHeight() {
+        final Quality quality = PluginJsonConfig.get(SrfChConfig.class).getPreferredQuality();
+        switch (quality) {
+        case Q180:
+            return 180;
+        case Q270:
+            return 270;
+        case Q360:
+            return 360;
+        case Q480:
+            return 480;
+        case Q720:
+            return 720;
+        case Q1080:
+            return 1080;
+        default:
+            /* Best quality */
+            return null;
+        }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -402,5 +465,10 @@ public class SrfCh extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return SrfChConfig.class;
     }
 }

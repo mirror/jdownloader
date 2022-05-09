@@ -92,7 +92,7 @@ public class MotherLessCom extends PluginForDecrypt {
         final boolean subscriberPremiumOnly = jd.plugins.hoster.MotherLessCom.isWatchSubscriberPremiumOnly(br);
         if (jd.plugins.hoster.MotherLessCom.isDownloadPremiumOnly(br)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
-            dl.setProperty("dltype", "registered");
+            dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "registered");
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("class=\"red-pill-button rounded-corners-r5\">Reply</a>")) {
@@ -107,14 +107,14 @@ public class MotherLessCom extends PluginForDecrypt {
         else if (subscriberPremiumOnly && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberImage)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless", "premiummotherlesspictures"));
             dl.setContentUrl(parameter);
-            dl.setProperty("dltype", "image");
+            dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "image");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (subscriberPremiumOnly && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberVideo)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dl.setContentUrl(parameter);
-            dl.setProperty("dltype", "video");
+            dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "video");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -122,7 +122,7 @@ public class MotherLessCom extends PluginForDecrypt {
             // this can have text which could be contained in previous if statements... has to be last!
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dl.setContentUrl(parameter);
-            dl.setProperty("dltype", "offline");
+            dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "offline");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -146,13 +146,13 @@ public class MotherLessCom extends PluginForDecrypt {
                     jd.plugins.hoster.MotherLessCom.notOnlineYet(dlink, false, false);
                     dlink.setAvailable(false);
                 }
-                dlink.setProperty("dltype", "video");
+                dlink.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "video");
                 dlink.setName(new Regex(parameter, "motherless\\.com/(.+)").getMatch(0));
                 decryptedLinks.add(dlink);
             } else if ("image".equalsIgnoreCase(mediatype)) {
                 final DownloadLink fina = createDownloadlink(parameter.replace("motherless.com/", "motherlesspictures.com/"));
                 fina.setContentUrl(parameter);
-                fina.setProperty("dltype", "image");
+                fina.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "image");
                 decryptedLinks.add(fina);
             } else {
                 gallery(decryptedLinks, parameter, progress);
