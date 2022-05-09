@@ -39,9 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https?://(?:www\\.)?fakku\\.net/(?:(?:viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https?://(?:www\\.)?fakku\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+/read" })
 public class FakkuNet extends antiDDoSForDecrypt {
     public FakkuNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,29 +51,29 @@ public class FakkuNet extends antiDDoSForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    @SuppressWarnings({ "deprecation", "unchecked" })
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced HTTPS */
-        String parameter = param.toString().replace("http://", "https://");
-        final String url_filename = new Regex(parameter, "fakku\\.net/manga/([^<>\"]*?)/read").getMatch(0);
-        boolean loggedin = false;
-        final PluginForHost plugin = JDUtilities.getPluginForHost("fakku.net");
-        final Account aa = AccountController.getInstance().getValidAccount(plugin);
-        if (aa != null) {
-            try {
-                loggedin = ((jd.plugins.hoster.FakkuNet) plugin).login(br, aa, false);
-            } catch (final Throwable e) {
-                logger.info("Login failed - continuing without login");
-            }
+        param.setCryptedUrl(param.getCryptedUrl().replace("http://", "https://"));
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), "https?://[^/]+/([^/]+)/([^/]+)");
+        final String contentGenre = urlinfo.getMatch(0);
+        final String url_title = urlinfo.getMatch(1);
+        if (contentGenre == null || url_title == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final PluginForHost plugin = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.FakkuNet) plugin).login(br, account, false);
         }
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(410);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error\"")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final DecimalFormat df = new DecimalFormat("000");
@@ -83,43 +82,42 @@ public class FakkuNet extends antiDDoSForDecrypt {
         final String json_array = br.getRegex("window\\.params\\.thumbs = (\\[.*?\\]);").getMatch(0);
         String main_part = br.getRegex("('|\")((?:https?:)?//t\\.fakku\\.net/images/[^<>\"]+/images/)\\1").getMatch(1);
         if (json_array == null && main_part == null) {
-            if (!loggedin) {
+            /* Looks like account is required to view this. */
+            if (account == null) {
                 throw new AccountRequiredException();
             }
             /* Handling for subscription URLs */
-            getPage("https://books.fakku.net/manga/" + url_filename + "/read");
-            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            getPage("https://books." + this.getHost() + "/" + contentGenre + "/" + url_title + "/read");
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             if (fpName == null) {
                 fpName = (String) JavaScriptEngineFactory.walkJson(entries, "content/content_name");
             }
             long content_pages = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "content/content_pages"), 0);
-            entries = (Map<String, Object>) entries.get("pages");
-            if (fpName == null || content_pages == 0 || entries == null) {
-                return null;
+            final Map<String, Object> pageMap = (Map<String, Object>) entries.get("pages");
+            if (fpName == null || content_pages == 0 || pageMap == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (counter = 1; counter <= content_pages; counter++) {
-                Map<String, Object> entries_temp = (Map<String, Object>) entries.get(Long.toString(counter));
-                final String directlink = (String) entries_temp.get("image");
+                final Map<String, Object> imgInfo = (Map<String, Object>) pageMap.get(Long.toString(counter));
+                final String directlink = (String) imgInfo.get("image");
                 final DownloadLink dl = createDownloadlink(directlink);
                 final String final_filename = fpName + " - " + df.format(counter) + ".jpg";
                 dl.setFinalFileName(final_filename);
                 dl.setAvailable(true);
-                dl.setContentUrl(parameter);
-                dl.setProperty("mainlink", "https://www.fakku.net/manga/" + url_filename + "/read");
+                dl.setContentUrl(param.getCryptedUrl());
+                dl.setProperty("mainlink", "https://www.fakku.net/manga/" + url_title + "/read");
                 dl.setProperty("decrypterfilename", final_filename);
                 decryptedLinks.add(dl);
             }
         } else {
             if (fpName == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             main_part = Request.getLocation(main_part, br.getRequest());
             fpName = Encoding.htmlDecode(fpName.trim());
             final String allThumbs[] = PluginJSonUtils.getJsonResultsFromArray(json_array);
-            if (allThumbs == null || allThumbs.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            if (allThumbs.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (String thumb : allThumbs) {
                 thumb = PluginJSonUtils.unescape(thumb);
