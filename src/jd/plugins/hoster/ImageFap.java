@@ -17,16 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -36,6 +33,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,6 +46,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
@@ -278,18 +281,58 @@ public class ImageFap extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            getRequest(this, br, br.createGetRequest(configLink));
-            String videoLink = br.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
-            if (videoLink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                if (Encoding.isHtmlEntityCoded(videoLink)) {
-                    videoLink = Encoding.htmlDecode(videoLink);
+            int retry = 5;
+            final Set<String> testedServerQualities = new HashSet<String>();
+            final Map<Integer, String> qualities = new HashMap<Integer, String>();
+            Integer bestQuality = null;
+            while (retry-- >= 0) {
+                final Browser brc = br.cloneBrowser();
+                logger.info("Try VideoConfig, round:" + retry);
+                getRequest(this, brc, brc.createGetRequest(configLink));
+                final String videoLinks[] = brc.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getColumn(0);
+                if (videoLinks == null || videoLinks.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                return videoLink;
+                for (final String videoLinksEntry : videoLinks) {
+                    final String quality = new Regex(videoLinksEntry, "-(\\d+)p\\.(mp4|flv|webm)").getMatch(0);
+                    final Integer p = quality != null ? Integer.parseInt(quality) : -1;
+                    final String url = Encoding.htmlDecode(videoLinksEntry);
+                    URLConnectionAdapter con = null;
+                    try {
+                        final String testServerQuality = new URL(url).getHost() + p;
+                        if (testedServerQualities.add(testServerQuality)) {
+                            final Browser brc2 = br.cloneBrowser();
+                            con = brc2.openHeadConnection(url);
+                            if (looksLikeDownloadableContent(con)) {
+                                qualities.put(p, url);
+                                if (bestQuality == null || p > bestQuality) {
+                                    bestQuality = p;
+                                }
+                            } else {
+                                brc.followConnection(true);
+                            }
+                        }
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    } finally {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    }
+                }
+                if (isAbort()) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (bestQuality == null) {
+                    sleep(2000, link);
+                } else {
+                    final String videoLink = qualities.get(bestQuality);
+                    logger.info("VideoConfig result:" + bestQuality + "->" + videoLink);
+                    return videoLink;
+                }
             }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            String imageLink = br.getRegex("name=\"mainPhoto\"[^>]*src=\"(https?://[^<>\"]+)\"").getMatch(0);
+            String imageLink = br.getRegex("name=\"mainPhoto\"[^>]*src\\s*=\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
             // if (imagelink == null) {
             // String ID = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0);
             // imagelink = br.getRegex("href=\"http://img\\.imagefapusercontent\\.com/images/full/\\d+/\\d+/" + ID +
@@ -301,9 +344,9 @@ public class ImageFap extends PluginForHost {
                     imageLink = decryptLink(returnID);
                 }
                 if (imageLink == null) {
-                    imageLink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(https?://.*?)\"").getMatch(0);
+                    imageLink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
                     if (imageLink == null) {
-                        imageLink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
+                        imageLink = br.getRegex("href=\"#\" onclick\\s*=\\s*\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
                         if (imageLink == null) {
                             imageLink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/full/.*?)\\s*<").getMatch(0);
                         }
@@ -383,7 +426,7 @@ public class ImageFap extends PluginForHost {
             br.getPage(request);
             if (br.getHttpConnection().getResponseCode() == 429) {
                 /*
-                 *
+                 * 
                  * 100 requests per 1 min 200 requests per 5 min 1000 requests per 1 hour
                  */
                 /* 2020-09-22: Most likely they will allow a retry after one hour. */

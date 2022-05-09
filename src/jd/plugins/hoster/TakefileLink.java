@@ -152,7 +152,7 @@ public class TakefileLink extends XFileSharingProBasic {
     public static List<String[]> getVirtualPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // virtual file hosting
-        for (final String virtualPluginDomain : new String[] { "vip", "erofullsets", "musiclibrary", "mega-rip", "webcam", "pwc", "scat", "rare", "files", "3dmodel", "4kuhd", "copro", "eros", "fetish", "goldenrain", "hentai", "hmu", "momroleplay", "monster", "pissing", "spy", "test", "voyeur" }) {
+        for (final String virtualPluginDomain : new String[] { "vip", "erofullsets", "musiclibrary", "mega-rip", "webcam", "pwc", "scat", "rare", "files", "3dmodel", "4kuhd", "copro", "eros", "fetish", "goldenrain", "hentai", "hmu", "momroleplay", "monster", "pissing", "spy", "test", "voyeur", "gaybb" }) {
             if (virtualPluginDomain.contains(".")) {
                 ret.add(new String[] { virtualPluginDomain });
             } else {
