@@ -28,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mountfile.net" }, urls = { "https?://(?:www\\.)?mountfile\\.net/d/[A-Za-z0-9]+" })
 public class MountFileNetFolder extends antiDDoSForDecrypt {
@@ -40,12 +42,14 @@ public class MountFileNetFolder extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getURL().endsWith("://mountfile.net/") || br.containsHTML(">Folder was deleted<")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Folder was deleted\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*Folder is empty")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<h2 class=\"center\">Download files from folder ([^<>\"]*?)</h2>").getMatch(0);
         if (fpName == null) {
@@ -53,8 +57,12 @@ public class MountFileNetFolder extends antiDDoSForDecrypt {
         }
         final String[][] fileInfo = br.getRegex("\"(/[A-Za-z0-9]+)\" target=\"_blank\">([^<>\"]*?)</a></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatches();
         if (fileInfo == null || fileInfo.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (!br.containsHTML("class=\"tlist\"")) {
+                /* Invalid folderURL e.g. mountfile.net/d/0 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         for (final String linkInfo[] : fileInfo) {
             final DownloadLink dl = createDownloadlink(Request.getLocation(linkInfo[0], br.getRequest()));

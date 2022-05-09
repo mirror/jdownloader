@@ -30,10 +30,13 @@ import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
@@ -69,12 +72,10 @@ public class FakkuNet extends antiDDoSForDecrypt {
         br.setAllowedResponseCodes(410);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 410) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error\"")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final DecimalFormat df = new DecimalFormat("000");
         int counter = 1;
@@ -83,8 +84,7 @@ public class FakkuNet extends antiDDoSForDecrypt {
         String main_part = br.getRegex("('|\")((?:https?:)?//t\\.fakku\\.net/images/[^<>\"]+/images/)\\1").getMatch(1);
         if (json_array == null && main_part == null) {
             if (!loggedin) {
-                logger.info("Cannot decrypt this subscription-only gallery without account");
-                return decryptedLinks;
+                throw new AccountRequiredException();
             }
             /* Handling for subscription URLs */
             getPage("https://books.fakku.net/manga/" + url_filename + "/read");

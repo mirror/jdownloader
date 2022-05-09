@@ -342,22 +342,26 @@ public class RecurbateCom extends antiDDoSForHost {
         } else {
             logger.warning("Failed to find nickname in HTML");
         }
-        final String plan = br.getRegex("<span class=\"plan-name\"[^>]*>([^<>\"<>]*)</span>").getMatch(0);
-        if (StringUtils.equalsIgnoreCase(plan, "Premium")) {
-            final String expire = br.getRegex("(?i)Expire on\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([A-Za-z]+ \\d{2}, \\d{4})").getMatch(0);
-            if (expire != null) {
-                /* Allow premium accounts without expire-date although all premium accounts should have an expire-date. */
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy", Locale.ENGLISH));
+        final String plan = br.getRegex("<span class=\"plan-name\"[^>]*>\\s*([^<]+)\\s*</span>").getMatch(0);
+        if (plan != null) {
+            if (plan.equalsIgnoreCase("Basic")) {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(free_maxdownloads);
             } else {
-                logger.warning("Failed to find expire-date for premium account!");
+                /* "Premium" or "Ultimate" plan */
+                final String expire = br.getRegex("(?i)Expire on\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([A-Za-z]+ \\d{1,2}, \\d{4})").getMatch(0);
+                if (expire != null) {
+                    /* Allow premium accounts without expire-date although all premium accounts should have an expire-date. */
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy", Locale.ENGLISH));
+                } else {
+                    logger.warning("Failed to find expire-date for premium account!");
+                }
+                account.setType(AccountType.PREMIUM);
+                account.setConcurrentUsePossible(true);
+                account.setMaxSimultanDownloads(premium_maxdownloads);
+                ai.setStatus(plan);
             }
-            account.setType(AccountType.PREMIUM);
-            account.setConcurrentUsePossible(true);
-            account.setMaxSimultanDownloads(premium_maxdownloads);
-            ai.setStatus(plan);
-        } else {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(free_maxdownloads);
+            ai.setStatus("Plan: " + plan);
         }
         checkErrors(br, account);
         return ai;
