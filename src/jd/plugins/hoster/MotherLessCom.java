@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,21 +40,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.|members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" })
 public class MotherLessCom extends PluginForHost {
-    public static final String  html_subscribedFailed       = "Failed to subscribe to the owner of the video";
-    public static final String  html_contentSubscriberVideo = "Here's another video instead\\.";
-    public static final String  html_contentSubscriberImage = "Here's another image instead\\.";
-    public static final String  html_contentFriendsOnly     = ">\\s*The content you are trying to view is for friends only\\.\\s*<";
+    public static final String html_subscribedFailed       = "Failed to subscribe to the owner of the video";
+    public static final String html_contentSubscriberVideo = "Here's another video instead\\.";
+    public static final String html_contentSubscriberImage = "Here's another image instead\\.";
+    public static final String html_contentFriendsOnly     = ">\\s*The content you are trying to view is for friends only\\.\\s*<";
     // offline can contain text which is displayed in contentScriber pages
-    public static final String  html_OFFLINE                = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
-    public static final String  html_notOnlineYet           = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
-    public static final String  ua                          = RandomUserAgent.generate();
-    private static final String PROPERTY_DIRECTURL          = "PROPERTY_DIRECTURL";
-    private String              dllink                      = null;
+    public static final String html_OFFLINE                = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
+    public static final String html_notOnlineYet           = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
+    public static final String ua                          = RandomUserAgent.generate();
+    private final String       PROPERTY_DIRECTURL          = "PROPERTY_DIRECTURL";
+    public static final String PROPERTY_TYPE               = "dltype";
+    private String             dllink                      = null;
 
     @SuppressWarnings("deprecation")
     public MotherLessCom(PluginWrapper wrapper) {
@@ -74,7 +75,7 @@ public class MotherLessCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         // reset comment/message
-        if ("video".equals(link.getStringProperty("dltype", null))) {
+        if ("video".equals(link.getStringProperty(PROPERTY_TYPE))) {
             notOnlineYet(link, true, true);
         }
         this.setBrowserExclusive();
@@ -82,14 +83,14 @@ public class MotherLessCom extends PluginForHost {
         br.setFollowRedirects(true);
         String title = null;
         String betterName = null;
-        if ("offline".equals(link.getStringProperty("dltype", null))) {
+        if ("offline".equals(link.getStringProperty(PROPERTY_TYPE))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*The member has deleted the upload\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if ("video".equals(link.getStringProperty("dltype", null)) || jd.plugins.decrypter.MotherLessCom.isVideo(this.br)) {
+        if ("video".equals(link.getStringProperty(PROPERTY_TYPE)) || jd.plugins.decrypter.MotherLessCom.isVideo(this.br)) {
             link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -122,7 +123,7 @@ public class MotherLessCom extends PluginForHost {
                     betterName += ext;
                 }
             }
-        } else if ("image".equals(link.getStringProperty("dltype", null))) {
+        } else if ("image".equals(link.getStringProperty(PROPERTY_TYPE))) {
             link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
             // links can go offline between the time of adding && download, also decrypter doesn't check found content, will happen here..
             if (br.containsHTML(html_OFFLINE) || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
@@ -215,10 +216,10 @@ public class MotherLessCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Content is for friends only!");
             }
             br.getHeaders().put("Accept-Encoding", "identity");
-            if ("video".equals(link.getStringProperty("dltype"))) {
+            if ("video".equals(link.getStringProperty(PROPERTY_TYPE))) {
                 br.getHeaders().put("Referer", "http://motherless.com/scripts/jwplayer.flash.swf");
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            } else if ("image".equals(link.getStringProperty("dltype"))) {
+            } else if ("image".equals(link.getStringProperty(PROPERTY_TYPE))) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             } else {
                 logger.warning("Unknown case for link: " + link.getDownloadURL());
@@ -300,13 +301,13 @@ public class MotherLessCom extends PluginForHost {
     }
 
     private void prepHeadersDownload(final DownloadLink link, final Browser brc) {
-        if ("video".equals(link.getStringProperty("dltype"))) {
+        if ("video".equals(link.getStringProperty(PROPERTY_TYPE))) {
             brc.getHeaders().put("Referer", "http://motherless.com/scripts/jwplayer.flash.swf");
         }
     }
 
     private boolean allowResume(final DownloadLink link) {
-        return !"image".equals(link.getStringProperty("dltype"));
+        return !"image".equals(link.getStringProperty(PROPERTY_TYPE));
     }
 
     @Override

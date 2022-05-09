@@ -25,6 +25,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -256,13 +257,18 @@ public class MotherLessCom extends PluginForDecrypt {
                         singlelink = formLink(singlelink);
                         final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
                         dl.setContentUrl(singlelink);
-                        dl.setProperty("dltype", "video");
+                        dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "video");
                         // fast add.
                         dl.setAvailable(true);
                         if (relative_path != null) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
                         }
-                        dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                        final String title = br.getRegex("<a href=\"/[^/]+/" + contentID + "\" title=\"([^\"]+)\"").getMatch(0);
+                        if (title != null) {
+                            dl.setName(Encoding.htmlDecode(title).trim() + ".mp4");
+                        } else {
+                            dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                        }
                         ret.add(dl);
                     }
                 }
@@ -278,13 +284,18 @@ public class MotherLessCom extends PluginForDecrypt {
                         singlelink = formLink(singlelink);
                         final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
                         dl.setContentUrl(singlelink);
-                        dl.setProperty("dltype", "image");
+                        dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "image");
                         // fast add.
                         dl.setAvailable(true);
                         if (relative_path != null) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
                         }
-                        dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                        final String title = br.getRegex("<a href=\"/[^/]+/" + contentID + "\" title=\"([^\"]+)\"").getMatch(0);
+                        if (title != null) {
+                            dl.setName(Encoding.htmlDecode(title).trim() + ".jpg");
+                        } else {
+                            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                        }
                         ret.add(dl);
                     }
                 }
