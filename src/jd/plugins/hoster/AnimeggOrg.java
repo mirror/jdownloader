@@ -18,12 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.AnimeggOrgConfig;
-import org.jdownloader.plugins.components.config.AnimeggOrgConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,6 +29,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.AnimeggOrgConfig;
+import org.jdownloader.plugins.components.config.AnimeggOrgConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
@@ -97,13 +97,13 @@ public class AnimeggOrg extends antiDDoSForHost {
         final LinkedHashMap<Integer, String> results = new LinkedHashMap<Integer, String>();
         final String[] quals = PluginJSonUtils.getJsonResultsFromArray(vidquals);
         String bestQualityDownloadurl = null;
-        int bestQuality = getUserPreferredquality();
+        int bestQuality = -1;
         for (final String qual : quals) {
             final String label = PluginJSonUtils.getJsonValue(qual, "label");
-            final String lapel = new Regex(label, "(\\d+)p").getMatch(0);
-            final Integer p = lapel != null ? Integer.parseInt(lapel) : -1;
+            final String labelP = new Regex(label, "(\\d+)p").getMatch(0);
+            final Integer p = labelP != null ? Integer.parseInt(labelP) : -1;
             final String url = PluginJSonUtils.getJsonValue(qual, "file");
-            if (url != null && lapel != null) {
+            if (url != null && labelP != null) {
                 results.put(p, url);
             }
             if (p > bestQuality) {
@@ -111,7 +111,7 @@ public class AnimeggOrg extends antiDDoSForHost {
                 bestQualityDownloadurl = url;
             }
         }
-        int userPreferredQuality = getUserPreferredquality();
+        final int userPreferredQuality = getUserPreferredquality();
         final int chosenQuality;
         if (results.containsKey(userPreferredQuality)) {
             dllink = results.get(userPreferredQuality);
@@ -154,16 +154,16 @@ public class AnimeggOrg extends antiDDoSForHost {
     private int getUserPreferredquality() {
         final Quality quality = PluginJsonConfig.get(AnimeggOrgConfig.class).getPreferredQuality();
         switch (quality) {
-        case Q240:
-            return 240;
-        case Q360:
-            return 360;
-        case Q480:
-            return 480;
-        case Q720:
-            return 720;
         case Q1080:
             return 1080;
+        case Q720:
+            return 720;
+        case Q480:
+            return 480;
+        case Q360:
+            return 360;
+        case Q240:
+            return 240;
         default:
             /* Should never happen */
             return -1;

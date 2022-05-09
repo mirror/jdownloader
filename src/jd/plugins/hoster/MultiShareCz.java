@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,6 +35,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/((?:[a-z]{2}/)?stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" })
 public class MultiShareCz extends antiDDoSForHost {
@@ -208,10 +208,11 @@ public class MultiShareCz extends antiDDoSForHost {
 
     public AvailableStatus requestFileInformationMh(final DownloadLink link) throws PluginException, IOException {
         prepBrowser(br);
+        final Browser brc = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
-            br.setFollowRedirects(true);
-            con = br.openGetConnection(link.getPluginPatternMatcher());
+            brc.setFollowRedirects(true);
+            con = brc.openGetConnection(link.getPluginPatternMatcher());
             if (this.looksLikeDownloadableContent(con)) {
                 if (link.getFinalFileName() == null) {
                     link.setFinalFileName(getFileNameFromHeader(con));
@@ -222,6 +223,11 @@ public class MultiShareCz extends antiDDoSForHost {
                 link.setAvailable(true);
                 return AvailableStatus.TRUE;
             } else {
+                try {
+                    brc.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 link.setAvailable(false);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -295,12 +301,13 @@ public class MultiShareCz extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("<h1>Chyba stahování</h1>")) {
+            } else if (br.containsHTML("<h1>\\s*(Chyba stahování|Download error)\\s*</h1>") || br.getURL().contains("/chyba-stahovani")) {
                 /* Check if downloadlink is internal (belongs to this MOCH and is not an external website) */
                 if (downloadLink.getPluginPatternMatcher().contains("multishare.cz/")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
+                } else {
+                    handleUnknownErrors(this.currentAcc, downloadLink, "known_unknown_downloaderror", 10);
                 }
-                handleUnknownErrors(this.currentAcc, downloadLink, "known_unknown_downloaderror", 10);
             }
             logger.warning("Received html code instead of file -> Unknown error");
             handleUnknownErrors(this.currentAcc, downloadLink, "unknown_downloaderror", 20);

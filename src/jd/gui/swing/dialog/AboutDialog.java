@@ -185,7 +185,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 stats.add(new JLabel("Java:"), "");
                 java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
                 ExtButton comp;
-                stats.add(comp = createLink(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit," : "(32bit,") + CrossSystem.getARCHFamily() + ")"));
+                stats.add(comp = createLink(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit/" : "(32bit/") + CrossSystem.getARCHFamily() + ")"));
                 comp.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {

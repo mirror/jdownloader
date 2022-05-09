@@ -1688,16 +1688,32 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected void handleGeneralServerErrors(final Browser br, final DownloadInterface dl, final Account account, final DownloadLink downloadLink) throws PluginException {
-        if (br.containsHTML("You exceeded your Premium (20|50) GB daily limit, try to download tomorrow")) {
-            throw new AccountUnavailableException("You exceeded your Premium daily limit, try to download tomorrow", 60 * 60 * 1000l);
+        if (br.containsHTML("You exceeded your Premium \\d+ GB daily limit, try to download tomorrow")) {
+            if (account != null) {
+                throw new AccountUnavailableException("You exceeded your Premium daily limit, try to download tomorrow", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now\\.";
-        if ((account == null || account.getType() == AccountType.FREE) && br.containsHTML(alreadyDownloading)) {
-            // found from jdlog://4140408642041 also note: ISP seems to have transparent proxy!
-            // should only happen to free.
+        final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now";
+        if (br.containsHTML(alreadyDownloading)) {
+            // most likely transparent proxy/carrier NAT/multiple WAN IPs
+            // HTTP/1.1 504 Gateway Time-out
+            // <head>
+            // <title>Download unavailable</title>
+            // </head>
+            // <body>
+            // Your current tariff doesn't allow to download more files then you are downloading now.
+            // If you are a free user, please upgrade to premium.
+            // </body>
+            // </html>
             // We also only have 1 max free sim currently, if we go higher we need to track current transfers against
             // connection_candidate(proxy|direct) IP address, and reduce max sim by one.
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, alreadyDownloading, 10 * 60 * 1000);
+            if (account == null || account.getType() == AccountType.FREE) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, alreadyDownloading, 15 * 60 * 1000);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, alreadyDownloading, 15 * 60 * 1000);
+            }
         } else if (dl.getConnection().getResponseCode() == 401) {
             // we should never get this here because checkcheckDirectLink should pick it up.
             // this happens when link is old, and site then prompts with basicauth which is under 401 header.

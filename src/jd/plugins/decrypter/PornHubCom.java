@@ -26,14 +26,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -55,6 +47,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -436,8 +437,8 @@ public class PornHubCom extends PluginForDecrypt {
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
             /**
-             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
-             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br> Without this we might only see some of all items and no
+             * pagination which is needed to be able to find all items.
              */
             logger.info("Found seeAllURL: " + seeAllURL);
             jd.plugins.hoster.PornHubCom.getPage(br, seeAllURL);
@@ -731,6 +732,12 @@ public class PornHubCom extends PluginForDecrypt {
         final boolean bestonly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_ONLY, false);
         final boolean bestselectiononly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_SELECTION_ONLY, false);
         final boolean fastlinkcheck = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.FAST_LINKCHECK, false);
+        boolean crawlHLS = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.CRAWL_VIDEO_HLS, true);
+        boolean crawlMP4 = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.CRAWL_VIDEO_MP4, true);
+        final boolean crawlThumbnail = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.CRAWL_THUMBNAIL, false);
+        if (!crawlHLS && !crawlMP4) {
+            crawlHLS = crawlMP4 = true;
+        }
         final boolean prefer_server_filename = cfg.getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false);
         /* Convert embed links to normal links */
         if (parameter.matches(".+/embed_player\\.php\\?id=\\d+")) {
@@ -818,6 +825,14 @@ public class PornHubCom extends PluginForDecrypt {
                     final String url = formatEntry.getValue();
                     if (StringUtils.isEmpty(url)) {
                         continue;
+                    } else if (!crawlHLS && "hls".equals(format)) {
+                        logger.info("Don't grab:" + format + "/" + quality);
+                        skippedFlag = true;
+                        continue;
+                    } else if (!crawlMP4 && "mp4".equals(format)) {
+                        logger.info("Don't grab:" + format + "/" + quality);
+                        skippedFlag = true;
+                        continue;
                     }
                     final boolean grab;
                     if (bestonly) {
@@ -892,7 +907,6 @@ public class PornHubCom extends PluginForDecrypt {
                         if (Integer.parseInt(foundQuality) > Integer.parseInt(bestQuality)) {
                             best = found;
                         } else {
-                            final String bestFormat = best.getStringProperty(jd.plugins.hoster.PornHubCom.PROPERT_FORMAT);
                             final String foundFormat = found.getStringProperty(jd.plugins.hoster.PornHubCom.PROPERT_FORMAT);
                             if (Integer.parseInt(foundQuality) == Integer.parseInt(bestQuality) && StringUtils.equalsIgnoreCase(foundFormat, "mp4")) {
                                 best = found;
@@ -903,6 +917,33 @@ public class PornHubCom extends PluginForDecrypt {
                 if (best != null) {
                     decryptedLinks.clear();
                     decryptedLinks.add(best);
+                }
+            }
+            if (crawlThumbnail) {
+                // higher resolution
+                String thumbnailURL = br.getRegex("\"thumbnailUrl\"\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
+                if (thumbnailURL == null) {
+                    // lower resolution
+                    thumbnailURL = br.getRegex("<img\\s*id\\s*=\\s*\"videoElementPoster\"[^>]*src\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+                    if (thumbnailURL == null) {
+                        thumbnailURL = br.getRegex("<img\\s*src\\s*=\\s*\"(https?://.*?)\"[^>]*id\\s*=\\s*\"videoElementPoster\"").getMatch(0);
+                    }
+                }
+                if (thumbnailURL != null) {
+                    String html_filename = siteTitle;
+                    if (!StringUtils.isEmpty(username)) {
+                        html_filename += "_" + username;
+                    }
+                    html_filename += getFileNameExtensionFromURL(thumbnailURL, ".jpg");
+                    DownloadLink dl = createDownloadlink("directhttp://" + thumbnailURL);
+                    dl.setProperty(DirectHTTP.FIXNAME, html_filename);
+                    dl.setFinalFileName(html_filename);
+                    dl.setContentUrl(parameter);
+                    dl.setLinkID("pornhub://" + viewkey + "_thumnail");
+                    if (fastlinkcheck) {
+                        dl.setAvailable(true);
+                    }
+                    decryptedLinks.add(dl);
                 }
             }
             final FilePackage fp = FilePackage.getInstance();
