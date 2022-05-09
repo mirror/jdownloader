@@ -280,26 +280,10 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
                 return add(createDownloadlink(url));
             }
         };
-        /* Cleanup/Improve title */
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
         }
         logger.info("PornEmbedParser is being executed...");
-        String externID = null;
-        externID = br.getRegex("(https?://(?:www\\.)?camhub\\.(?:world|cc)/embed/\\d+)").getMatch(0);
-        if (externID != null) {
-            final DownloadLink dl = this.createDownloadlink(externID);
-            /* Filename is good to have but not necessarily required, */
-            if (title != null) {
-                title += ".mp4";
-                /* 2020-09-29: Special: Enforce this filename because host-plugin will not be able to find a meaningful filename! */
-                dl.setForcedFileName(title);
-            }
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         /************************************************************************************************************/
         // Now check for all existant URLs if they're supported by any plugin tagged as porn plugin
         /************************************************************************************************************/
@@ -332,16 +316,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         if (lazyPlugins.size() == 0) {
             return ret;
         }
-        final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
-        if (lazyPlugins.size() == 1) {
-            // TODO: better way for this
-            if ("mydaddy.cc".equals(lazyPlugins.get(0).getDisplayName())) {
-                if (title != null) {
-                    dl.setProperty("decryptertitle", title);
-                }
-            }
-        }
-        ret.add(dl);
+        ret.add(createDownloadlink(Request.getLocation(url, br.getRequest())));
         return ret;
     }
 

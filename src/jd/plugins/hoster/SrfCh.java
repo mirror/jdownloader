@@ -90,7 +90,8 @@ public class SrfCh extends PluginForHost {
         return "http://www.srf.ch/allgemeines/impressum";
     }
 
-    private final String OFFICIAL_DOWNLOADURL = "official_downloadurl";
+    private final String OFFICIAL_DOWNLOADURL         = "official_downloadurl";
+    private final String PROPERTY_LAST_CHOSEN_QUALITY = "last_chosen_quality";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -159,7 +160,7 @@ public class SrfCh extends PluginForHost {
         if (!StringUtils.isEmpty(officialDownloadurl)) {
             link.setProperty(OFFICIAL_DOWNLOADURL, officialDownloadurl);
             /* Only check for filesize if user wants BEST quality anyways. */
-            if (!isDownload && getUserPreferredqualityHeight() == null) {
+            if (!isDownload && getUserPreferredqualityHeight(link) == null) {
                 URLConnectionAdapter con = null;
                 try {
                     /* 2022-05-09: HEAD request is not possible. */
@@ -215,7 +216,7 @@ public class SrfCh extends PluginForHost {
         if (urn == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Integer preferredQualityHeight = getUserPreferredqualityHeight();
+        final Integer preferredQualityHeight = getUserPreferredqualityHeight(link);
         /* 2020-07-29: E.g. "blockReason" : "ENDDATE" or "blockReason" : "GEOBLOCK" */
         String blockReason = br.getRegex("geoblock\\s*?:\\s*?\\{\\s*?(?:audio|video)\\:\\s*?\"([^\"]+)\"").getMatch(0);
         if (!br.getURL().contains("/byUrn/")) {
@@ -377,6 +378,7 @@ public class SrfCh extends PluginForHost {
                     logger.info("Using best quality as fallback: " + chosenQuality.getHeight() + "p");
                 }
             }
+            link.setProperty(PROPERTY_LAST_CHOSEN_QUALITY, chosenQuality.getHeight());
             final String url_hls = chosenQuality.getDownloadurl();
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, url_hls);
@@ -401,24 +403,28 @@ public class SrfCh extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content not downloadable because " + userReadableBlockedReason);
     }
 
-    private Integer getUserPreferredqualityHeight() {
-        final Quality quality = PluginJsonConfig.get(SrfChConfig.class).getPreferredQuality();
-        switch (quality) {
-        case Q180:
-            return 180;
-        case Q270:
-            return 270;
-        case Q360:
-            return 360;
-        case Q480:
-            return 480;
-        case Q720:
-            return 720;
-        case Q1080:
-            return 1080;
-        default:
-            /* Best quality */
-            return null;
+    private Integer getUserPreferredqualityHeight(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_LAST_CHOSEN_QUALITY)) {
+            return link.getIntegerProperty(PROPERTY_LAST_CHOSEN_QUALITY);
+        } else {
+            final Quality quality = PluginJsonConfig.get(SrfChConfig.class).getPreferredQuality();
+            switch (quality) {
+            case Q180:
+                return 180;
+            case Q270:
+                return 270;
+            case Q360:
+                return 360;
+            case Q480:
+                return 480;
+            case Q720:
+                return 720;
+            case Q1080:
+                return 1080;
+            default:
+                /* Best quality */
+                return null;
+            }
         }
     }
 
@@ -465,6 +471,7 @@ public class SrfCh extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(PROPERTY_LAST_CHOSEN_QUALITY);
     }
 
     @Override
