@@ -16,9 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -27,6 +32,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -44,6 +50,11 @@ public class FakkuNet extends antiDDoSForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.fakku.net/about";
     }
@@ -58,19 +69,18 @@ public class FakkuNet extends antiDDoSForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
     private String               dllink                    = null;
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        dllink = link.getDownloadURL();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, AccountController.getInstance().getValidAccount(this.getHost()));
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        dllink = link.getPluginPatternMatcher();
         this.setBrowserExclusive();
         prepBRForLink(link);
         final String filename = link.getStringProperty("decrypterfilename", null);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            try {
-                login(this.br, aa, false);
-            } catch (final Throwable e) {
-            }
+        if (account != null) {
+            login(this.br, account, false);
         }
         if (filename != null) {
             link.setFinalFileName(filename);
@@ -106,18 +116,17 @@ public class FakkuNet extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        if (link.getDownloadURL().matches(TYPE_PREMIUM)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_PREMIUM)) {
             /* Account only */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         prepBRForLink(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -141,10 +150,9 @@ public class FakkuNet extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "https://fakku.net";
-    private static Object       LOCK     = new Object();
+    private static Object LOCK = new Object();
 
-    public boolean login(final Browser br, final Account account, final boolean force) throws Exception {
+    public boolean login(final Browser br, final Account account, final boolean validateCookies) throws Exception {
         synchronized (LOCK) {
             try {
                 br.setCookiesExclusive(true);
@@ -152,21 +160,38 @@ public class FakkuNet extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     /* Try to avoid login-captcha! */
-                    br.setCookies(MAINPAGE, cookies);
-                    getPage("https://www." + account.getHoster() + "/login");
-                    if (isLoggedin()) {
+                    br.setCookies(this.getHost(), cookies);
+                    if (!validateCookies) {
+                        return false;
+                    }
+                    getPage("https://www." + account.getHoster() + "/account/subscription");
+                    if (isLoggedin(br)) {
+                        logger.info("Cookie login successful");
                         return true;
                     }
                     /* Full login required */
-                    br.setCookies(MAINPAGE, cookies);
+                    logger.info("Cookie login failed");
+                    br.setCookies(this.getHost(), cookies);
                 }
                 getPage("https://www." + account.getHoster() + "/login");
                 final Form loginform = br.getFormbyProperty("name", "login");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (br.containsHTML("")) {
-                    /* Handle login-captcha if required */
+                loginform.put("username", account.getUser());
+                InputField pwField = null;
+                for (final InputField ifield : loginform.getInputFields()) {
+                    if (StringUtils.equalsIgnoreCase(ifield.getType(), "password")) {
+                        pwField = ifield;
+                        break;
+                    }
+                }
+                if (pwField == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                pwField.setValue(Encoding.urlEncode(account.getPass()));
+                /* Handle login-captcha if required */
+                if (this.containsRecaptchaV2Class(br)) {
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     final DownloadLink dl_dummy;
                     if (dlinkbefore != null) {
@@ -181,17 +206,15 @@ public class FakkuNet extends antiDDoSForHost {
                         this.setDownloadLink(dlinkbefore);
                     }
                 }
-                loginform.put("username", account.getUser());
-                loginform.put("password", account.getPass());
                 this.submitForm(loginform);
-                if (!isLoggedin()) {
+                if (!isLoggedin(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(MAINPAGE), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -200,8 +223,12 @@ public class FakkuNet extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedin() {
-        return br.getCookie(MAINPAGE, "fakku_sid", Cookies.NOTDELETEDPATTERN) != null;
+    private boolean isLoggedin(final Browser br) {
+        if (br.getCookie(br.getHost(), "fakku_sid", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -209,18 +236,27 @@ public class FakkuNet extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         login(br, account, true);
         ai.setUnlimitedTraffic();
-        account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Free Account");
+        if (!br.getURL().endsWith("/account/subscription")) {
+            this.getPage("/account/subscription");
+        }
+        final Regex dateInfo = br.getRegex("(?i)>\\s*Next Billing Date\\s*</span>.*?placeholder=\"([A-Za-z]+ \\d+)[a-z]+, ([0-9]{4})\"");
+        if (dateInfo.matches()) {
+            final String nextBillingDate = dateInfo.getMatch(0) + " " + dateInfo.getMatch(1);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(nextBillingDate, "MMM dd yyyy", Locale.ENGLISH));
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account);
         /* No need to login again here as we already logged in in the linkcheck. */
-        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 
     @Override
