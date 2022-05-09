@@ -281,7 +281,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_STORY_HIGHLIGHTS)) {
             return this.crawlStoryHighlight(param, account, loggedIN);
         } else if (param.getCryptedUrl().matches(TYPE_STORY)) {
-            return this.crawlStory(param, account, loggedIN);
+            return this.crawlStory(param, account, loggedIN, true);
         } else if (param.getCryptedUrl().matches(TYPE_PROFILE_TAGGED)) {
             return crawlUserTagged(param, account, loggedIN);
         } else {
@@ -501,13 +501,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final InstagramConfig cfg = PluginJsonConfig.get(InstagramConfig.class);
         int userSelectedCrawlTypes = 0;
+        /* First check how many types of item the user wants us to crawl. */
         if (cfg.isProfileCrawlerCrawlStory()) {
             userSelectedCrawlTypes++;
-            decryptedLinks.addAll(this.crawlStory(param, username, account, loggedIN));
         }
         if (cfg.isProfileCrawlerCrawlStoryHighlights()) {
             userSelectedCrawlTypes++;
-            decryptedLinks.addAll(this.crawlAllHighlightStories(username, account, loggedIN));
         }
         final boolean crawlProfilePosts = cfg.getProfileCrawlerMaxItemsLimit() != 0;
         final boolean crawlProfilePicture = cfg.isProfileCrawlerCrawlProfilePicture();
@@ -517,6 +516,21 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (crawlProfilePicture) {
             userSelectedCrawlTypes++;
         }
+        if (userSelectedCrawlTypes == 0) {
+            logger.info("User has disabled all profile crawler functionality");
+            return decryptedLinks;
+        }
+        /* Now do the actual crawling. */
+        if (cfg.isProfileCrawlerCrawlStory()) {
+            if (userSelectedCrawlTypes == 1) {
+                decryptedLinks.addAll(this.crawlStory(param, username, account, loggedIN, true));
+            } else {
+                decryptedLinks.addAll(this.crawlStory(param, username, account, loggedIN, false));
+            }
+        }
+        if (cfg.isProfileCrawlerCrawlStoryHighlights()) {
+            decryptedLinks.addAll(this.crawlAllHighlightStories(username, account, loggedIN));
+        }
         if (crawlProfilePicture || crawlProfilePosts) {
             final APIPreference pref = cfg.getProfileCrawlerAPIPreference();
             if (pref == APIPreference.API_ONLY || (loggedIN.get() && pref == APIPreference.API_WEBSITE)) {
@@ -525,9 +539,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } else {
                 decryptedLinks.addAll(this.crawlUserWebsite(param, username, account, loggedIN, crawlProfilePicture, crawlProfilePosts));
             }
-        }
-        if (userSelectedCrawlTypes == 0) {
-            logger.info("User has disabled all profile crawler functionality");
         }
         return decryptedLinks;
     }
@@ -1380,10 +1391,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final Number media_count = ((Number) item.get("media_count"));
+        if (media_count == null || media_count.intValue() == 0) {
+            /* Nothing to crawl */
+            return decryptedLinks;
+        }
         final Map<String, Object> user = (Map<String, Object>) item.get("user");
         final String username = user.get("username").toString();
         final Object reel_typeO = item.get("reel_type");
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final InstagramConfig cfg = PluginJsonConfig.get(InstagramConfig.class);
         if (reel_typeO != null) {
             /* Story */
@@ -1951,16 +1967,16 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return this.crawlPostAltAPI(param, metadata, reel);
     }
 
-    private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
+    private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final Account account, final AtomicBoolean loggedIN, final boolean addDummyItemOnNoItemsFound) throws UnsupportedEncodingException, Exception {
         final String username = new Regex(param.getCryptedUrl(), TYPE_STORY).getMatch(0);
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return crawlStory(param, username, account, loggedIN);
+        return crawlStory(param, username, account, loggedIN, addDummyItemOnNoItemsFound);
     }
 
-    private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final String username, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
+    private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final String username, final Account account, final AtomicBoolean loggedIN, final boolean addDummyItemOnNoItemsFound) throws UnsupportedEncodingException, Exception {
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1978,7 +1994,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
         final Map<String, Object> reel = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        return this.crawlPostAltAPI(param, metadata, reel);
+        final ArrayList<DownloadLink> ret = this.crawlPostAltAPI(param, metadata, reel);
+        if (ret.isEmpty() && addDummyItemOnNoItemsFound) {
+            final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_HAS_NO_STORY_" + username, "This profile currently doesn't have a story: " + username);
+            ret.add(dummy);
+        }
+        return ret;
     }
 
     private DownloadLink getDummyDownloadlinkProfileEmpty(final String username) {
