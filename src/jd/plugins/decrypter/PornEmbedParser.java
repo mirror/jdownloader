@@ -69,7 +69,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         return false;
     }
 
-    /** Use thisd if you want to change the URL added by the user before processing it. */
+    /** Use this if you want to change the URL added by the user before processing it. */
     protected void correctCryptedLink(final CryptedLink param) {
     }
 
