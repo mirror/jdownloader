@@ -92,6 +92,7 @@ public class SrfCh extends PluginForHost {
 
     private final String OFFICIAL_DOWNLOADURL         = "official_downloadurl";
     private final String PROPERTY_LAST_CHOSEN_QUALITY = "last_chosen_quality";
+    private final String PROPERTY_URN                 = "urn";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -113,6 +114,7 @@ public class SrfCh extends PluginForHost {
         String officialDownloadurl = null;
         final String json = br.getRegex(">\\s*window\\.__SSR_VIDEO_DATA__ = (\\{.*?\\})</script>").getMatch(0);
         if (json != null) {
+            /* Website/old handling */
             final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             final Map<String, Object> videoDetail = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initialData/videoDetail");
             String title = (String) videoDetail.get("title");
@@ -142,7 +144,11 @@ public class SrfCh extends PluginForHost {
             }
             this.accessAPI(urn);
             final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final Map<String, Object> mediaInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "chapterList/{0}");
+            final List<Object> chapterList = (List<Object>) root.get("chapterList");
+            if (chapterList.size() > 1) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Map<String, Object> mediaInfo = (Map<String, Object>) chapterList.get(0);
             final String title = mediaInfo.get("title").toString();
             final String dateFormatted = new Regex(mediaInfo.get("date"), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             final String ext;
@@ -156,6 +162,7 @@ public class SrfCh extends PluginForHost {
             if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
                 link.setComment(description);
             }
+            officialDownloadurl = (String) mediaInfo.get("podcastHdUrl");
         }
         if (!StringUtils.isEmpty(officialDownloadurl)) {
             link.setProperty(OFFICIAL_DOWNLOADURL, officialDownloadurl);
@@ -184,25 +191,29 @@ public class SrfCh extends PluginForHost {
     }
 
     private String getURN(final DownloadLink link, final boolean allowFallback) throws MalformedURLException {
-        final String domainpart = new Regex(link.getPluginPatternMatcher(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
-        final String videoid = new Regex(link.getPluginPatternMatcher(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
-        final String channelname = convertDomainPartToShortChannelName(domainpart);
-        /* 2020-09-09: New URLs will contain this parameter */
-        String urn = UrlQuery.parse(link.getPluginPatternMatcher()).get("urn");
-        if (StringUtils.isEmpty(urn)) {
-            /* E.g. for audio files */
-            urn = br.getRegex("data-assetid=\"(urn:[^\"]+)\"").getMatch(0);
+        if (link.hasProperty(PROPERTY_URN)) {
+            return link.getStringProperty(PROPERTY_URN);
+        } else {
+            final String domainpart = new Regex(link.getPluginPatternMatcher(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
+            final String videoid = new Regex(link.getPluginPatternMatcher(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
+            final String channelname = convertDomainPartToShortChannelName(domainpart);
+            /* 2020-09-09: New URLs will contain this parameter */
+            String urn = UrlQuery.parse(link.getPluginPatternMatcher()).get("urn");
+            if (StringUtils.isEmpty(urn)) {
+                /* E.g. for audio files */
+                urn = br.getRegex("data-assetid=\"(urn:[^\"]+)\"").getMatch(0);
+            }
+            if (StringUtils.isEmpty(urn) && allowFallback) {
+                /* Final fallback e.g. for older URLs --> We have to generate that parameter on our own. */
+                urn = "urn:" + channelname + ":video:" + videoid;
+            }
+            return urn;
         }
-        if (StringUtils.isEmpty(urn) && allowFallback) {
-            /* Final fallback e.g. for older URLs --> We have to generate that parameter on our own. */
-            urn = "urn:" + channelname + ":video:" + videoid;
-        }
-        return urn;
     }
 
     private void accessAPI(final String urn) throws IOException, PluginException {
         /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
-        this.br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/" + urn + ".json?onlyChapters=true&vector=portalplay");
+        this.br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/" + urn + ".json?onlyChapters=false&vector=portalplay");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -233,7 +244,11 @@ public class SrfCh extends PluginForHost {
             try {
                 final Map<String, String> hlsMap = new HashMap<String, String>();
                 final Map<String, String> httpDownloadsMap = new HashMap<String, String>();
-                final Map<String, Object> mediaInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "chapterList/{0}");
+                final List<Object> chapterList = (List<Object>) root.get("chapterList");
+                if (chapterList.size() > 1) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final Map<String, Object> mediaInfo = (Map<String, Object>) chapterList.get(0);
                 if (StringUtils.isEmpty(blockReason)) {
                     /* 2020-07-29: New */
                     blockReason = (String) mediaInfo.get("blockReason");
