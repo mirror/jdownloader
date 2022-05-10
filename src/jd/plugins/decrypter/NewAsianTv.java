@@ -22,6 +22,13 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,12 +38,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newasiantv.tv" }, urls = { "https?://(?:\\w+\\.)?newasiantv\\.(tv|ch|biz|com)/(?:(?:watch|files)/.+\\.html?|embed\\.php\\?.+|\\?xlink=.+)" })
 public class NewAsianTv extends PluginForDecrypt {
@@ -59,33 +60,46 @@ public class NewAsianTv extends PluginForDecrypt {
                 final Object[] jsonArray = JSonStorage.restoreFromString(episodeJSON, TypeRef.OBJECT_ARRAY);
                 for (Object jsonObject : jsonArray) {
                     final Browser br2 = br.cloneBrowser();
-                    final String apiUrl = "https://player.newasiantv.com/v2/loader.php";
+                    final String apiUrl = "https://api.newasiantv.com/player";
                     Map map = (Map) jsonObject;
-                    String url = String.valueOf(map.getOrDefault("url", ""));
-                    String subUrl = String.valueOf(map.getOrDefault("subUrl", ""));
-                    String episodeID = String.valueOf(map.getOrDefault("episodeId", ""));
-                    String filmID = br.getRegex("var filmId=\"(\\w+)\";").getMatch(0);
-                    String currentEp = br.getRegex("var currentEp=\"(\\w+)\";").getMatch(0);
+                    final String slug = (String) map.get("id");
+                    final String subUrl = String.valueOf(map.getOrDefault("subUrl", ""));
+                    final String episodeID = String.valueOf(map.getOrDefault("episodeId", ""));
+                    final String filmID = br.getRegex("var filmId=\"(\\w+)\";").getMatch(0);
+                    final String currentEp = br.getRegex("var currentEp=\"(\\w+)\";").getMatch(0);
                     if (StringUtils.equalsIgnoreCase(episodeID, currentEp)) {
                         if (StringUtils.isNotEmpty(subUrl)) {
                             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(subUrl)));
                         }
-                        br2.postPage(apiUrl, "url=" + url + "&subUrl=" + subUrl + "&eid=" + episodeID + "&filmID=" + filmID);
-                        String cryptedData = br2.getRegex("(decodeLink\\(\\s*\"[^\"]+\"\\s*\\,\\s*[^\\)]+\\s*\\))").getMatch(0);
-                        if (StringUtils.isNotEmpty(cryptedData)) {
-                            final String jsExternal1 = br2.getPage("https://newasiantv.tv/theme/js/main.js?v=02042018");
-                            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-                            final ScriptEngine engine = manager.getEngineByName("javascript");
-                            try {
-                                engine.eval(jsExternal1);
-                                engine.eval("var res = " + cryptedData + ";");
-                                String decryptedData = (String) engine.get("res");
-                                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(decryptedData)));
-                            } catch (final Exception e) {
-                                e.printStackTrace();
+                        final UrlQuery query = new UrlQuery();
+                        query.add("slug", Encoding.urlEncode(slug));
+                        query.add("subUrl", Encoding.urlEncode(subUrl));
+                        query.add("eid", Encoding.urlEncode(episodeID));
+                        query.add("filmID", Encoding.urlEncode(filmID));
+                        br2.postPage(apiUrl, query);
+                        String iframeLink = null;
+                        if (br2.getRequest().getHtmlCode().startsWith("{")) {
+                            /* 2022-05-10: New handling */
+                            final Map<String, Object> entries = JSonStorage.restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                            iframeLink = entries.get("iframeUrl").toString();
+                        } else {
+                            /* Old handling */
+                            String cryptedData = br2.getRegex("(decodeLink\\(\\s*\"[^\"]+\"\\s*\\,\\s*[^\\)]+\\s*\\))").getMatch(0);
+                            if (StringUtils.isNotEmpty(cryptedData)) {
+                                final String jsExternal1 = br2.getPage("https://newasiantv.tv/theme/js/main.js?v=02042018");
+                                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                                final ScriptEngine engine = manager.getEngineByName("javascript");
+                                try {
+                                    engine.eval(jsExternal1);
+                                    engine.eval("var res = " + cryptedData + ";");
+                                    String decryptedData = (String) engine.get("res");
+                                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(decryptedData)));
+                                } catch (final Exception e) {
+                                    e.printStackTrace();
+                                }
                             }
+                            iframeLink = br2.getRegex("<iframe[^>]+src=\"([^\"]+)\"").getMatch(0);
                         }
-                        String iframeLink = br2.getRegex("<iframe[^>]+src=\"([^\"]+)\"").getMatch(0);
                         if (StringUtils.isNotEmpty(iframeLink)) {
                             iframeLink = Encoding.htmlDecode(iframeLink);
                             if (iframeLink.startsWith("//")) {
