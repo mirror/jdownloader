@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.JVMVersion;
 import org.appwork.utils.Regex;
@@ -113,6 +114,9 @@ public class JDClassLoaderLauncher {
         if (mainClass == null || mainClass.trim().length() == 0) {
             throw new RuntimeException("MainClass not set!");
         } else {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                System.setProperty("org.appwork.utils.Application.ResourceLookup", "org.jdownloader.updatev2.JDResourceLookup");
+            }
             if (JVMVersion.isMinimum(JVMVersion.JAVA_9)) {
                 try {
                     final String rootClass = getClass().getName().replaceAll("\\.", "/") + ".class";
