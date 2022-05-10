@@ -314,7 +314,7 @@ public class InstaGramCom extends PluginForHost {
         }
         final Browser brc = br.cloneBrowser();
         prepBRAltAPI(brc);
-        getPageAltAPI(brc, ALT_API_BASE + "/media/" + imageid + "/info/");
+        getPageAltAPI(account, brc, ALT_API_BASE + "/media/" + imageid + "/info/");
         /* Offline errorhandling */
         if (brc.getHttpConnection().getResponseCode() != 200) {
             /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
@@ -340,14 +340,19 @@ public class InstaGramCom extends PluginForHost {
         return downloadurl;
     }
 
-    public static void getPageAltAPI(final Browser br, final String url) throws PluginException, IOException {
+    public static void getPageAltAPI(final Account account, final Browser br, final String url) throws PluginException, IOException {
         br.getPage(url);
-        checkErrorsAltAPI(br);
+        checkErrorsAltAPI(account, br);
     }
 
-    public static void checkErrorsAltAPI(final Browser br) throws PluginException {
+    public static void checkErrorsAltAPI(final Account account, final Browser br) throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 429) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached");
+            if (account != null) {
+                /* Account should always be given */
+                throw new AccountUnavailableException("Rate-Limit reached", 5 * 60 * 1000);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached");
+            }
         }
     }
 
