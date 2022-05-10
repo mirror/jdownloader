@@ -21,6 +21,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -48,21 +63,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram.com/p/[A-Za-z0-9_-]+/" })
 public class InstaGramCom extends PluginForHost {
@@ -178,25 +178,18 @@ public class InstaGramCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             prepBRWebsite(this.br);
-            boolean isLoggedIN = false;
             if (PluginJsonConfig.get(InstagramConfig.class).isAttemptToDownloadOriginalQuality() && !hasTriedToCrawlOriginalQuality(link) && account != null) {
-                login(account, false);
-                isLoggedIN = true;
-                this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, true);
+                this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, account, true);
             } else {
                 this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             }
             this.dllink = this.checkLinkAndSetFilesize(link, this.dllink);
             if (this.dllink == null) {
                 /* This will also act as a fallback in case that "original quality" handling fails */
-                this.dllink = this.getFreshDirecturl(link, account, isLoggedIN);
+                this.dllink = this.getFreshDirecturl(link, account);
                 if (this.dllink == null) {
                     /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
-                }
-                String ext = null;
-                if (ext == null) {
-                    ext = getFileNameExtensionFromString(dllink, ".jpg");
                 }
                 link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                 /* Only do this extra request if the user triggered a single linkcheck! */
@@ -292,10 +285,16 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
-     * grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br>
+     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
+     *
+     * @throws Exception
      */
-    private String getHighesQualityDownloadlinkAltAPI(final DownloadLink link, final boolean removePictureEffects) throws IOException, PluginException {
+    private String getHighesQualityDownloadlinkAltAPI(final DownloadLink link, final Account account, final boolean removePictureEffects) throws Exception {
+        if (account == null) {
+            throw new AccountRequiredException();
+        }
+        login(account, false);
         // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
         /*
          * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
@@ -320,7 +319,15 @@ public class InstaGramCom extends PluginForHost {
         if (brc.getHttpConnection().getResponseCode() != 200) {
             /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
             /* E.g. {"message": "Media not found or unavailable", "status": "fail"} */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (brc.getHttpConnection().getResponseCode() == 403) {
+                /*
+                 * {"message":"login_required","error_title":"Du wurdest abgemeldet","error_body":"Bitte melde dich wieder an."
+                 * ,"logout_reason":8,"status":"fail"}
+                 */
+                this.errorSessionExpired(account);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         /*
          * New URL should be the BEST quality (resolution).
@@ -396,15 +403,12 @@ public class InstaGramCom extends PluginForHost {
         return dllink;
     }
 
-    private String getFreshDirecturl(final DownloadLink link, final Account account, final boolean isLoggedIN) throws Exception {
+    private String getFreshDirecturl(final DownloadLink link, final Account account) throws Exception {
         String directurl = null;
         logger.info("Trying to refresh directurl");
         if (preferAltAPIForDirecturlRefresh() && account != null) {
             logger.info("Tring to obtain fresh original quality downloadurl");
-            if (!isLoggedIN) {
-                this.login(account, false);
-            }
-            directurl = getHighesQualityDownloadlinkAltAPI(link, true);
+            directurl = getHighesQualityDownloadlinkAltAPI(link, account, true);
         } else if (isPartOfStory(link)) {
             throw new AccountRequiredException("Cannot refresh direct url of story elements without account");
         } else {
@@ -559,11 +563,7 @@ public class InstaGramCom extends PluginForHost {
                     if (verifyCookies(account, userCookies)) {
                         return;
                     } else {
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
+                        errorSessionExpired(account);
                     }
                 }
                 if (cookies != null) {
@@ -704,6 +704,18 @@ public class InstaGramCom extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    private void errorSessionExpired(final Account account) throws AccountInvalidException, AccountUnavailableException {
+        if (account.loadUserCookies() != null) {
+            if (account.hasEverBeenValid()) {
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+            } else {
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+            }
+        } else {
+            throw new AccountUnavailableException("Session expired", 1 * 60 * 1000l);
         }
     }
 

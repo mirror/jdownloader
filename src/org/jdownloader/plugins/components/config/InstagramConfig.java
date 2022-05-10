@@ -68,7 +68,7 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getAttemptToDownloadOriginalQuality_label() {
-            return "Try to download original quality (bigger filesize, without image-effects)? [This can slow down the download-process!]";
+            return "Try to download original quality (bigger filesize, without image-effects, only in account-mode)? [This can slow down the download-process!]";
         }
 
         public String getProfileCrawlerMaxItemsLimit_label() {
@@ -286,7 +286,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY")
-    @DescriptionForConfigEntry("Try to download original quality (bigger filesize, without image-effects)? [This can slow down the download-process!]")
+    @DescriptionForConfigEntry("Try to download original quality (bigger filesize, without image-effects, only in account-mode)? [This can slow down the download-process!]")
     @Order(50)
     boolean isAttemptToDownloadOriginalQuality();
 
