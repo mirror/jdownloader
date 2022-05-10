@@ -301,16 +301,26 @@ public class AboutDialog extends AbstractDialog<Integer> {
             }
             if (map != null) {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
-                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
-                stats.add(createLink("#" + map.get("JDownloaderRevision"), "https://svn.jdownloader.org/build.php?check=" + map.get("JDownloaderRevision")));
-                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_launcher()), "gapleft 10");
-                stats.add(createLink("#" + map.get("JDownloaderUpdaterRevision")));
-                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_appworkutilities()), "gapleft 10");
-                stats.add(createLink("#" + map.get("AppWorkUtilsRevision")));
-                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_browser()), "gapleft 10");
-                stats.add(createLink("#" + map.get("JDBrowserRevision")));
-                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_updater()), "gapleft 10");
-                stats.add(createLink("#" + map.get("UpdateClientV2Revision")));
+                if (map.containsKey("JDownloaderRevision")) {
+                    stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
+                    stats.add(createLink("#" + map.get("JDownloaderRevision"), "https://svn.jdownloader.org/build.php?check=" + map.get("JDownloaderRevision")));
+                }
+                if (map.containsKey("JDownloaderUpdaterRevision")) {
+                    stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_launcher()), "gapleft 10");
+                    stats.add(createLink("#" + map.get("JDownloaderUpdaterRevision")));
+                }
+                if (map.containsKey("AppWorkUtilsRevision")) {
+                    stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_appworkutilities()), "gapleft 10");
+                    stats.add(createLink("#" + map.get("AppWorkUtilsRevision")));
+                }
+                if (map.containsKey("JDBrowserRevision")) {
+                    stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_browser()), "gapleft 10");
+                    stats.add(createLink("#" + map.get("JDBrowserRevision")));
+                }
+                if (map.containsKey("UpdateClientV2Revision")) {
+                    stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_updater()), "gapleft 10");
+                    stats.add(createLink("#" + map.get("UpdateClientV2Revision")));
+                }
             }
         } catch (Throwable t) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
