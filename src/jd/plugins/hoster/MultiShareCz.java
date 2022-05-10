@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,11 +37,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/((?:[a-z]{2}/)?stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" })
 public class MultiShareCz extends antiDDoSForHost {
@@ -47,12 +47,12 @@ public class MultiShareCz extends antiDDoSForHost {
         this.enablePremium("https://www.multishare.cz/cenik/");
     }
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private final String                                   mhLink             = "https?://[\\w\\.]*?multishare\\.cz/html/mms_process\\.php\\?.+";
-    private static final String                            MAINPAGE           = "http://multishare.cz";
-    private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
-    private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
-    private Account                                        currentAcc         = null;
+    private final String                 mhLink            = "https?://[\\w\\.]*?multishare\\.cz/html/mms_process\\.php\\?.+";
+    private static final String          MAINPAGE          = "http://multishare.cz";
+    private static final String          NICE_HOST         = MAINPAGE.replaceAll("(https://|http://)", "");
+    private static final String          NICE_HOSTproperty = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
+    private Account                      currentAcc        = null;
+    private static MultiHosterManagement mhm               = new MultiHosterManagement("multishare.cz");
 
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
@@ -242,21 +242,7 @@ public class MultiShareCz extends antiDDoSForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(false);
@@ -270,7 +256,7 @@ public class MultiShareCz extends antiDDoSForHost {
         final String dllink = PluginJSonUtils.getJsonValue(br, "link");
         final String maxChunks = PluginJSonUtils.getJsonValue(br, "chunks");
         if (dllink == null) {
-            handleUnknownErrors(this.currentAcc, link, "dllinknull", 10);
+            mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50);
         }
         int chunks = 1;
         if (maxChunks != null) {
@@ -285,8 +271,8 @@ public class MultiShareCz extends antiDDoSForHost {
         handleDl(link, dllink, chunks);
     }
 
-    private void handleDl(final DownloadLink downloadLink, final String dllink, int chunks) throws Exception {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
+    private void handleDl(final DownloadLink link, final String dllink, int chunks) throws Exception {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, chunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             /*
              * download is not contentdisposition, so remove this host from premiumHosts list
@@ -303,14 +289,14 @@ public class MultiShareCz extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("<h1>\\s*(Chyba stahování|Download error)\\s*</h1>") || br.getURL().contains("/chyba-stahovani")) {
                 /* Check if downloadlink is internal (belongs to this MOCH and is not an external website) */
-                if (downloadLink.getPluginPatternMatcher().contains("multishare.cz/")) {
+                if (link.getPluginPatternMatcher().contains("multishare.cz/")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
                 } else {
-                    handleUnknownErrors(this.currentAcc, downloadLink, "known_unknown_downloaderror", 10);
+                    mhm.handleErrorGeneric(this.currentAcc, link, "Unknown download error 1", 50);
                 }
             }
-            logger.warning("Received html code instead of file -> Unknown error");
-            handleUnknownErrors(this.currentAcc, downloadLink, "unknown_downloaderror", 20);
+            logger.warning("Received unknown html code instead of file -> Unknown error");
+            mhm.handleErrorGeneric(this.currentAcc, link, "Unknown download error 2", 50);
         }
         dl.startDownload();
     }
@@ -369,48 +355,6 @@ public class MultiShareCz extends antiDDoSForHost {
     private String getFuid(final DownloadLink link) {
         final String fuid = new Regex(link.getPluginPatternMatcher(), "/(\\d+)/?$").getMatch(0);
         return fuid;
-    }
-
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    /**
-     * Is intended to handle unknown errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
-     *
-     * @param dl
-     *            : The DownloadLink
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleUnknownErrors(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
-        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        dl.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
-        }
     }
 
     @Override
