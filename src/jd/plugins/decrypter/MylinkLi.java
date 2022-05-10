@@ -17,11 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Time;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,7 +26,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mylink.li" }, urls = { "https?://(?:www\\.)?(?:mylink\\.(?:li|how|cx)|myl\\.li)/[A-Za-z0-9]+" })
+import org.appwork.utils.Time;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mylink.vc" }, urls = { "https?://(?:www\\.)?(?:mylink\\.(?:li|how|cx|vc)|myl\\.li)/[A-Za-z0-9]+" })
 public class MylinkLi extends antiDDoSForDecrypt {
     public MylinkLi(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,10 +40,6 @@ public class MylinkLi extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // final String linkID = new Regex(param.getCryptedUrl(), "/([A-Za-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            logger.warning("This crawler does not yet work!");
-            return null;
-        }
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {

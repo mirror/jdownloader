@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -36,6 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XingyaodiskCom extends PluginForHost {
@@ -75,8 +75,8 @@ public class XingyaodiskCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXCHUNKS    = 1;
+    private static final int     FREE_MAXDOWNLOADS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -118,6 +118,11 @@ public class XingyaodiskCom extends PluginForHost {
                 filesize += "b";
             }
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (filename == null || filesize == null) {
+            if (br.containsHTML("<title>\\s*文件已经被删除")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -161,12 +166,11 @@ public class XingyaodiskCom extends PluginForHost {
                 dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
             }
             if (dllink == null) {
-                dllink = ajax.getRegex("true\\|(http[^<>\"]+)").getMatch(0);
+                dllink = ajax.getRegex("true\\|(https?[^<>\"]+)").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dllink.startsWith("vip.php")) {
+            } else if (dllink.startsWith("vip.php")) {
                 throw new AccountRequiredException();
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
@@ -177,11 +181,12 @@ public class XingyaodiskCom extends PluginForHost {
                     logger.log(e);
                 }
                 /* Limit waittime / time needed until start of more downloads is allowed. */
-                final String waitSecsStr = br.getRegex("var seconds?_left = (\\d+);").getMatch(0);
+                final String waitSecsStr = br.getRegex("var seconds?_left\\s*=\\s*(\\d+)\\s*;").getMatch(0);
                 if (waitSecsStr != null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitSecsStr) * 1001l);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
+                } else if (br.getURL().contains("/promo.php")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+                } else if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);

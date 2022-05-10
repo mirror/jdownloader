@@ -16,19 +16,33 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import java.util.Map;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 5, names = {}, urls = {})
 public class NaughtyBlgOrg extends antiDDoSForDecrypt {
@@ -92,6 +106,37 @@ public class NaughtyBlgOrg extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         getPage(parameter);
+        final String nonce = br.getRegex("\"nonce\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        final String post_id = br.getRegex("\"post_id\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        final String recaptcha_key = br.getRegex("\"recaptcha_key\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        final String data_protection = br.getRegex("data-protection\\s*=\\s*\"(.*?)\"").getMatch(0);
+        final String data_area = br.getRegex("data-area\\s*=\\s*\"(.*?)\"").getMatch(0);
+        final String data_psid = br.getRegex("data-psid\\s*=\\s*\"(.*?)\"").getMatch(0);
+        String downloadhidden = null;
+        if (StringUtils.isAllNotEmpty(nonce, post_id, recaptcha_key, data_area, data_protection, data_psid)) {
+            final Form form = new Form();
+            form.setAction("/wp-admin/admin-ajax.php");
+            form.setMethod(MethodType.POST);
+            form.put("action", "validate_input");
+            form.put("nonce", nonce);
+            form.put("post_id", post_id);
+            form.put("protection", URLEncode.encodeRFC2396(data_protection));
+            form.put("area", URLEncode.encodeRFC2396(data_area));
+            form.put("captcha_id", data_psid);
+            form.put("type", "recaptcha");
+            try {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, recaptcha_key).getToken();
+                form.put("token", recaptchaV2Response);
+                final Browser brc = br.cloneBrowser();
+                brc.submitForm(form);
+                final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                if (Boolean.TRUE.equals(response.get("success"))) {
+                    downloadhidden = (String) response.get("content");
+                }
+            } catch (PluginException e) {
+                logger.log(e);
+            }
+        }
         // String content = this.br.getRegex(Pattern.compile("<div id=\"main\\-content\" class=\"main\\-content\\-single\">(.*?)<h3
         // class=\"comments\"", 34)).getMatch(0);
         String contentReleaseName = br.getRegex("<h1 class=\"post\\-title entry\\-title\">(.*?)</h1>").getMatch(0);
@@ -168,16 +213,17 @@ public class NaughtyBlgOrg extends antiDDoSForDecrypt {
             /* Final fallback --> Scan complete html */
             contentReleaseLinks = br.toString();
         }
-        /* 2020-07-15: This doesn't work anymore --> Grab all URLs of previously RegExes html snippet! */
-        // final String[] links = new Regex(contentReleaseLinks, "<a href=\"(https?://(www\\.)?[^\"]*?)\"").getColumn(0);
-        // String[] links = new Regex(contentReleaseLinks, "<a href=(.*?) title").getColumn(0);
-        // if (links == null) {
-        // links = HTMLParser.getHttpLinks(contentReleaseLinks, null);
-        // }
-        String[] links = HTMLParser.getHttpLinks(contentReleaseLinks, null);
-        if (links == null || links.length == 0) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        final Set<String> links = new HashSet<String>();
+        final String[] foundLinks = HTMLParser.getHttpLinks(contentReleaseLinks, null);
+        if (foundLinks != null) {
+            links.addAll(Arrays.asList(foundLinks));
+        }
+        final String[] foundHiddenLinks = HTMLParser.getHttpLinks(downloadhidden, null);
+        if (foundHiddenLinks != null) {
+            links.addAll(Arrays.asList(foundHiddenLinks));
+        }
+        if (links.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String link : links) {
             if (!new Regex(link, this.getSupportedLinks()).matches()) {
@@ -189,7 +235,7 @@ public class NaughtyBlgOrg extends antiDDoSForDecrypt {
         }
         // final String[] imgs = br.getRegex("(https://([\\w\\.]+)?pixhost\\.to/show/[^\"]+)").getColumn(0);
         final String[] imgs = br.getRegex("(https?://(?:[\\w\\.]+)?pixhost\\.to/show/[^\"\\'<>]+)").getColumn(0);
-        if (links != null && links.length != 0) {
+        if (links != null && links.size() != 0) {
             for (final String img : imgs) {
                 final DownloadLink dl = createDownloadlink(img);
                 decryptedLinks.add(dl);
@@ -223,10 +269,5 @@ public class NaughtyBlgOrg extends antiDDoSForDecrypt {
             break;
         }
         return filePackageName;
-    }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 }
