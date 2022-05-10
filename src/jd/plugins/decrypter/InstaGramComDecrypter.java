@@ -238,7 +238,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final Browser brc = br.cloneBrowser();
         brc.setRequest(null);
         InstaGramCom.prepBRAltAPI(brc);
-        InstaGramCom.getPageAltAPI(brc, InstaGramCom.ALT_API_BASE + "/users/" + userID + "/info/");
+        InstaGramCom.getPageAltAPI(null, brc, InstaGramCom.ALT_API_BASE + "/users/" + userID + "/info/");
         final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         final Map<String, Object> user = (Map<String, Object>) entries.get("user");
         if (user == null) {
@@ -736,10 +736,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         boolean hasCrawledProfilePicture = false;
         do {
             if (page == 1) {
-                InstaGramCom.getPageAltAPI(this.br, profilePostsFeedBaseURL);
+                InstaGramCom.getPageAltAPI(account, this.br, profilePostsFeedBaseURL);
             } else {
                 // br.getPage(hashtagBaseURL + "?after=" + nextid);
-                InstaGramCom.getPageAltAPI(this.br, profilePostsFeedBaseURL + "?max_id=" + nextid);
+                InstaGramCom.getPageAltAPI(account, this.br, profilePostsFeedBaseURL + "?max_id=" + nextid);
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             if (crawlProfilePicture && !hasCrawledProfilePicture) {
@@ -808,7 +808,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         InstaGramCom.prepBRAltAPI(this.br);
-        InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/highlights/" + userID + "/highlights_tray/");
+        InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/highlights/" + userID + "/highlights_tray/");
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Map<String, Object>> stories = (List<Map<String, Object>>) entries.get("tray");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -1749,10 +1749,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                  * This may return a varying amount of items e.g. 84 items on the first request, 9 after the next - this is decided
                  * serverside!
                  */
-                InstaGramCom.getPageAltAPI(this.br, savedItemsFeedBaseURL);
+                InstaGramCom.getPageAltAPI(account, this.br, savedItemsFeedBaseURL);
             } else {
                 // br.getPage(hashtagBaseURL + "?after=" + nextid);
-                InstaGramCom.getPageAltAPI(this.br, savedItemsFeedBaseURL + "?max_id=" + nextid);
+                InstaGramCom.getPageAltAPI(account, this.br, savedItemsFeedBaseURL + "?max_id=" + nextid);
             }
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final int numberofitemsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
@@ -1822,7 +1822,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         loginOrFail(account, loggedIN);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         InstaGramCom.prepBRAltAPI(this.br);
-        InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/tags/" + hashtag + "/info/");
+        InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/tags/" + hashtag + "/info/");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final long totalNumberofPosts = JavaScriptEngineFactory.toLong(entries.get("media_count"), 0);
         if (totalNumberofPosts == 0) {
@@ -1842,9 +1842,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 /*
                  * Returns a lot of items on first access and then a lot less e.g. 84 on first request, then 8-9 on each subsequent request.
                  */
-                InstaGramCom.getPageAltAPI(this.br, baseURL);
+                InstaGramCom.getPageAltAPI(account, this.br, baseURL);
             } else {
-                InstaGramCom.getPageAltAPI(this.br, baseURL + "?max_id=" + nextid);
+                InstaGramCom.getPageAltAPI(account, this.br, baseURL + "?max_id=" + nextid);
             }
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final int numberofPostsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
@@ -1909,7 +1909,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             if (page > 1) {
                 query.addAndReplace("max_id", Encoding.urlEncode(nextid));
             }
-            InstaGramCom.getPageAltAPI(this.br, baseURL + "?" + query.toString());
+            InstaGramCom.getPageAltAPI(account, this.br, baseURL + "?" + query.toString());
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final List<Map<String, Object>> resource_data_list = (List<Map<String, Object>>) entries.get("items");
             final int numberofitemsOnThisPage = resource_data_list.size();
@@ -1965,7 +1965,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         /* Login is required to crawl such elements! */
         this.loginOrFail(account, loggedIN);
         InstaGramCom.prepBRAltAPI(this.br);
-        InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/feed/reels_media/?reel_ids=highlight%3A" + reelID);
+        InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/feed/reels_media/?reel_ids=highlight%3A" + reelID);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final InstagramMetadata metadata = new InstagramMetadata();
         final Map<String, Object> reel = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "reels/highlight:" + reelID);
@@ -1997,7 +1997,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         /* We need to be loggedIN to be able to see stories of users! */
         this.loginOrFail(account, loggedIN);
         InstaGramCom.prepBRAltAPI(this.br);
-        InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
+        InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
         final Map<String, Object> reel = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final ArrayList<DownloadLink> ret = this.crawlPostAltAPI(param, metadata, reel);
         if (ret.isEmpty() && addDummyItemOnNoItemsFound) {
