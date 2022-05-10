@@ -5,8 +5,10 @@ import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Set;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -52,21 +54,26 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         /* TODO: Implement logic of pastebin settings once available: https://svn.jdownloader.org/issues/90043 */
         this.preProcess(param);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String plaintxt = getPastebinText(this.br);
-        if (plaintxt == null) {
+        final PastebinMetadata metadata = this.crawlMetadata(param, br);
+        if (metadata.getPastebinText() == null) {
             logger.warning("Could not find pastebin textfield");
             return decryptedLinks;
         }
         final PluginForHost sisterPlugin = JDUtilities.getPluginForHost(this.getHost());
         if (sisterPlugin != null) {
-            final DownloadLink textfile = getDownloadlinkForHosterplugin(param, plaintxt);
+            final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata.getPastebinText());
             decryptedLinks.add(textfile);
         }
-        /* TODO: Differentiate between URLs that we support (= have plugins for) and those we don't support. */
-        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
+        /* TODO: Differentiate between URLs that we support (= have plugin for) and those we don't support. */
+        final Set<String> pws = PasswordUtils.getPasswords(metadata.getPastebinText());
+        final String[] links = HTMLParser.getHttpLinks(metadata.getPastebinText(), "");
         logger.info("Found " + links.length + " URLs in plaintext");
         for (final String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
+            final DownloadLink dl = createDownloadlink(link);
+            if (pws != null && pws.size() > 0) {
+                dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
+            }
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
@@ -102,7 +109,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
     protected class PastebinMetadata {
         private String contentID     = null;
         private String title         = null;
-        private Long   date          = null;
+        private Date   date          = null;
         private String username      = null;
         private String description   = null;
         private String pastebinText  = null;
@@ -125,7 +132,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
             this.title = title;
         }
 
-        public Long getDate() {
+        public Date getDate() {
             return date;
         }
 
@@ -133,11 +140,11 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
             if (this.date == null) {
                 return null;
             } else {
-                return new SimpleDateFormat("yyyy-MM-dd").format(new Date(this.date.longValue()));
+                return new SimpleDateFormat("yyyy-MM-dd").format(this.date);
             }
         }
 
-        public void setDate(Long date) {
+        public void setDate(final Date date) {
             this.date = date;
         }
 
