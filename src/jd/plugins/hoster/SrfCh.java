@@ -36,6 +36,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -99,21 +100,29 @@ public class SrfCh extends PluginForHost {
         return requestFileInformation(link, false);
     }
 
+    private void setUrnAsLinkID(final DownloadLink link, final String urn) {
+        link.setLinkID(this.getHost() + "://" + urn);
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.setAllowedResponseCodes(new int[] { 410 });
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String urn = getURN(link, false);
+        String json = null;
+        String urn = getURN(link, false);
         if (urn != null) {
-            link.setLinkID(this.getHost() + "://" + urn);
+            setUrnAsLinkID(link, urn);
+        } else {
+            this.br.setAllowedResponseCodes(new int[] { 410 });
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            urn = getURN(this.br);
+            json = br.getRegex(">\\s*window\\.__SSR_VIDEO_DATA__ = (\\{.*?\\})</script>").getMatch(0);
         }
         String officialDownloadurl = null;
-        final String json = br.getRegex(">\\s*window\\.__SSR_VIDEO_DATA__ = (\\{.*?\\})</script>").getMatch(0);
-        if (json != null) {
+        final boolean allowLegacyWebsiteHandling = false;
+        if (json != null && allowLegacyWebsiteHandling) {
             /* Website/old handling */
             final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             final Map<String, Object> videoDetail = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initialData/videoDetail");
@@ -139,9 +148,10 @@ public class SrfCh extends PluginForHost {
         } else {
             /* E.g. audio items */
             if (urn == null) {
-                logger.info("This is no downloadable content");
+                /* Assume that content is offline or is no media content. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            setUrnAsLinkID(link, urn);
             this.accessAPI(urn);
             final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final List<Object> chapterList = (List<Object>) root.get("chapterList");
@@ -157,12 +167,16 @@ public class SrfCh extends PluginForHost {
             } else {
                 ext = ".mp4";
             }
-            link.setFinalFileName(dateFormatted + "_" + title + ext);
+            link.setFinalFileName(dateFormatted + "_" + mediaInfo.get("vendor") + "_" + title + ext);
             final String description = mediaInfo.get("description").toString();
             if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
                 link.setComment(description);
             }
             officialDownloadurl = (String) mediaInfo.get("podcastHdUrl");
+        }
+        /* urn was not contained in given URL but we found it in html code --> Save it as property */
+        if (getURNFromURL(link.getPluginPatternMatcher()) == null) {
+            link.setProperty(PROPERTY_URN, urn);
         }
         if (!StringUtils.isEmpty(officialDownloadurl)) {
             link.setProperty(OFFICIAL_DOWNLOADURL, officialDownloadurl);
@@ -197,17 +211,29 @@ public class SrfCh extends PluginForHost {
             final String domainpart = new Regex(link.getPluginPatternMatcher(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
             final String videoid = new Regex(link.getPluginPatternMatcher(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
             final String channelname = convertDomainPartToShortChannelName(domainpart);
-            /* 2020-09-09: New URLs will contain this parameter */
-            String urn = UrlQuery.parse(link.getPluginPatternMatcher()).get("urn");
-            if (StringUtils.isEmpty(urn)) {
-                /* E.g. for audio files */
-                urn = br.getRegex("data-assetid=\"(urn:[^\"]+)\"").getMatch(0);
-            }
+            /* First check if urn is located in URL added by user. */
+            String urn = getURNFromURL(link.getPluginPatternMatcher());
             if (StringUtils.isEmpty(urn) && allowFallback) {
                 /* Final fallback e.g. for older URLs --> We have to generate that parameter on our own. */
-                urn = "urn:" + channelname + ":video:" + videoid;
+                if (link.getPluginPatternMatcher().matches("https?://[^/]+/audio/.+")) {
+                    urn = "urn:" + channelname + ":audio:" + videoid;
+                } else {
+                    urn = "urn:" + channelname + ":video:" + videoid;
+                }
             }
             return urn;
+        }
+    }
+
+    private String getURN(final Browser br) {
+        return br.getRegex("data-assetid=\"(urn:[^\"]+)\"").getMatch(0);
+    }
+
+    private String getURNFromURL(final String url) throws MalformedURLException {
+        if (url == null) {
+            return null;
+        } else {
+            return UrlQuery.parse(url).get("urn");
         }
     }
 
