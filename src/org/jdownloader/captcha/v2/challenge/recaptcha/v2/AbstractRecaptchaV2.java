@@ -9,13 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.logging.LogController;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Request;
@@ -24,6 +17,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.logging.LogController;
 
 public abstract class AbstractRecaptchaV2<T extends Plugin> {
     /**
@@ -45,15 +45,41 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         return getSecureToken(br != null ? br.toString() : null);
     }
 
-    public static boolean containsRecaptchaV2Class(Browser br) {
+    public static boolean containsSupportedRecaptcha(final Browser br) {
+        return br != null && (containsRecaptchaV2Class(br) || containsRecaptchaV3(br));
+    }
+
+    public static boolean containsSupportedRecaptcha(final Form form) {
+        return form != null && (containsRecaptchaV2Class(form) || containsRecaptchaV3(form));
+    }
+
+    public static boolean containsSupportedRecaptcha(final String string) {
+        return string != null && (containsRecaptchaV2Class(string) || containsRecaptchaV3(string));
+    }
+
+    public static boolean containsRecaptchaV2Class(final Browser br) {
         return br != null && containsRecaptchaV2Class(br.toString());
     }
 
     public static boolean containsRecaptchaV2Class(final String string) {
         // class="g-recaptcha-response"
         // class="g-recaptcha"
+        // document.getElementById('g-recaptcha-response')
+        return string != null && (new Regex(string, "class\\s*=\\s*('|\")g-recaptcha(-response)?(\\1|\\s+)").matches() || new Regex(string, "document\\.getElementById\\(('|\")g-recaptcha(-response)?(\\1|\\s+)").matches());
+    }
+
+    public static boolean containsRecaptchaV3(Browser br) {
+        return br != null && containsRecaptchaV3(br.toString());
+    }
+
+    public static boolean containsRecaptchaV3(Form form) {
+        return form != null && containsRecaptchaV3(form.getHtmlCode());
+    }
+
+    public static boolean containsRecaptchaV3(final String string) {
         // grecaptcha.execute RecaptchaV3 support
-        return string != null && (new Regex(string, "class\\s*=\\s*('|\")g-recaptcha(-response)?(\\1|\\s+)").matches() || new Regex(string, "grecaptcha(?:\\.enterprise)?\\.execute\\s*\\(").matches());
+        // grecaptcha.enterprise.execute RecaptchaV3 support
+        return string != null && new Regex(string, "grecaptcha(?:\\.enterprise)?\\.execute\\s*\\(").matches();
     }
 
     public static boolean containsRecaptchaV2Class(Form form) {
@@ -68,8 +94,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
      * errormessage and the user will have to solve it again! This value is especially important for rare EDGE cases such as long
      * waiting-times + captcha. Example: User has to wait 180 seconds before he can confirm such a captcha. If he solves it directly, the
      * captcha will be invalid once the 180 seconds are over. Also see documentation in XFileSharingProBasic.java class in method
-     * 'handleCaptcha'. </br>
-     * TRY TO KEEP THIS VALUE UP-TO-DATE!!
+     * 'handleCaptcha'. </br> TRY TO KEEP THIS VALUE UP-TO-DATE!!
      */
     public int getSolutionTimeout() {
         return 1 * 60 * 1000;
