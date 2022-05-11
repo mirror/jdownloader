@@ -179,7 +179,11 @@ public class InstaGramCom extends PluginForHost {
         } else {
             prepBRWebsite(this.br);
             final MediaQualityDownloadMode mode = PluginJsonConfig.get(InstagramConfig.class).getMediaQualityDownloadMode();
-            if (mode == MediaQualityDownloadMode.DEFAULT_QUALITY) {
+            if (hasTriedToCrawlOriginalQuality(link)) {
+                /* Given stored directurl is original quality --> Prefer that */
+                this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+            } else if (mode == MediaQualityDownloadMode.DEFAULT_QUALITY) {
+                /* Default quality */
                 this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             } else if (mode == MediaQualityDownloadMode.PREFER_ORIGINAL_QUALITY) {
                 if (account != null) {
