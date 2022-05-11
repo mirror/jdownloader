@@ -57,15 +57,14 @@ public class BiqleRu extends PluginForDecrypt {
     }
 
     /* Converts embedded crap to vk.com video-urls. */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if ("biqle.ru".equals(getHost()) || "daftsex.com".equals(getHost()) || "artsporn.com".equals(getHost())) {
             final String decryptedhost = "biqledecrypted://";
             br.getPage(param.getCryptedUrl());
             br.followRedirect();
             if (br.getHttpConnection().getResponseCode() == 404) {
-                ret.add(this.createOfflinelink(param.toString()));
-                return ret;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)\\s*(—\\s*BIQLE.*?)?</title>").getMatch(0));
             FilePackage fp = null;
@@ -76,11 +75,22 @@ public class BiqleRu extends PluginForDecrypt {
             final String DaxabPlayer = br.getRegex("DaxabPlayer\\.init\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*\\}\\s*</script").getMatch(0);
             String daxab = null;
             if (DaxabPlayer != null) {
-                final String id = new Regex(param.getCryptedUrl(), "(-?\\d+_\\d+)").getMatch(0);
-                final String hash = new Regex(DaxabPlayer, "id\\s*:\\s*'video" + id + "'.*?hash\\s*:\\s*\"(.*?)\"").getMatch(0);
+                final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
+                final String oid = urlinfo.getMatch(0);
+                final String id = urlinfo.getMatch(1);
+                final String oid_and_id = oid + "_" + id;
+                final String hash = new Regex(DaxabPlayer, "id\\s*:\\s*'video" + oid_and_id + "'.*?hash\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (hash != null) {
                     daxab = "https://daxab.com/player/" + hash;
+                    /* 2022-05-11: Assume that this content is also hosted on vk.com */
+                    final DownloadLink vkontakteVideo = this.createDownloadlink(VKontakteRu.generateContentURLVideo(oid, id));
+                    ret.add(vkontakteVideo);
+                    distribute(vkontakteVideo);
+                } else {
+                    logger.info("WTF");
                 }
+            } else {
+                logger.info("WTF");
             }
             if (daxab == null) {
                 daxab = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)").getMatch(0);
@@ -234,17 +244,17 @@ public class BiqleRu extends PluginForDecrypt {
                 return ret;
             }
         } else {
-            final String parameter = param.toString();
-            final String videoid_part;
-            if (parameter.matches("https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+")) {
-                final String oid = new Regex(parameter, "oid=((?:\\-)?\\d+)").getMatch(0);
-                final String id = new Regex(parameter, "id=(\\d+)").getMatch(0);
-                videoid_part = oid + "_:" + id;
+            final String oid;
+            final String id;
+            if (param.getCryptedUrl().matches("https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+")) {
+                oid = new Regex(param.getCryptedUrl(), "oid=((?:\\-)?\\d+)").getMatch(0);
+                id = new Regex(param.getCryptedUrl(), "id=(\\d+)").getMatch(0);
             } else {
-                videoid_part = new Regex(parameter, "((?:\\-)?\\d+_\\d+)").getMatch(0);
+                final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
+                oid = urlinfo.getMatch(0);
+                id = urlinfo.getMatch(1);
             }
-            final String finallink = "https://vk.com/video" + videoid_part;
-            ret.add(createDownloadlink(finallink));
+            ret.add(createDownloadlink(VKontakteRu.generateContentURLVideo(oid, id)));
         }
         return ret;
     }
