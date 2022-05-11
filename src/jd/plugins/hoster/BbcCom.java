@@ -63,15 +63,21 @@ public class BbcCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
+        return getFID(link.getPluginPatternMatcher());
     }
 
-    private String             hls_url                     = null;
-    int                        numberofFoundMedia          = 0;
-    public static final String PROPERTY_TITLE_FROM_CRAWLER = "decrypterfilename";
-    public static final String PROPERTY_TITLE              = "title";
-    public static final String PROPERTY_DATE               = "date";
-    public static final String PROPERTY_TV_BRAND           = "brand";
+    public static String getFID(final String url) {
+        return new Regex(url, "/([^/]+)$").getMatch(0);
+    }
+
+    private String             hls_url                        = null;
+    int                        numberofFoundMedia             = 0;
+    @Deprecated
+    public static final String PROPERTY_TITLE_FROM_CRAWLER    = "decrypterfilename";
+    public static final String PROPERTY_TITLE                 = "title";
+    public static final String PROPERTY_DATE                  = "date";
+    public static final String PROPERTY_TV_BRAND              = "brand";
+    public static final String PROPERTY_QUALITY_IDENTIFICATOR = "quality_identificator";
 
     /** E.g. json instead of xml: http://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/pc/vpid/<vpid>/format/json */
     /**
@@ -82,8 +88,9 @@ public class BbcCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String filenameBase = this.getFilenameBase(link);
+        final String filenameBase = getFilenameBase(link);
         if (!link.isNameSet()) {
+            /* Fallback */
             link.setName(filenameBase + ".mp4");
         }
         this.setBrowserExclusive();
@@ -206,7 +213,8 @@ public class BbcCom extends PluginForHost {
             hlscontainer_chosen.setFramerate(50);
         }
         qualityString = String.format("hls_%s@%d", hlscontainer_chosen.getResolution(), hlscontainer_chosen.getFramerate(25));
-        link.setFinalFileName(getFilenameBase(link) + "_" + qualityString + ".mp4");
+        link.setProperty(PROPERTY_QUALITY_IDENTIFICATOR, qualityString);
+        link.setFinalFileName(getFilename(link));
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* 2017-04-25: Easy debug for user TODO: Remove once feedback is provided! */
             link.setComment(hlscontainer_chosen.getDownloadurl());
@@ -215,22 +223,28 @@ public class BbcCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String getFilenameBase(final DownloadLink link) {
+    public static String getFilenameBase(final DownloadLink link) {
+        String filenameBase;
         if (link.hasProperty(PROPERTY_TITLE_FROM_CRAWLER)) {
-            return link.getStringProperty(PROPERTY_TITLE_FROM_CRAWLER);
+            filenameBase = link.getStringProperty(PROPERTY_TITLE_FROM_CRAWLER);
         } else if (link.hasProperty(PROPERTY_TITLE)) {
-            String filenameBase = link.getStringProperty(PROPERTY_TITLE);
-            if (link.hasProperty(PROPERTY_TV_BRAND)) {
-                filenameBase = link.getStringProperty(PROPERTY_TV_BRAND) + "_" + filenameBase;
-            }
+            filenameBase = link.getStringProperty(PROPERTY_TITLE);
+            filenameBase = link.getStringProperty(PROPERTY_TV_BRAND, "bbc") + "_" + filenameBase;
             if (link.hasProperty(PROPERTY_DATE)) {
                 filenameBase = link.getStringProperty(PROPERTY_DATE) + "_" + filenameBase;
             }
-            return filenameBase;
         } else {
             /* Fallback */
-            return getFID(link);
+            filenameBase = getFID(link.getPluginPatternMatcher());
         }
+        if (link.hasProperty(PROPERTY_QUALITY_IDENTIFICATOR)) {
+            filenameBase += "_" + link.getStringProperty(PROPERTY_QUALITY_IDENTIFICATOR);
+        }
+        return filenameBase;
+    }
+
+    public static String getFilename(final DownloadLink link) {
+        return getFilenameBase(link) + ".mp4";
     }
 
     private void errorGeoBlocked() throws PluginException {

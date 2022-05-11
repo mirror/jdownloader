@@ -1005,9 +1005,9 @@ public class FaceBookComVideos extends PluginForHost {
     private Object findPhotoMap(final Object o, final String photoid) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
-            for (final Map.Entry<String, Object> cookieEntry : entrymap.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final Object value = cookieEntry.getValue();
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                final String key = entry.getKey();
+                final Object value = entry.getValue();
                 if (key.equals("id") && value instanceof String) {
                     final String entry_id = (String) value;
                     if (entry_id.equals(photoid) && entrymap.containsKey("__isMedia") && entrymap.containsKey("image")) {
