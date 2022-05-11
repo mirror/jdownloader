@@ -52,6 +52,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         /* TODO: Implement logic of pastebin settings once available: https://svn.jdownloader.org/issues/90043 */
+        correctCryptedLink(param);
         this.preProcess(param);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
@@ -78,6 +79,21 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    public DownloadLink preProcessAndGetPlaintextDownloadLink(final CryptedLink param) throws IOException, PluginException {
+        correctCryptedLink(param);
+        this.preProcess(param);
+        final PastebinMetadata metadata = this.crawlMetadata(param, br);
+        final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata.getPastebinText());
+        return textfile;
+    }
+
+    public PastebinMetadata preProcessAndGetMetadata(final CryptedLink param) throws IOException, PluginException {
+        correctCryptedLink(param);
+        this.preProcess(param);
+        final PastebinMetadata metadata = this.crawlMetadata(param, br);
+        return metadata;
+    }
+
     protected DownloadLink getDownloadlinkForHosterplugin(final CryptedLink link, final String pastebinText) {
         final DownloadLink textfile = this.createDownloadlink(link.getCryptedUrl());
         if (StringUtils.isEmpty(pastebinText)) {
@@ -95,10 +111,10 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
     }
 
     /** Accesses URL, checks if content looks like it's available and handles password/captcha until plaintext is available in HTML. */
-    protected abstract void preProcess(final CryptedLink param) throws IOException, PluginException;
+    public abstract void preProcess(final CryptedLink param) throws IOException, PluginException;
 
     /** Collects metadata which will be used later. */
-    protected PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
         final PastebinMetadata metadata = new PastebinMetadata(this.getFID(param.getCryptedUrl()));
         metadata.setPastebinText(getPastebinText(br));
         return metadata;
@@ -106,7 +122,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
 
     protected abstract String getPastebinText(final Browser br);
 
-    protected class PastebinMetadata {
+    public class PastebinMetadata {
         private String contentID     = null;
         private String title         = null;
         private Date   date          = null;

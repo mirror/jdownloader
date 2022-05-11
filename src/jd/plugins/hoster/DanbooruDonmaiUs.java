@@ -19,8 +19,17 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -37,14 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts/(\\d+)" })
 public class DanbooruDonmaiUs extends PluginForHost {
@@ -68,7 +69,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://danbooru.donmai.us/static/terms_of_service";
+        return API_BASE + "/static/terms_of_service";
     }
 
     @Override
@@ -91,11 +92,43 @@ public class DanbooruDonmaiUs extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        return requestFileInformation(link, false);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        if (account != null) {
+            return requestFileInformationAPI(link, account, isDownload);
+        } else {
+            return requestFileInformationWebsite(link, account, isDownload);
+        }
+    }
+
+    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        if (account == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        this.loginAPI(account, false);
+        br.setFollowRedirects(true);
+        if (checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
+            logger.info("Availablecheck via directurl successful");
+            return AvailableStatus.TRUE;
+        }
+        br.getPage(API_BASE + "/posts/" + this.getFID(link) + ".json");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        if (!entries.containsKey("id")) {
+            throw new AccountUnavailableException("Invalid apikey or insufficient permissions", 5 * 60 * 1000l);
+        }
+        parseFileInformationAPI(link, entries);
+        return AvailableStatus.TRUE;
+    }
+
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
@@ -122,11 +155,12 @@ public class DanbooruDonmaiUs extends PluginForHost {
             }
         }
         link.removeProperty(PROPERTY_PREMIUMONLY);
-        String filename = br.getRegex("<title>([^<>\"]+). \\s*Danbooru\\s*</title>").getMatch(0);
-        if (filename != null) {
-            filename = this.getFID(link) + "_" + filename;
+        String title = br.getRegex("<title>([^<>\"]+). \\s*Danbooru\\s*</title>").getMatch(0);
+        if (title != null) {
+            title = this.getFID(link) + "_" + title;
         } else {
-            filename = this.getFID(link);
+            /* Fallback */
+            title = this.getFID(link);
         }
         String dllink = br.getRegex("href=\"([^<>\"]+)\">\\s*view original").getMatch(0); // Not always available
         if (dllink != null && dllink.contains("?original=1")) { // https://board.jdownloader.org/showthread.php?t=77260&post#3
@@ -141,13 +175,13 @@ public class DanbooruDonmaiUs extends PluginForHost {
         }
         final String size = br.getRegex("Size:\\s*<a href=\"(?:(?:https?://danbooru\\.donmai\\.us)?/data/[^<>\"]+)\">(.*?)<").getMatch(0);
         final long orgSize = size != null ? SizeFormatter.getSize(size) : -1l;
-        if (filename == null || dllink == null) {
+        if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        title = Encoding.htmlDecode(title);
+        title = title.trim();
         if (dllink != null) {
+            String filename = title;
             final String ext = getFileNameExtensionFromString(dllink, ".jpg");
             if (!filename.endsWith(ext)) {
                 filename += ext;
@@ -159,7 +193,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
             }
             link.setProperty(PROPERTY_DIRECTURL, dllink);
         } else {
-            link.setName(filename + ".jpg");
+            link.setName(title + ".jpg");
         }
         if (orgSize > 0) {
             link.setDownloadSize(orgSize);
@@ -183,24 +217,6 @@ public class DanbooruDonmaiUs extends PluginForHost {
                 }
             }
         }
-        return AvailableStatus.TRUE;
-    }
-
-    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        if (checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
-            logger.info("Availablecheck via directurl successful");
-            return AvailableStatus.TRUE;
-        }
-        br.getPage(API_BASE + "/posts/" + this.getFID(link) + ".json");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        if (!entries.containsKey("id")) {
-            throw new AccountUnavailableException("Invalid apikey or insufficient permissions", 5 * 60 * 1000l);
-        }
-        parseFileInformationAPI(link, entries);
         return AvailableStatus.TRUE;
     }
 
@@ -260,7 +276,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, resume, maxchunks)) {
-            requestFileInformation(link, true);
+            requestFileInformation(link, null, true);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -304,8 +320,8 @@ public class DanbooruDonmaiUs extends PluginForHost {
     }
 
     /**
-     * Using API: https://danbooru.donmai.us/wiki_pages/help:api </br> Account types and associated API limits:
-     * https://danbooru.donmai.us/wiki_pages/help%3Ausers
+     * Using API: https://danbooru.donmai.us/wiki_pages/help:api </br>
+     * Account types and associated API limits: https://danbooru.donmai.us/wiki_pages/help%3Ausers
      */
     public boolean loginAPI(final Account account, final boolean force) throws Exception {
         synchronized (account) {
@@ -350,7 +366,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
                     message += "\r\n3. Close this message and try add your account to JD again: This time put your Danbooru username into the username field and apikey into the password field.";
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(5 * 60 * 1000);
-                    /* 2021-04-19: I've decided no to auto-open this URL! */
+                    /* 2021-04-19: I've decided not to auto-open this URL! */
                     // final String profileURL = "https://danbooru.donmai.us/profile";
                     // if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
                     // CrossSystem.openURL(profileURL);
@@ -429,7 +445,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
         if (tagQueryLimit != null) {
             account.setProperty(PROPERTY_ACCOUNT_QUERY_LIMIT, tagQueryLimit.intValue());
         }
-        if (levelString != null && levelString.matches("Gold|Platinum")) {
+        if (levelString != null && levelString.matches("(?i)Gold|Platinum")) {
             account.setType(AccountType.PREMIUM);
         } else {
             account.setType(AccountType.FREE);
@@ -441,12 +457,11 @@ public class DanbooruDonmaiUs extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2021-04-19: Account benefits are only used in crawler and not required for downloading single items! </br> Also, website is used
-         * for downloading and API is only used for crawling.
+         * 2021-04-19: Account benefits are only used in crawler and not required for downloading single items! </br>
+         * Also, website is used for downloading and API is only used for crawling.
          */
         if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, resume, maxchunks)) {
-            this.loginAPI(account, false);
-            requestFileInformationAPI(link, account);
+            requestFileInformationAPI(link, account, true);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -472,7 +487,11 @@ public class DanbooruDonmaiUs extends PluginForHost {
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (link.hasProperty(PROPERTY_PREMIUMONLY)) {
             /* Without account its not possible to download this link. */
-            return account != null && account.getType() == AccountType.PREMIUM;
+            if (account != null && account.getType() == AccountType.PREMIUM) {
+                return true;
+            } else {
+                return false;
+            }
         } else {
             return true;
         }
