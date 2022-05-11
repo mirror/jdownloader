@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.container;
 
 import java.io.BufferedReader;
@@ -51,14 +50,12 @@ public class R extends PluginsC {
             if ((buf[i] & 0xff) < 0x10) {
                 strbuf.append("0");
             }
-
             strbuf.append(Long.toString(buf[i] & 0xff, 16));
             if (i < buf.length - 1) {
                 strbuf.append(", ");
             }
         }
         strbuf.append("};");
-
         return strbuf.toString();
     }
 
@@ -72,7 +69,6 @@ public class R extends PluginsC {
         // }
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(asHex(k));
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Parse file: "+lc.getAbsolutePath());
-
         try {
             cls = new ArrayList<CrawledLink>();
             String fileContent[] = loadFileContent(lc.getAbsolutePath());
@@ -100,7 +96,6 @@ public class R extends PluginsC {
         }
         cs.setStatus(ContainerStatus.STATUS_FAILED);
         return cs;
-
     }
 
     // private byte[] getDKey() {
@@ -143,19 +138,17 @@ public class R extends PluginsC {
     // return null;
     // }
     // }
+    private final byte[] RSDF   = new byte[] { (byte) 0x8C, (byte) 0x35, (byte) 0x19, (byte) 0x2D, (byte) 0x96, (byte) 0x4D, (byte) 0xC3, (byte) 0x18, (byte) 0x2C, (byte) 0x6F, (byte) 0x84, (byte) 0xF3, (byte) 0x25, (byte) 0x22, (byte) 0x39, (byte) 0xEB, (byte) 0x4A, (byte) 0x32, (byte) 0x0D, (byte) 0x25, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 };
+    private final byte[] RSDFIV = new byte[] { (byte) 0xa3, (byte) 0xd5, (byte) 0xa3, (byte) 0x3c, (byte) 0xb9, (byte) 0x5a, (byte) 0xc1, (byte) 0xf5, (byte) 0xcb, (byte) 0xdb, (byte) 0x1a, (byte) 0xd2, (byte) 0x5c, (byte) 0xb0, (byte) 0xa7, (byte) 0xaa };
 
     private String[] decrypt(String rsdf) throws IOException, IllegalAlphabetException {
         String links = "";
         /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         String input64 = new String(new Base16Decoder().decode(rsdf.toCharArray()));
         byte[] input, output;
-
         byte[] k = null;
-
         try {
-            getClass();
-            k = (byte[]) Class.forName(getClass().getPackage().getName() + ".Config").getField("RSDF").get(null);
-
+            k = RSDF;
         } catch (Throwable e) {
             logger.log(e);
             if (k == null) {
@@ -163,7 +156,6 @@ public class R extends PluginsC {
                 return null;
             }
         }
-
         getEKey(k);
         if (k == null) {
             logger.severe("RSDF Decryption failed.");
@@ -174,18 +166,14 @@ public class R extends PluginsC {
         byte[] temp = new byte[16];
         byte[] iv = null;
         try {
-            iv = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("RSDFIV").get(null);
-
+            iv = RSDFIV;
         } catch (Throwable e) {
             logger.log(e);
         }
-
         String[] lines = Regex.getLines(input64);
         for (String line : lines) {
             input = Base64.decode(line);
-
             // byte[] k=null;
-
             output = new byte[input.length];
             for (i = 0; i < input.length; i++) {
                 aes.Cipher(iv, temp);
@@ -196,18 +184,15 @@ public class R extends PluginsC {
                 iv[15] = input[i];
             }
             String str = new String(output);
-
             str = str.replaceAll("CCF\\:", " CCF: ");
             str = str.replaceAll("http:/", "\r\nhttp:/");
             links += str;
-
         }
         return HTMLParser.getHttpLinks(links, null);
     }
 
     // @Override
     public String[] encrypt(String plain) {
-
         return null;
     }
 
@@ -242,12 +227,9 @@ public class R extends PluginsC {
             default:
                 if (i > 0) {
                     logger.info("iii" + i);
-
                     return ret;
                 }
-
             }
-
         }
         return rsdf;
     }
@@ -261,7 +243,6 @@ public class R extends PluginsC {
         for (int i = 0; i < key.length; i++) {
             key[i] -= (byte) i;
         }
-
     }
 
     private String getLocalFile(File file) {
@@ -269,39 +250,30 @@ public class R extends PluginsC {
         StringBuffer buffer = new StringBuffer();
         try {
             f = new BufferedReader(new FileReader(file));
-
             String line;
-
             while ((line = f.readLine()) != null) {
                 buffer.append(line + "\r\n");
             }
             f.close();
             return buffer.toString();
         } catch (IOException e) {
-
             logger.log(e);
         }
         return "";
     }
 
     private String[] loadFileContent(String filename) {
-
         String rsdf = filterRSDF(getLocalFile(new File(filename)).trim());
-
         if (rsdf == null) {
             return new String[] {};
         }
-
         String[] links;
         try {
             links = decrypt(rsdf);
-
             return links;
         } catch (Exception e) {
-
             logger.log(e);
         }
         return null;
     }
-
 }

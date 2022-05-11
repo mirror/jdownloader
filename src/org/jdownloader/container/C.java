@@ -47,8 +47,16 @@ public class C extends PluginsC {
         return new C();
     }
 
+    private final String[][] CCF0710() {
+        return new String[][] { new String[] { "026900E977C6402442B661329CFE62D6ED21BDEB0CD6321318A8EDC7BC5A6C86", "8CE1173EBAD76E08584B94573926231E" }, new String[] { "171BF8E34C3D0C0C2693FDD2B080423A5B98F4D028A0AF4D82A385D837A8F95F", "9FE95FFF7CA4FC0FCEF25E4F7444AE67" }, new String[] { "5F679C00548737E120E6518A981BD0BA11AF5C719E97502983AD6AA38ED721C3", "E3D153AD609EF7358D66684180C7331A" } };
+    }
+
+    private final String[][] CCF50() {
+        return new String[][] { new String[] { "64e9e143ce4634da5cd99b0cbfa3002a9a3765e10cb19cff906db6a68f95b398", "e0feabe3f4b13e6f05f4a5a35b7fbdc8" }, new String[] { "ffc9122b34fae1043087dca5faaaab109414049a6ad2f9f161c7576be464e48a", "b506b639984c9285adfac5b42bae6f47" } };
+    }
+
     private String decryptCCF5(InputStream inputStream) throws Exception {
-        final String[][] CCF50 = (String[][]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("CCF50").invoke(null);
+        final String[][] CCF50 = CCF50();
         final KeyParameter keyParam1 = new KeyParameter(HexFormatter.hexToByteArray(CCF50[0][0]));
         final CipherParameters cipherParams1 = new ParametersWithIV(keyParam1, HexFormatter.hexToByteArray(CCF50[0][1]));
         final BufferedBlockCipher cipher1 = new BufferedBlockCipher(new CBCBlockCipher(new RijndaelEngine()));
@@ -183,7 +191,7 @@ public class C extends PluginsC {
                     ccfContent = check;
                 }
             } else {
-                for (String ccf[] : (String[][]) getClass().forName(new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8")).getMethod("CCF0710").invoke(null)) {
+                for (String ccf[] : CCF0710()) {
                     /**
                      * CCF0.7-CCF1.0
                      */

@@ -25,7 +25,6 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 
 public class AMZ extends PluginsC {
-
     public AMZ() {
         super("Amazon Mp3", "file:/.+\\.amz$", "$Revision$");
     }
@@ -34,6 +33,9 @@ public class AMZ extends PluginsC {
         return new AMZ();
     }
 
+    private final byte[] AMZ_IV  = new byte[] { (byte) 0x5E, 0x72, (byte) 0xD7, (byte) 0x9A, 0x11, (byte) 0xB3, 0x4F, (byte) 0xEE };
+    private final byte[] AMZ_SEC = new byte[] { 0x29, (byte) 0xAB, (byte) 0x9D, 0x18, (byte) 0xB2, 0x44, (byte) 0x9E, 0x31 };
+
     @Override
     public ContainerStatus callDecryption(File file) {
         ContainerStatus cs = new ContainerStatus(file);
@@ -41,14 +43,8 @@ public class AMZ extends PluginsC {
         byte[] byteAMZ = Base64.decode(base64AMZ);
         /* google and you will find these keys public */
         cls = new ArrayList<CrawledLink>();
-        byte[] iv = null;
-        byte[] seckey = null;
-        try {
-            iv = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("AMZ_IV").get(null);
-            seckey = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("AMZ_SEC").get(null);
-        } catch (Throwable e) {
-            logger.log(e);
-        }
+        final byte[] iv = AMZ_IV;
+        final byte[] seckey = AMZ_SEC;
         SecretKey key = new SecretKeySpec(seckey, "DES");
         AlgorithmParameterSpec paramSpec = new IvParameterSpec(iv);
         try {
@@ -93,5 +89,4 @@ public class AMZ extends PluginsC {
     public String[] encrypt(String plain) {
         return null;
     }
-
 }
