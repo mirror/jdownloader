@@ -18,11 +18,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,7 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyuploadIo extends PluginForHost {
@@ -103,18 +104,19 @@ public class EasyuploadIo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*FILE NOT FOUND")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*FILE NOT FOUND")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h4>([^<>\"]+)</h4>").getMatch(0);
-        String filesize = br.getRegex("\\s*Size:\\s*(\\d+(\\.\\d+)? [^ \"\\|]+)").getMatch(0);
+        String filesize = br.getRegex("(?i)\\s*Size:\\s*(\\d+(\\.\\d+)? [^ \"\\|]+)").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
-        } else if (!link.isNameSet()) {
-            link.setName(this.getFID(link));
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -170,7 +172,8 @@ public class EasyuploadIo extends PluginForHost {
             if (link.isPasswordProtected()) {
                 link.setDownloadPassword(passCode);
             }
-            dllink = PluginJSonUtils.getJson(br, "download_link");
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            dllink = entries.get("download_link").toString();
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
