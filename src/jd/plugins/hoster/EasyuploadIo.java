@@ -21,7 +21,8 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,10 +35,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class EasyuploadIo extends antiDDoSForHost {
+public class EasyuploadIo extends PluginForHost {
     public EasyuploadIo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -102,7 +104,7 @@ public class EasyuploadIo extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*FILE NOT FOUND")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -136,28 +138,36 @@ public class EasyuploadIo extends antiDDoSForHost {
             final String fid = this.getFID(link);
             final String action = br.getRegex("url\\s*:\\s*\"(https?://[^\"]+action\\.php)\"").getMatch(0);
             if (action == null) {
-                logger.warning("Failed to find action");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final boolean passwordProtected = br.containsHTML("\\| Password Protected");
             String passCode = null;
-            if (passwordProtected) {
+            if (br.containsHTML("\\| Password Protected")) {
+                link.setPasswordProtected(true);
                 passCode = link.getDownloadPassword();
                 if (StringUtils.isEmpty(passCode)) {
                     /* No stored password available? Ask user! */
                     passCode = getUserInput("Password?", link);
                 }
             } else {
+                link.setPasswordProtected(false);
                 passCode = "";
             }
-            String postData = String.format("type=download-token&url=%s&value=%s&method=regular", fid, passCode);
-            postPage(action, postData);
+            final UrlQuery query = new UrlQuery();
+            query.add("type", "download-token");
+            query.add("url", fid);
+            query.add("value", Encoding.urlEncode(passCode));
+            query.add("method", "regular");
+            if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br) || br.containsHTML("grecaptcha\\.execute")) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                query.add("captchatoken", Encoding.urlEncode(recaptchaV2Response));
+            }
+            br.postPage(action, query);
             if (br.containsHTML("Invalid file password")) {
                 /* {"status":false,"data":"Invalid file password"} */
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            if (passwordProtected) {
+            if (link.isPasswordProtected()) {
                 link.setDownloadPassword(passCode);
             }
             dllink = PluginJSonUtils.getJson(br, "download_link");
