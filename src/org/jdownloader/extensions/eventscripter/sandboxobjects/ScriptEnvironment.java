@@ -525,7 +525,7 @@ public class ScriptEnvironment {
     }
 
     @ScriptAPI(description = "Get a FilePath Object", parameters = { "Path to a file or folder" })
-    public static FilePathSandbox getPath(String fileOrUrl) throws EnvironmentException {
+    public static FilePathSandbox getPath(String fileOrUrl) {
         if (Application.getJavaVersion() >= Application.JAVA17) {
             return new FilePathSandbox17(fileOrUrl);
         } else {

@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -34,10 +35,10 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1kh.de" }, urls = { "https?://(?:www\\.)?1kh\\.de/(?:f/[0-9/]+|[0-9]+)" })
 public class NsKhD extends PluginForDecrypt {
     final static private Pattern patternSupported_File = Pattern.compile("https?://[\\w\\.]*?1kh\\.de/[0-9]+", Pattern.CASE_INSENSITIVE);
+
     // final static private Pattern patternSupported_Folder =
     // Pattern.compile("http://[\\w\\.]*?1kh\\.de/f/[0-9/]+",
     // Pattern.CASE_INSENSITIVE);
-
     public NsKhD(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,11 +53,18 @@ public class NsKhD extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (Regex.matches(param.getCryptedUrl(), patternSupported_File)) {
             /* Einzelne Datei */
-            String[] links = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getColumn(0);
+            final String[] links = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getColumn(0);
+            if (links == null || links.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             progress.setRange(links.length);
             for (String element : links) {
-                br.getPage(Encoding.htmlDecode(element));
-                String link = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getMatch(0);
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(Encoding.htmlDecode(element));
+                final String link = brc.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getMatch(0);
+                if (link == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
                 progress.increase(1);
             }
@@ -80,7 +88,10 @@ public class NsKhD extends PluginForDecrypt {
             if (valid == false) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            String[] links = br.getRegex("<div class=\"Block3\".*?<a id=\"DownloadLink_(\\d+)\"").getColumn(0);
+            final String[] links = br.getRegex("<div class=\"Block3\".*?<a id=\"DownloadLink_(\\d+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             progress.setRange(links.length);
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink("https://1kh.de/" + element));
