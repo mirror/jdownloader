@@ -724,6 +724,7 @@ public class MegaConz extends PluginForHost {
 
     private String getPreviewURL(final DownloadLink link) throws Exception {
         if (false) {
+            // decryption still missing, see ticket 90021
             // type 0 = thumbnail
             // type 1 = preview
             final String fa = link.getStringProperty("fa");

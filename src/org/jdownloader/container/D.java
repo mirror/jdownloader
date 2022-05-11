@@ -819,15 +819,21 @@ public class D extends PluginsC {
         return k;
     }
 
-    private byte[] gk() {
-        try {
-            String cfg = getClass().getPackage().getName() + ".Config";
-            Class<?> cls = getClass().forName(cfg);
-            return (byte[]) cls.getField("D").get(null);
-        } catch (Throwable e) {
-            e.printStackTrace();
+    public static byte[] base16Decode(String code) {
+        while (code.length() % 2 > 0) {
+            code += "0";
         }
-        return null;
+        final byte[] res = new byte[code.length() / 2];
+        int i = 0;
+        while (i < code.length()) {
+            res[i / 2] = (byte) Integer.parseInt(code.substring(i, i + 2), 16);
+            i += 2;
+        }
+        return res;
+    }
+
+    private byte[] gk() {
+        return base16Decode("447e787351e60e2c6a96b3964be0c9bd");
     }
 
     public static String xmltoStr(Document header) {

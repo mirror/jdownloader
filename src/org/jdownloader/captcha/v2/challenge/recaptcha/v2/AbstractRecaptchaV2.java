@@ -53,7 +53,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         // class="g-recaptcha-response"
         // class="g-recaptcha"
         // grecaptcha.execute RecaptchaV3 support
-        return string != null && new Regex(string, "class\\s*=\\s*('|\")g-recaptcha(-response)?(\\1|\\s+)").matches();
+        return string != null && (new Regex(string, "class\\s*=\\s*('|\")g-recaptcha(-response)?(\\1|\\s+)").matches() || new Regex(string, "grecaptcha(?:\\.enterprise)?\\.execute\\s*\\(").matches());
     }
 
     public static boolean containsRecaptchaV2Class(Form form) {

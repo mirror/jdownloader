@@ -12,7 +12,6 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -26,23 +25,23 @@ public class MegaEncDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private final String MEGAENC_KEY  = "6B316F36416C2D316B7A3F217A30357958585858585858585858585858585858";
+    private final String MEGAENC_KEY2 = "ed1f4c200b35139806b260563b3d3876f011b4750f3a1a4a5efd0bbe67554b44";
+    private final String MEGAENC_IV   = "79F10A01844A0B27FF5B2D4E0ED3163E";
+
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String MEGAENC_KEY;
-        final String MEGAENC_IV;
         try {
-            final String className = new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8");
-            final Class<?> s = getClass().forName(className);
-            MEGAENC_IV = (String) s.getField("MEGAENC_IV").get(null);
             if (parameter.matches("mega://f?enc2\\?.+")) {
-                MEGAENC_KEY = (String) s.getField("MEGAENC_KEY2").get(null);
+                MEGAENC_KEY = MegaEncDecrypter.this.MEGAENC_KEY2;
             } else {
-                MEGAENC_KEY = (String) s.getField("MEGAENC_KEY").get(null);
+                MEGAENC_KEY = MegaEncDecrypter.this.MEGAENC_KEY;
             }
         } catch (Throwable e) {
-            LogSource.exception(logger, e);
+            logger.log(e);
             return decryptedLinks;
         }
         final boolean isFolder = parameter.contains("/fenc");
@@ -61,9 +60,9 @@ public class MegaEncDecrypter extends PluginForDecrypt {
         final String dec = new String(decrypted, "UTF-8");
         final DownloadLink link;
         if (isFolder) {
-            link = this.createDownloadlink("http://mega.co.nz/#F" + dec);
+            link = this.createDownloadlink("https://mega.co.nz/#F" + dec);
         } else {
-            link = this.createDownloadlink("http://mega.co.nz/#" + dec);
+            link = this.createDownloadlink("https://mega.co.nz/#" + dec);
         }
         decryptedLinks.add(link);
         return decryptedLinks;
