@@ -17,22 +17,23 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 import org.appwork.utils.IO;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.AbstractPastebinCrawler.PastebinMetadata;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.decrypter.Paste2Org.class })
@@ -81,44 +82,19 @@ public class Paste2Org extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (!link.isNameSet()) {
-            /* Fallback */
-            link.setName(this.getFID(link) + ".txt");
-        }
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        scanInfo(link, br);
+        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
+        final DownloadLink plaintext = ((jd.plugins.decrypter.Paste2Org) plg).preProcessAndGetPlaintextDownloadLink(new CryptedLink(link.getPluginPatternMatcher(), link));
+        link.setFinalFileName(plaintext.getName());
         return AvailableStatus.TRUE;
-    }
-
-    protected void scanInfo(final DownloadLink link, final Browser br) throws PluginException {
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String textToSave = getPastebinText(br);
-        if (textToSave != null) {
-            try {
-                link.setDownloadSize(textToSave.getBytes("UTF-8").length);
-            } catch (final UnsupportedEncodingException ignore) {
-                ignore.printStackTrace();
-            }
-        }
-        link.setFinalFileName(getFilename(link));
-        final String description = br.getRegex("class=\"desc\"[^>]*>\\s*<p>([^<]+)</p>").getMatch(0);
-        if (description != null && link.getComment() == null) {
-            link.setComment(description);
-        }
-    }
-
-    public static final String getPastebinText(final Browser br) {
-        return br.getRegex("(?i)<ol class='highlight code'>(.*?)</div></li></ol>").getMatch(0);
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        final String textToSave = getPastebinText(this.br);
+        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
+        final PastebinMetadata metadata = ((jd.plugins.decrypter.Paste2Org) plg).preProcessAndGetMetadata(new CryptedLink(link.getPluginPatternMatcher(), link));
+        final String textToSave = metadata.getPastebinText();
         /* Write text to file */
         final File dest = new File(link.getFileOutput());
         IO.writeToFile(dest, textToSave.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
@@ -126,10 +102,6 @@ public class Paste2Org extends PluginForHost {
         link.setVerifiedFileSize(dest.length());
         /* Set progress to finished - the "download" is complete. */
         link.getLinkStatus().setStatus(LinkStatus.FINISHED);
-    }
-
-    public String getFilename(final DownloadLink link) {
-        return this.getFID(link) + ".txt";
     }
 
     @Override

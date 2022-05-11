@@ -79,7 +79,7 @@ public class JustPasteIt extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected void preProcess(final CryptedLink param) throws IOException, PluginException {
+    public void preProcess(final CryptedLink param) throws IOException, PluginException {
         prepBR(br);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -93,8 +93,9 @@ public class JustPasteIt extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
         final PastebinMetadata metadata = super.crawlMetadata(param, br);
+        // metadata.setUsername("@anonymous");
         final String json = br.getRegex("window\\.barOptions\\s*=\\s*(\\{.*?\\});").getMatch(0);
         final String title = br.getRegex("class=\"articleFirstTitle\"[^>]*>([^<>\"]+)</h1>").getMatch(0);
         if (title != null) {

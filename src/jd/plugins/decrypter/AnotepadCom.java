@@ -84,7 +84,7 @@ public class AnotepadCom extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected void preProcess(final CryptedLink param) throws IOException, PluginException {
+    public void preProcess(final CryptedLink param) throws IOException, PluginException {
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)This note either is private or has been deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

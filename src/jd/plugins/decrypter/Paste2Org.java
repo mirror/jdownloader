@@ -69,11 +69,21 @@ public class Paste2Org extends AbstractPastebinCrawler {
 
     @Override
     protected String getPastebinText(final Browser br) {
-        return jd.plugins.hoster.Paste2Org.getPastebinText(br);
+        return br.getRegex("(?i)<ol class='highlight code'>(.*?)</div></li></ol>").getMatch(0);
     }
 
     @Override
-    protected void preProcess(final CryptedLink param) throws IOException, PluginException {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
+        final PastebinMetadata metadata = super.crawlMetadata(param, br);
+        final String description = br.getRegex("class=\"desc\"[^>]*>\\s*<p>([^<]+)</p>").getMatch(0);
+        if (description != null) {
+            metadata.setDescription(description);
+        }
+        return metadata;
+    }
+
+    @Override
+    public void preProcess(final CryptedLink param) throws IOException, PluginException {
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
