@@ -226,7 +226,7 @@ public class InstaGramCom extends PluginForHost {
     }
 
     private void errorWaitingForAccountToDownloadOriginalQuality() throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Waiting for valid account to be able to download original quality", 2 * 60 * 1000l);
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Waiting for valid account to be able to attempt to download original quality", 2 * 60 * 1000l);
     }
 
     private static boolean hasTriedToCrawlOriginalQuality(final DownloadLink link) {

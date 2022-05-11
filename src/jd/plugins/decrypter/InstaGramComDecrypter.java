@@ -104,7 +104,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     /**
      * For links matching pattern {@link #TYPE_HASHTAG} --> This will be set on created DownloadLink objects as a (packagizer-) property.
      */
-    @Deprecated
     private static LinkedHashMap<String, String> ID_TO_USERNAME        = new LinkedHashMap<String, String>() {
                                                                            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
                                                                                return size() > 100;
@@ -284,7 +283,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_STORY)) {
             return this.crawlStory(param, account, loggedIN, true);
         } else if (param.getCryptedUrl().matches(TYPE_PROFILE_TAGGED)) {
-            return crawlUserTagged(param, account, loggedIN);
+            return this.crawlUserTagged(param, account, loggedIN);
         } else {
             return this.crawlUser(param, account, loggedIN);
         }
@@ -292,6 +291,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     /**
      * Returns userID for given username. </br>
+     * Uses website to find userID. </br>
      * Throws Exception if it is unable to find userID in HTML code --> Profile is most likely offline then!
      */
     private String findUserID(final CryptedLink param, final Account account, final AtomicBoolean loggedIN, final String username) throws Exception {
@@ -300,25 +300,40 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* First check our cache -> saves time */
-        String userID = getCachedUserID(username);
-        if (userID != null) {
+        String cachedUserID = getCachedUserID(username);
+        if (cachedUserID != null) {
             /* Return cached userID */
-            return userID;
+            return cachedUserID;
         }
         /* Use website to find userID. */
-        loginOrFail(account, loggedIN);
+        final boolean useSearchToFindUserID = true;
+        String userID;
         final String userProfileURL = this.generateURLProfile(username);
-        getPageAutoLogin(account, loggedIN, userProfileURL, param, br, userProfileURL, null, null);
-        final String json = websiteGetJson();
-        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        /* We need to crawl the userID via website first in order to use the other API. */
-        userID = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
-        if (StringUtils.isEmpty(userID)) {
-            userID = br.getRegex("\"owner\":\\s*\\{\"id\":\\s*\"(\\d+)\"\\}").getMatch(0);
+        if (useSearchToFindUserID) {
+            /* 2022-05-11: New method: Faster and json only */
+            final Request req = br.createGetRequest("https://www." + this.getHost() + "/web/search/topsearch/?context=blended&query=" + username + "&include_reel=true");
+            /* None of these headers are mandatory atm. */
+            req.getHeaders().put("Referer", userProfileURL);
+            req.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            getPageAutoLogin(account, loggedIN, req.getUrl(), param, br, req, null, null);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "users/{0}/user");
+            if (user == null) {
+                /* Most likely that profile doesn't exist */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Profile not found");
+            }
+            userID = user.get("pk").toString();
+        } else {
+            getPageAutoLogin(account, loggedIN, userProfileURL, param, br, userProfileURL, null, null);
+            final String json = websiteGetJson();
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            userID = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
+            if (StringUtils.isEmpty(userID)) {
+                userID = br.getRegex("\"owner\":\\s*\\{\"id\":\\s*\"(\\d+)\"\\}").getMatch(0);
+            }
         }
         if (StringUtils.isEmpty(userID)) {
             /* Most likely that profile doesn't exist */
-            logger.info("Profile not found: " + username);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Profile not found");
         }
         /* Add to cache for later usage */
@@ -337,7 +352,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /** Get cached userID by username */
-    @Deprecated
     private String getCachedUserID(final String username) {
         if (username == null) {
             return null;
@@ -354,12 +368,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return null;
     }
 
-    @Deprecated
     private String getCachedUserName(final int userID) {
         return getCachedUserName(Integer.toString(userID));
     }
 
-    @Deprecated
     private String getCachedUserName(final String userID) {
         if (userID == null) {
             return null;
@@ -389,7 +401,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * Automatically performs given request and logs in if needed and possible. </br>
      *
      * @param urlCheck
-     *            Ensures if we are on this URL after request has been performed.
+     *            Ensures that we are on this URL after request has been performed.
      */
     private void getPageAutoLogin(final Account account, final AtomicBoolean loginState, final String urlCheck, final CryptedLink param, final Browser br, final Request request, final String rhxGis, final String variables) throws Exception {
         getPage(param, br, request, null, null);
@@ -534,7 +546,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
         }
         if (crawlStoryHighlights) {
-            decryptedLinks.addAll(this.crawlAllHighlightStories(username, account, loggedIN));
+            if (userSelectedCrawlTypes == 1) {
+                decryptedLinks.addAll(this.crawlAllHighlightStories(username, account, loggedIN, true));
+            } else {
+                decryptedLinks.addAll(this.crawlAllHighlightStories(username, account, loggedIN, false));
+            }
         }
         if (crawlProfilePicture || crawlProfilePosts) {
             final APIPreference pref = cfg.getProfileCrawlerAPIPreference();
@@ -792,35 +808,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 page++;
             }
         } while (!this.isAbort());
-        return decryptedLinks;
-    }
-
-    private ArrayList<DownloadLink> crawlAllHighlightStories(final String username, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
-        if (username == null) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Login is required to crawl such elements! */
-        this.loginOrFail(account, loggedIN);
-        final String userID = this.findUserID(null, account, loggedIN, username);
-        if (userID == null) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        InstaGramCom.prepBRAltAPI(this.br);
-        InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/highlights/" + userID + "/highlights_tray/");
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final List<Map<String, Object>> stories = (List<Map<String, Object>>) entries.get("tray");
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        for (final Map<String, Object> story : stories) {
-            final String storyID = story.get("id").toString();
-            /* These ones will go back into our crawler to find the individual media elements. */
-            final String url = this.generateStoryHighlightURL(storyID);
-            decryptedLinks.add(this.createDownloadlink(url));
-        }
-        if (decryptedLinks.isEmpty()) {
-            logger.info("User has no highlight stories: " + username);
-        }
         return decryptedLinks;
     }
 
@@ -1981,11 +1968,23 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return crawlStory(param, username, account, loggedIN, addDummyItemOnNoItemsFound);
     }
 
-    private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final String username, final Account account, final AtomicBoolean loggedIN, final boolean addDummyItemOnNoItemsFound) throws UnsupportedEncodingException, Exception {
+    /**
+     * Crawls story of given username. </br>
+     *
+     * @param handleErrors
+     *            true = throw exception on error e.g. if no account is given and add dummy item if user has no story. </br>
+     *            false = return empty array on error
+     */
+    private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final String username, final Account account, final AtomicBoolean loggedIN, final boolean handleErrors) throws UnsupportedEncodingException, Exception {
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (account == null && !handleErrors) {
+            return new ArrayList<DownloadLink>();
+        }
+        /* We need to be loggedIN to be able to see stories of users! */
+        this.loginOrFail(account, loggedIN);
         final InstagramMetadata metadata = new InstagramMetadata(username);
         final String userID = findUserID(param, account, loggedIN, username);
         if (StringUtils.isEmpty(userID)) {
@@ -1994,14 +1993,55 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(getDummyDownloadlinkProfileOffline(username));
             return decryptedLinks;
         }
-        /* We need to be loggedIN to be able to see stories of users! */
-        this.loginOrFail(account, loggedIN);
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
         final Map<String, Object> reel = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final ArrayList<DownloadLink> ret = this.crawlPostAltAPI(param, metadata, reel);
-        if (ret.isEmpty() && addDummyItemOnNoItemsFound) {
+        if (ret.isEmpty() && handleErrors) {
             final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_HAS_NO_STORY_" + username, "This profile currently doesn't have a story: " + username);
+            ret.add(dummy);
+        }
+        return ret;
+    }
+
+    /**
+     * Crawls all highlight stories of given username. </br>
+     *
+     * @param handleErrors
+     *            true = throw exception on error e.g. if no account is given and add dummy item if user has no story. </br>
+     *            false = return empty array on error
+     */
+    private ArrayList<DownloadLink> crawlAllHighlightStories(final String username, final Account account, final AtomicBoolean loggedIN, final boolean handleErrors) throws UnsupportedEncodingException, Exception {
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (account == null && !handleErrors) {
+            return new ArrayList<DownloadLink>();
+        }
+        /* Login is required to crawl such elements! */
+        this.loginOrFail(account, loggedIN);
+        final String userID = this.findUserID(null, account, loggedIN, username);
+        if (userID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        InstaGramCom.prepBRAltAPI(this.br);
+        InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/highlights/" + userID + "/highlights_tray/");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final List<Map<String, Object>> stories = (List<Map<String, Object>>) entries.get("tray");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        for (final Map<String, Object> story : stories) {
+            final String storyID = story.get("id").toString();
+            /* These ones will go back into our crawler to find the individual media elements. */
+            final String url = this.generateStoryHighlightURL(storyID);
+            ret.add(this.createDownloadlink(url));
+        }
+        if (ret.isEmpty()) {
+            logger.info("User has no highlight stories: " + username);
+        }
+        if (ret.isEmpty() && handleErrors) {
+            final DownloadLink dummy = this.createOfflinelink(generateURLProfile(username), "PROFILE_HAS_NO_STORY_HIGHLIGHTS_" + username, "This profile currently doesn't have any story highlights: " + username);
             ret.add(dummy);
         }
         return ret;
