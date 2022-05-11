@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,13 +27,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1kh.de" }, urls = { "http://[\\w\\.]*?1kh\\.de/f/[0-9/]+|http://[\\w\\.]*?1kh\\.de/[0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1kh.de" }, urls = { "https?://(?:www\\.)?1kh\\.de/(?:f/[0-9/]+|[0-9]+)" })
 public class NsKhD extends PluginForDecrypt {
-
-    final static private Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?1kh\\.de/[0-9]+", Pattern.CASE_INSENSITIVE);
-
+    final static private Pattern patternSupported_File = Pattern.compile("https?://[\\w\\.]*?1kh\\.de/[0-9]+", Pattern.CASE_INSENSITIVE);
     // final static private Pattern patternSupported_Folder =
     // Pattern.compile("http://[\\w\\.]*?1kh\\.de/f/[0-9/]+",
     // Pattern.CASE_INSENSITIVE);
@@ -43,17 +42,18 @@ public class NsKhD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-
-        br.getPage(parameter);
-        if (Regex.matches(parameter, patternSupported_File)) {
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (Regex.matches(param.getCryptedUrl(), patternSupported_File)) {
             /* Einzelne Datei */
             String[] links = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getColumn(0);
             progress.setRange(links.length);
-
             for (String element : links) {
                 br.getPage(Encoding.htmlDecode(element));
                 String link = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getMatch(0);
@@ -71,32 +71,26 @@ public class NsKhD extends PluginForDecrypt {
                     String password = getUserInput(null, param);
                     forms[0].put("Password", password);
                     br.submitForm(forms[0]);
-
                     if (!br.containsHTML("Das eingegebene Passwort ist falsch!")) {
                         valid = true;
                         break;
                     }
                 }
             }
-            if (valid == false) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (valid == false) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
             String[] links = br.getRegex("<div class=\"Block3\".*?<a id=\"DownloadLink_(\\d+)\"").getColumn(0);
             progress.setRange(links.length);
-
             for (String element : links) {
-                decryptedLinks.add(createDownloadlink("http://1kh.de/" + element));
+                decryptedLinks.add(createDownloadlink("https://1kh.de/" + element));
                 progress.increase(1);
             }
-
         }
-
         return decryptedLinks;
     }
 
-    // @Override
-
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
