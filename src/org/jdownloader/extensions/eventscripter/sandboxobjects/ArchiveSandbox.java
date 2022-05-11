@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
@@ -11,7 +12,10 @@ import org.jdownloader.extensions.eventscripter.ScriptThread;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.MissingArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 
 public class ArchiveSandbox {
@@ -94,18 +98,44 @@ public class ArchiveSandbox {
         }
     }
 
+    @Deprecated
     public DownloadLinkSandBox[] getDownloadLinks() {
-        if (archive != null) {
+        final ArchiveLinkSandbox[] links = getArchiveLinks();
+        if (links != null) {
             final ArrayList<DownloadLinkSandBox> ret = new ArrayList<DownloadLinkSandBox>();
-            for (final ArchiveFile file : archive.getArchiveFiles()) {
-                if (file instanceof DownloadLinkArchiveFile) {
-                    for (final DownloadLink dl : ((DownloadLinkArchiveFile) file).getDownloadLinks()) {
-                        ret.add(new DownloadLinkSandBox(dl));
-                    }
+            for (ArchiveLinkSandbox link : links) {
+                final DownloadLinkSandBox dlsb = link.getDownloadLinkSandBox();
+                if (dlsb != null) {
+                    ret.add(dlsb);
                 }
             }
             if (ret.size() > 0) {
                 return ret.toArray(new DownloadLinkSandBox[] {});
+            }
+        }
+        return null;
+    }
+
+    public ArchiveLinkSandbox[] getArchiveLinks() {
+        if (archive != null) {
+            final ArrayList<ArchiveLinkSandbox> ret = new ArrayList<ArchiveLinkSandbox>();
+            for (final ArchiveFile file : archive.getArchiveFiles()) {
+                if (file instanceof DownloadLinkArchiveFile) {
+                    for (final DownloadLink dl : ((DownloadLinkArchiveFile) file).getDownloadLinks()) {
+                        ret.add(new ArchiveLinkSandbox(new DownloadLinkSandBox(dl)));
+                    }
+                } else if (file instanceof CrawledLinkArchiveFile) {
+                    for (final CrawledLink dl : ((CrawledLinkArchiveFile) file).getLinks()) {
+                        ret.add(new ArchiveLinkSandbox(new CrawledLinkSandbox(dl)));
+                    }
+                } else if (file instanceof MissingArchiveFile) {
+                    ret.add(new ArchiveLinkSandbox(((MissingArchiveFile) file).getFilePath()));
+                } else if (file instanceof FileArchiveFile) {
+                    ret.add(new ArchiveLinkSandbox(ScriptEnvironment.getPath(((FileArchiveFile) file).getFilePath())));
+                }
+            }
+            if (ret.size() > 0) {
+                return ret.toArray(new ArchiveLinkSandbox[] {});
             }
         }
         return null;
