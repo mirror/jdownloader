@@ -33,6 +33,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -84,13 +85,12 @@ public class InstaGramCom extends PluginForHost {
         return br;
     }
 
-    private String dllink = null;
-
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/about/legal/terms/";
     }
 
+    private String              dllink                                   = null;
     /**
      * https://instagram.api-docs.io/1.0 </br>
      */
@@ -178,10 +178,26 @@ public class InstaGramCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             prepBRWebsite(this.br);
-            if (PluginJsonConfig.get(InstagramConfig.class).isAttemptToDownloadOriginalQuality() && !hasTriedToCrawlOriginalQuality(link) && account != null) {
-                this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, account, true);
-            } else {
+            final MediaQualityDownloadMode mode = PluginJsonConfig.get(InstagramConfig.class).getMediaQualityDownloadMode();
+            if (mode == MediaQualityDownloadMode.DEFAULT_QUALITY) {
                 this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+            } else if (mode == MediaQualityDownloadMode.PREFER_ORIGINAL_QUALITY) {
+                if (account != null) {
+                    this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, account, true);
+                } else {
+                    /* Fallback to default quality */
+                    this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+                }
+            } else if (mode == MediaQualityDownloadMode.ENFORCE_ORIGINAL_QUALITY) {
+                /* MediaQualityDownloadMode.ENFORCE_ORIGINAL_QUALITY */
+                if (account != null) {
+                    this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, account, true);
+                } else {
+                    errorWaitingForAccountToDownloadOriginalQuality();
+                }
+            } else {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.dllink = this.checkLinkAndSetFilesize(link, this.dllink);
             if (this.dllink == null) {
@@ -207,6 +223,10 @@ public class InstaGramCom extends PluginForHost {
             }
             return AvailableStatus.TRUE;
         }
+    }
+
+    private void errorWaitingForAccountToDownloadOriginalQuality() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Waiting for valid account to be able to download original quality", 2 * 60 * 1000l);
     }
 
     private static boolean hasTriedToCrawlOriginalQuality(final DownloadLink link) {
@@ -414,6 +434,8 @@ public class InstaGramCom extends PluginForHost {
         if (preferAltAPIForDirecturlRefresh() && account != null) {
             logger.info("Tring to obtain fresh original quality downloadurl");
             directurl = getHighesQualityDownloadlinkAltAPI(link, account, true);
+        } else if (PluginJsonConfig.get(InstagramConfig.class).getMediaQualityDownloadMode() == MediaQualityDownloadMode.ENFORCE_ORIGINAL_QUALITY) {
+            errorWaitingForAccountToDownloadOriginalQuality();
         } else if (isPartOfStory(link)) {
             throw new AccountRequiredException("Cannot refresh direct url of story elements without account");
         } else {

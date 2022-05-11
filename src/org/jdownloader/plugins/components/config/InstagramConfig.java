@@ -67,8 +67,8 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Default filenames: Include 'shortcode' in filenames if it is available?";
         }
 
-        public String getAttemptToDownloadOriginalQuality_label() {
-            return "Try to download original quality (bigger filesize, without image-effects, only in account-mode)? [This can slow down the download-process!]";
+        public String getMediaQualityDownloadMode_label() {
+            return "Select media quality download mode.\r\nOriginal quality = bigger filesize, without image-effects, works only when an account is available.";
         }
 
         public String getProfileCrawlerMaxItemsLimit_label() {
@@ -283,14 +283,34 @@ public interface InstagramConfig extends PluginConfigInterface {
 
     void setAddShortcodeToFilenames(boolean b);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @TakeValueFromSubconfig("ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY")
-    @DescriptionForConfigEntry("Try to download original quality (bigger filesize, without image-effects, only in account-mode)? [This can slow down the download-process!]")
-    @Order(50)
-    boolean isAttemptToDownloadOriginalQuality();
+    public static enum MediaQualityDownloadMode implements LabelInterface {
+        DEFAULT_QUALITY {
+            @Override
+            public String getLabel() {
+                return "Default Instagram quality";
+            }
+        },
+        PREFER_ORIGINAL_QUALITY {
+            @Override
+            public String getLabel() {
+                return "Prefer original quality (account required, on failure = fallback to default quality)";
+            }
+        },
+        ENFORCE_ORIGINAL_QUALITY {
+            @Override
+            public String getLabel() {
+                return "Enforce original quality (account required, on failure = display error)";
+            }
+        };
+    }
 
-    void setAttemptToDownloadOriginalQuality(boolean b);
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    @Order(50)
+    @DescriptionForConfigEntry("Select media quality download mode.\r\nOriginal quality = bigger filesize, without image-effects, works only when an account is available.")
+    MediaQualityDownloadMode getMediaQualityDownloadMode();
+
+    void setMediaQualityDownloadMode(final MediaQualityDownloadMode mediaQualityDownloadMode);
 
     @AboutConfig
     @SpinnerValidator(min = -1, max = 1024, step = 1)
