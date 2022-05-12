@@ -16,49 +16,73 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newalbumreleases.net" }, urls = { "https?://(?:www\\.)?newalbumreleases\\.net/(?!pic/)[A-Za-z0-9=/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class NwLbmRlsesNet extends PluginForDecrypt {
     public NwLbmRlsesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?newalbumreleases\\.net/(date/[0-9/]+|category/.+|about/?|comments/feed/?|feed/?|page.+)";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "newalbumreleases.net" });
+        return ret;
+    }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Link invalid: " + parameter);
-            return decryptedLinks;
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            // old: (?!(about|category|date|feed|comments|pic)/)[A-Za-z0-9=/]+/?
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\d+/[a-z0-9\\-]+/?");
         }
-        if (parameter.matches("https?://(?:www\\.)?newalbumreleases\\.net/\\d+(/?.+)?")) {
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (param.getCryptedUrl().matches("https?://(?:www\\.)?newalbumreleases\\.net/\\d+(/?.+)?")) {
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.setFollowRedirects(false);
             final String[] links = br.getRegex("\"(https?://[^<>\"]*?)\">DOWNLOAD</a>").getColumn(0);
             if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
                 return null;
             }
+            br.setFollowRedirects(false);
             for (final String singleLink : links) {
                 String finallink;
                 if (singleLink.contains("newalbumreleases.net/")) {
                     br.getPage(singleLink);
                     finallink = br.getRedirectLocation();
                     if (finallink == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
                         return null;
                     }
                 } else {
@@ -68,14 +92,13 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
             }
         } else {
             br.setFollowRedirects(false);
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
