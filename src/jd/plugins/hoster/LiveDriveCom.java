@@ -16,6 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -24,14 +29,41 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LiveDriveComFolder;
 
-//This plugin only takes decrypted links from the livedrive decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://public\\.livedrive\\.com/portal/public-shares/([^/]+)/file/\\*_([a-zA-Z0-9_/\\+\\=\\-%]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { LiveDriveComFolder.class })
 public class LiveDriveCom extends PluginForHost {
     public LiveDriveCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.decrypter.LiveDriveComFolder.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://public\\." + buildHostsPatternPart(domains) + "/portal/public-shares/([^/]+)/file/\\*_([a-zA-Z0-9_/\\+\\=\\-%]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -67,15 +99,33 @@ public class LiveDriveCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(500);
         br.getPage("https://public.livedrive.com/portal/account/sharing/withme/" + this.getUserSlug(link) + "/files/" + getFIDDecoded(link) + "?includePublicShares=true&includePrivateShares=false");
-        /* TODO: Add appropriate linkcheck */
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> resource = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        parseFileInfo(link, resource);
+        if (!link.isAvailable()) {
+            /* Offline according to json */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static void parseFileInfo(final DownloadLink link, final Map<String, Object> resource) {
+        link.setFinalFileName(resource.get("name").toString());
+        link.setVerifiedFileSize(((Number) resource.get("size")).longValue());
+        if (((Boolean) resource.get("deleted")).booleanValue() == Boolean.TRUE) {
+            link.setAvailable(false);
+        } else {
+            link.setAvailable(true);
+        }
     }
 
     @Override
@@ -89,7 +139,7 @@ public class LiveDriveCom extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
         }
         dl.startDownload();
     }
