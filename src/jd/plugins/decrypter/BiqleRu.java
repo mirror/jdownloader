@@ -20,8 +20,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.BiqleRuConfig;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,17 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.BiqleRuConfig;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daftsex.com", "artsporn.com", "18.ukdevilz.com", "adult.noodlemagazine.com", "novids.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daftsex\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?artsporn\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?18\\.ukdevilz\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?adult\\.noodlemagazine\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?novids\\.com/video/(?:-)?\\d+_\\d+" })
 public class BiqleRu extends PluginForDecrypt {
@@ -71,43 +72,36 @@ public class BiqleRu extends PluginForDecrypt {
             if (title != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(title);
+                fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
             }
-            final String DaxabPlayer = br.getRegex("DaxabPlayer\\.init\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*\\}\\s*</script").getMatch(0);
-            String daxab = null;
-            if (DaxabPlayer != null) {
-                final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
-                final String oid = urlinfo.getMatch(0);
-                final String id = urlinfo.getMatch(1);
-                final String oid_and_id = oid + "_" + id;
-                final String hash = new Regex(DaxabPlayer, "id\\s*:\\s*'video" + oid_and_id + "'.*?hash\\s*:\\s*\"(.*?)\"").getMatch(0);
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
+            final String oid = urlinfo.getMatch(0);
+            final String id = urlinfo.getMatch(1);
+            final String oid_and_id = oid + "_" + id;
+            final String daxabPlayerJS = br.getRegex("DaxabPlayer\\.init\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*\\}\\s*</script").getMatch(0);
+            String daxabEmbedURL = null;
+            if (daxabPlayerJS != null) {
+                final String hash = new Regex(daxabPlayerJS, "id\\s*:\\s*'video" + oid_and_id + "'.*?hash\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (hash != null) {
-                    daxab = "https://daxab.com/player/" + hash;
-                    /* 2022-05-11: Assume that this content is also hosted on vk.com */
-                    final DownloadLink vkontakteVideo = this.createDownloadlink(VKontakteRu.generateContentURLVideo(oid, id));
-                    ret.add(vkontakteVideo);
-                    distribute(vkontakteVideo);
-                } else {
-                    logger.info("WTF");
+                    daxabEmbedURL = "https://daxab.com/player/" + hash;
                 }
-            } else {
-                logger.info("WTF");
             }
-            if (daxab == null) {
-                daxab = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)").getMatch(0);
+            if (daxabEmbedURL == null) {
+                daxabEmbedURL = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)").getMatch(0);
             }
-            if (daxab != null) {
+            if (daxabEmbedURL != null) {
                 /* TODO: Apply quality setting also for other types of videos e.g. externally hosted/vk */
                 final String userPreferredQuality = getUserPreferredqualityStr();
                 final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
                 DownloadLink best = null;
-                int highestQualityInt = -1;
+                int highestQualityHeight = -1;
                 final Browser brc = br.cloneBrowser();
                 sleep(1000, param);
-                brc.getPage(daxab);
-                if (brc.containsHTML("cdn_files")) {
+                brc.getPage(daxabEmbedURL);
+                final String cdn_filesString = brc.getRegex("cdn_files\\s*:\\s*(\\{.*?\\})").getMatch(0);
+                if (cdn_filesString != null) {
                     final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
-                    final String cdn_id = brc.getRegex("cdn_id\\s*:\\s*\"(.*?)\"").getMatch(0);
-                    final String cdn_filesString = brc.getRegex("cdn_files\\s*:\\s*(\\{.*?\\})").getMatch(0);
+                    final String cdn_id = brc.getRegex("cdn_id\\s*:\\s*\"(-?\\d+_\\d+)\"").getMatch(0);
                     final Map<String, Object> cdn_files = JSonStorage.restoreFromString(cdn_filesString, TypeRef.HASHMAP);
                     for (Entry<String, Object> cdn_file : cdn_files.entrySet()) {
                         if (cdn_file.getKey().startsWith("mp4")) {
@@ -123,14 +117,11 @@ public class BiqleRu extends PluginForDecrypt {
                             } else {
                                 dl.setFinalFileName(cdn_id + "_" + heightStr + ".mp4");
                             }
-                            if (fp != null) {
-                                dl._setFilePackage(fp);
-                            }
                             dl.setContainerUrl(param.getCryptedUrl());
                             if (!heightStr.isEmpty()) {
                                 final int height = Integer.parseInt(heightStr);
-                                if (height > highestQualityInt) {
-                                    highestQualityInt = height;
+                                if (height > highestQualityHeight) {
+                                    highestQualityHeight = height;
                                     best = dl;
                                 }
                                 qualityMap.put(heightStr + "p", dl);
@@ -139,6 +130,14 @@ public class BiqleRu extends PluginForDecrypt {
                                 best = dl;
                             }
                         }
+                    }
+                    // if (highestQualityHeight == 720 && !brc.containsHTML("cdn_hls:")) {
+                    if (highestQualityHeight == 720) {
+                        /*
+                         * Assume that this content is also hosted on vk.com where there is the possibility that we can get a 1080p version.
+                         */
+                        final DownloadLink vkontakteVideo = this.createDownloadlink(VKontakteRu.generateContentURLVideo(oid, id));
+                        ret.add(vkontakteVideo);
                     }
                 } else {
                     final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
@@ -188,8 +187,8 @@ public class BiqleRu extends PluginForDecrypt {
                             dl.setContainerUrl(param.getCryptedUrl());
                             if (!resolution.isEmpty()) {
                                 final int height = Integer.parseInt(resolution);
-                                if (height > highestQualityInt) {
-                                    highestQualityInt = height;
+                                if (height > highestQualityHeight) {
+                                    highestQualityHeight = height;
                                     best = dl;
                                 }
                                 qualityMap.put(resolution + "p", dl);
@@ -221,10 +220,9 @@ public class BiqleRu extends PluginForDecrypt {
                             ret.add(entry.getValue());
                         }
                     }
-                    return ret;
                 }
             } else {
-                // vk mode
+                // vk mode | Old way(?)
                 final String daxabExt = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/ext\\.php\\?oid=[0-9\\-]+&id=\\d+&hash=[a-zA-Z0-9]+)\"").getMatch(0);
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(daxabExt);
@@ -233,17 +231,20 @@ public class BiqleRu extends PluginForDecrypt {
                 String base64String = new Regex(escapeString, "base64,(.+?)\"").getMatch(0);
                 String decodeString = Encoding.Base64Decode(base64String);
                 String action = new Regex(decodeString, "action=\"([^\"]+)\"").getMatch(0);
-                String oid = new Regex(decodeString, "oid\" value=\"([^\"]+)\"").getMatch(0);
-                String id = new Regex(decodeString, "id\" value=\"([^\"]+)\"").getMatch(0);
+                // String oid = new Regex(decodeString, "oid\" value=\"([^\"]+)\"").getMatch(0);
+                // String id = new Regex(decodeString, "id\" value=\"([^\"]+)\"").getMatch(0);
                 String hash = new Regex(decodeString, "hash\" value=\"([^\"]+)\"").getMatch(0);
                 String reqUrl = String.format("https:%s?oid=%s&id=%s&hash=%s&autoplay=0", action, oid, id, hash);
-                final DownloadLink downloadLink = createDownloadlink(reqUrl);
-                downloadLink.setFinalFileName(title + ".mp4");
-                downloadLink.setContainerUrl(param.getCryptedUrl());
-                ret.add(downloadLink);
-                return ret;
+                final DownloadLink video = createDownloadlink(reqUrl);
+                video.setFinalFileName(title + ".mp4");
+                video.setContainerUrl(param.getCryptedUrl());
+                ret.add(video);
+            }
+            if (fp != null) {
+                fp.addLinks(ret);
             }
         } else {
+            /* E.g. novids.com */
             final String oid;
             final String id;
             if (param.getCryptedUrl().matches("https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+")) {
