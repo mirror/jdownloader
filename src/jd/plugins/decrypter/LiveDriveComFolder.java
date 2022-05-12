@@ -16,82 +16,81 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://([a-z0-9]+\\.livedrive\\.com/((I|i)tem|files)/[a-z0-9]+|[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://(?:[A-Za-z0-9\\-]+\\.)?livedrive\\.com/.+" })
 public class LiveDriveComFolder extends PluginForDecrypt {
     public LiveDriveComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String FOLDERLINK = "https?://[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32}";
-
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // Prefer http for Stable compatibility
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        String parameter = param.toString().replace("https://", "http://");
-        if (parameter.matches(FOLDERLINK)) {
-            parameter = parameter.replace("livedrivefolderlink.com/", "livedrive.com/");
-            final Regex paraminfo = new Regex(parameter, "http://([a-z0-9]+)\\.livedrive\\.com/([a-z0-9]{32})");
-            // br.getPage("http://zenpharaohs.livedrive.com/Item/2390130");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://" + paraminfo.getMatch(0) + ".livedrive.com/Files/FileList?fileId=" + paraminfo.getMatch(1) + "&pageNo=1&viewMode=1&_=" + System.currentTimeMillis());
-        } else {
-            parameter = parameter.replace("/files/", "/item/");
-            br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // Single link or folder
-        String liveDriveUrlUserPart = new Regex(parameter, "(.*?)\\.livedrive\\.com").getMatch(0);
-        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
-        if (br.containsHTML("Item not found</span>")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        /**
+         * TODO: </br>
+         * - check pagination handling </br>
+         * - add support for subfolders </br>
+         * - set appropriate package names and subfolderPaths </br>
+         * - add errorhandling for empty folders
+         */
+        final String user = new Regex(br.getURL(), "https?://[^/]+/portal/public-shares/([^/]+)").getMatch(0);
+        if (user == null) {
+            /* Redirect to unsupported URL -> Must be offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[][] folders = br.getRegex("<div class=\"file\\-item\\-container\" name=\"([^<>\"]*?)\" data=\"([a-z0-9]{32})\" aid=\"\\d+\" ondblclick=\"Spinner\\(\\);\\$\\(\\'#FileList\\'\\)\\.load").getMatches();
-        final String[][] files = br.getRegex("\"/Files/ToolTipView\\?fileId=([a-f0-9]{32})\\&pageNo=1\" name=\"([^<>\"]+)\"").getMatches();
-        if ((folders == null || folders.length == 0) && (files == null || files.length == 0)) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return decryptedLinks;
-        }
-        if (files.length != 0) {
-            for (final String finfo[] : files) {
-                final String filename = finfo[1];
-                final String ID = finfo[0];
-                final DownloadLink theFinalLink = createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrivedecrypted.com/item/" + ID);
-                theFinalLink.setAvailable(true);
-                theFinalLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-                decryptedLinks.add(theFinalLink);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        int page = 1;
+        do {
+            br.getPage("https://public.livedrive.com/portal/account/sharing/withme/" + user + "/files?count=50&includePublicShares=true&includePrivateShares=false");
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) entries.get("resourceList");
+            for (final Map<String, Object> resource : resourcelist) {
+                final String resourceID = resource.get("fileId").toString();
+                final int resourceType = ((Number) resource.get("type")).intValue();
+                if (resourceType == 1) {
+                    final DownloadLink file = this.createDownloadlink("https://" + br.getHost(true) + "/portal/public-shares/" + user + "/file/*_" + Encoding.Base64Encode(resourceID));
+                    file.setFinalFileName(resource.get("name").toString());
+                    file.setVerifiedFileSize(((Number) resource.get("size")).intValue());
+                    file.setAvailable(true);
+                    ret.add(file);
+                } else if (resourceType == 2) {
+                    /* Folder */
+                    // TODO
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-        }
-        if (folders.length != 0) {
-            for (final String[] folderinfo : folders) {
-                final String ID = folderinfo[1];
-                final DownloadLink theFinalLink = createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrivefolderlink.com/" + ID);
-                decryptedLinks.add(theFinalLink);
+            final int pageCount = ((Number) entries.get("pageCount")).intValue();
+            logger.info("Crawled page " + page + "/" + entries.get("pageCount") + " | Found items so far: " + ret.size());
+            if (this.isAbort()) {
+                /* Aborted by user */
+                break;
+            } else if (page == pageCount) {
+                logger.info("Stopping because: Reached end");
+                break;
             }
-        }
-        if (decryptedLinks.size() == 0) {
-            if (new Regex(parameter, Pattern.compile("(http://[a-z0-9]+\\.livedrive\\.com/item/[a-z0-9]{32})", Pattern.CASE_INSENSITIVE)).matches()) {
-                decryptedLinks.add(createDownloadlink(parameter.replace("livedrive.com/", "livedrivedecrypted.com/")));
-            } else {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-        }
-        return decryptedLinks;
+        } while (true);
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

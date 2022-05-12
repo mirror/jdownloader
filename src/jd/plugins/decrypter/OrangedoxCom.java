@@ -24,8 +24,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orangedox.com" }, urls = { "https?://(?:www\\.)?dl\\.orangedox\\.com/([A-Za-z0-9]+)" })
 public class OrangedoxCom extends PluginForDecrypt {
@@ -33,15 +36,40 @@ public class OrangedoxCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        final URLConnectionAdapter con = br.openGetConnection(param.getCryptedUrl());
+        br.setFollowRedirects(false);
+        /*
+         * Special handling for Google Drive content because they will try to redirect us to direct-URLs but we prefer using the Google
+         * Drive plugin to handle such URLs.
+         */
+        final PluginForHost googleDrivePlugin = this.getNewPluginForHostInstance("drive.google.com");
+        String nexturl = param.getCryptedUrl() + "?dl=1";
+        URLConnectionAdapter con = null;
+        int redirects = 0;
+        do {
+            con = br.openGetConnection(nexturl);
+            if (br.getRedirectLocation() == null) {
+                break;
+            } else if (googleDrivePlugin.canHandle(br.getRedirectLocation())) {
+                try {
+                    con.disconnect();
+                } catch (final Throwable ignore) {
+                }
+                decryptedLinks.add(this.createDownloadlink(br.getRedirectLocation()));
+                return decryptedLinks;
+            } else {
+                logger.info("Redirect to the unknown: " + br.getRedirectLocation());
+                nexturl = br.getRedirectLocation();
+                redirects++;
+            }
+        } while (redirects < 10);
         if (this.looksLikeDownloadableContent(con)) {
             try {
                 con.disconnect();
             } catch (final Throwable ignore) {
             }
+            /* Typically Google Drive URLs. */
             final DownloadLink direct = this.createDownloadlink("directhttp://" + con.getURL().toString());
             if (con.getCompleteContentLength() > 0) {
                 direct.setVerifiedFileSize(con.getCompleteContentLength());
@@ -57,7 +85,8 @@ public class OrangedoxCom extends PluginForDecrypt {
                 logger.info("Password protected URLs are not yet supported");
                 throw new DecrypterException(DecrypterException.PASSWORD);
             } else {
-                logger.info("Failed to find any content");
+                /* Assume that content is offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         return decryptedLinks;
