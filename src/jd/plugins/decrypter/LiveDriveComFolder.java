@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -28,14 +29,43 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://(?:[A-Za-z0-9\\-]+\\.)?livedrive\\.com/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LiveDriveComFolder extends PluginForDecrypt {
     public LiveDriveComFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "livedrive.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[A-Za-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/.+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -46,34 +76,69 @@ public class LiveDriveComFolder extends PluginForDecrypt {
         }
         /**
          * TODO: </br>
-         * - check pagination handling </br>
          * - add support for subfolders </br>
-         * - set appropriate package names and subfolderPaths </br>
          * - add errorhandling for empty folders
          */
+        final Regex urlinfo = new Regex(br.getURL(), "https?://[^/]+/portal/public-shares/([^/]+)(/\\*_([a-zA-Z0-9_/\\+\\=\\-%]+))?");
         final String user = new Regex(br.getURL(), "https?://[^/]+/portal/public-shares/([^/]+)").getMatch(0);
+        final String directoryIDCrypted = urlinfo.getMatch(2);
         if (user == null) {
             /* Redirect to unsupported URL -> Must be offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String directoryID = null;
+        if (directoryIDCrypted != null) {
+            directoryID = Encoding.Base64Decode(directoryIDCrypted);
+        }
+        String currentSubfolderPath = this.getAdoptedCloudFolderStructure(user);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int page = 1;
+        final int maxItemsPerPage = 50;
+        FilePackage fp = FilePackage.getInstance();
+        final String urlPart;
+        if (directoryID != null) {
+            urlPart = "directory/" + directoryID + "/files";
+        } else {
+            urlPart = "files";
+        }
+        final String titleForOfflineContent;
+        if (directoryIDCrypted != null) {
+            titleForOfflineContent = user + "_" + directoryIDCrypted;
+        } else {
+            titleForOfflineContent = user;
+        }
         do {
-            br.getPage("https://public.livedrive.com/portal/account/sharing/withme/" + user + "/files?count=50&includePublicShares=true&includePrivateShares=false");
+            final UrlQuery query = new UrlQuery();
+            query.add("count", Integer.toString(maxItemsPerPage));
+            query.addAndReplace("page", Integer.toString(page));
+            query.add("includePublicShares", "true");
+            query.add("includePrivateShares", "false");
+            br.getPage("https://public.livedrive.com/portal/account/sharing/withme/" + user + "/" + urlPart + "?" + query.toString());
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            if (page == 1) {
+                fp.setName(currentSubfolderPath);
+            }
             final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) entries.get("resourceList");
+            if (resourcelist.isEmpty() && page == 1) {
+                ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + titleForOfflineContent, "This folder is empty."));
+                return ret;
+            }
             for (final Map<String, Object> resource : resourcelist) {
                 final String resourceID = resource.get("fileId").toString();
                 final int resourceType = ((Number) resource.get("type")).intValue();
                 if (resourceType == 1) {
                     final DownloadLink file = this.createDownloadlink("https://" + br.getHost(true) + "/portal/public-shares/" + user + "/file/*_" + Encoding.Base64Encode(resourceID));
-                    file.setFinalFileName(resource.get("name").toString());
-                    file.setVerifiedFileSize(((Number) resource.get("size")).intValue());
-                    file.setAvailable(true);
+                    jd.plugins.hoster.LiveDriveCom.parseFileInfo(file, resource);
+                    file.setRelativeDownloadFolderPath(currentSubfolderPath);
+                    file._setFilePackage(fp);
                     ret.add(file);
+                    distribute(file);
                 } else if (resourceType == 2) {
                     /* Folder */
-                    // TODO
+                    final DownloadLink folder = this.createDownloadlink("https://" + br.getHost(true) + "/portal/public-shares/" + user + "/*_" + Encoding.Base64Encode(resourceID));
+                    folder.setRelativeDownloadFolderPath(currentSubfolderPath + "/" + resource.get("name"));
+                    ret.add(folder);
+                    distribute(folder);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -84,8 +149,15 @@ public class LiveDriveComFolder extends PluginForDecrypt {
                 /* Aborted by user */
                 break;
             } else if (page == pageCount) {
+                /* We've just crawled the last page */
                 logger.info("Stopping because: Reached end");
                 break;
+            } else if (resourcelist.size() < maxItemsPerPage) {
+                /* Additional fail safe */
+                logger.info("Stopping because: Current page contains less items than " + maxItemsPerPage);
+                break;
+            } else {
+                page++;
             }
         } while (true);
         return ret;

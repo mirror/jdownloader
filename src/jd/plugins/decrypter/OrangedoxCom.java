@@ -43,7 +43,7 @@ public class OrangedoxCom extends PluginForDecrypt {
          * Special handling for Google Drive content because they will try to redirect us to direct-URLs but we prefer using the Google
          * Drive plugin to handle such URLs.
          */
-        final PluginForHost googleDrivePlugin = this.getNewPluginForHostInstance("drive.google.com");
+        final PluginForHost googleDrivePlugin = this.getNewPluginForHostInstance(jd.plugins.hoster.GoogleDrive.getPluginDomains().get(0)[0]);
         String nexturl = param.getCryptedUrl() + "?dl=1";
         URLConnectionAdapter con = null;
         int redirects = 0;
