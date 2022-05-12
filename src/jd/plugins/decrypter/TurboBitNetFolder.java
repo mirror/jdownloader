@@ -37,10 +37,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.hoster.TurboBitNet;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { TurboBitNet.class })
 public class TurboBitNetFolder extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
