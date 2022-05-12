@@ -342,6 +342,14 @@ public class DownloadLinkSandBox {
         }
     }
 
+    public String getArchiveID() {
+        return downloadLink != null ? downloadLink.getArchiveID() : null;
+    }
+
+    public Boolean isPartOfAnArchive() {
+        return downloadLink != null ? downloadLink.isPartOfAnArchive() : null;
+    }
+
     public ArchiveSandbox getArchive() {
         if (downloadLink == null || ArchiveValidator.EXTENSION == null) {
             return null;

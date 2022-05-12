@@ -18,17 +18,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -37,6 +33,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -140,7 +141,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         // }
         String recaptchaV2Response = null;
         /* 2018-07-18: Not all sites require a captcha to be solved */
-        final CaptchaType captchaType = getCaptchaType();
+        CaptchaType captchaType = getCaptchaType();
         if (evalulateCaptcha(captchaType, param.getCryptedUrl())) {
             logger.info("Captcha required");
             boolean requiresCaptchaWhichCanFail = false;
@@ -190,9 +191,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         /**
                          * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                         * </br>
-                         * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
-                         * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
+                         * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another
+                         * website as the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from
+                         * happening.
                          */
                         final String reCaptchaSiteURL;
                         if (this.getSpecialReferer() != null) {
@@ -202,10 +203,11 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                             /* Fine for most of all websites. */
                             reCaptchaSiteURL = br.getURL();
                         }
+                        final boolean isInvisible = captchaType == CaptchaType.reCaptchaV2_invisible;
                         recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, key) {
                             @Override
                             public TYPE getType() {
-                                if (captchaType == CaptchaType.reCaptchaV2_invisible) {
+                                if (isInvisible) {
                                     return TYPE.INVISIBLE;
                                 } else {
                                     return TYPE.NORMAL;
@@ -231,12 +233,18 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         final String chid = sm.getChallenge(code);
                         form.put("adcopy_challenge", chid);
                         form.put("adcopy_response", "manual_challenge");
-                    } else {
+                    } else if (captchaType != null) {
                         /* This should never happen */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported captcha type!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported captcha type:" + captchaType);
+                    } else {
+                        // * captchas(site) -> ads page -> no captcha(site)
+                        logger.info("no captcha?!");
                     }
                 }
                 submitForm(form);
+                // refresh appVars!
+                appVars = regexAppVars(this.br);
+                captchaType = getCaptchaType();
                 if (getLinksGoForm(param, br) != null) {
                     captchaFailed = false;
                     break;
@@ -401,6 +409,12 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     }
 
     protected Form getCaptchaForm(final Browser br) {
+        final Form[] forms = br.getForms();
+        for (Form form : forms) {
+            if (MethodType.POST.equals(form.getMethod())) {
+                return form;
+            }
+        }
         return br.getForm(0);
     }
 
