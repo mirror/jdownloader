@@ -77,6 +77,20 @@ public class CrawledLinkSandbox {
         }
     }
 
+    public String getArchiveID() {
+        return link != null ? link.getArchiveID() : null;
+    }
+
+    public Boolean isPartOfAnArchive() {
+        if (link != null) {
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null) {
+                return downloadLink.isPartOfAnArchive();
+            }
+        }
+        return null;
+    }
+
     public long getAddedDate() {
         if (link != null) {
             return link.getCreated();

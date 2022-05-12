@@ -2,21 +2,14 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.plugins.DownloadLink;
 
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
 import org.jdownloader.extensions.eventscripter.ScriptThread;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.MissingArchiveFile;
-import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
-import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
-import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
-import org.jdownloader.extensions.extraction.multi.ArchiveType;
 
 public class ArchiveSandbox {
     private final Archive archive;
@@ -36,6 +29,36 @@ public class ArchiveSandbox {
         } else {
             return super.hashCode();
         }
+    }
+
+    public ArchiveSandbox getParentArchive() {
+        if (archive != null) {
+            final Archive parent = archive.getParentArchive();
+            if (parent != null) {
+                return new ArchiveSandbox(parent);
+            }
+        }
+        return null;
+    }
+
+    public ArchiveFileSandbox getLastArchiveFile() {
+        if (archive != null) {
+            final ArchiveFile lastArchiveFile = archive.getLastArchiveFile();
+            if (lastArchiveFile != null) {
+                return new ArchiveFileSandbox(lastArchiveFile);
+            }
+        }
+        return null;
+    }
+
+    public ArchiveSandbox getRootArchive() {
+        if (archive != null) {
+            final Archive root = archive.getRootArchive();
+            if (root != null) {
+                return new ArchiveSandbox(root);
+            }
+        }
+        return null;
     }
 
     @Override
@@ -100,13 +123,13 @@ public class ArchiveSandbox {
 
     @Deprecated
     public DownloadLinkSandBox[] getDownloadLinks() {
-        final ArchiveLinkSandbox[] links = getArchiveLinks();
+        final ArchiveFileSandbox[] links = getArchiveFiles();
         if (links != null) {
             final ArrayList<DownloadLinkSandBox> ret = new ArrayList<DownloadLinkSandBox>();
-            for (ArchiveLinkSandbox link : links) {
-                final DownloadLinkSandBox dlsb = link.getDownloadLinkSandBox();
-                if (dlsb != null) {
-                    ret.add(dlsb);
+            for (ArchiveFileSandbox link : links) {
+                final DownloadLinkSandBox[] downloadLinks = link.getDownloadLinks();
+                if (downloadLinks != null) {
+                    ret.addAll(Arrays.asList(downloadLinks));
                 }
             }
             if (ret.size() > 0) {
@@ -116,26 +139,14 @@ public class ArchiveSandbox {
         return null;
     }
 
-    public ArchiveLinkSandbox[] getArchiveLinks() {
+    public ArchiveFileSandbox[] getArchiveFiles() {
         if (archive != null) {
-            final ArrayList<ArchiveLinkSandbox> ret = new ArrayList<ArchiveLinkSandbox>();
+            final ArrayList<ArchiveFileSandbox> ret = new ArrayList<ArchiveFileSandbox>();
             for (final ArchiveFile file : archive.getArchiveFiles()) {
-                if (file instanceof DownloadLinkArchiveFile) {
-                    for (final DownloadLink dl : ((DownloadLinkArchiveFile) file).getDownloadLinks()) {
-                        ret.add(new ArchiveLinkSandbox(new DownloadLinkSandBox(dl)));
-                    }
-                } else if (file instanceof CrawledLinkArchiveFile) {
-                    for (final CrawledLink dl : ((CrawledLinkArchiveFile) file).getLinks()) {
-                        ret.add(new ArchiveLinkSandbox(new CrawledLinkSandbox(dl)));
-                    }
-                } else if (file instanceof MissingArchiveFile) {
-                    ret.add(new ArchiveLinkSandbox(((MissingArchiveFile) file).getFilePath()));
-                } else if (file instanceof FileArchiveFile) {
-                    ret.add(new ArchiveLinkSandbox(ScriptEnvironment.getPath(((FileArchiveFile) file).getFilePath())));
-                }
+                ret.add(new ArchiveFileSandbox(file));
             }
             if (ret.size() > 0) {
-                return ret.toArray(new ArchiveLinkSandbox[] {});
+                return ret.toArray(new ArchiveFileSandbox[] {});
             }
         }
         return null;
@@ -153,7 +164,7 @@ public class ArchiveSandbox {
         if (archive != null) {
             return archive.getSplitType() == null ? (String.valueOf(archive.getArchiveType())) : (String.valueOf(archive.getSplitType()));
         } else {
-            return ArchiveType.RAR_MULTI.name();
+            return null;
         }
     }
 
