@@ -1384,11 +1384,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final Number media_count = ((Number) item.get("media_count"));
-        if (media_count != null && media_count.intValue() == 0) {
-            /* Nothing to crawl */
-            return decryptedLinks;
-        }
         final Map<String, Object> user = (Map<String, Object>) item.get("user");
         final String username = user.get("username").toString();
         final Object reel_typeO = item.get("reel_type");
@@ -1995,13 +1990,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
-        final Map<String, Object> reel = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final ArrayList<DownloadLink> ret = this.crawlPostAltAPI(param, metadata, reel);
-        if (ret.isEmpty() && handleErrors) {
+        final Map<String, Object> reel_media = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Number media_count = (Number) reel_media.get("media_count");
+        if (media_count.intValue() == 0 && handleErrors) {
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_HAS_NO_STORY_" + username, "This profile currently doesn't have a story: " + username);
             ret.add(dummy);
+            return ret;
         }
-        return ret;
+        return this.crawlPostAltAPI(param, metadata, reel_media);
     }
 
     /**
