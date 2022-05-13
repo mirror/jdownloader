@@ -1385,7 +1385,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Number media_count = ((Number) item.get("media_count"));
-        if (media_count == null || media_count.intValue() == 0) {
+        if (media_count != null && media_count.intValue() == 0) {
             /* Nothing to crawl */
             return decryptedLinks;
         }
