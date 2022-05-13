@@ -61,7 +61,21 @@ public class BiqleRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if ("biqle.ru".equals(getHost()) || "daftsex.com".equals(getHost()) || "artsporn.com".equals(getHost())) {
-            final String decryptedhost = "biqledecrypted://";
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
+            final String oid = urlinfo.getMatch(0);
+            final String id = urlinfo.getMatch(1);
+            /* Check if content is also hosted on vk and if so, return only vk.com URLs. */
+            final CryptedLink vklink = new CryptedLink(VKontakteRu.generateContentURLVideo(oid, id), param);
+            final PluginForDecrypt vkplugin = this.getNewPluginForDecryptInstance("vk.com");
+            try {
+                final ArrayList<DownloadLink> vkResults = vkplugin.decryptIt(vklink, null);
+                if (vkResults != null && !vkResults.isEmpty()) {
+                    return vkResults;
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("vk handling failed");
+            }
             br.getPage(param.getCryptedUrl());
             br.followRedirect();
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -74,9 +88,6 @@ public class BiqleRu extends PluginForDecrypt {
                 fp.setName(title);
                 fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
             }
-            final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
-            final String oid = urlinfo.getMatch(0);
-            final String id = urlinfo.getMatch(1);
             final String oid_and_id = oid + "_" + id;
             final String daxabPlayerJS = br.getRegex("DaxabPlayer\\.init\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*\\}\\s*</script").getMatch(0);
             String daxabEmbedURL = null;
@@ -89,6 +100,7 @@ public class BiqleRu extends PluginForDecrypt {
             if (daxabEmbedURL == null) {
                 daxabEmbedURL = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)").getMatch(0);
             }
+            final String decryptedhost = "biqledecrypted://";
             if (daxabEmbedURL != null) {
                 /* TODO: Apply quality setting also for other types of videos e.g. externally hosted/vk */
                 final String userPreferredQuality = getUserPreferredqualityStr();
@@ -130,28 +142,6 @@ public class BiqleRu extends PluginForDecrypt {
                                 best = dl;
                             }
                         }
-                    }
-                    if (highestQualityHeight == 720 || qualityMap.size() == 1) {
-                        /* Check if content is also hosted on vk and if so, return only vk.com URLs. */
-                        final CryptedLink vklink = new CryptedLink(VKontakteRu.generateContentURLVideo(oid, id), param);
-                        final PluginForDecrypt vkplugin = this.getNewPluginForDecryptInstance("vk.com");
-                        try {
-                            final ArrayList<DownloadLink> vkResults = vkplugin.decryptIt(vklink, null);
-                            if (vkResults != null && !vkResults.isEmpty()) {
-                                if (fp != null) {
-                                    fp.addLinks(vkResults);
-                                }
-                                return vkResults;
-                            }
-                        } catch (final Throwable e) {
-                            logger.log(e);
-                            logger.info("vk handling failed");
-                        }
-                        /*
-                         * Assume that this content is also hosted on vk.com where there is the possibility that we can get a 1080p version.
-                         */
-                        final DownloadLink vkontakteVideo = this.createDownloadlink(VKontakteRu.generateContentURLVideo(oid, id));
-                        ret.add(vkontakteVideo);
                     }
                 } else {
                     final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
