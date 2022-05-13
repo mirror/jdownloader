@@ -20,6 +20,7 @@ import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 @ScriptAPI(description = "The context download list package")
 public class FilePackageSandBox {
@@ -219,6 +220,28 @@ public class FilePackageSandBox {
     public long getModifiedDate() {
         if (filePackage == null) {
             return filePackage.getModified();
+        } else {
+            return -1;
+        }
+    }
+
+    public boolean isExpanded() {
+        return filePackage != null && filePackage.isExpanded();
+    }
+
+    public void setExpanded(boolean b) {
+        if (filePackage != null) {
+            if (Application.isHeadless()) {
+                filePackage.setExpanded(b);
+            } else {
+                DownloadsTableModel.getInstance().setFilePackageExpand(b, filePackage);
+            }
+        }
+    }
+
+    public int indexOf(DownloadLinkSandBox link) {
+        if (filePackage != null && link != null && link.downloadLink != null) {
+            return filePackage.indexOf(link.downloadLink);
         } else {
             return -1;
         }

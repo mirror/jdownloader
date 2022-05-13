@@ -26,15 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -64,7 +55,15 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -667,6 +666,34 @@ public class VKontakteRu extends PluginForDecrypt {
         return result;
     }
 
+    private QualitySelectionMode mode = null;
+
+    public void setQualitySelectionMode(QualitySelectionMode mode) {
+        this.mode = mode;
+    }
+
+    public QualitySelectionMode getQualitySelectionMode() {
+        if (mode != null) {
+            return mode;
+        } else {
+            return VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
+        }
+    }
+
+    private String preferredQualityString = null;
+
+    public String getPreferredQualityString() {
+        if (preferredQualityString != null) {
+            return preferredQualityString;
+        } else {
+            return VKontakteRuHoster.getPreferredQualityString();
+        }
+    }
+
+    public void setPreferredQualityString(String preferredQualityString) {
+        this.preferredQualityString = preferredQualityString;
+    }
+
     /** 2016-08-11: Using website, API not anymore! */
     private void crawlSingleVideo(final CryptedLink param) throws Exception {
         final String[] ids = findVideoIDs(param.getCryptedUrl());
@@ -683,7 +710,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         /* Check if fast-crawl is allowed */
-        final QualitySelectionMode qualitySelectionMode = VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
+        final QualitySelectionMode qualitySelectionMode = getQualitySelectionMode();
         final boolean userWantsMultipleQualities = qualitySelectionMode == QualitySelectionMode.ALL;
         final boolean linkCanBeFastCrawled = param.getDownloadLink() != null && !param.getDownloadLink().hasProperty(VIDEO_PROHIBIT_FASTCRAWL) && param.getDownloadLink().hasProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN);
         if (this.cfg.getBooleanProperty(VKontakteRuHoster.FASTCRAWL_VIDEO, VKontakteRuHoster.default_FASTCRAWL_VIDEO) && !userWantsMultipleQualities && linkCanBeFastCrawled) {
@@ -744,13 +771,13 @@ public class VKontakteRu extends PluginForDecrypt {
             } else {
                 fp.setName(titleToUse);
             }
-            final Map<String, String> selectedQualities = getSelectedVideoQualities(foundQualities, qualitySelectionMode, VKontakteRuHoster.getPreferredQualityString());
+            final Map<String, String> selectedQualities = getSelectedVideoQualities(foundQualities, qualitySelectionMode, getPreferredQualityString());
             if (selectedQualities.isEmpty()) {
                 logger.info("User has selected unavailable qualities only (or only unknown qualities are available)");
                 return;
             }
             final boolean fastLinkcheck = cfg.getBooleanProperty(VKontakteRuHoster.FASTLINKCHECK_VIDEO, true);
-            final PluginForHost plugin = JDUtilities.getPluginForHost(getHost());
+            final PluginForHost plugin = getNewPluginForHostInstance(getHost());
             for (final Map.Entry<String, String> qualityEntry : selectedQualities.entrySet()) {
                 final String thisQuality = qualityEntry.getKey();
                 final String finallink = qualityEntry.getValue();
