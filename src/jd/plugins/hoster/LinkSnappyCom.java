@@ -23,23 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -57,6 +40,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -456,6 +455,18 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 logger.info("Checking caching file...");
                 cacheDLChecker(link, account, (String) entries.get("hash"));
             }
+            final String filename = (String) entries.get("filename");
+            if (link.getFinalFileName() == null && filename != null && filename.contains("_")) {
+                // fix server side broken filenames, unicode characters collapsed to _
+                // remove all unicode characters and compare existing and server side filename
+                final String existingName = link.getName();
+                final String check = existingName.replaceAll("[^a-zA-Z0-9\\.]", "");
+                final String check2 = URLEncode.decodeURIComponent(filename).replaceAll("[^a-zA-Z0-9\\.]", "");
+                if (StringUtils.equalsIgnoreCase(check, check2)) {
+                    // do not trust/use server side filename and keep existing name
+                    link.setFinalFileName(existingName);
+                }
+            }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 this.handleDownloadErrors(link, account);
@@ -514,8 +525,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     /**
-     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br>
-     * It should be minimum of 5 minutes and above!
+     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br> It should be
+     * minimum of 5 minutes and above!
      *
      * @throws InterruptedException
      */

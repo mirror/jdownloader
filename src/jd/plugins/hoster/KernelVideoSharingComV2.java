@@ -55,6 +55,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.KVSConfig;
@@ -85,20 +86,20 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
      * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} (excluding "embed" URLs). </br> Examples:
      * example.com/videos/1234/title/ </br> example.com/videos/1234-title.html </br> example.com/videos/
      */
-    private static final String   type_normal               = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([a-z0-9\\-]+)(?:/?|\\.html)$";
+    private static final String   type_normal               = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([^/\\?#]+)(?:/?|\\.html)$";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} (excluding
      * "embed" URLs). </br> You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return true when using such a pattern! </br>
      * TODO: Consider removing support for this from this main class.
      */
-    private static final String   type_normal_fuid_at_end   = "^https?://[^/]+/videos?/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
+    private static final String   type_normal_fuid_at_end   = "^https?://[^/]+/videos?/([^/\\?#]+)-(\\d+)(?:/?|\\.html)$";
     /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} and
      * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br> You need to
      * override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
      */
-    private static final String   type_normal_without_fuid  = "^https?://[^/]+/(?:videos?/)?([a-z0-9\\-]+)(?:/?|\\.html)$";
-    private static final String   type_mobile               = "^https?://m\\.([^/]+/(videos?/)?\\d+/[a-z0-9\\-]+/$)";
+    private static final String   type_normal_without_fuid  = "^https?://[^/]+/(?:videos?/)?([^/\\?#]+)(?:/?|\\.html)$";
+    private static final String   type_mobile               = "^https?://m\\.([^/]+/(videos?/)?\\d+/[^/\\?#]+/$)";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} (excluding
      * "embed" URLs).
@@ -125,7 +126,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?videos?/\\d+/[a-z0-9\\-]+/?|embed/\\d+/?)|https?://(?:m|member)\\." + buildHostsPatternPart(domains) + "/videos?/\\d+/[a-z0-9\\-]+/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?videos?/\\d+/[^/\\?#]+/?|embed/\\d+/?)|https?://(?:m|member)\\." + buildHostsPatternPart(domains) + "/videos?/\\d+/[^/\\?#]+/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -138,7 +139,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+/[a-z0-9\\-]+/?|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+/[^/\\?#]+/?|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -151,7 +152,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos?/[a-z0-9\\-]+/?|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos?/[^/\\?#]+/?|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -163,7 +164,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos?/[a-z0-9\\-]+-\\d+/|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos?/[^/\\?#]+-\\d+/|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -175,7 +176,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultNoVideosNoFUID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(embed/\\d+/?|[a-z0-9\\-]+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(embed/\\d+/?|[^/\\?#]+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -218,7 +219,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getPluginPatternMatcher().matches(type_mobile)) {
             /* Correct mobile urls --> Normal URLs | 2020-10-30: This is old but still needed for some sites! */
-            final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos?/)?\\d+/[a-z0-9\\-]+/?$)");
+            final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos?/)?\\d+/[^/\\?#]+/?$)");
             link.setPluginPatternMatcher(String.format("%swww.%s", info.getMatch(0), info.getMatch(1)));
         }
     }
@@ -373,15 +374,15 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
              */
             if (realURL == null) {
                 /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} */
-                realURL = br.getRegex("(https?://[^/\"\\']+/videos?/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
+                realURL = br.getRegex("(https?://[^/\"\\']+/videos?/[^/\\?#]+-" + fuid + ")").getMatch(0);
             }
             if (realURL == null) {
                 /** {@link #buildAnnotationUrlsDefaultVideosPattern(List)} */
-                realURL = br.getRegex("(https?://[^/\"\\']+/videos?/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+                realURL = br.getRegex("(https?://[^/\"\\']+/videos?/" + fuid + "/[^/\\?#]+/?)").getMatch(0);
             }
             if (realURL == null) {
                 /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
-                realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+                realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/[^/\\?#]+/?)").getMatch(0);
             }
             if (realURL == null) {
                 /** {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} */
@@ -676,9 +677,11 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         /* Try default traits --> Very unsafe but may sometimes work */
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
             title = regexEmbedTitleWebsite();
+            title = removeUnwantedTitleStuff(title);
         }
         if (StringUtils.isEmpty(title)) {
             title = regexNormalTitleWebsite();
+            title = removeUnwantedTitleStuff(title);
         }
         if (title != null) {
             /* Remove html crap and spaces at the beginning and end. */
@@ -697,7 +700,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected String regexEmbedTitleWebsite() {
-        return br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
+        final String ret = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
+        return ret;
     }
 
     protected String regexNormalTitleWebsite() {
@@ -1520,12 +1524,10 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return m.toString();
     }
 
-    /** Returns "better human readable" file-title from URL. */
-    protected String getURLTitleCorrected(final String url) {
-        String urltitle = getURLTitle(url);
+    protected String removeUnwantedTitleStuff(String urltitle) {
         if (!StringUtils.isEmpty(urltitle)) {
             /* Special: Remove unwanted stuff e.g.: private-shows.net, anon-v.com */
-            final String removeme = new Regex(urltitle, "(-?[a-f0-9]{16})").getMatch(0);
+            final String removeme = new Regex(urltitle, "(-?[a-z0-9]{2,}(\\.|-)[a-z]{2,})$").getMatch(0);
             if (removeme != null) {
                 urltitle = urltitle.replace(removeme, "");
             }
@@ -1537,6 +1539,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return urltitle;
     }
 
+    /** Returns "better human readable" file-title from URL. */
+    protected String getURLTitleCorrected(final String url) {
+        String urltitle = getURLTitle(url);
+        urltitle = removeUnwantedTitleStuff(urltitle);
+        return urltitle;
+    }
+
     /**
      * Finds title inside given URL. <br />
      */
@@ -1544,15 +1553,20 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (url == null) {
             return null;
         } else {
+            String ret = null;
             if (url.matches(type_normal)) {
-                return new Regex(url, type_normal).getMatch(1);
+                ret = new Regex(url, type_normal).getMatch(1);
             } else if (url.matches(type_normal_fuid_at_end) && hasFUIDInsideURLAtTheEnd(url)) {
-                return new Regex(url, type_normal_fuid_at_end).getMatch(0);
+                ret = new Regex(url, type_normal_fuid_at_end).getMatch(0);
             } else if (url.matches(type_normal_without_fuid)) {
-                return new Regex(url, type_normal_without_fuid).getMatch(0);
+                ret = new Regex(url, type_normal_without_fuid).getMatch(0);
             } else {
                 return null;
             }
+            if (ret != null && ret.contains("%")) {
+                ret = URLEncode.decodeURIComponent(ret);
+            }
+            return ret;
         }
     }
 
