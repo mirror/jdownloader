@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Set;
 
+import org.jdownloader.controlling.PasswordUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -31,8 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pasted.co" }, urls = { "https?://(?:www\\.)?(?:tinypaste\\.com|tny\\.cz|pasted\\.co|controlc\\.com)/(?!tools|terms|api|contact|login|register|press)([0-9a-z]+|.*?id=[0-9a-z]+)" })
 public class PastedCo extends PluginForDecrypt {
     public PastedCo(PluginWrapper wrapper) {
@@ -40,6 +40,7 @@ public class PastedCo extends PluginForDecrypt {
     }
 
     private final String domains = "(?:tinypaste\\.com|tny\\.cz|pasted\\.co|controlc\\.com)";
+    /* Tags: pastebin */
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
@@ -47,11 +48,13 @@ public class PastedCo extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String link = parameter.toString().replaceFirst("tinypaste\\.com/|tny\\.cz/|pasted.co/", "controlc.com");
         br.getPage(link);
-        if (br.containsHTML(">404 - URL not found<|>The content has either been deleted|>Paste deleted<|>There does not seem to be anything here") || this.br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*This page was either removed or never existed at all")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("(Enter the correct password|has been password protected)")) {
+        final String pwRegex = "(?i)(Enter the correct password|has been password protected)";
+        if (br.containsHTML(pwRegex)) {
             for (int i = 0; i <= 3; i++) {
                 String id = new Regex(link, domains + "/.*?id=([0-9a-z]+)").getMatch(0);
                 if (id == null) {
@@ -64,7 +67,7 @@ public class PastedCo extends PluginForDecrypt {
                 String pw = getUserInput(null, parameter);
                 pwform.put("password_" + id, pw);
                 br.submitForm(pwform);
-                if (br.containsHTML("(Enter the correct password|has been password protected)")) {
+                if (br.containsHTML(pwRegex)) {
                     continue;
                 }
                 break;
