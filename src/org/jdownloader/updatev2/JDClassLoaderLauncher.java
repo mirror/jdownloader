@@ -114,7 +114,7 @@ public class JDClassLoaderLauncher {
         if (mainClass == null || mainClass.trim().length() == 0) {
             throw new RuntimeException("MainClass not set!");
         } else {
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (false && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 System.setProperty("org.appwork.utils.Application.ResourceLookup", "org.jdownloader.updatev2.JDResourceLookup");
             }
             if (JVMVersion.isMinimum(JVMVersion.JAVA_9)) {
