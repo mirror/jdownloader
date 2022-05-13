@@ -17,19 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.BiqleRuConfig;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -45,6 +35,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.BiqleRuConfig;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daftsex.com", "artsporn.com", "18.ukdevilz.com", "adult.noodlemagazine.com", "novids.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daftsex\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?artsporn\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?18\\.ukdevilz\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?adult\\.noodlemagazine\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?novids\\.com/video/(?:-)?\\d+_\\d+" })
 public class BiqleRu extends PluginForDecrypt {
@@ -66,15 +68,29 @@ public class BiqleRu extends PluginForDecrypt {
             final String id = urlinfo.getMatch(1);
             /* Check if content is also hosted on vk and if so, return only vk.com URLs. */
             final CryptedLink vklink = new CryptedLink(VKontakteRu.generateContentURLVideo(oid, id), param);
-            final PluginForDecrypt vkplugin = this.getNewPluginForDecryptInstance("vk.com");
-            try {
-                final ArrayList<DownloadLink> vkResults = vkplugin.decryptIt(vklink, null);
-                if (vkResults != null && !vkResults.isEmpty()) {
-                    return vkResults;
+            final List<LazyCrawlerPlugin> plugins = findNextLazyCrawlerPlugins(vklink.getCryptedUrl());
+            if (plugins.size() == 1) {
+                final VKontakteRu vkPlugin = this.getNewPluginInstance(plugins.get(0));
+                try {
+                    try {
+                        final QualitySelectionMode mode = PluginJsonConfig.get(BiqleRuConfig.class).getQualitySelectionMode();
+                        vkPlugin.setQualitySelectionMode(jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode.valueOf(mode.name()));
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                    vkPlugin.setPreferredQualityString(getUserPreferredqualityStr());
+                    final ArrayList<DownloadLink> vkResults = vkPlugin.decryptIt(vklink, null);
+                    if (vkResults != null && !vkResults.isEmpty()) {
+                        return vkResults;
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("vk handling failed");
                 }
-            } catch (final Throwable e) {
-                logger.log(e);
-                logger.info("vk handling failed");
+            } else if (plugins.size() > 1) {
+                logger.info("more than one decrypter plugin?!:" + plugins);
+            } else {
+                logger.info("missing vk.com decrypter plugin?!");
             }
             br.getPage(param.getCryptedUrl());
             br.followRedirect();
@@ -267,16 +283,16 @@ public class BiqleRu extends PluginForDecrypt {
     private String getUserPreferredqualityStr() {
         final Quality quality = PluginJsonConfig.get(BiqleRuConfig.class).getPreferredQuality();
         switch (quality) {
-        case Q240:
-            return "240p";
-        case Q360:
-            return "360p";
-        case Q480:
-            return "480p";
-        case Q720:
-            return "720p";
         case Q1080:
             return "1080p";
+        case Q720:
+            return "720p";
+        case Q480:
+            return "480p";
+        case Q360:
+            return "360p";
+        case Q240:
+            return "240p";
         default:
             /* Should never happen */
             return null;

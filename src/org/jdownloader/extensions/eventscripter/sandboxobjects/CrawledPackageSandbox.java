@@ -14,6 +14,7 @@ import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 @ScriptAPI(description = "The context linkgabber list package")
 public class CrawledPackageSandbox {
@@ -115,6 +116,28 @@ public class CrawledPackageSandbox {
                 }
             });
             return ret.toArray(new CrawledLinkSandbox[] {});
+        }
+    }
+
+    public boolean isExpanded() {
+        return filePackage != null && filePackage.isExpanded();
+    }
+
+    public void setExpanded(boolean b) {
+        if (filePackage != null) {
+            if (Application.isHeadless()) {
+                filePackage.setExpanded(b);
+            } else {
+                LinkGrabberTableModel.getInstance().setFilePackageExpand(b, filePackage);
+            }
+        }
+    }
+
+    public int indexOf(CrawledLinkSandbox link) {
+        if (filePackage != null && link != null && link.link != null) {
+            return filePackage.indexOf(link.link);
+        } else {
+            return -1;
         }
     }
 

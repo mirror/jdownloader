@@ -45,7 +45,7 @@ import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context download list link")
 public class DownloadLinkSandBox {
-    private final DownloadLink                                              downloadLink;
+    protected final DownloadLink                                            downloadLink;
     private final static WeakHashMap<DownloadLink, HashMap<String, Object>> SESSIONPROPERTIES = new WeakHashMap<DownloadLink, HashMap<String, Object>>();
 
     public DownloadLinkSandBox(DownloadLink downloadLink) {
