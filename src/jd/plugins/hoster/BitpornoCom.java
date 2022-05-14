@@ -147,6 +147,8 @@ public class BitpornoCom extends PluginForHost {
         if (br.containsHTML(html_video_encoding)) {
             return AvailableStatus.TRUE;
         }
+        // only available until hls version is transcoded/available
+        final String mp4File = br.getRegex("file\\s*:\\s*\"((?:https?://|/)[^<>\"]+\\.mp4)\"").getMatch(0);
         // from iframe
         br.getPage("/embed/" + fid);
         handleConfirm(br);
@@ -280,8 +282,7 @@ public class BitpornoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured");
-        }
-        if (dllink.contains(".m3u8")) {
+        } else if (dllink.contains(".m3u8")) {
             /* HLS download */
             br.getPage(dllink);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
@@ -291,18 +292,19 @@ public class BitpornoCom extends PluginForHost {
         } else {
             /* http download */
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.followConnection();
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
