@@ -149,6 +149,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     private static final String               PROPERTY_PLUGIN_api_domain_with_protocol                          = "apidomain";
     private static final String               PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
     private static final String               PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION   = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION";
+    private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP         = "ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
+    private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_VERSION           = "ALT_AVAILABLECHECK_LAST_FAILURE_VERSION";
+    private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_WORKING                   = "ALT_AVAILABLECHECK_LAST_WORKING";
     protected static final String             PROPERTY_ACCOUNT_INFO_TRUST_UNLIMITED_TRAFFIC                     = "trust_unlimited_traffic";
 
     public static enum URL_TYPE {
@@ -1239,7 +1242,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         /* Checks linkchecking via: examplehost.com/?op=checkfiles AND examplehost.com/?op=check_files */
         final String checkTypeOld = "checkfiles";
         final String checkTypeNew = "check_files";
-        final String checkType_last_used_and_working = getPluginConfig().getStringProperty("ALT_AVAILABLECHECK_LAST_WORKING", null);
+        final SubConfiguration config = this.getPluginConfig();
+        final String checkType_last_used_and_working = config.getStringProperty(PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_WORKING, null);
         String checkURL = null;
         int linkcheckTypeTryCount = 0;
         try {
@@ -1375,9 +1379,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         } finally {
             if (linkcheckerHasFailed) {
                 logger.info("Seems like checkfiles availablecheck is not supported by this host");
-                this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", System.currentTimeMillis());
+                config.setProperty(PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, System.currentTimeMillis());
+                config.setProperty(PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_VERSION, getPluginVersionHash());
             } else {
-                this.getPluginConfig().setProperty("ALT_AVAILABLECHECK_LAST_WORKING", checkTypeCurrent);
+                config.setProperty(PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_WORKING, checkTypeCurrent);
             }
         }
         if (linkcheckerHasFailed) {
@@ -5135,8 +5140,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
 
     protected boolean internal_supports_availablecheck_alt() {
         boolean allowedByAutoHandling = true;
-        final long timestampLastFailure = this.getPluginConfig().getLongProperty("ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
-        if (timestampLastFailure > 0) {
+        final SubConfiguration config = this.getPluginConfig();
+        final long timestampLastFailure = config.getLongProperty(PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);
+        final String last_version = config.getStringProperty(PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_VERSION, null);
+        if (timestampLastFailure > 0 && StringUtils.equalsIgnoreCase(getPluginVersionHash(), last_version)) {
             final long timestampCooldown = timestampLastFailure + internal_waittime_on_alternative_availablecheck_failures();
             if (timestampCooldown > System.currentTimeMillis()) {
                 logger.info("internal_supports_availablecheck_alt is still deactivated as it did not work on the last attempt");

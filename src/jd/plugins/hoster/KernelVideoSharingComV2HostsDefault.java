@@ -136,6 +136,26 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         return ret;
     }
 
+    @Override
+    public boolean isPremiumEnabled() {
+        if (super.isPremiumEnabled()) {
+            return true;
+        } else if ("xfreehd.com".equals(getHost())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public String getBuyPremiumUrl() {
+        if ("xfreehd.com".equals(getHost())) {
+            return "https://www.xfreehd.com/signup";
+        } else {
+            return super.getBuyPremiumUrl();
+        }
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
