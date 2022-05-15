@@ -5121,7 +5121,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * Example: uploadboy.com</br>
      * Do not override - at least try to avoid having to!!
      */
-    private final boolean internal_supports_availablecheck_filename_abuse() {
+    protected boolean internal_supports_availablecheck_filename_abuse() {
         final boolean supportedByIndicatingHtmlCode = new Regex(getCorrectBR(br), "op=report_file&(?:amp;)?id=" + this.getFUIDFromURL(this.getDownloadLink())).matches();
         boolean allowedByAutoHandling = true;
         final SubConfiguration config = this.getPluginConfig();
