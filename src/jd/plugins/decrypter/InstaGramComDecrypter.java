@@ -1992,13 +1992,16 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
         final Map<String, Object> reel_media = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Number media_count = (Number) reel_media.get("media_count");
-        if (media_count.intValue() == 0 && handleErrors) {
+        if (media_count.intValue() == 0) {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_HAS_NO_STORY_" + username, "This profile currently doesn't have a story: " + username);
-            ret.add(dummy);
+            if (handleErrors) {
+                final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_HAS_NO_STORY_" + username, "This profile currently doesn't have a story: " + username);
+                ret.add(dummy);
+            }
             return ret;
+        } else {
+            return this.crawlPostAltAPI(param, metadata, reel_media);
         }
-        return this.crawlPostAltAPI(param, metadata, reel_media);
     }
 
     /**
