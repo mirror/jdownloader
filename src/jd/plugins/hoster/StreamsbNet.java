@@ -41,7 +41,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         this.enablePremium(super.getPurchasePremiumURL());
     }
 
-    private static final String TYPE_SPECIAL = "https://[^/]+/(?:d|e)/([a-z0-9]{12})";
+    private static final String TYPE_SPECIAL = "https://[^/]+/(?:d|e|c)/([a-z0-9]{12})";
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
@@ -66,16 +66,27 @@ public class StreamsbNet extends XFileSharingProBasic {
     private static final String EXTENDED_FILENAME_RESULT = "extended_filename_result";
 
     @Override
+    protected boolean internal_supports_availablecheck_filename_abuse() {
+        return false;
+    }
+
+    @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         /* Beware! This is full of nasty workarounds! */
         AvailableStatus result = null;
-        String oldPluginPatternMatcher = null;
+        String oldPluginPatternMatcher = link.getPluginPatternMatcher();
         String officialDownloadFilesize = null;
         try {
-            oldPluginPatternMatcher = link.getPluginPatternMatcher();
-            link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
             result = super.requestFileInformationWebsite(link, account, isDownload);
-            officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
+            if (link.getPluginPatternMatcher().matches("https?://[^/]+/c/[a-z0-9]{12}.*")) {
+                return result;
+            } else if (StringUtils.equals(link.getName(), getFallbackFilename(link))) {
+                link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
+                result = super.requestFileInformationWebsite(link, account, isDownload);
+                officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
+            } else {
+                return result;
+            }
         } finally {
             if (officialDownloadFilesize != null) {
                 /* Do not change pluginpatternmatcher back */
@@ -120,7 +131,7 @@ public class StreamsbNet extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d/[a-z0-9]{12}|e/[a-z0-9]{12}|(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d/[a-z0-9]{12}|e/[a-z0-9]{12}|c/[a-z0-9]{12}|(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)");
         }
         return ret.toArray(new String[0]);
     }
