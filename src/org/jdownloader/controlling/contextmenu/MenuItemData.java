@@ -210,22 +210,31 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         action.requestUpdate(this);
         if (!isVisible()) {
             return null;
-        }
-        if (!action.isVisible()) {
+        } else if (!action.isVisible()) {
             return null;
-        }
-        if (action instanceof ComponentProviderInterface) {
+        } else if (action instanceof ComponentProviderInterface) {
             return ((ComponentProviderInterface) action).createComponent(this);
         }
-        JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
-        ret.getAccessibleContext().setAccessibleName(action.getName());
-        ret.getAccessibleContext().setAccessibleDescription(action.getTooltipText());
+        final JMenuItem ret = createMenuItem(action);
         if (StringUtils.isNotEmpty(name)) {
             ret.setText(name);
         }
         if (StringUtils.isNotEmpty(iconKey)) {
             ret.setIcon(getIcon(iconKey, 20));
         }
+        return ret;
+    }
+
+    protected JMenuItem createMenuItem(final CustomizableAppAction action) {
+        // see ExtMenuItem to avoid popup close
+        final JMenuItem ret;
+        if (action.isToggle()) {
+            ret = new JCheckBoxMenuItem(action);
+        } else {
+            ret = new JMenuItem(action);
+        }
+        ret.getAccessibleContext().setAccessibleName(action.getName());
+        ret.getAccessibleContext().setAccessibleDescription(action.getTooltipText());
         return ret;
     }
 
@@ -372,6 +381,7 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         this.shortcut = shortcut;
         clearCachedAction();
     }
+
     // public String _getShortcut() {
     // if (StringUtils.isNotEmpty(shortcut)) { return shortcut; }
     // if (getActionData() != null) {
@@ -383,7 +393,6 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     // }
     // return null;
     // }
-
     public boolean isVisible() {
         return visible;
     }
