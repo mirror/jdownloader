@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,9 +29,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photobucket.com" }, urls = { "https?://(?:www\\.)?s\\d+\\.photobucket\\.com/user/[^/]+/library.+" })
 public class PhotobucketComAlbum extends PluginForDecrypt {
@@ -38,9 +40,8 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        Map<String, Object> json;
         final String parameter = param.toString();
         br = new Browser();
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97");
@@ -48,8 +49,7 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String token = this.br.getRegex("name=\"token\" id=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
@@ -59,7 +59,7 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         if (albumdeds == null) {
             return null;
         }
-        json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(albumdeds);
+        Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(albumdeds);
         if (image_count_total == 0) {
             image_count_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "items/total"), 0);
         }
