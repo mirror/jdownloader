@@ -32,7 +32,6 @@ import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredO
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -743,7 +742,7 @@ public abstract class XvideosCore extends PluginForHost {
                 final String redirect_domain = (String) entries.get("redirect_domain");
                 final Object premiumStatus = entries.get("is_premium");
                 /* E.g. xnxx.gold response: {"form_valid":true,"form_displayed":"signin","user_main_cat":"straight","is_premium":true} */
-                if (StringUtils.isEmpty(premium_redirect) && StringUtils.isEmpty(redirect_domain) && premiumStatus != null) {
+                if (StringUtils.isEmpty(premium_redirect) && StringUtils.isEmpty(redirect_domain) && premiumStatus == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (!StringUtils.isEmpty(redirect_domain)) {
@@ -820,12 +819,20 @@ public abstract class XvideosCore extends PluginForHost {
          * 2021-03-08: "Cancel subsrciption" button is not always there is they also got packages that are a one time pay thing and don't
          * have to be cancelled by the user!
          */
-        return br.containsHTML("id=\"btn-cancel-subscription\"|id=\"account-content-block\"");
+        if (br.containsHTML("id=\"btn-cancel-subscription\"|id=\"account-content-block\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Works for free- and premium domain! */
-    private static boolean isLoggedin(Browser br) {
-        return br.containsHTML("/account/signout");
+    private static boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("/account/signout")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
