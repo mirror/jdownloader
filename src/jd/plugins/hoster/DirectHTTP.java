@@ -958,7 +958,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     } finally {
                         this.preferHeadRequest = preferHeadRequest;
                         if (trustHeadRequest) {
-                            logger.info("Trust head request!");
+                            logger.info("Trust head request(validated)!");
                             downloadLink.setProperty(PROPERTY_REQUEST_TYPE, requestMethod.name());
                             downloadLink.setFinalFileName(headFileName);
                             downloadLink.setProperty(FIXNAME, fixFileName);
@@ -966,7 +966,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         }
                     }
                 } else {
-                    logger.info("Trust head request!");
+                    logger.info("Trust head request(stored)!");
                 }
             } else {
                 downloadLink.setProperty(PROPERTY_REQUEST_TYPE, requestMethod.name());
