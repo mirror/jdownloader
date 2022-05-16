@@ -94,7 +94,10 @@ public class Rule34Xxx extends PluginForDecrypt {
                 // now core has changed we have to evaluate differently, as it doesn't re-enter decrypter if availablestatus is true.
                 final boolean isFromMassEvent = this.getCurrentLink().getSourceLink() != null && this.getCurrentLink().getSourceLink().getDownloadLink() != null && this.getCurrentLink().getSourceLink().getDownloadLink().getDownloadURL().contains("&s=view&");
                 final String link = HTMLEntities.unhtmlentities(image);
-                final DownloadLink dl = createDownloadlink(Request.getLocation(link, br.getRequest()));
+                String url = Request.getLocation(link, br.getRequest());
+                // 2022-05-16: rewrite us location to wimg because us is missing some files(404 not found)
+                url = url.replaceFirst("(?i)/(us|wimg)\\.rule34\\.xxx/", "/wimg.rule34.xxx/");
+                final DownloadLink dl = createDownloadlink(url);
                 if (isFromMassEvent) {
                     dl.setAvailable(true);
                 }
@@ -119,6 +122,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                 } else {
                     dl.setFinalFileName("rule34xxx-" + id + extension);
                 }
+                dl.setContentUrl(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }

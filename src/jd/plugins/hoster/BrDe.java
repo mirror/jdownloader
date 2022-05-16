@@ -17,18 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
-import java.util.Scanner;
 import java.util.TimeZone;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.BrDeConfigInterface;
-import org.jdownloader.plugins.config.PluginConfigInterface;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -42,6 +37,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.BrDeConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" })
 public class BrDe extends PluginForHost {
@@ -189,38 +188,6 @@ public class BrDe extends PluginForHost {
     // }
     // }
     /**
-     * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     *
-     * @return The success of the conversion.
-     */
-    public boolean convertSubtitle(final DownloadLink downloadlink) {
-        final File source = new File(downloadlink.getFileOutput());
-        BufferedWriter dest;
-        try {
-            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
-        } catch (IOException e1) {
-            return false;
-        }
-        final StringBuilder xml = new StringBuilder();
-        int counter = 1;
-        final String lineseparator = System.getProperty("line.separator");
-        Scanner in = null;
-        try {
-            in = new Scanner(new FileReader(source));
-            while (in.hasNext()) {
-                xml.append(in.nextLine() + lineseparator);
-            }
-        } catch (Exception e) {
-            return false;
-        } finally {
-            in.close();
-        }
-        final String xmlContent = xml.toString();
-        final boolean success = convertSubtitleBrDe(this, downloadlink, xmlContent, 0);
-        return success;
-    }
-
-    /**
      * Converts the BR Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      *
      * @return The success of the conversion.
@@ -229,7 +196,7 @@ public class BrDe extends PluginForHost {
         final File source = new File(downloadlink.getFileOutput());
         final BufferedWriter dest;
         try {
-            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
+            dest = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(source.getAbsolutePath().replace(".xml", ".srt")), "UTF-8"));
         } catch (IOException e1) {
             plugin.getLogger().log(e1);
             return false;

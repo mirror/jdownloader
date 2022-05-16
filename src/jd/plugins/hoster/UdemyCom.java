@@ -15,20 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.UdemyComConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -50,6 +42,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.UdemyComConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|lecture_id/\\d+)" })
 public class UdemyCom extends PluginForHost {
@@ -171,13 +171,11 @@ public class UdemyCom extends PluginForHost {
                 final boolean drm;
                 if ((Boolean) asset.get("course_is_drmed") == Boolean.TRUE) {
                     /**
-                     * Indicates that most of all courses' items are DRM protected but not necessary all of them! </br>
-                     * Also course owners can enable official download functionality for their courses which would probably not change this
-                     * boolean! </br>
-                     * How to find non-DRM protected items: </br>
-                     * 1. Open any course in your browser when logged in into any udemy.com account. </br>
-                     * 2. Click on ""Preview this course" in the top right corner. </br>
-                     * --> All items you can preview there (seems like random clips throughout the course) are streamable without DRM!
+                     * Indicates that most of all courses' items are DRM protected but not necessary all of them! </br> Also course owners
+                     * can enable official download functionality for their courses which would probably not change this boolean! </br> How
+                     * to find non-DRM protected items: </br> 1. Open any course in your browser when logged in into any udemy.com account.
+                     * </br> 2. Click on ""Preview this course" in the top right corner. </br> --> All items you can preview there (seems
+                     * like random clips throughout the course) are streamable without DRM!
                      */
                     drm = true;
                     link.setProperty(PROPERTY_IS_DRM_PROTECTED, true);
@@ -495,15 +493,11 @@ public class UdemyCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.br.getURL(), FREE_RESUME, FREE_MAXCHUNKS);
             if (this.dl.startDownload()) {
                 final File file_dest = new File(link.getFileOutput());
-                BufferedWriter out = null;
+                final FileOutputStream fos = new FileOutputStream(file_dest);
                 try {
-                    out = new BufferedWriter(new FileWriter(file_dest));
-                    out.write(html);
+                    fos.write(html.getBytes(Charset.forName("UTF-8")));
                 } finally {
-                    try {
-                        out.close();
-                    } catch (IOException e) {
-                    }
+                    fos.close();
                 }
             }
         } else {

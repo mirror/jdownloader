@@ -98,6 +98,7 @@ public class DirectHTTP extends antiDDoSForHost {
     public static final String PROPERTY_MAX_CONCURRENT  = "PROPERTY_MAX_CONCURRENT";
     public static final String PROPERTY_RATE_LIMIT      = "PROPERTY_RATE_LIMIT";
     public static final String PROPERTY_RATE_LIMIT_TLD  = "PROPERTY_RATE_LIMIT_TLD";
+    public static final String PROPERTY_REQUEST_TYPE    = "requestType";
 
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
@@ -508,9 +509,9 @@ public class DirectHTTP extends antiDDoSForHost {
                 urlConnection = openAntiDDoSRequestConnection(br, br.createPostRequest(downloadURL, downloadLink.getStringProperty("post", null)));
             } else {
                 try {
-                    if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty("requestType", null))) {
+                    if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null))) {
                         urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(downloadURL));
-                    } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
+                    } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null))) {
                         urlConnection = openAntiDDoSRequestConnection(br, br.createHeadRequest(downloadURL));
                         if (urlConnection.getResponseCode() == 404) {
                             /*
@@ -531,11 +532,11 @@ public class DirectHTTP extends antiDDoSForHost {
                     if (urlConnection != null) {
                         urlConnection.disconnect();
                     }
-                    if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
+                    if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null))) {
                         /* some servers do not allow head requests */
                         try {
                             urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(downloadURL));
-                            downloadLink.setProperty("requestType", "GET");
+                            downloadLink.setProperty(PROPERTY_REQUEST_TYPE, "GET");
                         } catch (IOException e2) {
                             if (urlConnection != null) {
                                 urlConnection.disconnect();
@@ -927,19 +928,50 @@ public class DirectHTTP extends antiDDoSForHost {
             }
             final String referer = urlConnection.getRequestProperty(HTTPConstants.HEADER_REQUEST_REFERER);
             downloadLink.setProperty("lastRefURL", referer);
-            switch (urlConnection.getRequestMethod()) {
-            case HEAD:
-                downloadLink.setProperty("requestType", "HEAD");
-                break;
-            case GET:
-                downloadLink.setProperty("requestType", "GET");
-                break;
-            default:
-                downloadLink.setProperty("requestType", Property.NULL);
-            }
+            final RequestMethod requestMethod = urlConnection.getRequestMethod();
             downloadLink.setProperty("allowOrigin", urlConnection.getHeaderField("access-control-allow-origin"));
             downloadLink.removeProperty(IOEXCEPTIONS);
-            return AvailableStatus.TRUE;
+            AvailableStatus status = AvailableStatus.TRUE;
+            if (RequestMethod.HEAD.equals(requestMethod)) {
+                if (downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null) == null) {
+                    final String headFileName = downloadLink.getFinalFileName();
+                    final String fixFileName = downloadLink.getStringProperty(FIXNAME, null);
+                    final long headFileSize = downloadLink.getVerifiedFileSize();
+                    boolean trustHeadRequest = true;
+                    final boolean preferHeadRequest = this.preferHeadRequest;
+                    try {
+                        downloadLink.setFinalFileName(null);
+                        downloadLink.setVerifiedFileSize(-1);
+                        downloadLink.removeProperty(FIXNAME);
+                        this.preferHeadRequest = false;
+                        status = this.requestFileInformation(downloadLink, retry + 1);
+                        if (AvailableStatus.TRUE.equals(status)) {
+                            if (headFileSize != downloadLink.getVerifiedFileSize()) {
+                                logger.info("Don't trust head request: contentLength mismatch! head:" + headFileSize + "!=get:" + downloadLink.getVerifiedFileSize());
+                                trustHeadRequest = false;
+                            }
+                            if (!StringUtils.equals(headFileName, downloadLink.getFinalFileName())) {
+                                logger.info("Don't trust head request: name mismatch! head:" + headFileName + "!=get:" + downloadLink.getFinalFileName());
+                                trustHeadRequest = false;
+                            }
+                        }
+                    } finally {
+                        this.preferHeadRequest = preferHeadRequest;
+                        if (trustHeadRequest) {
+                            logger.info("Trust head request!");
+                            downloadLink.setProperty(PROPERTY_REQUEST_TYPE, requestMethod.name());
+                            downloadLink.setFinalFileName(headFileName);
+                            downloadLink.setProperty(FIXNAME, fixFileName);
+                            downloadLink.setVerifiedFileSize(headFileSize);
+                        }
+                    }
+                } else {
+                    logger.info("Trust head request!");
+                }
+            } else {
+                downloadLink.setProperty(PROPERTY_REQUEST_TYPE, requestMethod.name());
+            }
+            return status;
         } catch (final PluginException e2) {
             /* try referer set by flashgot and check if it works then */
             if (downloadLink.getBooleanProperty("tryoldref", false) == false && downloadLink.getStringProperty("referer", null) != null) {
@@ -1002,7 +1034,7 @@ public class DirectHTTP extends antiDDoSForHost {
         link.removeProperty(DirectHTTP.NORESUME);
         link.removeProperty(DirectHTTP.NOCHUNKS);
         link.removeProperty("lastRefURL");
-        link.removeProperty("requestType");
+        link.removeProperty(PROPERTY_REQUEST_TYPE);
         link.removeProperty("streamMod");
         link.removeProperty("allowOrigin");
         link.removeProperty(FORCE_NOVERIFIEDFILESIZE);

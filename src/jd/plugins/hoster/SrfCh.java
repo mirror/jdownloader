@@ -22,6 +22,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -34,18 +46,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SrfCh extends PluginForHost {
@@ -155,20 +155,29 @@ public class SrfCh extends PluginForHost {
             this.accessAPI(urn);
             final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final List<Object> chapterList = (List<Object>) root.get("chapterList");
-            if (chapterList.size() > 1) {
+            if (chapterList.size() != 1) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Map<String, Object> mediaInfo = (Map<String, Object>) chapterList.get(0);
-            final String title = mediaInfo.get("title").toString();
+            final String title = (String) mediaInfo.get("title");
+            if (title == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String dateFormatted = new Regex(mediaInfo.get("date"), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             final String ext;
-            if (mediaInfo.get("mediaType").toString().equalsIgnoreCase("AUDIO")) {
+            final String mediaType = (String) mediaInfo.get("mediaType");
+            if (mediaType.equalsIgnoreCase("AUDIO")) {
                 ext = ".mp3";
-            } else {
+            } else if (mediaType.equalsIgnoreCase("VIDEO")) {
                 ext = ".mp4";
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported mediaType:" + mediaType);
             }
             link.setFinalFileName(dateFormatted + "_" + mediaInfo.get("vendor") + "_" + title + ext);
-            final String description = mediaInfo.get("description").toString();
+            String description = (String) mediaInfo.get("description");
+            if (description == null) {
+                description = (String) JavaScriptEngineFactory.walkJson(root, "show/description");
+            }
             if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
                 link.setComment(description);
             }
