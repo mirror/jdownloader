@@ -682,7 +682,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
         if (br.containsHTML("(?i)>\\s*This video is a private video uploaded by |Only active members can watch private videos")) {
             return true;
-        } else if (br.containsHTML("(?i)>\\s*This is a private video. You must be")) {
+        } else if (br.containsHTML("(?i)>\\s*This is a private video\\. You must be")) {
             // xfreehd.com
             // This is a private video. You must be subscribers or friends with XYZ to view it
             return true;

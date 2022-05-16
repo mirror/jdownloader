@@ -16,7 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -30,9 +33,31 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "https?://[\\w\\.]*?xup\\.((in|to)/dl,\\d+(/.+)?|raidrush\\.ws/ndl_[a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class XupIn extends PluginForHost {
-    private static final String AGB_LINK = "http://www.xup.in/terms/";
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "xup.in", "xup.to" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/dl,(\\d+)(/([^/]+)/?)?");
+        }
+        return ret.toArray(new String[0]);
+    }
 
     public XupIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,7 +65,7 @@ public class XupIn extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return AGB_LINK;
+        return "https://www.xup.in/terms/";
     }
 
     @Override
@@ -49,7 +74,31 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+            final String fid = urlinfo.getMatch(0);
+            final String filenameURL = urlinfo.getMatch(2);
+            if (filenameURL != null) {
+                link.setName(filenameURL);
+            } else {
+                link.setName(fid);
+            }
+        }
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -119,9 +168,9 @@ public class XupIn extends PluginForHost {
         dl.startDownload();
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
+        /* Do not allow multihost usage. */
+        return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override
