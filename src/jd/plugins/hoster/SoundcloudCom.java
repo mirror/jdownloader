@@ -518,7 +518,6 @@ public class SoundcloudCom extends PluginForHost {
                         /* Skip still we don't need or can't handle. */
                         final String preset = transcoding.get("preset").toString();
                         final String quality = transcoding.get("quality").toString();
-                        final String url = transcoding.get("url").toString();
                         final Map<String, Object> format = (Map<String, Object>) transcoding.get("format");
                         final String protocol = format.get("protocol").toString();
                         final String mime_type = format.get("mime_type").toString();
