@@ -135,13 +135,13 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private static Object       CAPTCHA_LOCK               = new Object();
-    public static final String  API_BASE                   = "https://www.googleapis.com/drive/v3";
-    private static final String PATTERN_GDOC               = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
-    private static final String PATTERN_FILE               = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
-    private static final String PATTERN_FILE_OLD           = "https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
-    private static final String PATTERN_FILE_DOWNLOAD_PAGE = "https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
-    private static final String PATTERN_VIDEO_STREAM       = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
+    private static Object      CAPTCHA_LOCK               = new Object();
+    public static final String API_BASE                   = "https://www.googleapis.com/drive/v3";
+    private final String       PATTERN_GDOC               = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
+    private final String       PATTERN_FILE               = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
+    private final String       PATTERN_FILE_OLD           = "https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
+    private final String       PATTERN_FILE_DOWNLOAD_PAGE = "https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
+    private final String       PATTERN_VIDEO_STREAM       = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
 
     private String getFID(final DownloadLink link) {
         if (link == null) {
@@ -167,7 +167,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /**
-     * Google has added this parameter to some long time shared URLs as of october 2021 to make those safer. </br>
+     * Google has added this parameter to some long time shared URLs as of October 2021 to make those safer. </br>
      * https://support.google.com/a/answer/10685032?p=update_drives&visit_id=637698313083783702-233025620&rd=1
      */
     private String getFileResourceKey(final DownloadLink link) {
@@ -183,13 +183,13 @@ public class GoogleDrive extends PluginForHost {
      * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
      * change the quality and then resume the started download with another URL.
      */
-    private static final String PROPERTY_USED_QUALITY                          = "USED_QUALITY";
+    private final String        PROPERTY_USED_QUALITY                          = "USED_QUALITY";
     private static final String PROPERTY_GOOGLE_DOCUMENT                       = "IS_GOOGLE_DOCUMENT";
     private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
     private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
-    private static final String PROPERTY_CAN_STREAM                            = "CAN_STREAM";
-    private static final String PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
-    private static final String PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
+    private final String        PROPERTY_CAN_STREAM                            = "CAN_STREAM";
+    private final String        PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
+    private final String        PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
     /**
      * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
      * to have it set on each DownloadLink if it exists.
@@ -198,9 +198,9 @@ public class GoogleDrive extends PluginForHost {
     /* Packagizer property */
     public static final String  PROPERTY_ROOT_DIR                              = "root_dir";
     /* Account properties */
-    private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
-    private static final String PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
-    private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
+    private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
+    private final String        PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
+    private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
     private String              dllink                                         = null;
 
     public Browser prepBrowser(final Browser pbr) {
@@ -280,6 +280,7 @@ public class GoogleDrive extends PluginForHost {
         final String fid = this.getFID(link);
         final String fileResourceKey = getFileResourceKey(link);
         if (fid == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         prepBrowserAPI(this.br);
@@ -578,13 +579,7 @@ public class GoogleDrive extends PluginForHost {
             }
         }
         /* Try to find precise filesize */
-        String filesizeBytes = br.getRegex("\"sizeInBytes\"\\s*:\\s*(\\d+),").getMatch(0);
-        if (filesizeUnsafe == null) {
-            // value is within html or a subquent ajax request to fetch json..
-            // devnote: to fix, look for the json request to https://clients\d+\.google\.com/drive/v2internal/files/ + fuid and find the
-            // filesize, then search for the number within the base page. It's normally there. just not referenced as such.
-            filesizeBytes = br.getRegex("\\[null,\"" + (filename != null ? Pattern.quote(filename) : "[^\"]") + "\"[^\r\n]+\\[null,\\d+,\"(\\d+)\"\\]").getMatch(0);
-        }
+        final String filesizeBytes = br.getRegex("\"sizeInBytes\"\\s*:\\s*(\\d+),").getMatch(0);
         if (filesizeBytes != null) {
             link.setVerifiedFileSize(Long.parseLong(filesizeBytes));
         }

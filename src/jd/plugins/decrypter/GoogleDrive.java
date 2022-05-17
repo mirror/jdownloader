@@ -44,17 +44,41 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:embedded)?folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[a-zA-Z0-9\\-_=\\&]+(\\?resourcekey=[A-Za-z0-9_\\-]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.hoster.GoogleDrive.class })
 public class GoogleDrive extends PluginForDecrypt {
     /**
-     * @author raztoki
+     * @author raztoki, pspzockerscene
      */
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.hoster.GoogleDrive.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            String regex = "https?://" + buildHostsPatternPart(domains) + "/(?:";
+            regex += "open\\?id=[a-zA-Z0-9\\-_]+";
+            regex += "|folder/d/[a-zA-Z0-9\\-_]+";
+            regex += "|(?:embedded)?folderview\\?[a-z0-9\\-_=\\&]+";
+            regex += "|drive/(?:[\\w\\-]+/)*folders/[a-zA-Z0-9\\-_=\\&]+(\\?resourcekey=[A-Za-z0-9_\\-]+)?";
+            regex += ")";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
     }
 
     // DEV NOTES
@@ -187,7 +211,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 folderID = newFolderID;
             } else {
                 /*
-                 * This should never happen and chances are high that this object is either offline or API crawler will fail to process it.
+                 * This should never happen and chances are high that this url is either offline or API crawler will fail to process it.
                  */
                 logger.warning("Expected to find new folderID but failed to do so");
             }
@@ -687,7 +711,11 @@ public class GoogleDrive extends PluginForDecrypt {
 
     private boolean isSingleFileURL(final String url) throws PluginException {
         final PluginForHost hostPlg = this.getNewPluginForHostInstance(this.getHost());
-        return hostPlg.canHandle(url);
+        if (hostPlg.canHandle(url)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void login(final Browser br, final Account account) throws Exception {
