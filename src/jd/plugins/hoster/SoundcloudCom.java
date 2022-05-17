@@ -26,6 +26,23 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,23 +66,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(?:www\\.)?soundclouddecrypted\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?" })
 public class SoundcloudCom extends PluginForHost {
@@ -280,9 +280,9 @@ public class SoundcloudCom extends PluginForHost {
         if (isDownload) {
             if (songPolicy != null && songPolicy.equalsIgnoreCase("SNIP")) {
                 /**
-                 * Typically previews will also have a duration value of only "30000" --> 30 seconds </br> When logged in with a Soundcloud
-                 * premium account, songs for which before only previews were available may change to "POLICY":"MONETIZE" --> Can be fully
-                 * streamed by the user.
+                 * Typically previews will also have a duration value of only "30000" --> 30 seconds </br>
+                 * When logged in with a Soundcloud premium account, songs for which before only previews were available may change to
+                 * "POLICY":"MONETIZE" --> Can be fully streamed by the user.
                  */
                 isOnlyOreviewDownloadable = true;
             }
@@ -398,17 +398,17 @@ public class SoundcloudCom extends PluginForHost {
         /* Do this so PROPERTY_chosen_quality will get set for correct filesize calculation. */
         getDirectlink(plugin, link, null, track);
         if (isDownloadable && userPrefersOfficialDownload()) {
-            /* Original file is downloadable and user wants to download original */
-            /* 2021-06-24: Filetype could be either mp3 or wav (maybe even more?) */
+            /* File is officially downloadable */
             /**
-             * Only set calculated filesize if wanted by user. These files could have any bitrate and format so by default filesize won't be
-             * set in this case!
+             * Only set calculated filesize if wanted by user. </br>
+             * Officially downloadable files could come in any bitrate thus we do by default not calculate the filesize for such items based
+             * on an assumed bitrate.
              */
             if (userEnforcesFilesizeEstimationEvenForNonStreamDownloads()) {
                 link.setDownloadSize(calculateFilesize(link));
             }
         } else {
-            /* Streams = Always mp3 but let's check anyways */
+            /* Streams */
             link.setDownloadSize(calculateFilesize(link));
         }
         if (!StringUtils.isEmpty(url)) {
