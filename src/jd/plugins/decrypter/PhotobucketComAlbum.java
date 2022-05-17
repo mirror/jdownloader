@@ -19,12 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -33,85 +35,94 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photobucket.com" }, urls = { "https?://(?:www\\.)?s\\d+\\.photobucket\\.com/user/[^/]+/library.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photobucket.com" }, urls = { "https?://(?:next|app)\\.photobucket\\.com/u/[^/]+/a/[a-f0-9\\-]+" })
 public class PhotobucketComAlbum extends PluginForDecrypt {
     public PhotobucketComAlbum(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
+    }
+
+    private final String TYPE_ALBUM = "https?://(?:next|app)\\.photobucket\\.com/u/([^/]+)/a/([a-f0-9\\-]+)";
+    private final String TYPE_USER  = "https?://(?:next|app)\\.photobucket\\.com/u/([^/]+)$";
+    private final String API_BASE   = "https://app.photobucket.com/api/graphql/v2";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br = new Browser();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97");
-        br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-        br.getPage(parameter);
+        if (param.getCryptedUrl().matches(TYPE_ALBUM)) {
+            return crawlAlbum(param);
+        } else {
+            /* TODO: Add support to crawl all images of a user */
+            return null;
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlAlbum(final CryptedLink param) throws Exception {
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_ALBUM);
+        final String user = urlinfo.getMatch(0);
+        final String albumID = urlinfo.getMatch(1);
+        if (albumID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        prepBr(br);
+        /* Get album information */
+        br.postPageRaw(API_BASE, "{\"operationName\":\"GetPublicAlbumDetails\",\"variables\":{\"owner\":\"" + user + "\",\"albumId\":\"" + albumID + "\"},\"query\":\"query GetPublicAlbumDetails($albumId: String!, $owner: String!, $password: String) {  getPublicAlbumDetails(albumId: $albumId, owner: $owner, password: $password) {    id    title    privacyMode    description    nestedAlbumsCount    parentAlbumId    totalUserUsedSpace    totalUserImageCount    imageCountIncludeSubAlbums    imageCount    sorting {      field      desc      __typename    }    __typename  }}\"}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String token = this.br.getRegex("name=\"token\" id=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final Map<String, Object> albumInfo0 = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> albumInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(albumInfo0, "data/getPublicAlbumDetails");
+        final int imageCount = ((Number) albumInfo.get("imageCount")).intValue();
+        if (imageCount == 0) {
+            /* Empty album */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final FilePackage fp = FilePackage.getInstance();
-        long image_count_total = 0;
-        int page = 1;
-        final String albumdeds = br.getRegex("collectionData:\\s*(\\{.*?\\}),\\s*collectionId:").getMatch(0);
-        if (albumdeds == null) {
-            return null;
+        fp.setName(albumInfo.get("title").toString());
+        final String description = (String) albumInfo.get("description");
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
         }
-        Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(albumdeds);
-        if (image_count_total == 0) {
-            image_count_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "items/total"), 0);
+        /* TODO: Add pagination */
+        /* Crawl album images */
+        br.postPageRaw(API_BASE, "{  \"operationName\": \"GetPublicAlbumImagesV2\",  \"variables\": {        \"albumId\": \"" + albumID
+                + "\",      \"pageSize\": 40    },  \"query\": \"fragment MediaFragment on Image {  id  title  dateTaken  uploadDate  isVideoType  username  isBlurred  image {    width    size    height    url    isLandscape    __typename  }  thumbnailImage {    width    size    height    url    isLandscape    __typename  }  originalImage {    width    size    height    url    isLandscape    __typename  }  livePhoto {    width    size    height    url    isLandscape    __typename  }  albumId  description  userTags  clarifaiTags  uploadDate  originalFilename  isMobileUpload  albumName  attributes  __typename}query GetPublicAlbumImagesV2($albumId: String!, $sortBy: Sorter, $scrollPointer: String, $pageSize: Int, $password: String) {  getPublicAlbumImagesV2(    albumId: $albumId    sortBy: $sortBy    scrollPointer: $scrollPointer    pageSize: $pageSize    password: $password  ) {    scrollPointer    items {      ...MediaFragment      __typename    }    __typename  }}\"}");
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Map<String, Object>> images = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/getPublicAlbumImagesV2/items");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        for (final Map<String, Object> image : images) {
+            final DownloadLink dl = this.createImageDownloadLink(image);
+            dl._setFilePackage(fp);
+            ret.add(dl);
+            distribute(dl);
         }
-        /* Don't try more than 24 per page - it won't work - state 2015-10-28 */
-        // final long max_entries_per_page = 24;
-        final long max_entries_per_page = JavaScriptEngineFactory.toLong(json.get("pageSize"), 24);
-        final String fpName = (String) json.get("albumName");
-        if (fpName != null) {
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+        return ret;
+    }
+
+    private Browser prepBr(final Browser br) {
+        br.getHeaders().put("apollographql-client-name", "photobucket-web");
+        // br.getHeaders().put("x-correlation-id", "NOT_NEEDED");
+        // br.getHeaders().put("x-amzn-trace-id", "NOT_NEEDED");
+        br.getHeaders().put("content-type", "application/json");
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("apollographql-client-version", "1.26.0");
+        br.getHeaders().put("origin", "https://next." + this.getHost());
+        br.getHeaders().put("referer", "https://next." + this.getHost() + "/");
+        // br.setAllowedResponseCodes(400);
+        return br;
+    }
+
+    private DownloadLink createImageDownloadLink(final Map<String, Object> image) {
+        final DownloadLink dl = this.createDownloadlink(JavaScriptEngineFactory.walkJson(image, "originalImage/url").toString());
+        final String description = (String) image.get("description");
+        dl.setFinalFileName(image.get("originalFilename").toString());
+        dl.setAvailable(true);
+        if (!StringUtils.isEmpty(description)) {
+            dl.setComment(description);
         }
-        final String currentAlbumPath = (String) json.get("currentAlbumPath");
-        final String libraryUrl = br.getRegex("'libraryUrl'\\s*,\\s*'(https?://s\\d+\\.photobucket\\.com)/user/").getMatch(0);
-        do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return decryptedLinks;
-            }
-            if (!decryptedLinks.isEmpty()) {
-                // only required over the first page!
-                if (token == null || currentAlbumPath == null) {
-                    return null;
-                }
-                final Browser br = this.br.cloneBrowser();
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("application/json", "text/javascript, */*; q=0.01");
-                final String url = libraryUrl + "/component/Common-PageCollection-Album-AlbumPageCollection?filters[album]=" + currentAlbumPath + "&filters[album_content]=2&sort=3&limit=" + max_entries_per_page + "&page=" + page + "&linkerMode=&json=1&hash=" + token + "&_=" + System.currentTimeMillis();
-                br.getPage(url);
-                json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            }
-            final List<Object> ressourcelist = (List) (decryptedLinks.isEmpty() ? JavaScriptEngineFactory.walkJson(json, "items/objects") : JavaScriptEngineFactory.walkJson(json, "body/objects"));
-            for (final Object pico : ressourcelist) {
-                json = (Map<String, Object>) pico;
-                final String fname = (String) json.get("name");
-                final String dlink = (String) json.get("linkUrl");
-                final String userid = Long.toString(JavaScriptEngineFactory.toLong(json.get("userId"), -1));
-                if (fname == null || dlink == null || userid.equals("-1")) {
-                    return null;
-                }
-                final DownloadLink dl = createDownloadlink(dlink);
-                dl.setContentUrl(dlink);
-                dl.setName(fname);
-                dl.setAvailable(true);
-                fp.add(dl);
-                decryptedLinks.add(dl);
-                distribute(dl);
-            }
-            if (ressourcelist.size() < max_entries_per_page) {
-                /* Fail safe */
-                break;
-            }
-            page++;
-        } while (decryptedLinks.size() < image_count_total);
-        return decryptedLinks;
+        return dl;
     }
 }
