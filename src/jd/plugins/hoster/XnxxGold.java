@@ -50,7 +50,7 @@ public class XnxxGold extends XvideosCore {
 
     @Override
     protected String getPremiumDomain() {
-        return "xnxx.gold";
+        return this.getHost();
     }
 
     public static String[] getAnnotationNames() {
