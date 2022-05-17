@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -118,11 +119,11 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         }
         /* Crawl album images */
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        int page = 1;
-        String scrollPointer = null;
+        int pageImages = 1;
+        String scrollPointerImages = null;
         do {
-            if (scrollPointer != null) {
-                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicAlbumImagesV2\",  \"variables\": {        \"albumId\": \"" + albumID + "\",      \"pageSize\": 40,       \"sortBy\": {           \"field\": \"DATE\",            \"desc\": true      },      \"scrollPointer\": \"" + scrollPointer
+            if (scrollPointerImages != null) {
+                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicAlbumImagesV2\",  \"variables\": {        \"albumId\": \"" + albumID + "\",      \"pageSize\": 40,       \"sortBy\": {           \"field\": \"DATE\",            \"desc\": true      },      \"scrollPointer\": \"" + scrollPointerImages
                         + "\",      \"password\": \"\"  },  \"query\": \"query GetPublicAlbumImagesV2($albumId: String!, $sortBy: Sorter, $scrollPointer: String, $pageSize: Int, $password: String) {  getPublicAlbumImagesV2(albumId: $albumId, sortBy: $sortBy, scrollPointer: $scrollPointer, pageSize: $pageSize, password: $password) {    scrollPointer    items {      ...ImageFragment      __typename    }    __typename  }}fragment ImageFragment on Image {  id  isBlurred  nsfw  title  username  image {    url    __typename  }  thumbnailImage {    url    width    height    __typename  }  originalImage {    url    width    height    isLandscape    size    __typename  }  livePhoto {    url    width    height    isLandscape    __typename  }  clarifaiTags  description  userTags  uploadDate  dateTaken  originalFilename  postProcess  status  isVideoType  albumName  albumId  __typename}\"}");
             } else {
                 br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicAlbumImagesV2\",  \"variables\": {        \"albumId\": \"" + albumID
@@ -130,7 +131,7 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
             }
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> getPublicAlbumImagesV2 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/getPublicAlbumImagesV2");
-            scrollPointer = (String) getPublicAlbumImagesV2.get("scrollPointer");
+            scrollPointerImages = (String) getPublicAlbumImagesV2.get("scrollPointer");
             final List<Map<String, Object>> images = (List<Map<String, Object>>) getPublicAlbumImagesV2.get("items");
             for (final Map<String, Object> image : images) {
                 final DownloadLink dl = this.createImageDownloadLink(image);
@@ -140,10 +141,10 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
                 ret.add(dl);
                 distribute(dl);
             }
-            logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + "/" + imageCount);
+            logger.info("Crawled page " + pageImages + " | Found items so far: " + ret.size() + "/" + imageCount);
             if (this.isAbort()) {
                 return ret;
-            } else if (StringUtils.isEmpty(scrollPointer)) {
+            } else if (StringUtils.isEmpty(scrollPointerImages)) {
                 logger.info("Stopping because: Reached last page");
                 break;
             } else if (ret.size() >= imageCount) {
@@ -151,25 +152,46 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
                 logger.info("Stopping because: Found all items");
                 break;
             } else {
-                page++;
+                pageImages++;
                 continue;
             }
         } while (true);
         if (nestedAlbumsCount > 0) {
             logger.info("Crawling nested albums");
-            /* TODO: Add pagination */
+            /* Test pagination */
             /* Now find nested albums on this level */
-            br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicSubAlbumsV2\",    \"variables\": {        \"albumId\": \"" + albumID + "\",      \"nestedImagesCount\": 9,       \"scrollPointer\": null,        \"pageSize\": 14,       \"sortBy\": {           \"field\": \"TITLE\",           \"desc\": false     },      \"username\": \"" + user
-                    + "\"    },  \"query\": \"query GetPublicSubAlbumsV2($albumId: String!, $sortBy: Sorter, $pageSize: Int, $scrollPointer: String, $nestedImagesCount: Int, $username: String!) {  getPublicSubAlbumsV2(albumId: $albumId, sortBy: $sortBy, pageSize: $pageSize, scrollPointer: $scrollPointer, nestedImagesCount: $nestedImagesCount, username: $username) {    scrollPointer    items {      id      title      privacyMode      imageCount      hasNestedAlbums      images {        id        thumbnailImage {          url          __typename        }        originalImage {          url          __typename        }        uploadDate        isVideoType        isBlurred        __typename      }      __typename    }    __typename  }}\"}");
-            final Map<String, Object> subAlbumInfo0 = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final Map<String, Object> subAlbumInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(subAlbumInfo0, "data/getPublicSubAlbumsV2");
-            final List<Map<String, Object>> subAlbums = (List<Map<String, Object>>) subAlbumInfo.get("items");
-            for (final Map<String, Object> subAlbum : subAlbums) {
-                final DownloadLink dl = this.createDownloadlink(generateURLAlbum(user, subAlbum.get("id").toString()));
-                dl.setRelativeDownloadFolderPath(thisAlbumPath);
-                ret.add(dl);
-                distribute(dl);
-            }
+            int pageNestedAlbums = 1;
+            int foundNestedAlbums = 0;
+            String scrollPointerNestedAlbums = null;
+            do {
+                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicSubAlbumsV2\",    \"variables\": {        \"albumId\": \"" + albumID + "\",      \"nestedImagesCount\": 0,       \"scrollPointer\": " + JSonStorage.serializeToJson(scrollPointerNestedAlbums) + ",        \"pageSize\": 14,       \"sortBy\": {           \"field\": \"TITLE\",           \"desc\": false     },      \"username\": \"" + user
+                        + "\"    },  \"query\": \"query GetPublicSubAlbumsV2($albumId: String!, $sortBy: Sorter, $pageSize: Int, $scrollPointer: String, $nestedImagesCount: Int, $username: String!) {  getPublicSubAlbumsV2(albumId: $albumId, sortBy: $sortBy, pageSize: $pageSize, scrollPointer: $scrollPointer, nestedImagesCount: $nestedImagesCount, username: $username) {    scrollPointer    items {      id      title      privacyMode      imageCount      hasNestedAlbums      images {        id        thumbnailImage {          url          __typename        }        originalImage {          url          __typename        }        uploadDate        isVideoType        isBlurred        __typename      }      __typename    }    __typename  }}\"}");
+                final Map<String, Object> subAlbumInfo0 = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final Map<String, Object> subAlbumInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(subAlbumInfo0, "data/getPublicSubAlbumsV2");
+                scrollPointerNestedAlbums = (String) subAlbumInfo.get("scrollPointer");
+                final List<Map<String, Object>> nestedAlbums = (List<Map<String, Object>>) subAlbumInfo.get("items");
+                for (final Map<String, Object> subAlbum : nestedAlbums) {
+                    final DownloadLink dl = this.createDownloadlink(generateURLAlbum(user, subAlbum.get("id").toString()));
+                    dl.setRelativeDownloadFolderPath(thisAlbumPath);
+                    ret.add(dl);
+                    distribute(dl);
+                }
+                foundNestedAlbums += nestedAlbums.size();
+                logger.info("Crawled page " + pageNestedAlbums + " | Found items so far: " + foundNestedAlbums + "/" + nestedAlbumsCount);
+                if (this.isAbort()) {
+                    return ret;
+                } else if (StringUtils.isEmpty(scrollPointerNestedAlbums)) {
+                    logger.info("Stopping because: Reached last page");
+                    break;
+                } else if (foundNestedAlbums >= nestedAlbumsCount) {
+                    /* Additional fail-safe */
+                    logger.info("Stopping because: Found all items");
+                    break;
+                } else {
+                    pageNestedAlbums++;
+                    continue;
+                }
+            } while (true);
         }
         return ret;
     }
