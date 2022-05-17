@@ -33,6 +33,8 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamsbNet extends XFileSharingProBasic {
@@ -112,6 +114,13 @@ public class StreamsbNet extends XFileSharingProBasic {
             setFilename(link.getStringProperty(EXTENDED_FILENAME_RESULT), link);
         }
         return result;
+    }
+
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        if (br.containsHTML("(?i)>\\s*File owner disabled downloads")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "File owner disabled downloads");
+        }
     }
 
     @Override
