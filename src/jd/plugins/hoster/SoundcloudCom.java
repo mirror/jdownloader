@@ -26,23 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -66,6 +49,23 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(?:www\\.)?soundclouddecrypted\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?" })
 public class SoundcloudCom extends PluginForHost {
@@ -268,7 +268,7 @@ public class SoundcloudCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final AvailableStatus status = checkStatusJson(link, response);
+        final AvailableStatus status = checkStatusJson(this, link, response);
         if (status.equals(AvailableStatus.FALSE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -280,9 +280,9 @@ public class SoundcloudCom extends PluginForHost {
         if (isDownload) {
             if (songPolicy != null && songPolicy.equalsIgnoreCase("SNIP")) {
                 /**
-                 * Typically previews will also have a duration value of only "30000" --> 30 seconds </br>
-                 * When logged in with a Soundcloud premium account, songs for which before only previews were available may change to
-                 * "POLICY":"MONETIZE" --> Can be fully streamed by the user.
+                 * Typically previews will also have a duration value of only "30000" --> 30 seconds </br> When logged in with a Soundcloud
+                 * premium account, songs for which before only previews were available may change to "POLICY":"MONETIZE" --> Can be fully
+                 * streamed by the user.
                  */
                 isOnlyOreviewDownloadable = true;
             }
@@ -364,7 +364,7 @@ public class SoundcloudCom extends PluginForHost {
         }
     }
 
-    public static AvailableStatus checkStatusJson(final DownloadLink link, final Map<String, Object> track) throws Exception {
+    public static AvailableStatus checkStatusJson(Plugin plugin, final DownloadLink link, final Map<String, Object> track) throws Exception {
         if (track == null) {
             return AvailableStatus.FALSE;
         }
@@ -393,15 +393,13 @@ public class SoundcloudCom extends PluginForHost {
         if (duration != null) {
             link.setProperty(PROPERTY_duration_seconds, duration.intValue());
         }
-        String type;
         final String url = (String) track.get("download_url");
         final boolean isDownloadable = isREALYDownloadable(track);
         /* Do this so PROPERTY_chosen_quality will get set for correct filesize calculation. */
-        getDirectlink(null, link, null, track);
+        getDirectlink(plugin, link, null, track);
         if (isDownloadable && userPrefersOfficialDownload()) {
             /* Original file is downloadable and user wants to download original */
             /* 2021-06-24: Filetype could be either mp3 or wav (maybe even more?) */
-            type = null;
             /**
              * Only set calculated filesize if wanted by user. These files could have any bitrate and format so by default filesize won't be
              * set in this case!
@@ -411,10 +409,6 @@ public class SoundcloudCom extends PluginForHost {
             }
         } else {
             /* Streams = Always mp3 but let's check anyways */
-            type = (String) track.get("original_format");
-            if (type == null) {
-                type = "mp3";
-            }
             link.setDownloadSize(calculateFilesize(link));
         }
         if (!StringUtils.isEmpty(url)) {
@@ -426,9 +420,6 @@ public class SoundcloudCom extends PluginForHost {
         link.setProperty(PROPERTY_title, title);
         link.setProperty(PROPERTY_originaldate, date);
         link.setProperty(PROPERTY_track_id, id);
-        if (type != null) {
-            link.setProperty(PROPERTY_filetype, type);
-        }
         if (!StringUtils.isEmpty(secret_token)) {
             link.setProperty(PROPERTY_secret_token, secret_token);
         }
@@ -503,11 +494,12 @@ public class SoundcloudCom extends PluginForHost {
                 if (browser == null) {
                     /* No browser given --> We can't generate final downloadurls! */
                     return null;
+                } else {
+                    /* Do not use this anymore --> It will return the same we're doing here but as a v1 request URL! */
+                    // finallink = toString(json.get("download_url"));
+                    browser.getPage(SoundcloudCom.API_BASEv2 + "/tracks/" + track_id + "/download?" + basicQuery.toString());
+                    return PluginJSonUtils.getJson(browser, "redirectUri");
                 }
-                /* Do not use this anymore --> It will return the same we're doing here but as a v1 request URL! */
-                // finallink = toString(json.get("download_url"));
-                browser.getPage(SoundcloudCom.API_BASEv2 + "/tracks/" + track_id + "/download?" + basicQuery.toString());
-                return PluginJSonUtils.getJson(browser, "redirectUri");
             } else {
                 final Map<String, Object> media = (Map<String, Object>) json.get("media");
                 if (media != null && media.containsKey("transcodings")) {
@@ -550,27 +542,28 @@ public class SoundcloudCom extends PluginForHost {
                         /* Extra HTTP request required to find final downloadurl. */
                         final Map<String, Object> format = (Map<String, Object>) chosenTranscoding.get("format");
                         final String mime_type = (String) format.get("mime_type");
+                        final String extension = Plugin.getExtensionFromMimeTypeStatic(mime_type);
+                        if (extension != null) {
+                            link.setProperty(PROPERTY_filetype, extension);
+                        }
                         if (browser == null) {
-                            final String extension = Plugin.getExtensionFromMimeTypeStatic(mime_type);
-                            if (extension != null) {
-                                link.setProperty(PROPERTY_filetype, extension);
-                            }
                             /*
                              * E.g. during crawling we only want to find the quality we will download later but we do not yet need to
                              * generate the final downloadURL.
                              */
                             return null;
-                        }
-                        plugin.getLogger().info("Chosen audio preset: " + chosenTranscoding.get("preset"));
-                        final Browser br2 = browser.cloneBrowser();
-                        final UrlQuery query = new UrlQuery().parse(streamUrl);
-                        query.add("client_id", getClientId(null));
-                        streamUrl = URLHelper.parseLocation(new URL(streamUrl), "?" + query.toString()).toString();
-                        br2.getPage(streamUrl);
-                        final Map<String, Object> urlMap = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
-                        final String finallink = (String) urlMap.get("url");
-                        if (!StringUtils.isEmpty(finallink)) {
-                            return finallink;
+                        } else {
+                            plugin.getLogger().info("Chosen audio preset: " + chosenTranscoding.get("preset"));
+                            final Browser br2 = browser.cloneBrowser();
+                            final UrlQuery query = new UrlQuery().parse(streamUrl);
+                            query.add("client_id", getClientId(null));
+                            streamUrl = URLHelper.parseLocation(new URL(streamUrl), "?" + query.toString()).toString();
+                            br2.getPage(streamUrl);
+                            final Map<String, Object> urlMap = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+                            final String finallink = (String) urlMap.get("url");
+                            if (!StringUtils.isEmpty(finallink)) {
+                                return finallink;
+                            }
                         }
                     }
                 }
