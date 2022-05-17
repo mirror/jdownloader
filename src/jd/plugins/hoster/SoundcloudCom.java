@@ -90,11 +90,11 @@ public class SoundcloudCom extends PluginForHost {
     /* json: media/encodings */
     public static final String[] stream_qualities                                                      = { "stream_url", "http_mp3_128_url", "hls_mp3_128_url" };
     // public static final String[] streamtypes = { "download", "stream", "streams" };
-    private static final String  AUDIO_QUALITY_SELECTION_MODE                                          = "ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES";
-    private static final String  ALLOW_PREVIEW_DOWNLOAD                                                = "ALLOW_PREVIEW_DOWNLOAD";
+    private final static String  AUDIO_QUALITY_SELECTION_MODE                                          = "ONLY_DOWNLOAD_OFFICIALLY_DOWNLOADABLE_FILES";
+    private final String         ALLOW_PREVIEW_DOWNLOAD                                                = "ALLOW_PREVIEW_DOWNLOAD";
     private final static String  CUSTOM_DATE                                                           = "CUSTOM_DATE";
     private final static String  CUSTOM_FILENAME_2                                                     = "CUSTOM_FILENAME_2";
-    private static final String  GRAB_PURCHASE_URL                                                     = "GRAB_PURCHASE_URL";
+    private final String         GRAB_PURCHASE_URL                                                     = "GRAB_PURCHASE_URL";
     private final String         GRAB500THUMB                                                          = "GRAB500THUMB";
     private final String         GRABORIGINALTHUMB                                                     = "GRABORIGINALTHUMB";
     private final String         CUSTOM_PACKAGENAME                                                    = "CUSTOM_PACKAGENAME";
@@ -114,8 +114,10 @@ public class SoundcloudCom extends PluginForHost {
     public static final String   PROPERTY_filetype                                                     = "type";
     public static final String   PROPERTY_chosen_quality                                               = "chosen_quality";
     public static final String   PROPERTY_duration_seconds                                             = "duration_seconds";
+    public static final String   PROPERTY_QUALITY_sq                                                   = "sq";
+    public static final String   PROPERTY_QUALITY_hq                                                   = "hq";
     /* Account properties */
-    private static final String  PROPERTY_ACCOUNT_oauthtoken                                           = "oauthtoken";
+    private final String         PROPERTY_ACCOUNT_oauthtoken                                           = "oauthtoken";
     public static final String   PROPERTY_ACCOUNT_userid                                               = "userid";
     public static final String   PROPERTY_ACCOUNT_created_at                                           = "created_at";
     public static final String   PROPERTY_ACCOUNT_username                                             = "username";
@@ -449,7 +451,7 @@ public class SoundcloudCom extends PluginForHost {
     /** Returns expected audio bitrate in kbit/s. */
     public static int getExpectedAudioBitrate(final DownloadLink link) {
         final String chosenQuality = link.getStringProperty(PROPERTY_chosen_quality);
-        if (chosenQuality == null || chosenQuality.equals("sq")) {
+        if (chosenQuality == null || chosenQuality.equals(PROPERTY_QUALITY_sq)) {
             return 128;
         } else {
             return 256;
@@ -510,10 +512,8 @@ public class SoundcloudCom extends PluginForHost {
                 final Map<String, Object> media = (Map<String, Object>) json.get("media");
                 if (media != null && media.containsKey("transcodings")) {
                     final List<Map<String, Object>> transcodings = (List<Map<String, Object>>) media.get("transcodings");
-                    String hqPreset = null;
-                    String lastPreset = null;
-                    String hqStreamurl = null;
-                    String lastStreamurl = null;
+                    Map<String, Object> transcodingHQ = null;
+                    Map<String, Object> transcodingSQ = null;
                     for (final Map<String, Object> transcoding : transcodings) {
                         /* Skip still we don't need or can't handle. */
                         final String preset = transcoding.get("preset").toString();
@@ -526,41 +526,43 @@ public class SoundcloudCom extends PluginForHost {
                         if (preset.contains("opus") || mime_type.contains("audio/ogg")) {
                             /* Skip because: Is never really available/working?! */
                             continue;
-                        } else if (quality.equals("sq") && protocol.equals("progressive")) {
+                        } else if (quality.equals(PROPERTY_QUALITY_sq) && protocol.equals("progressive")) {
                             /* Skip because: Available but doesn't work */
                             continue;
                         }
-                        if (quality.equals("hq")) {
-                            hqStreamurl = url;
-                            hqPreset = preset;
+                        if (quality.equals(PROPERTY_QUALITY_hq)) {
+                            transcodingHQ = transcoding;
                         } else {
-                            lastStreamurl = url;
-                            lastPreset = preset;
+                            transcodingSQ = transcoding;
                         }
                     }
-                    String streamUrl;
-                    final String chosenPreset;
-                    if (hqStreamurl != null) {
+                    final Map<String, Object> chosenTranscoding;
+                    if (transcodingHQ != null) {
                         /* E.g. pro/premium users */
-                        streamUrl = hqStreamurl;
-                        chosenPreset = hqPreset;
-                        link.setProperty(PROPERTY_chosen_quality, "hq");
+                        chosenTranscoding = transcodingHQ;
+                        link.setProperty(PROPERTY_chosen_quality, PROPERTY_QUALITY_hq);
                     } else {
                         /* Free account / no account */
-                        streamUrl = lastStreamurl;
-                        chosenPreset = lastPreset;
-                        link.setProperty(PROPERTY_chosen_quality, "sq");
+                        chosenTranscoding = transcodingSQ;
+                        link.setProperty(PROPERTY_chosen_quality, PROPERTY_QUALITY_sq);
                     }
-                    if (streamUrl != null) {
+                    String streamUrl = (String) chosenTranscoding.get("url");
+                    if (!StringUtils.isEmpty(streamUrl)) {
                         /* Extra HTTP request required to find final downloadurl. */
+                        final Map<String, Object> format = (Map<String, Object>) chosenTranscoding.get("format");
+                        final String mime_type = (String) format.get("mime_type");
                         if (browser == null) {
+                            final String extension = Plugin.getExtensionFromMimeTypeStatic(mime_type);
+                            if (extension != null) {
+                                link.setProperty(PROPERTY_filetype, extension);
+                            }
                             /*
                              * E.g. during crawling we only want to find the quality we will download later but we do not yet need to
                              * generate the final downloadURL.
                              */
                             return null;
                         }
-                        plugin.getLogger().info("Chosen audio preset: " + chosenPreset);
+                        plugin.getLogger().info("Chosen audio preset: " + chosenTranscoding.get("preset"));
                         final Browser br2 = browser.cloneBrowser();
                         final UrlQuery query = new UrlQuery().parse(streamUrl);
                         query.add("client_id", getClientId(null));
@@ -783,8 +785,8 @@ public class SoundcloudCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
+        final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
         if (br.getURL() == null || !br.getURL().contains(API_BASEv2 + "/me")) {
             br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=" + getAppLocaleV2());
@@ -856,8 +858,11 @@ public class SoundcloudCom extends PluginForHost {
         }
         String ext = link.getStringProperty(PROPERTY_filetype);
         if (ext != null) {
-            ext = "." + ext;
+            if (!ext.startsWith(".")) {
+                ext = "." + ext;
+            }
         } else {
+            /* Fallback/default */
             ext = ".mp3";
         }
         String date = link.getStringProperty(PROPERTY_originaldate);

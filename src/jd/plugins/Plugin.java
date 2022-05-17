@@ -168,11 +168,15 @@ public abstract class Plugin implements ActionListener {
     }
 
     public String getExtensionFromMimeType(final String contentType) {
+        return getExtensionFromMimeTypeStatic(contentType);
+    }
+
+    /** Mimics e.g.: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types */
+    public static String getExtensionFromMimeTypeStatic(final String contentType) {
         final String mimeType = new Regex(contentType, "(\\w+/[\\w\\-]+)").getMatch(0);
         if (StringUtils.isEmpty(mimeType)) {
             return null;
         } else {
-            // developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
             final HashMap<String, String> map = new HashMap<String, String>();
             map.put("application/x-7z-compressed", "7z");
             map.put("image/gif", "gif");
@@ -185,7 +189,9 @@ public abstract class Plugin implements ActionListener {
             map.put("video/ogg", "ogg");
             map.put("video/webm", "webm");
             map.put("audio/mp3", "mp3");
+            map.put("audio/mpeg", "mp3");
             map.put("audio/mp4", "mp4");
+            map.put("audio/ogg", "oga");
             map.put("audio/x-flac", "flac");
             map.put("audio/wav", "wav");
             map.put("text/css", "css");
