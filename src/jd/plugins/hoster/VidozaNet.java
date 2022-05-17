@@ -23,10 +23,14 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VidozaNet extends XFileSharingProBasic {
@@ -116,6 +120,26 @@ public class VidozaNet extends XFileSharingProBasic {
     }
 
     @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        try {
+            return super.requestFileInformationWebsite(link, account, isDownload);
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && !this.isEmbedURL(br.getURL())) {
+                /* 2022-05-17: Special handling for seemingly offline files which may still be playable and downloadable via embed URL. */
+                /* File-title can even be given for offline items! */
+                final String title = br.getRegex("<title>Watch ([^<]*?)( mp4)?</title>").getMatch(0);
+                if (title != null) {
+                    link.setFinalFileName(Encoding.htmlDecode(title) + ".mp4");
+                }
+                requestFileInformationVideoEmbed(link, account, true);
+                return AvailableStatus.TRUE;
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    @Override
     protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
         boolean isOffline = super.isOffline(link, br, html);
         if (!isOffline && html != null) {
@@ -129,5 +153,15 @@ public class VidozaNet extends XFileSharingProBasic {
     public boolean supports_availablecheck_filename_abuse() {
         /* 2019-07-04: Special */
         return false;
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        return true;
+    }
+
+    @Override
+    protected boolean isVideohosterEmbed() {
+        return true;
     }
 }

@@ -546,6 +546,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         return URL_TYPE.EMBED.equals(getURLType(link));
     }
 
+    protected boolean isEmbedURL(final String url) {
+        return URL_TYPE.EMBED.equals(getURLType(url));
+    }
+
     protected String buildEmbedURLPath(DownloadLink link, final String fuid) {
         return buildURLPath(link, fuid, URL_TYPE.EMBED);
     }
@@ -5077,7 +5081,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * This can 'automatically' detect whether a host supports embedding videos. <br />
      * Example: uqload.com</br>
-     * Do not override!
+     * Do not override unless really needed!
      */
     protected final boolean internal_isVideohosterEmbed(final Browser br) {
         return isVideohosterEmbed() || isVideohosterEmbedHTML(br);
