@@ -49,7 +49,7 @@ public class XnxxGold extends XvideosCore {
     };
 
     @Override
-    protected String getPremiumDomain() {
+    protected String getFallbackPremiumDomain() {
         return this.getHost();
     }
 

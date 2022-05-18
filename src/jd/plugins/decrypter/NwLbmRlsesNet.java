@@ -20,6 +20,7 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -91,10 +92,20 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
                     break;
                 }
             }
-            /* 2022-05-18: Look for embedded youtube videos */
-            final String[] ytVideos = br.getRegex("(https?://(?:www\\.)?youtube\\.com/embed/[A-Za-z0-9]+)").getColumn(0);
-            for (final String ytVideo : ytVideos) {
-                decryptedLinks.add(createDownloadlink(ytVideo));
+            /* 2022-05-18: Look for embedded (youtube) videos */
+            final String[] iframes = br.getRegex("<iframe(.*?)</iframe>").getColumn(0);
+            for (final String iframe : iframes) {
+                final String[] urls = HTMLParser.getHttpLinks(iframe, br.getURL());
+                for (final String url : urls) {
+                    decryptedLinks.add(createDownloadlink(url));
+                }
+            }
+            final String[] embeds = br.getRegex("<embed(.*?)</embed>").getColumn(0);
+            for (final String embed : embeds) {
+                final String[] urls = HTMLParser.getHttpLinks(embed, br.getURL());
+                for (final String url : urls) {
+                    decryptedLinks.add(createDownloadlink(url));
+                }
             }
             if (decryptedLinks.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
