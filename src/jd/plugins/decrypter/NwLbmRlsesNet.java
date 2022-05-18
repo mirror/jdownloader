@@ -63,7 +63,7 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.getCryptedUrl().matches("https?://(?:www\\.)?newalbumreleases\\.net/\\d+(/?.+)?")) {
             br.setFollowRedirects(true);
             br.getPage(param.getCryptedUrl());
@@ -71,12 +71,10 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String[] links = br.getRegex("\"(https?://[^<>\"]*?)\">DOWNLOAD</a>").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
-                return null;
-            }
             br.setFollowRedirects(false);
+            int counter = 1;
             for (final String singleLink : links) {
+                logger.info("Crawling item " + counter + "/" + links.length);
                 String finallink;
                 if (singleLink.contains("newalbumreleases.net/")) {
                     br.getPage(singleLink);
@@ -89,6 +87,17 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
                     finallink = singleLink;
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
+                if (this.isAbort()) {
+                    break;
+                }
+            }
+            /* 2022-05-18: Look for embedded youtube videos */
+            final String[] ytVideos = br.getRegex("(https?://(?:www\\.)?youtube\\.com/embed/[A-Za-z0-9]+)").getColumn(0);
+            for (final String ytVideo : ytVideos) {
+                decryptedLinks.add(createDownloadlink(ytVideo));
+            }
+            if (decryptedLinks.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
             br.setFollowRedirects(false);
