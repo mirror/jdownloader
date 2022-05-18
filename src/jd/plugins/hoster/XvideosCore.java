@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -79,14 +80,19 @@ public abstract class XvideosCore extends PluginForHost {
 
     protected abstract String[] getAllDomains();
 
-    protected abstract String getPremiumDomain();
+    /** Fallback for if premium domain cannot be determined automatically. */
+    protected abstract String getFallbackPremiumDomain();
 
-    protected String getPremiumBaseURL() {
-        return "https://www." + this.getPremiumDomain();
+    private String getPremiumDomain(final Account account) {
+        return account.getStringProperty(PROPERTY_ACCOUNT_PREMIUM_DOMAIN, this.getFallbackPremiumDomain());
     }
 
-    protected String getPremiumAccountOverviewURL() {
-        return getPremiumBaseURL() + "/account/premium";
+    protected String getPremiumBaseURL(final Account account) {
+        return "https://www." + this.getPremiumDomain(account);
+    }
+
+    protected String getPremiumAccountOverviewURL(final Account account) {
+        return getPremiumBaseURL(account) + "/account/premium";
     }
 
     @Override
@@ -150,18 +156,19 @@ public abstract class XvideosCore extends PluginForHost {
         }
     }
 
-    private static final String type_normal       = "https?://[^/]+/video(\\d+)(/(.+))?$";
+    private static final String type_normal                     = "https?://[^/]+/video(\\d+)(/(.+))?$";
     /* xnxx.gold */
-    private static final String type_normal_2     = "https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                          // xnxx.gold
-    private static final String type_embed        = "https?://[^/]+/embedframe/(\\d+)";
-    private static final String type_special1     = "https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([a-z0-9_\\-]+)";
-    private static final String type_special2     = "https?://[^/]+/[^/]+/(upload|pornstar|model)/([a-z0-9\\-\\_]+)/(\\d+).*";
-    private static final String NOCHUNKS          = "NOCHUNKS";
-    private String              streamURL         = null;
-    private HlsContainer        hlsContainer      = null;
-    public static final String  PROPERTY_USERNAME = "username";
-    private static final String PROPERTY_TAGS     = "tags";
-    private static final String PROPERTY_VIDEOID  = "videoid";
+    private static final String type_normal_2                   = "https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                          // xnxx.gold
+    private static final String type_embed                      = "https?://[^/]+/embedframe/(\\d+)";
+    private static final String type_special1                   = "https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([a-z0-9_\\-]+)";
+    private static final String type_special2                   = "https?://[^/]+/[^/]+/(upload|pornstar|model)/([a-z0-9\\-\\_]+)/(\\d+).*";
+    private static final String NOCHUNKS                        = "NOCHUNKS";
+    private String              streamURL                       = null;
+    private HlsContainer        hlsContainer                    = null;
+    public static final String  PROPERTY_USERNAME               = "username";
+    private static final String PROPERTY_TAGS                   = "tags";
+    private static final String PROPERTY_VIDEOID                = "videoid";
+    private final String        PROPERTY_ACCOUNT_PREMIUM_DOMAIN = "premium_domain";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -276,7 +283,7 @@ public abstract class XvideosCore extends PluginForHost {
         /* 2021-07-07: They seem to ignore this header and set language randomly or by IP or by user-choice! */
         br.getHeaders().put("Accept-Language", "en-gb");
         if (account != null) {
-            this.login(this, account, false);
+            this.login(account, false);
         }
         final boolean useLanguageSwitcherHandling = true;
         if (useLanguageSwitcherHandling) {
@@ -514,11 +521,11 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     private String getVideoHigh(final Browser br) {
-        return br.getRegex("html5player\\.setVideoUrlHigh\\('(.*?)'\\)").getMatch(0);
+        return br.getRegex("(?i)html5player\\.setVideoUrlHigh\\('(.*?)'\\)").getMatch(0);
     }
 
     private String getVideoLow(final Browser br) {
-        return br.getRegex("html5player\\.setVideoUrlLow\\('(.*?)'\\)").getMatch(0);
+        return br.getRegex("(?i)html5player\\.setVideoUrlLow\\('(.*?)'\\)").getMatch(0);
     }
 
     @Override
@@ -528,7 +535,7 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        if (Browser.getHost(link.getPluginPatternMatcher()).equalsIgnoreCase(this.getPremiumDomain()) && (account == null || account.getType() != AccountType.PREMIUM)) {
+        if (Browser.getHost(link.getPluginPatternMatcher()).equalsIgnoreCase(this.getPremiumDomain(account)) && (account == null || account.getType() != AccountType.PREMIUM)) {
             throw new AccountRequiredException();
         }
         if (streamURL != null) {
@@ -662,11 +669,12 @@ public abstract class XvideosCore extends PluginForHost {
         }
     }
 
-    public boolean login(final Plugin plugin, final Account account, final boolean force) throws Exception {
+    public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                /* Prefer English language */
                 br.getHeaders().put("Accept-Language", "en-gb");
                 final Cookies cookiesUser = account.loadUserCookies();
                 final Cookies cookiesFree = account.loadCookies("");
@@ -674,12 +682,12 @@ public abstract class XvideosCore extends PluginForHost {
                 if (cookiesUser != null) {
                     logger.info("Attempting user-cookie login");
                     setCookies(br, cookiesUser);
-                    br.setCookies(this.getPremiumDomain(), cookiesUser);
-                    if (attemptCookieLogin(plugin, account)) {
-                        plugin.getLogger().info("User-Cookie login successful");
+                    br.setCookies(this.getPremiumDomain(account), cookiesUser);
+                    if (attemptCookieLogin(account)) {
+                        logger.info("User-Cookie login successful");
                         return true;
                     } else {
-                        plugin.getLogger().info("User-Cookie login failed");
+                        logger.info("User-Cookie login failed");
                         if (account.hasEverBeenValid()) {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
@@ -688,20 +696,21 @@ public abstract class XvideosCore extends PluginForHost {
                     }
                 }
                 if (cookiesFree != null && cookiesPremium != null) {
-                    plugin.getLogger().info("Attempting cookie login");
+                    logger.info("Attempting cookie login");
                     setCookies(br, cookiesFree);
-                    br.setCookies(this.getPremiumDomain(), cookiesPremium);
+                    br.setCookies(this.getPremiumDomain(account), cookiesPremium);
                     if (!force) {
-                        plugin.getLogger().info("Trust cookies without check");
+                        logger.info("Trust cookies without check");
                         return false;
                     }
-                    if (attemptCookieLogin(plugin, account)) {
+                    if (attemptCookieLogin(account)) {
+                        logger.info("Cookie login successful");
                         return true;
                     } else {
+                        logger.info("Cookie login failed");
                         br.clearAll();
                     }
                 }
-                plugin.getLogger().info("Performing full login");
                 logger.info("Performing full login");
                 if (!StringUtils.contains(account.getUser(), "@")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -710,25 +719,26 @@ public abstract class XvideosCore extends PluginForHost {
                         throw new AccountInvalidException("Please enter your e-mail address into the 'username' field!");
                     }
                 }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("https://www." + this.getHost() + "/");
-                br.postPage("/account/signinform", "");
-                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                final String formHTML1 = (String) entries.get("form");
-                if (!StringUtils.isEmpty(formHTML1)) {
-                    br.getRequest().setHtmlCode(formHTML1);
+                final boolean useAjaxLogin = true;
+                if (useAjaxLogin) {
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    br.getPage("https://www." + this.getHost() + "/");
+                    br.postPage("/account/signinform", "");
+                    Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    final String formHTML1 = (String) entries.get("form");
+                    if (!StringUtils.isEmpty(formHTML1)) {
+                        br.getRequest().setHtmlCode(formHTML1);
+                    }
+                } else {
+                    br.getPage("https://www." + this.getHost() + "/account/");
                 }
-                final Form loginform = br.getForm(0);
+                final Form loginform = br.getFormbyProperty("id", "signin-form");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (!loginform.hasInputFieldByName("signin-form%5Bpassword%5D")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                loginform.setAction("/account/signinform");
-                // loginform.setMethod(MethodType.POST);
-                // loginform.put(Encoding.urlEncode("signin-form[votes]"), "");
-                // loginform.put(Encoding.urlEncode("signin-form[subs]"), "");
-                // loginform.put(Encoding.urlEncode("signin-form[post_referer]"), Encoding.urlEncode("https://www.xvideos.com/"));
                 loginform.put(Encoding.urlEncode("signin-form[login]"), Encoding.urlEncode(account.getUser()));
                 loginform.put(Encoding.urlEncode("signin-form[password]"), Encoding.urlEncode(account.getPass()));
                 loginform.put(Encoding.urlEncode("signin-form[rememberme]"), "on");
@@ -742,12 +752,16 @@ public abstract class XvideosCore extends PluginForHost {
                         loginform.put(Encoding.urlEncode("g-recaptcha-response"), Encoding.urlEncode(recaptchaV2Response));
                     }
                 }
+                loginform.setNullFieldValuesToEmptyFields();
                 br.submitForm(loginform);
-                Map<String, Object> loginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                final String formHTML2 = (String) loginResponse.get("form");
-                if (!StringUtils.isEmpty(formHTML2)) {
-                    /* 2FA login */
-                    br.getRequest().setHtmlCode(formHTML2);
+                Map<String, Object> ajaxLoginResponse = null;
+                if (useAjaxLogin) {
+                    ajaxLoginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    final String formHTML2 = (String) ajaxLoginResponse.get("form");
+                    if (!StringUtils.isEmpty(formHTML2)) {
+                        /* 2FA login */
+                        br.getRequest().setHtmlCode(formHTML2);
+                    }
                 }
                 /* 2FA login */
                 final Form unknownBrowserForm = br.getFormbyProperty("id", "unknown-browser-form");
@@ -776,7 +790,9 @@ public abstract class XvideosCore extends PluginForHost {
                     unknownBrowserForm.put(Encoding.urlEncode("unknown-browser-form[code]"), twoFACode);
                     unknownBrowserForm.setNullFieldValuesToEmptyFields();
                     br.submitForm(unknownBrowserForm);
-                    loginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    if (useAjaxLogin) {
+                        ajaxLoginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    }
                 } else if (totpAuthForm != null) {
                     /* TOTP login -> 2FA login which user has enabled via opt-in in his account. */
                     final DownloadLink dl_dummy;
@@ -785,41 +801,41 @@ public abstract class XvideosCore extends PluginForHost {
                     } else {
                         dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
                     }
-                    String twoFACode = getUserInput("Enter 2FA TOTP code", dl_dummy);
-                    if (twoFACode != null) {
-                        twoFACode = twoFACode.trim();
-                    }
-                    if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
-                        } else {
-                            throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
-                        }
-                    }
+                    String twoFACode = getUserInput("Enter 2FA TOTP code or any of your backup codes", dl_dummy);
+                    twoFACode = twoFACode.trim();
                     logger.info("Submitting 2FA TOTP code");
-                    totpAuthForm.put(Encoding.urlEncode("auth[code]"), twoFACode);
+                    totpAuthForm.put(Encoding.urlEncode("totp-auth[code]"), Encoding.urlEncode(twoFACode));
                     /* Do not ask again for TOTP code for 30 days. */
                     totpAuthForm.put(Encoding.urlEncode("totp-auth[remember_me]"), "on");
+                    // totpAuthForm.put(Encoding.urlEncode("totp-auth[post_referer]"), Encoding.urlEncode("https://de.xvideos.com/"));
                     totpAuthForm.setNullFieldValuesToEmptyFields();
                     br.submitForm(totpAuthForm);
-                    loginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    if (useAjaxLogin) {
+                        ajaxLoginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    }
                 }
-                final String premium_redirect = (String) loginResponse.get("premium_redirect");
-                final String redirect_domain = (String) loginResponse.get("redirect_domain");
-                // final Object premiumStatus = loginResponse.get("is_premium");
-                /* E.g. xnxx.gold response: {"form_valid":true,"form_displayed":"signin","user_main_cat":"straight","is_premium":true} */
-                if (!StringUtils.isEmpty(redirect_domain)) {
-                    /* FREE account */
-                    br.getPage(redirect_domain);
-                } else if (!StringUtils.isEmpty(premium_redirect)) {
-                    /* PREMIUM account */
-                    br.getPage(getPremiumBaseURL() + "/?" + premium_redirect);
-                } else {
-                    br.getPage(this.getPremiumAccountOverviewURL());
+                if (useAjaxLogin) {
+                    final String premium_redirect = (String) ajaxLoginResponse.get("premium_redirect");
+                    final String redirect_domain = (String) ajaxLoginResponse.get("redirect_domain");
+                    /*
+                     * E.g. xnxx.gold response: {"form_valid":true,"form_displayed":"signin","user_main_cat":"straight","is_premium":true}
+                     */
+                    if (!StringUtils.isEmpty(redirect_domain)) {
+                        /* FREE account */
+                        br.getPage(redirect_domain);
+                    } else if (!StringUtils.isEmpty(premium_redirect)) {
+                        /* PREMIUM account */
+                        br.getPage(getPremiumBaseURL(account) + "/?" + premium_redirect);
+                    } else {
+                        /* Get mainpage */
+                        br.getPage("/");
+                    }
                 }
-                /* Double-check! */
                 if (!isLoggedin(br)) {
-                    if (unknownBrowserForm != null) {
+                    final String loginFailureText = new Regex(PluginJSonUtils.unescape(br.getRequest().getHtmlCode()), "class=\"help-block error-block\">([^<]+)</span>").getMatch(0);
+                    if (loginFailureText != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        throw new AccountInvalidException(Encoding.htmlDecode(loginFailureText).trim());
+                    } else if (unknownBrowserForm != null) {
                         throw new AccountInvalidException("2FA mail login failed");
                     } else if (totpAuthForm != null) {
                         throw new AccountInvalidException("2FA TOTP login failed");
@@ -827,9 +843,7 @@ public abstract class XvideosCore extends PluginForHost {
                         throw new AccountInvalidException();
                     }
                 }
-                if (premium_redirect != null && StringUtils.containsIgnoreCase(br.getHost(), this.getPremiumDomain())) {
-                    account.setType(AccountType.PREMIUM);
-                } else if (isPremium(this.br)) {
+                if (isPremium(this.br)) {
                     account.setType(AccountType.PREMIUM);
                 } else {
                     account.setType(AccountType.FREE);
@@ -838,8 +852,12 @@ public abstract class XvideosCore extends PluginForHost {
                  * Always save both types of cookies otherwise cookie-login won't work and/or we'd never be able to notice whenever e.g. a
                  * free account changes to premium status.
                  */
+                final Map<String, Object> map = getJsonMap(br);
+                final Map<String, Object> domains = (Map<String, Object>) map.get("domains");
+                final String premiumDomain = Browser.getHost(domains.get("premium").toString(), true);
                 account.saveCookies(br.getCookies(this.getHost()), "");
-                account.saveCookies(br.getCookies(this.getPremiumDomain()), "premium");
+                account.saveCookies(br.getCookies(premiumDomain), "premium");
+                account.setProperty(PROPERTY_ACCOUNT_PREMIUM_DOMAIN, premiumDomain);
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -851,24 +869,28 @@ public abstract class XvideosCore extends PluginForHost {
         }
     }
 
-    private boolean attemptCookieLogin(final Plugin plugin, final Account account) throws IOException {
+    private boolean attemptCookieLogin(final Account account) throws Exception {
         /* Will redirect to premium domain if we're logged in as premium user */
         br.getPage("https://www." + this.getHost() + "/");
         if (isLoggedin(br)) {
-            plugin.getLogger().info("Cookie login successful");
+            logger.info("Cookie login successful");
             /* Refresh cookie timestamp */
             account.saveCookies(br.getCookies(this.getHost()), "");
             /* Now check if we have a free- or a premium account */
-            br.getPage(this.getPremiumAccountOverviewURL());
+            br.getPage(this.getPremiumAccountOverviewURL(account));
             if (isPremium(br)) {
-                account.saveCookies(br.getCookies(this.getPremiumDomain()), "premium");
+                account.saveCookies(br.getCookies(this.getPremiumDomain(account)), "premium");
                 account.setType(AccountType.PREMIUM);
             } else {
                 account.setType(AccountType.FREE);
             }
+            final Map<String, Object> map = getJsonMap(br);
+            final Map<String, Object> domains = (Map<String, Object>) map.get("domains");
+            final String premiumDomain = Browser.getHost(domains.get("premium").toString(), true);
+            account.setProperty(PROPERTY_ACCOUNT_PREMIUM_DOMAIN, premiumDomain);
             return true;
         } else {
-            plugin.getLogger().info("Cookie login failed");
+            logger.info("Cookie login failed");
             return false;
         }
     }
@@ -882,24 +904,38 @@ public abstract class XvideosCore extends PluginForHost {
     /**
      * Only use this when on this page: https://www.domain.tld/account/premium </br>
      * 2021-03-08: Free users cannot even view the account panel so checking for any elements in there is good enough as premium indicator!
+     *
+     * @throws Exception
      */
-    private static boolean isPremium(final Browser br) {
+    private static boolean isPremium(final Browser br) throws Exception {
         /*
          * 2021-03-08: "Cancel subsrciption" button is not always there is they also got packages that are a one time pay thing and don't
          * have to be cancelled by the user!
          */
-        if (br.containsHTML("id=\"btn-cancel-subscription\"|id=\"account-content-block\"")) {
-            return true;
-        } else {
-            return false;
-        }
+        final Map<String, Object> map = getJsonMap(br);
+        final Map<String, Object> login_info = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "dyn/login_info");
+        return ((Boolean) login_info.get("is_premium"));
     }
 
-    /** Works for free- and premium domain! */
-    private static boolean isLoggedin(final Browser br) {
-        if (br.containsHTML("/account/signout")) {
-            return true;
-        } else {
+    private static Map<String, Object> getJsonMap(final Browser br) throws Exception {
+        final String json = br.getRegex("window\\.xv\\.conf=(\\{.*?\\});\\s*</script>").getMatch(0);
+        if (json != null) {
+            return JavaScriptEngineFactory.jsonToJavaMap(json);
+        }
+        return null;
+    }
+
+    /**
+     * Works for free- and premium domain (for xvideos.red only if user has premium)!
+     *
+     * @throws Exception
+     */
+    private static boolean isLoggedin(final Browser br) throws Exception {
+        try {
+            final Map<String, Object> map = getJsonMap(br);
+            final Map<String, Object> login_info = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "dyn/login_info");
+            return ((Boolean) login_info.get("is_logged"));
+        } catch (final Throwable e) {
             return false;
         }
     }
@@ -907,7 +943,7 @@ public abstract class XvideosCore extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this, account, true);
+        login(account, true);
         ai.setUnlimitedTraffic();
         /* 2021-01-20: Doesn't work */
         // if (account.getType() == AccountType.PREMIUM) {

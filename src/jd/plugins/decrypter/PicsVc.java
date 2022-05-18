@@ -23,6 +23,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -35,10 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PicsVc extends PluginForDecrypt {
@@ -81,9 +81,12 @@ public class PicsVc extends PluginForDecrypt {
         /* 2021-09-30: pics.vc/watch URLs will often redirect to sxypix.com/w URLs. */
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=.gall_not_found")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\\.gall_not_found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class='gnf'")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fpName = br.getRegex("(?i)<title>\\s*([^<>\"]+)\\s*-\\s*(?:PICS\\.VC|SxyPix\\.com)\\s*</title>").getMatch(0);
         int foundNumberofItems = 0;

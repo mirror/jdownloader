@@ -52,7 +52,7 @@ public class XvideosCom extends XvideosCore {
     }
 
     @Override
-    protected String getPremiumDomain() {
+    protected String getFallbackPremiumDomain() {
         return "xvideos.red";
     }
 

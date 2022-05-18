@@ -128,9 +128,9 @@ public class XvideosComProfile extends PluginForDecrypt {
         final boolean premiumAccountRequired = this.requiresPremiumAccount(param);
         br.addAllowedResponseCodes(new int[] { 400 });
         br.setFollowRedirects(true);
-        Account account = AccountController.getInstance().getValidAccount(getHost());
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
-            ((jd.plugins.hoster.XvideosCom) plg).login(this, account, false);
+            ((jd.plugins.hoster.XvideosCom) plg).login(account, false);
         }
         if (accountRequired && account == null) {
             /* Account required! */

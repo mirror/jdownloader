@@ -26,6 +26,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -55,15 +64,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1734,9 +1734,9 @@ public class VKontakteRu extends PluginForDecrypt {
             this.getPage(this.CRYPTEDLINK_FUNCTIONAL);
         } else {
             /* The URL could also be a directURL or unsupported -> Let's check for that first */
-            logger.info("URL leads to downloadable content");
             URLConnectionAdapter con = this.br.openGetConnection(this.CRYPTEDLINK_ORIGINAL);
             if (this.looksLikeDownloadableContent(con)) {
+                logger.info("URL leads to downloadable content");
                 /* Very rare case */
                 try {
                     con.disconnect();
