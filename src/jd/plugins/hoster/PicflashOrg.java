@@ -37,7 +37,6 @@ import jd.plugins.PluginForHost;
 public class PicflashOrg extends PluginForHost {
     public PicflashOrg(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://www.picflash.org/userpanel.php?chkp=1");
     }
 
     @Override
@@ -47,7 +46,6 @@ public class PicflashOrg extends PluginForHost {
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "picflash.org" });
         return ret;
     }
@@ -64,29 +62,19 @@ public class PicflashOrg extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:picture\\.php\\?key=[A-Z0-9]+|viewer\\.php\\?img=.+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:picture\\.php\\?key=[A-Z0-9]+|viewer\\.php\\?img=[^/&]+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private final String        TYPE_1            = "https?://[^/]+/viewer\\.php\\?img=([^/]+)";
+    private final String        TYPE_2            = "https?://[^/]+/picture\\.php\\?key=([A-Z0-9]+)";
+    private static final String PROPERTY_FILENAME = "picflash_filename";
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public String getLinkID(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().contains("viewer.php")) {
-            /* 2019-10-15: Dupe recognization works via filename here and filename is not given inside URL for all linktypes! */
+        final String fid = this.getFID(link);
+        if (fid != null) {
             return this.getHost() + "://" + this.getFID(link);
         } else {
             return super.getLinkID(link);
@@ -94,39 +82,36 @@ public class PicflashOrg extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "=(.+)$").getMatch(0);
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        }
+        if (link.getPluginPatternMatcher().matches(TYPE_1)) {
+            if (link.hasProperty(PROPERTY_FILENAME)) {
+                return link.getStringProperty(PROPERTY_FILENAME);
+            } else {
+                return new Regex(link.getPluginPatternMatcher(), TYPE_1).getMatch(0);
+            }
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_2).getMatch(0);
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        /* 2019-09-23: This is a JD-friendly project :) */
+        /* 2019-09-23: picflash.org is a JD-friendly project :) */
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
-        if (link.getPluginPatternMatcher().contains("viewer.php")) {
-            /**
-             * Direct-URLs - we only only supported them via this plugin to work-around their Content-Type issue:
-             * https://ngb.to/threads/9824-Bugs-Alles-was-an-Bugs-auff%C3%A4llt/page24?p=767647&highlight=pspzockerscene#post767647 </br>
-             * 2019-10-15: They've fixed their content-type issue. Support for directurls via plugin is still useful though for
-             * offline-detection, see comments below.
-             */
+        if (link.getPluginPatternMatcher().matches(TYPE_1)) {
             link.setFinalFileName(this.getFID(link));
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
-                if (con.getResponseCode() != 200) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    final long filesize = con.getLongContentLength();
-                    /*
-                     * 2019-09-23: Offline content will lead to an 'error-picture' e.g.:
-                     * https://www.picflash.org/viewer.php?img=error_test.webm In comparison to images which are online, there will be no
-                     * content-disposition which is why we can easily filter-out offline content.
-                     */
-                    if (filesize <= 1 && !con.isContentDisposition()) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    link.setVerifiedFileSize(filesize);
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -140,26 +125,25 @@ public class PicflashOrg extends PluginForHost {
              * 2019-09-23: Most of the content is pictures. Sometimes they may also host small Videofiles which is why we rather not set a
              * MimeHint!
              */
-            // link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-            link.setName(this.getFID(link));
+            if (!link.isNameSet()) {
+                link.setName(this.getFID(link));
+            }
             br.getPage(link.getPluginPatternMatcher() + "&action=show");
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"content-box error top-space\"")) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("class=\"content-box error top-space\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = br.getRegex("<li>\\s*<b>Name\\s*:\\s*</b>([^<>\"]+)</li>").getMatch(0);
+            String filename = br.getRegex("(?i)<li>\\s*<b>Name\\s*:\\s*</b>([^<>\"]+)</li>").getMatch(0);
             if (!StringUtils.isEmpty(filename)) {
                 /* 2019-10-15: Do this so that duplicate recognization works throughout directurls and these URLs. */
                 filename = Encoding.htmlDecode(filename).trim();
-                link.setLinkID(this.getHost() + "://" + filename);
-            } else {
-                /* Fallback */
-                filename = this.getFID(link);
+                link.setProperty(PROPERTY_FILENAME, filename);
             }
-            String filesize = br.getRegex("([0-9,]+)\\s*Bytes</li>").getMatch(0);
+            String filesize = br.getRegex("(?i)([0-9,]+)\\s*Bytes</li>").getMatch(0);
             if (StringUtils.isEmpty(filename)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setName(filename);
             if (filesize != null) {
                 filesize = filesize.replace(",", "");
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -171,12 +155,8 @@ public class PicflashOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
-    }
-
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         String dllink;
-        if (link.getPluginPatternMatcher().contains("viewer.php")) {
+        if (link.getPluginPatternMatcher().matches(TYPE_1)) {
             /* Directurl */
             dllink = link.getPluginPatternMatcher();
         } else {
@@ -187,38 +167,35 @@ public class PicflashOrg extends PluginForHost {
                 /* For pictures */
                 dllink = br.getRegex("<a href=\"(http[^<>\"]+)\"[^<>]*class=\"full-image top-space\">").getMatch(0);
             }
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        final long minimumFilesize = link.getView().getBytesTotal() - 100;
-        /*
-         * 2019-09-23: For .webm videos they sometimes return 'text/html; charset=UTF-8' so we cannot only rely on the content-type here!
-         * This issue has been reported already: https://ngb.to/threads/9824-Bugs-Alles-was-an-Bugs-auff%C3%A4llt/page30
-         */
-        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getContentLength() < minimumFilesize) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        /* 2019-09-23: No captchas at all */
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override

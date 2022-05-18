@@ -29,6 +29,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -55,7 +56,7 @@ public class LiveMixtapesComDecrypter extends antiDDoSForDecrypt {
         return 1;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         if (parameter.matches(TYPE_DOWNLOAD)) {
@@ -123,8 +124,7 @@ public class LiveMixtapesComDecrypter extends antiDDoSForDecrypt {
             this.getPluginConfig().setProperty("cookies", br.getCookies(br.getHost()));
         }
         if (br.getURL().contains("error/login.html")) {
-            logger.info("Login needed to decrypt link: " + parameter);
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
         /* Check for (external) embedded video(s) e.g. instagram */
         if (br.containsHTML("function videoEmbed")) {
@@ -132,8 +132,6 @@ public class LiveMixtapesComDecrypter extends antiDDoSForDecrypt {
             if (finallink != null) {
                 logger.info("Found embedded content");
                 decryptedLinks.add(createDownloadlink(finallink));
-                /* 2020-04-22: Do not stop here anymore. */
-                // return decryptedLinks;
             }
         }
         String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)").getMatch(0);

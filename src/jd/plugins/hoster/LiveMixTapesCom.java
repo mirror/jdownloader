@@ -112,7 +112,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     }
 
     private boolean isAccountRequired() {
-        return br.containsHTML("class=\"download-member-only\"");
+        if (br.containsHTML("class=\"download-member-only\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -243,6 +247,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                     if (waitStr == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    // this.sleep(Integer.parseInt(waitStr) * 1001l, link);
                     final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -421,7 +426,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     }
 
     private boolean isLoggedIn() {
-        return br.getCookie(br.getHost(), "u", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "p", Cookies.NOTDELETEDPATTERN) != null;
+        if (br.getCookie(br.getHost(), "u", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "p", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -429,15 +438,10 @@ public class LiveMixTapesCom extends antiDDoSForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
-        if (link.getPluginPatternMatcher().contains("/download/")) {
-            return true;
-        } else {
-            return false;
-        }
+        return true;
     }
 }
