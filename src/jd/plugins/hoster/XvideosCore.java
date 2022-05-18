@@ -710,7 +710,6 @@ public abstract class XvideosCore extends PluginForHost {
                         throw new AccountInvalidException("Please enter your e-mail address into the 'username' field!");
                     }
                 }
-                final boolean useAjaxLogin = true;
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("https://www." + this.getHost() + "/");
                 br.postPage("/account/signinform", "");
