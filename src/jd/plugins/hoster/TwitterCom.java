@@ -384,11 +384,7 @@ public class TwitterCom extends PluginForHost {
                 if (dllink.contains(".m3u8")) {
                     checkFFProbe(link, "Download a HLS Stream");
                     br.setAllowedResponseCodes(new int[] { 403 });
-                    try {
-                        br.getPage(dllink);
-                    } catch (final Exception e) {
-                        logger.info("Fatal failure");
-                    }
+                    br.getPage(dllink);
                     if (this.br.getHttpConnection().getResponseCode() == 403) {
                         /* 2017-06-01: Unsure because browser shows the thumbnail and video 'wants to play' but doesn't. */
                         // throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or offline content");
@@ -404,20 +400,22 @@ public class TwitterCom extends PluginForHost {
                     }
                     final HlsContainer hlsBest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                     this.dllink = hlsBest.getDownloadurl();
-                    final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
-                    final StreamInfo streamInfo = downloader.getProbe();
-                    if (streamInfo == null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS failure");
-                    }
-                    final int hlsBandwidth = hlsBest.getBandwidth();
-                    if (hlsBandwidth > 0) {
-                        for (M3U8Playlist playList : downloader.getPlayLists()) {
-                            playList.setAverageBandwidth(hlsBandwidth);
+                    if (!isDownload) {
+                        final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
+                        final StreamInfo streamInfo = downloader.getProbe();
+                        if (streamInfo == null) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HLS failure");
                         }
-                    }
-                    final long estimatedSize = downloader.getEstimatedSize();
-                    if (estimatedSize > 0) {
-                        link.setDownloadSize(estimatedSize);
+                        final int hlsBandwidth = hlsBest.getBandwidth();
+                        if (hlsBandwidth > 0) {
+                            for (M3U8Playlist playList : downloader.getPlayLists()) {
+                                playList.setAverageBandwidth(hlsBandwidth);
+                            }
+                        }
+                        final long estimatedSize = downloader.getEstimatedSize();
+                        if (estimatedSize > 0) {
+                            link.setDownloadSize(estimatedSize);
+                        }
                     }
                 } else if (!isDownload || link.getFinalFileName() == null) {
                     URLConnectionAdapter con = null;
@@ -432,12 +430,12 @@ public class TwitterCom extends PluginForHost {
                             }
                             handleServerErrorsLastResort(con);
                         }
-                        if (con.getCompleteContentLength() <= 0) {
+                        if (con.getCompleteContentLength() == 0) {
                             /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
                             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server sent empty file", 60 * 1000l);
                             // 2017-07-20: Pass it to download core, it can handle this.
                             logger.info("Downloading empty file ...");
-                        } else {
+                        } else if (con.getCompleteContentLength() > 0) {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                         if (!link.isNameSet()) {
