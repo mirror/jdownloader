@@ -20,6 +20,7 @@ import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
@@ -257,6 +259,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage(link.getPluginPatternMatcher());
+                handleTooManyRequests(this, br);
                 final String redirect = br.getRedirectLocation();
                 if (redirect != null && redirect.matches(TYPE_DIRECT)) {
                     /* Check if we got a directURL. */
@@ -347,7 +350,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -398,7 +401,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 checkstatus = linkOk(link, isDownload);
                 if (checkstatus != 1) {
                     /* Refresh directlink */
-                    accessVideo(this.br, link.getPluginPatternMatcher(), this.ownerID, this.contentID, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID));
+                    accessVideo(this, this.br, link.getPluginPatternMatcher(), this.ownerID, this.contentID, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID));
                     if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (br.containsHTML("class\\s*=\\s*\"message_page_body\">\\s*Access denied")) {
@@ -613,6 +616,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (this.isHLS(link, this.finalUrl)) {
             /* HLS download */
             br.getPage(this.finalUrl);
+            handleTooManyRequests(this, br);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
@@ -819,7 +823,7 @@ public class VKontakteRuHoster extends PluginForHost {
         br.getHeaders().put("Referer", "https://" + DOMAIN + "/al_photos.php");
     }
 
-    public static void accessVideo(final Browser br, final String videoURL, final String oid, final String id, final String listID) throws Exception {
+    public static void accessVideo(final Plugin plugin, final Browser br, final String videoURL, final String oid, final String id, final String listID) throws Exception {
         final String videoids_together = oid + "_" + id;
         if (videoURL.matches(VKontakteRu.PATTERN_VIDEO_SINGLE_Z) && listID == null) {
             /**
@@ -848,6 +852,45 @@ public class VKontakteRuHoster extends PluginForHost {
             br.postPage(getProtocol() + "vk.com/al_video.php", query);
         } else {
             br.getPage(getProtocol() + "vk.com/video" + videoids_together);
+            handleTooManyRequests(plugin, br);
+        }
+    }
+
+    private static Map<String, String> LOCK_429 = new HashMap<String, String>();
+
+    public static void handleTooManyRequests(final Plugin plugin, final Browser br) throws Exception {
+        synchronized (LOCK_429) {
+            final boolean isFollowRedirect = br.isFollowingRedirects();
+            if (!isFollowRedirect && StringUtils.containsIgnoreCase(br.getRedirectLocation(), "/429.html")) {
+                br.followRedirect();
+            }
+            URL url = br._getURL();
+            if (url != null && StringUtils.equals(url.getPath(), "/429.html")) {
+                final UrlQuery query = UrlQuery.parse(url.getQuery());
+                final String hash429 = query.get("hash429");
+                if (hash429 != null) {
+                    Thread.sleep(1000);
+                    String newLocation = url.toString();
+                    if (StringUtils.containsIgnoreCase(newLocation, "&key=")) {
+                        // remove existing key from query
+                        newLocation = newLocation.replaceFirst("(?i)(&key=[^&#]+)", "");
+                    }
+                    newLocation = newLocation + "&key=" + Hash.getMD5(hash429);
+                    br.getPage(newLocation);
+                    if (!isFollowRedirect) {
+                        br.followRedirect();
+                    }
+                    if (!StringUtils.equals(br._getURL().getPath(), "/429.html") && !StringUtils.containsIgnoreCase(br.getRedirectLocation(), "/429.html")) {
+                        final String solution429 = br.getHostCookie("solution429");
+                        if (solution429 != null) {
+                            LOCK_429.put("hash", hash429);
+                            LOCK_429.put("solution", solution429);
+                        }
+                        return;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
     }
 
@@ -1176,6 +1219,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 logger.info("Performing full login");
                 br.getPage(getBaseURL() + "/");
+                handleTooManyRequests(this, br);
                 final Form login = br.getFormbyProperty("id", "quick_login_form");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1217,8 +1261,9 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    private boolean checkCookieLogin(final Browser br, final Account account) throws IOException {
+    private boolean checkCookieLogin(final Browser br, final Account account) throws Exception {
         br.getPage(getBaseURL());
+        handleTooManyRequests(this, br);
         // non language, check
         if (isLoggedinHTML(br)) {
             logger.info("Cookie login successful");
@@ -1254,6 +1299,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     private void getPageSafe(final Browser br, final Account acc, final DownloadLink link, final String page) throws Exception {
         br.getPage(page);
+        handleTooManyRequests(this, br);
         if (acc != null && br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
             // Force login
@@ -1309,6 +1355,14 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         /* Loads can be very high. Site sometimes returns more than 10 000 entries with 1 request. */
         br.setLoadLimit(br.getLoadLimit() * 4);
+        synchronized (LOCK_429) {
+            final String hash = LOCK_429.get("hash");
+            final String solution = LOCK_429.get("solution");
+            if (StringUtils.isAllNotEmpty(hash, solution)) {
+                br.setCookie(DOMAIN, "hash429", hash);
+                br.setCookie(DOMAIN, "solution429", solution);
+            }
+        }
         return br;
     }
 

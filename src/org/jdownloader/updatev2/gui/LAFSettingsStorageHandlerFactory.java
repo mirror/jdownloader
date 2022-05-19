@@ -1,6 +1,7 @@
 package org.jdownloader.updatev2.gui;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Locale;
 
 import org.appwork.exceptions.WTFException;
@@ -10,6 +11,7 @@ import org.appwork.storage.config.StorageHandlerFactory;
 import org.appwork.storage.config.handler.DefaultFactoryInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
+import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
@@ -19,6 +21,11 @@ import org.appwork.utils.swing.dialog.Dialog;
 public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<LAFSettings> {
     private static boolean equals(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
+    }
+
+    public static void main(String[] args) throws IOException {
+        Application.setApplication(".jd_home");
+        SyntheticaHelper.init();
     }
 
     @Override
@@ -65,7 +72,7 @@ public class LAFSettingsStorageHandlerFactory implements StorageHandlerFactory<L
                         final KeyHandler<Object> keyH = ret.getKeyHandler(s.toLowerCase(Locale.ENGLISH));
                         final Object oldValue = prim.get(s, null);
                         if (keyH != null && !equals(oldValue, keyH.getDefaultValue())) {
-                            keyH.setValue(oldValue);
+                            keyH.setValueAutoConvert(oldValue);
                         }
                     } catch (Throwable e) {
                         LoggerFactory.getDefaultLogger().log(e);

@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,15 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -65,7 +57,17 @@ import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@]+|vk\\.cc/[A-Za-z0-9]+)" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -216,6 +218,19 @@ public class VKontakteRu extends PluginForDecrypt {
                 return super.addAll(c);
             }
         };
+        if (param.getCryptedUrl().matches("^https?://[^/]*/429\\.html.+")) {
+            // rewrite 429.html URLs
+            final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
+            String redirect429 = query.get("redirect429");
+            if (redirect429 != null) {
+                redirect429 = redirect429.replace("%3F", "?").replace("%26", "&");
+                redirect429 = URLHelper.parseLocation(new URL(param.getCryptedUrl()), redirect429);
+                decryptedLinks.add(createDownloadlink(redirect429));
+                return decryptedLinks;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         br.setFollowRedirects(true);
         /* Set settings */
         cfg = SubConfiguration.getConfig("vk.com");
@@ -723,9 +738,9 @@ public class VKontakteRu extends PluginForDecrypt {
             return;
         }
         try {
-            br.setFollowRedirects(false);
+            br.setFollowRedirects(true);
             // webui, youtube stuff within -raztoki20160817
-            VKontakteRuHoster.accessVideo(this.br, param.getCryptedUrl(), oid, id, listID);
+            VKontakteRuHoster.accessVideo(this, this.br, param.getCryptedUrl(), oid, id, listID);
             handleVideoErrors(br);
             String embeddedVideoURL = new Regex(PluginJSonUtils.unescape(br.toString()), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
             if (embeddedVideoURL != null) {
@@ -2458,6 +2473,7 @@ public class VKontakteRu extends PluginForDecrypt {
         // if false, we get page and continue!
         if (!ifr) {
             br.getPage(url);
+            VKontakteRuHoster.handleTooManyRequests(this, br);
             return;
         }
         // following code checks all redirects against conditions.
@@ -2467,17 +2483,20 @@ public class VKontakteRu extends PluginForDecrypt {
             String redirect = url;
             do {
                 br.getPage(redirect);
+                VKontakteRuHoster.handleTooManyRequests(this, br);
                 redirect = br.getRedirectLocation();
                 if (redirect != null) {
                     if (redirect.contains("act=security_check") || redirect.contains("login.vk.com/?role=fast")) {
                         if (siteHandleSecurityCheck(redirect)) {
                             br.getPage(url);
+                            VKontakteRuHoster.handleTooManyRequests(this, br);
                         } else {
                             throw new DecrypterException("Could not solve Security Questions");
                         }
                     } else {
                         // maybe multiple redirects before end outcome!
                         br.getPage(redirect);
+                        VKontakteRuHoster.handleTooManyRequests(this, br);
                     }
                 }
             } while ((redirect = br.getRedirectLocation()) != null && counter++ < 10);
