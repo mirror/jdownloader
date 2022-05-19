@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -9,14 +10,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,7 +22,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "https?://[a-z0-9]+\\.orf\\.at/(?:player|programm)/\\d+/[a-zA-Z0-9]+|https?://radiothek\\.orf\\.at/(podcasts/[a-z0-9]+/[a-z0-9\\-]+(/[a-z0-9\\-]+)?|[a-z0-9]+/\\d+/[a-zA-Z0-9]+)" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "https?://[a-z0-9]+\\.orf\\.at/(?:player|programm)/\\d+/[a-zA-Z0-9]+|https?://[a-z0-9]+\\.orf\\.at/artikel/\\d+/[a-zA-Z0-9]+|https?://radiothek\\.orf\\.at/(podcasts/[a-z0-9]+/[a-z0-9\\-]+(/[a-z0-9\\-]+)?|[a-z0-9]+/\\d+/[a-zA-Z0-9]+)" })
 public class OrfAt extends PluginForDecrypt {
     public OrfAt(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,23 +42,57 @@ public class OrfAt extends PluginForDecrypt {
     }
 
     private final String                         TYPE_OLD      = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                         TYPE_ARTICLE  = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
     private final String                         TYPE_NEW      = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
     private final String                         TYPE_PODCAST  = "https?://radiothek\\.orf\\.at/podcasts/([a-z0-9]+)/([a-z0-9\\-]+)(/([a-z0-9\\-]+))?";
     private final String                         API_BASE      = "https://audioapi.orf.at";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, String> CHANNEL_CACHE = new LinkedHashMap<String, String>() {
-                                                                   protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                                                                       return size() > 50;
-                                                                   };
-                                                               };
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 50;
+        };
+    };
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        if (param.getCryptedUrl().matches(TYPE_PODCAST)) {
+        if (param.getCryptedUrl().matches(TYPE_ARTICLE)) {
+            return this.crawlArticle(param);
+        } else if (param.getCryptedUrl().matches(TYPE_PODCAST)) {
             return this.crawlPodcasts(param);
         } else {
             return crawlBroadcasts(param);
         }
+    }
+
+    private ArrayList<DownloadLink> crawlArticle(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        final String title = br.getRegex("\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        final String oon_audioEntries[] = br.getRegex("<div class=\"oon-audio\"(.*?)\\s*</div>").getColumn(0);
+        if (oon_audioEntries.length > 0) {
+            for (final String oon_audioEntry : oon_audioEntries) {
+                final String url = new Regex(oon_audioEntry, "data-url\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+                if (url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final DownloadLink link = createDownloadlink(url);
+                link.setContentUrl(param.getCryptedUrl());
+                String name = getFileNameFromURL(new URL(url));
+                if (title != null) {
+                    name = title + "-" + name;
+                    fp.add(link);
+                }
+                link.setFinalFileName(name);
+                link.setProperty(DirectHTTP.FIXNAME, name);
+                link.setProperty(DirectHTTP.PROPERTY_REQUEST_TYPE, "GET");
+                ret.add(link);
+            }
+            return ret;
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private ArrayList<DownloadLink> crawlPodcasts(final CryptedLink param) throws Exception {
