@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,7 +29,10 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.NullInputStream;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
@@ -37,6 +41,7 @@ import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
@@ -54,6 +59,7 @@ public class SegmentDownloader extends DownloadInterface {
     private PluginException                         caughtPluginException;
     protected final Browser                         obr;
     protected final List<Segment>                   segments          = new ArrayList<Segment>();
+    protected Long                                  lastModified      = null;
 
     @Deprecated
     public static List<Segment> buildSegments(URL baseURL, String[] segments) {
@@ -198,6 +204,12 @@ public class SegmentDownloader extends DownloadInterface {
                 if (!externalDownloadStop()) {
                     try {
                         currentConnection = openSegmentConnection(segment);
+                        if (lastModified == null) {
+                            final Date last = TimeFormatter.parseDateString(currentConnection.getHeaderField("Last-Modified"));
+                            if (last != null) {
+                                lastModified = last.getTime();
+                            }
+                        }
                         segment.getChunkRange().setValidLoaded(true);
                         meteredThrottledInputStream.setInputStream(getInputStream(segment, currentConnection));
                         bytesWritten = onSegmentStart(outputStream, segment, currentConnection);
@@ -345,13 +357,37 @@ public class SegmentDownloader extends DownloadInterface {
         if (handleErrors(outputPartFile) == false) {
             return false;
         } else {
-            final boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
+            final boolean renameOkay = finalizeDownload(outputPartFile, outputCompleteFile, lastModified);
+            // last modofied date noch setzen
+            // final Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
+            // if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+            // /* set original lastModified timestamp */
+            // outputCompleteFile.setLastModified(last.getTime());
             if (!renameOkay) {
                 error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
                 return false;
             } else {
                 return true;
             }
+        }
+    }
+
+    protected boolean finalizeDownload(File outputPartFile, File outputCompleteFile, Long lastModified) throws Exception {
+        if (downloadable.rename(outputPartFile, outputCompleteFile)) {
+            try {
+                if (lastModified != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                    /* set original lastModified timestamp */
+                    outputCompleteFile.setLastModified(lastModified.longValue());
+                } else {
+                    /* set current timestamp as lastModified timestamp */
+                    outputCompleteFile.setLastModified(System.currentTimeMillis());
+                }
+            } catch (final Throwable ignore) {
+                LogSource.exception(logger, ignore);
+            }
+            return true;
+        } else {
+            return false;
         }
     }
 
