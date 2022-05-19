@@ -113,15 +113,16 @@ public class PreFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String regExTrafficLeft() {
+    protected String regExTrafficLeft(final Browser br) {
         /* 2019-07-03: Special */
-        String trafficleft = super.regExTrafficLeft();
+        String trafficleft = super.regExTrafficLeft(br);
         if (StringUtils.isEmpty(trafficleft)) {
+            final String src = this.getCorrectBR(br);
             /* 2019-07-03: Free Accounts: According to this place, 5 GB (per day?) but another place states 2 GB/day */
-            trafficleft = new Regex(correctedBR, "Traffic Remaining</td>\\s*?<td>\\s*([^<>\"]+)\\s*</td>").getMatch(0);
+            trafficleft = new Regex(src, "Traffic Remaining</td>\\s*?<td>\\s*([^<>\"]+)\\s*</td>").getMatch(0);
             if (StringUtils.isEmpty(trafficleft)) {
                 /* 2020-11-13 */
-                trafficleft = new Regex(correctedBR, "Traffic remaining</label></td>\\s*<td>([^<>\"]+)<").getMatch(0);
+                trafficleft = new Regex(src, "Traffic remaining</label></td>\\s*<td>([^<>\"]+)<").getMatch(0);
             }
         }
         return trafficleft;

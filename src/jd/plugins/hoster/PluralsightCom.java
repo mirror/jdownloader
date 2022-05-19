@@ -27,7 +27,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -253,9 +252,9 @@ public class PluralsightCom extends antiDDoSForHost {
                 throw new AccountUnavailableException("Account block protection, please wait!", 5 * 60 * 1000l);
             }
             login(account, false);
-            return fetchFileInformation(link, account);
+            return fetchFileInformation(link, account, false);
         } else {
-            return fetchFileInformation(link, null);
+            return fetchFileInformation(link, null, false);
         }
     }
 
@@ -313,20 +312,24 @@ public class PluralsightCom extends antiDDoSForHost {
             final PostRequest request;
             boolean resolutionExists = false;
             if (useAPIv3) {
+                params.put("boundedContext", "course");
                 params.put("clipId", clipID);
                 params.put("mediaType", "mp4");
                 params.put("quality", resolution);
                 params.put("online", true);
-                params.put("boundedContext", "course");
                 if (version != null) {
                     params.put("versionId", version);
                 } else {
                     params.put("versionId", "");
                 }
                 request = br.createPostRequest(WEBSITE_BASE_APP + "/video/clips/v3/viewclip", JSonStorage.toString(params));
-                request.setContentType("application/json;charset=UTF-8");
+                request.setContentType("application/json");
+                request.getHeaders().put("x-team", "video-services");
                 request.getHeaders().put("Origin", WEBSITE_BASE_APP);
                 getRequest(br, plugin, request);
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    throw new AccountRequiredException();
+                }
                 /*
                  * 2020-04-21: E.g.
                  * {"success":false,"error":{"message":"1280x720.mp4 encoding not found"},"meta":{"statusCode":404},"trace":[{"service":
@@ -438,7 +441,7 @@ public class PluralsightCom extends antiDDoSForHost {
         return getRequest(br, plugin, request);
     }
 
-    private AvailableStatus fetchFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus fetchFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
         if (storedDirecturl != null) {
             final Request checkStream = getRequest(br, this, br.createHeadRequest(storedDirecturl));
@@ -458,7 +461,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 con.disconnect();
             }
         }
-        if (Thread.currentThread() instanceof SingleDownloadController) {
+        if (isDownload) {
             return AvailableStatus.UNCHECKABLE;
         } else if (link.getKnownDownloadSize() == -1) {
             /* Only check for filesize if none has been set yet. */
@@ -542,7 +545,7 @@ public class PluralsightCom extends antiDDoSForHost {
             if (account != null) {
                 login(account, false);
             }
-            fetchFileInformation(link, account);
+            fetchFileInformation(link, account, true);
             String streamURL = null;
             if (StringUtils.isEmpty(streamURL)) {
                 streamURL = getStreamURL(br, this, link, null);

@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -30,11 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TakefileLink extends XFileSharingProBasic {
@@ -133,10 +133,11 @@ public class TakefileLink extends XFileSharingProBasic {
     }
 
     @Override
-    public String regExTrafficLeft() {
-        String trafficleft = super.regExTrafficLeft();
+    public String regExTrafficLeft(final Browser br) {
+        String trafficleft = super.regExTrafficLeft(br);
         if (StringUtils.isEmpty(trafficleft)) {
-            trafficleft = new Regex(correctedBR, "Traffic available today</TD></TR>\\s*?</thead>\\s*?<TR><TD><b>\\s*([^<>\"]+)\\s*</b><").getMatch(0);
+            final String src = this.getCorrectBR(br);
+            trafficleft = new Regex(src, "Traffic available today</TD></TR>\\s*?</thead>\\s*?<TR><TD><b>\\s*([^<>\"]+)\\s*</b><").getMatch(0);
         }
         return trafficleft;
     }
@@ -218,8 +219,8 @@ public class TakefileLink extends XFileSharingProBasic {
             final AccountInfo aiVip = new AccountInfo();
             logger.info("Double-checking for premium status");
             getPage("https://vip." + this.getHost() + this.getRelativeAccountInfoURL());
-            final String validUntilStr = new Regex(correctedBR, "class=\"acc_data\">(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
-            final String trafficLeftStr = regExTrafficLeft();
+            final String validUntilStr = new Regex(this.getCorrectBR(br), "class=\"acc_data\">(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
+            final String trafficLeftStr = regExTrafficLeft(br);
             if (trafficLeftStr != null) {
                 /* Need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
                 long trafficLeft = 0;

@@ -175,9 +175,10 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String regExTrafficLeft() {
+    protected String regExTrafficLeft(final Browser br) {
         /* 2019-11-03: Special */
-        final Regex trafficleft = new Regex(correctedBR, "<span>Traffic available</span>\\s*<div class=\"price\"><sup>([^<>]+)</sup>(-?\\d+)</div>");
+        final String src = this.getCorrectBR(br);
+        final Regex trafficleft = new Regex(src, "<span>Traffic available</span>\\s*<div class=\"price\"><sup>([^<>]+)</sup>(-?\\d+)</div>");
         String availabletraffic = null;
         final String trafficleftUnit = trafficleft.getMatch(0);
         final String trafficleftTmp = trafficleft.getMatch(1);
@@ -186,7 +187,7 @@ public class DdownloadCom extends XFileSharingProBasic {
         }
         if (availabletraffic == null) {
             /* Fallback to template handling */
-            availabletraffic = super.regExTrafficLeft();
+            availabletraffic = super.regExTrafficLeft(br);
         }
         return availabletraffic;
     }
