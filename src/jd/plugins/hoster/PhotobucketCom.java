@@ -101,7 +101,7 @@ public class PhotobucketCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         PhotobucketComAlbum.prepBr(br);
-        br.postPageRaw(PhotobucketComAlbum.API_BASE, "{\"operationName\":\"GetPublicImage\",\"variables\":{\"imageId\":\"" + PluginJSonUtils.escape(this.getFID(link)) + "\",\"password\":\"\"},\"query\":\"query GetPublicImage($imageId: String!, $password: String) {  getPublicImage(imageId: $imageId, password: $password) {    id    username    status    nsfw    title    image {      url      __typename    }    thumbnailImage {      url      width      height      __typename    }    originalImage {      url      width      height      __typename    }    description    userTags    clarifaiTags    uploadDate    dateTaken    originalFilename    isVideoType    albumName    albumId    livePhoto {      url      width      height      isLandscape      __typename    }    __typename  }}\"}");
+        br.postPageRaw(PhotobucketComAlbum.API_BASE, "{\"operationName\":\"GetPublicImage\",\"variables\":{\"imageId\":\"" + PluginJSonUtils.escape(fid) + "\",\"password\":\"\"},\"query\":\"query GetPublicImage($imageId: String!, $password: String) {  getPublicImage(imageId: $imageId, password: $password) {    id    username    status    nsfw    title    image {      url      __typename    }    thumbnailImage {      url      width      height      __typename    }    originalImage {      url      width      height      __typename    }    description    userTags    clarifaiTags    uploadDate    dateTaken    originalFilename    isVideoType    albumName    albumId    livePhoto {      url      width      height      isLandscape      __typename    }    __typename  }}\"}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -140,8 +140,14 @@ public class PhotobucketCom extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL)) {
             requestFileInformation(link);
             if (isVideo(link)) {
-                /* TODO: Obtain video streamingURL. */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.postPageRaw(PhotobucketComAlbum.API_BASE, "{\"operationName\":\"GetDirectVideoLinks\",\"variables\":{\"ids\":[\"" + PluginJSonUtils.escape(this.getFID(link)) + "\"]},\"query\":\"query GetDirectVideoLinks($ids: [String]!, $password: String) {  getDirectVideoLinks(ids: $ids, password: $password)}\"}");
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                PhotobucketComAlbum.handleErrors(entries);
+                final String directurl = JavaScriptEngineFactory.walkJson(entries, "data/getDirectVideoLinks/{0}").toString();
+                if (StringUtils.isEmpty(directurl)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                link.setProperty(PROPERTY_DIRECTURL, directurl);
             }
             if (!link.hasProperty(PROPERTY_DIRECTURL)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
