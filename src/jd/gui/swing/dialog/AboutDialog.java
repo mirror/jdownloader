@@ -26,6 +26,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryUsage;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -183,7 +184,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             stats.add(createLink(TimeFormatter.formatMilliSeconds(Time.systemIndependentCurrentJVMTimeMillis() - SecondLevelLaunch.startup, 0)));
             try {
                 stats.add(new JLabel("Java:"), "");
-                java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+                final java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
                 ExtButton comp;
                 stats.add(comp = createLink(System.getProperty("java.vendor") + " - " + System.getProperty("java.runtime.name") + " - " + System.getProperty("java.version") + (Application.is64BitJvm() ? "(64bit/" : "(32bit/") + CrossSystem.getARCHFamily() + ")"));
                 comp.addActionListener(new ActionListener() {
@@ -235,9 +236,9 @@ public class AboutDialog extends AbstractDialog<Integer> {
                         sb.append("Pool:").append(memoryPoolMXBean.getName()).append("\r\n");
                         sb.append("Type:").append(memoryPoolMXBean.getType()).append("\r\n");
                         sb.append("Managed by:").append(Arrays.toString(memoryPoolMXBean.getMemoryManagerNames())).append("\r\n");
-                        memory = memoryPoolMXBean.getCollectionUsage();
-                        if (memory != null) {
-                            sb.append("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax()));
+                        final MemoryUsage collectionUsage = memoryPoolMXBean.getCollectionUsage();
+                        if (collectionUsage != null) {
+                            sb.append("Usage: " + SizeFormatter.formatBytes(collectionUsage.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(collectionUsage.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(collectionUsage.getMax()));
                         }
                         sb.append("\r\n");
                     }
