@@ -317,7 +317,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * <b> Enabling this leads to at least one additional http-request! </b> <br />
      * Enable this for websites using <a href="https://sibsoft.net/xvideosharing.html">XVideosharing</a>. <br />
      * Demo-Website: <a href="http://xvideosharing.com">xvideosharing.com</a> DO NOT CALL THIS DIRECTLY - ALWAYS USE
-     * internal_isVideohosterEmbed()!!!<br />
+     * {@link #internal_isVideohosterEmbed()}!!!<br />
      *
      * @return true: Try to find final downloadlink via '/embed-<fuid>.html' request. <br />
      *         false: Skips this part. <br />
@@ -329,13 +329,17 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Checks whether current html code contains embed code for current fuid which would indicate that we have a videohost. */
     protected boolean isVideohosterEmbedHTML(final Browser br) {
-        return new Regex(correctedBR, "/embed-" + this.getFUIDFromURL(this.getDownloadLink()) + "\\.html").matches();
+        if (new Regex(correctedBR, "/embed-" + this.getFUIDFromURL(this.getDownloadLink()) + "\\.html").matches()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
      * Keep in mind: Most videohosters will allow embedding their videos thus a "video filename" should be enforced but they may also
-     * sometimes NOT support embedding videos while a "video filename" should still be enforced - then this trigger might be useful! </br DO
-     * NOT CALL THIS FUNCTION DIRECTLY! Use 'internal_isVideohoster_enforce_video_filename' instead!!
+     * sometimes NOT support embedding videos while a "video filename" should still be enforced - then this trigger might be useful! </br>
+     * DO NOT CALL THIS FUNCTION DIRECTLY! Use {@link #internal_isVideohoster_enforce_video_filename()} instead!!
      *
      * @return true: Implies that the hoster only allows video-content to be uploaded. Enforces .mp4 extension for all URLs. Also sets
      *         mime-hint via CompiledFiletypeFilter.VideoExtensions.MP4. <br />
@@ -360,12 +364,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * See also function getFilesizeViaAvailablecheckAlt! <br />
+     * See also function {@link #getFilesizeViaAvailablecheckAlt()} ! <br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b> <br/>
-     * <b>DO NOT CALL THIS DIRECTLY, USE internal_supports_availablecheck_alt </b>
+     * <b>DO NOT CALL THIS DIRECTLY, USE {@link #internal_supports_availablecheck_alt()} </b>
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call as an alternative source for filesize-parsing.<br />
-     *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt. <br />
+     * @return true: Implies that website supports {@link #getFilesizeViaAvailablecheckAlt()} call as an alternative source for
+     *         filesize-parsing.<br />
+     *         false: Implies that website does NOT support {@link #getFilesizeViaAvailablecheckAlt()}. <br />
      *         default: true
      */
     protected boolean supports_availablecheck_alt() {
@@ -373,11 +378,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Only works when getFilesizeViaAvailablecheckAlt returns true! See getFilesizeViaAvailablecheckAlt!
+     * Only works when {@link #getFilesizeViaAvailablecheckAlt(Browser, DownloadLink))} returns true! See
+     * {@link #getFilesizeViaAvailablecheckAlt()}!
      *
-     * @return true: Implies that website supports getFilesizeViaAvailablecheckAlt call without Form-handling (one call less than usual) as
-     *         an alternative source for filesize-parsing. <br />
-     *         false: Implies that website does NOT support getFilesizeViaAvailablecheckAlt without Form-handling. <br />
+     * @return true: Implies that website supports {@link #getFilesizeViaAvailablecheckAlt(Browser, DownloadLink))} call without
+     *         Form-handling (one call less than usual) as an alternative source for filesize-parsing. <br />
+     *         false: Implies that website does NOT support {@link #getFilesizeViaAvailablecheckAlt(Browser, DownloadLink))} without
+     *         Form-handling. <br />
      *         default: true
      */
     protected boolean supports_availablecheck_filesize_alt_fast() {
@@ -399,12 +406,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * See also function getFnameViaAbuseLink!<br />
+     * See also function {@link #getFnameViaAbuseLink()}!<br />
      * <b> Enabling this will eventually lead to at least one additional website-request! </b> <br/>
-     * DO NOT CALL THIS DIRECTLY - ALWAYS USE internal_supports_availablecheck_filename_abuse()!!!<br />
+     * DO NOT CALL THIS DIRECTLY - ALWAYS USE {@link #internal_supports_availablecheck_filename_abuse()}!!<br />
      *
-     * @return true: Implies that website supports getFnameViaAbuseLink call as an alternative source for filename-parsing. <br />
-     *         false: Implies that website does NOT support getFnameViaAbuseLink. <br />
+     * @return true: Implies that website supports {@link #getFnameViaAbuseLink() } call as an alternative source for filename-parsing.
+     *         <br />
+     *         false: Implies that website does NOT support {@link #getFnameViaAbuseLink()}. <br />
      *         default: true
      */
     protected boolean supports_availablecheck_filename_abuse() {
@@ -414,8 +422,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * @return true: Try to RegEx filesize from normal html code. If this fails due to static texts on a website or even fake information,
      *         all links of a filehost may just get displayed with the same/wrong filesize. <br />
-     *         false: Do not RegEx filesize from normal html code. Plugin will still be able to find filesize if supports_availablecheck_alt
-     *         or supports_availablecheck_alt_fast is enabled (=default)! <br />
+     *         false: Do not RegEx filesize from normal html code. </br>
+     *         Plugin will still be able to find filesize if {@link #supports_availablecheck_alt()} or
+     *         {@link #supports_availablecheck_alt_fast()} is enabled (=default)! <br />
      *         default: true
      */
     protected boolean supports_availablecheck_filesize_html() {
@@ -433,7 +442,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * 4. Is FAST - if it is not fast, this will noticably slow down the linkchecking procedure! <br />
      * 5. Allows using a generated direct-URL at least two times.
      *
-     * @return true: requestFileInformation will use '/embed' to do an additional offline-check and find the filesize. <br />
+     * @return true: {@link #requestFileInformation(DownloadLink)} will use '/embed' to do an additional offline-check and find the
+     *         filesize. <br />
      *         false: Disable this.<br />
      *         default: false
      */
@@ -841,17 +851,17 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         final Browser altbr = br.cloneBrowser();
         if (isPremiumOnlyURL(this.br)) {
             /*
-             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
+             * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/offline.
              * There are 2 alternative ways to get this information anyways!
              */
             logger.info("PREMIUMONLY linkcheck: Trying alternative linkcheck");
             /* Find filename */
             if (this.internal_supports_availablecheck_filename_abuse()) {
-                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
             }
             /* Find filesize */
             if (this.internal_supports_availablecheck_alt()) {
-                getFilesizeViaAvailablecheckAlt(fileInfo, altbr, link);
+                getFilesizeViaAvailablecheckAlt(altbr, link);
             }
         } else {
             /* Normal handling */
@@ -865,17 +875,23 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                  */
                 if (!StringUtils.isEmpty(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && this.internal_supports_availablecheck_filename_abuse()) {
                     logger.warning("filename length is larrrge");
-                    fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
+                    final String betterFilename = this.getFnameViaAbuseLink(altbr, link);
+                    if (betterFilename != null) {
+                        fileInfo[0] = betterFilename;
+                    }
                 } else if (StringUtils.isEmpty(fileInfo[0]) && this.internal_supports_availablecheck_filename_abuse()) {
                     /* We failed to find the filename via html --> Try getFnameViaAbuseLink as workaround */
                     logger.info("Failed to find filename, trying getFnameViaAbuseLink");
-                    fileInfo[0] = this.getFnameViaAbuseLink(altbr, link, fileInfo[0]);
+                    final String betterFilename = this.getFnameViaAbuseLink(altbr, link);
+                    if (betterFilename != null) {
+                        fileInfo[0] = betterFilename;
+                    }
                 }
             }
             /* Filesize fallback */
             if (StringUtils.isEmpty(fileInfo[1]) && this.internal_supports_availablecheck_alt()) {
                 /* Failed to find filesize? Try alternative way! */
-                getFilesizeViaAvailablecheckAlt(fileInfo, altbr, link);
+                getFilesizeViaAvailablecheckAlt(altbr, link);
             }
         }
         processFileInfo(fileInfo, altbr, link);
@@ -1450,12 +1466,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    protected String getFnameViaAbuseLink(final Browser br, final DownloadLink dl, final String fallbackFilename) throws Exception {
-        getPage(br, getMainPage() + "/?op=report_file&id=" + this.getFUIDFromURL(dl), false);
+    protected String getFnameViaAbuseLink(final Browser br, final DownloadLink link) throws Exception {
+        getPage(br, getMainPage() + "/?op=report_file&id=" + this.getFUIDFromURL(link), false);
         /*
          * 2019-07-10: ONLY "No such file" as response might always be wrong and should be treated as a failure! Example: xvideosharing.com
          */
-        final boolean fnameViaAbuseUnsupported = br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || !br.getURL().contains("report_file") || br.toString().trim().equals("No such file");
         if (br.containsHTML("(?i)>\\s*No such file<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -1465,20 +1480,21 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             return filename;
         } else {
             logger.info("Failed to find filename via report_file - using fallbackFilename");
+            final boolean fnameViaAbuseUnsupported = br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || !br.getURL().contains("report_file") || br.toString().trim().equals("No such file");
             if (fnameViaAbuseUnsupported) {
                 logger.info("Seems like report_file availablecheck seems not to be supported by this host");
                 final SubConfiguration config = this.getPluginConfig();
                 config.setProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, System.currentTimeMillis());
                 config.setProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_VERSION, getPluginVersionHash());
             }
-            return fallbackFilename;
+            return null;
         }
     }
 
-    /** Part of getFnameViaAbuseLink(). */
+    /** Part of {@link #getFnameViaAbuseLink() getFnameViaAbuseLink} */
     public String regexFilenameAbuse(final Browser br) {
         String filename = null;
-        final String filename_src = br.getRegex("<b>Filename\\s*:?\\s*<[^\n]+</td>").getMatch(-1);
+        final String filename_src = br.getRegex("(?i)<b>Filename\\s*:?\\s*<[^\n]+</td>").getMatch(-1);
         if (filename_src != null) {
             filename = new Regex(filename_src, ">([^>]+)</td>$").getMatch(0);
         }
@@ -1488,12 +1504,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (filename == null) {
             /* 2021-05-12: New XFS style e.g. userupload.net */
-            filename = br.getRegex("<label>\\s*Filename\\s*</label>\\s*<input[^>]*class=\"form-control form-control-plaintext\"[^>]*value=\"([^\"]+)\"").getMatch(0);
+            filename = br.getRegex("(?i)<label>\\s*Filename\\s*</label>\\s*<input[^>]*class=\"form-control form-control-plaintext\"[^>]*value=\"([^\"]+)\"").getMatch(0);
         }
         return filename;
     }
 
-    /** Only use this if it is made sure that the host we're working with is an imagehoster (ximagesharing)!! */
+    /** Only use this if it is made sure that the host we're working with is an imagehoster ("ximagesharing")!! */
     public String regexImagehosterFilename(final Browser br) {
         return br.getRegex("class=\"pic\"[^>]*alt=\"([^<>\"]*?)\"").getMatch(0);
     }
@@ -1511,7 +1527,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * @return isOnline
      * @throws IOException
      */
-    protected boolean getFilesizeViaAvailablecheckAlt(final String[] fileInfo, final Browser br, final DownloadLink link) throws PluginException, IOException {
+    protected boolean getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException, IOException {
         logger.info("Trying getFilesizeViaAvailablecheckAlt");
         requestFileInformationWebsiteMassLinkcheckerSingle(link);
         if (link.isAvailabilityStatusChecked()) {
@@ -3337,8 +3353,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
 
     @Deprecated
     /** TODO: Find out where this is used. Lifetime accounts are not part of usual XFS hosts! */
-    protected boolean is_lifetime_account() {
-        return new Regex(correctedBR, "(?i)>\\s*Premium account expire\\s*</TD><TD><b>Lifetime</b>").matches();
+    protected boolean is_lifetime_account(final Browser br) {
+        return br.getRegex("(?i)>\\s*Premium account expire\\s*</TD><TD><b>Lifetime</b>").matches();
     }
 
     @Override
@@ -3440,7 +3456,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
          * trafficleft is usually not given via API so we'll have to check for it via website. Also we do not trsut 'unlimited traffic' via
          * API yet.
          */
-        String trafficLeftStr = regExTrafficLeft();
+        String trafficLeftStr = regExTrafficLeft(br);
         /* Example non english: brupload.net */
         final boolean userHasUnlimitedTraffic = trafficLeftStr != null && trafficLeftStr.matches(".*?(nlimited|Ilimitado).*?");
         if (trafficLeftStr != null && !userHasUnlimitedTraffic && !trafficLeftStr.equalsIgnoreCase("Mb")) {
@@ -3474,7 +3490,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             /* premium users the Mb value isn't provided for some reason... */
             ai.setUsedSpace(space[0] + "Mb");
         }
-        if (supports_lifetime_account() && is_lifetime_account()) {
+        if (supports_lifetime_account() && is_lifetime_account(br)) {
             ai.setValidUntil(-1);
             setAccountLimitsByType(account, AccountType.LIFETIME);
         } else {
@@ -3765,20 +3781,21 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Tries to find available traffic-left value inside html code. */
-    protected String regExTrafficLeft() {
+    protected String regExTrafficLeft(final Browser br) {
         /* 2020-30-09: progressbar with tooltip */
-        String availabletraffic = new Regex(this.correctedBR, "Traffic available(?:\\s*today)?\\s*[^<>]*:?(?:<[^>]*>)?</TD>\\s*<TD[^>]*>\\s*<div[^>]*title\\s*=\\s*\"\\s*([^<>\"']+)\\s*available").getMatch(0);
+        final String src = this.getCorrectBR(br);
+        String availabletraffic = new Regex(src, "Traffic available(?:\\s*today)?\\s*[^<>]*:?(?:<[^>]*>)?</TD>\\s*<TD[^>]*>\\s*<div[^>]*title\\s*=\\s*\"\\s*([^<>\"']+)\\s*available").getMatch(0);
         if (StringUtils.isEmpty(availabletraffic)) {
             /* Traffic can also be negative! */
-            availabletraffic = new Regex(this.correctedBR, "Traffic available(?:\\s*today)?\\s*[^<>]*:?(?:<[^>]*>)?</TD>\\s*<TD[^>]*>\\s*(?:<b[^>]*>)?\\s*([^<>\"']+)").getMatch(0);
+            availabletraffic = new Regex(src, "Traffic available(?:\\s*today)?\\s*[^<>]*:?(?:<[^>]*>)?</TD>\\s*<TD[^>]*>\\s*(?:<b[^>]*>)?\\s*([^<>\"']+)").getMatch(0);
             if (StringUtils.isEmpty(availabletraffic)) {
                 /* 2019-02-11: For newer XFS versions */
-                availabletraffic = new Regex(this.correctedBR, ">\\s*Traffic available(?:\\s*today)?\\s*</div>\\s*<div class=\"txt\\d+\">\\s*([^<>\"]+)\\s*<").getMatch(0);
+                availabletraffic = new Regex(src, ">\\s*Traffic available(?:\\s*today)?\\s*</div>\\s*<div class=\"txt\\d+\">\\s*([^<>\"]+)\\s*<").getMatch(0);
             }
             if (StringUtils.isEmpty(availabletraffic)) {
                 // wrzucajpliki.pl
                 // <span>Traffic available</span><div class="price"><sup>MB</sup>102400</div>
-                final String trafficLeft = new Regex(this.correctedBR, ">\\s*Traffic available(?:\\s*today)?\\s*</[^>]*>\\s*<div class=\"(?:txt\\d+|price)\">\\s*(.*?)\\s*</div").getMatch(0);
+                final String trafficLeft = new Regex(src, ">\\s*Traffic available(?:\\s*today)?\\s*</[^>]*>\\s*<div class=\"(?:txt\\d+|price)\">\\s*(.*?)\\s*</div").getMatch(0);
                 final String unit = new Regex(trafficLeft, "<sup>\\s*([TGMKB]+)\\s*</sup>").getMatch(0);
                 final String left = new Regex(trafficLeft, "</sup>\\s*([\\-0-9\\.]+)").getMatch(0);
                 if (unit != null && left != null) {

@@ -37,6 +37,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -49,6 +50,8 @@ public class SubyShareCom extends XFileSharingProBasic {
         /* 2021-03-08: Trying to avoid running into "/checkddos.php" */
         this.setStartIntervall(10 * 1000l);
     }
+
+    private final String PROPERTY_FAKE_OFFLINE_STATUS = "fake_offline_status";
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
@@ -75,6 +78,37 @@ public class SubyShareCom extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        try {
+            final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
+            link.removeProperty(PROPERTY_FAKE_OFFLINE_STATUS);
+            return status;
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() != LinkStatus.ERROR_FILE_NOT_FOUND) {
+                /* Some other Exception happened -> Forward it */
+                throw e;
+            }
+            /* Check if the file is really offline */
+            logger.info("Looks like file is offline --> Checking if it really is");
+            final String filename = this.getFnameViaAbuseLink(br, link); // Throws exception if file is offline
+            if (filename != null) {
+                link.setName(filename);
+            }
+            link.setProperty(PROPERTY_FAKE_OFFLINE_STATUS, true);
+            logger.info("File is not offline but GEO-blocked");
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    public String regexFilenameAbuse(final Browser br) {
+        String filename = super.regexFilenameAbuse(br);
+        if (filename == null) {
+            filename = br.getRegex("(?i)>\\s*Filename\\s*</label>\\s*<[^>]*>\\s*<p class=\"form-control-static\"[^>]*>([^<]+)<").getMatch(0);
+        }
+        return filename;
     }
 
     @Override
@@ -124,13 +158,13 @@ public class SubyShareCom extends XFileSharingProBasic {
     protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         super.checkErrors(br, correctedBR, link, account, checkAll);
         /* 2019-07-08: Special */
-        if (new Regex(correctedBR, "Sorry\\s*,\\s*we do not support downloading from Dedicated servers|Please download from your PC without using any above services|If this is our mistake\\s*,\\s*please contact").matches()) {
+        if (new Regex(correctedBR, "(?i)Sorry\\s*,\\s*we do not support downloading from Dedicated servers|Please download from your PC without using any above services|If this is our mistake\\s*,\\s*please contact").matches()) {
             if (account != null) {
                 throw new AccountUnavailableException("VPN download prohibited by this filehost", 15 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "VPN download prohibited by this filehost");
             }
-        } else if (new Regex(correctedBR, ">\\s*The owner of this file blocked you to download it").matches()) {
+        } else if (new Regex(correctedBR, "(?i)>\\s*The owner of this file blocked you to download it").matches()) {
             /*
              * 2020-07-17: This may sometimes happen in premium mode - user is then supposed to contact the uploader to ask for permission
              * to download the file (WTF?!)
@@ -154,6 +188,9 @@ public class SubyShareCom extends XFileSharingProBasic {
         /* First bring up saved final links */
         String dllink = checkDirectLink(link, account);
         if (StringUtils.isEmpty(dllink)) {
+            if (link.hasProperty(PROPERTY_FAKE_OFFLINE_STATUS)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "URL is referer protected or offline");
+            }
             requestFileInformationWebsite(link, account, true);
             int download1counter = 0;
             final int download1max = 1;
@@ -360,11 +397,12 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String regExTrafficLeft() {
+    protected String regExTrafficLeft(final Browser br) {
         /* 2018-07-19: Special */
-        String trafficleftStr = super.regExTrafficLeft();
+        String trafficleftStr = super.regExTrafficLeft(br);
         if (StringUtils.isEmpty(trafficleftStr)) {
-            trafficleftStr = new Regex(correctedBR, "Usable Bandwidth\\s*<span class=\"[^\"]+\">\\s*(\\d+(?:\\.\\d{1,2})? [A-Za-z]{2,5}) / [^<]+<").getMatch(0);
+            final String src = this.getCorrectBR(br);
+            trafficleftStr = new Regex(src, "(?i)Usable Bandwidth\\s*<span class=\"[^\"]+\">\\s*(\\d+(?:\\.\\d{1,2})? [A-Za-z]{2,5}) / [^<]+<").getMatch(0);
         }
         return trafficleftStr;
     }
@@ -374,7 +412,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         /* 2020-02-17: Special */
         boolean pwprotected = super.isPasswordProtectedHTML(br, pwForm);
         if (!pwprotected) {
-            pwprotected = br.containsHTML("><b>Password</b>");
+            pwprotected = br.containsHTML("(?i)><b>Password</b>");
         }
         return pwprotected;
     }
@@ -407,7 +445,8 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     private void handleAntiDdosChallenge(final Browser br) throws PluginException, IOException {
-        if (br.getURL().contains("/checkddos.php")) {
+        final String checkddosPage = "/checkddos.php";
+        if (br.getURL().contains(checkddosPage)) {
             /* 2021-03-08 */
             // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Antiddos check triggered", 2 * 60 * 1000l);
             final Form form = br.getFormbyProperty("id", "checkDDOS");
@@ -416,7 +455,7 @@ public class SubyShareCom extends XFileSharingProBasic {
             } else if (!form.hasInputFieldByName("b")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String calcChallenge = br.getRegex("Verify\\s*:\\s*</span>\\s*<strong>([0-9\\-\\+\\*x ]+)=\\?</strong>").getMatch(0);
+            String calcChallenge = br.getRegex("(?i)Verify\\s*:\\s*</span>\\s*<strong>([0-9\\-\\+\\*x ]+)=\\?</strong>").getMatch(0);
             calcChallenge = calcChallenge.trim().toLowerCase(Locale.ENGLISH);
             /* E.g. "3 x 3" -> "3 * 3" */
             calcChallenge = calcChallenge.replace("x", "*");
@@ -431,12 +470,18 @@ public class SubyShareCom extends XFileSharingProBasic {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
             br.submitForm(form);
-            if (br.getURL().contains("/checkddos.php")) {
+            if (br.getURL().contains(checkddosPage)) {
                 logger.warning("Failed to solve challenge(?)");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 logger.info("Checkddos challenge solved successfully");
             }
         }
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        /* Set this to false to avoid it being called multiple times. */
+        return false;
     }
 }

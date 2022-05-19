@@ -21,6 +21,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,11 +34,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ElitefileNet extends XFileSharingProBasic {
@@ -193,9 +193,9 @@ public class ElitefileNet extends XFileSharingProBasic {
          * trafficleft is usually not given via API so we'll have to check for it via website. Also we do not trsut 'unlimited traffic' via
          * API yet.
          */
-        String trafficLeftStr = regExTrafficLeft();
+        String trafficLeftStr = regExTrafficLeft(br);
         /* Example non english: brupload.net */
-        final boolean userHasUnlimitedTraffic = trafficLeftStr != null && trafficLeftStr.matches(".*?(nlimited|Ilimitado).*?");
+        final boolean userHasUnlimitedTraffic = trafficLeftStr != null && trafficLeftStr.matches("(?i).*?(nlimited|Ilimitado).*?");
         if (trafficLeftStr != null && !userHasUnlimitedTraffic && !trafficLeftStr.equalsIgnoreCase("Mb")) {
             trafficLeftStr = Encoding.htmlDecode(trafficLeftStr);
             trafficLeftStr.trim();
@@ -208,7 +208,7 @@ public class ElitefileNet extends XFileSharingProBasic {
                 trafficLeft = SizeFormatter.getSize(trafficLeftStr);
             }
             /* 2019-02-19: Users can buy additional traffic packages: Example(s): subyshare.com */
-            final String usableBandwidth = br.getRegex("Usable Bandwidth\\s*<span[^>]*>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
+            final String usableBandwidth = br.getRegex("(?i)Usable Bandwidth\\s*<span[^>]*>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
             if (usableBandwidth != null) {
                 trafficLeft = Math.max(trafficLeft, SizeFormatter.getSize(usableBandwidth));
             }

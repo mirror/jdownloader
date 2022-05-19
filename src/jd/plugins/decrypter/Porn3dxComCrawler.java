@@ -16,8 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -56,18 +58,18 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
             /* 2022-02-08 */
             authorSlug = br.getRegex("class=\"avatar-link\" href=\"https?://[^/]+/([^/\"]+)\"").getMatch(0);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        if (authorSlug != null && titleSlug != null) {
+            fp.setName(authorSlug + " - " + titleSlug);
+        } else if (titleSlug != null) {
+            fp.setName(titleSlug);
+        } else {
+            /* Fallback */
+            fp.setName(postID);
+        }
         final String[] newEmbedURLs = br.getRegex("(https?://iframe\\.mediadelivery\\.net/embed/[^\"]+)\"").getColumn(0);
         if (newEmbedURLs.length > 0) {
             /* 2022-02-08 */
-            final FilePackage fp = FilePackage.getInstance();
-            if (authorSlug != null && titleSlug != null) {
-                fp.setName(authorSlug + " - " + titleSlug);
-            } else if (titleSlug != null) {
-                fp.setName(titleSlug);
-            } else {
-                /* Fallback */
-                fp.setName(postID);
-            }
             int index = 0;
             for (final String newEmbedURL : newEmbedURLs) {
                 final DownloadLink dl = this.createDownloadlink(newEmbedURL);
@@ -92,20 +94,36 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
             /* Self-embedded video hosted most likely on tube.porn3dx.com (peertube instance). */
             decryptedLinks.add(createDownloadlink(embedURL));
         } else {
-            final String imageURL = br.getRegex("(https?://media\\.[^/]+/post/\\d+/large\\.[a-z]+)").getMatch(0);
-            if (imageURL == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final DownloadLink link = this.createDownloadlink(imageURL);
+            final String filenameBase;
             if (authorSlug != null && titleSlug != null) {
-                link.setFinalFileName(authorSlug + "_" + postID + "_" + titleSlug + Plugin.getFileNameExtensionFromString(imageURL));
+                filenameBase = authorSlug + "_" + postID + "_" + titleSlug;
             } else if (titleSlug != null) {
-                link.setFinalFileName(postID + "_" + titleSlug + Plugin.getFileNameExtensionFromString(imageURL));
+                filenameBase = postID + "_" + titleSlug;
             } else {
-                link.setFinalFileName(postID + Plugin.getFileNameExtensionFromString(imageURL));
+                filenameBase = postID;
             }
-            link.setAvailable(true);
-            decryptedLinks.add(link);
+            final String[] imageURLs = br.getRegex("data-full-url=\"(https?://[^/]+/post/\\d+/[a-f0-9]+\\.jpg)\"").getColumn(0);
+            final int padLength = StringUtils.getPadLength(imageURLs.length);
+            int counter = 1;
+            for (final String imageURL : imageURLs) {
+                final DownloadLink image = this.createDownloadlink(imageURL);
+                image.setFinalFileName(filenameBase + "_" + String.format(Locale.US, "%0" + padLength + "d", counter) + ".jpg");
+                image.setAvailable(true);
+                image._setFilePackage(fp);
+                decryptedLinks.add(image);
+                counter++;
+            }
+            final String imageURLLarge = br.getRegex("(https?://media\\.[^/]+/post/\\d+/large\\.[a-z]+)").getMatch(0);
+            if (imageURLs.length == 0 && imageURLLarge != null) {
+                final DownloadLink image = this.createDownloadlink(imageURLLarge);
+                image.setFinalFileName(filenameBase + Plugin.getFileNameExtensionFromString(imageURLLarge));
+                image.setAvailable(true);
+                image._setFilePackage(fp);
+                decryptedLinks.add(image);
+            }
+        }
+        if (decryptedLinks.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return decryptedLinks;
     }

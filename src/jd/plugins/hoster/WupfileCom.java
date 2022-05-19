@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WupfileCom extends XFileSharingProBasic {
@@ -103,21 +104,22 @@ public class WupfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean is_lifetime_account() {
+    protected boolean is_lifetime_account(final Browser br) {
         /* 2020-04-28: Special: Handle Premium traffic accounts without expire-date as lifetime. */
-        return new Regex(correctedBR, "Premium traffic remaining\\s*<").matches();
+        return br.getRegex("(?i)Premium traffic remaining\\s*<").matches();
     }
 
     @Override
-    protected String regExTrafficLeft() {
-        String availabletraffic = super.regExTrafficLeft();
+    protected String regExTrafficLeft(final Browser br) {
+        String availabletraffic = super.regExTrafficLeft(br);
+        final String src = this.getCorrectBR(br);
         if (availabletraffic == null) {
             /* For premium/lifetime accounts */
-            availabletraffic = new Regex(this.correctedBR, "Traffic remaining\\s*:\\s*</TD><TD><b>([^<>\"]+)</b>").getMatch(0);
+            availabletraffic = new Regex(src, "Traffic remaining\\s*:\\s*</TD><TD><b>([^<>\"]+)</b>").getMatch(0);
         }
         if (availabletraffic == null) {
             /* Foe free accounts */
-            availabletraffic = new Regex(this.correctedBR, "value=\"([^<>\"]+)\"> </b>\\s*<a class=\"profile-userbuttons\" href=\\?op=ex_traffic").getMatch(0);
+            availabletraffic = new Regex(src, "value=\"([^<>\"]+)\"> </b>\\s*<a class=\"profile-userbuttons\" href=\\?op=ex_traffic").getMatch(0);
         }
         return availabletraffic;
     }

@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -34,10 +38,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HotlinkCc extends XFileSharingProBasic {
@@ -255,10 +255,11 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    public String regExTrafficLeft() {
-        String trafficleft = super.regExTrafficLeft();
+    public String regExTrafficLeft(final Browser br) {
+        String trafficleft = super.regExTrafficLeft(br);
         if (StringUtils.isEmpty(trafficleft)) {
-            trafficleft = new Regex(correctedBR, "Traffic available today</TD></TR>\\s*?</thead>\\s*?<TR><TD><b>\\s*([^<>\"]+)\\s*</b><").getMatch(0);
+            final String src = this.getCorrectBR(br);
+            trafficleft = new Regex(src, "Traffic available today</TD></TR>\\s*?</thead>\\s*?<TR><TD><b>\\s*([^<>\"]+)\\s*</b><").getMatch(0);
         }
         return trafficleft;
     }
