@@ -75,19 +75,20 @@ public class TiktokCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
-    private String              dllink                 = null;
-    public static final String  PROPERTY_DIRECTURL     = "directurl";
-    public static final String  PROPERTY_USERNAME      = "username";
-    public static final String  PROPERTY_USER_ID       = "user_id";
-    public static final String  PROPERTY_VIDEO_ID      = "videoid";
-    public static final String  PROPERTY_DATE          = "date";
-    public static final String  PROPERTY_DESCRIPTION   = "description";
-    public static final String  PROPERTY_HASHTAGS      = "hashtags";
-    public static final String  PROPERTY_LIKE_COUNT    = "like_count";
-    public static final String  PROPERTY_PLAY_COUNT    = "play_count";
-    public static final String  PROPERTY_SHARE_COUNT   = "share_count";
-    public static final String  PROPERTY_COMMENT_COUNT = "comment_count";
-    private static final String TYPE_VIDEO             = "https?://[^/]+/(@[^/]+)/video/(\\d+).*?";
+    private String              dllink                             = null;
+    public static final String  PROPERTY_DIRECTURL                 = "directurl";
+    public static final String  PROPERTY_USERNAME                  = "username";
+    public static final String  PROPERTY_USER_ID                   = "user_id";
+    public static final String  PROPERTY_VIDEO_ID                  = "videoid";
+    public static final String  PROPERTY_DATE                      = "date";
+    public static final String  PROPERTY_DATE_LAST_MODIFIED_HEADER = "date_last_modified_header";
+    public static final String  PROPERTY_DESCRIPTION               = "description";
+    public static final String  PROPERTY_HASHTAGS                  = "hashtags";
+    public static final String  PROPERTY_LIKE_COUNT                = "like_count";
+    public static final String  PROPERTY_PLAY_COUNT                = "play_count";
+    public static final String  PROPERTY_SHARE_COUNT               = "share_count";
+    public static final String  PROPERTY_COMMENT_COUNT             = "comment_count";
+    private static final String TYPE_VIDEO                         = "https?://[^/]+/(@[^/]+)/video/(\\d+).*?";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -114,19 +115,16 @@ public class TiktokCom extends PluginForHost {
         }
         link.setProperty(PROPERTY_VIDEO_ID, fid);
         if (!link.isNameSet()) {
+            /* Fallback-filename */
             link.setName(fid + ".mp4");
         }
-        String username = null;
-        if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
-            username = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0);
-        } else {
+        if (!link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
             /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL. */
             br.setFollowRedirects(false);
             br.getPage("https://m.tiktok.com/v/" + fid + ".html");
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
-                username = new Regex(redirect, TYPE_VIDEO).getMatch(0);
-                if (username == null) {
+                if (!redirect.matches(TYPE_VIDEO)) {
                     /* Redirect to unsupported URL -> Most likely mainpage -> Offline! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -134,8 +132,6 @@ public class TiktokCom extends PluginForHost {
                 link.setPluginPatternMatcher(redirect);
             }
         }
-        String createDate = null;
-        String lastModifiedHeaderValue = null;
         if (PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck() && !isDownload) {
             br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -176,7 +172,7 @@ public class TiktokCom extends PluginForHost {
                 if (entries == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
+                final String createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
                 description = (String) entries.get("desc");
                 final Map<String, Object> videoInfo = (Map<String, Object>) entries.get("itemInfos");
                 this.dllink = (String) videoInfo.get("downloadAddr");
@@ -184,12 +180,18 @@ public class TiktokCom extends PluginForHost {
                     this.dllink = (String) videoInfo.get("playAddr");
                 }
                 /* 2020-10-26: Doesn't work anymore, returns 403 */
-                if (username == null && entries.containsKey("author")) {
+                if (entries.containsKey("author")) {
                     final Map<String, Object> authorInfos = (Map<String, Object>) entries.get("author");
-                    username = (String) authorInfos.get("uniqueId");
+                    String username = (String) authorInfos.get("uniqueId");
                     if (!StringUtils.isEmpty(username) && !username.startsWith("@")) {
                         username = "@" + username;
                     }
+                    if (!StringUtils.isEmpty(username)) {
+                        link.setProperty(PROPERTY_USERNAME, username);
+                    }
+                }
+                if (!StringUtils.isEmpty(createDate)) {
+                    link.setProperty(PROPERTY_DATE, convertDateFormat(createDate));
                 }
                 if (this.dllink == null && isDownload) {
                     /* Fallback */
@@ -232,20 +234,19 @@ public class TiktokCom extends PluginForHost {
                 }
                 final Map<String, Object> itemInfos = (Map<String, Object>) videoData.get("itemInfos");
                 // entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
-                createDate = Long.toString(JavaScriptEngineFactory.toLong(itemInfos.get("createTime"), 0));
+                final String createDate = Long.toString(JavaScriptEngineFactory.toLong(itemInfos.get("createTime"), 0));
                 description = (String) itemInfos.get("text");
                 dllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
                 /* Always look for username --> Username given inside URL which user added can be wrong! */
                 final Object authorInfosO = videoData.get("authorInfos");
                 if (authorInfosO != null) {
                     final Map<String, Object> authorInfos = (Map<String, Object>) authorInfosO;
-                    final String usernameTmp = (String) authorInfos.get("uniqueId");
-                    if (!StringUtils.isEmpty(usernameTmp)) {
-                        if (usernameTmp.startsWith("@")) {
-                            username = usernameTmp;
-                        } else {
-                            username = "@" + usernameTmp;
+                    String username = (String) authorInfos.get("uniqueId");
+                    if (!StringUtils.isEmpty(username)) {
+                        if (!username.startsWith("@")) {
+                            username = "@" + username;
                         }
+                        link.setProperty(PROPERTY_USERNAME, username);
                     }
                 }
                 /* Set more Packagizer properties */
@@ -265,13 +266,9 @@ public class TiktokCom extends PluginForHost {
                     final Number number = (Number) itemInfos.get("commentCount");
                     setCommentCount(link, number);
                 }
-                // {
-                // /* 2020-10-26: Test */
-                // dllink = br.getRegex("<video src=\"(https?://[^<>\"]+)\"").getMatch(0);
-                // if (Encoding.isHtmlEntityCoded(dllink)) {
-                // dllink = Encoding.htmlDecode(dllink);
-                // }
-                // }
+                if (!StringUtils.isEmpty(createDate)) {
+                    link.setProperty(PROPERTY_DATE, convertDateFormat(createDate));
+                }
                 if (this.dllink == null && isDownload) {
                     /* Fallback */
                     this.dllink = generateDownloadurlOld(link);
@@ -306,7 +303,10 @@ public class TiktokCom extends PluginForHost {
                         }
                         /* Save it for later usage */
                         link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-                        lastModifiedHeaderValue = brc.getRequest().getResponseHeader("Last-Modified");
+                        final String lastModifiedHeaderValue = brc.getRequest().getResponseHeader("Last-Modified");
+                        if (lastModifiedHeaderValue != null) {
+                            link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
+                        }
                     }
                 } finally {
                     try {
@@ -317,30 +317,12 @@ public class TiktokCom extends PluginForHost {
             }
         }
         String filename = "";
-        String dateFormatted;
-        /* Try to make filename start with publish-date of video. */
-        if (!StringUtils.isEmpty(createDate)) {
-            dateFormatted = convertDateFormat(createDate);
-            if (dateFormatted != null) {
-                /* Save for later usage */
-                link.setProperty(PROPERTY_DATE, dateFormatted);
-            }
-        } else if (lastModifiedHeaderValue != null && !link.hasProperty(PROPERTY_DATE)) {
-            /* Last chance: Get date from response-header of video directURL. */
-            dateFormatted = convertDateFormat(lastModifiedHeaderValue);
-            if (dateFormatted != null) {
-                /* Save for later usage */
-                link.setProperty(PROPERTY_DATE, dateFormatted);
-            }
-        } else {
-            /* Try to get saved value */
-            dateFormatted = link.getStringProperty(PROPERTY_DATE);
-        }
+        String dateFormatted = getDateFormatted(link);
         if (dateFormatted != null) {
             filename = dateFormatted;
         }
+        final String username = getUsername(link);
         if (!StringUtils.isEmpty(username)) {
-            link.setProperty(PROPERTY_USERNAME, username);
             filename += "_" + username;
         }
         filename += "_" + fid + ".mp4";
@@ -351,6 +333,26 @@ public class TiktokCom extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getUsername(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_USERNAME)) {
+            return link.getStringProperty(PROPERTY_USERNAME);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0);
+        } else {
+            return null;
+        }
+    }
+
+    private String getDateFormatted(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_DATE)) {
+            return link.getStringProperty(PROPERTY_DATE);
+        } else if (link.hasProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER)) {
+            return convertDateFormat(link.getStringProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER));
+        } else {
+            return null;
+        }
     }
 
     public static final void setLikeCount(final DownloadLink link, final Number number) {
@@ -397,7 +399,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     private String generateDownloadurlOld(final DownloadLink link) throws IOException {
-        this.br.getPage("https://www.tiktok.com/node/video/playwm?id=" + this.getFID(link));
+        this.br.getPage("https://www." + this.getHost() + "/node/video/playwm?id=" + this.getFID(link));
         return new URL(br.toString()).toString();
     }
 
