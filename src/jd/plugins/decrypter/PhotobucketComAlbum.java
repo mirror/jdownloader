@@ -35,9 +35,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DirectHTTP;
+import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "photobucket.com" }, urls = { "https?://(?:(next|app)\\.)?photobucket\\.com/u/[^/]+(?:/a/[a-f0-9\\-]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PhotobucketComAlbum extends PluginForDecrypt {
     public PhotobucketComAlbum(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,9 +48,37 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
-    private final String TYPE_ALBUM = "https?://[^/]+/u/([^/]+)/a/([a-f0-9\\-]+)(/p/([a-f0-9\\-]+))?";
-    private final String TYPE_USER  = "https?://[^/]+/u/([^/]+)$";
-    private final String API_BASE   = "https://app.photobucket.com/api/graphql/v2";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "photobucket.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("^https?://(?:(next|app)\\.)?" + buildHostsPatternPart(domains) + "/u/[^/]+(?:/a/[a-f0-9\\-]+)?$");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private final String       TYPE_ALBUM = "https?://[^/]+/u/([^/]+)/a/([a-f0-9\\-]+)(/p/([a-f0-9\\-]+))?";
+    private final String       TYPE_USER  = "https?://[^/]+/u/([^/]+)$";
+    public static final String API_BASE   = "https://app.photobucket.com/api/graphql/v2";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         if (param.getCryptedUrl().matches(TYPE_ALBUM)) {
@@ -70,7 +98,7 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         prepBr(br);
-        br.postPageRaw(API_BASE, "{ \"operationName\": \"GetAllPublicAlbums\",  \"variables\": {        \"sortBy\": {           \"field\": \"TITLE\",           \"desc\": false     },      \"owner\": \"" + user + "\"    },  \"query\": \"query GetAllPublicAlbums($sortBy: Sorter!, $owner: String!) {  getAllPublicAlbums(sortBy: $sortBy, owner: $owner) {    ...AlbumTreeItemFragment    __typename  }}fragment AlbumTreeItemFragment on AlbumTreeItem {  id  title  privacyMode  parentAlbumId  imageCount  __typename}\"}");
+        br.postPageRaw(API_BASE, "{ \"operationName\": \"GetAllPublicAlbums\",  \"variables\": {        \"sortBy\": {           \"field\": \"TITLE\",           \"desc\": false     },      \"owner\": \"" + PluginJSonUtils.escape(user) + "\"    },  \"query\": \"query GetAllPublicAlbums($sortBy: Sorter!, $owner: String!) {  getAllPublicAlbums(sortBy: $sortBy, owner: $owner) {    ...AlbumTreeItemFragment    __typename  }}fragment AlbumTreeItemFragment on AlbumTreeItem {  id  title  privacyMode  parentAlbumId  imageCount  __typename}\"}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* User profile does not exist */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -100,7 +128,7 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         }
         prepBr(br);
         /* Get album information */
-        br.postPageRaw(API_BASE, "{\"operationName\":\"GetPublicAlbumDetails\",\"variables\":{\"owner\":\"" + user + "\",\"albumId\":\"" + albumID + "\"},\"query\":\"query GetPublicAlbumDetails($albumId: String!, $owner: String!, $password: String) {  getPublicAlbumDetails(albumId: $albumId, owner: $owner, password: $password) {    id    title    privacyMode    description    nestedAlbumsCount    parentAlbumId    totalUserUsedSpace    totalUserImageCount    imageCountIncludeSubAlbums    imageCount    sorting {      field      desc      __typename    }    __typename  }}\"}");
+        br.postPageRaw(API_BASE, "{\"operationName\":\"GetPublicAlbumDetails\",\"variables\":{\"owner\":\"" + PluginJSonUtils.escape(user) + "\",\"albumId\":\"" + PluginJSonUtils.escape(albumID) + "\"},\"query\":\"query GetPublicAlbumDetails($albumId: String!, $owner: String!, $password: String) {  getPublicAlbumDetails(albumId: $albumId, owner: $owner, password: $password) {    id    title    privacyMode    description    nestedAlbumsCount    parentAlbumId    totalUserUsedSpace    totalUserImageCount    imageCountIncludeSubAlbums    imageCount    sorting {      field      desc      __typename    }    __typename  }}\"}");
         final Map<String, Object> albumInfo0 = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         this.handleErrors(albumInfo0);
         final Map<String, Object> albumInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(albumInfo0, "data/getPublicAlbumDetails");
@@ -123,10 +151,10 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         String scrollPointerImages = null;
         do {
             if (scrollPointerImages != null) {
-                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicAlbumImagesV2\",  \"variables\": {        \"albumId\": \"" + albumID + "\",      \"pageSize\": 40,       \"sortBy\": {           \"field\": \"DATE\",            \"desc\": true      },      \"scrollPointer\": \"" + scrollPointerImages
+                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicAlbumImagesV2\",  \"variables\": {        \"albumId\": \"" + PluginJSonUtils.escape(albumID) + "\",      \"pageSize\": 40,       \"sortBy\": {           \"field\": \"DATE\",            \"desc\": true      },      \"scrollPointer\": \"" + PluginJSonUtils.escape(scrollPointerImages)
                         + "\",      \"password\": \"\"  },  \"query\": \"query GetPublicAlbumImagesV2($albumId: String!, $sortBy: Sorter, $scrollPointer: String, $pageSize: Int, $password: String) {  getPublicAlbumImagesV2(albumId: $albumId, sortBy: $sortBy, scrollPointer: $scrollPointer, pageSize: $pageSize, password: $password) {    scrollPointer    items {      ...ImageFragment      __typename    }    __typename  }}fragment ImageFragment on Image {  id  isBlurred  nsfw  title  username  image {    url    __typename  }  thumbnailImage {    url    width    height    __typename  }  originalImage {    url    width    height    isLandscape    size    __typename  }  livePhoto {    url    width    height    isLandscape    __typename  }  clarifaiTags  description  userTags  uploadDate  dateTaken  originalFilename  postProcess  status  isVideoType  albumName  albumId  __typename}\"}");
             } else {
-                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicAlbumImagesV2\",  \"variables\": {        \"albumId\": \"" + albumID
+                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicAlbumImagesV2\",  \"variables\": {        \"albumId\": \"" + PluginJSonUtils.escape(albumID)
                         + "\",      \"scrollPointer\": null,        \"pageSize\": 40,       \"sortBy\": null,       \"password\": \"\"  },  \"query\": \"query GetPublicAlbumImagesV2($albumId: String!, $sortBy: Sorter, $scrollPointer: String, $pageSize: Int, $password: String) {  getPublicAlbumImagesV2(albumId: $albumId, sortBy: $sortBy, scrollPointer: $scrollPointer, pageSize: $pageSize, password: $password) {    scrollPointer    items {      ...ImageFragment      __typename    }    __typename  }}fragment ImageFragment on Image {  id  isBlurred  nsfw  title  username  image {    url    __typename  }  thumbnailImage {    url    width    height    __typename  }  originalImage {    url    width    height    isLandscape    size    __typename  }  livePhoto {    url    width    height    isLandscape    __typename  }  clarifaiTags  description  userTags  uploadDate  dateTaken  originalFilename  postProcess  status  isVideoType  albumName  albumId  __typename}\"}");
             }
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -134,8 +162,11 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
             scrollPointerImages = (String) getPublicAlbumImagesV2.get("scrollPointer");
             final List<Map<String, Object>> images = (List<Map<String, Object>>) getPublicAlbumImagesV2.get("items");
             for (final Map<String, Object> image : images) {
-                final DownloadLink dl = this.createImageDownloadLink(image);
-                dl.setContentUrl(param.getCryptedUrl() + "/p/" + image.get("id"));
+                final String contentURL = param.getCryptedUrl() + "/p/" + image.get("id");
+                final DownloadLink dl = this.createDownloadlink(contentURL);
+                final DownloadLink link = this.createDownloadlink(JavaScriptEngineFactory.walkJson(image, "originalImage/url").toString());
+                jd.plugins.hoster.PhotobucketCom.parseFileInfo(link, image);
+                dl.setContentUrl(contentURL);
                 dl._setFilePackage(albumPackage);
                 dl.setRelativeDownloadFolderPath(thisAlbumPath);
                 ret.add(dl);
@@ -164,7 +195,7 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
             int foundNestedAlbums = 0;
             String scrollPointerNestedAlbums = null;
             do {
-                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicSubAlbumsV2\",    \"variables\": {        \"albumId\": \"" + albumID + "\",      \"nestedImagesCount\": 0,       \"scrollPointer\": " + JSonStorage.serializeToJson(scrollPointerNestedAlbums) + ",        \"pageSize\": 14,       \"sortBy\": {           \"field\": \"TITLE\",           \"desc\": false     },      \"username\": \"" + user
+                br.postPageRaw(API_BASE, "{ \"operationName\": \"GetPublicSubAlbumsV2\",    \"variables\": {        \"albumId\": \"" + PluginJSonUtils.escape(albumID) + "\",      \"nestedImagesCount\": 0,       \"scrollPointer\": " + JSonStorage.serializeToJson(scrollPointerNestedAlbums) + ",        \"pageSize\": 14,       \"sortBy\": {           \"field\": \"TITLE\",           \"desc\": false     },      \"username\": \"" + PluginJSonUtils.escape(user)
                         + "\"    },  \"query\": \"query GetPublicSubAlbumsV2($albumId: String!, $sortBy: Sorter, $pageSize: Int, $scrollPointer: String, $nestedImagesCount: Int, $username: String!) {  getPublicSubAlbumsV2(albumId: $albumId, sortBy: $sortBy, pageSize: $pageSize, scrollPointer: $scrollPointer, nestedImagesCount: $nestedImagesCount, username: $username) {    scrollPointer    items {      id      title      privacyMode      imageCount      hasNestedAlbums      images {        id        thumbnailImage {          url          __typename        }        originalImage {          url          __typename        }        uploadDate        isVideoType        isBlurred        __typename      }      __typename    }    __typename  }}\"}");
                 final Map<String, Object> subAlbumInfo0 = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 final Map<String, Object> subAlbumInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(subAlbumInfo0, "data/getPublicSubAlbumsV2");
@@ -196,37 +227,25 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
         return ret;
     }
 
-    private void handleErrors(final Map<String, Object> json) throws PluginException {
+    public static void handleErrors(final Map<String, Object> json) throws PluginException {
         if (json.containsKey("errors")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
-    private Browser prepBr(final Browser br) {
+    public static Browser prepBr(final Browser br) {
+        final String host = getPluginDomains().get(0)[0];
         br.getHeaders().put("apollographql-client-name", "photobucket-web");
         // br.getHeaders().put("x-correlation-id", "NOT_NEEDED");
         // br.getHeaders().put("x-amzn-trace-id", "NOT_NEEDED");
         br.getHeaders().put("content-type", "application/json");
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("apollographql-client-version", "1.26.0");
-        br.getHeaders().put("origin", "https://next." + this.getHost());
-        br.getHeaders().put("referer", "https://next." + this.getHost() + "/");
+        br.getHeaders().put("origin", "https://next." + host);
+        br.getHeaders().put("referer", "https://next." + host + "/");
+        br.setFollowRedirects(true);
         // br.setAllowedResponseCodes(400);
         return br;
-    }
-
-    private DownloadLink createImageDownloadLink(final Map<String, Object> image) {
-        final String originalFilename = image.get("originalFilename").toString();
-        final DownloadLink dl = this.createDownloadlink(JavaScriptEngineFactory.walkJson(image, "originalImage/url").toString());
-        dl.setLinkID(this.getHost() + "://" + image.get("id"));
-        final String description = (String) image.get("description");
-        dl.setFinalFileName(originalFilename);
-        dl.setProperty(DirectHTTP.FIXNAME, originalFilename);
-        dl.setAvailable(true);
-        if (!StringUtils.isEmpty(description)) {
-            dl.setComment(description);
-        }
-        return dl;
     }
 
     private String generateURLAlbum(final String user, final String albumID) {

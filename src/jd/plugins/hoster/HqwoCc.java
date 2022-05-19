@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -134,6 +133,15 @@ public class HqwoCc extends PluginForHost {
                 }
             } catch (final Throwable e) {
                 logger.info("BEST handling for multiple video source failed");
+            }
+        }
+        final String[] qualities = br.getRegex("(//[^\"]+/\\d+\\.mp4)").getColumn(0);
+        int bestQualityHeight = 0;
+        for (final String quality : qualities) {
+            final int height = Integer.parseInt(new Regex(quality, "(\\d+)\\.mp4$").getMatch(0));
+            if (height > bestQualityHeight) {
+                bestQualityHeight = height;
+                dllink = quality;
             }
         }
         if (!StringUtils.isEmpty(dllink)) {
