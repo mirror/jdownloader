@@ -26,6 +26,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -37,14 +38,11 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         DownloadsTableSearchField item = DownloadsTableSearchField.getInstance();
         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
         try {
-
             ActionData ad = this.getActionData();
             Object sc = ad.fetchSetup("shortcut");
             if (sc != null && sc instanceof String) {
-
                 ks = KeyStroke.getKeyStroke((String) sc);
             }
-
         } catch (Throwable e) {
         }
         AppAction a = item.getFocusAction();
@@ -60,13 +58,11 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
 
     @Override
     public JComponent createSettingsPanel() {
-
         ActionData ad = this.getActionData();
         if (ad == null) {
             ad = new ActionData();
             setActionData(ad);
         }
-
         final ActionData actionData = ad;
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][100:n:n,fill]", "[]");
         SwingUtils.setOpaque(p, false);
@@ -77,16 +73,13 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         try {
             Object sc = ad.fetchSetup("shortcut");
             if (sc != null && sc instanceof String) {
-
                 ks = KeyStroke.getKeyStroke((String) sc);
             }
         } catch (Throwable e) {
         }
         String msg1 = KeyUtils.getShortcutString(ks, true);
-
         shortcut.setText(msg1);
         shortcut.addKeyListener(new KeyListener() {
-
             @Override
             public void keyTyped(KeyEvent e) {
             }
@@ -101,11 +94,8 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
                 KeyStroke currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
                 shortcut.setText(msg1);
                 actionData.putSetup("shortcut", currentShortcut == null ? null : currentShortcut.toString());
-
             }
-
         });
-
         p.add(new JLabel(_GUI.T.InfoPanel_InfoPanel_shortcuts()));
         p.add(shortcut, "split 2");
         JButton shortCutReset;
@@ -117,7 +107,6 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
@@ -128,15 +117,11 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
                     }
                 };
             }
-
         }), "width 22!,height 22!");
-
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_min()), "newline");
         int width = _getMinWidth();
-
         final ExtSpinner minSpin = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
         minSpin.addChangeListener(new ChangeListener() {
-
             @Override
             public void stateChanged(ChangeEvent e) {
                 actionData.putSetup("minWidth", ((Number) minSpin.getValue()).intValue());
@@ -144,13 +129,10 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         });
         p.add(minSpin);
         //
-
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_pref()));
         width = _getPrefWidth();
-
         final ExtSpinner prefSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
         prefSpin.addChangeListener(new ChangeListener() {
-
             @Override
             public void stateChanged(ChangeEvent e) {
                 actionData.putSetup("prefWidth", ((Number) prefSpin.getValue()).intValue());
@@ -160,17 +142,14 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         //
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_max()));
         width = _getMaxWidth();
-
         final ExtSpinner maxSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
         maxSpin.addChangeListener(new ChangeListener() {
-
             @Override
             public void stateChanged(ChangeEvent e) {
                 actionData.putSetup("maxWidth", ((Number) maxSpin.getValue()).intValue());
             }
         });
         p.add(maxSpin);
-
         return p;
     }
 
@@ -184,7 +163,6 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
 
     protected int _getPrefWidth() {
         int width = 300;
-
         try {
             width = ((Number) getActionData().fetchSetup("prefWidth")).intValue();
         } catch (Throwable e) {
@@ -194,7 +172,6 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
 
     protected int _getMaxWidth() {
         int width = 10000;
-
         try {
             width = ((Number) getActionData().fetchSetup("maxWidth")).intValue();
         } catch (Throwable e) {
@@ -204,7 +181,6 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
 
     protected int _getMinWidth() {
         int width = 0;
-
         try {
             width = ((Number) getActionData().fetchSetup("minWidth")).intValue();
         } catch (Throwable e) {
@@ -217,8 +193,8 @@ public class SearchMenuItem extends MenuItemData implements MenuLink, SelfLayout
         return "height 24!,aligny top,pushx,growx,width " + _getMinWidth() + ":" + _getPrefWidth() + ":" + _getMaxWidth();
     }
 
-    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-
+    @Override
+    public JComponent createItem(MenuBuilder menuBuilder) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         return DownloadsTableSearchField.getInstance();
     }
 }
