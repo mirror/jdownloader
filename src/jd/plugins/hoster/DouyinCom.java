@@ -161,6 +161,7 @@ public class DouyinCom extends PluginForHost {
             } else if (!br.containsHTML("/video/" + this.getFID(link))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!this.canHandle(this.br.getURL())) {
+                /* Redirect to somewhere else */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String json = br.getRegex("<script id=\"RENDER_DATA\" type=\"application/json\">(.*?)<").getMatch(0);
