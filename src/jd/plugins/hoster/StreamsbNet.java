@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -61,11 +62,12 @@ public class StreamsbNet extends XFileSharingProBasic {
          * streamsb.com is basically only a dummy entry here as no downloadlinks exist that can be used via this domain.
          */
         ret.add(new String[] { "streamsb.com" });
-        ret.add(new String[] { "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com" });
+        ret.add(new String[] { "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com" });
         return ret;
     }
 
-    private static final String EXTENDED_FILENAME_RESULT = "extended_filename_result";
+    private final String EXTENDED_FILENAME_RESULT   = "extended_filename_result";
+    private final String IS_OFFICIALLY_DOWNLOADABLE = "is_officially_downloadable";
 
     @Override
     protected boolean internal_supports_availablecheck_filename_abuse() {
@@ -77,27 +79,24 @@ public class StreamsbNet extends XFileSharingProBasic {
         /* Beware! This is full of nasty workarounds! */
         AvailableStatus result = null;
         String oldPluginPatternMatcher = link.getPluginPatternMatcher();
-        String officialDownloadFilesize = null;
-        try {
+        result = super.requestFileInformationWebsite(link, account, isDownload);
+        if (link.getPluginPatternMatcher().matches("https?://[^/]+/c/[a-z0-9]{12}.*") && link.hasProperty(IS_OFFICIALLY_DOWNLOADABLE) && !link.getBooleanProperty(IS_OFFICIALLY_DOWNLOADABLE)) {
+            return result;
+        } else {
+            link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
             result = super.requestFileInformationWebsite(link, account, isDownload);
-            if (link.getPluginPatternMatcher().matches("https?://[^/]+/c/[a-z0-9]{12}.*")) {
-                return result;
-            } else if (StringUtils.equals(link.getName(), getFallbackFilename(link))) {
-                link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
-                result = super.requestFileInformationWebsite(link, account, isDownload);
-                officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
-            } else {
-                return result;
-            }
-        } finally {
+            final String officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
             if (officialDownloadFilesize != null) {
                 /* Do not change pluginpatternmatcher back */
                 logger.info("Item is officially downloadable!");
+                link.setDownloadSize(SizeFormatter.getSize(officialDownloadFilesize));
+                link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, true);
             } else {
                 link.setPluginPatternMatcher(oldPluginPatternMatcher);
+                link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
             }
         }
-        if (link.getPluginPatternMatcher().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT)) {
+        if (br.getURL().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT)) {
             /*
              * 2021-11-18: Workaround e.g. for items for which uploader has disabled download button because upper handling will fail to
              * find a nice filename.
