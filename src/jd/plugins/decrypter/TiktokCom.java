@@ -156,7 +156,7 @@ public class TiktokCom extends PluginForDecrypt {
                     fp = FilePackage.getInstance();
                     fp.setName(username);
                 }
-                final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + author + "/video/" + videoID);
+                final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/@" + author + "/video/" + videoID);
                 final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
                 dl.setFinalFileName(dateFormatted + "_@" + author + "_" + videoID + ".mp4");
                 dl.setAvailable(true);
@@ -179,7 +179,7 @@ public class TiktokCom extends PluginForDecrypt {
             if ((Boolean) userPost.get("hasMore") && cfg.isAddDummyURLProfileCrawlerWebsiteModeMissingPagination()) {
                 final DownloadLink dummy = createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.FILE_NOT_FOUND));
                 dummy.setFinalFileName("CANNOT_CRAWL_MORE_THAN_" + videos.size() + "_ITEMS_OF_PROFILE_" + usernameSlug);
-                dummy.setComment("This crawler plugin cannot handle pagination yet thus it is currently impossible to crawl more than " + videos.size() + " items. Check our forum for more info: https://board.jdownloader.org/showthread.php?t=79982");
+                dummy.setComment("This crawler plugin cannot handle pagination yet thus it is currently impossible to crawl more than " + videos.size() + " items. Check this forum thread for more info: https://board.jdownloader.org/showthread.php?t=79982");
                 dummy._setFilePackage(fp);
                 // distribute(dummy);
                 ret.add(dummy);
@@ -192,7 +192,7 @@ public class TiktokCom extends PluginForDecrypt {
             logger.warning("Fallback to plain html handling");
             final String[] videoIDs = br.getRegex(usernameSlug + "/video/(\\d+)\"").getColumn(0);
             for (final String videoID : videoIDs) {
-                final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID);
+                final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/@" + usernameSlug + "/video/" + videoID);
                 dl.setName("@" + usernameSlug + "_" + videoID + ".mp4");
                 dl.setAvailable(cfg.isEnableFastLinkcheck());
                 dl._setFilePackage(fp);

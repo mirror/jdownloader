@@ -25,8 +25,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.TiktokConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -102,7 +107,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "/(?:video|v|embed)/(\\d+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "https?://.*/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
     // private String dllink = null;
@@ -148,7 +153,11 @@ public class TiktokCom extends PluginForHost {
             /* Fallback-filename */
             link.setName(fid + ".mp4");
         }
-        this.checkAvailablestatusWebsite(link, isDownload);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !true) {
+            this.checkAvailablestatusAPI(link, isDownload);
+        } else {
+            this.checkAvailablestatusWebsite(link, isDownload);
+        }
         final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
@@ -372,7 +381,73 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
+    public static final String API_BASE         = "https://api-h2.tiktokv.com/aweme/v1";
+    public static final String API_VERSION_NAME = "20.9.3";
+    public static final String API_VERSION_CODE = "293";
+
     public void checkAvailablestatusAPI(final DownloadLink link, final boolean isDownload) throws Exception {
+        prepBRAPI(br);
+        final UrlQuery query = getAPIQuery();
+        query.add("aweme_id", this.getFID(link));
+        accessAPI(br, "/aweme/detail", query);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        /* TODO: Make use of that API */
+    }
+
+    private void accessAPI(final Browser br, final String path, final UrlQuery query) throws IOException {
+        br.getPage(API_BASE + path + "?" + query.toString() + "/");
+    }
+
+    public static Browser prepBRAPI(final Browser br) {
+        br.getHeaders().put("User-Agent", String.format("com.ss.android.ugc.trill/%s (Linux; U; Android 10; en_US; Pixel 4; Build/QQ3A.200805.001; Cronet/58.0.2991.0)", API_VERSION_CODE));
+        br.getHeaders().put("Accept", "application/json");
+        br.setCookie(API_BASE, "odin_tt", getRandomString("0123456789abcdef", 160));
+        return br;
+    }
+
+    public static UrlQuery getAPIQuery() {
+        final UrlQuery query = new UrlQuery();
+        query.add("version_name", API_VERSION_NAME);
+        query.add("version_code", API_VERSION_CODE);
+        query.add("build_number", API_VERSION_NAME);
+        query.add("manifest_version_code", API_VERSION_CODE);
+        query.add("update_version_code", API_VERSION_CODE);
+        query.add("openudid", getRandomString("0123456789abcdef", 16));
+        query.add("uuid", getRandomString("0123456789", 16));
+        query.add("_rticket", Long.toString(System.currentTimeMillis()));
+        query.add("ts", Long.toString(System.currentTimeMillis() / 1000));
+        query.add("device_brand", "Google");
+        query.add("device_type", "Pixel 4");
+        query.add("device_platform", "Android");
+        query.add("resolution", "1080*1920");
+        query.add("dpi", "420");
+        query.add("os_version", "10");
+        query.add("os_api", "28");
+        query.add("carrier_region", "US");
+        query.add("sys_region", "US");
+        query.add("region", "US");
+        query.add("app_name", "trill");
+        query.add("app_language", "en");
+        query.add("language", "en");
+        query.add("timezone_name", "America/New_York");
+        query.add("timezone_offset", "-14400");
+        query.add("channel", "googleplay");
+        query.add("ac", "wifi");
+        query.add("mcc_mnc", "310260");
+        query.add("is_my_cn", "0");
+        query.add("aid", "1180");
+        query.add("ssmix", "a");
+        query.add("as", "a1qwert123");
+        query.add("cp", "cbfhckdckkde1");
+        return query;
+    }
+
+    private static String getRandomString(final String chars, final int length) {
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(new Random().nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     private String getUsername(final DownloadLink link) {
