@@ -17,6 +17,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -36,18 +37,14 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
 
     @Override
     public JComponent createSettingsPanel() {
-
         ActionData ad = getActionData();
-
         final ActionData actionData = ad;
         MigPanel p = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         SwingUtils.setOpaque(p, false);
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_min()));
         int width = _getMinWidth();
-
         final ExtSpinner minSpin = new ExtSpinner(new SpinnerNumberModel(width, -1, 10000, 1));
         minSpin.addChangeListener(new ChangeListener() {
-
             @Override
             public void stateChanged(ChangeEvent e) {
                 actionData.putSetup("minWidth", ((Number) minSpin.getValue()).intValue());
@@ -55,13 +52,10 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         });
         p.add(minSpin);
         //
-
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_pref()));
         width = _getPrefWidth();
-
         final ExtSpinner prefSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
         prefSpin.addChangeListener(new ChangeListener() {
-
             @Override
             public void stateChanged(ChangeEvent e) {
                 actionData.putSetup("prefWidth", ((Number) prefSpin.getValue()).intValue());
@@ -71,10 +65,8 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         //
         p.add(new JLabel(_GUI.T.MenuEditors_boxwidth_max()));
         width = _getMaxWidth();
-
         final ExtSpinner maxSpin = new ExtSpinner(new SpinnerNumberModel(width, 0, 10000, 1));
         maxSpin.addChangeListener(new ChangeListener() {
-
             @Override
             public void stateChanged(ChangeEvent e) {
                 actionData.putSetup("maxWidth", ((Number) maxSpin.getValue()).intValue());
@@ -86,7 +78,6 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
 
     protected int _getPrefWidth() {
         int width = 0;
-
         try {
             width = ((Number) getActionData().fetchSetup("prefWidth")).intValue();
         } catch (Throwable e) {
@@ -96,7 +87,6 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
 
     protected int _getMaxWidth() {
         int width = 10000;
-
         try {
             width = ((Number) getActionData().fetchSetup("maxWidth")).intValue();
         } catch (Throwable e) {
@@ -106,7 +96,6 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
 
     protected int _getMinWidth() {
         int width = 0;
-
         try {
             width = ((Number) getActionData().fetchSetup("minWidth")).intValue();
         } catch (Throwable e) {
@@ -114,8 +103,8 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
         return width;
     }
 
-    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-
+    @Override
+    public JComponent createItem(MenuBuilder menuBuilder) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         MigPanel ret = new MigPanel("ins 0", "[]", "[]");
         ret.setBackground(Color.RED);
         ret.setOpaque(false);
@@ -126,5 +115,4 @@ public class HorizontalBoxItem extends MenuItemData implements MenuLink, SelfLay
     public String createConstraints() {
         return "height 24!,aligny top,gapleft 2,pushx,growx,width " + _getMinWidth() + ":" + _getPrefWidth() + ":" + _getMaxWidth();
     }
-
 }

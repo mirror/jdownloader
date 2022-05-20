@@ -15,6 +15,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -41,14 +42,11 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
 
     public static final class FilterCombo extends PseudoCombo<View> {
         private final DownloadsTable                                                                  table;
-
         protected static FilterCombo                                                                  INSTANCE;
-
         private NullsafeAtomicReference<PackageControllerTableModelFilter<FilePackage, DownloadLink>> appliedFilter = new NullsafeAtomicReference<PackageControllerTableModelFilter<FilePackage, DownloadLink>>(null);
 
         public static FilterCombo getInstance() {
             return new EDTHelper<FilterCombo>() {
-
                 @Override
                 public FilterCombo edtRun() {
                     if (INSTANCE != null) {
@@ -57,9 +55,7 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                     INSTANCE = new FilterCombo();
                     return INSTANCE;
                 }
-
             }.getReturnValue();
-
         }
 
         @Override
@@ -111,7 +107,6 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                 return null;
             case SKIPPED:
                 return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                     @Override
                     public boolean isFilteringPackageNodes() {
                         return false;
@@ -139,7 +134,6 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                 };
             case FAILED:
                 return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                     @Override
                     public boolean isFilteringPackageNodes() {
                         return false;
@@ -167,7 +161,6 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                 };
             case EXISTS:
                 return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                     @Override
                     public boolean isFilteringPackageNodes() {
                         return false;
@@ -195,7 +188,6 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                 };
             case OFFLINE:
                 return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                     @Override
                     public boolean isFilteringPackageNodes() {
                         return false;
@@ -223,7 +215,6 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                 };
             case RUNNING:
                 return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                     @Override
                     public boolean isFilteringPackageNodes() {
                         return false;
@@ -251,7 +242,6 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                 };
             case SUCCESSFUL:
                 return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                     @Override
                     public boolean isFilteringPackageNodes() {
                         return false;
@@ -279,7 +269,6 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                 };
             case TODO:
                 return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                     @Override
                     public boolean isFilteringPackageNodes() {
                         return false;
@@ -308,7 +297,6 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
             }
             return null;
         }
-
     }
 
     public QuickFilterMenuItem() {
@@ -319,8 +307,8 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
         //
     }
 
-    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-
+    @Override
+    public JComponent createItem(MenuBuilder menuBuilder) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         return FilterCombo.getInstance();
     }
 }
