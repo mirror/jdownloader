@@ -16,15 +16,24 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,10 +43,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "77file.com" }, urls = { "https?://(?:www\\.)?77file\\.com/((?:s|down)/[A-Za-z0-9]+|(?:file|down)/[^/]+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SeventySevenFileCom extends PluginForHost {
     public SeventySevenFileCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://77file.com/vip.php");
     }
 
     @Override
@@ -45,13 +55,48 @@ public class SeventySevenFileCom extends PluginForHost {
         return "https://www.77file.com/terms.php";
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "77file.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:s|down)/[A-Za-z0-9]+|(?:file|down)/[^/]+\\.html)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
+    private final boolean        FREE_RESUME                  = true;
+    private final int            FREE_MAXCHUNKS               = 1;
+    private final int            FREE_MAXDOWNLOADS            = 1;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    /* 2022-05-20: Premium limits untested */
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/down/", "/s/"));
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getPluginPatternMatcher(), ".+/([^/]+)(\\.html)?$").getMatch(0);
     }
 
     @Override
@@ -61,16 +106,11 @@ public class SeventySevenFileCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        /* 2021-05-10: Doesn't work. */
-        // if (this.checkDirectLink(link, "free_directlink") != null) {
-        // logger.info("Availablecheck done via directurl");
-        // return AvailableStatus.TRUE;
-        // }
         br.getPage(link.getPluginPatternMatcher());
-        /* Empty / Missing filesize --> File offline */
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("<span id=\"file_size\"></span>")) {
+            /* Empty / Missing filesize */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*此文件已被用户删除，暂时无法访问")) {
             /* 2021-12-07 */
@@ -94,13 +134,13 @@ public class SeventySevenFileCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         // final String fid = getFID(link);
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
+            requestFileInformation(link);
             final String fileID2 = this.br.getRegex("file_id=(\\d+)").getMatch(0);
             if (fileID2 == null) {
                 logger.warning("Failed to find fileID2");
@@ -152,29 +192,6 @@ public class SeventySevenFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    return dllink;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
-    }
-
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
         final String url = link.getStringProperty(directlinkproperty);
         if (StringUtils.isEmpty(url)) {
@@ -199,8 +216,98 @@ public class SeventySevenFileCom extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getPluginPatternMatcher(), ".+/([^/]+)$").getMatch(0);
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                /*
+                 * 2021-11-09: Warning: They only allow one active session per account so user logging in via browser may end JDs session!
+                 */
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force) {
+                        /* Do not verify cookies */
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin(br)) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/account.php?action=login");
+                final Form loginform = br.getFormbyProperty("name", "user_form");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                br.getPage("/mydisk.php?item=profile&menu=cp");
+                if (!isLoggedin(br)) {
+                    throw new AccountInvalidException();
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("action=logout")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        if (!br.getURL().contains("/mydisk.php?item=profile&menu=cp")) {
+            br.getPage("/mydisk.php?item=profile&menu=cp");
+        }
+        ai.setUnlimitedTraffic();
+        final String premiumExpire = br.getRegex("(?i)<td>Account type</td>\\s*<td>\\s*<b class=\"text-danger\">\\s*Premium\\s*<small>\\((\\d{4}-\\d{2}-\\d{2})\\)</small>").getMatch(0);
+        if (premiumExpire == null) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumExpire, "yyyy-MM-dd", Locale.ENGLISH), br);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+        }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        if (account.getType() == AccountType.PREMIUM) {
+            this.handleDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "premium_directlink");
+        } else {
+            this.handleDownload(link, account, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_free_directlink");
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
