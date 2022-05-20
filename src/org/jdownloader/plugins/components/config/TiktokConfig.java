@@ -12,21 +12,28 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "tiktok.com", type = Type.HOSTER)
 public interface TiktokConfig extends PluginConfigInterface {
-    public static final TiktokConfig.TRANSLATION TRANSLATION = new TRANSLATION();
+    public static final TiktokConfig.TRANSLATION TRANSLATION                                                = new TRANSLATION();
+    final String                                 text_EnableFastLinkcheck                                   = "Enable fast linkcheck? If enabled, filenames may contain less information and filesize will be missing until download is started.";
+    final String                                 text_MaxSimultaneousDownloads                              = "Set max. simultaneous downloads. The higher the value the higher is the chance that your IP gets blocked by tiktok!";
+    final String                                 text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination = "Add dummy URL when user profile is crawled in website mode and crawler fails to find all items due to missing pagination?";
 
     public static class TRANSLATION {
         public String getEnableFastLinkcheck_label() {
-            return "Enable fast linkcheck? If enabled, filenames may contain less information and filesize will be missing until download is started.";
+            return text_EnableFastLinkcheck;
         }
 
         public String getMaxSimultaneousDownloads_label() {
-            return "Set max. simultaneous downloads. The higher the value the higher is the chance that your IP gets blocked by tiktok!";
+            return text_MaxSimultaneousDownloads;
+        }
+
+        public String getAddDummyURLProfileCrawlerWebsiteModeMissingPagination_label() {
+            return text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination;
         }
     }
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Enable fast linkcheck? If enabled, filenames may contain less information and filesize will be missing until download is started.")
+    @DescriptionForConfigEntry(text_EnableFastLinkcheck)
     @Order(10)
     boolean isEnableFastLinkcheck();
 
@@ -36,8 +43,16 @@ public interface TiktokConfig extends PluginConfigInterface {
     @DefaultIntValue(1)
     @SpinnerValidator(min = 1, max = 20, step = 1)
     @Order(20)
-    @DescriptionForConfigEntry("Set max. simultaneous downloads. The higher the value the higher is the chance that your IP gets blocked by tiktok!")
+    @DescriptionForConfigEntry(text_MaxSimultaneousDownloads)
     int getMaxSimultaneousDownloads();
 
     void setMaxSimultaneousDownloads(int i);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination)
+    @Order(30)
+    boolean isAddDummyURLProfileCrawlerWebsiteModeMissingPagination();
+
+    void setAddDummyURLProfileCrawlerWebsiteModeMissingPagination(boolean b);
 }

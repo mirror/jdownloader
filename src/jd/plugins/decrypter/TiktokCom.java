@@ -22,6 +22,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -32,29 +39,48 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://[A-Za-z0-9]+\\.tiktok\\.com/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.hoster.TiktokCom.class })
 public class TiktokCom extends PluginForDecrypt {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_USER = ".+tiktok\\.com/(?:@|share/user/\\d+)(.+)";
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.hoster.TiktokCom.getPluginDomains();
+    }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static final String TYPE_USER = "https?://[^/]+/(?:@|share/user/\\d+)(.+)";
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         if (param.getCryptedUrl().matches("https?://vm\\..+")) {
             /* Single redirect URLs */
             br.setFollowRedirects(false);
@@ -68,172 +94,112 @@ public class TiktokCom extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (plg.canHandle(param.getCryptedUrl())) {
-            /* Single URL for host plugin */
+            /* Single video URL --> Is handled by host plugin */
             decryptedLinks.add(this.createDownloadlink(param.getCryptedUrl()));
             return decryptedLinks;
         } else if (param.getCryptedUrl().matches(TYPE_USER)) {
-            crawlProfile(param, decryptedLinks);
+            crawlProfileWebsite(param, decryptedLinks);
         } else {
             logger.info("Unsupported URL: " + param.getCryptedUrl());
         }
         return decryptedLinks;
     }
 
-    public ArrayList<DownloadLink> crawlProfile(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+    public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param, final ArrayList<DownloadLink> ret) throws Exception {
         br.setFollowRedirects(true);
-        final String usernameSlug = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
-        if (usernameSlug == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (jd.plugins.hoster.TiktokCom.isBotProtectionActive(this.br)) {
+        }
+        final String usernameSlug = new Regex(br.getURL(), TYPE_USER).getMatch(0);
+        if (usernameSlug == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (jd.plugins.hoster.TiktokCom.isBotProtectionActive(this.br)) {
             throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items of user " + usernameSlug, null, null);
         }
-        String websiteJson = br.getRegex("window\\.__INIT_PROPS__ = (\\{.*?\\})</script>").getMatch(0);
-        if (websiteJson == null) {
-            websiteJson = br.getRegex("<script\\s*id\\s*=\\s*\"__NEXT_DATA__\"[^>]*>\\s*(\\{.*?\\})\\s*</script>").getMatch(0);
-        }
-        if (websiteJson != null) {
-            /* Old handling with broken pagination (API sign handling missing), see: https://svn.jdownloader.org/issues/86758 */
-            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(websiteJson);
-            final Map<String, Object> user_data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/userInfo/user");
-            final String secUid = (String) user_data.get("secUid");
-            final String userId = (String) user_data.get("id");
-            final String username = (String) user_data.get("uniqueId");
-            // final String username = new Regex(parameter, "/@([^/\\?\\&]+)").getMatch(0);
-            if (StringUtils.isEmpty(secUid) || StringUtils.isEmpty(userId) || StringUtils.isEmpty(username)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* 2022-01-07: New simple handling */
+        // TODO: Implement pagination, see: https://svn.jdownloader.org/issues/86758
+        final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
+        FilePackage fp = null;
+        String username = null;
+        try {
+            /* First try the "hard" way */
+            String json = br.getRegex("window\\['SIGI_STATE'\\]\\s*=\\s*(\\{.*?\\});").getMatch(0);
+            if (json == null) {
+                json = br.getRegex("<script\\s*id\\s*=\\s*\"SIGI_STATE\"[^>]*>\\s*(\\{.*?\\});?\\s*</script>").getMatch(0);
             }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(username);
-            List<Object> ressourcelist;
-            final boolean paginationBroken = true;
-            if (paginationBroken) {
-                logger.warning("Plugin not yet finished, API signing is missing");
-                /* We can only return the elements we find on their website when we cannot use their API! */
-                ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/items");
-                for (final Object videoO : ressourcelist) {
-                    entries = (Map<String, Object>) videoO;
-                    final String videoID = (String) entries.get("id");
-                    if (StringUtils.isEmpty(videoID)) {
-                        /* Skip invalid items */
-                        continue;
-                    }
-                    /* Mimic filenames which host plugin would set */
-                    final String description = (String) entries.get("desc");
-                    final long createTime = ((Number) entries.get("createTime")).longValue();
-                    SimpleDateFormat target_format = new SimpleDateFormat("yyyy-MM-dd");
-                    /* Timestamp */
-                    final Date theDate = new Date(createTime * 1000);
-                    final String dateFormatted = target_format.format(theDate);
-                    final String videoURL = "https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID;
-                    final DownloadLink dl = this.createDownloadlink(videoURL);
-                    dl.setName(dateFormatted + "_@" + usernameSlug + "_" + videoID + ".mp4");
-                    dl.setComment(description);
-                    dl.setAvailable(true);
-                    dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
-                }
-                return decryptedLinks;
-            }
-            boolean hasMore = true;
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Map<String, Object>> itemModule = (Map<String, Map<String, Object>>) entries.get("ItemModule");
+            final Map<String, Object> userPost = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "ItemList/user-post");
+            final List<Map<String, Object>> preloadList = (List<Map<String, Object>>) userPost.get("preloadList");
+            /* Typically we get up to 30 items per page. In some cases we get only 28 or 29 for some reason. */
+            final Collection<Map<String, Object>> videos = itemModule.values();
             int index = 0;
-            int page = 1;
-            // final int maxItemsPerPage = 48;
-            String maxCursor = "0";
-            do {
-                logger.info("Current page: " + page);
-                logger.info("Current index: " + index);
-                br.getPage("https://m." + this.getHost() + "/share/item/list?secUid=" + secUid + "&id=" + userId + "&type=1&count=48&minCursor=0&maxCursor=" + maxCursor + "&_signature=TODO_FIXME");
-                if (jd.plugins.hoster.TiktokCom.isBotProtectionActive(this.br)) {
-                    throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl more items of user " + usernameSlug, null, null);
+            for (final Map<String, Object> video : videos) {
+                final Map<String, Object> preloadInfo = preloadList.get(index);
+                final Map<String, Object> stats = (Map<String, Object>) video.get("stats");
+                final Map<String, Object> streamInfo = (Map<String, Object>) video.get("video");
+                final String author = video.get("author").toString();
+                final String videoID = (String) video.get("id");
+                final String createTimeStr = (String) video.get("createTime");
+                final String description = (String) video.get("desc");
+                String directurl = (String) streamInfo.get("downloadAddr");
+                if (StringUtils.isEmpty(directurl)) {
+                    directurl = (String) streamInfo.get("playAddr");
                 }
-                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                entries = (Map<String, Object>) entries.get("body");
-                hasMore = ((Boolean) entries.get("hasMore")).booleanValue();
-                maxCursor = (String) entries.get("maxCursor");
-                ressourcelist = (List<Object>) entries.get("itemListData");
-                for (final Object videoO : ressourcelist) {
-                    entries = (Map<String, Object>) videoO;
-                    entries = (Map<String, Object>) entries.get("itemInfos");
-                    final String videoID = (String) entries.get("id");
-                    final long createTimestamp = JavaScriptEngineFactory.toLong(entries.get("createTime"), 0);
-                    if (StringUtils.isEmpty(videoID) || createTimestamp == 0) {
-                        /* This should never happen */
-                        return null;
-                    }
-                    final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + username + "/video/" + videoID);
-                    final String date_formatted = formatDate(createTimestamp);
-                    dl.setFinalFileName(date_formatted + "_@" + username + "_" + videoID + ".mp4");
-                    dl.setAvailable(true);
-                    dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                    index++;
+                if (StringUtils.isEmpty(directurl)) {
+                    directurl = preloadInfo.get("url").toString();
                 }
-                page++;
-            } while (!this.isAbort() && hasMore && !StringUtils.isEmpty(maxCursor));
-        } else {
-            /* 2022-01-07: New simple handling */
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(usernameSlug);
-            try {
-                /* First try the "hard" way */
-                String json = br.getRegex("window\\['SIGI_STATE'\\]\\s*=\\s*(\\{.*?\\});").getMatch(0);
-                if (json == null) {
-                    json = br.getRegex("<script\\s*id\\s*=\\s*\"SIGI_STATE\"[^>]*>\\s*(\\{.*?\\});?\\s*</script>").getMatch(0);
+                if (fp == null) {
+                    username = author;
+                    fp = FilePackage.getInstance();
+                    fp.setName(username);
                 }
-                final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                final Map<String, Map<String, Object>> itemModule = (Map<String, Map<String, Object>>) entries.get("ItemModule");
-                final Collection<Map<String, Object>> videos = itemModule.values();
-                for (final Map<String, Object> video : videos) {
-                    final Map<String, Object> stats = (Map<String, Object>) video.get("stats");
-                    final Map<String, Object> streamInfo = (Map<String, Object>) video.get("video");
-                    final String videoID = (String) video.get("id");
-                    final String createTimeStr = (String) video.get("createTime");
-                    final String description = (String) video.get("desc");
-                    String directurl = (String) streamInfo.get("downloadAddr");
-                    if (StringUtils.isEmpty(directurl)) {
-                        directurl = (String) streamInfo.get("playAddr");
-                    }
-                    final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID);
-                    final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
-                    dl.setFinalFileName(dateFormatted + "_@" + usernameSlug + "_" + videoID + ".mp4");
-                    dl.setAvailable(true);
-                    jd.plugins.hoster.TiktokCom.setDescriptionAndHashtags(dl, description);
-                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_USERNAME, usernameSlug);
-                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_USER_ID, video.get("authorId"));
-                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_DATE, dateFormatted);
-                    jd.plugins.hoster.TiktokCom.setLikeCount(dl, (Number) stats.get("diggCount"));
-                    jd.plugins.hoster.TiktokCom.setPlayCount(dl, (Number) stats.get("playCount"));
-                    jd.plugins.hoster.TiktokCom.setShareCount(dl, (Number) stats.get("shareCount"));
-                    jd.plugins.hoster.TiktokCom.setCommentCount(dl, (Number) stats.get("commentCount"));
-                    if (!StringUtils.isEmpty(directurl)) {
-                        dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_DIRECTURL, directurl);
-                    }
-                    dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
+                final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + author + "/video/" + videoID);
+                final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
+                dl.setFinalFileName(dateFormatted + "_@" + author + "_" + videoID + ".mp4");
+                dl.setAvailable(true);
+                jd.plugins.hoster.TiktokCom.setDescriptionAndHashtags(dl, description);
+                dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_USERNAME, author);
+                dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_USER_ID, video.get("authorId"));
+                dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_DATE, dateFormatted);
+                jd.plugins.hoster.TiktokCom.setLikeCount(dl, (Number) stats.get("diggCount"));
+                jd.plugins.hoster.TiktokCom.setPlayCount(dl, (Number) stats.get("playCount"));
+                jd.plugins.hoster.TiktokCom.setShareCount(dl, (Number) stats.get("shareCount"));
+                jd.plugins.hoster.TiktokCom.setCommentCount(dl, (Number) stats.get("commentCount"));
+                if (!StringUtils.isEmpty(directurl)) {
+                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_DIRECTURL, directurl);
                 }
-            } catch (final Throwable e) {
-                logger.log(e);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                // distribute(dl);
+                index++;
             }
-            if (decryptedLinks.isEmpty()) {
-                /* Last chance fallback */
-                logger.warning("Fallback to plain html handling");
-                final String[] videoIDs = br.getRegex(usernameSlug + "/video/(\\d+)\"").getColumn(0);
-                for (final String videoID : videoIDs) {
-                    final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID);
-                    dl.setName("@" + usernameSlug + "_" + videoID + ".mp4");
-                    dl.setAvailable(PluginJsonConfig.get(TiktokConfig.class).isEnableFastLinkcheck());
-                    dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
-                }
+            if ((Boolean) userPost.get("hasMore") && cfg.isAddDummyURLProfileCrawlerWebsiteModeMissingPagination()) {
+                final DownloadLink dummy = createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.FILE_NOT_FOUND));
+                dummy.setFinalFileName("CANNOT_CRAWL_MORE_THAN_" + videos.size() + "_ITEMS_OF_PROFILE_" + usernameSlug);
+                dummy.setComment("This crawler plugin cannot handle pagination yet thus it is currently impossible to crawl more than " + videos.size() + " items. Check our forum for more info: https://board.jdownloader.org/showthread.php?t=79982");
+                dummy._setFilePackage(fp);
+                // distribute(dummy);
+                ret.add(dummy);
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        if (ret.isEmpty()) {
+            /* Last chance fallback */
+            logger.warning("Fallback to plain html handling");
+            final String[] videoIDs = br.getRegex(usernameSlug + "/video/(\\d+)\"").getColumn(0);
+            for (final String videoID : videoIDs) {
+                final DownloadLink dl = this.createDownloadlink("https://www.tiktok.com/@" + usernameSlug + "/video/" + videoID);
+                dl.setName("@" + usernameSlug + "_" + videoID + ".mp4");
+                dl.setAvailable(cfg.isEnableFastLinkcheck());
+                dl._setFilePackage(fp);
+                ret.add(dl);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     public static String formatDate(final long date) {
