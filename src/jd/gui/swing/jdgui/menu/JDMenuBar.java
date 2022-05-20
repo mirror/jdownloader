@@ -97,7 +97,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                 if (!inst.isVisible()) {
                     return;
                 }
-                final JMenu submenu = (JMenu) inst.addTo(root);
+                final JMenu submenu = (JMenu) inst.addTo(root, this);
 
                 if (submenu != null) {
                     applyMnemonic(root, submenu);
@@ -123,7 +123,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                     logger.log(e);
                 }
                 if (root instanceof JMenu) {
-                    JComponent comp = inst.addTo(root);
+                    JComponent comp = inst.addTo(root, this);
                     if (comp == null) {
                         return;
                     }
@@ -218,7 +218,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
                 @Override
                 protected void addContainer(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                    final JMenu submenu = (JMenu) inst.addTo(root);
+                    final JMenu submenu = (JMenu) inst.addTo(root, this);
                     if (root == JDMenuBar.this) {
                         submenu.setIcon(null);
                     }
@@ -227,7 +227,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
                 @Override
                 protected void addAction(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                    inst.addTo(root);
+                    inst.addTo(root, this);
                 }
 
             }.run();

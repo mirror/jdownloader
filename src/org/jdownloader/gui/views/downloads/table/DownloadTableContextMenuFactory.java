@@ -4,10 +4,10 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.JPopupMenu;
 
+import jd.controlling.packagecontroller.AbstractNode;
+
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
-
-import jd.controlling.packagecontroller.AbstractNode;
 
 public class DownloadTableContextMenuFactory {
     private static final DownloadTableContextMenuFactory INSTANCE = new DownloadTableContextMenuFactory();
@@ -29,15 +29,10 @@ public class DownloadTableContextMenuFactory {
      */
     private DownloadTableContextMenuFactory() {
         manager = MenuManagerDownloadTableContext.getInstance();
-
     }
 
     public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
-
         /* Properties */
-
-        return manager.build();
-
+        return manager.build(ev);
     }
-
 }

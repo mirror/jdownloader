@@ -78,13 +78,13 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     protected static final long                            SELECTION_REFRESH_MIN = 25l;
     protected static final long                            SELECTION_REFRESH_MAX = 100l;
     private static final DelayedRunnable                   SELECTIONUPDATER      = new DelayedRunnable(EXECUTER, SELECTION_REFRESH_MIN, SELECTION_REFRESH_MAX) {
-        @Override
-        public void delayedrun() {
-            if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.isEnabled()) {
-                LinkGrabberTableModel.getInstance().addTableModifier(getTableDataModification(null), false);
-            }
-        };
-    };
+                                                                                     @Override
+                                                                                     public void delayedrun() {
+                                                                                         if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.isEnabled()) {
+                                                                                             LinkGrabberTableModel.getInstance().addTableModifier(getTableDataModification(null), false);
+                                                                                         }
+                                                                                     };
+                                                                                 };
 
     private static LinkGrabberTableModel.TableDataModification getTableDataModification(final Runnable runnable) {
         return LinkGrabberTableModel.getInstance().new TableDataModification() {
@@ -127,32 +127,32 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     protected static final long                 FILTER_REFRESH_MIN     = 1000l;
     protected static final long                 FILTER_REFRESH_MAX     = 3000l;
     private static final DelayedRunnable        FILTERTABLESUPDATER    = new DelayedRunnable(EXECUTER, FILTER_REFRESH_MIN, FILTER_REFRESH_MAX) {
-        @Override
-        public String getID() {
-            return "FilterTable";
-        }
+                                                                           @Override
+                                                                           public String getID() {
+                                                                               return "FilterTable";
+                                                                           }
 
-        @Override
-        public void delayedrun() {
-            try {
-                ArrayList<FilterTableDataUpdater> updater = new ArrayList<FilterTableDataUpdater>();
-                for (FilterTableUpdater filterTable : FILTERTABLES) {
-                    if (filterTable.getUpdate().getAndSet(false)) {
-                        updater.add(filterTable.getTable().getFilterTableDataUpdater());
-                    }
-                }
-                updateFilterTables(updater);
-            } catch (final Throwable e) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-            }
-        }
-    };
+                                                                           @Override
+                                                                           public void delayedrun() {
+                                                                               try {
+                                                                                   ArrayList<FilterTableDataUpdater> updater = new ArrayList<FilterTableDataUpdater>();
+                                                                                   for (FilterTableUpdater filterTable : FILTERTABLES) {
+                                                                                       if (filterTable.getUpdate().getAndSet(false)) {
+                                                                                           updater.add(filterTable.getTable().getFilterTableDataUpdater());
+                                                                                       }
+                                                                                   }
+                                                                                   updateFilterTables(updater);
+                                                                               } catch (final Throwable e) {
+                                                                                   org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+                                                                               }
+                                                                           }
+                                                                       };
     private static final PropertyChangeListener PROPERTYCHANGELISTENER = new PropertyChangeListener() {
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            updateAllFiltersInstant();
-        }
-    };
+                                                                           @Override
+                                                                           public void propertyChange(PropertyChangeEvent evt) {
+                                                                               updateAllFiltersInstant();
+                                                                           }
+                                                                       };
     private static volatile Filter              filterException        = null;
     private static volatile Thread              filterExceptionThread  = null;
     private BooleanKeyHandler                   visibleKeyHandler;
@@ -355,7 +355,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                     new EDTHelper<Void>() {
                         @Override
                         public Void edtRun() {
-                            final JPopupMenu ret = MenuManagerLinkgrabberTableContext.getInstance().build();
+                            final JPopupMenu ret = MenuManagerLinkgrabberTableContext.getInstance().build(mouseEvent);
                             ret.show(FilterTable.this, mouseEvent.getPoint().x, mouseEvent.getPoint().y);
                             return null;
                         }
@@ -364,7 +364,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             }), false);
             return popup;
         } else {
-            return MenuManagerLinkgrabberTableContext.getInstance().build();
+            return MenuManagerLinkgrabberTableContext.getInstance().build(mouseEvent);
         }
     }
 

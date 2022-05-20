@@ -9,6 +9,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtMenuImpl;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 
 public class MenuContainer extends MenuItemData {
     public MenuContainer() {
@@ -36,30 +37,24 @@ public class MenuContainer extends MenuItemData {
     }
 
     @Override
-    public JMenu createItem() {
-
+    public JMenu createItem(MenuBuilder menuBuilder) {
         JMenu subMenu = new ExtMenuImpl(getName());
         if (StringUtils.isNotEmpty(_getDescription())) {
             subMenu.getAccessibleContext().setAccessibleDescription(_getDescription());
         }
         if (StringUtils.isNotEmpty(getMnemonic())) {
-
             Field f;
             try {
                 f = KeyEvent.class.getField("VK_" + Character.toUpperCase(getMnemonic().charAt(0)));
-
                 final int m = (Integer) f.get(null);
                 subMenu.setMnemonic(m);
             } catch (Exception e) {
                 throw new WTFException(e);
             }
-
         }
         if (getIconKey() != null) {
             subMenu.setIcon(MenuItemData.getIcon(getIconKey(), 18));
         }
-
         return subMenu;
     }
-
 }

@@ -1,5 +1,6 @@
 package org.jdownloader.controlling.contextmenu;
 
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -13,6 +14,10 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -34,10 +39,6 @@ import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialog;
 import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialogInterface;
 import org.jdownloader.logging.LogController;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
     protected final DelayedRunnable               updateDelayer;
     private static final ScheduledExecutorService SERVICE = DelayedRunnable.getNewScheduledExecutorService();
@@ -57,10 +58,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
             @Override
             public void delayedrun() {
-
                 updateGui();
             }
-
         };
     }
 
@@ -72,7 +71,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             i++;
         }
         saveTo(config.getMenu(), file);
-
     }
 
     protected abstract String getStorageKey();
@@ -114,13 +112,10 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     protected abstract void updateGui();
 
-    public JPopupMenu build() {
-        long t = System.currentTimeMillis();
-        ExtPopupMenu root = new ExtPopupMenu();
-        MenuContainerRoot md = getMenuData();
-        new MenuBuilder(this, root, md).run();
-        // createLayer(root, md);
-
+    public JPopupMenu build(MouseEvent ev) {
+        final ExtPopupMenu root = new ExtPopupMenu();
+        final MenuContainerRoot md = getMenuData();
+        new MenuBuilder(this, root, md).setHideOnClick(true).run();
         return root;
     }
 
@@ -129,15 +124,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     public void openGui() {
         new Thread("Manager") {
-
             public void run() {
                 if (managerVisible) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             WindowManager.getInstance().setZState(dialogFrame.getDialog(), FrameState.TO_FRONT_FOCUSED);
-
                         }
                     };
                     return;
@@ -150,7 +142,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 }
             }
         }.start();
-
     }
 
     public LogSource getLogger() {
@@ -162,14 +153,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     LogSource                          logger;
 
     public List<Object> list() {
-
         ArrayList<Object> ret = new ArrayList<Object>();
         ret.add(new SeparatorData());
         for (MenuItemData mid : setupDefaultStructure().list()) {
             if (mid instanceof MenuContainerRoot) {
                 continue;
             }
-
             if (MenuContainer.class.isAssignableFrom(mid.getClass().getSuperclass())) {
                 if (StringUtils.isEmpty(mid.getName())) {
                     continue;
@@ -201,15 +190,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     // parent.getItems().add(index, archiveSubMenu);
     //
     // }
-
     public MenuContainerRoot getMenuData() {
         if (!SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
             // the menus will get refreshed anyway after the extensioncontroller has been loaded.
-
             return new MenuContainerRoot();
         }
         return new EDTHelper<MenuContainerRoot>() {
-
             @Override
             public MenuContainerRoot edtRun() {
                 long t = System.currentTimeMillis();
@@ -219,43 +205,31 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 try {
                     convertOldFiles();
                     MenuContainerRoot ret = config.getMenu();
-
                     MenuContainerRoot defaultMenu = setupDefaultStructure();
                     if (ret == null) {
                         // no customizer ever used
                         ret = defaultMenu;
-
                     } else {
                         ret._setOwner(ContextMenuManager.this);
                         ret.validate();
-
                         List<MenuItemData> allItemsInMenu = ret.list();
                         List<MenuItemData> allItemsInDefaultMenu = defaultMenu.list();
                         HashMap<String, MenuItemData> itemsIdsInMenu = new HashMap<String, MenuItemData>();
                         HashMap<String, MenuItemData> itemsInDefaultMenu = new HashMap<String, MenuItemData>();
-
                         for (MenuItemData d : allItemsInDefaultMenu) {
-
                             itemsInDefaultMenu.put(d._getIdentifier(), d);
-
                         }
                         for (MenuItemData d : allItemsInMenu) {
-
                             itemsIdsInMenu.put(d._getIdentifier(), d);
-
                         }
                         ArrayList<String> unused = config.getUnusedItems();
                         if (unused == null) {
                             unused = new ArrayList<String>();
                         }
-
                         ArrayList<MenuItemData> newActions = new ArrayList<MenuItemData>();
                         HashSet<String> idsInUnusedList = new HashSet<String>(unused);
-
                         // find new or updated actions
-
                         for (Entry<String, MenuItemData> e : itemsInDefaultMenu.entrySet()) {
-
                             if (!idsInUnusedList.contains(e.getKey())) {
                                 // not in unused list
                                 if (!itemsIdsInMenu.containsKey(e.getKey())) {
@@ -263,12 +237,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                                     // this is a new action
                                     newActions.add(e.getValue());
                                 }
-
                             }
                         }
-
                         if (newActions.size() > 0) {
-
                             List<List<MenuItemData>> paths = defaultMenu.listPaths();
                             // HashSet<Class<?>> actionClassesInDefaultTree = new HashSet<Class<?>>();
                             // // HashMap<MenuItemData,> actionClassesInDefaultTree = new HashSet<Class<?>>();
@@ -288,7 +259,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                             // }
                             // }
                             HashSet<String> itemsInSubmenuItems = new HashSet<String>();
-
                             for (MenuItemData ad : newActions) {
                                 if (ad.getItems() != null) {
                                     for (MenuItemData mid : ad.list()) {
@@ -299,7 +269,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                                         itemsInSubmenuItems.add(mid._getIdentifier());
                                     }
                                 }
-
                             }
                             for (MenuItemData ad : newActions) {
                                 if (itemsInSubmenuItems.contains(ad._getIdentifier())) {
@@ -311,22 +280,16 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                                             ret.add(path);
                                         } catch (Throwable e) {
                                             logger.log(e);
-
                                         }
                                     }
-
                                 }
-
                             }
                             // neworUpdate.add(new SeparatorData());
                             // neworUpdate.add(new MenuItemData(new ActionData(0,MenuManagerAction.class)));
-
                         }
-
                     }
                     ret._setOwner(ContextMenuManager.this);
                     ret.validate();
-
                     menuData = ret;
                     onSetupMenuData(menuData);
                     // System.out.println(System.currentTimeMillis() - t);
@@ -349,14 +312,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 }
             }
         }.getReturnValue();
-
     }
 
     protected void onSetupMenuData(MenuContainerRoot menuData) {
     }
 
     private void convertOldFiles() {
-
     }
 
     abstract public MenuContainerRoot createDefaultStructure();
@@ -369,7 +330,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     // }
     // }
     // }
-
     public MenuContainerRoot setupDefaultStructure() {
         MenuContainerRoot ret = createDefaultStructure();
         ret._setOwner(this);
@@ -403,7 +363,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             config.setUnusedItems(null);
             menuData = setupDefaultStructure();
             menuData.validate();
-
         } else {
             menuData = root;
             config.setMenu(root);
@@ -414,11 +373,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     private ArrayList<String> getUnused(MenuContainerRoot root) {
         ArrayList<String> list = new ArrayList<String>();
-
         List<MenuItemData> allItemsInMenu = root.list();
-
         HashSet<String> actionClassesInMenu = new HashSet<String>();
-
         for (MenuItemData d : allItemsInMenu) {
             actionClassesInMenu.add(d._getIdentifier());
         }
@@ -427,9 +383,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             if (actionClassesInMenu.add(e._getIdentifier())) {
                 list.add(e._getIdentifier());
             }
-
         }
-
         return list;
     }
 
@@ -439,15 +393,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         } else {
             IO.secureWrite(saveTo, JSonStorage.serializeToJson(new MenuStructure(root, getUnused(root))).getBytes("UTF-8"));
         }
-
     }
 
     public void importFrom(File f) throws IOException {
-
         MenuStructure data = readFrom(f);
         data.getRoot().validateFull();
         setMenuData(data.getRoot());
-
         Dialog.getInstance().showMessageDialog("Imported '" + getName() + "");
     }
 
@@ -460,7 +411,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         if (!Application.isHeadless()) {
             if (extender.add(handler)) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         menuData = null;
@@ -479,7 +429,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         if (!Application.isHeadless()) {
             if (extender.remove(handler)) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         menuData = null;
@@ -500,7 +449,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 return;
             }
             SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(afterInitCallback = new Runnable() {
-
                 @Override
                 public void run() {
                     updateDelayer.resetAndStart();
@@ -523,5 +471,4 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     public boolean isAcceleratorsEnabled() {
         return false;
     }
-
 }
