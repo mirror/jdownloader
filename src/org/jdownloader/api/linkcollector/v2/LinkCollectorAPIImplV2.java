@@ -70,6 +70,11 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     @Override
+    public void setComment(long[] linkIds, long[] packageIds, boolean allPackageLinks, String comment) throws BadParameterException {
+        packageControllerUtils.setComment(linkIds, packageIds, allPackageLinks, comment);
+    }
+
+    @Override
     public ArrayList<CrawledPackageAPIStorableV2> queryPackages(CrawledPackageQueryStorable queryParams) throws BadParameterException {
         ArrayList<CrawledPackageAPIStorableV2> result = new ArrayList<CrawledPackageAPIStorableV2>();
         LinkCollector lc = LinkCollector.getInstance();

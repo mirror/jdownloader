@@ -151,6 +151,44 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         }
     }
 
+    public void setComment(long[] linkIds, long[] packageIds, boolean allPackageLinks, String comment) {
+        final SelectionInfo<PackageType, ChildType> selectionInfo = getSelectionInfo(linkIds, packageIds);
+        final List<AbstractNode> nodes = selectionInfo.getRawSelection();
+        for (AbstractNode node : nodes) {
+            if (node instanceof DownloadLink) {
+                ((DownloadLink) node).setComment(comment);
+            } else if (node instanceof CrawledLink) {
+                ((CrawledLink) node).setComment(comment);
+            } else if (node instanceof FilePackage) {
+                final FilePackage fp = ((FilePackage) node);
+                fp.setComment(comment);
+                if (allPackageLinks) {
+                    final boolean readL = fp.getModifyLock().readLock();
+                    try {
+                        for (final DownloadLink child : fp.getChildren()) {
+                            child.setComment(comment);
+                        }
+                    } finally {
+                        fp.getModifyLock().readUnlock(readL);
+                    }
+                }
+            } else if (node instanceof CrawledPackage) {
+                final CrawledPackage cp = ((CrawledPackage) node);
+                cp.setComment(comment);
+                if (allPackageLinks) {
+                    final boolean readL = cp.getModifyLock().readLock();
+                    try {
+                        for (final CrawledLink child : cp.getChildren()) {
+                            child.setComment(comment);
+                        }
+                    } finally {
+                        cp.getModifyLock().readUnlock(readL);
+                    }
+                }
+            }
+        }
+    }
+
     public void setEnabled(boolean enabled, final long[] linkIds, final long[] packageIds) {
         final List<ChildType> sdl = getSelectionInfo(linkIds, packageIds).getChildren();
         for (ChildType dl : sdl) {

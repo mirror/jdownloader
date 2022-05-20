@@ -62,6 +62,9 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
     @APIParameterNames({ "linkid" })
     List<LinkVariantStorableV2> getVariants(long linkid) throws BadParameterException;
 
+    @APIParameterNames({ "linkIds", "packageIds", "allPackageLinks", "comment" })
+    public void setComment(long[] linkIds, long[] packageIds, boolean allPackageLinks, String comment) throws BadParameterException;
+
     @APIParameterNames({ "linkid", "variantID" })
     void setVariant(long linkid, String variantID) throws BadParameterException;
 
@@ -71,12 +74,10 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
     @APIParameterNames({ "linkIds", "packageIds" })
     void startOnlineStatusCheck(long[] linkIds, long[] packageIds) throws BadParameterException;
 
-    @APIParameterNames({"linkIds","packageIds","urlDisplayTypes"})
-
+    @APIParameterNames({ "linkIds", "packageIds", "urlDisplayTypes" })
     Map<String, List<Long>> getDownloadUrls(final long[] linkIds, final long[] packageIds, UrlDisplayTypeStorable[] urlDisplayTypes) throws BadParameterException;
 
-    @APIParameterNames({"linkIds","pkgIds","newPkgName","downloadPath"})
-
+    @APIParameterNames({ "linkIds", "pkgIds", "newPkgName", "downloadPath" })
     void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException;
 
     @APIParameterNames({ "linkIds", "pkgIds" })

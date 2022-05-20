@@ -47,7 +47,8 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
      */
     @APIParameterNames({ "queryParams" })
     List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException;
-    @APIParameterNames({"linkIds","packageIds"})
+
+    @APIParameterNames({ "linkIds", "packageIds" })
     void removeLinks(final long[] linkIds, final long[] packageIds) throws BadParameterException;
 
     @APIParameterNames({ "packageId", "newName" })
@@ -55,6 +56,9 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
 
     @APIParameterNames({ "linkId", "newName" })
     void renameLink(Long linkId, String newName);
+
+    @APIParameterNames({ "linkIds", "packageIds", "allPackageLinks", "comment" })
+    public void setComment(long[] linkIds, long[] packageIds, boolean allPackageLinks, String comment) throws BadParameterException;
 
     @APIParameterNames({ "linkIds", "packageIds" })
     void resetLinks(long[] linkIds, long[] packageIds);
@@ -71,7 +75,8 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
 
     @APIParameterNames({ "packageIds", "afterDestPackageId" })
     void movePackages(long[] packageIds, long afterDestPackageId);
-    @APIParameterNames({"linkIds","afterLinkID","destPackageID"})
+
+    @APIParameterNames({ "linkIds", "afterLinkID", "destPackageID" })
     void moveLinks(long[] linkIds, long afterLinkID, long destPackageID);
 
     /**
