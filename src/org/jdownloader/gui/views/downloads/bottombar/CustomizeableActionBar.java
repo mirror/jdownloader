@@ -25,6 +25,12 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import jd.SecondLevelLaunch;
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
+import jd.gui.swing.jdgui.JDGui;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
@@ -44,14 +50,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.components.SetIconInterface;
-import jd.gui.swing.components.SetLabelInterface;
-import jd.gui.swing.jdgui.JDGui;
-import net.miginfocom.swing.MigLayout;
-
 public class CustomizeableActionBar extends MigPanel implements PropertyChangeListener {
-
     private final AbstractBottomBarMenuManager manager;
 
     @Override
@@ -67,7 +66,6 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         manager = bottomBarMenuManager;
         manager.addLink(this);
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 new EDTRunner() {
@@ -133,7 +131,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     private void addLink(MenuItemData menudata) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        final JComponent item = menudata.createItem();
+        final JComponent item = menudata.createItem(null);
         if (StringUtils.isNotEmpty(menudata.getIconKey())) {
             if (item instanceof SetIconInterface) {
                 ((SetIconInterface) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 20));
@@ -176,14 +174,12 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             bt = new ExtButton(action);
         }
         bt.setEnabled(action.isEnabled());
-
         if (action instanceof SelfLayoutInterface) {
             add(bt, ((SelfLayoutInterface) action).createConstraints());
         } else if (menudata instanceof SelfLayoutInterface) {
             add(bt, ((SelfLayoutInterface) menudata).createConstraints());
         } else {
             if (StringUtils.isEmpty(action.getName())) {
-
                 add(bt, "height 24!,width 24!,aligny top");
             } else {
                 add(bt, "height 24!,aligny top");
@@ -241,7 +237,6 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         final Graphics2D g2 = dest.createGraphics();
         g2.drawImage(back, xoffsetBack, yoffsetBack, null);
         g2.drawImage(front, xoffsetFront, yoffsetFront, null);
-
         g2.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.CAP_ROUND));
         g2.setColor(new Color(0, 0, 0, 50));
         g2.drawLine(w + 1, 0, w + 1, h);
@@ -259,7 +254,6 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             private Component    positionComp;
             private ExtPopupMenu popup;
             private long         lastHide = 0;
-
             {
                 updateIcon(true);
                 setName(menudata.getName());
@@ -275,12 +269,9 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 if (timeSinceLastHide < 250) {
                     //
                     return;
-
                 }
                 popup = new ExtPopupMenu() {
-
                     public void setVisible(boolean b) {
-
                         super.setVisible(b);
                         if (!b) {
                             lastHide = System.currentTimeMillis();
@@ -288,40 +279,30 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                         } else {
                             updateIcon(false);
                         }
-
                     };
                 };
-
                 new MenuBuilder(manager, popup, (MenuContainer) menudata) {
                     protected void addAction(final JComponent root, final MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-
                         super.addAction(root, inst, index, size);
                     }
                 }.run();
-
                 Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
                 Dimension pref = popup.getPreferredSize();
                 popup.setPreferredSize(pref);
                 Component refComponent = positionComp == null ? ((Component) e.getSource()) : positionComp;
                 Point loc = refComponent.getLocation();
-
                 Point converted = SwingUtilities.convertPoint(refComponent, loc, JDGui.getInstance().getMainFrame());
-
                 if (converted.x > JDGui.getInstance().getMainFrame().getWidth() / 2) {
                     // right side
                     popup.show((Component) e.getSource(), -popup.getPreferredSize().width + insets.right + ((Component) e.getSource()).getWidth() + 1, -popup.getPreferredSize().height + insets.bottom);
-
                 } else {
                     popup.show(refComponent, -insets.left - 1, -popup.getPreferredSize().height + insets.bottom);
                 }
-
             }
 
             private void updateIcon(boolean b) {
-
                 if (StringUtils.isEmpty(validateIconKey(menudata.getIconKey()))) {
                     setSmallIcon(NewTheme.I().getIcon(b ? IconKey.ICON_POPUPSMALL : IconKey.ICON_POPDOWNSMALL, -1));
-
                 } else {
                     setSmallIcon(createDropdownImage(b, NewTheme.I().getImage(validateIconKey(menudata.getIconKey()), 18)));
                 }

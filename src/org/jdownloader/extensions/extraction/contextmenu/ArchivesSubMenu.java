@@ -10,6 +10,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
@@ -37,8 +38,8 @@ public class ArchivesSubMenu extends MenuContainer {
     }
 
     @Override
-    public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        final JComponent ret = super.addTo(root);
+    public JComponent addTo(JComponent root, MenuBuilder menuBuilder) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+        final JComponent ret = super.addTo(root, menuBuilder);
         ret.setEnabled(false);
         final ArchiveValidation result = ArchiveValidator.validate(_getSelection(), true);
         result.executeWhenReached(new Runnable() {

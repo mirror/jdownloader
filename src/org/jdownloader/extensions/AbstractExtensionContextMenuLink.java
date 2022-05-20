@@ -7,9 +7,9 @@ import javax.swing.JComponent;
 
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 
 public abstract class AbstractExtensionContextMenuLink<T extends AbstractExtension<?, ?>> extends MenuItemData implements MenuLink {
-
     protected T _getExtension() {
         try {
             ParameterizedType sc = (ParameterizedType) getClass().getGenericSuperclass();
@@ -23,11 +23,10 @@ public abstract class AbstractExtensionContextMenuLink<T extends AbstractExtensi
             e.printStackTrace();
             return null;
         }
-
     }
 
     @Override
-    public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public JComponent addTo(JComponent root, MenuBuilder menuBuilder) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         T ext = _getExtension();
         if (ext == null || !ext.isEnabled()) {
             return null;
@@ -37,5 +36,4 @@ public abstract class AbstractExtensionContextMenuLink<T extends AbstractExtensi
     }
 
     abstract protected void link(JComponent root, T extension);
-
 }

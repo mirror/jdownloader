@@ -18,22 +18,26 @@ import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 
 public class MenuBuilder {
+    protected final JComponent                            root;
+    protected final MenuContainer                         menuData;
+    protected final LogSource                             logger;
+    protected final HashMap<JComponent, HashSet<Integer>> mnemonics;
+    protected boolean                                     hideOnClick = true;
 
-    private JComponent                            root;
+    public boolean isHideOnClick() {
+        return hideOnClick;
+    }
 
-    private MenuContainer                         menuData;
-    private ContextMenuManager<?, ?>              menuManager;
-    private LogSource                             logger;
-    private HashMap<JComponent, HashSet<Integer>> mnemonics;
+    public MenuBuilder setHideOnClick(boolean hideOnClick) {
+        this.hideOnClick = hideOnClick;
+        return this;
+    }
 
     public MenuBuilder(ContextMenuManager<?, ?> menuManager, JComponent root, MenuContainer md) {
         this.root = root;
-
-        this.menuManager = menuManager;
         menuData = md;
         logger = menuManager.getLogger();
         mnemonics = new HashMap<JComponent, HashSet<Integer>>();
-
     }
 
     protected void registerMnemonic(JComponent root, int mnem) {
@@ -49,31 +53,31 @@ public class MenuBuilder {
         if (mnem == 0) {
             if (submenu.getText() != null) {
                 for (int i = 0; i < submenu.getText().length(); i++) {
-
                     mnem = org.appwork.swing.action.BasicAction.charToMnemonic(submenu.getText().charAt(i));
                     if (mnem > 0 && !isMnemonicUsed(root, mnem)) {
                         submenu.setMnemonic(mnem);
                         break;
                     }
                 }
-
             }
         }
-
         registerMnemonic(root, mnem);
     }
 
     protected boolean isMnemonicUsed(JComponent root, int mnem) {
-        HashSet<Integer> set = mnemonics.get(root);
+        final HashSet<Integer> set = mnemonics.get(root);
         if (set == null) {
             return false;
+        } else {
+            return set.contains(mnem);
         }
-        return set.contains(mnem);
     }
 
     /**
      * @param root
      * @param md
+     * @param hideOnClick
+     *            TODO
      */
     protected void createLayer(final JComponent root, MenuContainer md) {
         if (root == null) {
@@ -82,8 +86,6 @@ public class MenuBuilder {
         long t = System.currentTimeMillis();
         try {
             int counter = 0;
-            boolean hasToggle = false;
-
             for (MenuItemData i : md.getItems()) {
                 try {
                     final MenuItemData inst = i;
@@ -98,32 +100,26 @@ public class MenuBuilder {
                     if (count == 0 && inst instanceof SeparatorData) {
                         continue;
                     }
-
                     switch (inst.getType()) {
                     case ACTION:
-
                         addAction(root, inst, counter, md.getItems().size());
-
                         break;
                     case CONTAINER:
                         addContainer(root, inst, counter, md.getItems().size());
-
+                        break;
+                    default:
+                        throw new Exception("Unsupported Type:" + inst.getType());
                     }
-                    ;
-
                 } catch (Throwable e) {
                     logger.warning("Could Not Build MenuItem: " + i);
                     logger.log(e);
                 } finally {
                     counter++;
                 }
-
             }
-            ;
             if (root instanceof ExtMenuInterface) {
                 ((ExtMenuInterface) root).cleanup();
             }
-
             for (Component c : root.getComponents()) {
                 if (c instanceof AfterLayerUpdateInterface) {
                     ((AfterLayerUpdateInterface) c).onAfterLayerDone(root, md);
@@ -132,41 +128,28 @@ public class MenuBuilder {
         } finally {
             // System.out.println("Menu Creation Layer: " + md + " took " + (System.currentTimeMillis() - t));
         }
-
     }
 
     protected void addContainer(final JComponent root, final MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-        final JMenu submenu = (JMenu) inst.addTo(root);
-        if (submenu == null) {
-            return;
-        }
-        createLayer(submenu, (MenuContainer) inst);
-
-        if (submenu.getMenuComponentCount() == 0) {
-            root.remove(submenu);
+        final JMenu submenu = (JMenu) inst.addTo(root, this);
+        if (submenu != null) {
+            createLayer(submenu, (MenuContainer) inst);
+            if (submenu.getMenuComponentCount() == 0) {
+                root.remove(submenu);
+            }
         }
     }
 
     protected void addAction(final JComponent root, final MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-        long t = System.currentTimeMillis();
-        try {
-            inst.addTo(root);
-        } finally {
-            // System.out.println("Action Creation " + inst + " took " + (System.currentTimeMillis() - t));
-        }
+        inst.addTo(root, this);
     }
 
     public void run() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 createLayer(root, menuData);
-
             }
         };
-
     }
-
 }

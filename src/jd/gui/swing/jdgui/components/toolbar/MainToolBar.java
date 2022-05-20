@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.components.toolbar;
 
 import java.awt.Component;
@@ -93,18 +92,12 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class MainToolBar extends JToolBar implements MouseListener, DownloadWatchdogListener, GenericConfigEventListener<Boolean> {
-
     private static final long          serialVersionUID = 922971719957349497L;
-
     private static MainToolBar         INSTANCE         = null;
-
     private volatile SpeedMeterPanel   speedmeter;
     private JRootPane                  rootpane;
-
     private boolean                    initDone         = false;
-
     private LogSource                  logger;
-
     private HashMap<KeyStroke, Action> shortCutActions;
 
     public boolean isInitDone() {
@@ -139,26 +132,19 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     // ret.height = 38;
     // return ret;
     // }
-
     private MainToolBar() {
         super();
         logger = LogController.getInstance().getLogger("MainToolbar");
-
         this.addMouseListener(this);
         this.setRollover(true);
         this.setFloatable(false);
-
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
             public void run() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         speedmeter = new SpeedMeterPanel(true, false);
-
                         speedmeter.addMouseListener(new MouseAdapter() {
-
                             @Override
                             public void mouseClicked(MouseEvent e) {
                                 if (true) {
@@ -172,14 +158,11 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 };
                 DownloadWatchDog.getInstance().getEventSender().addListener(MainToolBar.this);
             }
-
         });
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         if (!isInitDone()) {
@@ -189,22 +172,16 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 };
             }
         });
-
         addMouseListener(new MouseAdapter() {
-
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                     QuickSettingsPopup pu = new QuickSettingsPopup();
                     pu.show((Component) e.getSource(), e.getX(), e.getY());
-
                 }
             }
-
         });
-
         LAFOptions.getInstance().getExtension().customizeToolbar(this);
-
     }
 
     /**
@@ -230,10 +207,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
         }
         initDone = true;
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 setVisible(false);
                 removeAll();
                 initToolbar();
@@ -241,9 +216,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 setVisible(true);
                 revalidate();
             }
-
         };
-
     }
 
     protected void addImpl(Component comp, Object constraints, int index) {
@@ -252,7 +225,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
             comp.removeMouseListener(this);
             comp.addMouseListener(this);
         }
-
     }
 
     private void fillActions(MenuContainer menuData) {
@@ -262,9 +234,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-
         final ActionMap actions = getActionMap();
-
         for (MenuItemData mi : menuData.getItems()) {
             if (!mi._isValidated()) {
                 return;
@@ -306,7 +276,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
         }
     }
@@ -338,25 +307,20 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
             } catch (Exception e) {
                 logger.log(e);
             }
-
             logger.info(keystroke + " -> " + action);
-
             input.put(keystroke, key);
             input2.put(keystroke, key);
             input3.put(keystroke, key);
             actions.put(key, action);
             shortCutActions.put(keystroke, action);
-
         }
     }
 
     public void updateContextShortcuts(MenuContainerRoot container) {
-
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actions = getActionMap();
-
         if (shortCutActions != null) {
             for (Entry<KeyStroke, Action> ks : shortCutActions.entrySet()) {
                 Object binding = input.get(ks.getKey());
@@ -364,13 +328,10 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 input2.remove(ks.getKey());
                 input3.remove(ks.getKey());
                 actions.remove(binding);
-
             }
         }
-
         shortCutActions = new HashMap<KeyStroke, Action>();
         fillActions(container);
-
     }
 
     private void initToolbar() {
@@ -382,7 +343,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
         // System.out.println(this.getColConstraints(list.length));
         MenuItemData last = null;
         for (final MenuItemData menudata : list) {
-
             AbstractButton bt = null;
             CustomizableAppAction action;
             try {
@@ -401,11 +361,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 if (menudata._getValidateException() != null) {
                     continue;
                 }
-
                 if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
                     bt = new ExtButton(new AppAction() {
                         private ExtPopupMenu root = null;
-
                         {
                             setTooltipText(menudata.getName());
                             setName(menudata.getName());
@@ -423,18 +381,14 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 lroot = new ExtPopupMenu();
                                 final ExtPopupMenu finalMenu = lroot;
                                 final MouseListener ml = new MouseListener() {
-
                                     private Timer timer;
-
                                     {
                                         final MouseListener ml = this;
                                         timer = new Timer(1000, new ActionListener() {
-
                                             @Override
                                             public void actionPerformed(ActionEvent e2) {
                                                 finalMenu.setVisible(false);
                                                 ((JComponent) e.getSource()).removeMouseListener(ml);
-
                                             }
                                         });
                                         timer.setRepeats(false);
@@ -455,28 +409,24 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                     @Override
                                     public void mouseEntered(MouseEvent e) {
                                         timer.stop();
-
                                     }
 
                                     @Override
                                     public void mouseExited(MouseEvent e) {
                                         timer.stop();
                                         timer.start();
-
                                     }
-
                                 };
                                 ((JComponent) e.getSource()).addMouseListener(ml);
                                 new MenuBuilder(MenuManagerMainToolbar.getInstance(), lroot, (MenuContainer) menudata) {
                                     @Override
                                     protected void addContainer(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                                        final JMenu submenu = (JMenu) inst.addTo(root);
+                                        final JMenu submenu = (JMenu) inst.addTo(root, this);
                                         if (submenu == null) {
                                             return;
                                         }
                                         submenu.addMouseListener(ml);
                                         createLayer(submenu, (MenuContainer) inst);
-
                                         if (submenu.getMenuComponentCount() == 0) {
                                             root.remove(submenu);
                                         }
@@ -484,11 +434,10 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                                     @Override
                                     protected void addAction(JComponent root, MenuItemData inst, int index, int size) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                                        JComponent ret = inst.addTo(root);
+                                        JComponent ret = inst.addTo(root, this);
                                         if (ret != null) {
                                             ret.addMouseListener(ml);
                                         }
-
                                     }
                                 }.run();
                                 Component button = (Component) e.getSource();
@@ -496,16 +445,12 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
                                 root = lroot;
                                 lroot.show(button, -insets.left, button.getHeight() - insets.top);
-
                             }
                         }
-
                     });
-
                     last = menudata;
                     final AbstractButton finalBt = bt;
                     bt.addMouseListener(new MouseListener() {
-
                         private Timer timer;
 
                         @Override
@@ -543,7 +488,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 ltimer.stop();
                             }
                             ltimer = new Timer(200, new ActionListener() {
-
                                 @Override
                                 public void actionPerformed(ActionEvent e) {
                                     e.setSource(finalBt);
@@ -553,7 +497,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                             ltimer.setRepeats(false);
                             ltimer.start();
                             timer = ltimer;
-
                         }
 
                         @Override
@@ -565,36 +508,28 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                             }
                         }
                     });
-
                     add(bt, "width 32!,height 32!,hidemode 3");
                     bt.setHideActionText(true);
                     continue;
-
                 } else if (menudata instanceof MenuLink) {
-                    final JComponent item = menudata.createItem();
+                    final JComponent item = menudata.createItem(null);
                     if (StringUtils.isNotEmpty(menudata.getIconKey())) {
                         if (item instanceof AbstractButton) {
                             ((AbstractButton) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
                         } else if (item instanceof SetIconInterface) {
                             ((SetIconInterface) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
-
                         }
                     }
-
                     if (StringUtils.isNotEmpty(menudata.getName())) {
                         if (item instanceof SetLabelInterface) {
                             ((SetLabelInterface) item).setText(menudata.getName());
-
                         }
                     }
-
                     if (item instanceof JMenu) {
-
                         bt = new ExtButton(new AppAction() {
                             {
                                 setName(((JMenu) item).getText());
                                 Icon ico = ((JMenu) item).getIcon();
-
                                 if (ico == null || Math.max(ico.getIconHeight(), ico.getIconWidth()) < 24) {
                                     ico = createDropdownImage("menu");
                                     putValue(AbstractAction.LARGE_ICON_KEY, ico);
@@ -607,7 +542,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                     putValue(AbstractAction.LARGE_ICON_KEY, ico);
                                     setSmallIcon(ico);
                                 } else {
-
                                     putValue(AbstractAction.LARGE_ICON_KEY, ico);
                                     setSmallIcon(ico);
                                 }
@@ -619,28 +553,22 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 for (Component c : ((JMenu) item).getMenuComponents()) {
                                     root.add(c);
                                 }
-
                                 Object src = e.getSource();
                                 if (e.getSource() instanceof Component) {
                                     Component button = (Component) e.getSource();
                                     Dimension prefSize = root.getPreferredSize();
                                     Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
                                     root.show(button, -insets.left, button.getHeight() - insets.top);
-
                                 }
                             }
-
                         });
-
                         add(bt, "width 32!,height 32!,hidemode 3");
                         bt.setHideActionText(true);
                     } else {
                         add(item, "aligny center,hidemode 3");
                     }
                 } else if (menudata.getActionData() != null && menudata.getActionData()._isValidDataForCreatingAnAction()) {
-
                     action = menudata.createAction();
-
                     // if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                     // action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
                     // } else if (MenuItemData.isEmptyValue(menudata.getShortcut())) {
@@ -659,10 +587,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                             action.requestUpdate(MainToolBar.this);
                             bt = new JToggleButton(action);
                             Icon icon;
-
                             bt.setIcon(icon = NewTheme.I().getCheckBoxImage(validateIconKey(action.getIconKey()), false, 24));
                             bt.setRolloverIcon(icon);
-
                             bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
                             bt.setRolloverSelectedIcon(icon);
                             add(bt, "width 32!,height 32!,hidemode 3");
@@ -670,16 +596,13 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         } else {
                             action.requestUpdate(MainToolBar.this);
                             bt = new ExtButton(action);
-
                             bt.setIcon(NewTheme.I().getIcon(validateIconKey(action.getIconKey()), 24));
                             add(bt, "width 32!,height 32!,hidemode 3");
                             bt.setHideActionText(true);
                         }
                     }
-
                     final AbstractButton finalBt = bt;
                     action.addPropertyChangeListener(new PropertyChangeListener() {
-
                         @Override
                         public void propertyChange(PropertyChangeEvent evt) {
                             if ("visible".equals(evt.getPropertyName())) {
@@ -695,11 +618,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         continue;
                     }
                     final KeyStroke ks = (KeyStroke) value;
-
                     this.rootpane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
                     this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
                     this.rootpane.getActionMap().put(action, action);
-
                     // final String shortCut = action.getShortCutString();
                     // if (bt != null) {
                     // if (StringUtils.isEmpty(action.getTooltipText())) {
@@ -710,22 +631,18 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     //
                     // }
                 }
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         add(Box.createHorizontalGlue(), "pushx,growx");
-
     }
 
     public String validateIconKey(String key) {
-
         if (StringUtils.isEmpty(key) || !NewTheme.I().hasIcon(key)) {
             return IconKey.ICON_QUESTION;
         }
         return key;
-
     }
 
     protected ImageIcon createDropdownImage(String iconKey) {
@@ -734,13 +651,11 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
         }
         Image back = NewTheme.I().getImage(iconKey, 20, false);
         return createDropdownImage(back);
-
     }
 
     protected ImageIcon createDropdownImage(Image back) {
         Image checkBox = NewTheme.I().getImage("popDownSmall", -1, false);
         back = ImageProvider.merge(back, checkBox, 0, 0, 24 - checkBox.getWidth(null), 24 - checkBox.getHeight(null));
-
         return new ImageIcon(back);
     }
 
@@ -761,7 +676,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     @Override
     public void mousePressed(MouseEvent e) {
-
     }
 
     @Override
@@ -783,7 +697,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     @Override
     public void onDownloadWatchdogStateIsIdle() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (speedmeter != null) {
@@ -800,7 +713,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     @Override
     public void onDownloadWatchdogStateIsRunning() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (speedmeter != null) {
@@ -813,7 +725,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     @Override
     public void onDownloadWatchdogStateIsStopped() {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (speedmeter != null) {
@@ -834,11 +745,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-
             @Override
             public void execute(DownloadSession currentSession) {
                 final boolean running = DownloadWatchDog.getInstance().isRunning();
-
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
@@ -853,7 +762,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         }
                     }
                 };
-
             }
 
             @Override
@@ -878,5 +786,4 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     @Override
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
     }
-
 }

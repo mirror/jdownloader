@@ -1,5 +1,11 @@
 package org.jdownloader.controlling.contextmenu;
 
+import java.awt.AWTEvent;
+import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -7,6 +13,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -20,6 +27,7 @@ import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.ComponentProviderInterface;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -201,10 +209,11 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         return ret;
     }
 
-    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        if (getActionData() == null || !getActionData()._isValidDataForCreatingAnAction()) {
-            //
-            throw new WTFException("No ACTION");
+    public JComponent createItem(MenuBuilder menuBuilder) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+        if (getActionData() == null) {
+            throw new WTFException("No action:" + this);
+        } else if (!getActionData()._isValidDataForCreatingAnAction()) {
+            throw new WTFException("No valid action:" + this);
         }
         final CustomizableAppAction action = createAction();
         action.requestUpdate(this);
@@ -215,7 +224,7 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         } else if (action instanceof ComponentProviderInterface) {
             return ((ComponentProviderInterface) action).createComponent(this);
         }
-        final JMenuItem ret = createMenuItem(action);
+        final JMenuItem ret = createMenuItem(action, menuBuilder);
         if (StringUtils.isNotEmpty(name)) {
             ret.setText(name);
         }
@@ -225,13 +234,50 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         return ret;
     }
 
-    protected JMenuItem createMenuItem(final CustomizableAppAction action) {
+    protected boolean processHideOnClickMouseEvent(JMenuItem item, final boolean hideOnClick, final MouseEvent ev) {
+        if (!hideOnClick && ev.getID() == MouseEvent.MOUSE_RELEASED) {
+            item.setSelected(!item.isSelected());
+            for (final ActionListener al : item.getActionListeners()) {
+                int modifiers = 0;
+                final AWTEvent currentEvent = EventQueue.getCurrentEvent();
+                if (currentEvent instanceof InputEvent) {
+                    modifiers = ((InputEvent) currentEvent).getModifiers();
+                } else if (currentEvent instanceof ActionEvent) {
+                    modifiers = ((ActionEvent) currentEvent).getModifiers();
+                }
+                al.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, item.getActionCommand(), EventQueue.getMostRecentEventTime(), modifiers));
+                final Action action = item.getAction();
+                if (action instanceof CustomizableAppAction) {
+                    ((CustomizableAppAction) action).requestUpdate(ev);
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    protected JMenuItem createMenuItem(final CustomizableAppAction action, final MenuBuilder menuBuilder) {
         // see ExtMenuItem to avoid popup close
         final JMenuItem ret;
         if (action.isToggle()) {
-            ret = new JCheckBoxMenuItem(action);
+            ret = new JCheckBoxMenuItem(action) {
+                @Override
+                protected void processMouseEvent(final MouseEvent e) {
+                    if (!MenuItemData.this.processHideOnClickMouseEvent(this, menuBuilder == null || menuBuilder.isHideOnClick(), e)) {
+                        super.processMouseEvent(e);
+                    }
+                }
+            };
         } else {
-            ret = new JMenuItem(action);
+            ret = new JMenuItem(action) {
+                @Override
+                protected void processMouseEvent(final MouseEvent e) {
+                    if (!MenuItemData.this.processHideOnClickMouseEvent(this, menuBuilder == null || menuBuilder.isHideOnClick(), e)) {
+                        super.processMouseEvent(e);
+                    }
+                }
+            };
         }
         ret.getAccessibleContext().setAccessibleName(action.getName());
         ret.getAccessibleContext().setAccessibleDescription(action.getTooltipText());
@@ -285,17 +331,18 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         return (ret);
     }
 
-    public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+    public JComponent addTo(JComponent root, MenuBuilder menuBuilder) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         if (!isVisible()) {
             return null;
+        } else {
+            final JComponent it = createItem(menuBuilder);
+            if (it == null) {
+                return null;
+            } else {
+                root.add(it);
+                return it;
+            }
         }
-        JComponent it;
-        it = createItem();
-        if (it == null) {
-            return null;
-        }
-        root.add(it);
-        return it;
     }
 
     public List<MenuItemData> list() {
