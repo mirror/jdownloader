@@ -239,29 +239,24 @@ public class SuFileCom extends PluginForHost {
         final String expire = br.getRegex(">到期时间：</span><span class=\\\\mr15 w300 dib\">([^<>\"]*?)</span>").getMatch(0);
         ai.setUnlimitedTraffic();
         if (br.containsHTML("href=\"upvip\\.php\" title=\"升级为VIP会员\"") || expire == null) {
-            account.setProperty("free", true);
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
         } else {
-            account.setProperty("free", false);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.CHINA));
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium Account");
         }
-        account.setValid(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
