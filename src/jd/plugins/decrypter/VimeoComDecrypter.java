@@ -67,6 +67,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -946,32 +947,33 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     } else {
                         decryptedLinks.addAll(dedupeMap.values());
                     }
-                    String fpName = "";
-                    if (StringUtils.isNotEmpty(channelName)) {
-                        fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
-                    }
+                    String formattedDate = null;
                     if (date != null) {
                         try {
-                            final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_3", "dd.MM.yyyy_HH-mm-ss");
+                            final String userDefinedDateFormat = cfg.getStringProperty(VimeoCom.CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
                             SimpleDateFormat formatter = jd.plugins.hoster.VimeoCom.getFormatterForDate(date);
                             Date dateStr = formatter.parse(date);
-                            String formattedDate = formatter.format(dateStr);
+                            formattedDate = formatter.format(dateStr);
                             Date theDate = formatter.parse(formattedDate);
                             formatter = new SimpleDateFormat(userDefinedDateFormat);
                             formattedDate = formatter.format(theDate);
-                            fpName += formattedDate + " - ";
                         } catch (final Throwable e) {
                             LogSource.exception(logger, e);
                         }
                     }
-                    if (StringUtils.isNotEmpty(title)) {
-                        fpName += title;
+                    String customPackagename = JDUtilities.getPluginForHost(this.getHost()).getPluginConfig().getStringProperty(VimeoCom.CUSTOM_PACKAGENAME_SINGLE_VIDEO, VimeoCom.defaultCustomPackagenameSingleVideo);
+                    if (StringUtils.isEmpty(customPackagename)) {
+                        /* Fallback */
+                        customPackagename = VimeoCom.defaultCustomPackagenameSingleVideo;
                     }
-                    if (StringUtils.isNotEmpty(fpName)) {
-                        final FilePackage fp = FilePackage.getInstance();
-                        fp.setName(fpName);
-                        fp.addLinks(decryptedLinks);
-                    }
+                    customPackagename = customPackagename.replace("*date*", formattedDate);
+                    customPackagename = customPackagename.replace("*videoid*", videoID);
+                    customPackagename = customPackagename.replace("*channelname*", channelName);
+                    customPackagename = customPackagename.replace("*videoname*", title);
+                    /* Generate packagename */
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(customPackagename);
+                    fp.addLinks(decryptedLinks);
                 }
             }
         }
