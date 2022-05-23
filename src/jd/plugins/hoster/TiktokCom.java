@@ -153,13 +153,13 @@ public class TiktokCom extends PluginForHost {
             /* Fallback-filename */
             link.setName(fid + ".mp4");
         }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !true) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             this.checkAvailablestatusAPI(link, isDownload);
         } else {
             this.checkAvailablestatusWebsite(link, isDownload);
         }
         final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+        if (!StringUtils.isEmpty(dllink) && !link.isSizeSet() && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
@@ -347,21 +347,21 @@ public class TiktokCom extends PluginForHost {
                     }
                 }
                 /* Set more Packagizer properties */
-                if (itemInfos.containsKey("diggCount")) {
-                    final Number number = (Number) itemInfos.get("diggCount");
-                    setLikeCount(link, number);
+                final Object diggCountO = itemInfos.get("diggCount");
+                if (diggCountO != null) {
+                    setLikeCount(link, (Number) diggCountO);
                 }
-                if (itemInfos.containsKey("playCount")) {
-                    final Number number = (Number) itemInfos.get("playCount");
-                    setPlayCount(link, number);
+                final Object playCountO = itemInfos.get("playCount");
+                if (playCountO != null) {
+                    setPlayCount(link, (Number) playCountO);
                 }
-                if (itemInfos.containsKey("shareCount")) {
-                    final Number number = (Number) itemInfos.get("shareCount");
-                    setShareCount(link, number);
+                final Object shareCountO = itemInfos.get("shareCount");
+                if (shareCountO != null) {
+                    setShareCount(link, (Number) shareCountO);
                 }
-                if (itemInfos.containsKey("commentCount")) {
-                    final Number number = (Number) itemInfos.get("commentCount");
-                    setCommentCount(link, number);
+                final Object commentCountO = itemInfos.get("commentCount");
+                if (commentCountO != null) {
+                    setCommentCount(link, (Number) commentCountO);
                 }
                 if (!StringUtils.isEmpty(createDate)) {
                     link.setProperty(PROPERTY_DATE, convertDateFormat(createDate));
@@ -391,15 +391,44 @@ public class TiktokCom extends PluginForHost {
         query.add("aweme_id", this.getFID(link));
         accessAPI(br, "/aweme/detail", query);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        /* TODO: Make use of that API */
+        final Map<String, Object> aweme_detail = (Map<String, Object>) entries.get("aweme_detail");
+        if (aweme_detail == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> status = (Map<String, Object>) aweme_detail.get("status");
+        if ((Boolean) status.get("is_delete")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        link.setProperty(PROPERTY_DATE, new SimpleDateFormat("yyyy-MM-dd").format(new Date(((Number) aweme_detail.get("create_time")).longValue() * 1000)));
+        final Map<String, Object> statistics = (Map<String, Object>) aweme_detail.get("statistics");
+        final Map<String, Object> video = (Map<String, Object>) aweme_detail.get("video");
+        final Map<String, Object> author = (Map<String, Object>) aweme_detail.get("author");
+        link.setProperty(PROPERTY_USERNAME, "@" + author.get("unique_id").toString());
+        setDescriptionAndHashtags(link, aweme_detail.get("desc").toString());
+        if ((Boolean) video.get("has_watermark") || (Boolean) aweme_detail.get("prevent_download")) {
+            /* Get stream downloadurl because it comes without watermark */
+            link.setProperty(PROPERTY_DIRECTURL, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
+        } else {
+            /* Grab official downloadlink because this video doesn't come with a watermark anyways. */
+            final String downloadJson = video.get("misc_download_addrs").toString();
+            final Map<String, Object> misc_download_addrs = JSonStorage.restoreFromString(downloadJson, TypeRef.HASHMAP);
+            final Map<String, Object> suffix_scene = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
+            link.setProperty(PROPERTY_DIRECTURL, JavaScriptEngineFactory.walkJson(suffix_scene, "url_list/{0}"));
+            link.setVerifiedFileSize(((Number) suffix_scene.get("data_size")).longValue());
+        }
+        setLikeCount(link, (Number) statistics.get("digg_count"));
+        setPlayCount(link, (Number) statistics.get("play_count"));
+        setShareCount(link, (Number) statistics.get("share_count"));
+        setCommentCount(link, (Number) statistics.get("comment_count"));
     }
 
     private void accessAPI(final Browser br, final String path, final UrlQuery query) throws IOException {
-        br.getPage(API_BASE + path + "?" + query.toString() + "/");
+        br.getPage(API_BASE + path + "/" + "?" + query.toString());
     }
 
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("User-Agent", String.format("com.ss.android.ugc.trill/%s (Linux; U; Android 10; en_US; Pixel 4; Build/QQ3A.200805.001; Cronet/58.0.2991.0)", API_VERSION_CODE));
+        // br.getHeaders().put("User-Agent", "okhttp");
         br.getHeaders().put("Accept", "application/json");
         br.setCookie(API_BASE, "odin_tt", getRandomString("0123456789abcdef", 160));
         return br;
@@ -417,19 +446,19 @@ public class TiktokCom extends PluginForHost {
         query.add("_rticket", Long.toString(System.currentTimeMillis()));
         query.add("ts", Long.toString(System.currentTimeMillis() / 1000));
         query.add("device_brand", "Google");
-        query.add("device_type", "Pixel 4");
-        query.add("device_platform", "Android");
-        query.add("resolution", "1080*1920");
+        query.add("device_type", Encoding.urlEncode("Pixel 4"));
+        query.add("device_platform", "android");
+        query.add("resolution", "1080%2A1920");
         query.add("dpi", "420");
         query.add("os_version", "10");
-        query.add("os_api", "28");
+        query.add("os_api", "29");
         query.add("carrier_region", "US");
         query.add("sys_region", "US");
         query.add("region", "US");
         query.add("app_name", "trill");
         query.add("app_language", "en");
         query.add("language", "en");
-        query.add("timezone_name", "America/New_York");
+        query.add("timezone_name", Encoding.urlEncode("America/New_York"));
         query.add("timezone_offset", "-14400");
         query.add("channel", "googleplay");
         query.add("ac", "wifi");

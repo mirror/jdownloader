@@ -22,6 +22,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,19 +56,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
@@ -379,34 +379,38 @@ public class DeepbridCom extends antiDDoSForHost {
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
                     br.setCookies(this.getHost(), userCookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust login usercookies as they're not that old");
+                    if (!forceFullLogin) {
+                        /* Do not verify cookies */
                         return;
-                    } else {
-                        logger.info("Trying to login via usercookies");
-                        if (isLoggedinAPI()) {
-                            /* Save new cookie-timestamp */
-                            logger.info("UserCookie login successful");
-                            account.saveCookies(br.getCookies(this.getHost()), "");
-                            return;
-                        } else if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
+                    logger.info("Trying to login via usercookies");
+                    if (isLoggedinAPI(br)) {
+                        /* Save new cookie-timestamp */
+                        logger.info("UserCookie login successful");
+                        /*
+                         * For cookie login user can enter whatever he wants in "username" field. We want unique usernames so user cannot
+                         * add the same account twice!
+                         */
+                        final String username = PluginJSonUtils.getJson(br, "username");
+                        if (username != null) {
+                            account.setUser(username);
                         }
+                        return;
+                    } else if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                     }
                 }
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust login cookies as they're not that old");
+                    if (!forceFullLogin) {
+                        /* Do not verify cookies */
                         return;
                     }
                     logger.info("Trying to login via cookies");
-                    if (isLoggedinAPI()) {
+                    if (isLoggedinAPI(br)) {
                         /* Save new cookie-timestamp */
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(this.getHost()), "");
@@ -436,7 +440,7 @@ public class DeepbridCom extends antiDDoSForHost {
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 submitForm(loginform);
-                if (!isLoggedinAPI()) {
+                if (!isLoggedinAPI(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
@@ -449,8 +453,8 @@ public class DeepbridCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedinAPI() throws Exception {
-        getPage(API_BASE + "?page=api&action=accountInfo");
+    private boolean isLoggedinAPI(final Browser br) throws Exception {
+        getPage(br, API_BASE + "?page=api&action=accountInfo");
         final String username = PluginJSonUtils.getJson(br, "username");
         final boolean loggedInViaCookies = username != null;
         /* Failure would redirect us to /login */
