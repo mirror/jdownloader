@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -35,6 +30,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamlareCom extends PluginForHost {
@@ -51,7 +51,7 @@ public class StreamlareCom extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamlare.com" });
+        ret.add(new String[] { "streamlare.com", "slmaxed.com" });
         return ret;
     }
 
@@ -76,13 +76,13 @@ public class StreamlareCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
+
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
