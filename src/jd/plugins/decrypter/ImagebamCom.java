@@ -34,6 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -170,6 +171,7 @@ public class ImagebamCom extends PluginForDecrypt {
             final String filenameURL = Plugin.getFileNameFromURL(new URL(finallink));
             if (originalFilename != null) {
                 direct.setFinalFileName(originalFilename);
+                direct.setProperty(DirectHTTP.FIXNAME, originalFilename);
             } else if (filenameURL != null) {
                 direct.setFinalFileName(filenameURL);
             }
