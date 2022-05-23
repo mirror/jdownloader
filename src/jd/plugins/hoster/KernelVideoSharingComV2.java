@@ -708,11 +708,11 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         /* Try default traits --> Very unsafe but may sometimes work */
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
             title = regexEmbedTitleWebsite();
-            title = removeUnwantedTitleStuff(title);
+            title = removeUnwantedURLTitleStuff(title);
         }
         if (StringUtils.isEmpty(title)) {
             title = regexNormalTitleWebsite();
-            title = removeUnwantedTitleStuff(title);
+            title = removeUnwantedURLTitleStuff(title);
         }
         if (title != null) {
             /* Remove html crap and spaces at the beginning and end. */
@@ -1555,13 +1555,11 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return m.toString();
     }
 
-    protected String removeUnwantedTitleStuff(String urltitle) {
+    protected String removeUnwantedURLTitleStuff(String urltitle) {
+        if (urltitle == null) {
+            return null;
+        }
         if (!StringUtils.isEmpty(urltitle)) {
-            /* Special: Remove unwanted stuff e.g.: private-shows.net, anon-v.com */
-            final String removeme = new Regex(urltitle, "(-?[a-z0-9]{2,}(\\.|-)[a-z]{2,})$").getMatch(0);
-            if (removeme != null) {
-                urltitle = urltitle.replace(removeme, "");
-            }
             /* Make the url-filenames look better by using spaces instead of '-'. */
             urltitle = urltitle.replace("-", " ");
             /* Remove eventually existing spaces at the end */
@@ -1573,7 +1571,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     /** Returns "better human readable" file-title from URL. */
     protected String getURLTitleCorrected(final String url) {
         String urltitle = getURLTitle(url);
-        urltitle = removeUnwantedTitleStuff(urltitle);
+        urltitle = removeUnwantedURLTitleStuff(urltitle);
         return urltitle;
     }
 

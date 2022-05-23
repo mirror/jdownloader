@@ -36,7 +36,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "kvs-demo.com" });
         ret.add(new String[] { "sleazyneasy.com" });
         ret.add(new String[] { "pornwhite.com" });
-        ret.add(new String[] { "anon-v.com" });
         ret.add(new String[] { "voyeurhit.com" });
         ret.add(new String[] { "hotmovs.com" });
         ret.add(new String[] { "theclassicporn.com" });
@@ -129,33 +128,11 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "moviesand.com" });
         /* 2022-04-19 */
         ret.add(new String[] { "goodporn.to" });
-        /* 2022-04-29 */
-        ret.add(new String[] { "xfreehd.com" });
         /* 2022-05-02 */
         ret.add(new String[] { "heavyfetish.com" });
         /* 2022-05-19 */
         ret.add(new String[] { "whoreshub.com" });
         return ret;
-    }
-
-    @Override
-    public boolean isPremiumEnabled() {
-        if (super.isPremiumEnabled()) {
-            return true;
-        } else if ("xfreehd.com".equals(getHost())) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public String getBuyPremiumUrl() {
-        if ("xfreehd.com".equals(getHost())) {
-            return "https://www.xfreehd.com/signup";
-        } else {
-            return super.getBuyPremiumUrl();
-        }
     }
 
     public static String[] getAnnotationNames() {
