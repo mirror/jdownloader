@@ -71,17 +71,18 @@ public class TiktokCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+            ret.add("https?://(?:(?:www|vm)\\.)?" + buildHostsPatternPart(domains) + "/.+");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_USER = "https?://[^/]+/(?:@|share/user/\\d+)(.+)";
+    private final String TYPE_REDIRECT = "https?://vm\\.[^/]+/([A-Za-z0-9]+).*";
+    private final String TYPE_USER     = "https?://[^/]+/(?:@|share/user/\\d+)(.+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        if (param.getCryptedUrl().matches("https?://vm\\..+")) {
+        if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
             /* Single redirect URLs */
             br.setFollowRedirects(false);
             br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));

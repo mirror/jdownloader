@@ -618,8 +618,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     continue;
                 }
                 logger.info("Cannot parse profile as it is private and not even visible when loggedIN");
-                final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PRIVATE_PROFILE_PERMISSIONS_MISSING_" + username, "The following profile is private and your given account is lacking permissions to access it: " + username);
-                decryptedLinks.add(dummy);
+                decryptedLinks.add(getDummyDownloadlinkProfilePrivate(username));
                 return decryptedLinks;
             }
             break;
@@ -1974,8 +1973,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (account == null && !handleErrors) {
+        } else if (account == null && !handleErrors) {
             return new ArrayList<DownloadLink>();
         }
         /* We need to be loggedIN to be able to see stories of users! */
@@ -1995,8 +1993,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (media_count == null || media_count.intValue() == 0) {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             if (handleErrors) {
-                final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_HAS_NO_STORY_" + username, "This profile currently doesn't have a story: " + username);
-                ret.add(dummy);
+                final Map<String, Object> user = (Map<String, Object>) reel_media.get("user");
+                if (media_count == null && (Boolean) user.get("is_private")) {
+                    /* We got a private profile and thus cannot even know if this user has a story or not. */
+                    ret.add(getDummyDownloadlinkProfilePrivate(username));
+                } else {
+                    final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "PROFILE_HAS_NO_STORY_" + username, "This profile currently doesn't have a story: " + username);
+                    ret.add(dummy);
+                }
             }
             return ret;
         } else {
@@ -2053,6 +2057,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     private DownloadLink getDummyDownloadlinkProfileOffline(final String username) {
         return this.createOfflinelink(generateURLProfile(username), "PROFILE_NOT_FOUND_" + username, "The following profile doesn't exist: " + username);
+    }
+
+    private DownloadLink getDummyDownloadlinkProfilePrivate(final String username) {
+        return this.createOfflinelink(generateURLProfile(username), "PRIVATE_PROFILE_PERMISSIONS_MISSING_" + username, "The following profile is private and you do not have the required permissions to access it: " + username);
     }
 
     private DownloadLink getDummyDownloadlinkProfileHasNoSavedPosts(final String username) {
