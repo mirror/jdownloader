@@ -19,22 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.XvideosComConfigCore;
-import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHLSQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHTTPQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredOfficialDownloadQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -57,6 +41,22 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHLSQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHTTPQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredOfficialDownloadQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class XvideosCore extends PluginForHost {
@@ -261,8 +261,7 @@ public abstract class XvideosCore extends PluginForHost {
         final Regex brokenURL2 = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/video(\\d+)/?$");
         if (brokenURL.matches()) {
             /**
-             * 2021-11-29: Hotfix for broken URLs due to bug in correctDownloadLink! </br>
-             * TODO: Remove this in 2022-02
+             * 2021-11-29: Hotfix for broken URLs due to bug in correctDownloadLink! </br> TODO: Remove this in 2022-02
              */
             final String newURL = brokenURL.getMatch(0) + "/" + brokenURL.getMatch(1);
             logger.info("Fixing broken URL#1: OLD: " + link.getPluginPatternMatcher() + " | NEW: " + newURL);
@@ -291,9 +290,8 @@ public abstract class XvideosCore extends PluginForHost {
         final boolean useLanguageSwitcherHandling = true;
         if (useLanguageSwitcherHandling) {
             /**
-             * Use this to prefer English language. </br>
-             * 2021-07-07: Not yet required - only in crawler plugin: Seems like they set the language for the main website/video overview
-             * based on IP and for single videos, default is English(?)
+             * Use this to prefer English language. </br> 2021-07-07: Not yet required - only in crawler plugin: Seems like they set the
+             * language for the main website/video overview based on IP and for single videos, default is English(?)
              */
             disableAutoTranslation(this, Browser.getHost(link.getPluginPatternMatcher()), br);
         }
@@ -372,20 +370,20 @@ public abstract class XvideosCore extends PluginForHost {
             logger.warning("Failed to find nice final filename");
         }
         String videoURL = null;
-        if (isDownload || !PluginJsonConfig.get(getConfigInterface()).isEnableFastLinkcheckForHostPlugin()) {
+        final XvideosComConfigCore config = getConfigInterface() != null ? PluginJsonConfig.get(getConfigInterface()) : null;
+        if (isDownload || (config != null && !config.isEnableFastLinkcheckForHostPlugin())) {
             final String hlsMaster = br.getRegex("setVideoHLS\\('(.*?)'\\)").getMatch(0);
             /**
              * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
-             * is an attempt to detect this.</br>
-             * See also: https://board.jdownloader.org/showthread.php?t=86587 </br>
-             * Do not check when premium account is given because it usually allows official downloads so downloads will work fine even if
-             * HLS streaming is not available.
+             * is an attempt to detect this.</br> See also: https://board.jdownloader.org/showthread.php?t=86587 </br> Do not check when
+             * premium account is given because it usually allows official downloads so downloads will work fine even if HLS streaming is
+             * not available.
              */
-            final boolean allowLimitCheck = (account == null || account.getType() != AccountType.PREMIUM) && PluginJsonConfig.get(getConfigInterface()).isTryToRecognizeLimit() && isDownload;
+            final boolean allowLimitCheck = (account == null || account.getType() != AccountType.PREMIUM) && config != null && config.isTryToRecognizeLimit() && isDownload;
             if (allowLimitCheck && StringUtils.isEmpty(hlsMaster)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Low quality block active", 60 * 60 * 1000l);
             }
-            if (PluginJsonConfig.get(getConfigInterface()).isPreferHLSStreamDownload()) {
+            if (config == null || config.isPreferHLSStreamDownload()) {
                 logger.info("User prefers HLS download");
                 if (StringUtils.isNotEmpty(hlsMaster)) {
                     logger.info("FoundHlsMaster --> Looking for preferred quality");
@@ -616,32 +614,47 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     private PreferredHTTPQuality getPreferredHTTPQuality() {
-        return PluginJsonConfig.get(getConfigInterface()).getPreferredHTTPQuality();
+        final Class<? extends XvideosComConfigCore> clazz = getConfigInterface();
+        if (clazz == null) {
+            return PreferredHTTPQuality.HIGH;
+        } else {
+            return PluginJsonConfig.get(clazz).getPreferredHTTPQuality();
+        }
     }
 
     private int getPreferredHLSQuality() {
-        final PreferredHLSQuality preferredHLSQuality = PluginJsonConfig.get(getConfigInterface()).getPreferredHLSQuality();
-        switch (preferredHLSQuality) {
-        case Q2160P:
+        final Class<? extends XvideosComConfigCore> clazz = getConfigInterface();
+        if (clazz == null) {
             return 2160;
-        case Q1080P:
-            return 1080;
-        case Q720P:
-            return 720;
-        case Q480P:
-            return 480;
-        case Q360P:
-            return 360;
-        default:
-            /* This should never happen */
-            return -1;
+        } else {
+            final PreferredHLSQuality preferredHLSQuality = PluginJsonConfig.get(clazz).getPreferredHLSQuality();
+            switch (preferredHLSQuality) {
+            case Q2160P:
+                return 2160;
+            case Q1080P:
+                return 1080;
+            case Q720P:
+                return 720;
+            case Q480P:
+                return 480;
+            case Q360P:
+                return 360;
+            default:
+                /* This should never happen */
+                return -1;
+            }
         }
     }
 
     /** Get user preferred official download quality as String. */
     private String getPreferredOfficialDownloadQualityStr() {
-        final PreferredOfficialDownloadQuality preferredOfficialDownloadQuality = PluginJsonConfig.get(getConfigInterface()).getPreferredOfficialDownloadQuality();
-        return officialDownloadQualityToString(preferredOfficialDownloadQuality);
+        final Class<? extends XvideosComConfigCore> clazz = getConfigInterface();
+        if (clazz == null) {
+            return officialDownloadQualityToString(null);
+        } else {
+            final PreferredOfficialDownloadQuality preferredOfficialDownloadQuality = PluginJsonConfig.get(clazz).getPreferredOfficialDownloadQuality();
+            return officialDownloadQualityToString(preferredOfficialDownloadQuality);
+        }
     }
 
     /** Returns array containing all possible official download qualities sorted from best to worst. */
@@ -656,7 +669,10 @@ public abstract class XvideosCore extends PluginForHost {
         return allPossibleOfficialDownloadQualitiesStr;
     }
 
-    private String officialDownloadQualityToString(final PreferredOfficialDownloadQuality downloadQuality) {
+    private String officialDownloadQualityToString(PreferredOfficialDownloadQuality downloadQuality) {
+        if (downloadQuality == null) {
+            downloadQuality = PreferredOfficialDownloadQuality.Q2160P;
+        }
         switch (downloadQuality) {
         case Q2160P:
             return "URL_MP4_4K";
@@ -905,8 +921,8 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     /**
-     * Only use this when on this page: https://www.domain.tld/account/premium </br>
-     * 2021-03-08: Free users cannot even view the account panel so checking for any elements in there is good enough as premium indicator!
+     * Only use this when on this page: https://www.domain.tld/account/premium </br> 2021-03-08: Free users cannot even view the account
+     * panel so checking for any elements in there is good enough as premium indicator!
      *
      * @throws Exception
      */

@@ -34,6 +34,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,9 +52,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
@@ -375,6 +376,27 @@ public class DeepbridCom extends antiDDoSForHost {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null) {
+                    br.setCookies(this.getHost(), userCookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l) {
+                        /* We trust these cookies as they're not that old --> Do not check them */
+                        logger.info("Trust login usercookies as they're not that old");
+                        return;
+                    } else {
+                        logger.info("Trying to login via usercookies");
+                        if (isLoggedinAPI()) {
+                            /* Save new cookie-timestamp */
+                            logger.info("UserCookie login successful");
+                            account.saveCookies(br.getCookies(this.getHost()), "");
+                            return;
+                        } else if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);

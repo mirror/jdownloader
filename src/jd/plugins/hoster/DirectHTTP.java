@@ -627,7 +627,14 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
+    private String preSetFinalName = null;
+    private String preSetFIXNAME   = null;
+
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws Exception {
+        if (retry == 0) {
+            preSetFinalName = downloadLink.getFinalFileName();
+            preSetFIXNAME = downloadLink.getStringProperty(FIXNAME, null);
+        }
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -934,15 +941,21 @@ public class DirectHTTP extends antiDDoSForHost {
             AvailableStatus status = AvailableStatus.TRUE;
             if (RequestMethod.HEAD.equals(requestMethod)) {
                 if (downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null) == null) {
-                    final String headFileName = downloadLink.getFinalFileName();
-                    final String fixFileName = downloadLink.getStringProperty(FIXNAME, null);
+                    final String headFinalFileName = downloadLink.getFinalFileName();
+                    final String headFIXNAME = downloadLink.getStringProperty(FIXNAME, null);
                     final long headFileSize = downloadLink.getVerifiedFileSize();
                     boolean trustHeadRequest = true;
                     final boolean preferHeadRequest = this.preferHeadRequest;
                     try {
-                        downloadLink.setFinalFileName(null);
+                        if (preSetFinalName == null) {
+                            // trust preset FinalFileName
+                            downloadLink.setFinalFileName(null);
+                        }
+                        if (preSetFIXNAME == null) {
+                            // trust preset FIXNAME property
+                            downloadLink.removeProperty(FIXNAME);
+                        }
                         downloadLink.setVerifiedFileSize(-1);
-                        downloadLink.removeProperty(FIXNAME);
                         this.preferHeadRequest = false;
                         status = this.requestFileInformation(downloadLink, retry + 1);
                         if (AvailableStatus.TRUE.equals(status)) {
@@ -950,8 +963,8 @@ public class DirectHTTP extends antiDDoSForHost {
                                 logger.info("Don't trust head request: contentLength mismatch! head:" + headFileSize + "!=get:" + downloadLink.getVerifiedFileSize());
                                 trustHeadRequest = false;
                             }
-                            if (!StringUtils.equals(headFileName, downloadLink.getFinalFileName())) {
-                                logger.info("Don't trust head request: name mismatch! head:" + headFileName + "!=get:" + downloadLink.getFinalFileName());
+                            if (preSetFinalName == null && !StringUtils.equals(headFinalFileName, downloadLink.getFinalFileName())) {
+                                logger.info("Don't trust head request: name mismatch! head:" + headFinalFileName + "!=get:" + downloadLink.getFinalFileName());
                                 trustHeadRequest = false;
                             }
                         }
@@ -960,9 +973,13 @@ public class DirectHTTP extends antiDDoSForHost {
                         if (trustHeadRequest) {
                             logger.info("Trust head request(validated)!");
                             downloadLink.setProperty(PROPERTY_REQUEST_TYPE, requestMethod.name());
-                            downloadLink.setFinalFileName(headFileName);
-                            downloadLink.setProperty(FIXNAME, fixFileName);
                             downloadLink.setVerifiedFileSize(headFileSize);
+                            if (preSetFinalName == null) {
+                                downloadLink.setFinalFileName(headFinalFileName);
+                            }
+                            if (preSetFIXNAME == null) {
+                                downloadLink.setProperty(FIXNAME, headFIXNAME);
+                            }
                         }
                     }
                 } else {
