@@ -35,6 +35,7 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -65,7 +66,7 @@ public class PornflipComCrawler extends PluginForDecrypt {
     }
 
     private LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
-    private String                        filename       = null;
+    private String                        title          = null;
     private String                        parameter      = null;
     private CryptedLink                   param          = null;
     private String                        videoID        = null;
@@ -74,13 +75,13 @@ public class PornflipComCrawler extends PluginForDecrypt {
     private static final String           ALLOW_BEST     = "ALLOW_BEST";
 
     @SuppressWarnings({ "static-access", "deprecation" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        videoID = new Regex(param.toString(), "(?:watch(?:\\?v=|/)|embed/|v/)([A-Za-z0-9\\-_]+)").getMatch(0);
+        videoID = new Regex(param.getCryptedUrl(), "(?:watch(?:\\?v=|/)|embed/|v/)([A-Za-z0-9\\-_]+)").getMatch(0);
         if (videoID == null) {
-            videoID = new Regex(param.toString(), "https?://[^/]+/(?:[a-z]{2})?([A-Za-z0-9\\-_]+)").getMatch(0);
+            videoID = new Regex(param.getCryptedUrl(), "https?://[^/]+/(?:[a-z]{2})?([A-Za-z0-9\\-_]+)").getMatch(0);
         }
-        parameter = param.toString();
+        parameter = param.getCryptedUrl();
         /* 2017-05-10: Changed from http to https */
         parameter = parameter.replace("http://", "https://");
         this.param = param;
@@ -93,29 +94,40 @@ public class PornflipComCrawler extends PluginForDecrypt {
         getUserLogin(false);
         getPage(parameter);
         if (PornflipCom.isOffline(this.br)) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"title-hide-user\"")) {
             /* 2020-09-01: pornflip.com */
             logger.info("Private video --> Account with permission required!");
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
         /* Decrypt start */
-        filename = PluginJSonUtils.getJson(br, "name");
-        if (filename == null) {
+        title = PluginJSonUtils.getJson(br, "name");
+        if (title == null) {
             /* 2020-03-18 */
-            filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]+)\" />").getMatch(0);
+            title = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]+)\" />").getMatch(0);
         }
-        if (filename == null) {
+        if (title == null) {
+            /* 2022-05-23: playvids.com embed URLs */
+            title = br.getRegex("id=\"mediaPlayerTitleLink\"[^>]*target=\"_blank\" href=\"[^\"]+\"[^>]*>([^<]+)</a>").getMatch(0);
+        }
+        if (title == null) {
+            title = br.getRegex(this.videoID + "/" + "([a-z0-9\\-]+)").getMatch(0);
+            if (title != null) {
+                title = title.replace("-", " ").trim();
+            }
+        }
+        if (title == null) {
             /* Final fallback */
-            filename = new Regex(parameter, "/([^/]+)$").getMatch(0);
+            title = new Regex(parameter, "/([^/]+)$").getMatch(0);
+            if (title != null) {
+                title = title.replace("-", " ").trim();
+            }
         }
-        if (filename == null) {
+        if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(filename);
+        fp.setName(title);
         /** Decrypt qualities START */
         foundQualities = ((PornflipCom) plugin).getQualities(this.br);
         if (foundQualities == null || foundQualities.isEmpty()) {
@@ -123,8 +135,7 @@ public class PornflipComCrawler extends PluginForDecrypt {
              * 2020-09-15: Assume that content is offline as they got a lot of different URLs all with a pattern matching the one of single
              * videos.
              */
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /** Decrypt qualities END */
         /** Decrypt qualities, selected by the user */
@@ -215,7 +226,7 @@ public class PornflipComCrawler extends PluginForDecrypt {
                 final List<HDSContainer> containers = HDSContainer.getHDSQualities(brc);
                 if (containers != null) {
                     for (final HDSContainer container : containers) {
-                        String fname = filename + "_" + qualityValue;
+                        String fname = title + "_" + qualityValue;
                         final DownloadLink link = new DownloadLink(JDUtilities.getPluginForHost(this.getHost()), null, this.getHost(), "http://playviddecrypted.com/" + UniqueAlltimeID.create(), true);
                         link.setProperty("directlink", directlink);
                         link.setProperty("qualityvalue", qualityValue);
@@ -241,7 +252,7 @@ public class PornflipComCrawler extends PluginForDecrypt {
             } else {
                 /* Small workaround */
                 final String qualityIndicatorForFilename = qualityValue.replace("data-hls-src", "hls_");
-                final String fname = filename + "_" + qualityIndicatorForFilename + ".mp4";
+                final String fname = title + "_" + qualityIndicatorForFilename + ".mp4";
                 final DownloadLink dl = new DownloadLink(JDUtilities.getPluginForHost(this.getHost()), null, this.getHost(), "http://playviddecrypted.com/" + UniqueAlltimeID.create(), true);
                 dl.setProperty("directlink", directlink);
                 dl.setProperty("qualityvalue", qualityValue);

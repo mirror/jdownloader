@@ -120,9 +120,10 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
+        /* First check if there is already some downloadable content in the html of the current page. */
         decryptedLinks.addAll(crawlPosts(br, fp));
         if (decryptedLinks.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("Didn't find anything in HTML ");
         }
         final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
         if (csrftoken == null) {

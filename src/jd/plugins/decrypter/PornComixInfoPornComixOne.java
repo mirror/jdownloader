@@ -12,6 +12,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomixone.net" }, urls = { "https?://(?:www\\.)?porncomixone\\.net/comic/([a-z0-9\\-]+)" })
@@ -23,20 +25,18 @@ public class PornComixInfoPornComixOne extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String addedurl = param.getCryptedUrl();
-        br.getPage(addedurl);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String urltitle = new Regex(addedurl, this.getSupportedLinks()).getMatch(0);
+        final String urltitle = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         String postTitle = br.getRegex("(?i)<title>([^<>\"]+) \\&bull; Porn Comics One</title>").getMatch(0);
         if (StringUtils.isEmpty(postTitle)) {
             /* Fallback */
-            postTitle = urltitle.replace("-", " ");
+            postTitle = urltitle.replace("-", " ").trim();
         } else {
             postTitle = Encoding.htmlDecode(postTitle);
         }
@@ -46,7 +46,7 @@ public class PornComixInfoPornComixOne extends PluginForDecrypt {
                 imageurl = br.getURL(imageurl).toString();
                 final DownloadLink link = createDownloadlink(imageurl);
                 link.setAvailable(true);
-                link.setContainerUrl(addedurl);
+                link.setContainerUrl(param.getCryptedUrl());
                 decryptedLinks.add(link);
             }
         }

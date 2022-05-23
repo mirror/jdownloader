@@ -333,7 +333,7 @@ public abstract class XvideosCore extends PluginForHost {
             /* Can be translated titles */
             filename = br.getRegex("\"video_title\"\\s*:\\s*\"(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
+                filename = br.getRegex("(?i)<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
             }
         }
         {

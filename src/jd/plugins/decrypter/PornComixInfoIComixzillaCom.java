@@ -13,6 +13,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -51,14 +53,13 @@ public class PornComixInfoIComixzillaCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String addedurl = param.getCryptedUrl();
         br.getPage(addedurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String urltitle = new Regex(br.getURL(), "/([^/]+)/?$").getMatch(0);
         /* Allow to pickup quotes */
@@ -70,8 +71,12 @@ public class PornComixInfoIComixzillaCom extends PluginForDecrypt {
             /* Fallback */
             postTitle = urltitle.replace("-", " ");
         }
-        String[] images = br.getRegex("<li><a href=\"(https?://[^/]+/img/[^<>\"]+)").getColumn(0);
-        if (images != null) {
+        String[] images = br.getRegex("class='dgwt-jg-item' data-size='\\d+x\\d+'><a href='(https?://[^/]+/img/[^<>\"\\']+)").getColumn(0);
+        if (images.length == 0) {
+            /* Fallback */
+            images = br.getRegex("<a href=.(https?://[^/]+/img/[^<>\"\\']+)").getColumn(0);
+        }
+        if (images.length > 0) {
             for (final String imageurl : images) {
                 /* 2020-11-13: Not needed anymore */
                 // imageurl = Encoding.htmlDecode(imageurl).replaceFirst("(-\\d+x\\d+)\\.(jpe?g|gif|png)$", ".$2");
