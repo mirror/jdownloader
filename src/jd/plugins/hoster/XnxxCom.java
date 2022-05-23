@@ -18,29 +18,28 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.config.XvideosComXnxxGoldConfig;
+import org.jdownloader.plugins.components.config.XvideosComXnxxComConfig;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class XnxxGold extends XvideosCore {
-    public XnxxGold(PluginWrapper wrapper) {
+public class XnxxCom extends XvideosCore {
+    public XnxxCom(PluginWrapper wrapper) {
         super(wrapper);
-        /* Slightly modified version of xvideos.com */
-        this.enablePremium("https://www.xnxx.gold/account/create/");
+        this.enablePremium("https://www.xnxx.com/");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://info.xnxx.gold/legal/tos";
+        return "https://info.xnxx.com/legal/tos";
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xnxx.gold" });
+        ret.add(new String[] { "xnxx.com" });
         return ret;
     }
 
@@ -67,6 +66,7 @@ public class XnxxGold extends XvideosCore {
         for (final String[] domains : getPluginDomains()) {
             String pattern = "https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(";
             pattern += "video-[a-z0-9\\-]+/[^/]+";
+            pattern += "|embedframe/\\d+";
             pattern += ")";
             ret.add(pattern);
         }
@@ -79,8 +79,8 @@ public class XnxxGold extends XvideosCore {
     }
 
     @Override
-    public Class<XvideosComXnxxGoldConfig> getConfigInterface() {
-        return XvideosComXnxxGoldConfig.class;
+    public Class<XvideosComXnxxComConfig> getConfigInterface() {
+        return XvideosComXnxxComConfig.class;
     }
 
     @Override
