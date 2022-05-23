@@ -26,6 +26,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.TumblrComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -48,14 +56,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TumblrCom;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.TumblrComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?![a-z0-9]+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/image/\\d+|/post/\\d+|/likes|/?$|/blog/view/[^/]+(?:/\\d+)?)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
@@ -488,7 +488,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         // FINAL FAILOVER FOR UNSUPPORTED CONTENT, this way we wont have to keep making updates to this plugin! only time we would need to
-        // is, when we need to customise / fixup results into proper url format. -raztoki20160211
+        // is, when we need to customize / fixup results into proper url format. -raztoki20160211
         final String iframe = new Regex(string, "<iframe [^>]*src=(\"|')((?![^>]*//assets\\.tumblr\\.com/[^>]+?).*?)\\1").getMatch(1);
         if (iframe != null) {
             decryptedLinks.add(createDownloadlink(iframe));
@@ -810,7 +810,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all posts of a blog via API: </br> https://www.tumblr.com/docs/en/api/v2#posts--retrieve-published-posts
+     * Crawls all posts of a blog via API: </br>
+     * https://www.tumblr.com/docs/en/api/v2#posts--retrieve-published-posts
      */
     private ArrayList<DownloadLink> decryptUserAPI(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
