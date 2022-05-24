@@ -80,7 +80,6 @@ public class TiktokCom extends PluginForDecrypt {
     private final String TYPE_USER     = "https?://[^/]+/(?:@|share/user/\\d+)(.+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
             /* Single redirect URLs */
@@ -93,20 +92,22 @@ public class TiktokCom extends PluginForDecrypt {
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (plg.canHandle(param.getCryptedUrl())) {
             /* Single video URL --> Is handled by host plugin */
+            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             decryptedLinks.add(this.createDownloadlink(param.getCryptedUrl()));
             return decryptedLinks;
         } else if (param.getCryptedUrl().matches(TYPE_USER)) {
-            crawlProfileWebsite(param, decryptedLinks);
+            return crawlProfileWebsite(param);
         } else {
             logger.info("Unsupported URL: " + param.getCryptedUrl());
         }
-        return decryptedLinks;
+        return null;
     }
 
-    public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param, final ArrayList<DownloadLink> ret) throws Exception {
+    public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -119,7 +120,7 @@ public class TiktokCom extends PluginForDecrypt {
         if (jd.plugins.hoster.TiktokCom.isBotProtectionActive(this.br)) {
             throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items of user " + usernameSlug, null, null);
         }
-        /* 2022-01-07: New simple handling */
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // TODO: Implement pagination, see: https://svn.jdownloader.org/issues/86758
         final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
         FilePackage fp = null;
@@ -170,7 +171,7 @@ public class TiktokCom extends PluginForDecrypt {
                 jd.plugins.hoster.TiktokCom.setShareCount(dl, (Number) stats.get("shareCount"));
                 jd.plugins.hoster.TiktokCom.setCommentCount(dl, (Number) stats.get("commentCount"));
                 if (!StringUtils.isEmpty(directurl)) {
-                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_DIRECTURL, directurl);
+                    dl.setProperty(jd.plugins.hoster.TiktokCom.PROPERTY_DIRECTURL_WEBSITE, directurl);
                 }
                 dl._setFilePackage(fp);
                 ret.add(dl);
@@ -200,6 +201,13 @@ public class TiktokCom extends PluginForDecrypt {
                 ret.add(dl);
             }
         }
+        return ret;
+    }
+
+    public ArrayList<DownloadLink> crawlProfileAPI(final CryptedLink param) throws Exception {
+        br.setFollowRedirects(true);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        // TODO: Add API handling
         return ret;
     }
 

@@ -29,10 +29,10 @@ import java.util.Random;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -111,7 +111,8 @@ public class TiktokCom extends PluginForHost {
     }
 
     // private String dllink = null;
-    public static final String  PROPERTY_DIRECTURL                 = "directurl";
+    public static final String  PROPERTY_DIRECTURL_WEBSITE         = "directurl";
+    public static final String  PROPERTY_DIRECTURL_API             = "directurl_api";
     public static final String  PROPERTY_USERNAME                  = "username";
     public static final String  PROPERTY_USER_ID                   = "user_id";
     public static final String  PROPERTY_VIDEO_ID                  = "videoid";
@@ -123,6 +124,8 @@ public class TiktokCom extends PluginForHost {
     public static final String  PROPERTY_PLAY_COUNT                = "play_count";
     public static final String  PROPERTY_SHARE_COUNT               = "share_count";
     public static final String  PROPERTY_COMMENT_COUNT             = "comment_count";
+    public static final String  PROPERTY_HAS_WATERMARK             = "has_watermark";
+    public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE   = "last_used_download_mode";
     private static final String TYPE_VIDEO                         = "https?://[^/]+/(@[^/]+)/video/(\\d+).*?";
 
     @Override
@@ -153,12 +156,12 @@ public class TiktokCom extends PluginForHost {
             /* Fallback-filename */
             link.setName(fid + ".mp4");
         }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        if (PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode() == DownloadMode.API) {
             this.checkAvailablestatusAPI(link, isDownload);
         } else {
             this.checkAvailablestatusWebsite(link, isDownload);
         }
-        final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+        final String dllink = getStoredDirecturl(link);
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet() && !isDownload) {
             URLConnectionAdapter con = null;
             try {
@@ -210,6 +213,22 @@ public class TiktokCom extends PluginForHost {
             link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getStoredDirecturl(final DownloadLink link) {
+        if (PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode() == DownloadMode.API) {
+            return link.getStringProperty(PROPERTY_DIRECTURL_API);
+        } else {
+            return link.getStringProperty(PROPERTY_DIRECTURL_WEBSITE);
+        }
+    }
+
+    private void setStoredDirecturl(final DownloadLink link, final String directurl) {
+        if (PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode() == DownloadMode.API) {
+            link.setProperty(PROPERTY_DIRECTURL_API, directurl);
+        } else {
+            link.setProperty(PROPERTY_DIRECTURL_WEBSITE, directurl);
+        }
     }
 
     public void checkAvailablestatusWebsite(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -376,7 +395,7 @@ public class TiktokCom extends PluginForHost {
             }
             setDescriptionAndHashtags(link, description);
             if (!StringUtils.isEmpty(dllink)) {
-                link.setProperty(PROPERTY_DIRECTURL, dllink);
+                this.setStoredDirecturl(link, dllink);
             }
         }
     }
@@ -405,16 +424,24 @@ public class TiktokCom extends PluginForHost {
         final Map<String, Object> author = (Map<String, Object>) aweme_detail.get("author");
         link.setProperty(PROPERTY_USERNAME, "@" + author.get("unique_id").toString());
         setDescriptionAndHashtags(link, aweme_detail.get("desc").toString());
-        if ((Boolean) video.get("has_watermark") || (Boolean) aweme_detail.get("prevent_download")) {
+        final Boolean has_watermark = (Boolean) video.get("has_watermark");
+        if (has_watermark || (Boolean) aweme_detail.get("prevent_download")) {
             /* Get stream downloadurl because it comes without watermark */
-            link.setProperty(PROPERTY_DIRECTURL, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
+            if (has_watermark) {
+                link.setProperty(PROPERTY_HAS_WATERMARK, true);
+            } else {
+                link.removeProperty(PROPERTY_HAS_WATERMARK);
+            }
+            link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
+            this.setStoredDirecturl(link, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}").toString());
         } else {
             /* Grab official downloadlink because this video doesn't come with a watermark anyways. */
             final String downloadJson = video.get("misc_download_addrs").toString();
             final Map<String, Object> misc_download_addrs = JSonStorage.restoreFromString(downloadJson, TypeRef.HASHMAP);
             final Map<String, Object> suffix_scene = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
-            link.setProperty(PROPERTY_DIRECTURL, JavaScriptEngineFactory.walkJson(suffix_scene, "url_list/{0}"));
+            this.setStoredDirecturl(link, JavaScriptEngineFactory.walkJson(suffix_scene, "url_list/{0}").toString());
             link.setVerifiedFileSize(((Number) suffix_scene.get("data_size")).longValue());
+            link.removeProperty(PROPERTY_HAS_WATERMARK);
         }
         setLikeCount(link, (Number) statistics.get("digg_count"));
         setPlayCount(link, (Number) statistics.get("play_count"));
@@ -593,11 +620,20 @@ public class TiktokCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link) throws Exception, PluginException {
+        final DownloadMode mode = PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode();
+        if (!link.hasProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE) || !StringUtils.equals(link.getStringProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE), mode.name())) {
+            /* Prevent file corruption */
+            logger.info("Resetting progress because user has downloaded using other download mode before");
+            link.setChunksProgress(null);
+            link.setVerifiedFileSize(-1);
+        }
+        /* Remember last used download mode */
+        link.setProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE, mode.name());
         if (this.attemptStoredDownloadurlDownload(link)) {
             logger.info("Using stored directurl for downloading");
         } else {
             requestFileInformation(link, true);
-            final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+            final String dllink = this.getStoredDirecturl(link);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -620,7 +656,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        final String url = this.getStoredDirecturl(link);
         if (StringUtils.isEmpty(url)) {
             return false;
         }
@@ -631,7 +667,7 @@ public class TiktokCom extends PluginForHost {
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
-                link.removeProperty(PROPERTY_DIRECTURL);
+                this.setStoredDirecturl(link, null);
                 brc.followConnection(true);
                 throw new IOException();
             }
@@ -660,6 +696,9 @@ public class TiktokCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(PROPERTY_HAS_WATERMARK);
+        }
     }
 }
