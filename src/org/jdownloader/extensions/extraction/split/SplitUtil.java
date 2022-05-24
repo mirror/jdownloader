@@ -30,11 +30,11 @@ import jd.plugins.download.raf.FileBytesCache;
 import jd.plugins.download.raf.FileBytesCacheFlusher;
 import net.sf.sevenzipjbinding.SevenZipException;
 
-import org.appwork.uio.CloseReason;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -147,14 +147,18 @@ class SplitUtil {
                 /* file already exists */
                 IfFileExistsAction action = controller.getIfFileExistsAction();
                 while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
-                    IfFileExistsDialog d = new IfFileExistsDialog(destination, controller.getCurrentActiveItem(), archive);
-                    d.show();
-                    if (d.getCloseReason() != CloseReason.OK) {
-                        throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
+                    final IfFileExistsDialog d = new IfFileExistsDialog(destination, controller.getCurrentActiveItem(), archive);
+                    try {
+                        d.throwCloseExceptions();
+                    } catch (DialogNoAnswerException e) {
+                        throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK, e);
                     }
                     action = d.getAction();
                     if (action == null) {
                         throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                    } else if (d.isDontShowAgainSelected()) {
+                        controller.getLogger().info("Remember IfFileExistsAction:" + action + " for current archive");
+                        controller.setIfFileExistsAction(action);
                     }
                     if (action == IfFileExistsAction.AUTO_RENAME) {
                         destination = new File(destination.getParentFile(), d.getNewName());

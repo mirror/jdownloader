@@ -32,12 +32,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jd.plugins.download.raf.FileBytesCache;
 import jd.plugins.download.raf.FileBytesCacheFlusher;
 
-import org.appwork.uio.CloseReason;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.awfc.AWFCUtils;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -99,14 +99,17 @@ public class XtreamSplit extends IExtraction {
                 IfFileExistsAction action = getExtractionController().getIfFileExistsAction();
                 while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                     final IfFileExistsDialog d = new IfFileExistsDialog(outputFile, getExtractionController().getCurrentActiveItem(), archive);
-                    d.show();
-                    if (d.getCloseReason() != CloseReason.OK) {
-                        throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
-                    } else {
-                        action = d.getAction();
+                    try {
+                        d.throwCloseExceptions();
+                    } catch (DialogNoAnswerException e) {
+                        throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK, e);
                     }
+                    action = d.getAction();
                     if (action == null) {
                         throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
+                    } else if (d.isDontShowAgainSelected()) {
+                        getExtractionController().getLogger().info("Remember IfFileExistsAction:" + action + " for current archive");
+                        getExtractionController().setIfFileExistsAction(action);
                     }
                     if (action == IfFileExistsAction.AUTO_RENAME) {
                         outputFile = new File(outputFile.getParentFile(), d.getNewName());

@@ -191,6 +191,9 @@ public class Zip4J extends IExtraction {
                 action = dialogInterface.getAction();
                 if (action == null) {
                     throw new ZipException("cannot handle if file exists: " + extractToFile);
+                } else if (dialogInterface.isDontShowAgainSelected()) {
+                    logger.info("Remember IfFileExistsAction:" + action + " for current archive");
+                    getExtractionController().setIfFileExistsAction(action);
                 }
                 if (action == IfFileExistsAction.AUTO_RENAME) {
                     if (dialogInterface == dialog) {

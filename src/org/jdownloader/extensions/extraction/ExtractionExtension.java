@@ -794,10 +794,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     public IfFileExistsAction getIfFileExistsAction(Archive archive) {
         IfFileExistsAction ret = archive.getSettings()._getIfFileExistsAction();
-        if (ret != null) {
-            return ret;
+        if (ret == null) {
+            ret = getSettings().getIfFileExistsAction();
         }
-        return getSettings().getIfFileExistsAction();
+        return ret;
     }
 
     public File getFinalExtractToFolder(Archive archive, boolean raw) {

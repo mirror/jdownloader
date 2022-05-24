@@ -26,6 +26,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.CFG_EXTRACTION;
@@ -39,7 +40,6 @@ import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
 public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> implements IfFileExistsDialogInterface, FocusListener {
-
     private String             path;
     private IfFileExistsAction result;
     private String             packagename;
@@ -69,7 +69,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private String       newNameString;
 
     public IfFileExistsDialog(File extractTo, Item item, Archive archive) {
-        super(0, _JDT.T.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
+        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
         //
         logger = LogController.getInstance().getLogger(IfFileExistsDialog.class.getName());
         this.archive = archive;
@@ -83,23 +83,18 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         }
         this.item = item;
         this.path = extractTo.getAbsolutePath();
-
         String extension = Files.getExtension(extractTo.getName());
         String name = StringUtils.isEmpty(extension) ? extractTo.getName() : extractTo.getName().substring(0, extractTo.getName().length() - extension.length() - 1);
         int i = 1;
         while (extractTo.exists()) {
             if (StringUtils.isEmpty(extension)) {
                 extractTo = new File(extractTo.getParentFile(), name + "_" + i);
-
             } else {
                 extractTo = new File(extractTo.getParentFile(), name + "_" + i + "." + extension);
-
             }
             i++;
         }
-
         newNameString = extractTo.getName();
-
         // setTimeout(60000);
     }
 
@@ -123,7 +118,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         if (result != null) {
             CFG_EXTRACTION.CFG.setLatestIfFileExistsAction(result);
         }
-
     }
 
     @Override
@@ -133,7 +127,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         txt.setLabelMode(true);
         txt.setToolTipText(path);
         File localFile = new File(path);
-
         txt.setText(T.T.file_exists_message());
         p.add(txt, "spanx");
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filename())), "sg 1");
@@ -148,18 +141,14 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         }
         p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_filesize_existing())), "sg 1");
         p.add(new JLabel(SizeFormatter.formatBytes(localFile.length())));
-
         if (packagename != null) {
             p.add(SwingUtils.toBold(new JLabel(_GUI.T.IfFileExistsDialog_layoutDialogContent_package())), "sg 1");
             p.add(new JLabel(packagename));
         }
-
         p.add(SwingUtils.toBold(new JLabel(T.T.IfFileExistsDialog_layoutDialogContent_archive())), "sg 1");
         p.add(new JLabel(archive.getName()));
-
         skip = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_skip_());
         skip.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 result = IfFileExistsAction.SKIP_FILE;
                 newName.setEnabled(false);
@@ -167,7 +156,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         });
         overwrite = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_overwrite_());
         overwrite.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 result = IfFileExistsAction.OVERWRITE_FILE;
                 newName.setEnabled(false);
@@ -175,19 +163,16 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         });
         rename = new JRadioButton(_GUI.T.IfFileExistsDialog_layoutDialogContent_rename_());
         rename.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 result = IfFileExistsAction.AUTO_RENAME;
                 newName.setEnabled(true);
             }
         });
-
         // Group the radio buttons.
         ButtonGroup group = new ButtonGroup();
         group.add(skip);
         group.add(overwrite);
         group.add(rename);
-
         p.add(new JSeparator(), "spanx,pushx,growx");
         p.add(skip, "skip 1");
         p.add(overwrite, "skip 1");
@@ -195,7 +180,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         newName = new JTextField(newNameString);
         p.add(SwingUtils.toBold(new JLabel(T.T.IfFileExistsDialog_layoutDialogContent_newName())), "sg 1");
         p.add(newName);
-
         IfFileExistsAction def = CFG_EXTRACTION.CFG.getLatestIfFileExistsAction();
         if (def == null) {
             def = IfFileExistsAction.SKIP_FILE;
@@ -204,12 +188,10 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         case AUTO_RENAME:
             rename.setSelected(true);
             break;
-
         case OVERWRITE_FILE:
             overwrite.setSelected(true);
             break;
         default:
-
             skip.setSelected(true);
         }
         newName.setEnabled(rename.isSelected());
