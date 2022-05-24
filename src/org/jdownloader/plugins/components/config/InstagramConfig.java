@@ -305,7 +305,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("DEFAULT")
+    @DefaultEnumValue("DEFAULT_QUALITY")
     @Order(50)
     @DescriptionForConfigEntry("Select media quality download mode.\r\nOriginal quality = bigger filesize, without image-effects, works only when an account is available.")
     MediaQualityDownloadMode getMediaQualityDownloadMode();

@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.extraction;
 
 public class ExtractionControllerException extends Exception {
-
     private final int exitCode;
 
     public int getExitCode() {
@@ -14,6 +13,11 @@ public class ExtractionControllerException extends Exception {
     }
 
     public ExtractionControllerException(int exitCodeCreateError) {
+        this.exitCode = exitCodeCreateError;
+    }
+
+    public ExtractionControllerException(int exitCodeCreateError, Throwable e) {
+        super(e);
         this.exitCode = exitCodeCreateError;
     }
 }
