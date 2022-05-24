@@ -460,7 +460,7 @@ public class TiktokCom extends PluginForHost {
             final Map<String, Object> misc_download_addrs = JSonStorage.restoreFromString(downloadJson, TypeRef.HASHMAP);
             downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
         }
-        if (has_watermark || (Boolean) aweme_detail.get("prevent_download")) {
+        if (has_watermark || ((Boolean) aweme_detail.get("prevent_download") && downloadInfo == null)) {
             /* Get stream downloadurl because it comes without watermark */
             if (has_watermark) {
                 link.setProperty(PROPERTY_HAS_WATERMARK, true);
@@ -469,14 +469,14 @@ public class TiktokCom extends PluginForHost {
             }
             link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
             if (downloadInfo != null) {
-                /*
-                 * Version with- and without watermark have nearly the same filesize --> Set size of possibly watermarked video on these
-                 * items too so users get to see more information in linkgrabber.
+                /**
+                 * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+                 * If a video is watermarked and downloads are prohibited both versions should be identical.
                  */
                 link.setDownloadSize(((Number) downloadInfo.get("data_size")).longValue());
             }
         } else {
-            /* Grab official downloadlink because this video doesn't come with a watermark anyways. */
+            /* Grab official downloadlink whenever possible because this video doesn't come with a watermark. */
             link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}").toString());
             link.setVerifiedFileSize(((Number) downloadInfo.get("data_size")).longValue());
             link.removeProperty(PROPERTY_HAS_WATERMARK);

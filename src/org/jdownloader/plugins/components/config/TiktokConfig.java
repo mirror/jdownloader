@@ -15,11 +15,11 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "tiktok.com", type = Type.HOSTER)
 public interface TiktokConfig extends PluginConfigInterface {
     public static final TiktokConfig.TRANSLATION TRANSLATION                                                = new TRANSLATION();
-    final String                                 text_EnableFastLinkcheck                                   = "Enable fast linkcheck? If enabled, filenames may contain less information and filesize will be missing until download is started.";
+    final String                                 text_EnableFastLinkcheck                                   = "Enable fast linkcheck? If enabled, filenames may contain less information in website mode and filesize might be missing until download is started.";
     final String                                 text_MaxSimultaneousDownloads                              = "Set max. simultaneous downloads. The higher the value the higher is the chance that your IP gets blocked by tiktok!";
     final String                                 text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination = "Profile crawler website mode: Add dummy URL when user profile is crawled in website mode and crawler fails to find all items due to missing pagination?";
     final String                                 text_getDownloadMode                                       = "Select download mode";
-    final String                                 text_getCrawlMode                                          = "Select crawl mode";
+    final String                                 text_getCrawlMode                                          = "Select profile crawl mode";
 
     public static class TRANSLATION {
         public String getEnableFastLinkcheck_label() {
