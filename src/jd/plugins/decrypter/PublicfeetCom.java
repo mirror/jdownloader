@@ -25,6 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "publicfeet.com" }, urls = { "https?://(?:www\\.)?publicfeet\\.com/posts/([a-z0-9\\-]+)" })
@@ -33,31 +35,35 @@ public class PublicfeetCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">No such post|This room does not exist")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("(?i)>\\s*No such post|This room does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to mainpage --> Content must be offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String[] links = br.getRegex("\"(http://[^/]+/public/media/front/post/img/\\d+[^<>\"\\']+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String[] images = br.getRegex("\"(https?://[^/]+/public/media/front/post/img/\\d+[^<>\"\\']+)\"").getColumn(0);
+        final String[] videos = br.getRegex("\"(https?://[^/]+/storage/app/[^<>\"\\']+\\.mp4)\"").getColumn(0);
+        if (images.length == 0 && videos.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (final String singleLink : links) {
+        for (final String singleLink : images) {
             final DownloadLink dl = createDownloadlink(singleLink);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        for (final String singleLink : videos) {
+            final DownloadLink dl = createDownloadlink(singleLink);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(contentID).replace("-", " ").trim());
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }

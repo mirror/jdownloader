@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,13 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "https?://(?:www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "https?://(?:www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9\\-]+" })
 public class PrtctdScdvntCm extends antiDDoSForDecrypt {
-    private String  MAINPAGE = "http://protected.socadvnet.com/";
-    private Browser xhr      = null;
+    private Browser xhr = null;
 
     public PrtctdScdvntCm(final PluginWrapper wrapper) {
         super(wrapper);
@@ -57,9 +56,8 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
             return null;
         }
         getPage(parameter);
-        if (br._getURL().getPath().equals("/index.php")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+        if (!this.canHandle(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String title = br.getRegex("<title>\\s*(?:Links protector:)?\\s*(.*?)\\s*</title>").getMatch(0);
         final FilePackage fp;
@@ -74,8 +72,12 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
         final String getList = "/llinks.php";
         xhrPostPage(getList, "LinkName=" + postvar);
         String[] linksCount = xhr.getRegex("(ten\\.selifylf//:s?ptth)").getColumn(0);
-        if (linksCount == null || linksCount.length == 0) {
+        if (linksCount.length == 0) {
             linksCount = xhr.getRegex("(moc\\.tenvdacos\\.detcetorp//:s?ptth)").getColumn(0);
+        }
+        if (linksCount.length == 0) {
+            /* 2022-05-24 */
+            linksCount = xhr.getRequest().getHtmlCode().split("\\|");
         }
         if (linksCount == null || linksCount.length == 0) {
             return null;
@@ -84,7 +86,7 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
         if (cpPage != null) {
             Browser r = xhr;
             for (int i = 0; i <= 3; i++) {
-                final String equals = this.getCaptchaCode(MAINPAGE + cpPage, param);
+                final String equals = this.getCaptchaCode("/" + cpPage, param);
                 r = xhrPostPage(sendCaptcha, "res_code=" + equals);
                 if (!r.toString().trim().equals("1") && !r.toString().trim().equals("0")) {
                     logger.warning("Error in doing the maths for link: " + parameter);
@@ -105,13 +107,13 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        logger.info("Found " + linkCounter + " links, decrypting now...");
         br.setFollowRedirects(false);
         for (int i = 0; i <= linkCounter - 1; i++) {
+            logger.info("Crawling item " + (i + 1) + "/" + linkCounter);
             final Browser br = this.br.cloneBrowser();
             final String actualPage = getList + "?out_name=" + postvar + "&&link_id=" + i;
             getPage(br, actualPage);
-            if (br.containsHTML("This file is either removed due to copyright claim or is deleted by the uploader")) {
+            if (br.containsHTML("(?i)This file is either removed due to copyright claim or is deleted by the uploader")) {
                 logger.info("Found one offline link for link " + parameter + " linkid:" + i);
                 continue;
             }
@@ -142,6 +144,9 @@ public class PrtctdScdvntCm extends antiDDoSForDecrypt {
             }
             decryptedLinks.add(link);
             distribute(link);
+            if (this.isAbort()) {
+                break;
+            }
         }
         return decryptedLinks;
     }

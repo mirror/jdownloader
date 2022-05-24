@@ -15,9 +15,13 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -28,7 +32,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -36,17 +42,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(?:www\\.)?flyfiles\\.net/[a-z0-9]{10}" })
 public class FlyFilesNet extends PluginForHost {
-    private static final String HOST     = "http://flyfiles.net";
+    private static final String HOST     = "https://flyfiles.net";
     private static Object       LOCK     = new Object();
     private static final String NOCHUNKS = "NOCHUNKS";
 
-    // TODO: rename plugin when jd2 goes stable, FlyFilesNet
     // DEV NOTES
     // mods:
     // non account: 3 * 1
@@ -80,30 +81,33 @@ public class FlyFilesNet extends PluginForHost {
         br.setCookie(HOST, "lang", "english");
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">[\r\n\t ]+File not found\\![\r\n\t ]+<")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*File not found\\!")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String[][] fileInfo = br.getRegex(Pattern.compile("<div id=\"file_det\" style=\"top:\\d+%;\">[\r\n\t ]+(.+) \\- ([\\d\\.]+ (KB|MB|GB|TB))", Pattern.CASE_INSENSITIVE)).getMatches();
-        if (fileInfo == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Regex finfo = br.getRegex("id=\"file_det\"[^>]*>\\s+(.+) \\- ([\\d\\.]+ (KB|MB|GB|TB))<br>");
+        if (finfo.matches()) {
+            link.setName(Encoding.htmlDecode(finfo.getMatch(0)).trim());
+            link.setDownloadSize(SizeFormatter.getSize(finfo.getMatch(1)));
         }
-        link.setName(Encoding.htmlDecode(fileInfo[0][0].trim()));
-        link.setDownloadSize(SizeFormatter.getSize(fileInfo[0][1]));
         return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        final String fid = new Regex(downloadLink.getDownloadURL(), "net/(.*)").getMatch(0);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        final String fid = new Regex(link.getDownloadURL(), "net/(.*)").getMatch(0);
+        String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
-            requestFileInformation(downloadLink);
+            requestFileInformation(link);
+            if (br.containsHTML("(?i)This file available for downloading only for premium users")) {
+                throw new AccountRequiredException();
+            }
             String captchaurl = br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
             final String waittime = br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
             final String reCaptchaV2ID = br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^\"\\']+)\\'").getMatch(0);
@@ -117,7 +121,7 @@ public class FlyFilesNet extends PluginForHost {
                 }
             }
             if (captchaurl != null) {
-                final String code = this.getCaptchaCode(captchaurl, downloadLink);
+                final String code = this.getCaptchaCode(captchaurl, link);
                 postata += "&captcha_value=" + Encoding.urlEncode(code);
                 br.postPage(postURL, postata);
                 if (br.containsHTML("#downlinkCaptcha\\|0")) {
@@ -141,12 +145,16 @@ public class FlyFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
@@ -155,23 +163,32 @@ public class FlyFilesNet extends PluginForHost {
         return 1;
     }
 
-    private String checkDirectLink(DownloadLink downloadLink, String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
-                Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
-                con.disconnect();
-            } catch (Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+            } catch (final Exception e) {
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     public String getDllink() {
@@ -188,22 +205,15 @@ public class FlyFilesNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         String expire = new Regex(br, "<u>Premium</u>: <span id=\"premiumDate\">(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
-            account.setValid(false);
             return ai;
         }
         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
         ai.setUnlimitedTraffic();
-        ai.setStatus("Premium User");
-        account.setValid(true);
+        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
@@ -288,8 +298,12 @@ public class FlyFilesNet extends PluginForHost {
             maxChunks = 1;
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premlink", dllink);
@@ -320,7 +334,7 @@ public class FlyFilesNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
@@ -336,11 +350,11 @@ public class FlyFilesNet extends PluginForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        } else if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 }
