@@ -41,6 +41,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -106,7 +107,7 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
+    public static String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), "https?://.*/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
@@ -127,6 +128,10 @@ public class TiktokCom extends PluginForHost {
     public static final String  PROPERTY_HAS_WATERMARK             = "has_watermark";
     public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE   = "last_used_download_mode";
     private static final String TYPE_VIDEO                         = "https?://[^/]+/(@[^/]+)/video/(\\d+).*?";
+    /* API related stuff */
+    public static final String  API_BASE                           = "https://api-h2.tiktokv.com/aweme/v1";
+    public static final String  API_VERSION_NAME                   = "20.9.3";
+    public static final String  API_VERSION_CODE                   = "293";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -196,6 +201,22 @@ public class TiktokCom extends PluginForHost {
                 }
             }
         }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (super.looksLikeDownloadableContent(urlConnection)) {
+            return true;
+        } else if (urlConnection.getRequest().getResponseHeader("X-Video-Codec-Type") != null) {
+            /* E.g. HEAD-request returning wrong content-type: https://www.tiktok.com/@ameliagething/video/6895294446670318850 */
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static void setFilename(final DownloadLink link) {
         String filename = "";
         String dateFormatted = getDateFormatted(link);
         if (dateFormatted != null) {
@@ -205,14 +226,13 @@ public class TiktokCom extends PluginForHost {
         if (!StringUtils.isEmpty(username)) {
             filename += "_" + username;
         }
-        filename += "_" + fid + ".mp4";
+        filename += "_" + getFID(link) + ".mp4";
         /* Only set final filename if ALL information is available! */
         if (link.hasProperty(PROPERTY_DATE) && !StringUtils.isEmpty(username)) {
             link.setFinalFileName(filename);
         } else {
             link.setName(filename);
         }
-        return AvailableStatus.TRUE;
     }
 
     private String getStoredDirecturl(final DownloadLink link) {
@@ -233,6 +253,7 @@ public class TiktokCom extends PluginForHost {
 
     public void checkAvailablestatusWebsite(final DownloadLink link, final boolean isDownload) throws Exception {
         final String fid = getFID(link);
+        prepBRWebsite(br);
         if (!link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
             /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL. */
             br.setFollowRedirects(false);
@@ -398,25 +419,32 @@ public class TiktokCom extends PluginForHost {
                 this.setStoredDirecturl(link, dllink);
             }
         }
+        link.setAvailable(true);
+        setFilename(link);
     }
-
-    public static final String API_BASE         = "https://api-h2.tiktokv.com/aweme/v1";
-    public static final String API_VERSION_NAME = "20.9.3";
-    public static final String API_VERSION_CODE = "293";
 
     public void checkAvailablestatusAPI(final DownloadLink link, final boolean isDownload) throws Exception {
         prepBRAPI(br);
         final UrlQuery query = getAPIQuery();
-        query.add("aweme_id", this.getFID(link));
+        query.add("aweme_id", getFID(link));
+        /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
         accessAPI(br, "/aweme/detail", query);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Object> aweme_detail = (Map<String, Object>) entries.get("aweme_detail");
         if (aweme_detail == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        parseFileInfoAPI(link, aweme_detail);
+        if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    public static void parseFileInfoAPI(final DownloadLink link, final Map<String, Object> aweme_detail) throws PluginException {
         final Map<String, Object> status = (Map<String, Object>) aweme_detail.get("status");
         if ((Boolean) status.get("is_delete")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            link.setAvailable(false);
+            return;
         }
         link.setProperty(PROPERTY_DATE, new SimpleDateFormat("yyyy-MM-dd").format(new Date(((Number) aweme_detail.get("create_time")).longValue() * 1000)));
         final Map<String, Object> statistics = (Map<String, Object>) aweme_detail.get("statistics");
@@ -425,6 +453,13 @@ public class TiktokCom extends PluginForHost {
         link.setProperty(PROPERTY_USERNAME, "@" + author.get("unique_id").toString());
         setDescriptionAndHashtags(link, aweme_detail.get("desc").toString());
         final Boolean has_watermark = (Boolean) video.get("has_watermark");
+        Map<String, Object> downloadInfo = (Map<String, Object>) video.get("download_addr");
+        if (downloadInfo == null) {
+            /* Fallback/old way */
+            final String downloadJson = video.get("misc_download_addrs").toString();
+            final Map<String, Object> misc_download_addrs = JSonStorage.restoreFromString(downloadJson, TypeRef.HASHMAP);
+            downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
+        }
         if (has_watermark || (Boolean) aweme_detail.get("prevent_download")) {
             /* Get stream downloadurl because it comes without watermark */
             if (has_watermark) {
@@ -433,31 +468,40 @@ public class TiktokCom extends PluginForHost {
                 link.removeProperty(PROPERTY_HAS_WATERMARK);
             }
             link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
-            this.setStoredDirecturl(link, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}").toString());
+            if (downloadInfo != null) {
+                /*
+                 * Version with- and without watermark have nearly the same filesize --> Set size of possibly watermarked video on these
+                 * items too so users get to see more information in linkgrabber.
+                 */
+                link.setDownloadSize(((Number) downloadInfo.get("data_size")).longValue());
+            }
         } else {
             /* Grab official downloadlink because this video doesn't come with a watermark anyways. */
-            final String downloadJson = video.get("misc_download_addrs").toString();
-            final Map<String, Object> misc_download_addrs = JSonStorage.restoreFromString(downloadJson, TypeRef.HASHMAP);
-            final Map<String, Object> suffix_scene = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
-            this.setStoredDirecturl(link, JavaScriptEngineFactory.walkJson(suffix_scene, "url_list/{0}").toString());
-            link.setVerifiedFileSize(((Number) suffix_scene.get("data_size")).longValue());
+            link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}").toString());
+            link.setVerifiedFileSize(((Number) downloadInfo.get("data_size")).longValue());
             link.removeProperty(PROPERTY_HAS_WATERMARK);
         }
         setLikeCount(link, (Number) statistics.get("digg_count"));
         setPlayCount(link, (Number) statistics.get("play_count"));
         setShareCount(link, (Number) statistics.get("share_count"));
         setCommentCount(link, (Number) statistics.get("comment_count"));
+        link.setAvailable(true);
+        setFilename(link);
     }
 
-    private void accessAPI(final Browser br, final String path, final UrlQuery query) throws IOException {
+    public static void accessAPI(final Browser br, final String path, final UrlQuery query) throws IOException {
         br.getPage(API_BASE + path + "/" + "?" + query.toString());
+    }
+
+    public static Browser prepBRWebsite(final Browser br) {
+        return br;
     }
 
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("User-Agent", String.format("com.ss.android.ugc.trill/%s (Linux; U; Android 10; en_US; Pixel 4; Build/QQ3A.200805.001; Cronet/58.0.2991.0)", API_VERSION_CODE));
         // br.getHeaders().put("User-Agent", "okhttp");
         br.getHeaders().put("Accept", "application/json");
-        br.setCookie(API_BASE, "odin_tt", getRandomString("0123456789abcdef", 160));
+        br.setCookie(API_BASE, "odin_tt", generateRandomString("0123456789abcdef", 160));
         return br;
     }
 
@@ -468,8 +512,8 @@ public class TiktokCom extends PluginForHost {
         query.add("build_number", API_VERSION_NAME);
         query.add("manifest_version_code", API_VERSION_CODE);
         query.add("update_version_code", API_VERSION_CODE);
-        query.add("openudid", getRandomString("0123456789abcdef", 16));
-        query.add("uuid", getRandomString("0123456789", 16));
+        query.add("openudid", generateRandomString("0123456789abcdef", 16));
+        query.add("uuid", generateRandomString("0123456789", 16));
         query.add("_rticket", Long.toString(System.currentTimeMillis()));
         query.add("ts", Long.toString(System.currentTimeMillis() / 1000));
         query.add("device_brand", "Google");
@@ -498,7 +542,7 @@ public class TiktokCom extends PluginForHost {
         return query;
     }
 
-    private static String getRandomString(final String chars, final int length) {
+    public static String generateRandomString(final String chars, final int length) {
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
             sb.append(chars.charAt(new Random().nextInt(chars.length())));
@@ -506,7 +550,7 @@ public class TiktokCom extends PluginForHost {
         return sb.toString();
     }
 
-    private String getUsername(final DownloadLink link) {
+    public static String getUsername(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_USERNAME)) {
             return link.getStringProperty(PROPERTY_USERNAME);
         } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
@@ -516,7 +560,7 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    private String getDateFormatted(final DownloadLink link) {
+    private static String getDateFormatted(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_DATE)) {
             return link.getStringProperty(PROPERTY_DATE);
         } else if (link.hasProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER)) {
@@ -574,7 +618,7 @@ public class TiktokCom extends PluginForHost {
         return new URL(br.toString()).toString();
     }
 
-    private String convertDateFormat(final String sourceDateString) {
+    public static String convertDateFormat(final String sourceDateString) {
         if (sourceDateString == null) {
             return null;
         }
@@ -616,10 +660,10 @@ public class TiktokCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        doFree(link);
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink link) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         final DownloadMode mode = PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode();
         if (!link.hasProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE) || !StringUtils.equals(link.getStringProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE), mode.name())) {
             /* Prevent file corruption */

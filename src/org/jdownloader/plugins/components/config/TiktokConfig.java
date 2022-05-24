@@ -37,9 +37,10 @@ public interface TiktokConfig extends PluginConfigInterface {
         public String getDownloadMode_label() {
             return text_getDownloadMode;
         }
-        // public String getCrawlMode_label() {
-        // return text_getCrawlMode;
-        // }
+
+        public String getCrawlMode_label() {
+            return text_getCrawlMode;
+        }
     }
 
     @AboutConfig
@@ -89,26 +90,27 @@ public interface TiktokConfig extends PluginConfigInterface {
     DownloadMode getDownloadMode();
 
     void setDownloadMode(final DownloadMode mode);
-    // public static enum CrawlMode implements LabelInterface {
-    // WEBSITE {
-    // @Override
-    // public String getLabel() {
-    // return "Website [Max first ~30 items]";
-    // }
-    // },
-    // API {
-    // @Override
-    // public String getLabel() {
-    // return "API [All items]";
-    // }
-    // };
-    // }
-    //
-    // @AboutConfig
-    // @DefaultEnumValue("API")
-    // @Order(50)
-    // @DescriptionForConfigEntry(text_getCrawlMode)
-    // CrawlMode getCrawlerMode();
-    //
-    // void setCrawlerMode(final CrawlMode mode);
+
+    public static enum CrawlMode implements LabelInterface {
+        WEBSITE {
+            @Override
+            public String getLabel() {
+                return "Website [Max first ~30 items]";
+            }
+        },
+        API {
+            @Override
+            public String getLabel() {
+                return "API [All items]";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("API")
+    @Order(50)
+    @DescriptionForConfigEntry(text_getCrawlMode)
+    CrawlMode getCrawlMode();
+
+    void setCrawlMode(final CrawlMode mode);
 }
