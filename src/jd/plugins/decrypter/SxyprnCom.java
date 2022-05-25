@@ -117,4 +117,8 @@ public class SxyprnCom extends antiDDoSForDecrypt {
         }
         return ret;
     }
+
+    public static final String getContentURL(final String host, final String contentID) {
+        return "https://" + host + "/post/" + contentID + ".html";
+    }
 }
