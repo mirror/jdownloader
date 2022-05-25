@@ -11,14 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
-import org.appwork.utils.Files;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -33,6 +25,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.utils.Files;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/t/([\\w\\-/]+)" })
 public class EroScriptsCom extends antiDDoSForDecrypt {
@@ -173,6 +172,9 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
         public void preloadLinks() throws MalformedURLException {
             List<LazyCrawlerPlugin> decrypters = plugin.getCrawler().getSortedLazyCrawlerPlugins();
             List<LazyHostPlugin> hosters = plugin.getCrawler().getSortedLazyHostPlugins();
+            // TODO: rewrite to use LinkCrawler , see FolderWatchExtension, line 539, that way filters/abort still work and everything can
+            // make use of multithreading
+            // let the LinkCrawler process all found links, then you can requestFileInformation them
             for (DownloadLink l : links) {
                 for (LazyCrawlerPlugin p : decrypters) {
                     boolean can = false;
@@ -201,11 +203,7 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
                         continue;
                     }
                     try {
-                        PluginForDecrypt dec = p.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-                        plugin.pluginInstances.add(dec);
-                        dec.setLogger(getLogger());
-                        dec.setBrowser(getBrowser());
-                        dec.init();
+                        final PluginForDecrypt dec = getNewPluginInstance(p);
                         CrawledLink cl = new CrawledLink(new CryptedLink(l.getDownloadURL(), l.getDownloadURL()));
                         dec.setCurrentLink(cl);
                         List<DownloadLink> result = dec.decryptIt(cl);
@@ -226,18 +224,14 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
                     }
                 }
                 for (LazyHostPlugin p : hosters) {
-                    if (p.canHandle(l.getDownloadURL())) {
+                    if (p.canHandle(l.getPluginPatternMatcher())) {
                         try {
-                            PluginForHost host = p.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-                            plugin.pluginInstances.add(host);
-                            host.setLogger(getLogger());
-                            host.setBrowser(getBrowser());
-                            host.init();
+                            final PluginForHost host = getNewPluginInstance(p);
                             host.requestFileInformation(l);
-                            break;
                         } catch (Exception e) {
                             plugin.getLogger().log(e);
                         }
+                        break;
                     }
                 }
             }
