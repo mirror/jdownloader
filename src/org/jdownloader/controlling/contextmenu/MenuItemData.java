@@ -18,6 +18,9 @@ import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
+import javax.swing.Timer;
+
+import jd.controlling.TaskQueue;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
@@ -25,6 +28,7 @@ import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.ComponentProviderInterface;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
@@ -234,7 +238,7 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
         return ret;
     }
 
-    protected boolean processHideOnClickMouseEvent(JMenuItem item, final boolean hideOnClick, final MouseEvent ev) {
+    protected boolean processHideOnClickMouseEvent(final JMenuItem item, final boolean hideOnClick, final MouseEvent ev) {
         if (!hideOnClick && ev.getID() == MouseEvent.MOUSE_RELEASED) {
             item.setSelected(!item.isSelected());
             for (final ActionListener al : item.getActionListeners()) {
@@ -248,7 +252,20 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
                 al.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, item.getActionCommand(), EventQueue.getMostRecentEventTime(), modifiers));
                 final Action action = item.getAction();
                 if (action instanceof CustomizableAppAction) {
-                    ((CustomizableAppAction) action).requestUpdate(ev);
+                    TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            new Timer(1000, new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    if (item.isVisible()) {
+                                        ((CustomizableAppAction) action).requestUpdate(ev);
+                                    }
+                                }
+                            }).start();
+                            return null;
+                        }
+                    });
                 }
             }
             return true;

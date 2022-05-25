@@ -297,8 +297,8 @@ public class CompiledFiletypeFilter {
         AIFF,
         AU,
         M3U,
-        M4a,
-        M4b,
+        M4a, // mpeg 4 audio, eg aac
+        M4b, // mpeg 4 audiobook
         M4P,
         MKA,
         MP1,
