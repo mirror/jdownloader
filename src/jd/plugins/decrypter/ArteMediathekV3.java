@@ -156,7 +156,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             final String finalFilename = titleBase + videoStream.get("filename");
             link.setFinalFileName(finalFilename);
             link.setProperty(DirectHTTP.FIXNAME, finalFilename);
-            // TODO: Maybe add filesize estimation based on duration in seconds + bitrate?
             link.setAvailable(true);
             link.setDownloadSize(bitrate / 8 * 1024 * durationSeconds);
             link._setFilePackage(fp);
