@@ -29,6 +29,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.ReflectionUtils;
 
 /**
  * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache
@@ -362,9 +363,12 @@ public class Property implements Serializable {
      */
     public Object getProperty(final String key, final Object def) {
         Object ret = getProperty(key);
-        if (def instanceof Long && ret instanceof Integer) {
-            /* fix for integer in property map, but long wanted */
-            ret = ((Integer) ret).longValue();
+        if (def instanceof Number && ret instanceof Number) {
+            if (def.getClass().equals(ret.getClass())) {
+                return ret;
+            } else {
+                ret = ReflectionUtils.cast(ret, def.getClass());
+            }
         }
         if (ret == null) {
             return def;
