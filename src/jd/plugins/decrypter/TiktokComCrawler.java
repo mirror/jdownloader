@@ -100,6 +100,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             decryptedLinks.add(createDownloadlink(finallink));
+            return decryptedLinks;
         } else if (plg.canHandle(param.getCryptedUrl())) {
             /* Single video URL --> Is handled by host plugin */
             final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
