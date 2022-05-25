@@ -31,15 +31,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -55,6 +46,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -243,14 +243,26 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             brc.setFollowRedirects(true);
             brc.getPage(url);
         }
-        final String apitoken = brc.getRegex("\"apiToken\"\\s*:\\s*\"([^\"\\']+)\"").getMatch(0);
-        final String embed_content = brc.getRegex("\"embed_content\"\\s*:\\s*\"(/.*?)\"").getMatch(0);
-        final String api_base = brc.getRegex("apiService\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
+        String apitoken = brc.getRegex("\"apiToken\"\\s*:\\s*\"([^\"\\']+)").getMatch(0);
+        if (apitoken == null) {
+            apitoken = brc.getRegex("apiToken\\s*:\\s*'([^\"\\']+)").getMatch(0);
+        }
+        String api_base = brc.getRegex("apiService\\s*:\\s*'(https?://[^<>\"\\']+)").getMatch(0);
+        String embed_content = brc.getRegex("\"embed_content\"\\s*:\\s*\"(/.*?)\"").getMatch(0);
+        if (embed_content == null) {
+            embed_content = brc.getRegex("embed_content\\s*:\\s*'([^\"\\']+)").getMatch(0);
+        }
+        String config = brc.getRegex("\"config\"\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
+        if (config == null) {
+            config = brc.getRegex("player\\s*:\\s*\\{[^\\}]*js\\s*:\\s*'(https?://[^\"\\']+)").getMatch(0);
+        }
         String profile = brc.getRegex("\\.json\\?profile=([^\"]+)\"").getMatch(0);
-        final String config = brc.getRegex("\"config\"\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
         if (config != null) {
             brc.getPage(config);
-            final String tmp = brc.getRegex("\"apiProfile\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+            String tmp = brc.getRegex("\"apiProfile\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+            if (tmp == null) {
+                tmp = brc.getRegex("apiProfile\\s*:\\s*(?:\"|')([^\"\\']+)").getMatch(0);
+            }
             if (tmp != null) {
                 profile = tmp;
             }
@@ -833,8 +845,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(finalDownloadURL);
                         dl.setContentUrl(param.getCryptedUrl());
                         /**
-                         * Usually filesize is only given for the official downloads.</br>
-                         * Only set it here if we haven't touched the original downloadurls!
+                         * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the
+                         * original downloadurls!
                          */
                         if (filesize > 0) {
                             dl.setAvailable(true);
