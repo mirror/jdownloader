@@ -1,0 +1,158 @@
+package jd.plugins.hoster;
+
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/uploads/([\\w\\-/]+)" })
+public class EroScriptsCom extends antiDDoSForHost {
+    private static final String COOKIE_ID        = "_forum_session";
+    public static final long    trust_cookie_age = 5 * 60 * 1000l;
+    public static final String  FETCH_IMAGES     = "FETCH_IMAGES";
+    public static final String  SMART_FILENAMES  = "SMART_FILENAMES";
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "discuss.eroscripts.com" };
+    }
+
+    @SuppressWarnings("deprecation")
+    public EroScriptsCom(final PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("https://discuss.eroscripts.com/signup");
+        setConfigElements();
+    }
+
+    protected void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FETCH_IMAGES, "Add images?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SMART_FILENAMES, "Attempt to link script and video filenames?").setDefaultValue(true));
+    }
+
+    public void login(final Browser br, final Account account, boolean alwaysLogin) throws Exception {
+        getLogger().info("Performing login");
+        Cookies cookies = account.loadCookies(COOKIE_ID);
+        if (cookies != null && !cookies.isEmpty()) {
+            br.setCookies("https://discuss.eroscripts.com", cookies);
+            if (!alwaysLogin && System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID) <= trust_cookie_age) {
+                getLogger().info("Trust login cookies:" + account.getType());
+                return;
+            }
+            br.getPage("https://discuss.eroscripts.com/login");
+            if (br.getRedirectLocation() != null) {
+                // Update cookie timestamp
+                account.saveCookies(br.getCookies("https://discuss.eroscripts.com"), COOKIE_ID);
+                return;
+            }
+            account.clearCookies(COOKIE_ID);
+        }
+        br.getPage("https://discuss.eroscripts.com/login");
+        Form form = br.getFormbyProperty("id", "hidden-login-form");
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        Browser csrfBr = br.cloneBrowser();
+        csrfBr.setHeader("accept", "application/json");
+        csrfBr.getPage("https://discuss.eroscripts.com/session/csrf");
+        final Map<String, String> apiResponse = JSonStorage.restoreFromString(csrfBr.toString(), TypeRef.HASHMAP_STRING);
+        form.put("login", account.getUser());
+        form.put("password", account.getPass());
+        form.put("second_factor_method", "1");
+        form.setAction("https://discuss.eroscripts.com/session");
+        form.setMethod(MethodType.POST);
+        Browser formBr = br.cloneBrowser();
+        formBr.setHeader("x-csrf-token", apiResponse.get("csrf"));
+        formBr.setHeader("x-requested-with", "XMLHttpRequest");
+        formBr.submitForm(form);
+        Map<String, Object> loginResponse = JSonStorage.restoreFromString(formBr.toString(), TypeRef.HASHMAP);
+        if (loginResponse.containsKey("reason") && ((String) loginResponse.get("reason")).equals("invalid_second_factor")) {
+            String twoFactorCode = getUserInput("Two Factor code", null);
+            form.put("second_factor_method", "1");
+            form.put("second_factor_token", twoFactorCode);
+            formBr.submitForm(form);
+            loginResponse = JSonStorage.restoreFromString(formBr.toString(), TypeRef.HASHMAP);
+        }
+        if (loginResponse.containsKey("error")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, (String) loginResponse.get("error"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        account.saveCookies(formBr.getCookies("https://discuss.eroscripts.com"), COOKIE_ID);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        synchronized (account) {
+            this.login(this.br, account, true);
+        }
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "https://discuss.eroscripts.com/signup";
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        if (parameter.getBooleanProperty("has_file_info")) {
+            return AvailableStatus.TRUE;
+        }
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        login(br, account, false);
+        Browser testBr = br.cloneBrowser();
+        testBr.setFollowRedirects(true);
+        URLConnectionAdapter con = openAntiDDoSRequestConnection(testBr, testBr.createGetRequest(parameter.getDownloadURL()));
+        if (con.getResponseCode() == 404) {
+            con.disconnect();
+            return AvailableStatus.FALSE;
+        }
+        parameter.setDownloadSize(con.getContentLength());
+        final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
+        if (dispositionHeader != null) {
+            parameter.setName(dispositionHeader.getFilename());
+        }
+        con.disconnect();
+        parameter.setUrlDownload(testBr.getURL());
+        parameter.setContentUrl(testBr.getURL());
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getDownloadURL());
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleFree(link);
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+    }
+}
