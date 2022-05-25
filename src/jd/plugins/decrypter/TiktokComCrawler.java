@@ -175,11 +175,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 if (fp == null) {
                     username = author;
                     fp = FilePackage.getInstance();
-                    fp.setName(username);
+                    fp.setName("@" + username);
                 }
                 final DownloadLink dl = this.createDownloadlink(getContentURL(author, videoID));
                 final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
-                dl.setFinalFileName(dateFormatted + "_@" + author + "_" + videoID + ".mp4");
                 dl.setAvailable(true);
                 TiktokCom.setDescriptionAndHashtags(dl, description);
                 dl.setProperty(TiktokCom.PROPERTY_USERNAME, author);
@@ -192,6 +191,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(directurl)) {
                     dl.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, directurl);
                 }
+                TiktokCom.setFilename(dl);
                 dl._setFilePackage(fp);
                 ret.add(dl);
                 distribute(dl);
@@ -298,7 +298,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                      */
                     author = JavaScriptEngineFactory.walkJson(aweme_detail, "author/unique_id").toString();
                     fp = FilePackage.getInstance();
-                    fp.setName(author);
+                    fp.setName("@" + author);
                 }
                 final DownloadLink link = this.createDownloadlink(getContentURL(author, aweme_detail.get("aweme_id").toString()));
                 TiktokCom.parseFileInfoAPI(link, aweme_detail);
@@ -323,13 +323,22 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private String getContentURL(String user, final String videoID) {
-        if (user.startsWith("@")) {
-            user = user.substring(1, user.length());
-        }
-        return "https://www." + this.getHost() + "/@" + user + "/video/" + videoID;
+    private String getContentURL(final String user, final String videoID) {
+        return "https://www." + this.getHost() + "/@" + sanitizeUsername(user) + "/video/" + videoID;
     }
 
+    /** Cleans up given username String. */
+    public static String sanitizeUsername(final String user) {
+        if (user == null) {
+            return null;
+        } else if (user.startsWith("@")) {
+            return user.substring(1, user.length());
+        } else {
+            return user;
+        }
+    }
+
+    /** Returns random 19 digit string. */
     private static String generateDeviceID() {
         return TiktokCom.generateRandomString("1234567890", 19);
     }
