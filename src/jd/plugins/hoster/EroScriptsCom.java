@@ -1,11 +1,7 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -17,13 +13,20 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/uploads/([\\w\\-/]+)" })
 public class EroScriptsCom extends antiDDoSForHost {
@@ -50,60 +53,68 @@ public class EroScriptsCom extends antiDDoSForHost {
     }
 
     public void login(final Browser br, final Account account, boolean alwaysLogin) throws Exception {
-        getLogger().info("Performing login");
-        Cookies cookies = account.loadCookies(COOKIE_ID);
-        if (cookies != null && !cookies.isEmpty()) {
-            br.setCookies("https://discuss.eroscripts.com", cookies);
-            if (!alwaysLogin && System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID) <= trust_cookie_age) {
-                getLogger().info("Trust login cookies:" + account.getType());
-                return;
+        synchronized (account) {
+            try {
+                account.setType(AccountType.FREE);
+                getLogger().info("Performing login");
+                Cookies cookies = account.loadCookies(COOKIE_ID);
+                if (cookies != null && !cookies.isEmpty()) {
+                    br.setCookies("https://discuss.eroscripts.com", cookies);
+                    if (!alwaysLogin && System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID) <= trust_cookie_age) {
+                        getLogger().info("Trust login cookies:" + account.getType());
+                        return;
+                    }
+                    br.getPage("https://discuss.eroscripts.com/login");
+                    if (br.getRedirectLocation() != null) {
+                        // Update cookie timestamp
+                        account.saveCookies(br.getCookies("https://discuss.eroscripts.com"), COOKIE_ID);
+                        return;
+                    }
+                    account.clearCookies(COOKIE_ID);
+                }
+                br.getPage("https://discuss.eroscripts.com/login");
+                Form form = br.getFormbyProperty("id", "hidden-login-form");
+                if (form == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                Browser csrfBr = br.cloneBrowser();
+                csrfBr.setHeader("accept", "application/json");
+                csrfBr.getPage("https://discuss.eroscripts.com/session/csrf");
+                final Map<String, String> apiResponse = JSonStorage.restoreFromString(csrfBr.toString(), TypeRef.HASHMAP_STRING);
+                form.put("login", account.getUser());
+                form.put("password", account.getPass());
+                form.put("second_factor_method", "1");
+                form.setAction("https://discuss.eroscripts.com/session");
+                form.setMethod(MethodType.POST);
+                Browser formBr = br.cloneBrowser();
+                formBr.setHeader("x-csrf-token", apiResponse.get("csrf"));
+                formBr.setHeader("x-requested-with", "XMLHttpRequest");
+                formBr.submitForm(form);
+                Map<String, Object> loginResponse = JSonStorage.restoreFromString(formBr.toString(), TypeRef.HASHMAP);
+                if (loginResponse.containsKey("reason") && ((String) loginResponse.get("reason")).equals("invalid_second_factor")) {
+                    String twoFactorCode = getUserInput("Two Factor code", null);
+                    form.put("second_factor_method", "1");
+                    form.put("second_factor_token", twoFactorCode);
+                    formBr.submitForm(form);
+                    loginResponse = JSonStorage.restoreFromString(formBr.toString(), TypeRef.HASHMAP);
+                }
+                if (loginResponse.containsKey("error")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, (String) loginResponse.get("error"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(formBr.getCookies("https://discuss.eroscripts.com"), COOKIE_ID);
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies(COOKIE_ID);
+                }
+                throw e;
             }
-            br.getPage("https://discuss.eroscripts.com/login");
-            if (br.getRedirectLocation() != null) {
-                // Update cookie timestamp
-                account.saveCookies(br.getCookies("https://discuss.eroscripts.com"), COOKIE_ID);
-                return;
-            }
-            account.clearCookies(COOKIE_ID);
         }
-        br.getPage("https://discuss.eroscripts.com/login");
-        Form form = br.getFormbyProperty("id", "hidden-login-form");
-        if (form == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        Browser csrfBr = br.cloneBrowser();
-        csrfBr.setHeader("accept", "application/json");
-        csrfBr.getPage("https://discuss.eroscripts.com/session/csrf");
-        final Map<String, String> apiResponse = JSonStorage.restoreFromString(csrfBr.toString(), TypeRef.HASHMAP_STRING);
-        form.put("login", account.getUser());
-        form.put("password", account.getPass());
-        form.put("second_factor_method", "1");
-        form.setAction("https://discuss.eroscripts.com/session");
-        form.setMethod(MethodType.POST);
-        Browser formBr = br.cloneBrowser();
-        formBr.setHeader("x-csrf-token", apiResponse.get("csrf"));
-        formBr.setHeader("x-requested-with", "XMLHttpRequest");
-        formBr.submitForm(form);
-        Map<String, Object> loginResponse = JSonStorage.restoreFromString(formBr.toString(), TypeRef.HASHMAP);
-        if (loginResponse.containsKey("reason") && ((String) loginResponse.get("reason")).equals("invalid_second_factor")) {
-            String twoFactorCode = getUserInput("Two Factor code", null);
-            form.put("second_factor_method", "1");
-            form.put("second_factor_token", twoFactorCode);
-            formBr.submitForm(form);
-            loginResponse = JSonStorage.restoreFromString(formBr.toString(), TypeRef.HASHMAP);
-        }
-        if (loginResponse.containsKey("error")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, (String) loginResponse.get("error"), PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        account.saveCookies(formBr.getCookies("https://discuss.eroscripts.com"), COOKIE_ID);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        synchronized (account) {
-            this.login(this.br, account, true);
-        }
+        this.login(this.br, account, true);
         return ai;
     }
 
@@ -118,28 +129,45 @@ public class EroScriptsCom extends antiDDoSForHost {
             return AvailableStatus.TRUE;
         }
         final Account account = AccountController.getInstance().getValidAccount(this);
+        if (account == null) {
+            throw new AccountRequiredException();
+        }
+        // TODO: check if browser instance has cookies set (called by decrypter plugin) so no additional login is required
         login(br, account, false);
-        Browser testBr = br.cloneBrowser();
+        final Browser testBr = br.cloneBrowser();
         testBr.setFollowRedirects(true);
-        URLConnectionAdapter con = openAntiDDoSRequestConnection(testBr, testBr.createGetRequest(parameter.getDownloadURL()));
-        if (con.getResponseCode() == 404) {
+        final URLConnectionAdapter con = openAntiDDoSRequestConnection(testBr, testBr.createGetRequest(parameter.getDownloadURL()));
+        try {
+            if (!looksLikeDownloadableContent(con)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                if (con.getCompleteContentLength() > 0) {
+                    parameter.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
+                if (dispositionHeader != null) {
+                    parameter.setFinalFileName(dispositionHeader.getFilename());
+                }
+            }
+        } finally {
             con.disconnect();
-            return AvailableStatus.FALSE;
         }
-        parameter.setDownloadSize(con.getContentLength());
-        final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
-        if (dispositionHeader != null) {
-            parameter.setName(dispositionHeader.getFilename());
-        }
-        con.disconnect();
-        parameter.setUrlDownload(testBr.getURL());
-        parameter.setContentUrl(testBr.getURL());
+        parameter.setPluginPatternMatcher(testBr.getURL());
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        // no account required?
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getDownloadURL());
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
