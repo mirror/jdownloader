@@ -3565,7 +3565,7 @@ public class YoutubeHelper {
                 final Map<String, Object> set = new HashMap<String, Object>();
                 for (final String ytcfg : ytcfgSet) {
                     final Map<String, Object> map = jsonToJavaMap(ytcfg, false);
-                    if (map != null) {
+                    if (map != null && map.size() > 0) {
                         set.putAll(map);
                     }
                 }
