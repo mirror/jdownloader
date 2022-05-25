@@ -17,9 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Scanner;
 
@@ -206,7 +207,7 @@ public class ZdfDeMediathek extends PluginForHost {
         final String lineseparator = System.getProperty("line.separator");
         Scanner in = null;
         try {
-            in = new Scanner(new FileReader(source));
+            in = new Scanner(new InputStreamReader(new FileInputStream(source), "UTF-8"));
             while (in.hasNext()) {
                 xml.append(in.nextLine() + lineseparator);
             }
@@ -250,7 +251,7 @@ public class ZdfDeMediathek extends PluginForHost {
             final String lineseparator = System.getProperty("line.separator");
             Scanner in = null;
             try {
-                in = new Scanner(new FileReader(source));
+                in = new Scanner(new InputStreamReader(new FileInputStream(source), "UTF-8"));
                 while (in.hasNext()) {
                     xml.append(in.nextLine() + lineseparator);
                 }
