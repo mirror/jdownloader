@@ -132,7 +132,7 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             }
         }
         /* 2022-03-24 */
-        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance("gogoplay4.com");
+        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(Gogoplay4Com.getPluginDomains().get(0)[0]);
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String url : urls) {
             if (plg.canHandle(url)) {
