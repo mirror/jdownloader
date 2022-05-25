@@ -43,10 +43,11 @@ public class Gogoplay4Com extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /** HTML tags to easily find this plugin in the future: streaming.php, download.php */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com" });
+        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net" });
         return ret;
     }
 
@@ -71,12 +72,33 @@ public class Gogoplay4Com extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_DOWNLOAD  = "(?:https?://[^/]+)?/download\\?id=.+";
-    private static final String TYPE_STREAMING = "(?:https?://[^/]+)?/streaming\\.php\\?id=.+";
-    private static final String TYPE_STREAM    = "https?://[^/]+/videos/[\\w\\-]+";
+    private static final String TYPE_DOWNLOAD         = "(?:https?://[^/]+)?/download\\?id=[^/]+";
+    private static final String TYPE_STREAMING        = "(?:https?://[^/]+)?/streaming\\.php\\?id=[^/]+";
+    private static final String TYPE_STREAM_SELFEMBED = "https?://[^/]+/videos/[\\w\\-]+";
+
+    /** Domain independent handling. */
+    public static final boolean looksLikeSupportedPattern(final String url) {
+        if (url == null) {
+            return false;
+        } else if (looksLikeSupportedPatternStreaming(url)) {
+            return true;
+        } else if (url.matches(TYPE_DOWNLOAD)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static final boolean looksLikeSupportedPatternStreaming(final String url) {
+        if (url.matches(TYPE_STREAMING)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        if (param.getCryptedUrl().matches(TYPE_STREAM)) {
+        if (param.getCryptedUrl().matches(TYPE_STREAM_SELFEMBED)) {
             return this.crawlStream(param);
         } else {
             return this.crawlDownloadlinks(param);
@@ -110,32 +132,43 @@ public class Gogoplay4Com extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final UrlQuery firstCaptcha = new UrlQuery();
-        final String recaptchaV3Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
-            @Override
-            public TYPE getType() {
-                return TYPE.INVISIBLE;
-            }
-        }.getToken();
-        firstCaptcha.add("captcha_v3", Encoding.urlEncode(recaptchaV3Response));
-        firstCaptcha.add("id", Encoding.urlEncode(id));
-        br.postPage("/download", firstCaptcha);
-        if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha.render") && br.containsHTML("captcha_v2"))) {
-            /* 2022-03-24: Can be two captchas required?! */
-            final UrlQuery nextCaptcha = new UrlQuery();
-            final String siteKey = br.getRegex("site_key\\s*=\\s*'(" + AbstractRecaptchaV2.apiKeyRegex + ")'").getMatch(0);
-            if (siteKey == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, siteKey).getToken();
-            nextCaptcha.add("captcha_v2", Encoding.urlEncode(recaptchaV2Response));
-            nextCaptcha.add("id", Encoding.urlEncode(id));
-            br.postPage("/download", nextCaptcha);
-            if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha.render") && br.containsHTML("captcha_v2"))) {
-                /* Website prompts for captcha again -> Should never happen */
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        final String titleFromQuery = query.get("title");
+        final String packageName;
+        if (titleFromQuery != null) {
+            /* Use title in query as packagename */
+            packageName = titleFromQuery;
+        } else {
+            /* Get packagename from HTML */
+            packageName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        }
+        /* 0-2 captchas are required */
+        if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha\\.execute") && br.containsHTML("captcha_v3"))) {
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final UrlQuery firstCaptcha = new UrlQuery();
+            final String recaptchaV3Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+                @Override
+                public TYPE getType() {
+                    return TYPE.INVISIBLE;
+                }
+            }.getToken();
+            firstCaptcha.add("captcha_v3", Encoding.urlEncode(recaptchaV3Response));
+            firstCaptcha.add("id", Encoding.urlEncode(id));
+            br.postPage("/download", firstCaptcha);
+            if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha\\.render") && br.containsHTML("captcha_v2"))) {
+                /* 2022-03-24: Can be two captchas required?! */
+                final UrlQuery nextCaptcha = new UrlQuery();
+                final String siteKey = br.getRegex("site_key\\s*=\\s*'(" + AbstractRecaptchaV2.apiKeyRegex + ")'").getMatch(0);
+                if (siteKey == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, siteKey).getToken();
+                nextCaptcha.add("captcha_v2", Encoding.urlEncode(recaptchaV2Response));
+                nextCaptcha.add("id", Encoding.urlEncode(id));
+                br.postPage("/download", nextCaptcha);
+                if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha.render") && br.containsHTML("captcha_v2"))) {
+                    /* Website prompts for captcha again -> Should never happen */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
             }
         }
         final String[] streamLinks = br.getRegex("class=\"dowload\"[^>]*><a\\s*href=\"(https?://[^\"]+)\"").getColumn(0);
@@ -154,9 +187,9 @@ public class Gogoplay4Com extends PluginForDecrypt {
             link.setReferrerUrl(param.getCryptedUrl());
             decryptedLinks.add(link);
         }
-        if (fpName != null) {
+        if (packageName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.setName(Encoding.htmlDecode(packageName).trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
