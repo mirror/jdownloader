@@ -755,7 +755,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         synchronized (account) {
             try {
                 login_api(account, false);
-                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
                 if (StringUtils.isEmpty(expire_date)) {
                     /* APIv2 */
@@ -1679,26 +1679,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private long getPluginSavedLastDownloadTimestamp() {
-        return getLongProperty(getPluginConfig(), PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
-    }
-
-    private static long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
-        }
+        return getPluginConfig().getLongProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
     }
 
     @Override

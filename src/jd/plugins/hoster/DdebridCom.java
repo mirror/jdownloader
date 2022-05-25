@@ -41,7 +41,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -210,8 +209,8 @@ public class DdebridCom extends PluginForHost {
             }
             if (traffic_leftO != null && traffic_leftO instanceof String) {
                 ai.setUnlimitedTraffic();
-            } else if (traffic_leftO != null && traffic_leftO instanceof Long) {
-                ai.setTrafficLeft((Long) traffic_leftO);
+            } else if (traffic_leftO != null && traffic_leftO instanceof Number) {
+                ai.setTrafficLeft(((Number) traffic_leftO).longValue());
             } else {
                 logger.info("Failed to find any processable traffic_left value");
             }
