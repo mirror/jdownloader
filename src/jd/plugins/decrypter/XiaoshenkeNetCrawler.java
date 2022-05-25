@@ -18,26 +18,31 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.XiaoshenkeNet;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class FullpornerCom extends PornEmbedParser {
-    public FullpornerCom(PluginWrapper wrapper) {
+public class XiaoshenkeNetCrawler extends PluginForDecrypt {
+    public XiaoshenkeNetCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "fullporner.com" });
+        ret.add(new String[] { "xiaoshenke.net" });
         return ret;
     }
 
@@ -57,34 +62,15 @@ public class FullpornerCom extends PornEmbedParser {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/watch/([a-f0-9]{24})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videox/([a-f0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = super.decryptIt(param, progress);
-        String title = br.getRegex("class=\"single-video-title[^\"]*\">\\s*<h2>([^<]+)</h2>").getMatch(0);
-        final PluginForHost xiaoshenkeHostPlugin = this.getNewPluginForHostInstance(jd.plugins.hoster.XiaoshenkeNet.getPluginDomains().get(0)[0]);
-        if (decryptedLinks.size() > 0 && title != null) {
-            /* Most of all times we grab xiaoshenke.net URLs which need a special property. */
-            title = Encoding.htmlDecode(title).trim();
-            for (final DownloadLink link : decryptedLinks) {
-                /* Set special properties for some URLs */
-                if (xiaoshenkeHostPlugin.canHandle(link.getPluginPatternMatcher())) {
-                    link.setProperty(XiaoshenkeNet.PROPERTY_TITLE, title);
-                }
-            }
-        }
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        decryptedLinks.add(createDownloadlink(SxyprnCom.getContentURL("sxyprn.com", contentID)));
         return decryptedLinks;
-    }
-
-    @Override
-    protected boolean isOffline(Browser br) {
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            return true;
-        } else {
-            return false;
-        }
     }
 }
