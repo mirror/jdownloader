@@ -23,7 +23,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -35,12 +34,11 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
 public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> implements IfFileExistsDialogInterface, FocusListener {
-    private String             path;
+    private final String       path;
     private IfFileExistsAction result;
     private String             packagename;
 
@@ -57,21 +55,18 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         return packageID;
     }
 
-    private JRadioButton skip;
-    private JRadioButton overwrite;
-    private JRadioButton rename;
-    private String       packageID;
-    private DownloadLink downloadLink;
-    private Archive      archive;
-    private Item         item;
-    private LogSource    logger;
-    private JTextField   newName;
-    private String       newNameString;
+    private JRadioButton  skip;
+    private JRadioButton  overwrite;
+    private JRadioButton  rename;
+    private String        packageID;
+    private DownloadLink  downloadLink;
+    private final Archive archive;
+    private final Item    item;
+    private JTextField    newName;
+    private String        newNameString;
 
     public IfFileExistsDialog(File extractTo, Item item, Archive archive) {
         super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
-        //
-        logger = LogController.getInstance().getLogger(IfFileExistsDialog.class.getName());
         this.archive = archive;
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) {
