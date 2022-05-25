@@ -953,7 +953,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         // trust preset FinalFileName
                         downloadLink.setFinalFileName(preSetFinalName);
                         // trust preset FIXNAME property
-                        downloadLink.removeProperty(preSetFIXNAME);
+                        downloadLink.setProperty(FIXNAME, preSetFIXNAME);
                         downloadLink.setVerifiedFileSize(-1);
                         this.preferHeadRequest = false;
                         status = this.requestFileInformation(downloadLink, retry + 1);
