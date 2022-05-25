@@ -253,8 +253,10 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                     } else {
                         throw new Exception("Invalid value: " + text);
                     }
-                } else {
+                } else if (text instanceof Boolean) {
                     ((JCheckBox) input).setSelected((Boolean) text);
+                } else {
+                    throw new Exception("Unsupported type:" + text.getClass());
                 }
             } catch (Exception e) {
                 LogController.CL().severe("Falcher Wert: " + text);
@@ -263,14 +265,14 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             }
             break;
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
-            if (text instanceof Integer) {
-                ((JComboBox) input).setSelectedIndex((Integer) text);
+            if (text instanceof Number) {
+                ((JComboBox) input).setSelectedIndex(((Number) text).intValue());
             } else {
                 ((JComboBox) input).setSelectedItem(text);
             }
             break;
         case ConfigContainer.TYPE_SPINNER:
-            int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
+            int value = text instanceof Number ? ((Number) text).intValue() : Integer.parseInt(text.toString());
             try {
                 value = Math.min((Integer) ((SpinnerNumberModel) ((JSpinner) input).getModel()).getMaximum(), value);
                 value = Math.max((Integer) ((SpinnerNumberModel) ((JSpinner) input).getModel()).getMinimum(), value);
