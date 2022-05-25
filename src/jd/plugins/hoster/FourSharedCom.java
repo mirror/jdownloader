@@ -21,8 +21,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +42,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(?:-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music|mobile)/[A-Za-z0-9\\-_]+(?:/.*)?|https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9\\-_]+" })
 public class FourSharedCom extends PluginForHost {
@@ -321,7 +321,7 @@ public class FourSharedCom extends PluginForHost {
         if (error != null && error.contains("/linkerror.jsp")) {
             br.followConnection();
             dl.getConnection().disconnect();
-            long retryCount = getLongProperty(link, "retrycount_linkerror", 0);
+            long retryCount = link.getLongProperty("retrycount_linkerror", 0);
             if (retryCount == 3) {
                 /* Try 3 times, then do extended errorhandling */
                 logger.info("linkerror occured more than 3 times --> Extended errorhandling");
@@ -751,25 +751,6 @@ public class FourSharedCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } catch (final Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-    }
-
-    private static long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
         }
     }
 

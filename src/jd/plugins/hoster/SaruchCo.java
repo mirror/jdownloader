@@ -193,7 +193,7 @@ public class SaruchCo extends PluginForHost {
                     for (final String possibleQualityObjectName : possibleQualityObjectNames) {
                         try {
                             quality_temp_o = entries.get(possibleQualityObjectName);
-                            if (quality_temp_o != null && quality_temp_o instanceof Long) {
+                            if (quality_temp_o != null && quality_temp_o instanceof Number) {
                                 quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
                             } else if (quality_temp_o != null && quality_temp_o instanceof String) {
                                 /* E.g. '360p' */

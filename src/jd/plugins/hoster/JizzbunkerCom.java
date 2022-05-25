@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +29,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jizzbunker.com" }, urls = { "https?://(?:www\\.)?jizzbunker\\.com/(?:[a-z]{2}/)?(\\d+)/([a-z0-9\\-]+)\\.html" })
 public class JizzbunkerCom extends PluginForHost {
@@ -104,7 +103,7 @@ public class JizzbunkerCom extends PluginForHost {
                     entries = (Map<String, Object>) videoo;
                     dllink_temp = (String) entries.get("file");
                     quality_temp_o = entries.get("label");
-                    if (quality_temp_o != null && quality_temp_o instanceof Long) {
+                    if (quality_temp_o != null && quality_temp_o instanceof Number) {
                         quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
                     } else if (quality_temp_o != null && quality_temp_o instanceof String) {
                         /* E.g. '360p' */

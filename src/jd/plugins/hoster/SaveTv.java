@@ -784,7 +784,7 @@ public class SaveTv extends PluginForHost {
         if (produceyear_o instanceof Double) {
             /* Yes - they acrtually return a YEAR as double value */
             produceyear = Integer.toString((int) ((Double) produceyear_o).doubleValue());
-        } else if (produceyear_o instanceof Long) {
+        } else if (produceyear_o instanceof Number) {
             /* In case they correct their horrible json we might as well get a long value --> Handle this too :) */
             produceyear = Long.toString(JavaScriptEngineFactory.toLong(produceyear_o, 0));
         } else if (produceyear_o instanceof String) {
@@ -2582,10 +2582,14 @@ public class SaveTv extends PluginForHost {
         final String result;
         if (jsonobject == null) {
             result = null;
+        } else if (jsonobject instanceof Float) {
+            // why convert to int?
+            result = Integer.toString((int) ((Float) jsonobject).floatValue());
         } else if (jsonobject instanceof Double) {
+            // why convert to int?
             result = Integer.toString((int) ((Double) jsonobject).doubleValue());
-        } else if (jsonobject instanceof Long) {
-            result = Long.toString(((Long) jsonobject).longValue());
+        } else if (jsonobject instanceof Number) {
+            result = ((Number) jsonobject).toString();
         } else if (jsonobject instanceof Boolean) {
             result = Boolean.toString(((Boolean) jsonobject).booleanValue());
         } else {

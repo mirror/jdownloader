@@ -781,7 +781,7 @@ public class Uploadedto extends PluginForHost {
         }
         if (account != null && PluginJsonConfig.get(UploadedNetConfig.class).isEnableReconnectWorkaroundAccount()) {
             /* User has no limit on his IP in general --> Check if the current account has a limit. */
-            lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD, 0);
+            lastdownload = account.getLongProperty(PROPERTY_LASTDOWNLOAD, 0);
             passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
             if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
                 /**
@@ -1859,25 +1859,6 @@ public class Uploadedto extends PluginForHost {
             }
         }
         return lastdownload;
-    }
-
-    private static long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
-        }
     }
 
     private boolean dmcaDlEnabled() {
