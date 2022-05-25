@@ -53,69 +53,76 @@ public class Q32Pw extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String domain_key = br.getRegex("domain_key\\s*:\\s*\"([a-f0-9]+)\"").getMatch(0);
-        final String linkid = br.getRegex("linkid\\s*:\\s*\"(\\d+)\"").getMatch(0);
-        final String lang = br.getRegex("lang\\s*:\\s*\"([a-z]+)\"").getMatch(0);
-        final String waitStr = br.getRegex("id=\"countdown\">(\\d+)<").getMatch(0);
-        if (domain_key == null || linkid == null || lang == null) {
-            return null;
-        }
-        /*
-         * 2020-01-23: Waittime is not skippable but it starts to count here already --> We can let the user solve the captcha while the
-         * timer keeps running :)
-         */
-        final long timeBefore = System.currentTimeMillis();
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("/ajax.php?action=get.ca", String.format("domain_key=%s&linkid=%s&lang=%s", domain_key, linkid, lang));
-        boolean captchaSuccess = false;
-        int counter = 0;
-        do {
-            final String json = PluginJSonUtils.unescape(br.toString());
-            String captchaQuestion = PluginJSonUtils.getJson(json, "question");
-            if (StringUtils.isEmpty(captchaQuestion)) {
-                logger.warning("Failed to find captcha question");
-                return null;
+        String directRedirect = br.getRegex("class=\"link\" href=\"javascript://\" href=\"#\"><h3>([^>]+)</h3>").getMatch(0);
+        if (directRedirect != null) {
+            if (directRedirect.startsWith("http")) {
+                directRedirect = "https://" + directRedirect;
             }
-            /* Some cleanup. E.g. "Click the picture for <strong>boxing gloves</strong>" --> "Click the picture for boxing gloves" */
-            captchaQuestion = captchaQuestion.replaceAll("</?strong>", "");
-            final int expected_numberof_images = 5;
-            final String[] answerKeys = new Regex(json, "name=\"ca\" value=\"([a-f0-9]+)\"").getColumn(0);
-            final String[] captchas_b64 = new Regex(json, "base64,([a-zA-Z0-9_/\\+\\=]+)").getColumn(0);
-            if (captchas_b64 == null || captchas_b64.length != expected_numberof_images || answerKeys == null || answerKeys.length != expected_numberof_images) {
-                logger.warning("Failed to find captcha images or length mismatch");
-                return null;
+            decryptedLinks.add(createDownloadlink(directRedirect));
+        } else {
+            final String domain_key = br.getRegex("domain_key\\s*:\\s*\"([a-f0-9]+)\"").getMatch(0);
+            final String linkid = br.getRegex("linkid\\s*:\\s*\"(\\d+)\"").getMatch(0);
+            final String lang = br.getRegex("lang\\s*:\\s*\"([a-z]+)\"").getMatch(0);
+            final String waitStr = br.getRegex("id=\"countdown\">(\\d+)<").getMatch(0);
+            if (domain_key == null || linkid == null || lang == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final BufferedImage[] images = new BufferedImage[captchas_b64.length];
-            final File stitchedImageOutput = getStitchedImage(captchas_b64, images);
-            final ClickedPoint c = getCaptchaClickedPoint(getHost(), stitchedImageOutput, param, captchaQuestion);
-            if (c == null) {
+            /*
+             * 2020-01-23: Waittime is not skippable but it starts to count here already --> We can let the user solve the captcha while the
+             * timer keeps running :)
+             */
+            final long timeBefore = System.currentTimeMillis();
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("/ajax.php?action=get.ca", String.format("domain_key=%s&linkid=%s&lang=%s", domain_key, linkid, lang));
+            boolean captchaSuccess = false;
+            int counter = 0;
+            do {
+                final String json = PluginJSonUtils.unescape(br.toString());
+                String captchaQuestion = PluginJSonUtils.getJson(json, "question");
+                if (StringUtils.isEmpty(captchaQuestion)) {
+                    logger.warning("Failed to find captcha question");
+                    return null;
+                }
+                /* Some cleanup. E.g. "Click the picture for <strong>boxing gloves</strong>" --> "Click the picture for boxing gloves" */
+                captchaQuestion = captchaQuestion.replaceAll("</?strong>", "");
+                final int expected_numberof_images = 5;
+                final String[] answerKeys = new Regex(json, "name=\"ca\" value=\"([a-f0-9]+)\"").getColumn(0);
+                final String[] captchas_b64 = new Regex(json, "base64,([a-zA-Z0-9_/\\+\\=]+)").getColumn(0);
+                if (captchas_b64 == null || captchas_b64.length != expected_numberof_images || answerKeys == null || answerKeys.length != expected_numberof_images) {
+                    logger.warning("Failed to find captcha images or length mismatch");
+                    return null;
+                }
+                final BufferedImage[] images = new BufferedImage[captchas_b64.length];
+                final File stitchedImageOutput = getStitchedImage(captchas_b64, images);
+                final ClickedPoint c = getCaptchaClickedPoint(getHost(), stitchedImageOutput, param, captchaQuestion);
+                if (c == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                final Integer clicked_image_number = getClickedImageLocation(c, images);
+                final String answer_key = answerKeys[clicked_image_number];
+                logger.info("Got the captcha answer --> Waiting what's left of the waittime");
+                if (counter == 0) {
+                    /* Only wait before sending the first captcha answer. We can try again without waiting then. */
+                    waitTime(param, waitStr, timeBefore);
+                }
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/ajax.php?action=get.cca", String.format("domain_key=%s&linkid=%s&lang=%s&ca=%s", domain_key, linkid, lang, answer_key));
+                captchaSuccess = "success".equalsIgnoreCase(PluginJSonUtils.getJson(br, "status"));
+                counter++;
+            } while (!captchaSuccess && counter <= 4);
+            if (!captchaSuccess) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            final Integer clicked_image_number = getClickedImageLocation(c, images);
-            final String answer_key = answerKeys[clicked_image_number];
-            logger.info("Got the captcha answer --> Waiting what's left of the waittime");
-            if (counter == 0) {
-                /* Only wait before sending the first captcha answer. We can try again without waiting then. */
-                waitTime(param, waitStr, timeBefore);
+            /* 'link' is another q32.pw URL which redirects to 'slink' --> We take 'slink' right away. */
+            // final String finallink = PluginJSonUtils.getJson(br, "link");
+            final String finallink = PluginJSonUtils.getJson(br, "slink");
+            if (StringUtils.isEmpty(finallink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("/ajax.php?action=get.cca", String.format("domain_key=%s&linkid=%s&lang=%s&ca=%s", domain_key, linkid, lang, answer_key));
-            captchaSuccess = "success".equalsIgnoreCase(PluginJSonUtils.getJson(br, "status"));
-            counter++;
-        } while (!captchaSuccess && counter <= 4);
-        if (!captchaSuccess) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            decryptedLinks.add(createDownloadlink(finallink));
         }
-        /* 'link' is another q32.pw URL which redirects to 'slink' --> We take 'slink' right away. */
-        // final String finallink = PluginJSonUtils.getJson(br, "link");
-        final String finallink = PluginJSonUtils.getJson(br, "slink");
-        if (StringUtils.isEmpty(finallink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 
