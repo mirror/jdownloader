@@ -48,6 +48,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.TiktokComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends PluginForHost {
@@ -127,7 +128,7 @@ public class TiktokCom extends PluginForHost {
     public static final String  PROPERTY_COMMENT_COUNT             = "comment_count";
     public static final String  PROPERTY_HAS_WATERMARK             = "has_watermark";
     public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE   = "last_used_download_mode";
-    private static final String TYPE_VIDEO                         = "https?://[^/]+/(@[^/]+)/video/(\\d+).*?";
+    private static final String TYPE_VIDEO                         = "https?://[^/]+/@([^/]+)/video/(\\d+).*?";
     /* API related stuff */
     public static final String  API_BASE                           = "https://api-h2.tiktokv.com/aweme/v1";
     public static final String  API_VERSION_NAME                   = "20.9.3";
@@ -224,7 +225,7 @@ public class TiktokCom extends PluginForHost {
         }
         final String username = getUsername(link);
         if (!StringUtils.isEmpty(username)) {
-            filename += "_" + username;
+            filename += "_@" + username;
         }
         filename += "_" + getFID(link) + ".mp4";
         /* Only set final filename if ALL information is available! */
@@ -252,6 +253,8 @@ public class TiktokCom extends PluginForHost {
     }
 
     public void checkAvailablestatusWebsite(final DownloadLink link, final boolean isDownload) throws Exception {
+        /* In website mode we neither know whether or not a video is watermarked nor can we download it without watermark. */
+        link.removeProperty(PROPERTY_HAS_WATERMARK);
         final String fid = getFID(link);
         prepBRWebsite(br);
         if (!link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
@@ -319,10 +322,7 @@ public class TiktokCom extends PluginForHost {
                 /* 2020-10-26: Doesn't work anymore, returns 403 */
                 if (entries.containsKey("author")) {
                     final Map<String, Object> authorInfos = (Map<String, Object>) entries.get("author");
-                    String username = (String) authorInfos.get("uniqueId");
-                    if (!StringUtils.isEmpty(username) && !username.startsWith("@")) {
-                        username = "@" + username;
-                    }
+                    final String username = (String) authorInfos.get("uniqueId");
                     if (!StringUtils.isEmpty(username)) {
                         link.setProperty(PROPERTY_USERNAME, username);
                     }
@@ -378,11 +378,8 @@ public class TiktokCom extends PluginForHost {
                 final Object authorInfosO = videoData.get("authorInfos");
                 if (authorInfosO != null) {
                     final Map<String, Object> authorInfos = (Map<String, Object>) authorInfosO;
-                    String username = (String) authorInfos.get("uniqueId");
+                    final String username = (String) authorInfos.get("uniqueId");
                     if (!StringUtils.isEmpty(username)) {
-                        if (!username.startsWith("@")) {
-                            username = "@" + username;
-                        }
                         link.setProperty(PROPERTY_USERNAME, username);
                     }
                 }
@@ -450,7 +447,7 @@ public class TiktokCom extends PluginForHost {
         final Map<String, Object> statistics = (Map<String, Object>) aweme_detail.get("statistics");
         final Map<String, Object> video = (Map<String, Object>) aweme_detail.get("video");
         final Map<String, Object> author = (Map<String, Object>) aweme_detail.get("author");
-        link.setProperty(PROPERTY_USERNAME, "@" + author.get("unique_id").toString());
+        link.setProperty(PROPERTY_USERNAME, author.get("unique_id").toString());
         setDescriptionAndHashtags(link, aweme_detail.get("desc").toString());
         final Boolean has_watermark = (Boolean) video.get("has_watermark");
         Map<String, Object> downloadInfo = (Map<String, Object>) video.get("download_addr");
@@ -552,9 +549,9 @@ public class TiktokCom extends PluginForHost {
 
     public static String getUsername(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_USERNAME)) {
-            return link.getStringProperty(PROPERTY_USERNAME);
+            return TiktokComCrawler.sanitizeUsername(link.getStringProperty(PROPERTY_USERNAME));
         } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
-            return new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0);
+            return TiktokComCrawler.sanitizeUsername(new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0));
         } else {
             return null;
         }

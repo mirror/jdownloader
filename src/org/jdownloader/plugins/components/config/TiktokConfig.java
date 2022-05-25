@@ -72,13 +72,13 @@ public interface TiktokConfig extends PluginConfigInterface {
         WEBSITE {
             @Override
             public String getLabel() {
-                return "Website [With watermark]";
+                return "Website [Usually with watermark]";
             }
         },
         API {
             @Override
             public String getLabel() {
-                return "API [Without watermark]";
+                return "API [Usually without watermark]";
             }
         };
     }
