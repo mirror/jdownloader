@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,9 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.DebugMode;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "http://arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://concert\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://creative\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://future\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://cinema\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://theoperaplatform\\.eu\\.artejd_decrypted_jd/\\d+", "http://info\\.arte\\.tv\\.artejd_decrypted_jd/\\d+" })
 public class ArteTv extends PluginForHost {
@@ -94,7 +94,8 @@ public class ArteTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     public ArteTv(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
+        /* 2022-05-22: Removed settings for now as new plugin is still under development */
+        // setConfigElements();
     }
 
     @SuppressWarnings("deprecation")
