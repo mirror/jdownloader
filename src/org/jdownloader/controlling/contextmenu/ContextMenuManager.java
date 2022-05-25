@@ -115,7 +115,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     public JPopupMenu build(MouseEvent ev) {
         final ExtPopupMenu root = new ExtPopupMenu();
         final MenuContainerRoot md = getMenuData();
-        new MenuBuilder(this, root, md).setHideOnClick(true).run();
+        new MenuBuilder(this, root, md).setHideOnClick(!ev.isShiftDown()).run();
         return root;
     }
 

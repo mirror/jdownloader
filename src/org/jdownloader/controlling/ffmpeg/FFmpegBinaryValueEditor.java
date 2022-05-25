@@ -5,15 +5,13 @@ import java.io.File;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.settings.advanced.AdvandedValueEditor;
-
-import com.formdev.flatlaf.util.StringUtils;
 
 public class FFmpegBinaryValueEditor extends AdvandedValueEditor<String> {
     @Override
@@ -38,9 +36,7 @@ public class FFmpegBinaryValueEditor extends AdvandedValueEditor<String> {
             } else {
                 throw new ValidationException("invalid:" + ret);
             }
-        } catch (DialogClosedException e) {
-            throw new ValidationException(e);
-        } catch (DialogCanceledException e) {
+        } catch (DialogNoAnswerException e) {
             throw new ValidationException(e);
         }
     }

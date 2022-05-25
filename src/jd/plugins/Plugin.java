@@ -190,7 +190,7 @@ public abstract class Plugin implements ActionListener {
             map.put("video/webm", "webm");
             map.put("audio/mp3", "mp3");
             map.put("audio/mpeg", "mp3");
-            map.put("audio/mp4", "mp4");// m4a?
+            map.put("audio/mp4", "m4a");
             map.put("audio/ogg", "oga");
             map.put("audio/x-flac", "flac");
             map.put("audio/wav", "wav");
