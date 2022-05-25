@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -42,6 +36,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "https?://((?:\\w+\\.)?livemixtapes\\.com/download(?:/mp3)?/\\d+/[a-z0-9\\-]+\\.html|club\\.livemixtapes\\.com/play/\\d+)" })
 public class LiveMixTapesCom extends antiDDoSForHost {
@@ -232,14 +231,6 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (dlform.containsHTML("g-recaptcha-response")) {
-                /*
-                 * 2021-02-26: TODO: Fix this! Why does it take us to the "download" page only without returning a downloadurl? I've failed
-                 * to make this work...
-                 */
-                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // Usually we have a waittime here but it can be skipped
                 int attempt = 0;
                 do {
                     attempt++;
@@ -247,27 +238,9 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                     if (waitStr == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    // this.sleep(Integer.parseInt(waitStr) * 1001l, link);
                     final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    // if (StringUtils.isEmpty(dlform.getAction())) {
-                    // dlform.setAction(br.getURL().replace("/mixtapes/", "/download/"));
-                    // }
-                    // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7");
-                    // br.getHeaders().put("Accept",
-                    // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
-                    // br.getHeaders().put("Origin", "https://www." + this.getHost());
-                    // br.getHeaders().put("Cache-Control", "max-age=0");
-                    // br.getHeaders().put("Sec-CH-UA", "Sec-Ch-UA \"Chromium\";v=\"94\", \"Google Chrome\";v=\"94\", \";Not A
-                    // Brand\";v=\"99\"");
-                    // br.getHeaders().put("Sec-CH-UA-Mobile", "?0");
-                    // br.getHeaders().put("Sec-CH-UA-Platform", "\"Windows\"");
-                    // br.getHeaders().put("Upgrade-Insecure-Requests", "1");
-                    // br.getHeaders().put("Sec-Fetch-Site", "same-origin");
-                    // br.getHeaders().put("Sec-Fetch-Mode", "navigate");
-                    // br.getHeaders().put("Sec-Fetch-User", "?1");
-                    // br.getHeaders().put("Sec-Fetch-Dest", "document");
                     long wait = Long.parseLong(waitStr);
                     if (wait < 1000) {
                         wait = wait * 1001;
@@ -295,18 +268,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                         logger.info("Captcha failed on attempt: " + attempt);
                         continue;
                     }
-                    // final Form dlform2 = br.getFormbyProperty("id", "adfreedownload");
-                    // dlform2.setAction(br.getURL().replace("/mixtapes/", "/download/"));
-                    // final String recaptchaV2Response2 = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    // dlform2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response2));
-                    // br.setFollowRedirects(false);
-                    // br.submitForm(dlform2);}
                 } while (true);
-                // dllink = br.getRedirectLocation();
-                // if (dllink == null) {
-                // logger.warning("Failed to find final downloadurl");
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
