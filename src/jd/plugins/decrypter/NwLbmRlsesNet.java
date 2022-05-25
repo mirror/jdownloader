@@ -108,7 +108,7 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
                 }
             }
             if (decryptedLinks.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
             br.setFollowRedirects(false);
