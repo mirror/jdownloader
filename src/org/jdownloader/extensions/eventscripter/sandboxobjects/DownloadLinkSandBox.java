@@ -12,7 +12,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageController;
-import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -40,7 +39,6 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
-import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context download list link")
@@ -497,11 +495,7 @@ public class DownloadLinkSandBox {
 
     public String getDownloadHost() {
         if (downloadLink != null) {
-            if (downloadLink.getDefaultPlugin().hasFeature(LazyPlugin.FEATURE.GENERIC)) {
-                return Browser.getHost(downloadLink.getPluginPatternMatcher());
-            } else {
-                return downloadLink.getHost();
-            }
+            return downloadLink.getServiceHost();
         } else {
             return null;
         }
