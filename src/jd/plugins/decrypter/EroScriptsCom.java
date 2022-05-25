@@ -1,0 +1,371 @@
+package jd.plugins.decrypter;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.utils.Files;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/t/([\\w\\-/]+)" })
+public class EroScriptsCom extends antiDDoSForDecrypt {
+    class SmartGroup {
+        EroScriptsCom                     plugin;
+        protected String                  title;
+        protected ArrayList<DownloadLink> links;
+        protected ArrayList<DownloadLink> scripts;
+        protected ArrayList<DownloadLink> videos;
+        protected ArrayList<DownloadLink> matched;
+        protected FilePackage             fp;
+        protected FilePackage             myfp;
+        protected int                     foundPackages = 0;
+
+        public SmartGroup(EroScriptsCom plugin, String title, ArrayList<DownloadLink> links) throws MalformedURLException {
+            this.plugin = plugin;
+            this.title = title;
+            this.links = links;
+            preloadLinks();
+            findScripts();
+            findVideos();
+            matchMaking();
+        }
+
+        int compareString(String str1, String str2) {
+            String clean1 = str1.split("\\.", 2)[0].toLowerCase().replaceAll("[',\\-_\\(\\)\\[\\]]", " ").replaceAll("\\s{2,}", " ").trim();
+            String clean2 = str2.split("\\.", 2)[0].toLowerCase().replaceAll("[',\\-_\\(\\)\\[\\]]", " ").replaceAll("\\s{2,}", " ").trim();
+            if (clean1.equals(clean2)) {
+                return clean1.length();
+            }
+            if (clean1.startsWith(clean2)) {
+                return clean2.length();
+            }
+            if (clean2.startsWith(clean1)) {
+                return clean1.length();
+            }
+            int score = 0;
+            String[] pts1 = clean1.split("\\s");
+            String[] pts2 = clean2.split("\\s");
+            for (String p1 : pts1) {
+                for (String p2 : pts2) {
+                    if (p1.equals(p2)) {
+                        score += p2.length();
+                    }
+                }
+            }
+            for (String p1 : pts1) {
+                for (String p2 : pts2) {
+                    if (p2.equals(p1)) {
+                        score += p1.length();
+                    }
+                }
+            }
+            return score;
+        }
+
+        void renameBase(DownloadLink l, String packageName, String fileBase) {
+            String[] pts = l.getName().split("\\.", 2);
+            if (pts.length != 2) {
+                return;
+            }
+            l.forceForcedFileName(fileBase + "." + pts[1]);
+            l.setName(fileBase + "." + pts[1]);
+            l.setFinalFileName(fileBase + "." + pts[1]);
+            if (!packageName.equals(title)) {
+                if (myfp == null || !myfp.getName().equals(packageName)) {
+                    myfp = FilePackage.getInstance();
+                    myfp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+                    myfp.setName(packageName);
+                    foundPackages += 1;
+                }
+            } else {
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+                    fp.setName(title);
+                    myfp = fp;
+                }
+            }
+            myfp.add(l);
+        }
+
+        List<Entry<DownloadLink[], Integer>> sortedMatches() {
+            Map<DownloadLink[], Integer> matchScores = new HashMap<DownloadLink[], Integer>();
+            for (DownloadLink v : videos) {
+                for (DownloadLink s : scripts) {
+                    DownloadLink[] key = { v, s };
+                    matchScores.put(key, compareString(v.getName(), s.getName()));
+                }
+            }
+            Comparator<Entry<DownloadLink[], Integer>> valueComparator = new Comparator<Entry<DownloadLink[], Integer>>() {
+                @Override
+                public int compare(Entry<DownloadLink[], Integer> e1, Entry<DownloadLink[], Integer> e2) {
+                    return e2.getValue() - e1.getValue();
+                }
+            };
+            List<Entry<DownloadLink[], Integer>> listOfEntries = new ArrayList<Entry<DownloadLink[], Integer>>(matchScores.entrySet());
+            Collections.sort(listOfEntries, valueComparator);
+            return listOfEntries;
+        }
+
+        void matchMaking() {
+            matched = new ArrayList<DownloadLink>();
+            if (scripts.size() == 1 && videos.size() == 1) {
+                matched.add(scripts.get(0));
+                matched.add(videos.get(0));
+                renameBase(scripts.get(0), title, title);
+                renameBase(videos.get(0), title, title);
+            } else {
+                List<Entry<DownloadLink[], Integer>> matchScores = sortedMatches();
+                for (Entry<DownloadLink[], Integer> e : matchScores) {
+                    if (matched.contains(e.getKey()[0]) || matched.contains(e.getKey()[1]) || e.getValue() <= 0) {
+                        continue;
+                    }
+                    String scriptBase = e.getKey()[1].getName().split("\\.", 2)[0];
+                    renameBase(e.getKey()[0], scriptBase, scriptBase);
+                    renameBase(e.getKey()[1], scriptBase, scriptBase);
+                    matched.add(e.getKey()[0]);
+                    matched.add(e.getKey()[1]);
+                }
+            }
+            if (fp == null) {
+                if (foundPackages == 1) {
+                    fp = myfp;
+                } else {
+                    fp = FilePackage.getInstance();
+                    fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+                    fp.setName(title);
+                }
+            }
+            for (DownloadLink l : links) {
+                if (!matched.contains(l)) {
+                    fp.add(l);
+                }
+            }
+        }
+
+        public void preloadLinks() throws MalformedURLException {
+            List<LazyCrawlerPlugin> decrypters = plugin.getCrawler().getSortedLazyCrawlerPlugins();
+            List<LazyHostPlugin> hosters = plugin.getCrawler().getSortedLazyHostPlugins();
+            for (DownloadLink l : links) {
+                for (LazyCrawlerPlugin p : decrypters) {
+                    boolean can = false;
+                    if (p.canHandle(l.getDownloadURL())) {
+                        can = true;
+                    } else {
+                        // Attempt fix for exmaple issue: spankbang.party -> spankbang.com
+                        int ih = p.getDisplayName().lastIndexOf(".");
+                        URL u = new URL(l.getDownloadURL());
+                        int il = u.getHost().lastIndexOf(".");
+                        if (ih > 0 && il > 0) {
+                            String hostBase = p.getDisplayName().substring(0, ih);
+                            String linkBase = u.getHost().substring(0, il);
+                            String hostPost = p.getDisplayName().substring(ih + 1);
+                            String linkPost = u.getHost().substring(il + 1);
+                            if (hostBase.equals(linkBase) && !hostPost.equals(linkPost)) {
+                                String testUrl = l.getDownloadURL().replace(linkBase + "." + linkPost, hostBase + "." + hostPost);
+                                if (p.canHandle(testUrl)) {
+                                    l.setUrlDownload(testUrl);
+                                    can = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!can) {
+                        continue;
+                    }
+                    try {
+                        PluginForDecrypt dec = p.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+                        plugin.pluginInstances.add(dec);
+                        dec.setLogger(getLogger());
+                        dec.setBrowser(getBrowser());
+                        dec.init();
+                        CrawledLink cl = new CrawledLink(new CryptedLink(l.getDownloadURL(), l.getDownloadURL()));
+                        dec.setCurrentLink(cl);
+                        List<DownloadLink> result = dec.decryptIt(cl);
+                        if (result.size() > 1) {
+                            l.setEnabled(false);
+                        } else if (result.size() == 1) {
+                            DownloadLink dl = result.get(0).getDownloadLink();
+                            l.setUrlDownload(dl.getDownloadURL());
+                            l.setContentUrl(dl.getContentUrl());
+                            l.setLinkID(dl.getLinkID());
+                            l.setProperties(dl.getProperties());
+                            l.setPluginPatternMatcher(dl.getPluginPatternMatcher());
+                            l.setName(dl.getName());
+                            break;
+                        }
+                    } catch (Exception e) {
+                        plugin.getLogger().log(e);
+                    }
+                }
+                for (LazyHostPlugin p : hosters) {
+                    if (p.canHandle(l.getDownloadURL())) {
+                        try {
+                            PluginForHost host = p.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+                            plugin.pluginInstances.add(host);
+                            host.setLogger(getLogger());
+                            host.setBrowser(getBrowser());
+                            host.init();
+                            host.requestFileInformation(l);
+                            break;
+                        } catch (Exception e) {
+                            plugin.getLogger().log(e);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void findScripts() {
+            scripts = new ArrayList<DownloadLink>();
+            for (DownloadLink l : links) {
+                if (l.getName().endsWith(".funscript")) {
+                    scripts.add(l);
+                }
+            }
+        }
+
+        public void findVideos() {
+            videos = new ArrayList<DownloadLink>();
+            for (DownloadLink l : links) {
+                if (!l.isEnabled()) {
+                    continue;
+                }
+                if (l.getName() == null || l.getName().length() == 0) {
+                    continue;
+                }
+                String ext = Files.getExtension(l.getName());
+                if (ext == null) {
+                    continue;
+                }
+                if (ext.equalsIgnoreCase("mp4") || ext.equalsIgnoreCase("mkv") || ext.equalsIgnoreCase("wmv") || ext.equalsIgnoreCase("mov")) {
+                    videos.add(l);
+                }
+            }
+        }
+    }
+
+    public EroScriptsCom(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    protected void handleMatches(String[][] matches, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+        for (String[] m : matches) {
+            String match = br.getURL(Encoding.htmlDecode(m[0])).toString();
+            if (match.contains("discuss.eroscripts.com") && !match.contains("/uploads")) {
+                continue;
+            }
+            if (match.contains("/model/")) {
+                continue;
+            }
+            if (match.contains("xhamster.") && !match.contains("/videos/")) {
+                continue;
+            }
+            if (match.contains("pornhub.") && !match.contains("view_video")) {
+                continue;
+            }
+            if (match.contains("spankbang.") && !match.contains("/video/")) {
+                continue;
+            }
+            if (match.contains("pixiv.net")) {
+                continue;
+            }
+            String ext = Files.getExtension(match);
+            boolean useImages = getPluginConfig().getBooleanProperty(jd.plugins.hoster.EroScriptsCom.FETCH_IMAGES, true);
+            if (!useImages) {
+                if (ext != null && (ext.equalsIgnoreCase("jpg") || ext.equalsIgnoreCase("jpeg") || ext.equalsIgnoreCase("png") || ext.equalsIgnoreCase("gif") || ext.equalsIgnoreCase("bmp"))) {
+                    continue;
+                }
+                if (match.contains("imgur.")) {
+                    continue;
+                }
+            }
+            boolean dupe = false;
+            for (DownloadLink l : decryptedLinks) {
+                if (l.getDownloadURL().equals(match)) {
+                    dupe = true;
+                    break;
+                }
+            }
+            if (dupe) {
+                continue;
+            }
+            DownloadLink link = this.createDownloadlink(match);
+            if (m[2] != null && !m[2].isEmpty()) {
+                String name = Encoding.htmlDecode(m[2]);
+                if (ext != null) {
+                    name += "." + ext;
+                    link.setFinalFileName(name);
+                } else {
+                    link.setName(name);
+                }
+            }
+            decryptedLinks.add(link);
+        }
+    }
+
+    @Override
+    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        Account account = AccountController.getInstance().getValidAccount(getHost());
+        if (account == null) {
+            throw new AccountRequiredException();
+        }
+        jd.plugins.hoster.EroScriptsCom hoster = (jd.plugins.hoster.EroScriptsCom) this.getNewPluginForHostInstance("discuss.eroscripts.com");
+        hoster.login(br, account, false);
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.getPage(parameter.getCryptedUrl());
+        final Storage CFG = JSonStorage.getPlainStorage("quickfilters");
+        String[][] linkMatches = br.getRegex("<a[^<>]*\\shref\\s*=\\s*(?:\"|')([^#][^\\s]+)(?:\"|')([^<>]+title\\s*=\\s*(?:\\\"|')([^\\'\\\"]*)(?:\\\"|'))?").getMatches();
+        handleMatches(linkMatches, decryptedLinks);
+        if (getPluginConfig().getBooleanProperty(jd.plugins.hoster.EroScriptsCom.FETCH_IMAGES, true)) {
+            String[][] imgMatches = br.getRegex("<img[^<>]*\\ssrc\\s*=\\s*(?:\"|')([^#][^\\s]+)(?:\"|')([^<>]+alt\\s*=\\s*(?:\\\"|')([^\\'\\\"]*)(?:\\\"|'))?").getMatches();
+            handleMatches(imgMatches, decryptedLinks);
+        }
+        if (decryptedLinks.size() == 0) {
+            return decryptedLinks;
+        }
+        String[][] titleMatches = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\"").getMatches();
+        if (titleMatches == null || titleMatches.length == 0) {
+            return decryptedLinks;
+        }
+        String title = Encoding.htmlDecode(titleMatches[0][0]);
+        if (getPluginConfig().getBooleanProperty(jd.plugins.hoster.EroScriptsCom.SMART_FILENAMES, true)) {
+            // runSmartFileNames(title, decryptedLinks);
+            SmartGroup sg = new SmartGroup(this, title, decryptedLinks);
+        } else {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+            fp.addLinks(decryptedLinks);
+        }
+        return decryptedLinks;
+    }
+}
