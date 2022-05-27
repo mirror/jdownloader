@@ -29,20 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -67,7 +53,19 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -698,6 +696,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             /* E.g. 'review' URLs (old handling) */
                             final Map<String, Object> clipData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
                             final Map<String, Object> ownerMap = (Map<String, Object>) clipData.get("user");
+                            if (ownerMap != null) {
+                                ownerUrl = new Regex(ownerMap.get("url"), "(?:vimeo\\.com)?/(.+)").getMatch(0);
+                                ownerName = (String) ownerMap.get("display_name");
+                                if (ownerName != null) {
+                                    ownerName = (String) ownerMap.get("name");
+                                }
+                            }
                             title = (String) clipData.get("title");
                             if (StringUtils.isEmpty(unlistedHash)) {
                                 unlistedHash = (String) clipData.get("unlistedHash");
@@ -708,11 +713,20 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         } else if (entries.containsKey("video")) {
                             /* player.vimeo.com or normal vimeo.com */
                             final Map<String, Object> video = (Map<String, Object>) entries.get("video");
+                            Map<String, Object> ownerMap = null;
                             if (video.containsKey("owner")) {
-                                final Map<String, Object> ownerMap = (Map<String, Object>) video.get("owner");
-                                ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                                ownerName = (String) ownerMap.get("name");
+                                ownerMap = (Map<String, Object>) video.get("owner");
+                            } else if (entries != null && entries.containsKey("owner")) {
+                                ownerMap = (Map<String, Object>) entries.get("owner");
                             }
+                            if (ownerMap != null) {
+                                ownerUrl = new Regex(ownerMap.get("url"), "(?:vimeo\\.com)?/(.+)").getMatch(0);
+                                ownerName = (String) ownerMap.get("display_name");
+                                if (ownerName != null) {
+                                    ownerName = (String) ownerMap.get("name");
+                                }
+                            }
+                            date = (String) JavaScriptEngineFactory.walkJson(video, "uploaded_on");
                             title = (String) video.get("title");
                             if (StringUtils.isEmpty(unlistedHash)) {
                                 unlistedHash = (String) video.get("unlisted_hash");
@@ -720,15 +734,20 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         } else if (entries.containsKey("clip")) {
                             /* E.g. normal URLs */
                             final Map<String, Object> clip = (Map<String, Object>) entries.get("clip");
+                            Map<String, Object> ownerMap = null;
                             if (clip.containsKey("owner")) {
-                                final Map<String, Object> ownerMap = (Map<String, Object>) clip.get("owner");
-                                ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                                ownerName = (String) ownerMap.get("name");
+                                ownerMap = (Map<String, Object>) clip.get("owner");
                             } else if (entries != null && entries.containsKey("owner")) {
-                                final Map<String, Object> ownerMap = (Map<String, Object>) entries.get("owner");
-                                ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                                ownerName = (String) ownerMap.get("name");
+                                ownerMap = (Map<String, Object>) entries.get("owner");
                             }
+                            if (ownerMap != null) {
+                                ownerUrl = new Regex(ownerMap.get("url"), "(?:vimeo\\.com)?/(.+)").getMatch(0);
+                                ownerName = (String) ownerMap.get("display_name");
+                                if (ownerName == null) {
+                                    ownerName = (String) ownerMap.get("name");
+                                }
+                            }
+                            date = (String) JavaScriptEngineFactory.walkJson(clip, "uploaded_on");
                             title = (String) clip.get("title");
                             if (StringUtils.isEmpty(unlistedHash)) {
                                 unlistedHash = (String) clip.get("unlisted_hash");
@@ -935,7 +954,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         final DownloadLink best = dedupeMap.get(container.bestString());
                         /* we wont use size as its not always shown for different qualities. use quality preference */
                         final int ordial_current = container.getSource().ordinal();
-                        if (best == null || container.getSource().ordinal() > (jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(best, false)).getSource().ordinal()) {
+                        if (best == null || ordial_current > (jd.plugins.hoster.VimeoCom.getVimeoVideoContainer(best, false)).getSource().ordinal()) {
                             dedupeMap.put(container.bestString(), link);
                         }
                     }
@@ -952,23 +971,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         try {
                             final String userDefinedDateFormat = cfg.getStringProperty(VimeoCom.CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
                             SimpleDateFormat formatter = jd.plugins.hoster.VimeoCom.getFormatterForDate(date);
-                            Date dateStr = formatter.parse(date);
+                            final Date dateStr = formatter.parse(date);
                             formattedDate = formatter.format(dateStr);
-                            Date theDate = formatter.parse(formattedDate);
+                            final Date theDate = formatter.parse(formattedDate);
                             formatter = new SimpleDateFormat(userDefinedDateFormat);
                             formattedDate = formatter.format(theDate);
                         } catch (final Throwable e) {
-                            LogSource.exception(logger, e);
+                            logger.log(e);
                         }
                     }
-                    String customPackagename = JDUtilities.getPluginForHost(this.getHost()).getPluginConfig().getStringProperty(VimeoCom.CUSTOM_PACKAGENAME_SINGLE_VIDEO, VimeoCom.defaultCustomPackagenameSingleVideo);
+                    String customPackagename = cfg.getStringProperty(VimeoCom.CUSTOM_PACKAGENAME_SINGLE_VIDEO, VimeoCom.defaultCustomPackagenameSingleVideo);
                     if (StringUtils.isEmpty(customPackagename)) {
                         /* Fallback */
                         customPackagename = VimeoCom.defaultCustomPackagenameSingleVideo;
                     }
-                    customPackagename = customPackagename.replace("*date*", formattedDate);
+                    customPackagename = customPackagename.replace("*date*", formattedDate == null ? "" : formattedDate);
                     customPackagename = customPackagename.replace("*videoid*", videoID);
-                    customPackagename = customPackagename.replace("*channelname*", channelName);
+                    customPackagename = customPackagename.replace("*channelname*", channelName == null ? "" : channelName);
                     customPackagename = customPackagename.replace("*videoname*", title);
                     /* Generate packagename */
                     final FilePackage fp = FilePackage.getInstance();
