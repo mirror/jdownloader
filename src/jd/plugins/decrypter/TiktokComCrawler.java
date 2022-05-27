@@ -22,15 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -48,6 +39,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TiktokCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TiktokCom.class })
@@ -124,8 +124,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use website to crawl all videos of a user. </br>
-     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
+     * Use website to crawl all videos of a user. </br> Pagination hasn't been implemented so this will only find the first batch of items -
+     * usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
@@ -177,7 +177,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 if (fp == null) {
                     username = author;
                     fp = FilePackage.getInstance();
-                    fp.setName("@" + username);
+                    fp.setName(username);
                 }
                 final DownloadLink dl = this.createDownloadlink(getContentURL(author, videoID));
                 final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
@@ -300,7 +300,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                      */
                     author = JavaScriptEngineFactory.walkJson(aweme_detail, "author/unique_id").toString();
                     fp = FilePackage.getInstance();
-                    fp.setName("@" + author);
+                    fp.setName(author);
                 }
                 final DownloadLink link = this.createDownloadlink(getContentURL(author, aweme_detail.get("aweme_id").toString()));
                 TiktokCom.parseFileInfoAPI(link, aweme_detail);

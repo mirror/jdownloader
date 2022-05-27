@@ -21,9 +21,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -60,6 +62,7 @@ import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -78,27 +81,30 @@ import org.jdownloader.plugins.controller.LazyPlugin;
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
-"https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
+        "https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
 public class DirectHTTP extends antiDDoSForHost {
-    public static final String ENDINGS                  = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
-    public static final String NORESUME                 = "nochunkload";
-    public static final String NOCHUNKS                 = "nochunk";
+    public static final String  ENDINGS                  = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
+    public static final String  NORESUME                 = "nochunkload";
+    public static final String  NOCHUNKS                 = "nochunk";
     /**
      * Set this property on DownloadLink objects if you want to force a filename which also survives if the user resets a DownloadLink.
      * Otherwise, Content-Disposition filename will be used (or filename from inside URL as fallback).
      */
-    public static final String FIXNAME                  = "fixName";
-    public static final String FORCE_NORESUME           = "forcenochunkload";
-    public static final String FORCE_NOCHUNKS           = "forcenochunk";
-    public static final String FORCE_NOVERIFIEDFILESIZE = "forcenoverifiedfilesize";
-    public static final String TRY_ALL                  = "tryall";
-    public static final String POSSIBLE_URLPARAM        = "POSSIBLE_GETPARAM";
-    public static final String BYPASS_CLOUDFLARE_BGJ    = "bpCfBgj";
-    public static final String PROPERTY_COOKIES         = "COOKIES";
-    public static final String PROPERTY_MAX_CONCURRENT  = "PROPERTY_MAX_CONCURRENT";
-    public static final String PROPERTY_RATE_LIMIT      = "PROPERTY_RATE_LIMIT";
-    public static final String PROPERTY_RATE_LIMIT_TLD  = "PROPERTY_RATE_LIMIT_TLD";
-    public static final String PROPERTY_REQUEST_TYPE    = "requestType";
+    public static final String  FIXNAME                  = "fixName";
+    public static final String  FORCE_NORESUME           = "forcenochunkload";
+    public static final String  FORCE_NOCHUNKS           = "forcenochunk";
+    public static final String  FORCE_NOVERIFIEDFILESIZE = "forcenoverifiedfilesize";
+    public static final String  TRY_ALL                  = "tryall";
+    public static final String  POSSIBLE_URLPARAM        = "POSSIBLE_GETPARAM";
+    public static final String  BYPASS_CLOUDFLARE_BGJ    = "bpCfBgj";
+    public static final String  PROPERTY_COOKIES         = "COOKIES";
+    public static final String  PROPERTY_MAX_CONCURRENT  = "PROPERTY_MAX_CONCURRENT";
+    public static final String  PROPERTY_RATE_LIMIT      = "PROPERTY_RATE_LIMIT";
+    public static final String  PROPERTY_RATE_LIMIT_TLD  = "PROPERTY_RATE_LIMIT_TLD";
+    public static final String  PROPERTY_REQUEST_TYPE    = "requestType";
+    private static final String PROPERTY_DISABLE_PREFIX  = "disable_";
+    private static final String PROPERTY_ENABLE_PREFIX   = "enable_";
+    private static final String PROPERTY_OPTION_SET      = "optionSet";
 
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
@@ -359,7 +365,7 @@ public class DirectHTTP extends antiDDoSForHost {
             resume = true;
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         }
-        this.setCustomHeaders(this.br, downloadLink);
+        this.setCustomHeaders(this.br, downloadLink, null);
         if (resume && downloadLink.getVerifiedFileSize() > 0) {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         } else {
@@ -495,14 +501,18 @@ public class DirectHTTP extends antiDDoSForHost {
         return ret;
     }
 
-    private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink) throws Exception {
+    private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink, final Set<String> optionSet) throws Exception {
+        return prepareConnection(br, downloadLink, 1, this.preferHeadRequest, optionSet == null ? new HashSet<String>() : optionSet);
+    }
+
+    private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink, final int round, boolean preferHeadRequest, Set<String> optionSet) throws Exception {
         URLConnectionAdapter urlConnection = null;
-        this.setCustomHeaders(br, downloadLink);
+        br.setRequest(null);
+        this.setCustomHeaders(br, downloadLink, optionSet);
         boolean rangeHeader = false;
-        final Request currentRequest = br.getRequest();
         try {
             String downloadURL = getDownloadURL(downloadLink);
-            if (downloadLink.getProperty("streamMod") != null) {
+            if (downloadLink.getProperty("streamMod") != null || optionSet.contains("streamMod")) {
                 rangeHeader = true;
                 br.getHeaders().put("Range", "bytes=" + 0 + "-");
             }
@@ -510,30 +520,43 @@ public class DirectHTTP extends antiDDoSForHost {
                 urlConnection = openAntiDDoSRequestConnection(br, br.createPostRequest(downloadURL, downloadLink.getStringProperty("post", null)));
             } else {
                 try {
-                    if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null))) {
+                    if ("GET".equals(downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null))) {
+                        // PROPERTY_REQUEST_TYPE is set to GET
                         urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(downloadURL));
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null))) {
+                        // PROPERTY_REQUEST_TYPE is set to HEAD or preferHeadRequest
                         urlConnection = openAntiDDoSRequestConnection(br, br.createHeadRequest(downloadURL));
+                    } else {
+                        urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(downloadURL));
+                    }
+                    if (urlConnection.getResponseCode() == 403 || urlConnection.getResponseCode() == 405) {
+                        boolean retry = false;
+                        if (downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null) != null && optionSet.add(PROPERTY_DISABLE_PREFIX + LinkCrawler.PROPERTY_AUTO_REFERER)) {
+                            retry = true;
+                        } else if (optionSet.add(PROPERTY_ENABLE_PREFIX + "selfReferer")) {
+                            retry = true;
+                        }
+                        if (retry) {
+                            followURLConnection(br, urlConnection);
+                            return prepareConnection(br, downloadLink, round + 1, preferHeadRequest, optionSet);
+                        }
+                    }
+                    if (RequestMethod.HEAD.equals(urlConnection.getRequestMethod())) {
                         if (urlConnection.getResponseCode() == 404) {
                             /*
                              * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") &&
                              * urlConnection.getHeaderField("Via") != null
                              */
                             followURLConnection(br, urlConnection);
-                            br.setRequest(currentRequest);
-                            urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(downloadURL));
+                            return prepareConnection(br, downloadLink, round + 1, false, optionSet);
                         } else if (urlConnection.getResponseCode() != 401 && urlConnection.getResponseCode() >= 300) {
                             // no head support?
                             followURLConnection(br, urlConnection);
-                            br.setRequest(currentRequest);
-                            urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(downloadURL));
+                            return prepareConnection(br, downloadLink, round + 1, false, optionSet);
                         }
-                    } else {
-                        urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(downloadURL));
                     }
                 } catch (final IOException e) {
                     followURLConnection(br, urlConnection);
-                    br.setRequest(currentRequest);
                     if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null))) {
                         /* some servers do not allow head requests */
                         try {
@@ -541,10 +564,9 @@ public class DirectHTTP extends antiDDoSForHost {
                             downloadLink.setProperty(PROPERTY_REQUEST_TYPE, "GET");
                         } catch (IOException e2) {
                             followURLConnection(br, urlConnection);
-                            br.setRequest(currentRequest);
                             if (StringUtils.startsWithCaseInsensitive(downloadURL, "http://")) {
                                 setDownloadURL(downloadURL.replaceFirst("(?i)^http://", "https://"), null);
-                                return prepareConnection(br, downloadLink);
+                                return prepareConnection(br, downloadLink, round + 1, preferHeadRequest, optionSet);
                             } else {
                                 throw e2;
                             }
@@ -552,7 +574,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     } else {
                         if (StringUtils.startsWithCaseInsensitive(downloadURL, "http://")) {
                             setDownloadURL(downloadURL.replaceFirst("(?i)^http://", "https://"), null);
-                            return prepareConnection(br, downloadLink);
+                            return prepareConnection(br, downloadLink, round + 1, preferHeadRequest, optionSet);
                         } else {
                             throw e;
                         }
@@ -634,6 +656,15 @@ public class DirectHTTP extends antiDDoSForHost {
     private String preSetFIXNAME   = null;
 
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws Exception {
+        final HashSet<String> optionSet = downloadLink.getObjectProperty(PROPERTY_OPTION_SET, TypeRef.STRING_HASHSET);
+        return requestFileInformation(downloadLink, 0, optionSet);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry, Set<String> optionSet) throws Exception {
+        if (optionSet == null) {
+            optionSet = new HashSet<String>();
+            downloadLink.setProperty(PROPERTY_OPTION_SET, optionSet);
+        }
         if (retry == 0) {
             preSetFinalName = downloadLink.getFinalFileName();
             preSetFIXNAME = downloadLink.getStringProperty(FIXNAME, null);
@@ -709,7 +740,7 @@ public class DirectHTTP extends antiDDoSForHost {
             String basicauth = null;
             for (final AuthenticationFactory authenticationFactory : authenticationFactories) {
                 br.setCustomAuthenticationFactory(authenticationFactory);
-                urlConnection = this.prepareConnection(this.br, downloadLink);
+                urlConnection = this.prepareConnection(this.br, downloadLink, optionSet);
                 logger.info("looksLikeDownloadableContent result(" + retry + ",1):" + looksLikeDownloadableContent(urlConnection));
                 if (isCustomOffline(urlConnection)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -727,7 +758,7 @@ public class DirectHTTP extends antiDDoSForHost {
                             setDownloadURL(newURL, downloadLink);
                         }
                         br.setRequest(null);
-                        urlConnection = this.prepareConnection(this.br, downloadLink);
+                        urlConnection = this.prepareConnection(this.br, downloadLink, optionSet);
                         logger.info("looksLikeDownloadableContent result(" + retry + ",2):" + looksLikeDownloadableContent(urlConnection));
                         if (isCustomOffline(urlConnection)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -762,7 +793,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     }
                     if (mp3URL != null) {
                         setDownloadURL(mp3URL, null);
-                        return this.requestFileInformation(downloadLink, retry + 1);
+                        return this.requestFileInformation(downloadLink, retry + 1, optionSet);
                     }
                 }
             }
@@ -770,7 +801,7 @@ public class DirectHTTP extends antiDDoSForHost {
             if (length == 0 && RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                 preferHeadRequest = false;
                 followURLConnection(br, urlConnection);
-                return this.requestFileInformation(downloadLink, retry + 1);
+                return this.requestFileInformation(downloadLink, retry + 1, optionSet);
             }
             if (urlConnection.getHeaderField("cf-bgj") != null && !downloadLink.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
                 if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
@@ -779,7 +810,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     urlConnection.disconnect();
                 }
                 downloadLink.setProperty(BYPASS_CLOUDFLARE_BGJ, Boolean.TRUE);
-                return this.requestFileInformation(downloadLink, retry + 1);
+                return this.requestFileInformation(downloadLink, retry + 1, optionSet);
             }
             String streamMod = null;
             for (Entry<String, List<String>> header : urlConnection.getHeaderFields().entrySet()) {
@@ -796,7 +827,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 } else {
                     urlConnection.disconnect();
                 }
-                return this.requestFileInformation(downloadLink, retry + 1);
+                return this.requestFileInformation(downloadLink, retry + 1, optionSet);
             }
             if (contentType != null && (contentType.startsWith("text/html") || contentType.startsWith("application/json")) && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false && !isDirectHTTPRule(downloadLink)) {
                 /* jd does not want to download html content! */
@@ -804,7 +835,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                     preferHeadRequest = false;
                     followURLConnection(br, urlConnection);
-                    return this.requestFileInformation(downloadLink, retry + 1);
+                    return this.requestFileInformation(downloadLink, retry + 1, optionSet);
                 } else {
                     final String pageContent = this.br.followConnection(true);
                     if (StringUtils.endsWithCaseInsensitive(br.getURL(), "mp4")) {
@@ -845,14 +876,14 @@ public class DirectHTTP extends antiDDoSForHost {
                                 downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
                                 final String newURL = getDownloadURL(downloadLink) + urlParams;
                                 setDownloadURL(newURL, downloadLink);
-                                return this.requestFileInformation(downloadLink, retry + 1);
+                                return this.requestFileInformation(downloadLink, retry + 1, optionSet);
                             }
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     }
                     /* found one valid url */
                     setDownloadURL(embeddedLink, downloadLink);
-                    return this.requestFileInformation(downloadLink, retry + 1);
+                    return this.requestFileInformation(downloadLink, retry + 1, optionSet);
                 }
             } else {
                 if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
@@ -956,7 +987,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         downloadLink.setProperty(FIXNAME, preSetFIXNAME);
                         downloadLink.setVerifiedFileSize(-1);
                         this.preferHeadRequest = false;
-                        status = this.requestFileInformation(downloadLink, retry + 1);
+                        status = this.requestFileInformation(downloadLink, retry + 1, optionSet);
                         if (AvailableStatus.TRUE.equals(status)) {
                             if (headFileSize != downloadLink.getVerifiedFileSize()) {
                                 logger.info("Don't trust head request: contentLength mismatch! head:" + headFileSize + "!=get:" + downloadLink.getVerifiedFileSize());
@@ -992,7 +1023,7 @@ public class DirectHTTP extends antiDDoSForHost {
             /* try referer set by flashgot and check if it works then */
             if (downloadLink.getBooleanProperty("tryoldref", false) == false && downloadLink.getStringProperty("referer", null) != null) {
                 downloadLink.setProperty("tryoldref", true);
-                return this.requestFileInformation(downloadLink, retry + 1);
+                return this.requestFileInformation(downloadLink, retry + 1, optionSet);
             } else {
                 final String finalFileName = downloadLink.getFinalFileName();
                 resetDownloadlink(downloadLink);
@@ -1053,6 +1084,7 @@ public class DirectHTTP extends antiDDoSForHost {
         link.removeProperty(PROPERTY_REQUEST_TYPE);
         link.removeProperty("streamMod");
         link.removeProperty("allowOrigin");
+        link.removeProperty(PROPERTY_OPTION_SET);
         link.removeProperty(FORCE_NOVERIFIEDFILESIZE);
         link.removeProperty(BYPASS_CLOUDFLARE_BGJ);
         /* E.g. filename set in crawler --> We don't want to lose that. */
@@ -1066,7 +1098,7 @@ public class DirectHTTP extends antiDDoSForHost {
     public void resetPluginGlobals() {
     }
 
-    private void setCustomHeaders(final Browser br, final DownloadLink downloadLink) throws IOException {
+    private void setCustomHeaders(final Browser br, final DownloadLink downloadLink, Set<String> optionSet) throws IOException {
         /* allow customized headers, eg useragent */
         final Object customRet = downloadLink.getProperty("customHeader");
         List<String[]> custom = null;
@@ -1123,10 +1155,14 @@ public class DirectHTTP extends antiDDoSForHost {
             // used in MANY plugins!
             br.getHeaders().put("Referer", downloadLink.getStringProperty("lastRefURL", null));
         }
-        if (getValidReferer(downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null)) != null) {
-            if (!br.getHeaders().contains("Referer")) {
+        if (!br.getHeaders().contains("Referer") && (optionSet == null || !optionSet.contains(PROPERTY_DISABLE_PREFIX + LinkCrawler.PROPERTY_AUTO_REFERER))) {
+            if (getValidReferer(downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null)) != null) {
                 br.getHeaders().put("Referer", downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null));
             }
+        }
+        if (optionSet != null && optionSet.contains(PROPERTY_ENABLE_PREFIX + "selfReferer")) {
+            final String referer = getDownloadURL(downloadLink);
+            br.getHeaders().put("Referer", referer);
         }
         this.downloadWorkaround(br, downloadLink);
         if (downloadLink.hasProperty("allowOrigin")) {
@@ -1148,6 +1184,7 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
+    // TODO: add auto support/try, see optionSet in prepareConnection
     protected void downloadWorkaround(final Browser br, final DownloadLink downloadLink) throws IOException {
         // we shouldn't potentially over right setCustomHeaders..
         if (br.getHeaders().get("Referer") == null) {

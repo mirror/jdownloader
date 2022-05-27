@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -30,6 +26,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "readallcomics.com" }, urls = { "https?://(?:www\\.)?readallcomics\\.com/(?:category/)?[^/]+/?" })
 public class ReadAllComics extends antiDDoSForDecrypt {
@@ -64,6 +64,9 @@ public class ReadAllComics extends antiDDoSForDecrypt {
             }
         } else {
             String linkSection = br.getRegex("<div[^>]+data-wpusb-component\\s*=\\s*\"[^\"]*buttons-section[^\"]*\"[^>]*>([^$]+)<div[^>]+data-wpusb-component\\s*=\\s*\"[^\"]*buttons-section[^\"]*\"[^>]*>").getMatch(0);
+            if (linkSection == null) {
+                linkSection = br.getRegex("name\\s*=\\s*\"IL_IN_ARTICLE\"(.*?)name\\s*=\\s*\"IL_IN_ARTICLE\"").getMatch(0);
+            }
             String[] images = new Regex(linkSection, "<img[^>]+src\\s*=\\s*\"\\s*([^\"]+)\\s*\"[^>]*>").getColumn(0);
             if (images != null && images.length > 0) {
                 fp.setName(Encoding.htmlDecode(fpName));
