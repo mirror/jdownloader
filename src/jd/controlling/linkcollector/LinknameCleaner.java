@@ -2,6 +2,8 @@ package jd.controlling.linkcollector;
 
 import java.util.regex.Pattern;
 
+import jd.controlling.packagecontroller.AbstractNode;
+
 import org.appwork.utils.Regex;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
@@ -47,6 +49,10 @@ public class LinknameCleaner {
     }
 
     public static String cleanFileName(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean cleanup) {
+        return cleanFileName(null, name, splitUpperLowerCase, ignoreArchiveFilters, extensionSettings, cleanup);
+    }
+
+    public static String cleanFileName(AbstractNode node, String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean cleanup) {
         if (name == null) {
             return null;
         }
