@@ -20,7 +20,6 @@ import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFold
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 
 public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderAction<CrawledPackage, CrawledLink> {
-
     /**
      *
      */
@@ -63,13 +62,12 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
         final CrawledPackage pkg = new CrawledPackage();
         pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
         if (TYPE.NORMAL != entry.getType()) {
-            final String pkgName = LinknameCleaner.cleanFileName(getSelection().getPackageView(entry).getChildren().get(0).getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+            final String pkgName = LinknameCleaner.cleanFileName(entry, getSelection().getPackageView(entry).getChildren().get(0).getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
             pkg.setName(pkgName);
         } else {
             pkg.setName(entry.getName());
         }
         pkg.setComment(entry.getComment());
-
         return pkg;
     }
 
@@ -82,5 +80,4 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     protected Queue getQueue() {
         return LinkCollector.getInstance().getQueue();
     }
-
 }
