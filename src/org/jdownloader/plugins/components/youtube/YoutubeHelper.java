@@ -3509,7 +3509,7 @@ public class YoutubeHelper {
             }
         }
         {
-            String ytInitialPlayerResponse = br.getRegex(">\\s*var\\s*ytInitialPlayerResponse\\s*=\\s*(\\{.*?\\})\\s*;?\\s*(</script|var\\s*meta)").getMatch(0);
+            String ytInitialPlayerResponse = br.getRegex(">\\s*var\\s*ytInitialPlayerResponse\\s*=\\s*(\\{.*?\\})\\s*;?\\s*(</script|var\\s*(?:meta|head)\\s*=\\s*document)").getMatch(0);
             if (ytInitialPlayerResponse == null) {
                 ytInitialPlayerResponse = br.getRegex("window\\[\"ytInitialPlayerResponse\"\\]\\s*=\\s*\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*[\r\n]").getMatch(0);
                 if (ytInitialPlayerResponse == null) {
