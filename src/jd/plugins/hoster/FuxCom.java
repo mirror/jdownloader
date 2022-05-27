@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashSet;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,6 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com", "4tube.com", "porntube.com", "pornerbros.com" }, urls = { "https?://(?:www\\.)?fux\\.com/(?:videos?|embed)/\\d+/?(?:[\\w-]+)?", "https?://(?:www\\.)?4tube\\.com/(?:embed|videos)/\\d+/?(?:[\\w-]+)?|https?://m\\.4tube\\.com/videos/\\d+/?(?:[\\w-]+)?", "https?://(?:www\\.)?(?:porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)", "https?://(?:www\\.)?(?:pornerbros\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.pornerbros\\.com/\\d+|pornerbros\\.com/embed/\\d+)" })
 public class FuxCom extends PluginForHost {
@@ -127,7 +127,10 @@ public class FuxCom extends PluginForHost {
          * 2019-04-29: Always use 'Fallback filename' as it works for all supported websites and will usually give us a 'good looking'
          * filename.
          */
-        String filename = getFallbackFilename(link);
+        String filename = br.getRegex("property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\\s*(\\|\\s+.*?)?\"").getMatch(0);
+        if (filename == null) {
+            filename = getFallbackFilename(link);
+        }
         final String source;
         final String b64 = br.getRegex("window\\.INITIALSTATE = \\'([^\"\\']+)\\'").getMatch(0);
         if (b64 != null) {

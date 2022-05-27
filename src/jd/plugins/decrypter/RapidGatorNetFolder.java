@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -64,9 +65,17 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<title>Download file (.*?)</title>").getMatch(0);
         }
-        parsePage(decryptedLinks);
+        FilePackage fp;
+        if (fpName != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
+        } else {
+            fp = null;
+        }
+        parsePage(decryptedLinks, fp);
         String lastPage = null;
-        while (isAbort()) {
+        while (!isAbort()) {
             String nextPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Next").getMatch(0);
             if (lastPage == null) {
                 lastPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Last").getMatch(0);
@@ -75,44 +84,52 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
                 try {
                     sleep(500, param);
                 } catch (InterruptedException e) {
+                    logger.log(e);
                     break;
                 }
                 ((jd.plugins.hoster.RapidGatorNet) plugin).getPage(nextPage);
-                parsePage(decryptedLinks);
+                parsePage(decryptedLinks, fp);
             } else {
                 break;
             }
         }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
-        }
         return decryptedLinks;
     }
 
-    private void parsePage(ArrayList<DownloadLink> ret) throws Exception {
+    private List<DownloadLink> parsePage(ArrayList<DownloadLink> ret, FilePackage fp) throws Exception {
+        final List<DownloadLink> pageRet = new ArrayList<DownloadLink>();
         final String[] subfolders = br.getRegex("<td><a href=\"(/folder/\\d+/[^<>\"/]+\\.html)\">").getColumn(0);
-        String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
+        final String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
         if ((links == null || links.length == 0) && (subfolders == null || subfolders.length == 0)) {
             logger.warning("Empty folder, or possible plugin defect. Please confirm this issue within your browser, if the plugin is truely broken please report issue to JDownloader Development Team. " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (links != null && links.length != 0) {
             for (String[] dl : links) {
-                DownloadLink link = createDownloadlink(Request.getLocation(dl[0], br.getRequest()));
+                final DownloadLink link = createDownloadlink(Request.getLocation(dl[0], br.getRequest()));
                 link.setName(dl[2].replaceFirst("\\.html$", ""));
                 link.setDownloadSize(SizeFormatter.getSize(dl[3]));
                 link.setAvailable(true);
+                pageRet.add(link);
+                if (fp != null) {
+                    fp.add(link);
+                }
                 ret.add(link);
+                distribute(link);
             }
         }
         if (subfolders != null && subfolders.length != 0) {
             for (final String folder : subfolders) {
                 final DownloadLink link = createDownloadlink(Request.getLocation(folder, br.getRequest()));
+                pageRet.add(link);
+                if (fp != null) {
+                    fp.add(link);
+                }
                 ret.add(link);
+                distribute(link);
             }
         }
+        return pageRet;
     }
 
     @Override
