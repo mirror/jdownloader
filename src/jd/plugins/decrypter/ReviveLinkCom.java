@@ -34,7 +34,7 @@ public class ReviveLinkCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?revivelink.com/\\?(contact|register|forgot|login)";
+    private static final String INVALIDLINKS = "https?://(www\\.)?revivelink.com/\\?(contact|register|forgot|login)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // Logger logDebug = JDLogger.getLogger();
@@ -46,13 +46,14 @@ public class ReviveLinkCom extends PluginForDecrypt {
         }
         // Get the package name
         String strName = "";
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(strParameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(An error has occurred|The article cannot be found|404 Not Found)")) {
             logger.info("Link offline: " + strParameter);
             return decryptedLinks;
         }
         if (br.containsHTML("class=\"QapTcha\"")) {
+            sleep(2000, param);
             final String fid = new Regex(strParameter, this.getSupportedLinks()).getMatch(0);
             final String pass = generatePass();
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -61,7 +62,7 @@ public class ReviveLinkCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + strParameter);
                 return null;
             }
-            br.getPage("http://revivelink.com/slinks.php?R=" + fid + "&" + Encoding.urlEncode(pass) + "=");
+            br.getPage("https://revivelink.com/slinks.php?R=" + fid + "&" + Encoding.urlEncode(pass) + "=");
         }
         final String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
