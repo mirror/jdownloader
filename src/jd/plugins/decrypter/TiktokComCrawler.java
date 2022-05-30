@@ -109,9 +109,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_USER_USERNAME) || param.getCryptedUrl().matches(TYPE_USER_USER_ID)) {
             return crawlProfile(param);
         } else {
-            /* Developer mistake */
-            logger.info("Unsupported URL: " + param.getCryptedUrl());
-            return null;
+            // unsupported url pattern
+            return new ArrayList<DownloadLink>(0);
         }
     }
 

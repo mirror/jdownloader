@@ -77,7 +77,11 @@ public class ReadMng extends antiDDoSForDecrypt {
             if (images.length == 0) {
                 String json = br.getRegex("ts_reader\\.run\\((\\{.*?\\})\\);\\s*</script").getMatch(0);
                 if (json == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (br.containsHTML("is not available yet.\\s*<")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 json = json.replace("''", "\"\"");
                 Map<String, Object> map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
