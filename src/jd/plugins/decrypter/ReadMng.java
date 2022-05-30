@@ -40,7 +40,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "readmng.com" }, urls = { "https?://(?:www\\.)?readmng\\.com/(?!new-manga)[^/]+(?:/[\\d\\.a-z]+/?)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "readmng.com" }, urls = { "https?://(?:www\\.)?readmng\\.com/(?!new-manga/|category/|dist/|member/|noblesse/|uploads/|latest-releases/|hot-manga/|cdn-cgi/)[^/]+(?:/[\\d\\.a-z]+/?)?" })
 public class ReadMng extends antiDDoSForDecrypt {
     public ReadMng(PluginWrapper wrapper) {
         super(wrapper);
