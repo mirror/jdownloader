@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -29,9 +32,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/folder/\\d+/.*" })
 @SuppressWarnings("deprecation")
@@ -75,7 +75,7 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
         }
         parsePage(decryptedLinks, fp);
         String lastPage = null;
-        while (!isAbort()) {
+        do {
             String nextPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Next").getMatch(0);
             if (lastPage == null) {
                 lastPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Last").getMatch(0);
@@ -92,7 +92,7 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
             } else {
                 break;
             }
-        }
+        } while (!this.isAbort());
         return decryptedLinks;
     }
 
