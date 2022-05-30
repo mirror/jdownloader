@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,12 +24,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcut.com" }, urls = { "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcut.com" }, urls = { "https?://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+" })
 public class RlCtCm extends PluginForDecrypt {
-
     public RlCtCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,7 +42,13 @@ public class RlCtCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String page = br.getRedirectLocation();
-        if (page.contains("/password.html")) {
+        if (page != null && canHandle(page)) {
+            br.followRedirect();
+            page = br.getRedirectLocation();
+        }
+        if (page.contains("/abuse.html")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (page.contains("/password.html")) {
             for (int i = 0; i < 5; i++) {
                 br.getPage(page);
                 String linkid = br.getRegex("name=u value=\"(.*?)\"").getMatch(0);
@@ -52,8 +58,12 @@ public class RlCtCm extends PluginForDecrypt {
                 page = br.getRedirectLocation();
                 br.getPage(page);
                 page = br.getRedirectLocation();
-                if (!page.contains("/password.html")) break;
-                if (i == 4) throw new DecrypterException(JDL.L("plugins.decrypter.urtcutcom.badpassword", "You have entered bad password 5 times. Please review your data."));
+                if (!page.contains("/password.html")) {
+                    break;
+                }
+                if (i == 4) {
+                    throw new DecrypterException(JDL.L("plugins.decrypter.urtcutcom.badpassword", "You have entered bad password 5 times. Please review your data."));
+                }
             }
             decryptedLinks.add(createDownloadlink(page));
         } else {
@@ -66,5 +76,4 @@ public class RlCtCm extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
