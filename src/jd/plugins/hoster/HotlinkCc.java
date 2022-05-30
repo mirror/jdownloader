@@ -177,12 +177,12 @@ public class HotlinkCc extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
@@ -574,6 +574,12 @@ public class HotlinkCc extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
         /** 2021-01-28 */
+        return false;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        /* 2022-05-31: No captchas at all */
         return false;
     }
 
