@@ -23,6 +23,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,13 +39,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "readmng.com" }, urls = { "https?://(?:www\\.)?readmng\\.com/(?!new-manga/|category/|dist/|member/|noblesse/|uploads/|latest-releases/|hot-manga/|cdn-cgi/)[^/]+(?:/[\\d\\.a-z]+/?)?" })
 public class ReadMng extends antiDDoSForDecrypt {
@@ -77,7 +77,7 @@ public class ReadMng extends antiDDoSForDecrypt {
             if (images.length == 0) {
                 String json = br.getRegex("ts_reader\\.run\\((\\{.*?\\})\\);\\s*</script").getMatch(0);
                 if (json == null) {
-                    if (br.containsHTML("is not available yet.\\s*<")) {
+                    if (br.containsHTML("(?i)is not available yet.\\s*<")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
