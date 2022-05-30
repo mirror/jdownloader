@@ -15,16 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -35,6 +34,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "https?://(?:[a-z0-9_\\-]+\\.)?urlgalleries\\.net/(porn-gallery-\\d+/.*|blog_gallery\\.php\\?id=\\d+.*|porn-picture-.+)|https?://go\\.urlgalleries\\.net/[a-z0-9]+" })
 public class RlGalleriesNt extends PluginForDecrypt {
@@ -97,10 +99,9 @@ public class RlGalleriesNt extends PluginForDecrypt {
         final String domain = Browser.getHost(parameter, true);
         /* Display as many items as possible to avoid having to deal with pagination. */
         // br.getPage(parameter);
-        br.getPage(String.format("https://%s/porn-gallery-%s//Lycia&a=10000", domain, galleryID));
+        br.getPage(new GetRequest(new URL(String.format("https://%s/porn-gallery-%s//&a=10000", domain, galleryID))));
         if (isOffline()) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("border='0' /></a></div>(?:\\s*<h\\d+[^>]*>\\s*)?(.*?)(?:\\s*</h\\d+>\\s*)?</td></tr><tr>").getMatch(0);
         if (fpName == null) {
@@ -211,7 +212,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
     }
 
     private boolean isOffline() {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title> - urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || br.getURL().contains("/not_found_adult.php");
+        return br.getHttpConnection().getResponseCode() == 404 | br.containsHTML("<center>\\s*This blog has been closed down") | br.containsHTML("<title> - urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE") || br.getURL().contains("/not_found_adult.php");
     }
 
     /* NO OVERRIDE!! */
