@@ -15,7 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -81,6 +83,7 @@ public class LikeeVideo extends PluginForHost {
     private final int           free_maxdownloads = -1;
     private String              dllink            = null;
     private static final String PROPERTY_VIDEO_ID = "videoid";
+    private static final String PROPERTY_DATE     = "date";
     private static final String PROPERTY_TITLE    = "title";
     private static String       PROPERTY_USERNAME = "username";
     private final String        TYPE_1            = "https://l\\.[^/]+/v/([A-Za-z0-9]+)";
@@ -136,6 +139,7 @@ public class LikeeVideo extends PluginForHost {
         link.setProperty(PROPERTY_TITLE, entries.get("video_title"));
         link.setProperty(PROPERTY_VIDEO_ID, entries.get("post_id"));
         link.setProperty(PROPERTY_USERNAME, entries.get("nick_name"));
+        link.setProperty(PROPERTY_DATE, new SimpleDateFormat("yyyy-dd-MM").format(new Date(((Number) entries.get("post_time")).longValue() * 1000)));
         this.dllink = entries.get("videoUrl").toString();
         /* We want to have the video without watermark */
         this.dllink = this.dllink.replaceFirst("_4.mp4", ".mp4");
@@ -161,7 +165,7 @@ public class LikeeVideo extends PluginForHost {
     }
 
     private static void setFilename(final DownloadLink link) {
-        String filename = "@" + link.getStringProperty(PROPERTY_USERNAME) + "_" + link.getStringProperty(PROPERTY_TITLE);
+        String filename = link.getStringProperty(PROPERTY_DATE) + "_@" + link.getStringProperty(PROPERTY_USERNAME) + " - " + link.getStringProperty(PROPERTY_TITLE);
         // String dateFormatted = getDateFormatted(link);
         // if (dateFormatted != null) {
         // filename = dateFormatted;
