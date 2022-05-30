@@ -16,20 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -48,6 +40,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "" })
 public class PremboxCom extends PluginForHost {
@@ -192,13 +191,13 @@ public class PremboxCom extends PluginForHost {
                 int counter = 0;
                 int count_max = 15;
                 /* TODO: Use json parser here */
-                br.postPage(API_SERVER + "/downloadLink", "directDownload=0&login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                br.postPage(API_SERVER + "/downloadLink", "directDownload=0&" + getLoginPassPostData(account) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
                 this.handleErrors(br, account);
                 /* 'downloadLink' value will be "fileNotReadyYet" at this stage. */
                 do {
                     // this.postAPISafe(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" +
                     // JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
-                    br.postPage(API_SERVER + "/serverFileStatus", "login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                    br.postPage(API_SERVER + "/serverFileStatus", getLoginPassPostData(account) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
                     this.handleErrors(br, account);
                     dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
                     if (!StringUtils.isEmpty(dllink)) {
@@ -216,7 +215,7 @@ public class PremboxCom extends PluginForHost {
             } else {
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
                 /* TODO: Use json parser here */
-                br.postPage(API_SERVER + "/downloadLink", "directDownload=1&login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                br.postPage(API_SERVER + "/downloadLink", "directDownload=1&" + getLoginPassPostData(account) + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
                 this.handleErrors(br, account);
                 // this.postAPISafe(API_SERVER + "/serverFileStatus", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) +
                 // "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" +
@@ -419,6 +418,10 @@ public class PremboxCom extends PluginForHost {
         return ai;
     }
 
+    private String getLoginPassPostData(final Account account) throws Exception {
+        return "login=" + URLEncoder.encode(account.getUser(), "UTF-8") + "&pass=" + URLEncoder.encode(account.getPass(), "UTF-8");
+    }
+
     /**
      * Log into users' account and set login cookie
      *
@@ -426,7 +429,7 @@ public class PremboxCom extends PluginForHost {
      */
     private void login(final Account account) throws Exception {
         this.prepBR(br);
-        br.postPage(API_SERVER + "/login", "login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()));
+        br.postPage(API_SERVER + "/login", getLoginPassPostData(account));
         this.handleErrors(this.br, account);
     }
 
@@ -435,14 +438,15 @@ public class PremboxCom extends PluginForHost {
      **/
     private void deleteCompleteDownloadHistory(final Account account, final String downloadtype) throws Exception {
         /* This moves the downloaded files/entries to the download history. */
-        br.postPage(API_SERVER + "/clearFileList", "login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()));
+        br.postPage(API_SERVER + "/clearFileList", getLoginPassPostData(account));
         try {
             this.handleErrors(br, account);
         } catch (final Throwable ignore) {
+            logger.log(ignore);
             logger.warning("Failed to delete file list");
         }
         /* This deletes the download history. */
-        br.postPage(API_SERVER + "/clearHistory", "login=" + JSonUtils.escape(account.getUser()) + "&pass=" + JSonUtils.escape(account.getPass()));
+        br.postPage(API_SERVER + "/clearHistory", getLoginPassPostData(account));
         try {
             this.handleErrors(br, account);
         } catch (final Throwable ignore) {
