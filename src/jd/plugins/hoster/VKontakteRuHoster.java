@@ -508,7 +508,6 @@ public class VKontakteRuHoster extends PluginForHost {
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
-                        boolean jsonSourceAvailableFromHtml = false;
                         if (albumID == null) {
                             /* Find albumID */
                             getPageSafe(account, link, getBaseURL() + "/photo" + photoID);
@@ -542,11 +541,8 @@ public class VKontakteRuHoster extends PluginForHost {
                                 /* Save this! Important! */
                                 link.setProperty(PROPERTY_PHOTOS_album_id, albumID);
                             }
-                            if (picturesGetJsonFromHtml(br) != null) {
-                                jsonSourceAvailableFromHtml = true;
-                            }
                         }
-                        if (!jsonSourceAvailableFromHtml) {
+                        if (picturesGetJsonFromHtml(br) == null) {
                             /* Only go the json-way if we have to! */
                             if (albumID == null) {
                                 logger.info("albumID is null and failed to find picture json");
@@ -576,7 +572,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 final String temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
                 if (isDownload && temp_name != null) {
                     link.setFinalFileName(temp_name);
-                } else if (!isDownload && temp_name != null) {
+                } else if (temp_name != null) {
                     link.setName(temp_name);
                 }
             }
@@ -586,13 +582,13 @@ public class VKontakteRuHoster extends PluginForHost {
 
     /** Check errors which may happen after POST '/al_photos.php' request. */
     private void checkErrorsPhoto(final Browser br) throws PluginException {
-        if (br.containsHTML(">\\s*Unfortunately, this photo has been deleted")) {
+        if (br.containsHTML("(?i)>\\s*Unfortunately, this photo has been deleted")) {
             /* html */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*Access denied")) {
+        } else if (br.containsHTML("(?i)>\\s*Access denied")) {
             /* html */
             throw new AccountRequiredException();
-        } else if (br.containsHTML("Access denied\\\\\"") || br.containsHTML("Access denied\"")) {
+        } else if (br.containsHTML("(?i)Access denied\\\\\"") || br.containsHTML("(?i)Access denied\"")) {
             /* json */
             /*
              * 2019-10-02: E.g.
@@ -1503,7 +1499,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     /** RegEx source-json from html. */
     private static String picturesGetJsonFromHtml(final Browser br) {
-        return br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.+)").getMatch(0);
+        return br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.*?)\\);\n").getMatch(0);
     }
 
     /** RegEx source-json from xml. */

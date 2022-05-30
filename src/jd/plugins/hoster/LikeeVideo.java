@@ -15,38 +15,76 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "likee.video" }, urls = { "https?://l\\.likee\\.video/v/([A-Za-z0-9]+)" })
-public class LikeeVideo extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class LikeeVideo extends PluginForHost {
     public LikeeVideo(PluginWrapper wrapper) {
         super(wrapper);
     }
-    /* DEV NOTES */
-    // Tags: Video plugin
-    // other:
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "likee.video" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "https?://l\\." + buildHostsPatternPart(domains) + "/v/[A-Za-z0-9]+";
+            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/@[^/]+/video/\\d+";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
+    }
+
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private final boolean       free_resume       = true;
+    private final int           free_maxchunks    = 0;
+    private final int           free_maxdownloads = -1;
+    private String              dllink            = null;
+    private static final String PROPERTY_VIDEO_ID = "videoid";
+    private static final String PROPERTY_TITLE    = "title";
+    private static String       PROPERTY_USERNAME = "username";
+    private final String        TYPE_1            = "https://l\\.[^/]+/v/([A-Za-z0-9]+)";
+    private final String        TYPE_2            = "https?://[^/]+/@([^/]+)/video/(\\d+)";
 
     @Override
     public String getAGBLink() {
@@ -55,7 +93,7 @@ public class LikeeVideo extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
+        final String linkid = getVideoID(link);
         if (linkid != null) {
             return this.getHost() + "://" + linkid;
         } else {
@@ -63,61 +101,54 @@ public class LikeeVideo extends antiDDoSForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    private String getVideoID(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.hasProperty(PROPERTY_VIDEO_ID)) {
+            return link.getStringProperty(PROPERTY_VIDEO_ID);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_2)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_2).getMatch(1);
+        } else {
+            return null;
+        }
     }
 
+    /** Website similar to tiktok.com */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        final String videoID = this.getVideoID(link);
+        if (!link.isNameSet() && videoID != null) {
+            /* Fallback */
+            link.setName(this.getVideoID(link) + ".mp4");
+        }
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link))) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || (videoID != null && !br.getURL().contains(this.getVideoID(link)))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = PluginJSonUtils.getJson(br, "name");
-        if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]+<h\\d+>([^<>]*?)<").getMatch(0);
+        final String json = br.getRegex(">\\s*window\\.data = (\\{.*?);</script>").getMatch(0);
+        if (json == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        }
-        this.dllink = PluginJSonUtils.getJson(br, "video_url");
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = encodeUnicode(filename);
-            String ext;
-            if (!StringUtils.isEmpty(dllink)) {
-                ext = getFileNameExtensionFromString(dllink, default_extension);
-                if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
-                    ext = default_extension;
-                }
-            } else {
-                ext = default_extension;
-            }
-            if (!filename.endsWith(ext)) {
-                filename += ext;
-            }
-            link.setFinalFileName(filename);
-        } else {
-            /* Fallback */
-            link.setName(this.getFID(link) + default_extension);
-        }
-        if (!StringUtils.isEmpty(dllink)) {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        link.setProperty(PROPERTY_TITLE, entries.get("video_title"));
+        link.setProperty(PROPERTY_VIDEO_ID, entries.get("post_id"));
+        link.setProperty(PROPERTY_USERNAME, entries.get("nick_name"));
+        this.dllink = entries.get("videoUrl").toString();
+        /* We want to have the video without watermark */
+        this.dllink = this.dllink.replaceFirst("_4.mp4", ".mp4");
+        setFilename(link);
+        if (!StringUtils.isEmpty(dllink) && !link.isSizeSet()) {
             URLConnectionAdapter con = null;
             try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    server_issues = true;
-                } else {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(con);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -129,29 +160,41 @@ public class LikeeVideo extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    private static void setFilename(final DownloadLink link) {
+        String filename = "@" + link.getStringProperty(PROPERTY_USERNAME) + "_" + link.getStringProperty(PROPERTY_TITLE);
+        // String dateFormatted = getDateFormatted(link);
+        // if (dateFormatted != null) {
+        // filename = dateFormatted;
+        // }
+        filename += ".mp4";
+        link.setFinalFileName(filename);
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
+        handleConnectionErrors(dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final URLConnectionAdapter con) throws PluginException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            // try {
+            // br.followConnection(true);
+            // } catch (final IOException e) {
+            // logger.log(e);
+            // }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
         }
-        dl.startDownload();
     }
 
     @Override
