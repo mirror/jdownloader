@@ -749,7 +749,7 @@ public class InstaGramCom extends PluginForHost {
                     final UrlQuery query = UrlQuery.parse(url.getQuery());
                     final String stp = query.get("stp");
                     if (StringUtils.containsIgnoreCase(stp, "dst-jpg")) {
-                        ret = ret.replaceFirst("\\.webm$", ".jpg");
+                        ret = ret.replaceFirst("\\.webp$", ".jpg");
                     } else if (StringUtils.containsIgnoreCase(stp, "dst-webp")) {
                         ret = ret.replaceFirst("\\.jpe?g$", ".webp");
                     }
