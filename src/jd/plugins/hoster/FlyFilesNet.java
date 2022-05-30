@@ -16,17 +16,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +30,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,9 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(?:www\\.)?flyfiles\\.net/[a-z0-9]{10}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(?:www\\.)?flyfiles\\.net/([a-z0-9]{10})" })
 public class FlyFilesNet extends PluginForHost {
-    private static final String HOST     = "https://flyfiles.net";
     private static Object       LOCK     = new Object();
     private static final String NOCHUNKS = "NOCHUNKS";
 
@@ -62,7 +58,7 @@ public class FlyFilesNet extends PluginForHost {
 
     public FlyFilesNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(HOST + "/");
+        this.enablePremium("https://" + this.getHost() + "/");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -72,13 +68,13 @@ public class FlyFilesNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return HOST + "/terms.php";
+        return "https://" + this.getHost() + "/terms.php";
     }
 
     public void prepBrowser() {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(HOST, "lang", "english");
+        br.setCookie(this.getHost(), "lang", "english");
     }
 
     @Override
@@ -111,7 +107,7 @@ public class FlyFilesNet extends PluginForHost {
             String captchaurl = br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
             final String waittime = br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
             final String reCaptchaV2ID = br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^\"\\']+)\\'").getMatch(0);
-            final String postURL = HOST + "/";
+            final String postURL = "https://" + this.getHost() + "/";
             String postata = "getDownLink=" + fid;
             if (waittime != null) {
                 final long wait = Long.parseLong(waittime);
@@ -142,7 +138,8 @@ public class FlyFilesNet extends PluginForHost {
             }
             dllink = getDllink();
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* 2022-05-30: Assume that content is only downloadable with premium account */
+                throw new AccountRequiredException();
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
@@ -152,7 +149,8 @@ public class FlyFilesNet extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2022-05-30: Assume that content is only downloadable with premium account */
+            throw new AccountRequiredException();
         }
         link.setProperty("directlink", dllink);
         dl.startDownload();
@@ -206,7 +204,7 @@ public class FlyFilesNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account, true);
-        String expire = new Regex(br, "<u>Premium</u>: <span id=\"premiumDate\">(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
+        String expire = new Regex(br, "(?i)<u>Premium</u>: <span id=\"premiumDate\">(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             return ai;
@@ -217,60 +215,38 @@ public class FlyFilesNet extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
-                /** Load cookies */
                 prepBrowser();
                 br.setCookiesExclusive(true);
                 prepBrowser();
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.getPage(HOST);
-                br.postPage(HOST + "/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                final Cookies cookies = account.loadCookies("");
                 final String lang = System.getProperty("user.language");
-                if (!br.containsHTML("#login\\|1")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (cookies != null) {
+                    br.setCookies(cookies);
+                    /* Trust cookies without check */
+                    return;
+                } else {
+                    logger.info("Performing full login");
+                    br.getPage("https://" + this.getHost());
+                    br.postPage("/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                    if (!br.containsHTML("#login\\|1")) {
+                        throw new AccountInvalidException();
                     }
                 }
                 br.getPage("/");
                 // only support premium at this stage
-                if (!new Regex(br, "(<u>Premium</u>: <span id=\"premiumDate\">)").matches()) {
+                if (!new Regex(br, "(?i)(<u>Premium</u>: <span id=\"premiumDate\">)").matches()) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -282,7 +258,7 @@ public class FlyFilesNet extends PluginForHost {
         login(account, false);
         String dllink = checkDirectLink(link, "premlink");
         if (dllink == null) {
-            br.postPage(HOST + "/", "getDownLink=" + new Regex(link.getDownloadURL(), "net/(.*)").getMatch(0));
+            br.postPage("https://" + this.getHost() + "/", "getDownLink=" + new Regex(link.getDownloadURL(), "net/(.*)").getMatch(0));
             dllink = getDllink();
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.

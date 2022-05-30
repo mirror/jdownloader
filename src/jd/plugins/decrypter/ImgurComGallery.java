@@ -260,7 +260,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         apiCrawlJsonMultipleItems(data, 0);
     }
 
-    private void apiCrawlJsonMultipleItems(Map<String, Object> data, final int index) throws DecrypterException, ParseException, PluginException {
+    private void apiCrawlJsonMultipleItems(final Map<String, Object> data, final int index) throws DecrypterException, ParseException, PluginException {
         final long status = JavaScriptEngineFactory.toLong(data.get("status"), 200);
         if (status == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -298,10 +298,10 @@ public class ImgurComGallery extends PluginForDecrypt {
             final String videoSource = (String) item.get("video_source");
             String title = (String) item.get("title");
             final String description = (String) item.get("description");
-            final long size = JavaScriptEngineFactory.toLong(item.get("size"), -1);
-            final long size_mp4 = JavaScriptEngineFactory.toLong(item.get("mp4_size"), -1);
+            final Number size = (Number) item.get("size");
+            final Number size_mp4 = (Number) item.get("mp4_size");
             String filetype = (String) item.get("type");
-            if ((size == -1 && size_mp4 == -1) || filetype == null) {
+            if ((size == null && size_mp4 == null) || filetype == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             final boolean user_prefers_mp4 = ImgurComHoster.userPrefersMp4();
@@ -311,12 +311,12 @@ public class ImgurComGallery extends PluginForDecrypt {
             }
             final long filesize;
             final String directlink;
-            if (user_prefers_mp4 && size_mp4 > 0) {
-                filesize = size_mp4;
+            if (user_prefers_mp4 && size_mp4 != null) {
+                filesize = size_mp4.longValue();
                 filetype = "mp4";
                 directlink = generateUrlDirect(imgUID, "mp4");
             } else {
-                filesize = size;
+                filesize = size.longValue();
                 directlink = (String) item.get("link");
             }
             final DownloadLink dl = createDownloadlink(generateUrlDownload(imgUID));
@@ -324,7 +324,6 @@ public class ImgurComGallery extends PluginForDecrypt {
             if (!StringUtils.isEmpty(directlink)) {
                 dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, directlink);
             }
-            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_USERNAME, author);
             dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_USERNAME, author);
             if (!StringUtils.isEmpty(title)) {
                 title = Encoding.htmlDecode(title);
@@ -609,9 +608,8 @@ public class ImgurComGallery extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        entries = (Map<String, Object>) entries.get("data");
-        apiCrawlJsonMultipleItems(entries);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        apiCrawlJsonMultipleItems((Map<String, Object>) entries.get("data"));
     }
 
     private void apiCrawlGallery() throws Exception {

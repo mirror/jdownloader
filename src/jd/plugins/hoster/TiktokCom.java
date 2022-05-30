@@ -34,6 +34,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.TiktokConfig;
 import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -58,6 +59,11 @@ public class TiktokCom extends PluginForHost {
             Browser.setRequestIntervalLimitGlobal("tiktok.com", true, 1000);
         } catch (final Throwable e) {
         }
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     public static List<String[]> getPluginDomains() {

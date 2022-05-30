@@ -6,7 +6,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -60,7 +59,7 @@ public class SxyprnCom extends antiDDoSForHost {
     private String  json         = null;
     private String  dllink       = null;
     private boolean server_issue = false;
-    private String  authorid     = null;
+    // private String authorid = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -87,7 +86,7 @@ public class SxyprnCom extends antiDDoSForHost {
             link.setFinalFileName(title.trim() + ".mp4");
         }
         final String fid = this.getFID(link);
-        authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
+        // authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
         json = br.getRegex("data-vnfo=\\'([^\\']+)\\'").getMatch(0);
         String vnfo = PluginJSonUtils.getJsonValue(json, fid);
         if (vnfo == null && json != null) {
@@ -243,18 +242,13 @@ public class SxyprnCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         /*
          * 2020-04-27: They only have free accounts - there is no premium model. Free acccount users can sometimes see content which is
          * otherwise hidden / seemingly offline.
          */
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
