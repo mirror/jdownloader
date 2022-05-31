@@ -241,7 +241,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /** Returns true if this link has the worst "Streaming Quota reached" status: It is currently not even downloadable via account. */
-    private boolean isStreamingQuotaReachedAccount(final DownloadLink link) {
+    private boolean isStreamQuotaReachedAccount(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT)) {
             return true;
         } else {
