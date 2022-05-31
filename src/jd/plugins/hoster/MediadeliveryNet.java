@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -25,12 +31,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MediadeliveryNet extends antiDDoSForHost {
@@ -126,7 +126,7 @@ public class MediadeliveryNet extends antiDDoSForHost {
         requestFileInformation(link);
         final String hlsMaster = br.getRegex("\"(https?://[^\"]+playlist\\.m3u8)\"").getMatch(0);
         if (StringUtils.isEmpty(hlsMaster)) {
-            if (br.containsHTML("playlist.drm")) {
+            if (br.containsHTML("playlist\\.drm")) {
                 // m3u8 with aes-key
                 throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected unsupported!");
             }
