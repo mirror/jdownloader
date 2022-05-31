@@ -22,6 +22,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,15 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TiktokCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TiktokCom.class })
@@ -115,6 +115,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
+        if (PluginJsonConfig.get(TiktokConfig.class).getProfileCrawlerMaxItemsLimit() == 0) {
+            logger.info("User has disabled profile crawler --> Returning empty array");
+            return new ArrayList<DownloadLink>();
+        }
         if (PluginJsonConfig.get(TiktokConfig.class).getCrawlMode() == CrawlMode.API) {
             return crawlProfileAPI(param);
         } else {
@@ -123,8 +127,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use website to crawl all videos of a user. </br> Pagination hasn't been implemented so this will only find the first batch of items -
-     * usually around 30 items!
+     * Use website to crawl all videos of a user. </br>
+     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
@@ -196,6 +200,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 dl._setFilePackage(fp);
                 ret.add(dl);
                 distribute(dl);
+                if (ret.size() == cfg.getProfileCrawlerMaxItemsLimit()) {
+                    logger.info("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
+                    return ret;
+                }
                 index++;
             }
             if ((Boolean) userPost.get("hasMore") && cfg.isAddDummyURLProfileCrawlerWebsiteModeMissingPagination()) {
@@ -215,10 +223,14 @@ public class TiktokComCrawler extends PluginForDecrypt {
             final String[] videoIDs = br.getRegex(usernameSlug + "/video/(\\d+)\"").getColumn(0);
             for (final String videoID : videoIDs) {
                 final DownloadLink dl = this.createDownloadlink(getContentURL(usernameSlug, videoID));
-                dl.setName("@" + usernameSlug + "_" + videoID + ".mp4");
-                dl.setAvailable(cfg.isEnableFastLinkcheck());
+                TiktokCom.setFilename(dl);
+                dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 ret.add(dl);
+                if (ret.size() == cfg.getProfileCrawlerMaxItemsLimit()) {
+                    logger.info("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
+                    return ret;
+                }
             }
         }
         return ret;
@@ -278,6 +290,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         int page = 1;
         FilePackage fp = null;
         String author = null;
+        final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
         do {
             TiktokCom.accessAPI(br, "/aweme/post", query);
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
@@ -306,6 +319,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 link._setFilePackage(fp);
                 ret.add(link);
                 distribute(link);
+                if (ret.size() == cfg.getProfileCrawlerMaxItemsLimit()) {
+                    logger.info("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
+                    return ret;
+                }
             }
             logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
             if (this.isAbort()) {
