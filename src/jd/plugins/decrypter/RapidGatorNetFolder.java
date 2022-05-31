@@ -19,89 +19,126 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.RapidGatorNet;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/folder/\\d+/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @SuppressWarnings("deprecation")
+@PluginDependencies(dependencies = { RapidGatorNet.class })
 public class RapidGatorNetFolder extends antiDDoSForDecrypt {
-    private String parameter = null;
-    private String uid       = null;
-
     public RapidGatorNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString().replace("http://", "https://");
-        uid = new Regex(parameter, "/folder/(\\d+)").getMatch(0);
-        // standardise browser configurations to avoid detection.
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.hoster.RapidGatorNet.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/\\d+/.*");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        param.setCryptedUrl(param.getCryptedUrl().replace("http://", "https://"));
+        final String folderID = new Regex(param.getCryptedUrl(), "/folder/(\\d+)").getMatch(0);
         final PluginForHost plugin = this.getNewPluginForHostInstance(this.getHost());
-        // normal stuff
         br.setFollowRedirects(true);
-        ((jd.plugins.hoster.RapidGatorNet) plugin).getPage(parameter);
+        ((jd.plugins.hoster.RapidGatorNet) plugin).getPage(param.getCryptedUrl());
         br.setFollowRedirects(false);
         if (br.containsHTML("E_FOLDERNOTFOUND") || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"empty\"")) {
             logger.info("Folder is empty");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex("Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
+        String fpName = br.getRegex("(?i)Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>Download file (.*?)</title>").getMatch(0);
+            fpName = br.getRegex("(?i)<title>Download file (.*?)</title>").getMatch(0);
         }
         FilePackage fp;
         if (fpName != null) {
             fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         } else {
             fp = null;
         }
-        parsePage(decryptedLinks, fp);
-        String lastPage = null;
+        String lastPageURL = null;
+        int page = 1;
+        String lastPageStr = "Unknown";
         do {
-            String nextPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Next").getMatch(0);
-            if (lastPage == null) {
-                lastPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Last").getMatch(0);
+            ret.addAll(parsePage(fp));
+            String nextPageURL = br.getRegex("(?i)<a href=\"(/folder/" + folderID + "/[^>]+\\?page=\\d+)\">\\s*Next").getMatch(0);
+            if (lastPageURL == null) {
+                lastPageURL = br.getRegex("(?i)<a href=\"(/folder/" + folderID + "/[^>]+\\?page=\\d+)\">\\s*Last").getMatch(0);
+                if (lastPageURL != null) {
+                    lastPageStr = UrlQuery.parse(lastPageURL).get("page");
+                }
             }
-            if (nextPage != null && (lastPage != null && !br.getURL().contains(lastPage))) {
+            logger.info("Crawled page " + page + "/" + lastPageStr + " | Found items so far: " + ret.size());
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (nextPageURL == null) {
+                logger.info("Stopping because: Failed to find nextPage");
+                break;
+            } else if (lastPageURL == null || br.getURL().contains(lastPageURL)) {
+                logger.info("Stopping because: Reached last page");
+                break;
+            } else {
                 try {
                     sleep(500, param);
                 } catch (InterruptedException e) {
                     logger.log(e);
                     break;
                 }
-                ((jd.plugins.hoster.RapidGatorNet) plugin).getPage(nextPage);
-                parsePage(decryptedLinks, fp);
-            } else {
-                break;
+                ((jd.plugins.hoster.RapidGatorNet) plugin).getPage(nextPageURL);
+                page++;
             }
-        } while (!this.isAbort());
-        return decryptedLinks;
+        } while (true);
+        return ret;
     }
 
-    private List<DownloadLink> parsePage(ArrayList<DownloadLink> ret, FilePackage fp) throws Exception {
+    private List<DownloadLink> parsePage(final FilePackage fp) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<DownloadLink> pageRet = new ArrayList<DownloadLink>();
         final String[] subfolders = br.getRegex("<td><a href=\"(/folder/\\d+/[^<>\"/]+\\.html)\">").getColumn(0);
         final String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
         if ((links == null || links.length == 0) && (subfolders == null || subfolders.length == 0)) {
-            logger.warning("Empty folder, or possible plugin defect. Please confirm this issue within your browser, if the plugin is truely broken please report issue to JDownloader Development Team. " + parameter);
+            logger.warning("Empty folder, or possible plugin defect. Please confirm this issue within your browser, if the plugin is truely broken please report issue to JDownloader Development Team. " + br.getURL());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (links != null && links.length != 0) {
@@ -137,7 +174,6 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
         return 1;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
