@@ -20,7 +20,7 @@ public interface TiktokConfig extends PluginConfigInterface {
     final String                                 text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination = "Profile crawler website mode: Add dummy URL when user profile is crawled in website mode and crawler fails to find all items due to missing pagination?";
     final String                                 text_DownloadMode                                          = "Select download mode";
     final String                                 text_CrawlMode                                             = "Select profile crawl mode";
-    final String                                 text_ProfileCrawlerMaxItemsLimit                           = "Profile crawler: How many items shall be grabbed? [0 = disable profile crawler, -1 = grab all items]";
+    final String                                 text_ProfileCrawlerMaxItemsLimit                           = "Profile crawler: Define max number of items to be fetched: 0 = disable profile crawler, -1 = fetch all items";
 
     public static class TRANSLATION {
         public String getEnableFastLinkcheck_label() {
