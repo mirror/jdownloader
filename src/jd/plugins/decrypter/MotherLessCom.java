@@ -272,7 +272,6 @@ public class MotherLessCom extends PluginForDecrypt {
                     ret.add(this.createDownloadlink("https://" + this.getHost() + "/G" + galleryID));
                 }
             } else {
-                final String filenameRegexBase = "<a href=\"[^\"]+[^/]+/%s\" title=\"([^\"]+)\"";
                 final String[] videolinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(/[^\"]+)\" class=\"img-container\" target=\"_self\">\\s*<span class=\"currently-playing-icon\"").getColumn(0);
                 if (videolinks != null && videolinks.length != 0) {
                     for (String singlelink : videolinks) {
@@ -291,7 +290,7 @@ public class MotherLessCom extends PluginForDecrypt {
                         if (relative_path != null) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
                         }
-                        final String title = br.getRegex(String.format(filenameRegexBase, contentID)).getMatch(0);
+                        final String title = regexMediaTitle(br, contentID);
                         if (title != null) {
                             dl.setName(Encoding.htmlDecode(title).trim() + ".mp4");
                         } else {
@@ -317,7 +316,7 @@ public class MotherLessCom extends PluginForDecrypt {
                         if (relative_path != null) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
                         }
-                        final String title = br.getRegex(String.format(filenameRegexBase, contentID)).getMatch(0);
+                        final String title = regexMediaTitle(br, contentID);
                         if (title != null) {
                             dl.setName(Encoding.htmlDecode(title).trim() + ".jpg");
                         } else {
@@ -366,6 +365,10 @@ public class MotherLessCom extends PluginForDecrypt {
                 page++;
             }
         }
+    }
+
+    private String regexMediaTitle(final Browser br, final String contentID) {
+        return br.getRegex("<a href=\"[^\"]+[^/]+/" + contentID + "\" title=\"([^\"]+)\"").getMatch(0);
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
