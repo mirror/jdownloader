@@ -24,12 +24,27 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -53,29 +68,42 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends antiDDoSForHost {
     public RapidGatorNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://rapidgator.net/article/premium");
     }
 
-    private static final String            MAINPAGE                                   = "https://rapidgator.net/";
-    private static final String            PREMIUMONLYTEXT                            = "This file can be downloaded by premium only</div>";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "rapidgator.net", "rapidgator.asia", "rg.to" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static final String            PREMIUMONLYTEXT                            = "(?is)This file can be downloaded by premium only</div>";
     /*
      * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
      * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
@@ -109,7 +137,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static final long              FREE_RECONNECTWAIT_OTHERS                  = 30 * 60 * 1000L;
     private static final long              FREE_CAPTCHA_EXPIRE_TIME                   = 105 * 1000L;
     // CONTENT-DISPOSITION header is missing encoding
-    private static final boolean           FIX_FILENAMES                              = true;
+    private final boolean                  FIX_FILENAMES                              = true;
 
     @Override
     public String getAGBLink() {
@@ -921,7 +949,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
                     br.setFollowRedirects(true);
                     accessMainpage(br);
-                    if (isLoggedINWebsite()) {
+                    if (isLoggedINWebsite(br)) {
                         logger.info("Successfully validated last session");
                         if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_website, WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
                             setAccountTypeWebsite(account, br);
@@ -964,12 +992,12 @@ public class RapidGatorNet extends antiDDoSForHost {
                     } else {
                         postPage("/auth/login", loginPostData);
                     }
-                    if (isLoggedINWebsite()) {
+                    if (isLoggedINWebsite(br)) {
                         continue;
                     }
                     break;
                 }
-                if (!isLoggedINWebsite()) {
+                if (!isLoggedINWebsite(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 setAccountTypeWebsite(account, br);
@@ -1014,8 +1042,12 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedINWebsite() {
-        return br.getCookie(RapidGatorNet.MAINPAGE, "user__", Cookies.NOTDELETEDPATTERN) != null;
+    private boolean isLoggedINWebsite(final Browser br) {
+        if (br.getCookie(br.getHost(), "user__", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void setAccountTypeWebsite(final Account account, final Browser br) {
@@ -1493,7 +1525,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         for (int i = 0; i <= repeat; i++) {
             br.setFollowRedirects(false);
             getPage(br, link.getPluginPatternMatcher());
-            logged_in = this.isLoggedINWebsite();
+            logged_in = this.isLoggedINWebsite(br);
             if (!logged_in && !validated_cookies && i + 1 != repeat) {
                 // lets login fully again, as hoster as removed premium cookie for some unknown reason...
                 logger.info("Performing login sequence with cookie validation");
@@ -1554,7 +1586,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 ac.setTrafficLeft(0);
                 account.setAccountInfo(ac);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else if (br.getCookie(RapidGatorNet.MAINPAGE, "user__", Cookies.NOTDELETEDPATTERN) == null) {
+            } else if (br.getCookie(br.getHost(), "user__", Cookies.NOTDELETEDPATTERN) == null) {
                 logger.info("Account seems to be invalid!");
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 account.setProperty("cookies", Property.NULL);
