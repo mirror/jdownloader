@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -104,7 +105,6 @@ public class SeventySevenFileCom extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(this.getFID(link));
         }
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -134,12 +134,15 @@ public class SeventySevenFileCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleFreeDownload(link, null, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleFreeDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         // final String fid = getFID(link);
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
+            if (account != null) {
+                this.login(account, false);
+            }
             requestFileInformation(link);
             final String fileID2 = this.br.getRegex("file_id=(\\d+)").getMatch(0);
             if (fileID2 == null) {
@@ -184,7 +187,11 @@ public class SeventySevenFileCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directlinkproperty, dllink);
@@ -283,7 +290,7 @@ public class SeventySevenFileCom extends PluginForHost {
             br.getPage("/mydisk.php?item=profile&menu=cp");
         }
         ai.setUnlimitedTraffic();
-        final String premiumExpire = br.getRegex("(?i)<td>Account type</td>\\s*<td>\\s*<b class=\"text-danger\">\\s*Premium\\s*<small>\\((\\d{4}-\\d{2}-\\d{2})\\)</small>").getMatch(0);
+        final String premiumExpire = br.getRegex("(?i)VIP结束时间\\s*：</td>\\s*<td>\\s*(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         if (premiumExpire == null) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
@@ -299,9 +306,51 @@ public class SeventySevenFileCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.PREMIUM) {
-            this.handleDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "premium_directlink");
+            // this.handleFreeDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "premium_directlink");
+            final String premiumDirectlinkproperty = "premium_directlink";
+            // final String fid = getFID(link);
+            if (!attemptStoredDownloadurlDownload(link, premiumDirectlinkproperty, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS)) {
+                this.login(account, false);
+                requestFileInformation(link);
+                /* Here comes unfinished code because we do not support their used captcha called "TencentCaptcha" yet. */
+                if (br.containsHTML("getverify\\.php")) {
+                    /* 2022-05-31: Unsupported captcha in premium mode */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String dllink = br.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(https?://down\\.[^<>\"]+)\"").getMatch(0);
+                }
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                link.setProperty(premiumDirectlinkproperty, dllink);
+            }
+            dl.startDownload();
         } else {
-            this.handleDownload(link, account, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "account_free_directlink");
+            this.handleFreeDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        }
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+            /* Premium download = captcha (really strange but that's how it is lol) */
+            return true;
+        } else {
+            /* Anonymous download and free account download = no captcha */
+            return false;
         }
     }
 
