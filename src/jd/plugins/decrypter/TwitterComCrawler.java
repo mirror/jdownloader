@@ -137,7 +137,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        resumeURL = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty("twitterResume") : null;
+        resumeURL = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_RESUME) : null;
         br.setAllowedResponseCodes(new int[] { 429 });
         final String newURL = param.getCryptedUrl().replaceFirst("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
         if (!newURL.equals(param.getCryptedUrl())) {
@@ -871,11 +871,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private final String PROPERTY_RESUME = "twitterResume";
+
     @Override
     protected DownloadLink createLinkCrawlerRetry(final CrawledLink link, final DecrypterRetryException retryException) {
         final DownloadLink ret = super.createLinkCrawlerRetry(link, retryException);
         if (ret != null && resumeURL != null) {
-            ret.setProperty("twitterResume", resumeURL);
+            ret.setProperty(PROPERTY_RESUME, resumeURL);
         }
         return ret;
     }

@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins;
 
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -54,7 +55,9 @@ public class CryptedLink {
     }
 
     public DownloadLink getDownloadLink() {
-        if (source instanceof DownloadLink) {
+        if (source instanceof CheckableLink) {
+            return ((CheckableLink) source).getDownloadLink();
+        } else if (source instanceof DownloadLink) {
             return (DownloadLink) source;
         } else if (source instanceof CrawledLink) {
             return ((CrawledLink) source).getDownloadLink();
