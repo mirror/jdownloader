@@ -20,14 +20,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -39,6 +35,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -111,24 +113,41 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         return parseM3U8(this, param.getCryptedUrl(), br, referer, cookiesString, null, null);
     }
 
-    public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String finalName, final String preSetName) throws IOException {
+    public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String finalName, final String preSetName) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
+            final String sessionDataTitle = br.getRegex("#EXT-X-SESSION-DATA:DATA-ID\\s*=\\s*\"[^\"]*title\"[^\r\n]*VALUE\\s*=\\s*\"(.*?)\"").getMatch(0);
             final ArrayList<String> infos = new ArrayList<String>();
             for (final String line : Regex.getLines(br.toString())) {
                 if (StringUtils.startsWithCaseInsensitive(line, "concat") || StringUtils.contains(line, "file:")) {
                     continue;
                 } else if (!line.startsWith("#")) {
-                    final URL url = br.getURL(line);
-                    final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url.toString(), true);
-                    if (finalName != null) {
-                        link.setFinalFileName(finalName);
+                    infos.add(line);
+                    final String m3u8Content = StringUtils.join(infos, "\r\n");
+                    final List<HlsContainer> hlsContainer = HlsContainer.parseHlsQualities(m3u8Content, br);
+                    if (hlsContainer.size() != 1) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        final HlsContainer hls = hlsContainer.get(0);
+                        final URL url = br.getURL(line);
+                        final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url.toString(), true);
+                        if (finalName != null) {
+                            link.setFinalFileName(finalName);
+                        }
+                        link.setProperty("m3u8Source", m3u8URL);
+                        if (StringUtils.isNotEmpty(preSetName)) {
+                            link.setProperty("preSetName", preSetName);
+                        } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
+                            link.setProperty("preSetName", sessionDataTitle);
+                        }
+                        if (hls.getBandwidth() > 0) {
+                            link.setProperty("hlsBandwidth", hls.getBandwidth());
+                        }
+                        link.setProperty("Referer", referer);
+                        link.setProperty("cookies", cookiesString);
+                        addToResults(plugin, ret, br, url, link);
+                        infos.clear();
                     }
-                    link.setProperty("preSetName", preSetName);
-                    link.setProperty("Referer", referer);
-                    link.setProperty("cookies", cookiesString);
-                    addToResults(plugin, ret, br, url, link);
-                    infos.clear();
                 } else {
                     infos.add(line);
                 }
@@ -146,10 +165,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         return ret;
     }
 
-    public static boolean looksLikeMpegURL(URLConnectionAdapter con) {
-        return con != null && (StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl") || StringUtils.equalsIgnoreCase(con.getContentType(), "application/x-mpegurl"));
-    }
-
     private static void addToResults(final PluginForDecrypt plugin, final List<DownloadLink> results, final Browser br, final URL url, final DownloadLink link) {
         if (StringUtils.endsWithCaseInsensitive(url.getPath(), ".m3u8")) {
             results.add(link);
@@ -159,7 +174,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             URLConnectionAdapter con = null;
             try {
                 con = brc.openRequestConnection(new HeadRequest(url));
-                if (con.isOK() && (looksLikeMpegURL(con) || StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".m3u8"))) {
+                if (con.isOK() && (LinkCrawlerDeepInspector.looksLikeMpegURL((con)) || StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".m3u8"))) {
                     link.setPluginPatternMatcher("m3u8" + url.toString().substring(4));
                     results.add(link);
                 }

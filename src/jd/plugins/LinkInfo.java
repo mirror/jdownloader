@@ -266,12 +266,18 @@ public class LinkInfo {
 
                             @Override
                             public ExtensionsFilterInterface getSource() {
-                                return hint;
+                                if (compiled != null) {
+                                    return compiled;
+                                } else {
+                                    return hint;
+                                }
                             }
 
                             @Override
                             public Pattern compiledAllPattern() {
-                                if (hint != null) {
+                                if (compiled != null) {
+                                    return compiled.compiledAllPattern();
+                                } else if (hint != null) {
                                     return hint.compiledAllPattern();
                                 } else {
                                     return null;
@@ -280,7 +286,9 @@ public class LinkInfo {
 
                             @Override
                             public String getDesc() {
-                                if (hint != null) {
+                                if (compiled != null) {
+                                    return compiled.getDesc();
+                                } else if (hint != null) {
                                     return hint.getDesc();
                                 } else {
                                     return desc;
@@ -289,7 +297,9 @@ public class LinkInfo {
 
                             @Override
                             public String getIconID() {
-                                if (hint != null) {
+                                if (compiled != null) {
+                                    return compiled.getIconID();
+                                } else if (hint != null) {
                                     return hint.getIconID();
                                 } else {
                                     return null;
@@ -298,7 +308,9 @@ public class LinkInfo {
 
                             @Override
                             public Pattern getPattern() {
-                                if (hint != null) {
+                                if (compiled != null) {
+                                    return compiled.compiledAllPattern();
+                                } else if (hint != null) {
                                     return hint.compiledAllPattern();
                                 } else {
                                     return pattern;
@@ -312,7 +324,9 @@ public class LinkInfo {
 
                             @Override
                             public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
-                                if (hint != null) {
+                                if (compiled != null) {
+                                    return compiled.isSameExtensionGroup(extension);
+                                } else if (hint != null) {
                                     return hint.isSameExtensionGroup(extension);
                                 } else {
                                     return extension != null && extension.getIconID() == null && StringUtils.equals(extension.name(), name());
@@ -321,7 +335,9 @@ public class LinkInfo {
 
                             @Override
                             public ExtensionsFilterInterface[] listSameGroup() {
-                                if (hint != null) {
+                                if (compiled != null) {
+                                    return compiled.listSameGroup();
+                                } else if (hint != null) {
                                     return hint.listSameGroup();
                                 } else {
                                     return new ExtensionsFilterInterface[] { this };

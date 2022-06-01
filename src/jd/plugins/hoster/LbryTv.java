@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.GenericM3u8Decrypter;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -215,7 +215,7 @@ public class LbryTv extends PluginForHost {
         if (StringUtils.equalsIgnoreCase(urlConnection.getContentType(), link.getStringProperty(PROPERTY_EXPECTED_CONTENT_TYPE))) {
             return true;
         } else {
-            return super.looksLikeDownloadableContent(urlConnection) && !GenericM3u8Decrypter.looksLikeMpegURL(urlConnection);
+            return super.looksLikeDownloadableContent(urlConnection) && !LinkCrawlerDeepInspector.looksLikeMpegURL(urlConnection);
         }
     }
 
@@ -231,7 +231,7 @@ public class LbryTv extends PluginForHost {
             final URLConnectionAdapter con = brc.openGetConnection(dllink);
             if (!looksLikeDownloadableContent(con, link)) {
                 brc.followConnection();
-                if (GenericM3u8Decrypter.looksLikeMpegURL(con)) {
+                if (LinkCrawlerDeepInspector.looksLikeMpegURL(con)) {
                     final List<HlsContainer> hls = HlsContainer.getHlsQualities(brc);
                     final HlsContainer best = HlsContainer.findBestVideoByBandwidth(hls);
                     if (best == null) {

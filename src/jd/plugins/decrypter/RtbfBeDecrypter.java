@@ -15,17 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -43,6 +41,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "https?://(?:www\\.)?rtbf\\.be/(?:video|auvio)/.+" })
 public class RtbfBeDecrypter extends PluginForDecrypt {
@@ -98,20 +100,14 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
              */
             video_id = id_url;
         }
-        String title = br.getRegex("<h1[^<>]*?class=\"rtbf\\-media\\-item__title\">([^<>]+)</h1>").getMatch(0);
-        if (title == null) {
+        String htmlTitle = br.getRegex("<h1[^<>]*?class=\"rtbf\\-media\\-item__title\">([^<>]+)</h1>").getMatch(0);
+        if (htmlTitle == null) {
             /* Fallback 1 (can contain subtitle as well!) */
-            title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
+            htmlTitle = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\s+(?::|-)\\s+RTBF\\s+(?:Vidéo|Auvio)\"").getMatch(0);
         }
-        if (title == null) {
+        if (htmlTitle == null) {
             /* Fallback 2 - title with date (can contain subtitle as well!) --> Grab title without date */
-            title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)").getMatch(0);
-        }
-        /* 2017-03-01: Removed subtitle for now as we got faulty names before. Title should actually contain everything we need! */
-        final String subtitle = this.br.getRegex("<h2 class=\"rtbf\\-media\\-item__subtitle\">([^<>]+)</h2>").getMatch(0);
-        final String uploadDate = PluginJSonUtils.getJsonValue(this.br, "uploadDate");
-        if (uploadDate != null) {
-            date_formatted = new Regex(uploadDate, "^(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+            htmlTitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)").getMatch(0);
         }
         br.getPage("/auvio/embed/media?id=" + video_id + "&autoplay=1");
         final boolean eventually_geoblocked = br.containsHTML("Ce contenu (n'est plus disponible|est visible uniquement en Belgique)");
@@ -137,21 +133,34 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         video_json = HTMLEntities.unhtmlentities(video_json);
         video_json = Encoding.htmlDecode(video_json);
         video_json = PluginJSonUtils.unescape(video_json);
+        final String uploadDate = PluginJSonUtils.getJsonValue(video_json, "liveFrom");
+        if (uploadDate != null) {
+            try {
+                date_formatted = new SimpleDateFormat("dd-MM-yyyy").format(new Date(Long.parseLong(uploadDate) * 1000));
+            } catch (final Exception e) {
+                logger.log(e);
+            }
+        }
         // we can get filename here also.
-        if (title == null) {
-            title = PluginJSonUtils.getJsonValue(video_json, "title");
+        String title = null;
+        final String jsonTitle = PluginJSonUtils.getJsonValue(video_json, "title");
+        final String jsonSubTitle = PluginJSonUtils.getJsonValue(video_json, "subtitle");
+        if (StringUtils.isNotEmpty(jsonTitle)) {
+            title = jsonTitle;
+            if (StringUtils.isNotEmpty(jsonSubTitle)) {
+                title += "-" + jsonSubTitle;
+            }
         }
         if (StringUtils.isEmpty(title)) {
-            /* Fallback */
-            title = video_id;
+            title = htmlTitle;
+            if (StringUtils.isEmpty(title)) {
+                /* Fallback */
+                title = "rtbf_" + video_id;
+            }
         }
         title = Encoding.htmlDecode(title).trim();
-        title = "rtbf_" + title;
         if (date_formatted != null) {
             title = date_formatted + "_" + title;
-        }
-        if (subtitle != null && !subtitle.equalsIgnoreCase("{{subtitle}}") && !title.toLowerCase().contains(subtitle.toLowerCase())) {
-            title = title + " - " + subtitle;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

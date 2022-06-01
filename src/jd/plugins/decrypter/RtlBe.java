@@ -27,7 +27,8 @@ public class RtlBe extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String id = new Regex(parameter.getCryptedUrl(), "/(\\d+)").getMatch(0);
         br.getPage("http://www.rtl.be/videos/vpo_video.asmx?action=getinfos&id=" + id);
-        final String title = br.getRegex("<Title>\\s*(.*?)\\s*<").getMatch(0);
+        String title = br.getRegex("<Title>\\s*(.*?)\\s*<").getMatch(0);
+        title = Encoding.htmlOnlyDecode(title);
         final String m3u8 = br.getRegex("<URL_UNICORN>\\s*(https?://.*?)\\s*<").getMatch(0);
         if (m3u8 != null) {
             final Browser brc = br.cloneBrowser();

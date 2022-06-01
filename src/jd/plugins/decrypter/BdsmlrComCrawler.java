@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,6 +36,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BdsmlrComCrawler extends PluginForDecrypt {
@@ -63,13 +63,13 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://\\w+\\." + buildHostsPatternPart(domains) + "/(?:post/\\d+)?$");
+            ret.add("https?://[\\w\\-]+\\." + buildHostsPatternPart(domains) + "/(?:post/\\d+)?$");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_USER_PROFILE = "https?://(\\w+)\\.[^/]+/?$";
-    private static final String TYPE_POST         = "https?://(\\w+)\\.[^/]+/post/(\\d+)$";
+    private static final String TYPE_USER_PROFILE = "https?://([\\w\\-]+)\\.[^/]+/?$";
+    private static final String TYPE_POST         = "https?://([\\w\\-]+)\\.[^/]+/post/(\\d+)$";
     private static final String PROPERTY_POST_ID  = "post_id";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -211,7 +211,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage)\\s*\">.*?class=\"countinf\")").getColumn(0);
         for (final String post : posts) {
-            final Regex postInfo = new Regex(post, "(https?://(\\w+)\\.[^/]+/post/(\\d+))");
+            final Regex postInfo = new Regex(post, "(https?://([\\w\\-]+)\\.[^/]+/post/(\\d+))");
             final String postURL = postInfo.getMatch(0);
             final String username = postInfo.getMatch(1);
             final String postID = postInfo.getMatch(2);

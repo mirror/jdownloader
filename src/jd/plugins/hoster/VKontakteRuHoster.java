@@ -27,20 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -72,6 +58,20 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|s/v1/doc/[A-Za-z0-9\\-_]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[^&#]+(\\&dl=[^&#]{16,})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip|pdf).+|[rz][0-9]{2}.+)" })
@@ -570,10 +570,12 @@ public class VKontakteRuHoster extends PluginForHost {
                 /* 2016-10-07: Implemented to avoid host-side block although results tell me that this does not improve anything. */
                 setHeaderRefererPhoto(this.br);
                 final String temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
-                if (isDownload && temp_name != null) {
-                    link.setFinalFileName(temp_name);
-                } else if (temp_name != null) {
-                    link.setName(temp_name);
+                if (temp_name != null) {
+                    if (isDownload) {
+                        link.setFinalFileName(temp_name);
+                    } else {
+                        link.setName(temp_name);
+                    }
                 }
             }
         }
