@@ -27,6 +27,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +60,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -58,20 +74,6 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|s/v1/doc/[A-Za-z0-9\\-_]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[^&#]+(\\&dl=[^&#]{16,})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip|pdf).+|[rz][0-9]{2}.+)" })
@@ -87,7 +89,6 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  TYPE_DOCLINK_1                                                              = "(?i)https?://[^/]+/doc([\\d\\-]+)_([\\d\\-]+)(\\?hash=[^&#]+(\\&dl=[^&#]{16,})?)?";
     public static final String  TYPE_DOCLINK_2                                                              = "(?i)https?://[^/]+/s/v1/doc/([A-Za-z0-9\\-_]+)";
     public static final long    trust_cookie_age                                                            = 300000l;
-    private static final String TEMPORARILYBLOCKED                                                          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
     public static final String  FASTLINKCHECK_VIDEO                                                         = "FASTLINKCHECK_VIDEO";
     public static final String  FASTCRAWL_VIDEO                                                             = "FASTCRAWL_VIDEO";
@@ -120,8 +121,6 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  VKWALL_STORE_PICTURE_DIRECTURLS                                             = "VKWALL_STORE_PICTURE_DIRECTURLS";
     public static final String  VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS                    = "VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS";
     public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT";
-    /* html patterns */
-    public static final String  HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS                                       = "This video has been removed from public access";
     public static Object        LOCK                                                                        = new Object();
     private String              finalUrl                                                                    = null;
     private String              ownerID                                                                     = null;
@@ -135,6 +134,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static String        PROPERTY_GENERAL_TITLE_PLAIN                                                = "title_plain";
     public static String        PROPERTY_GENERAL_DATE                                                       = "date";
     public static String        PROPERTY_GENERAL_UPLOADER                                                   = "uploader";
+    public static final String  PROPERTY_GENERAL_directlink                                                 = "directlink";
     /* Can be given for any content if it is part of a wall post */
     public static String        PROPERTY_GENERAL_wall_post_id                                               = "wall_post_id";
     /* For single photos */
@@ -163,7 +163,9 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public static void setRequestIntervalLimits() {
-        Browser.setBurstRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            Browser.setBurstRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
+        }
     }
 
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
@@ -252,7 +254,7 @@ public class VKontakteRuHoster extends PluginForHost {
             } else {
                 logger.info("Account not available during availablecheck");
             }
-            if (VKontakteRu.isTypeDocument(link.getPluginPatternMatcher())) {
+            if (VKontakteRu.isDocument(link.getPluginPatternMatcher())) {
                 if (!link.isNameSet() && this.ownerID != null && this.contentID != null) {
                     /* Set fallback filename */
                     link.setName("doc" + this.ownerID + "_" + this.contentID + ".pdf");
@@ -308,8 +310,8 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (checkstatus != 1) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } else if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
-                finalUrl = link.getStringProperty("directlink", null);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_AUDIOLINK)) {
+                finalUrl = link.getStringProperty(PROPERTY_GENERAL_directlink);
                 if (!audioIsValidDirecturl(finalUrl)) {
                     checkstatus = 0;
                 } else {
@@ -386,69 +388,57 @@ public class VKontakteRuHoster extends PluginForHost {
                         logger.info("Refreshed audiolink directlink seems not to work --> Link is probably offline");
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
-                        link.setProperty("directlink", finalUrl);
+                        link.setProperty(PROPERTY_GENERAL_directlink, finalUrl);
                     }
                 }
             } else if (this.isTypeVideo(link.getPluginPatternMatcher())) {
-                finalUrl = link.getStringProperty("directlink");
+                finalUrl = link.getStringProperty(PROPERTY_GENERAL_directlink);
                 /* Don't lose filenames if e.g. user resets DownloadLink. */
-                final String linkQuality = link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY);
-                if (linkQuality != null) {
-                    link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + linkQuality + ".mp4");
+                final String chosenQuality = link.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY);
+                if (chosenQuality != null) {
+                    link.setFinalFileName(link.getStringProperty(PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + chosenQuality + ".mp4");
                 }
-                /* Check if directlink is expired */
+                /* Check if stored directlink is expired */
                 checkstatus = linkOk(link, isDownload);
                 if (checkstatus != 1) {
                     /* Refresh directlink */
-                    accessVideo(this, this.br, link.getPluginPatternMatcher(), this.ownerID, this.contentID, link.getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID));
-                    if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (br.containsHTML("class\\s*=\\s*\"message_page_body\">\\s*Access denied")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    final Map<String, Object> video = jd.plugins.decrypter.VKontakteRu.findVideoMap(this.br, this.contentID);
-                    final Map<String, String> availableQualities = jd.plugins.decrypter.VKontakteRu.findAvailableVideoQualities(video);
-                    if (availableQualities.isEmpty()) {
-                        /* This should never happen */
-                        logger.info("vk.com: Couldn't find any available qualities for videolink");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (StringUtils.isNotEmpty(linkQuality)) {
-                        final Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
-                        finalUrl = selectedQualities.get(linkQuality);
-                        if (finalUrl == null) {
-                            if (selectedQualities.isEmpty()) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
-                            } else {
-                                logger.info("Qualities:" + selectedQualities);
-                                /* Rare case: User has to delete- and re-add URL via crawler. */
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:ALL|" + linkQuality);
+                    this.finalUrl = null;
+                    final VKontakteRu crawler = (VKontakteRu) this.getNewPluginForDecryptInstance(this.getHost());
+                    if (!StringUtils.isEmpty(chosenQuality)) {
+                        /* Be sure to let crawler crawl all possible qualities, then look for the one we're looking for. */
+                        crawler.setQualitySelectionMode(QualitySelectionMode.ALL);
+                        final ArrayList<DownloadLink> results = crawler.decryptIt(new CryptedLink(link.getPluginPatternMatcher()), null);
+                        for (final DownloadLink result : results) {
+                            final String quality = result.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY);
+                            if (quality == null) {
+                                /* Skip non-video content just in case */
+                                continue;
                             }
+                            if (quality.equalsIgnoreCase(chosenQuality)) {
+                                this.finalUrl = result.getStringProperty(PROPERTY_GENERAL_directlink);
+                                break;
+                            }
+                        }
+                        if (this.finalUrl == null) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl" + chosenQuality);
                         }
                     } else {
                         final QualitySelectionMode mode = QualitySelectionMode.values()[link.getIntegerProperty(VIDEO_QUALITY_SELECTION_MODE, default_VIDEO_QUALITY_SELECTION_MODE)];
-                        final Quality quality = Quality.values()[link.getIntegerProperty(PREFERRED_VIDEO_QUALITY, default_PREFERRED_VIDEO_QUALITY)];
-                        Map<String, String> selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, mode, quality.getLabel());
-                        if (selectedQualities.isEmpty()) {
-                            selectedQualities = VKontakteRu.getSelectedVideoQualities(availableQualities, QualitySelectionMode.ALL, null);
-                            if (selectedQualities.isEmpty()) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl - Content offline?");
-                            } else {
-                                logger.info("Qualities:" + selectedQualities);
-                                /* Rare case: User has to delete- and re-add URL via crawler. */
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Selected quality is not available:" + mode + "|" + quality);
-                            }
+                        crawler.setQualitySelectionMode(mode);
+                        /* Expect to get exactly one result */
+                        final ArrayList<DownloadLink> results = crawler.decryptIt(new CryptedLink(link.getPluginPatternMatcher()), null);
+                        if (results.size() > 1) {
+                            logger.warning("More results available than expected: " + results.size());
                         }
-                        /* Assume map only contains this one element */
-                        final Entry<String, String> entry = selectedQualities.entrySet().iterator().next();
-                        finalUrl = entry.getValue();
+                        final DownloadLink result = results.get(0);
+                        final String quality = result.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY);
                         /*
                          * Set this quality which will also update the linkID of this DownloadLink so user cannot add the same quality
                          * multiple times.
                          */
-                        link.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_SELECTED_QUALITY, entry.getKey());
+                        link.setProperty(PROPERTY_VIDEO_SELECTED_QUALITY, quality);
                         /* Correct filename which did not contain any quality modifier before. */
-                        link.setFinalFileName(link.getStringProperty(VKontakteRuHoster.PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + entry.getKey() + ".mp4");
+                        link.setFinalFileName(link.getStringProperty(PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + quality + ".mp4");
                     }
                 }
             } else {
@@ -820,39 +810,6 @@ public class VKontakteRuHoster extends PluginForHost {
         br.getHeaders().put("Referer", "https://" + DOMAIN + "/al_photos.php");
     }
 
-    public static void accessVideo(final Plugin plugin, final Browser br, final String videoURL, final String oid, final String id, final String listID) throws Exception {
-        final String videoids_together = oid + "_" + id;
-        if (videoURL.matches(VKontakteRu.PATTERN_VIDEO_SINGLE_Z) && listID == null) {
-            /**
-             * 2022-01-07: Special: Extra request of original URL in beforehand required to find listID and/or set required cookies!
-             */
-            br.getPage(videoURL);
-            final String thisListID = br.getRegex("\\?z=video" + videoids_together + "%2F([a-f0-9]+)\"").getMatch(0);
-            final UrlQuery query = new UrlQuery();
-            query.add("act", "show");
-            query.add("al", "1");
-            query.add("autoplay", "0");
-            if (thisListID != null) {
-                /* Should always be given! */
-                query.add("list", thisListID);
-            }
-            query.add("module", "");
-            query.add("video", videoids_together);
-            br.postPage("/al_video.php?act=show", query);
-        } else if (listID != null) {
-            final UrlQuery query = new UrlQuery();
-            query.add("act", "show_inline");
-            query.add("al", "1");
-            query.add("list", listID);
-            query.add("module", "public");
-            query.add("video", videoids_together);
-            br.postPage(getProtocol() + "vk.com/al_video.php", query);
-        } else {
-            br.getPage(getProtocol() + "vk.com/video" + videoids_together);
-            handleTooManyRequests(plugin, br);
-        }
-    }
-
     private static Map<String, String> LOCK_429 = new HashMap<String, String>();
 
     public static void handleTooManyRequests(final Plugin plugin, final Browser br) throws Exception {
@@ -896,13 +853,12 @@ public class VKontakteRuHoster extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(br, account, true);
         ai.setUnlimitedTraffic();
-        ai.setStatus("Free Account");
         account.setType(AccountType.FREE);
         return ai;
     }
 
     private void generalErrorhandling(final Browser br) throws PluginException {
-        if (br.containsHTML(VKontakteRuHoster.TEMPORARILYBLOCKED)) {
+        if (br.containsHTML(VKontakteRu.TEMPORARILYBLOCKED)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
         } else if (br.containsHTML("You have to log in to view this user")) {
             /*
@@ -1183,7 +1139,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
     public void login(final Browser br, final Account account, final boolean forceCookieCheck) throws Exception {
-        synchronized (VKontakteRuHoster.LOCK) {
+        synchronized (LOCK) {
             br.setCookiesExclusive(true);
             prepBrowser(br, false);
             this.vkID = account.getStringProperty("vkid");
@@ -1667,7 +1623,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     /** Returns ArrayList of audio Objects for Playlists/Albums after '/al_audio.php' request. */
     public static List<Object> getAudioDataArray(final Browser br) throws Exception {
-        final String json = jd.plugins.decrypter.VKontakteRu.regexJsonInsideHTML(br);
+        final String json = VKontakteRu.regexJsonInsideHTML(br);
         if (json == null) {
             return null;
         }
@@ -1930,45 +1886,45 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME, "Append the uploaders' name to the beginning of filenames?").setDefaultValue(default_VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Wall settings (for 'vk.com/wall-123...' and 'vk.com/wall-123..._123...' links):"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_ALBUMS, "Grab album links ('vk.com/album')?").setDefaultValue(default_WALL_ALLOW_albums));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_PHOTOS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckphotos", "Grab photo links ('vk.com/photo')?")).setDefaultValue(default_WALL_ALLOW_photo));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckaudio", "Grab audio links (.mp3 directlinks)?")).setDefaultValue(default_WALL_ALLOW_audio));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckvideo", "Grab video links ('vk.com/video')?")).setDefaultValue(default_WALL_ALLOW_video));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_DOCS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckdocs", "Grab documents?")).setDefaultValue(default_WALL_ALLOW_documents));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_URLS, JDL.L("plugins.hoster.vkontakteruhoster.wallchecklink", "Grab other urls?")).setDefaultValue(default_WALL_ALLOW_urls));
-        final ConfigEntry cfg_graburlsinsideposts = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheck_look_for_urls_inside_posts", "Grab URLs inside wall posts?")).setDefaultValue(default_WALL_ALLOW_lookforurlsinsidewallposts);
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_ALBUMS, "Grab album links ('vk.com/album')?").setDefaultValue(default_WALL_ALLOW_albums));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_PHOTOS, JDL.L("plugins.hoster.wallcheckphotos", "Grab photo links ('vk.com/photo')?")).setDefaultValue(default_WALL_ALLOW_photo));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_AUDIO, JDL.L("plugins.hoster.wallcheckaudio", "Grab audio links (.mp3 directlinks)?")).setDefaultValue(default_WALL_ALLOW_audio));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_VIDEO, JDL.L("plugins.hoster.wallcheckvideo", "Grab video links ('vk.com/video')?")).setDefaultValue(default_WALL_ALLOW_video));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_DOCS, JDL.L("plugins.hoster.wallcheckdocs", "Grab documents?")).setDefaultValue(default_WALL_ALLOW_documents));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_URLS, JDL.L("plugins.hoster.wallchecklink", "Grab other urls?")).setDefaultValue(default_WALL_ALLOW_urls));
+        final ConfigEntry cfg_graburlsinsideposts = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_URLS_INSIDE_POSTS, JDL.L("plugins.hoster.wallcheck_look_for_urls_inside_posts", "Grab URLs inside wall posts?")).setDefaultValue(default_WALL_ALLOW_lookforurlsinsidewallposts);
         this.getConfig().addEntry(cfg_graburlsinsideposts);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX, JDL.L("plugins.hoster.vkontakteruhoster.regExForUrlsInsideWallPosts", "RegEx for URLs from inside wall posts (black-/whitelist): ")).setDefaultValue(default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX).setEnabledCondidtion(cfg_graburlsinsideposts, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX, JDL.L("plugins.hoster.regExForUrlsInsideWallPosts", "RegEx for URLs from inside wall posts (black-/whitelist): ")).setDefaultValue(default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX).setEnabledCondidtion(cfg_graburlsinsideposts, true));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for comments inside 'vk.com/wall-123_123...' links:\r\nIf you enable any of the following checkboxes, all wall comments URLs will be crawled first and then their content.\r\nThis can take a lot of time."));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_COMMENTS_PHOTOS, "Grab photo urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_PHOTOS));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_COMMENTS_AUDIO, "Grab audio urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_AUDIO));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_COMMENTS_VIDEO, "Grab video urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_VIDEO));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_COMMENTS_URLS, "Grab other urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_URLS));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_COMMENTS_PHOTOS, "Grab photo urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_PHOTOS));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_COMMENTS_AUDIO, "Grab audio urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_AUDIO));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_COMMENTS_VIDEO, "Grab video urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_VIDEO));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_GRAB_COMMENTS_URLS, "Grab other urls inside comments below single wall posts?").setDefaultValue(default_VKWALL_GRAB_COMMENTS_URLS));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for video albums ('vk.com/videosXXX_XXX' links):"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKVIDEO_ALBUM_USEIDASPACKAGENAME, "Use ownerID as packagename?").setDefaultValue(default_VKVIDEO_ALBUM_USEIDASPACKAGENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKVIDEO_ALBUM_USEIDASPACKAGENAME, "Use ownerID as packagename?").setDefaultValue(default_VKVIDEO_ALBUM_USEIDASPACKAGENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/audios' links:"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.audiosUseIdAsPackagename", "Use audio-Owner-ID as packagename ('audiosXXXX' or 'audios-XXXX')?")).setDefaultValue(default_VKAUDIO_USEIDASPACKAGENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKAUDIOS_USEIDASPACKAGENAME, JDL.L("plugins.hoster.audiosUseIdAsPackagename", "Use audio-Owner-ID as packagename ('audiosXXXX' or 'audios-XXXX')?")).setDefaultValue(default_VKAUDIO_USEIDASPACKAGENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/docs' links:"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKDOCS_USEIDASPACKAGENAME, "Use doc-Owner-ID as packagename ('docsXXXX' or 'docs-XXXX')?").setDefaultValue(default_VKDOCS_USEIDASPACKAGENAME));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKDOCS_ADD_UNIQUE_ID, "Add doc-Owner-ID and doc-Content-ID as a unique identifier to the beginning of filenames?").setDefaultValue(default_VKDOCS_ADD_UNIQUE_ID));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKDOCS_USEIDASPACKAGENAME, "Use doc-Owner-ID as packagename ('docsXXXX' or 'docs-XXXX')?").setDefaultValue(default_VKDOCS_USEIDASPACKAGENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKDOCS_ADD_UNIQUE_ID, "Add doc-Owner-ID and doc-Content-ID as a unique identifier to the beginning of filenames?").setDefaultValue(default_VKDOCS_ADD_UNIQUE_ID));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/photo' links:"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, "Use (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: '<server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, "Use oid_id AND (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: 'oid_id - <server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME));
-        final ConfigEntry cfg_store_directurls = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, "Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\nThis may also speedup the download process.\r\n WARNING: This may use a lot of RAM if you add big amounts of URLs!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS);
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, "Use (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: '<server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, "Use oid_id AND (temporary) server filename as final filename instead of e.g. 'oid_id.jpg'?\r\nNew filenames will look like this: 'oid_id - <server_filename>.jpg'").setDefaultValue(default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME));
+        final ConfigEntry cfg_store_directurls = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_STORE_PICTURE_DIRECTURLS, "Store picture-directlinks?\r\nThis helps to download images which can only be viewed inside comments but not separately.\r\nThis may also speedup the download process.\r\n WARNING: This may use a lot of RAM if you add big amounts of URLs!").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS);
         this.getConfig().addEntry(cfg_store_directurls);
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS, "Prefer usage of saved crawler picture-directlinks --> This can really speed-up download process if you have many items").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS).setEnabledCondidtion(cfg_store_directurls, true));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS, "Prefer usage of saved crawler picture-directlinks --> This can really speed-up download process if you have many items").setDefaultValue(default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS).setEnabledCondidtion(cfg_store_directurls, true));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
         /* 2019-08-06: Disabled API setting for now as API requires authorization which we do not (yet) support! */
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(),
-        // VKontakteRuHoster.VKWALL_USE_API, "For 'vk.com/wall' links: Use API?").setDefaultValue(default_VKWALL_USE_API));
+        // VKWALL_USE_API, "For 'vk.com/wall' links: Use API?").setDefaultValue(default_VKWALL_USE_API));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, "User-Agent: ").setDefaultValue(default_user_agent));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.vkontakteruhoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS, JDL.L("plugins.hoster.vkontakteruhoster.sleep.tooManyRequests", "Define sleep time for 'Temp Blocked' event"), (int) defaultSLEEP_TOO_MANY_REQUESTS, 15000, 500).setDefaultValue(defaultSLEEP_TOO_MANY_REQUESTS));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 1000, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SLEEP_TOO_MANY_REQUESTS, JDL.L("plugins.hoster.sleep.tooManyRequests", "Define sleep time for 'Temp Blocked' event"), (int) defaultSLEEP_TOO_MANY_REQUESTS, 15000, 500).setDefaultValue(defaultSLEEP_TOO_MANY_REQUESTS));
     }
 }
