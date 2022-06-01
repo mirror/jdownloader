@@ -33,6 +33,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -184,8 +185,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 }
                 if (fp == null) {
                     username = author;
-                    fp = FilePackage.getInstance();
-                    fp.setName(username);
+                    fp = this.getFilePackage(username);
                 }
                 final DownloadLink dl = this.createDownloadlink(getContentURL(author, videoID));
                 final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
@@ -215,7 +215,9 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 final DownloadLink dummy = createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.FILE_NOT_FOUND));
                 dummy.setFinalFileName("CANNOT_CRAWL_MORE_THAN_" + videos.size() + "_ITEMS_OF_PROFILE_" + usernameSlug);
                 dummy.setComment("This crawler plugin cannot handle pagination yet thus it is currently impossible to crawl more than " + videos.size() + " items. Check this forum thread for more info: https://board.jdownloader.org/showthread.php?t=79982");
-                dummy._setFilePackage(fp);
+                if (fp != null) {
+                    dummy._setFilePackage(fp);
+                }
                 distribute(dummy);
                 ret.add(dummy);
             }
@@ -230,7 +232,9 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 final DownloadLink dl = this.createDownloadlink(getContentURL(usernameSlug, videoID));
                 TiktokCom.setFilename(dl);
                 dl.setAvailable(true);
-                dl._setFilePackage(fp);
+                if (fp != null) {
+                    dl._setFilePackage(fp);
+                }
                 ret.add(dl);
                 if (ret.size() == cfg.getProfileCrawlerMaxItemsLimit()) {
                     logger.info("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
@@ -308,8 +312,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                      * TYPE_USER_USER_ID.
                      */
                     author = JavaScriptEngineFactory.walkJson(aweme_detail, "author/unique_id").toString();
-                    fp = FilePackage.getInstance();
-                    fp.setName(author);
+                    fp = getFilePackage(author);
                 }
                 final DownloadLink link = this.createDownloadlink(getContentURL(author, aweme_detail.get("aweme_id").toString()));
                 TiktokCom.parseFileInfoAPI(link, aweme_detail);
@@ -336,6 +339,13 @@ public class TiktokComCrawler extends PluginForDecrypt {
             page++;
         } while (true);
         return ret;
+    }
+
+    private FilePackage getFilePackage(final String name) {
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, false);
+        fp.setName(name);
+        return fp;
     }
 
     private String getContentURL(final String user, final String videoID) {
