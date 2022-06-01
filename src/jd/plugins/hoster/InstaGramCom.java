@@ -22,6 +22,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -50,23 +67,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram.com/p/[A-Za-z0-9_-]+/" })
 public class InstaGramCom extends PluginForHost {
@@ -312,8 +312,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
-     * grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br>
+     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
      *
      * @throws Exception
      */
@@ -373,13 +373,28 @@ public class InstaGramCom extends PluginForHost {
     }
 
     public static void checkErrorsAltAPI(final Account account, final Browser br) throws PluginException {
-        if (br.getHttpConnection().getResponseCode() == 429) {
+        /* Offline errorhandling */
+        if (br.getHttpConnection().getResponseCode() == 200) {
+            /* No error */
+            return;
+        }
+        /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
+        /* E.g. {"message": "Media not found or unavailable", "status": "fail"} */
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            /*
+             * {"message":"login_required","error_title":"Du wurdest abgemeldet","error_body":"Bitte melde dich wieder an."
+             * ,"logout_reason":8,"status":"fail"}
+             */
+            throw new AccountInvalidException();
+        } else if (br.getHttpConnection().getResponseCode() == 429) {
             if (account != null) {
                 /* Account should always be given */
                 throw new AccountUnavailableException("Rate-Limit reached", 5 * 60 * 1000);
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached");
             }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
@@ -908,8 +923,10 @@ public class InstaGramCom extends PluginForHost {
     private boolean isLoggedIn(final Browser br) {
         // return br.getCookies(MAINPAGE).get("sessionid", Cookies.NOTDELETEDPATTERN) != null && br.getCookies(MAINPAGE).get("ds_user_id",
         // Cookies.NOTDELETEDPATTERN) != null;
-        final String fullname = PluginJSonUtils.getJson(br, "full_name");
-        final String has_profile_pic = PluginJSonUtils.getJson(br, "has_profile_pic");
+        /* Unescape possible escaped json */
+        final String cleaned = PluginJSonUtils.unescape(br.getRequest().getHtmlCode());
+        final String fullname = PluginJSonUtils.getJson(cleaned, "full_name");
+        final String has_profile_pic = PluginJSonUtils.getJson(cleaned, "has_profile_pic");
         if (fullname != null && has_profile_pic != null) {
             return true;
         } else {

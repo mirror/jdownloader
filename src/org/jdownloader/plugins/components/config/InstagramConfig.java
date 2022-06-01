@@ -87,20 +87,12 @@ public interface InstagramConfig extends PluginConfigInterface {
             return "Profile crawler: Crawl profile picture?";
         }
 
-        public String getProfileCrawlerAPIPreference_label() {
-            return "Profile crawler: Set API preference";
-        }
-
         public String getProfileTaggedCrawledMaxItemsLimit_label() {
             return "Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]";
         }
 
         public String getHashtagCrawlerMaxItemsLimit_label() {
             return "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawler]";
-        }
-
-        public String getHashtagCrawlerAPIPreference_label() {
-            return "Hashtag crawler: Set API preference";
         }
 
         public String getCrawlerAbortOnRateLimitReached_label() {
@@ -346,14 +338,6 @@ public interface InstagramConfig extends PluginConfigInterface {
     void setProfileCrawlerCrawlProfilePicture(boolean b);
 
     @AboutConfig
-    @DefaultEnumValue("API_WEBSITE")
-    @Order(80)
-    @DescriptionForConfigEntry("Profile crawler: Set API preference")
-    APIPreference getProfileCrawlerAPIPreference();
-
-    void setProfileCrawlerAPIPreference(final APIPreference apiPreference);
-
-    @AboutConfig
     @SpinnerValidator(min = 0, max = 10000, step = 25)
     @DefaultIntValue(25)
     @DescriptionForConfigEntry("Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]")
@@ -373,14 +357,6 @@ public interface InstagramConfig extends PluginConfigInterface {
     void setHashtagCrawlerMaxItemsLimit(int items);
 
     @AboutConfig
-    @DefaultEnumValue("API_WEBSITE")
-    @Order(100)
-    @DescriptionForConfigEntry("Hashtag crawler: Set API preference")
-    APIPreference getHashtagCrawlerAPIPreference();
-
-    void setHashtagCrawlerAPIPreference(final APIPreference apiPreference);
-
-    @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("QUIT_ON_RATE_LIMIT_REACHED")
     @DescriptionForConfigEntry("Crawler: Abort crawl process once rate limit is reached?")
@@ -397,25 +373,24 @@ public interface InstagramConfig extends PluginConfigInterface {
     int getGlobalRequestIntervalLimitMilliseconds();
 
     void setGlobalRequestIntervalLimitMilliseconds(int milliseconds);
-
-    public static enum APIPreference implements LabelInterface {
-        API_WEBSITE {
-            @Override
-            public String getLabel() {
-                return "Prefer API over website";
-            }
-        },
-        API_ONLY {
-            @Override
-            public String getLabel() {
-                return "API only";
-            }
-        },
-        WEBSITE_ONLY {
-            @Override
-            public String getLabel() {
-                return "Website only";
-            }
-        };
-    }
+    // public static enum APIPreference implements LabelInterface {
+    // API_WEBSITE {
+    // @Override
+    // public String getLabel() {
+    // return "Prefer API over website";
+    // }
+    // },
+    // API_ONLY {
+    // @Override
+    // public String getLabel() {
+    // return "API only";
+    // }
+    // },
+    // WEBSITE_ONLY {
+    // @Override
+    // public String getLabel() {
+    // return "Website only";
+    // }
+    // };
+    // }
 }

@@ -66,10 +66,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.TwitterCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class TwitterCom extends PluginForDecrypt {
-    public TwitterCom(PluginWrapper wrapper) {
+public class TwitterComCrawler extends PluginForDecrypt {
+    public TwitterComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -149,8 +150,8 @@ public class TwitterCom extends PluginForDecrypt {
         }
         if (param.getCryptedUrl().matches(TYPE_CARD)) {
             return this.crawlCard(param, account);
-        } else if (param.getCryptedUrl().matches(jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED)) {
-            return this.crawlAPISingleTweet(param, new Regex(param.getCryptedUrl(), jd.plugins.hoster.TwitterCom.TYPE_VIDEO_EMBED).getMatch(0), account);
+        } else if (param.getCryptedUrl().matches(TwitterCom.TYPE_VIDEO_EMBED)) {
+            return this.crawlAPISingleTweet(param, new Regex(param.getCryptedUrl(), TwitterCom.TYPE_VIDEO_EMBED).getMatch(0), account);
         } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {
             return this.crawlSingleTweet(param, account);
         } else {
@@ -263,7 +264,7 @@ public class TwitterCom extends PluginForDecrypt {
 
     public static Browser prepAPIHeaders(final Browser br) {
         br.getHeaders().put("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA");
-        final String csrftoken = br.getCookie("twitter.com", jd.plugins.hoster.TwitterCom.COOKIE_KEY_LOGINED_CSRFTOKEN, Cookies.NOTDELETEDPATTERN);
+        final String csrftoken = br.getCookie("twitter.com", TwitterCom.COOKIE_KEY_LOGINED_CSRFTOKEN, Cookies.NOTDELETEDPATTERN);
         if (csrftoken != null) {
             /* Indicates that the user is loggedin. */
             br.getHeaders().put("x-csrf-token", csrftoken);
@@ -361,6 +362,7 @@ public class TwitterCom extends PluginForDecrypt {
                 fp.setComment(tweetText);
             }
         }
+        final String contentURL = createTwitterPostURL(username, tweetID);
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
@@ -410,9 +412,9 @@ public class TwitterCom extends PluginForDecrypt {
                             filename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
                         }
                         dl.setProperty(PROPERTY_BITRATE, highestBitrate);
-                        dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL, streamURL);
+                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, streamURL);
                         if (!StringUtils.isEmpty(hlsMaster)) {
-                            dl.setProperty(jd.plugins.hoster.TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
+                            dl.setProperty(TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
                         }
                         dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
                     } else if (type.equals("photo")) {
@@ -434,6 +436,7 @@ public class TwitterCom extends PluginForDecrypt {
                         /* Unknown type -> This should never happen! */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type:" + type);
                     }
+                    dl.setContentUrl(contentURL);
                     if (filename != null) {
                         dl.setFinalFileName(filename);
                         dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, filename);
@@ -463,6 +466,7 @@ public class TwitterCom extends PluginForDecrypt {
             /* Fallback handling for very old (???) content */
             /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
             final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
+            singleVideo.setContentUrl(contentURL);
             final String finalFilename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
             singleVideo.setFinalFileName(finalFilename);
             singleVideo.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, finalFilename);
@@ -497,7 +501,7 @@ public class TwitterCom extends PluginForDecrypt {
                 itemsSkippedDueToPluginSettings += urlsInPostText.length;
             }
             if (cfg.isAddTweetTextAsTextfile()) {
-                final DownloadLink text = this.createDownloadlink(createTwitterPostURL(username, tweetID));
+                final DownloadLink text = this.createDownloadlink(contentURL);
                 final String filename;
                 if (cfg.isUseOriginalFilenames() && lastFoundOriginalFilename != null) {
                     /*
