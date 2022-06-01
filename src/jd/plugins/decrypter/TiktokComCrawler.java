@@ -56,6 +56,11 @@ public class TiktokComCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public void init() {
+        TiktokCom.setRequestLimits();
+    }
+
     public static List<String[]> getPluginDomains() {
         return TiktokCom.getPluginDomains();
     }
@@ -249,20 +254,12 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);
-            /* Find corresponding userID. */
-            /* This didn't work. Use website instead. */
-            // TiktokCom.prepBRAPI(this.br);
-            // final UrlQuery query0 = TiktokCom.getAPIQuery();
-            // query0.add("keyword", Encoding.urlEncode(usernameSlug));
-            // query0.add("cursor", "0");
-            // query0.add("count", "10");
-            // query0.add("type", "1");
-            // query0.add("hot_search", "0");
-            // query0.add("search_source", "discover");
-            // TiktokCom.accessAPI(br, "/discover/search", query0);
+            /* Find userID */
             final Browser website = br.cloneBrowser();
-            website.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36");
-            website.getPage("https://www." + this.getHost() + "/api/search/user/preview/?aid=1988&app_language=en&app_name=tiktok_web&battery_info=1&browser_language=en-US&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F101.0.4951.67%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true&device_id=" + generateDeviceID() + "&device_platform=web_pc&focus_state=true&from_page=fyp&history_len=2&history_list=%255B%255D&is_fullscreen=false&is_page_visible=true&keyword=" + Encoding.urlEncode(usernameSlug) + "&os=windows&priority_region=&referer=&region=US&screen_height=1080&screen_width=1920");
+            TiktokCom.prepBRWebAPI(website);
+            final UrlQuery query = TiktokCom.getWebsiteQuery();
+            query.add("keyword", Encoding.urlEncode(usernameSlug));
+            website.getPage("https://www." + this.getHost() + "/api/search/user/preview/?" + query.toString());
             final Map<String, Object> searchResults = JSonStorage.restoreFromString(website.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(searchResults, "sug_list/{0}/extra_info");
             if (user == null) {
@@ -357,7 +354,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /** Returns random 19 digit string. */
-    private static String generateDeviceID() {
+    public static String generateDeviceID() {
         return TiktokCom.generateRandomString("1234567890", 19);
     }
 
