@@ -1,7 +1,9 @@
 package jd.plugins.hoster;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -10,6 +12,7 @@ import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
@@ -98,21 +101,27 @@ public class LinkCrawlerRetry extends PluginForHost {
                     LinkCollector.getInstance().getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
                         @Override
                         protected Void run() throws RuntimeException {
-                            LinkCollector.getInstance().removeChildren(pv.getChildren());
-                            final StringBuilder sb = new StringBuilder();
-                            for (final CrawledLink crawledLink : pv.getChildren()) {
-                                if (sb.length() > 0) {
-                                    sb.append("\r\n");
+                            final List<CrawledLink> links = new ArrayList<CrawledLink>(pv.getChildren());
+                            LinkCollector.getInstance().removeChildren(links);
+                            for (final CrawledLink crawledLink : links) {
+                                final DownloadLink downloadLink = crawledLink.getDownloadLink();
+                                if (downloadLink != null) {
+                                    // allow LinkCrawler to process this link again
+                                    downloadLink.setDefaultPlugin(null);
                                 }
-                                sb.append(crawledLink.getURL());
                             }
-                            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails(), sb.toString()));
+                            retry(links);
                             return null;
                         }
                     });
                 }
             }));
         }
+    }
+
+    private void retry(List<CrawledLink> links) {
+        final JobLinkCrawler jlc = LinkCollector.getInstance().newJobLinkCrawler(new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails()));
+        jlc.crawl(links);
     }
 
     @Override
@@ -129,15 +138,15 @@ public class LinkCrawlerRetry extends PluginForHost {
                     DownloadController.getInstance().getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
                         @Override
                         protected Void run() throws RuntimeException {
-                            DownloadController.getInstance().removeChildren(pv.getChildren());
-                            final StringBuilder sb = new StringBuilder();
-                            for (final DownloadLink downloadLink : pv.getChildren()) {
-                                if (sb.length() > 0) {
-                                    sb.append("\r\n");
-                                }
-                                sb.append(downloadLink.getPluginPatternMatcher());
+                            final List<DownloadLink> downloadLinks = new ArrayList<DownloadLink>(pv.getChildren());
+                            DownloadController.getInstance().removeChildren(downloadLinks);
+                            final List<CrawledLink> links = new ArrayList<CrawledLink>();
+                            for (final DownloadLink downloadLink : downloadLinks) {
+                                // allow LinkCrawler to process this link again
+                                downloadLink.setDefaultPlugin(null);
+                                links.add(new CrawledLink(downloadLink));
                             }
-                            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails(), sb.toString()));
+                            retry(links);
                             return null;
                         }
                     });

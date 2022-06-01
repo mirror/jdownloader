@@ -31,20 +31,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TwitterConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -68,8 +58,21 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TwitterCom;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterComCrawler extends PluginForDecrypt {
+    private String resumeURL = null;
+
     public TwitterComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -134,6 +137,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        resumeURL = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty("twitterResume") : null;
         br.setAllowedResponseCodes(new int[] { 429 });
         final String newURL = param.getCryptedUrl().replaceFirst("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
         if (!newURL.equals(param.getCryptedUrl())) {
@@ -753,7 +757,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         query.append("count", expected_items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
         final String addedURLWithoutParams = URLHelper.getURL(new URL(param.getCryptedUrl()), false, false, false).toString();
-        final UrlQuery addedURLQuery = UrlQuery.parse(param.getCryptedUrl());
+        final UrlQuery addedURLQuery = UrlQuery.parse(resumeURL);
         Number maxTweetsToCrawl = null;
         final String maxTweetDateStr = addedURLQuery.get("max_date");
         long crawlUntilTimestamp = -1;
@@ -819,8 +823,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
             logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
             if (tweetMap.size() < expected_items_per_page) {
                 /**
-                 * This can sometimes happen! </br>
-                 * We'll ignore this and let it run into our other fail-safe for when a page contains zero items.
+                 * This can sometimes happen! </br> We'll ignore this and let it run into our other fail-safe for when a page contains zero
+                 * items.
                  */
                 logger.info(String.format("Current page contained only %d of max. %d expected objects --> Reached the end?", tweetMap.size(), expected_items_per_page));
                 // break;
@@ -850,7 +854,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             addedURLQuery.addAndReplace("page", Integer.toString(page));
             addedURLQuery.addAndReplace("totalCrawledTweetsCount", Integer.toString(totalCrawledTweetsCount));
             addedURLQuery.addAndReplace("nextCursor", Encoding.urlEncode(nextCursor));
-            param.setCryptedUrl(addedURLWithoutParams + "?" + addedURLQuery.toString());
+            resumeURL = addedURLWithoutParams + "?" + addedURLQuery.toString();
             page++;
             /* Wait before accessing next page. */
             this.sleep(cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds(), param);
@@ -865,6 +869,15 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    @Override
+    protected DownloadLink createLinkCrawlerRetry(final CrawledLink link, final DecrypterRetryException retryException) {
+        final DownloadLink ret = super.createLinkCrawlerRetry(link, retryException);
+        if (ret != null && resumeURL != null) {
+            ret.setProperty("twitterResume", resumeURL);
+        }
+        return ret;
     }
 
     private DownloadLink getDummyErrorProfileContainsNoLikedItems(final String username) {
@@ -888,8 +901,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
-     * Scroll down to "Twitter API error codes"
+     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br> Scroll down to "Twitter API error codes"
      */
     private void handleErrorsAPI(final Browser br) throws Exception {
         Map<String, Object> entries = null;
@@ -915,13 +927,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 63:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // case 88:
-                /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
-                // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
-                // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
-                // logger.info("Rate-limit reached | Resets in: " +
-                // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
-                // }
+                    // case 88:
+                    /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
+                    // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
+                    // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
+                    // logger.info("Rate-limit reached | Resets in: " +
+                    // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
+                    // }
                 case 109:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 144:
