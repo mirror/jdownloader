@@ -65,7 +65,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.TwitterCom.getPluginDomains();
+        return jd.plugins.decrypter.TwitterComCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -130,7 +130,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void init() {
         super.init();
-        jd.plugins.decrypter.TwitterCom.setRequestIntervallLimits();
+        jd.plugins.decrypter.TwitterComCrawler.setRequestIntervallLimits();
     }
 
     private static Object LOCK = new Object();
@@ -150,7 +150,7 @@ public class TwitterCom extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_FILENAME_FROM_CRAWLER);
+            final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
             if (filenameFromCrawler != null) {
                 link.setFinalFileName(filenameFromCrawler);
             }
@@ -158,7 +158,7 @@ public class TwitterCom extends PluginForHost {
             prepBR(this.br);
             /* Most items will come from crawler. */
             String filename = null;
-            final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_FILENAME_FROM_CRAWLER);
+            final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
             if (filenameFromCrawler != null) {
                 link.setFinalFileName(filenameFromCrawler);
                 filename = filenameFromCrawler;
@@ -199,13 +199,13 @@ public class TwitterCom extends PluginForHost {
                      * 2022-02-02: Legacy handling: TODO: Hardcode set 'useCrawler' to false after 04-2022 to fix rare issue with single
                      * embedded video URLs. Don't do this earlier as it will kill filenames of existing videos!
                      */
-                    if (link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY)) {
-                        if (link.getBooleanProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false)) {
+                    if (link.hasProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY)) {
+                        if (link.getBooleanProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false)) {
                             useCrawler = true;
                         } else {
                             useCrawler = false;
                         }
-                    } else if (!link.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
+                    } else if (!link.hasProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_BITRATE)) {
                         /* Link was added to host plugin directly -> Don't use crawler handling. */
                         useCrawler = false;
                     } else {
@@ -214,7 +214,7 @@ public class TwitterCom extends PluginForHost {
                     if (useCrawler) {
                         logger.info("Obtaining new directurl via crawler");
                         final PluginForDecrypt decrypter = this.getNewPluginForDecryptInstance(this.getHost());
-                        final String tweetVideoURL = jd.plugins.decrypter.TwitterCom.createVideourl(tweetID);
+                        final String tweetVideoURL = jd.plugins.decrypter.TwitterComCrawler.createVideourl(tweetID);
                         final CryptedLink param = new CryptedLink(tweetVideoURL, link);
                         final ArrayList<DownloadLink> results = decrypter.decryptIt(param, null);
                         if (results.isEmpty()) {
@@ -237,17 +237,17 @@ public class TwitterCom extends PluginForHost {
                                  * before. </br>
                                  * TODO: Remove it after 08-2022
                                  */
-                                if ((link.getName() != null && link.getName().endsWith(".mp4")) || StringUtils.equals(link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_TYPE), "video")) {
+                                if ((link.getName() != null && link.getName().endsWith(".mp4")) || StringUtils.equals(link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_TYPE), "video")) {
                                     result = tmp;
                                     break;
                                 }
                             }
-                            result = results.get(link.getIntegerProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_MEDIA_INDEX, 0));
+                            result = results.get(link.getIntegerProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_MEDIA_INDEX, 0));
                         }
                         if (result == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to refresh directurl");
                         }
-                        if (!result.hasProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_BITRATE)) {
+                        if (!result.hasProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_BITRATE)) {
                             /*
                              * This should never happen but it can if the user e.g. for some reason adds a non-video single tweet URL as URL
                              * matching this video embed pattern.
@@ -295,10 +295,10 @@ public class TwitterCom extends PluginForHost {
                         final Browser brc = br.cloneBrowser();
                         brc.setAllowedResponseCodes(400);
                         synchronized (LOCK) {
-                            jd.plugins.decrypter.TwitterCom.prepAPIHeaders(brc);
+                            jd.plugins.decrypter.TwitterComCrawler.prepAPIHeaders(brc);
                             /* Set guest_token header if needed. */
                             if (account == null) {
-                                final String guest_token = jd.plugins.decrypter.TwitterCom.getAndSetGuestToken(this, brc);
+                                final String guest_token = jd.plugins.decrypter.TwitterComCrawler.getAndSetGuestToken(this, brc);
                                 if (guest_token != null) {
                                     brc.getHeaders().put("x-guest-token", guest_token);
                                 } else {
@@ -334,11 +334,11 @@ public class TwitterCom extends PluginForHost {
                                      * 2019-08-20: {"errors":[{"code":239,"message":"Bad guest token."}]}
                                      */
                                     logger.info("Possible token failure 239, retrying");
-                                    jd.plugins.decrypter.TwitterCom.resetGuestToken();
+                                    jd.plugins.decrypter.TwitterComCrawler.resetGuestToken();
                                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 3 * 60 * 1000l);
                                 } else if (errorcode.equals("353")) {
                                     logger.info("Possible token failure 353, retrying");
-                                    jd.plugins.decrypter.TwitterCom.resetGuestToken();
+                                    jd.plugins.decrypter.TwitterComCrawler.resetGuestToken();
                                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 353", 2 * 60 * 1000l);
                                 } else {
                                     logger.warning("Unknown error");
@@ -485,7 +485,7 @@ public class TwitterCom extends PluginForHost {
 
     /** Returns text of this tweet. Can be null as not all tweets have a post-text! */
     private String getTweetText(final DownloadLink link) {
-        return link.getStringProperty(jd.plugins.decrypter.TwitterCom.PROPERTY_TWEET_TEXT);
+        return link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_TWEET_TEXT);
     }
 
     private static String regexVideoVmapHighestQualityURL(final Browser br) {
@@ -647,7 +647,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     private boolean checkLogin(final Browser br) throws IOException {
-        jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
+        jd.plugins.decrypter.TwitterComCrawler.prepAPIHeaders(br);
         br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
         if (br.getRequest().getHttpConnection().getResponseCode() == 200) {
             return true;
