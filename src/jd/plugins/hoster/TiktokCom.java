@@ -55,10 +55,16 @@ import jd.plugins.decrypter.TiktokComCrawler;
 public class TiktokCom extends PluginForHost {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
-        try {
-            Browser.setRequestIntervalLimitGlobal("tiktok.com", true, 1000);
-        } catch (final Throwable e) {
-        }
+        // this.enablePremium("https://tiktok.com/");
+    }
+
+    @Override
+    public void init() {
+        setRequestLimits();
+    }
+
+    public static void setRequestLimits() {
+        Browser.setRequestIntervalLimitGlobal("tiktok.com", true, 1000);
     }
 
     @Override
@@ -508,6 +514,11 @@ public class TiktokCom extends PluginForHost {
         return br;
     }
 
+    public static Browser prepBRWebAPI(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36");
+        return br;
+    }
+
     public static UrlQuery getAPIQuery() {
         final UrlQuery query = new UrlQuery();
         query.add("version_name", API_VERSION_NAME);
@@ -542,6 +553,41 @@ public class TiktokCom extends PluginForHost {
         query.add("ssmix", "a");
         query.add("as", "a1qwert123");
         query.add("cp", "cbfhckdckkde1");
+        return query;
+    }
+
+    public static UrlQuery getWebsiteQuery() {
+        final UrlQuery query = new UrlQuery();
+        query.add("aid", "1459");
+        query.add("app_language", "en");
+        query.add("app_name", "tiktok_web");
+        query.add("battery_info", "1");
+        query.add("browser_language", "en-US");
+        query.add("browser_name", "Mozilla");
+        query.add("browser_online", "true");
+        query.add("browser_platform", "Win32");
+        query.add("browser_version", "5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F102.0.5005.62%20Safari%2F537.36");
+        query.add("channel", "tiktok_web");
+        query.add("cookie_enabled", "true");
+        query.add("device_id", TiktokComCrawler.generateDeviceID());
+        query.add("device_platform", "web_pc");
+        query.add("focus_state", "true");
+        /* Can e.g. be "user" or "fyp". We'll leave that blank for now. */
+        query.add("from_page", "");
+        query.add("history_len", "0");
+        query.add("is_fullscreen", "false");
+        query.add("is_page_visible", "true");
+        query.add("os", "windows");
+        query.add("priority_region", "US");
+        query.add("referer", "https%3A%2F%2Fwww.tiktok.com%2F");
+        query.add("screen_height", "1080");
+        query.add("screen_width", "1920");
+        query.add("tz_name", "America%2FMonterrey");
+        // query.add("verifyFp", "");
+        query.add("webcast_language", "en-US");
+        // query.add("msToken", "");
+        // query.add("X-Bogus", "");
+        // query.add("_signature", "");
         return query;
     }
 

@@ -419,7 +419,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 accountRequired = e;
             }
         }
-        if (accountRequired != null || (urlCheck != null && !br.getURL().contains(urlCheck)) || DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        if (accountRequired != null || (urlCheck != null && !br.getURL().contains(urlCheck))) {
             /*
              * E.g. private gallery and we're not logged in or we're not logged in with an account with the required permissions -> Redirect
              * to main page or URL of the profile which uploaded the gallery.
