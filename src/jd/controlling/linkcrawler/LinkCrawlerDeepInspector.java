@@ -48,7 +48,9 @@ public abstract class LinkCrawlerDeepInspector {
             } else if (completeContentLength == 0) {
                 return false;
             } else if (hasContentType && (!isTextContent(urlConnection) && contentType.matches("(?i)^(application|audio|video|image)/.+"))) {
-                if (contentType.matches("(?i)application/vnd.apple.mpegurl") || contentType.matches("(?i)application/x-mpegurl")) {
+                if (isOtherTextContent(urlConnection)) {
+                    return false;
+                } else if (looksLikeMpegURL(urlConnection)) {
                     return false;
                 } else {
                     return true;
@@ -75,13 +77,17 @@ public abstract class LinkCrawlerDeepInspector {
         return false;
     }
 
+    public static boolean looksLikeMpegURL(URLConnectionAdapter con) {
+        return con != null && (StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl") || StringUtils.equalsIgnoreCase(con.getContentType(), "application/x-mpegurl"));
+    }
+
     public boolean isTextContent(final URLConnectionAdapter urlConnection) {
         return isOtherTextContent(urlConnection) || isPlainTextContent(urlConnection) || isHtmlContent(urlConnection);
     }
 
     public boolean isOtherTextContent(final URLConnectionAdapter urlConnection) {
         final String contentType = urlConnection.getContentType();
-        return StringUtils.containsIgnoreCase(contentType, "application/json") || StringUtils.containsIgnoreCase(contentType, "application/xml");
+        return contentType != null && contentType.matches("(?i)application/[^ ;]*(json|xml).*");
     }
 
     public boolean isPlainTextContent(final URLConnectionAdapter urlConnection) {

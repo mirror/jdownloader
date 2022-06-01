@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
-
-import jd.http.Browser;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
@@ -59,8 +59,15 @@ public class HlsContainer {
     }
 
     public static List<HlsContainer> getHlsQualities(final Browser br) throws Exception {
+        return parseHlsQualities(br.toString(), br);
+    }
+
+    public static List<HlsContainer> parseHlsQualities(final String m3u8, final Browser br) throws Exception {
         final ArrayList<HlsContainer> hlsqualities = new ArrayList<HlsContainer>();
-        final String[][] streams = br.getRegex("#EXT-X-STREAM-INF:?([^\r\n]+)[\r\n]+([^\r\n]+)").getMatches();
+        // TODO: update to support #EXT-X-SESSION-DATA:DATA-ID="com.example.title",LANGUAGE="en", VALUE="This is an example",see
+        // GenericM3u8Decrypter
+        // https://hlsbook.net/adding-session-data-to-a-playlist/
+        final String[][] streams = new Regex(m3u8, "#EXT-X-STREAM-INF:?([^\r\n]+)[\r\n]+([^\r\n]+)").getMatches();
         if (streams != null) {
             for (final String stream[] : streams) {
                 if (StringUtils.isNotEmpty(stream[1])) {
@@ -267,7 +274,6 @@ public class HlsContainer {
         AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "avc\\d+"),
         HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev|hvc)\\d+"),
         UNKNOWN(CODEC_TYPE.UNKNOWN, null, null, null);
-
         private final CODEC_TYPE type;
 
         public CODEC_TYPE getType() {

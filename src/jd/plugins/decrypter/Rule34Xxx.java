@@ -35,6 +35,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.components.config.Rule34xxxConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -111,7 +112,10 @@ public class Rule34Xxx extends PluginForDecrypt {
                     dl.setLinkID(id);
                 }
                 final String extension = getFileNameExtensionFromString(image);
-                if (".webm".equals(extension)) {
+                final ExtensionsFilterInterface fileType = CompiledFiletypeFilter.getExtensionsFilterInterface(extension.replaceFirst("^\\.", ""));
+                if (fileType != null) {
+                    dl.setMimeHint(fileType);
+                } else if (".webm".equals(extension)) {
                     dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.WEBM);
                 } else {
                     dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);

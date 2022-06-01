@@ -266,7 +266,7 @@ public class M3U8Playlist {
                         extXMapURL = segmentURL;
                     }
                 }
-                final M3U8Segment existing = current.getSegment(segmentURL);
+                final M3U8Segment existing = current.getSegment(segmentURL, null);
                 if (existing == null || existing.isByteRange()) {
                     final M3U8Segment lastSegment = current.getLastSegment();
                     final int index = current.addSegment(segmentURL, lastSegmentDuration);
@@ -334,7 +334,7 @@ public class M3U8Playlist {
         if (current != null && current.size() > 0) {
             if (extXMapURL != null && false) {
                 // continue with old handling as normal M3U8Segment
-                final M3U8Segment extXMapSegment = current.getSegment(extXMapURL);
+                final M3U8Segment extXMapSegment = current.getSegment(extXMapURL, null);
                 if (extXMapSegment != null) {
                     current.extXMap = extXMapSegment;
                     current.removeSegment(current.indexOf(extXMapSegment));
@@ -575,7 +575,7 @@ public class M3U8Playlist {
         }
     }
 
-    protected M3U8Segment getSegment(final String url) {
+    protected M3U8Segment getSegment(final String url, long[] byteRange) {
         final List<M3U8Segment> list = map.get(url);
         if (list != null && list.size() > 0) {
             return list.get(0);

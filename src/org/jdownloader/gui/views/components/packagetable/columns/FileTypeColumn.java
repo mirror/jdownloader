@@ -15,9 +15,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 
 public class FileTypeColumn extends ExtTextColumn<AbstractNode> {
-
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -48,25 +47,28 @@ public class FileTypeColumn extends ExtTextColumn<AbstractNode> {
     public boolean isEnabled(final AbstractNode obj) {
         if (obj instanceof CrawledPackage) {
             return ((CrawledPackage) obj).getView().isEnabled();
-        }
-        if (obj instanceof FilePackage) {
+        } else if (obj instanceof FilePackage) {
             return ((FilePackage) obj).getView().isEnabled();
+        } else {
+            return obj.isEnabled();
         }
-        return obj.isEnabled();
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
-        ExtensionsFilterInterface extension = null;
+        final ExtensionsFilterInterface extension;
         if (value instanceof DownloadLink) {
             extension = ((DownloadLink) value).getLinkInfo().getExtension();
         } else if (value instanceof CrawledLink) {
             extension = ((CrawledLink) value).getLinkInfo().getExtension();
+        } else {
+            return null;
         }
         if (extension != null) {
             return extension.name();
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -75,21 +77,25 @@ public class FileTypeColumn extends ExtTextColumn<AbstractNode> {
             return ((DownloadLink) value).getLinkInfo().getIcon();
         } else if (value instanceof CrawledLink) {
             return ((CrawledLink) value).getLinkInfo().getIcon();
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
     protected String getTooltipText(AbstractNode value) {
-        ExtensionsFilterInterface extension = null;
+        final ExtensionsFilterInterface extension;
         if (value instanceof DownloadLink) {
             extension = ((DownloadLink) value).getLinkInfo().getExtension();
         } else if (value instanceof CrawledLink) {
             extension = ((CrawledLink) value).getLinkInfo().getExtension();
+        } else {
+            return null;
         }
         if (extension != null) {
             return extension.getDesc();
+        } else {
+            return null;
         }
-        return null;
     }
 }
