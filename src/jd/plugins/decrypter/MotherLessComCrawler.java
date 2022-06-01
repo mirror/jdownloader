@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -32,15 +31,17 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.MotherLessCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class MotherLessCom extends PluginForDecrypt {
+public class MotherLessComCrawler extends PluginForDecrypt {
     private String      fpName = null;
     private FilePackage fp;
 
-    public MotherLessCom(PluginWrapper wrapper) {
+    public MotherLessComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -67,7 +68,7 @@ public class MotherLessCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            String regex = "https?://(?:(www|members)\\.)?" + buildHostsPatternPart(domains) + "/(g(i|v)?/[\\w\\-_]+/[A-Z0-9]{7}|[A-Z0-9]{6,9}(/[A-Z0-9]{7})?)";
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Z0-9]{6,9}(/[A-Z0-9]{7})?";
             regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/f/[^/]+/(?:images|videos|galleries)";
             regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:m|u)/([^/\\?]+)";
             ret.add(regex);
@@ -118,7 +119,7 @@ public class MotherLessCom extends PluginForDecrypt {
         br.getPage(param.getCryptedUrl());
         final boolean subscriberPremiumOnly = jd.plugins.hoster.MotherLessCom.isWatchSubscriberPremiumOnly(br);
         if (jd.plugins.hoster.MotherLessCom.isDownloadPremiumOnly(br)) {
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("motherless.com/", "motherlessvideos.com/"));
+            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
             dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "registered");
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -132,22 +133,22 @@ public class MotherLessCom extends PluginForDecrypt {
         // Common bug: It can happen that the texts that we use to differ between the kinds of links change so the decrypter breaks down,
         // always check that first!
         else if (subscriberPremiumOnly && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberImage)) {
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("motherless", "premiummotherlesspictures"));
+            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
             dl.setContentUrl(param.getCryptedUrl());
             dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "image");
-            dl.setProperty("onlyregistered", "true");
+            dl.setProperty(MotherLessCom.PROPERTY_ONLYREGISTERED, true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (subscriberPremiumOnly && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberVideo)) {
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("motherless.com/", "motherlessvideos.com/"));
+            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
             dl.setContentUrl(param.getCryptedUrl());
             dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "video");
-            dl.setProperty("onlyregistered", "true");
+            dl.setProperty(MotherLessCom.PROPERTY_ONLYREGISTERED, true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(jd.plugins.hoster.MotherLessCom.html_OFFLINE) || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404") || this.br.getHttpConnection().getResponseCode() == 503) {
             // this can have text which could be contained in previous if statements... has to be last!
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("motherless.com/", "motherlessvideos.com/"));
+            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
             dl.setContentUrl(param.getCryptedUrl());
             dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "offline");
             decryptedLinks.add(dl);
@@ -155,34 +156,35 @@ public class MotherLessCom extends PluginForDecrypt {
         }
         if (param.getCryptedUrl().matches(TYPE_FAVOURITES_ALL)) {
             fpName = this.br.getRegex("<title>([^<>\"]*?)\\- MOTHERLESS\\.COM</title>").getMatch(0);
-            gallery(decryptedLinks, param, progress);
+            crawlGallery(decryptedLinks, param, progress);
         } else {
             String[] SubGal = br.getRegex("(?i)<a href=\"(/[A-Z0-9]+)\" title=\"More [^ ]+ in this gallery\" class=\"pop plain more\">See More &raquo;</a>").getColumn(0);
             if (SubGal != null && SubGal.length != 0) {
                 for (String subuid : SubGal) {
                     br.getPage("://motherless.com" + subuid);
-                    gallery(decryptedLinks, param, progress);
+                    crawlGallery(decryptedLinks, param, progress);
                 }
                 return decryptedLinks;
             }
             final String mediatype = br.getRegex("var __mediatype\\s*=\\s*'([^\"\\']+)'").getMatch(0);
             if (isVideo(br)) {
-                final DownloadLink dlink = createDownloadlink(param.getCryptedUrl().replace("motherless.com/", "motherlessvideos.com/"));
+                final DownloadLink dlink = createDownloadlink(param.getCryptedUrl());
                 dlink.setContentUrl(param.getCryptedUrl());
                 if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_notOnlineYet)) {
-                    jd.plugins.hoster.MotherLessCom.notOnlineYet(dlink, false, false);
-                    dlink.setAvailable(false);
+                    dlink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                } else {
+                    dlink.setAvailable(true);
                 }
                 dlink.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "video");
                 dlink.setName(new Regex(param.getCryptedUrl(), "motherless\\.com/(.+)").getMatch(0));
                 decryptedLinks.add(dlink);
             } else if ("image".equalsIgnoreCase(mediatype)) {
-                final DownloadLink fina = createDownloadlink(param.getCryptedUrl().replace("motherless.com/", "motherlesspictures.com/"));
+                final DownloadLink fina = createDownloadlink(param.getCryptedUrl());
                 fina.setContentUrl(param.getCryptedUrl());
                 fina.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "image");
                 decryptedLinks.add(fina);
             } else {
-                gallery(decryptedLinks, param, progress);
+                crawlGallery(decryptedLinks, param, progress);
             }
         }
         return decryptedLinks;
@@ -201,7 +203,7 @@ public class MotherLessCom extends PluginForDecrypt {
         if (singlelink.startsWith("/")) {
             singlelink = "https://" + this.getHost() + singlelink;
         }
-        String ID = new Regex(singlelink, "https?://motherless\\.com/[A-Z0-9]+/([A-Z0-9]+)").getMatch(0);
+        String ID = new Regex(singlelink, "https?://[^/]+/[A-Z0-9]+/([A-Z0-9]+)").getMatch(0);
         if (ID != null) {
             singlelink = "https://" + this.getHost() + "/" + ID;
         }
@@ -210,7 +212,7 @@ public class MotherLessCom extends PluginForDecrypt {
 
     /** Supports all kinds of multiple page urls that motherless.com has. */
     @SuppressWarnings("deprecation")
-    private void gallery(ArrayList<DownloadLink> ret, final CryptedLink param, ProgressController progress) throws IOException {
+    private void crawlGallery(ArrayList<DownloadLink> ret, final CryptedLink param, ProgressController progress) throws IOException {
         String relative_path = null;
         final HashSet<String> dupes = new HashSet<String>();
         if (param.getCryptedUrl().matches(TYPE_FAVOURITES_ALL)) {
@@ -282,20 +284,18 @@ public class MotherLessCom extends PluginForDecrypt {
                             singlelink = "https://" + this.getHost() + "/" + contentID;
                         }
                         singlelink = formLink(singlelink);
-                        final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
+                        final DownloadLink dl = createDownloadlink(singlelink);
                         dl.setContentUrl(singlelink);
                         dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "video");
-                        // fast add.
                         dl.setAvailable(true);
                         if (relative_path != null) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
                         }
                         final String title = regexMediaTitle(br, contentID);
                         if (title != null) {
-                            dl.setName(Encoding.htmlDecode(title).trim() + ".mp4");
-                        } else {
-                            dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                            dl.setProperty(MotherLessCom.PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
                         }
+                        MotherLessCom.setFilename(dl);
                         ret.add(dl);
                     }
                 }
@@ -308,20 +308,18 @@ public class MotherLessCom extends PluginForDecrypt {
                             continue;
                         }
                         singlelink = formLink(singlelink);
-                        final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
+                        final DownloadLink dl = createDownloadlink(singlelink);
                         dl.setContentUrl(singlelink);
                         dl.setProperty(jd.plugins.hoster.MotherLessCom.PROPERTY_TYPE, "image");
-                        // fast add.
                         dl.setAvailable(true);
                         if (relative_path != null) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
                         }
                         final String title = regexMediaTitle(br, contentID);
                         if (title != null) {
-                            dl.setName(Encoding.htmlDecode(title).trim() + ".jpg");
-                        } else {
-                            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                            dl.setProperty(MotherLessCom.PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
                         }
+                        MotherLessCom.setFilename(dl);
                         ret.add(dl);
                     }
                 }
@@ -367,7 +365,7 @@ public class MotherLessCom extends PluginForDecrypt {
         }
     }
 
-    private String regexMediaTitle(final Browser br, final String contentID) {
+    private static String regexMediaTitle(final Browser br, final String contentID) {
         return br.getRegex("<a href=\"[^\"]+[^/]+/" + contentID + "\" title=\"([^\"]+)\"").getMatch(0);
     }
 

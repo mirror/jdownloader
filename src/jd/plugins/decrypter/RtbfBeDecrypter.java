@@ -34,8 +34,12 @@ import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface;
@@ -59,8 +63,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Ce contenu n'est plus disponible") || br.getURL().equals("https://www.rtbf.be/auvio/")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (parameter.matches(".+(categorie/|/archives).+")) {
             crawlCategory(decryptedLinks, parameter);
@@ -81,12 +84,12 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> crawlSingleVideo(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws Exception {
+    private ArrayList<DownloadLink> crawlSingleVideo(final ArrayList<DownloadLink> decryptedLinks, final String url) throws Exception {
         final RtbfBeConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.RtbfBe.RtbfBeConfigInterface.class);
         fastLinkcheck = cfg.isFastLinkcheckEnabled();
         String date_formatted = null;
         final String decryptedhost = "http://" + this.getHost() + "decrypted/";
-        final String id_url = new Regex(parameter, "(\\d+)$").getMatch(0);
+        final String id_url = new Regex(url, "(\\d+)$").getMatch(0);
         String video_id = br.getRegex("/embed/media\\?id=(\\d+)").getMatch(0);
         if (video_id == null) {
             /*
@@ -102,7 +105,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         }
         if (title == null) {
             /* Fallback 2 - title with date (can contain subtitle as well!) --> Grab title without date */
-            title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\- \\d{2}/\\d{2}/\\d{4}").getMatch(0);
+            title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)").getMatch(0);
         }
         /* 2017-03-01: Removed subtitle for now as we got faulty names before. Title should actually contain everything we need! */
         final String subtitle = this.br.getRegex("<h2 class=\"rtbf\\-media\\-item__subtitle\">([^<>]+)</h2>").getMatch(0);
@@ -113,8 +116,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         br.getPage("/auvio/embed/media?id=" + video_id + "&autoplay=1");
         final boolean eventually_geoblocked = br.containsHTML("Ce contenu (n'est plus disponible|est visible uniquement en Belgique)");
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final String video_json_metadata = this.br.getRegex("<script type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
         String video_json = br.getRegex("<div class=\"js\\-player\\-embed.*?\" data\\-video=\"(.*?)\">").getMatch(0);
@@ -126,10 +128,10 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         }
         if (video_json == null) {
             if (eventually_geoblocked) {
-                decryptedLinks.add(createOfflinelink(parameter, "GEO_BLOCKED"));
-                return decryptedLinks;
+                throw new DecrypterRetryException(RetryReason.GEO, "GEO_BLOCKED_" + id_url);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            return null;
         }
         // this is json encoded with htmlentities.
         video_json = HTMLEntities.unhtmlentities(video_json);
@@ -139,7 +141,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
         if (title == null) {
             title = PluginJSonUtils.getJsonValue(video_json, "title");
         }
-        if (title == null || title.equalsIgnoreCase("")) {
+        if (StringUtils.isEmpty(title)) {
             /* Fallback */
             title = video_id;
         }
@@ -211,7 +213,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                 dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String filename = String.format(format_filename, title, protocol, height);
                 final String linkid = String.format(linkid_format, video_id, protocol, height_for_quality_selection);
-                setDownloadlinkProperties(dl, parameter, date_formatted, filename, linkid, finallink);
+                setDownloadlinkProperties(dl, url, date_formatted, filename, linkid, finallink);
                 all_found_downloadlinks.put("http_mp4_" + height_for_quality_selection, dl);
             }
         }
@@ -237,7 +239,7 @@ public class RtbfBeDecrypter extends PluginForDecrypt {
                     highestHlsBandwidth = hlscontainer.getBandwidth();
                     best_hls_quality = dl;
                 }
-                setDownloadlinkProperties(dl, parameter, date_formatted, filename, linkid, finallink);
+                setDownloadlinkProperties(dl, url, date_formatted, filename, linkid, finallink);
                 all_found_downloadlinks.put("hls_mp4_" + height_for_quality_selection, dl);
             }
         }

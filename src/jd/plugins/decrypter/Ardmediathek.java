@@ -450,8 +450,8 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final String url_json = String.format("https://www.ndr.de/%s-ardjson.json", videoID);
         br.getPage(url_json);
-        final Map<String, Object> ardJsonObject = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        return this.crawlARDJsonExtended(param, ardJsonObject);
+        final Map<String, Object> ndrJsonObject = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        return this.crawlNdrJson(param, ndrJsonObject);
     }
 
     private ArrayList<DownloadLink> crawlWdrMediathek(final CryptedLink param) throws Exception {
@@ -1078,6 +1078,42 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         final HashMap<String, DownloadLink> foundQualitiesMap = this.crawlARDJson(param, metadata, root);
+        return this.handleUserQualitySelection(metadata, foundQualitiesMap);
+    }
+
+    private ArrayList<DownloadLink> crawlNdrJson(final CryptedLink param, final Map<String, Object> root) throws Exception {
+        final ArdMetadata metadata = new ArdMetadata();
+        final Map<String, Object> meta = (Map<String, Object>) root.get("meta");
+        final String title = (String) meta.get("title");
+        final String seriesTitle = (String) meta.get("seriesTitle");
+        if (!StringUtils.isEmpty(seriesTitle) && !StringUtils.isEmpty(title)) {
+            metadata.setTitle(seriesTitle + " - " + title);
+        } else if (!StringUtils.isEmpty(seriesTitle)) {
+            metadata.setTitle(seriesTitle);
+        } else if (!StringUtils.isEmpty(title)) {
+            metadata.setTitle(title);
+        }
+        final String broadcastedOnDateTime = meta.get("broadcastedOnDateTime").toString();
+        final long timestamp = TimeFormatter.getMilliSeconds(broadcastedOnDateTime, "dd.MM.yyyy HH:mm", Locale.GERMANY);
+        metadata.setDateTimestamp(timestamp);
+        final String description = (String) meta.get("synopsis");
+        if (!StringUtils.isEmpty(description)) {
+            metadata.setDescription(description);
+        }
+        final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
+        final List<Map<String, Object>> streams = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(root, "streams/{0}/media");
+        for (final Map<String, Object> stream : streams) {
+            final String mimeType = stream.get("mimeType").toString();
+            final String url = stream.get("url").toString();
+            if (mimeType.equals("video/mp4")) {
+                final Number width = (Number) stream.get("maxHResolutionPx");
+                this.addQualityHTTP(param, metadata, foundQualitiesMap, url, null, VideoResolution.getByWidth(width.intValue()), false);
+            } else if (mimeType.equals("application/vnd.apple.mpegurl")) {
+                this.addHLS(param, metadata, foundQualitiesMap, br, url, false);
+            } else {
+                logger.warning("Skipping unsupported mimeType: " + mimeType);
+            }
+        }
         return this.handleUserQualitySelection(metadata, foundQualitiesMap);
     }
 
