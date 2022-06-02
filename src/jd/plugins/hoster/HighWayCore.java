@@ -782,9 +782,9 @@ public abstract class HighWayCore extends UseNet {
         }
         logger.info("Performing full login");
         if (this.useApikeyLogin()) {
-            br.postPage(this.getAPIBase() + "?login", "apikey=" + Encoding.urlEncode(account.getPass()));
+            br.postPage(getAPIBase() + "?login", "apikey=" + Encoding.urlEncode(account.getPass()));
         } else {
-            br.postPage(this.getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
+            br.postPage(getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
         }
         this.checkErrors(this.br, this.getDownloadLink(), account);
         /* No Exception --> Assume that login was successful */

@@ -92,8 +92,8 @@ public class VKontakteRuHoster extends PluginForHost {
     /* Settings stuff */
     public static final String  FASTLINKCHECK_VIDEO                                                         = "FASTLINKCHECK_VIDEO";
     public static final String  FASTCRAWL_VIDEO                                                             = "FASTCRAWL_VIDEO";
-    private static final String FASTLINKCHECK_PICTURES                                                      = "FASTLINKCHECK_PICTURES_V2";
-    private static final String FASTLINKCHECK_AUDIO                                                         = "FASTLINKCHECK_AUDIO";
+    public static final String  FASTLINKCHECK_PICTURES                                                      = "FASTLINKCHECK_PICTURES_V2";
+    public static final String  FASTLINKCHECK_AUDIO                                                         = "FASTLINKCHECK_AUDIO";
     public static final String  VIDEO_QUALITY_SELECTION_MODE                                                = "VIDEO_QUALITY_SELECTION_MODE";
     public static final String  PREFERRED_VIDEO_QUALITY                                                     = "PREFERRED_VIDEO_QUALITY";
     public static final String  VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME                                      = "VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME";
@@ -112,7 +112,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  VKVIDEO_ALBUM_USEIDASPACKAGENAME                                            = "VKVIDEO_ALBUM_USEIDASPACKAGENAME";
     public static final String  VKVIDEO_USEIDASPACKAGENAME                                                  = "VKVIDEO_USEIDASPACKAGENAME";
     private static final String VKAUDIOS_USEIDASPACKAGENAME                                                 = "VKAUDIOS_USEIDASPACKAGENAME";
-    private static final String VKDOCS_USEIDASPACKAGENAME                                                   = "VKDOCS_USEIDASPACKAGENAME";
+    public static final String  VKDOCS_USEIDASPACKAGENAME                                                   = "VKDOCS_USEIDASPACKAGENAME";
     private static final String VKDOCS_ADD_UNIQUE_ID                                                        = "VKDOCS_ADD_UNIQUE_ID";
     private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME                             = "VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME";
     private static final String VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME = "VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME";
@@ -125,7 +125,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private String              finalUrl                                                                    = null;
     private String              ownerID                                                                     = null;
     private String              contentID                                                                   = null;
-    private static final String ALPHANUMERIC                                                                = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
+    private final String        ALPHANUMERIC                                                                = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
     private String              vkID                                                                        = null;
     /* Properties */
     /* General */
@@ -135,6 +135,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static String        PROPERTY_GENERAL_DATE                                                       = "date";
     public static String        PROPERTY_GENERAL_UPLOADER                                                   = "uploader";
     public static final String  PROPERTY_GENERAL_directlink                                                 = "directlink";
+    public static final String  PROPERTY_GENERAL_mainlink                                                   = "mainlink";
     /* Can be given for any content if it is part of a wall post */
     public static String        PROPERTY_GENERAL_wall_post_id                                               = "wall_post_id";
     /* For single photos */
@@ -331,23 +332,17 @@ public class VKontakteRuHoster extends PluginForHost {
                      */
                     final String postID = link.getStringProperty("postID", null);
                     final String fromId = link.getStringProperty("fromId", null);
-                    boolean failed = false;
                     if (postID != null && fromId != null) {
                         logger.info("Trying to refresh audiolink directlink via wall-handling");
                         final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
                         br.postPage(getBaseURL() + "/audio", post);
                         url = br.getRegex("\"0\":\"" + Pattern.quote(ownerID) + "\",\"1\":\"" + Pattern.quote(contentID) + "\",\"2\":(\"[^\"]+\")").getMatch(0);
-                        if (url == null) {
-                            /* Try other way below. */
-                            failed = true;
-                        } else {
-                            /* Decodes the json string */
+                        if (url != null) {
+                            /* Decode the json string */
                             url = (String) JavaScriptEngineFactory.jsonToJavaObject(url);
                         }
-                    } else {
-                        failed = true;
                     }
-                    if (failed) {
+                    if (url == null) {
                         logger.info("refreshing audiolink directlink via album-handling");
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
@@ -360,29 +355,20 @@ public class VKontakteRuHoster extends PluginForHost {
                          * both variants.
                          */
                         postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
-                        url = audioGetDirectURL();
+                        url = audioGetDirectURL(br);
                         if (url == null) {
                             postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
-                            url = audioGetDirectURL();
+                            url = audioGetDirectURL(br);
                             if (url == null) {
                                 postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
-                                url = audioGetDirectURL();
+                                url = audioGetDirectURL(br);
                             }
                         }
                     }
                     if (url == null) {
-                        if (failed) {
-                            /*
-                             * 2017-01-05: Changed from ERROR_FILE_NOT_FOUND to ERROR_TEMPORARILY_UNAVAILABLE --> Until now we never had a
-                             * good test case to identify offline urls.
-                             */
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue - content might be offline", 5 * 60 * 1000l);
-                        } else {
-                            logger.warning("Failed to refresh audiolink directlink");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    finalUrl = url;
+                    this.finalUrl = url;
                     checkstatus = linkOk(link, isDownload);
                     if (checkstatus != 1) {
                         logger.info("Refreshed audiolink directlink seems not to work --> Link is probably offline");
@@ -778,13 +764,13 @@ public class VKontakteRuHoster extends PluginForHost {
         return result;
     }
 
-    private String audioGetDirectURL() throws PluginException {
-        String url = this.br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
+    private String audioGetDirectURL(final Browser br) throws PluginException {
+        String url = br.getRegex("\"(http[^<>\"\\']+\\.mp3[^<>\"\\']*?)\"").getMatch(0);
         if (url != null) {
             url = url.replace("\\", "");
             url = decryptAudioURL(url);
             if (!audioIsValidDirecturl(url)) {
-                url = null;
+                return null;
             }
         }
         return url;
@@ -858,9 +844,9 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private void generalErrorhandling(final Browser br) throws PluginException {
-        if (br.containsHTML(VKontakteRu.TEMPORARILYBLOCKED)) {
+        if (VKontakteRu.containsErrorSamePageReloadTooFast(br)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
-        } else if (br.containsHTML("You have to log in to view this user")) {
+        } else if (br.containsHTML("(?i)You have to log in to view this user")) {
             /*
              * 2019-08-06 e.g.
              * "CENSORED<!><!>3<!>4231<!>8<!>You have to log in to view this user&#39;s photos.<!><!>CENSORED<!><!pageview_candidate>"
@@ -1710,8 +1696,8 @@ public class VKontakteRuHoster extends PluginForHost {
     /* Default values... */
     private static final boolean default_fastlinkcheck_FASTLINKCHECK_VIDEO                                           = true;
     public static final boolean  default_FASTCRAWL_VIDEO                                                             = true;
-    private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK                                          = true;
-    private static final boolean default_fastlinkcheck_FASTAUDIOLINKCHECK                                            = true;
+    public static final boolean  default_FASTLINKCHECK_PICTURES                                                      = true;
+    public static final boolean  default_FASTLINKCHECK_AUDIO                                                         = true;
     public static final int      default_VIDEO_QUALITY_SELECTION_MODE                                                = 0;
     public static final int      default_PREFERRED_VIDEO_QUALITY                                                     = 0;
     public static final boolean  default_ALLOW_BEST                                                                  = false;
@@ -1732,7 +1718,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final boolean  default_VKVIDEO_ALBUM_USEIDASPACKAGENAME                                            = false;
     public static final boolean  default_VKVIDEO_USEIDASPACKAGENAME                                                  = false;
     private static final boolean default_VKAUDIO_USEIDASPACKAGENAME                                                  = false;
-    private static final boolean default_VKDOCS_USEIDASPACKAGENAME                                                   = false;
+    public static final boolean  default_VKDOCS_USEIDASPACKAGENAME                                                   = false;
     private static final boolean default_VKDOCS_ADD_UNIQUE_ID                                                        = false;
     private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME                             = false;
     private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME = false;
@@ -1876,8 +1862,8 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_VIDEO, "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?").setDefaultValue(default_fastlinkcheck_FASTLINKCHECK_VIDEO));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTCRAWL_VIDEO, "Enable fast video album crawling? Filenames may change before download and filesize won't be visible until download is started.").setDefaultValue(default_FASTCRAWL_VIDEO));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, "Fast linkcheck for all picture links (when true or false filename & filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?").setDefaultValue(default_fastlinkcheck_FASTPICTURELINKCHECK));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_AUDIO, "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?").setDefaultValue(default_fastlinkcheck_FASTAUDIOLINKCHECK));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_PICTURES, "Fast linkcheck for all picture links (when true or false filename & filesize wont be shown until download starts, when false only task performed is to check if picture has been deleted!)?").setDefaultValue(default_FASTLINKCHECK_PICTURES));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FASTLINKCHECK_AUDIO, "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?").setDefaultValue(default_FASTLINKCHECK_AUDIO));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: (for vk.com/video-XXX_XXX and vk.com/clip-XXX_XXX)"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
