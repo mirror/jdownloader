@@ -28,6 +28,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -59,16 +69,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -2448,7 +2448,6 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     public static void getPage(final Plugin plugin, final Account account, final Browser br, final Request req) throws Exception {
         final boolean followRedirectsOld = br.isFollowingRedirects();
-        // following code checks all redirects against conditions.
         try {
             int counterRedirect = 0;
             br.setFollowRedirects(false);
@@ -2496,10 +2495,9 @@ public class VKontakteRu extends PluginForDecrypt {
                         doRequest = req.cloneRequest();
                         br.getPage(doRequest);
                         if (!containsErrorSamePageReloadTooFast(br)) {
-                            //
                             break;
                         } else {
-                            System.out.println("next try");
+                            plugin.getLogger().info("Next try");
                         }
                     } while (containsErrorSamePageReloadTooFast(br) && counterErrorSamePageReloadTooFast <= maxAttempts);
                     if (containsErrorSamePageReloadTooFast(br)) {
@@ -2726,8 +2724,9 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Basic preparations on user-added links.</br> Make sure to remove unneeded things so that in the end, our links match the desired
-     * linktypes.</br> This is especially important because we get required IDs out of these urls or even access them directly without API.
+     * Basic preparations on user-added links.</br>
+     * Make sure to remove unneeded things so that in the end, our links match the desired linktypes.</br>
+     * This is especially important because we get required IDs out of these urls or even access them directly without API.
      *
      * @param a
      *

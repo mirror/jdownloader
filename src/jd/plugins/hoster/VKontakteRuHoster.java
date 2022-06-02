@@ -30,7 +30,6 @@ import java.util.regex.Pattern;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
@@ -164,9 +163,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public static void setRequestIntervalLimits() {
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            Browser.setBurstRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
-        }
+        Browser.setBurstRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
     }
 
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {

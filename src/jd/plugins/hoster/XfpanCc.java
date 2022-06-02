@@ -16,9 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,18 +34,47 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "expfile.com" }, urls = { "https?://(?:www\\.)?expfile\\.com/(?:file|down2?)\\-(\\d+)\\.html" })
-public class ExpfileCom extends PluginForHost {
-    public ExpfileCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class XfpanCc extends PluginForHost {
+    public XfpanCc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://" + getHost() + "/";
+        return "http://www." + getHost() + "/";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "xfpan.cc", "upfilex.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:file|down?)/([A-Za-z0-9]+)\\.html");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
+    /* 2022-06-02: All limits are untested */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 1;
@@ -77,23 +107,14 @@ public class ExpfileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("window\\.location='down2-\\d+\\.html")) {
-            br.getPage("/down2-" + this.getFID(link) + ".html");
-        }
         if (br.getHttpConnection().getResponseCode() == 404) {
-            /* 72bbb.com definitly returns 404 on url offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"info_box_msg\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<h2>文件名：([^<]+)</h2>").getMatch(0);
-        String filesize = br.getRegex("文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
-        }
+        final String filename = br.getRegex("/>([^<]+)</h4>").getMatch(0);
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());
-        }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -107,7 +128,10 @@ public class ExpfileCom extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             requestFileInformation(link);
-            // this.br.getPage("/down-" + this.getFID(link) + ".html");
+            final String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
+            if (internalFileID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final Browser ajax = this.br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /** 2022-05-04: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
@@ -121,8 +145,12 @@ public class ExpfileCom extends PluginForHost {
             // if (br.toString().equals("false")) {
             // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             // }
-            ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + this.getFID(link));
+            ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + internalFileID);
+            // ajax.getPage("/downbox.php?file_id=" + internalFileID);
             dllink = ajax.getRegex("(cd\\.php[^\"\\']+)").getMatch(0);
+            if (dllink != null) {
+                dllink = "/" + dllink;
+            }
             if (dllink == null) {
                 dllink = ajax.getRegex("true\\|(http[^<>\"]+)").getMatch(0);
             }
@@ -140,10 +168,18 @@ public class ExpfileCom extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
+            final String redirect = br.getRegex("document\\.location=\"(promo\\.php\\?file_id=\\d+)\"").getMatch(0);
+            if (redirect != null) {
+                logger.info("Found redirect after failed download attempt: " + redirect);
+                br.getPage(redirect);
+            }
             /* Limit waittime / time needed until start of more downloads is allowed. */
             final String waitSecsStr = br.getRegex("var secs = (\\d+);").getMatch(0);
             if (waitSecsStr != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitSecsStr) * 1001l);
+            } else if (br.containsHTML("vip\\.php")) {
+                /* Premiumonly or IP limit?! */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
