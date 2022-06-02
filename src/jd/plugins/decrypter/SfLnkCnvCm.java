@@ -17,7 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.regex.Pattern;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -39,40 +39,31 @@ import jd.plugins.DownloadLink;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SfLnkCnvCm extends antiDDoSForDecrypt {
-    private static String[] domains = new String[] { "safelinkconverter.com", "safelinkreview.com", "getcomics.ga", "safelinkreviewx.com", "1safe.link" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "safelinkconverter.com" });
+        return ret;
+    }
 
     public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return domains;
+        return buildSupportedNames(getPluginDomains());
     }
 
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/.+'
-     *
-     */
     public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/.+" };
+        return buildAnnotationUrls(getPluginDomains());
     }
 
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
         }
-        return pattern.toString();
+        return ret.toArray(new String[0]);
     }
 
     public SfLnkCnvCm(final PluginWrapper wrapper) {
@@ -83,26 +74,14 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        if (parameter.matches(".+1safe\\.link/.+")) {
-            /* Redirect-URLs which may redirect to URLs containing e.g. base64 encrypted string(s) */
-            br.setFollowRedirects(false);
-            getPage(parameter);
-            parameter = br.getRedirectLocation();
-            if (parameter == null) {
-                /* Probably offline */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-        }
         br.setFollowRedirects(true);
-        final String b64 = Encoding.htmlDecode(new Regex(parameter, "\\?id=([a-zA-Z0-9_/\\+\\=\\-%]+)").getMatch(0));
+        final String b64 = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), "\\?id=([a-zA-Z0-9_/\\+\\=\\-%]+)").getMatch(0));
         if (b64 == null) {
             return null;
         }
         // c value is nearly always 1, user value is important.
         // if not present lets just try to decrypt id, as sometimes its not obstructed, other times it is...
-        if (!new Regex(parameter, "(\\?|\\&)user=\\d+").matches()) {
+        if (!new Regex(param.getCryptedUrl(), "(\\?|\\&)user=\\d+").matches()) {
             final HashSet<String> results = jd.plugins.decrypter.GenericBase64Decrypter.handleBase64Decode(b64);
             for (final String result : results) {
                 decryptedLinks.add(createDownloadlink(result));
@@ -110,15 +89,9 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
-        getPage(parameter.replace("http://", "https://"));
+        getPage(param.getCryptedUrl().replace("http://", "https://"));
         String link = null;
-        if (StringUtils.containsIgnoreCase(br.getURL(), "safelinkreview.com/") || StringUtils.containsIgnoreCase(br.getURL(), "getcomics.ga/")) {
-            link = br.getRegex("onclick=\"window\\.open\\('(.*?)'").getMatch(0);
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
-                return decryptedLinks;
-            }
-        } else if (StringUtils.containsIgnoreCase(br.getURL(), "safelinkconverter.com/decrypt-\\d+/")) {
+        if (StringUtils.containsIgnoreCase(br.getURL(), "safelinkconverter.com/decrypt-\\d+/")) {
             // stuff that ends up going to /decrypted-2/ with solvemedia can be bypassed.
             getPage(br.getURL().replace("/decrypt-2/", "/decrypt/"));
         } else if (br.containsHTML("decrypt.safelinkconverter")) {
@@ -141,7 +114,6 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
