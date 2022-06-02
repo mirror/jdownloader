@@ -16,7 +16,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl.be" }, urls = { "https?://(?:www\\.)?rtl\\.be/info/video/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl.be" }, urls = { "https?://(?:www\\.)?rtl\\.be/info/video/\\d+\\.aspx" })
 public class RtlBe extends PluginForDecrypt {
     public RtlBe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -26,7 +26,7 @@ public class RtlBe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String id = new Regex(parameter.getCryptedUrl(), "/(\\d+)").getMatch(0);
-        br.getPage("http://www.rtl.be/videos/vpo_video.asmx?action=getinfos&id=" + id);
+        br.getPage("https://www.rtl.be/videos/vpo_video.asmx?action=getinfos&id=" + id);
         String title = br.getRegex("<Title>\\s*(.*?)\\s*<").getMatch(0);
         title = Encoding.htmlOnlyDecode(title);
         final String m3u8 = br.getRegex("<URL_UNICORN>\\s*(https?://.*?)\\s*<").getMatch(0);
