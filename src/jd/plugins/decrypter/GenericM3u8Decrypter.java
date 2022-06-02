@@ -125,9 +125,9 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     infos.add(line);
                     final String m3u8Content = StringUtils.join(infos, "\r\n");
                     final List<HlsContainer> hlsContainer = HlsContainer.parseHlsQualities(m3u8Content, br);
-                    if (hlsContainer.size() != 1) {
+                    if (hlsContainer.size() > 1) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
+                    } else if (hlsContainer.size() == 1) {
                         final HlsContainer hls = hlsContainer.get(0);
                         final URL url = br.getURL(line);
                         final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url.toString(), true);
@@ -146,8 +146,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                         link.setProperty("Referer", referer);
                         link.setProperty("cookies", cookiesString);
                         addToResults(plugin, ret, br, url, link);
-                        infos.clear();
                     }
+                    infos.clear();
                 } else {
                     infos.add(line);
                 }

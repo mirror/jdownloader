@@ -263,6 +263,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (tmp == null) {
                 tmp = brc.getRegex("apiProfile\\s*:\\s*(?:\"|')([^\"\\']+)").getMatch(0);
             }
+            if (tmp == null) {
+                tmp = brc.getRegex("DEFAULT_API_PROFILE\\s*=\\s*(?:\"|')([^\"\\']+)").getMatch(0);
+            }
             if (tmp != null) {
                 profile = tmp;
             }
