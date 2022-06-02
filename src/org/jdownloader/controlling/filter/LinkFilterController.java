@@ -51,7 +51,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private volatile List<LinkgrabberFilterRuleWrapper> acceptFilters = null;
     private volatile List<LinkgrabberFilterRuleWrapper> denyFilters   = null;
     private final KeyHandler<Object>                    filterListHandler;
-
     private final ChangeEventSender                     eventSender;
     private final boolean                               testInstance;
 
@@ -67,7 +66,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
             filterListHandler = config._getStorageHandler().getKeyHandler("FilterList");
             filter = readConfig();
             filterListHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
-
                 @Override
                 public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
                     filter = readConfig();
@@ -79,7 +77,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 }
             });
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
                 @Override
                 public void onShutdown(final ShutdownRequest shutdownRequest) {
                     save(filter);
@@ -118,7 +115,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
             boolean offlineRule = false;
             boolean directHttpView = false;
             HashSet<String> dupefinder = new HashSet<String>();
-
             for (LinkgrabberFilterRule rule : filter) {
                 LinkgrabberFilterRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<LinkgrabberFilterRule>() {
                 });
@@ -134,7 +130,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     r.setEnabled(rule.isEnabled());
                     offlineRule = true;
                     continue;
-
                 }
                 if (DirectHTTPView.ID.equals(rule.getId())) {
                     DirectHTTPView r;
@@ -143,7 +138,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     r.setEnabled(rule.isEnabled());
                     directHttpView = true;
                     continue;
-
                 }
                 if (DupesView.ID.equals(rule.getId())) {
                     DupesView r;
@@ -152,7 +146,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     r.setEnabled(rule.isEnabled());
                     dupesView = true;
                     continue;
-
                 }
                 newList.add(rule);
             }
@@ -213,13 +206,11 @@ public class LinkFilterController implements LinkCrawlerFilter {
             updateInternal();
         } else {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     updateInternal();
                     return null;
                 }
-
             });
         }
     }
@@ -234,15 +225,39 @@ public class LinkFilterController implements LinkCrawlerFilter {
         }
     }
 
-    public void addAll(java.util.List<LinkgrabberFilterRule> all) {
-        if (all == null) {
-            return;
+    public void add(LinkgrabberFilterRule linkFilter) {
+        if (linkFilter != null) {
+            final List<LinkgrabberFilterRule> addAll = new ArrayList<LinkgrabberFilterRule>();
+            addAll.add(linkFilter);
+            addAll(addAll);
         }
-        synchronized (this) {
-            filter.addAll(all);
-            save(filter);
+    }
+
+    public void addAll(List<LinkgrabberFilterRule> all) {
+        if (all != null && all.size() > 0) {
+            synchronized (this) {
+                final HashSet<String> dupecheck = createDupeSet();
+                for (LinkgrabberFilterRule rule : all) {
+                    if (!rule.isStaticRule()) {
+                        if (dupecheck.add(JSonStorage.serializeToJson(rule))) {
+                            filter.add(rule);
+                        }
+                    }
+                }
+                save(filter);
+            }
             update();
         }
+    }
+
+    private HashSet<String> createDupeSet() {
+        final HashSet<String> ret = new HashSet<String>();
+        synchronized (this) {
+            for (final LinkgrabberFilterRule rule : filter) {
+                ret.add(JSonStorage.serializeToJson(rule));
+            }
+        }
+        return ret;
     }
 
     private synchronized final void save(ArrayList<LinkgrabberFilterRule> filter) {
@@ -251,7 +266,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
             if (filterListHandler != null) {
                 final Thread thread = Thread.currentThread();
                 eventSuppressor = new EventSuppressor<ConfigEvent>() {
-
                     @Override
                     public boolean suppressEvent(ConfigEvent eventType) {
                         return Thread.currentThread() == thread;
@@ -269,17 +283,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 }
             }
         }
-    }
-
-    public void add(LinkgrabberFilterRule linkFilter) {
-        if (linkFilter == null) {
-            return;
-        }
-        synchronized (this) {
-            filter.add(linkFilter);
-            save(filter);
-        }
-        update();
     }
 
     public void remove(LinkgrabberFilterRule lf) {
