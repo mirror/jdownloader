@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.SerienStreamToConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -36,6 +37,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -74,22 +76,72 @@ public class SerienStreamTo extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    private final String TYPE_SINGLE_REDIRECT = "https?://[^/]+/redirect/(\\d+)";
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* 2021-11-08: Do NOT enforce HTTPS! */
         param.setCryptedUrl(param.getCryptedUrl().replaceAll("[/]+$", ""));
+        if (param.getCryptedUrl().matches(TYPE_SINGLE_REDIRECT)) {
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            ret.add(this.crawlSingleRedirect(param.getCryptedUrl(), br));
+            return ret;
+        } else {
+            return this.crawlMirrors(param);
+        }
+    }
+
+    private DownloadLink crawlSingleRedirect(String url, final Browser br) throws PluginException, InterruptedException, DecrypterException, IOException {
+        br.setFollowRedirects(false);
+        url = url.replaceFirst("http://", "https://");
+        final String initialHost = Browser.getHost(url, true);
+        String redirectPage = br.getPage(url);
+        String finallink = null;
+        if (br.getRedirectLocation() != null) {
+            finallink = br.getRedirectLocation();
+        } else if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || br.containsHTML("grecaptcha")) {
+            br.setFollowRedirects(true);
+            final Form captcha = br.getForm(0);
+            final String sitekey = new Regex(redirectPage, "grecaptcha\\.execute\\('([^']+)'").getMatch(0);
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, sitekey) {
+                @Override
+                public TYPE getType() {
+                    return TYPE.INVISIBLE;
+                }
+            }.getToken();
+            captcha.put("original", "");
+            captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
+            try {
+                redirectPage = br.submitForm(captcha);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            finallink = br.getURL().toString();
+        }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (finallink == null || this.canHandle(finallink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (Browser.getHost(finallink, true).equalsIgnoreCase(initialHost)) {
+            /* E.g. redirect to mainpage */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return createDownloadlink(finallink);
+    }
+
+    private ArrayList<DownloadLink> crawlMirrors(final CryptedLink param) throws PluginException, InterruptedException, DecrypterException, IOException {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String title = br.getRegex("<meta property=\"og:title\" content=\"(?:Episode \\d+\\s|Staffel \\d+\\s|von+\\s)+([^\"]+)\"/>").getMatch(0);
         final String itemSlug = new Regex(br.getURL(), "https?://[^/]+/[^/]+/[^/]+/(.*)").getMatch(0);
         // If we're on a show site, add the seasons, if we're on a season page, add the episodes and so on ...
         String[][] itemLinks = br.getRegex("href=\"([^\"]+" + Regex.escape(itemSlug) + "/[^\"]+)\"").getMatches();
         for (String[] itemLink : itemLinks) {
-            decryptedLinks.add(createDownloadlink(br.getURL(Encoding.htmlDecode(itemLink[0])).toString()));
+            ret.add(createDownloadlink(br.getURL(Encoding.htmlDecode(itemLink[0])).toString()));
         }
         /* Videos are on external sites (not in embeds), so harvest those if we can get our hands on them. */
         final String[] episodeHTMLs = br.getRegex("<li class=\"[^\"]*episodeLink\\d+\"(.*?)</a>").getColumn(0);
@@ -269,13 +321,13 @@ public class SerienStreamTo extends PluginForDecrypt {
                     if (filePackage != null) {
                         filePackage.add(link);
                     }
-                    decryptedLinks.add(link);
+                    ret.add(link);
                     distribute(link);
                     index += 1;
                 }
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override

@@ -69,7 +69,7 @@ public class VideovardSx extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/v/([a-z0-9]{12})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:v|e)/([a-z0-9]{12})");
         }
         return ret.toArray(new String[0]);
     }
