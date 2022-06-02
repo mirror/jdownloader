@@ -27,19 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -73,6 +60,16 @@ import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
@@ -89,11 +86,11 @@ public class VKontakteRu extends PluginForDecrypt {
         return 2;
     }
 
-    private String getBaseURL() {
+    private static String getBaseURL() {
         return VKontakteRuHoster.getBaseURL();
     }
 
-    private String getProtocol() {
+    private static String getProtocol() {
         return VKontakteRuHoster.getProtocol();
     }
 
@@ -649,16 +646,7 @@ public class VKontakteRu extends PluginForDecrypt {
         this.preferredQualityString = preferredQualityString;
     }
 
-    /** Debug var */
-    @Deprecated
-    private static AtomicInteger calls = new AtomicInteger(0);
-
     private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            synchronized (calls) {
-                calls.set(calls.get() + 1);
-            }
-        }
         final ArrayList<DownloadLink> ret = this.getReturnArray();
         try {
             final String[] ids = findVideoIDs(param.getCryptedUrl());
@@ -810,10 +798,6 @@ public class VKontakteRu extends PluginForDecrypt {
             } else {
                 logger.warning("WTF1");
                 throw e;
-            }
-        } finally {
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                System.out.println("Calls: " + calls.get());
             }
         }
         if (ret.isEmpty()) {
@@ -2287,11 +2271,11 @@ public class VKontakteRu extends PluginForDecrypt {
             final String contentURL;
             if (postID != null && listID != null) {
                 /* Video is part of */
-                contentURL = this.getProtocol() + this.getHost() + "/wall" + postID + "?z=video" + videoContentStr + "%2F" + listID;
+                contentURL = getProtocol() + getHost() + "/wall" + postID + "?z=video" + videoContentStr + "%2F" + listID;
             } else if (postID != null) {
-                contentURL = this.getProtocol() + this.getHost() + "/wall" + postID + "?z=video" + videoContentStr;
+                contentURL = getProtocol() + getHost() + "/wall" + postID + "?z=video" + videoContentStr;
             } else {
-                contentURL = this.getProtocol() + this.getHost() + "/video" + videoContentStr;
+                contentURL = getProtocol() + getHost() + "/video" + videoContentStr;
             }
             final DownloadLink dl = this.createDownloadlink(contentURL);
             if (fp != null) {
@@ -2309,17 +2293,20 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private void getPage(final String url) throws Exception {
-        getPage(this.br, br.createGetRequest(url));
-        siteGeneralErrorhandling(this.br);
+        getPage(br, br.createGetRequest(url));
+    }
+
+    private void getPage(final Browser br, final Request request) throws Exception {
+        getPage(this, account, this.br, request);
+        siteGeneralErrorhandling(br);
     }
 
     private void getPage(final Browser br, final String url) throws Exception {
         getPage(this.br, br.createGetRequest(url));
-        siteGeneralErrorhandling(br);
     }
 
     private void apiGetPageSafe(final String url) throws Exception {
-        getPage(br, br.createGetRequest(url));
+        getPage(this, account, br, br.createGetRequest(url));
         apiHandleErrors();
     }
 
@@ -2392,7 +2379,7 @@ public class VKontakteRu extends PluginForDecrypt {
             String redirectUri = PluginJSonUtils.getJsonValue(br, "redirect_uri");
             logger.info("Redirect URI: " + redirectUri);
             if (redirectUri != null) {
-                boolean success = siteHandleSecurityCheck(redirectUri);
+                final boolean success = siteHandleSecurityCheck(this, account, br, redirectUri);
                 if (success) {
                     logger.info("Verification Done");
                     return true;
@@ -2459,36 +2446,35 @@ public class VKontakteRu extends PluginForDecrypt {
      * @param url
      * @throws Exception
      */
-    private void getPage(final Browser br, final Request req) throws Exception {
+    public static void getPage(final Plugin plugin, final Account account, final Browser br, final Request req) throws Exception {
         final boolean followRedirectsOld = br.isFollowingRedirects();
         // following code checks all redirects against conditions.
         try {
             int counterRedirect = 0;
             br.setFollowRedirects(false);
-            if (req.getRequestMethod() == RequestMethod.GET) {
-                String redirect = req.getUrl();
-                do {
-                    br.getPage(redirect);
-                    VKontakteRuHoster.handleTooManyRequests(this, br);
-                    redirect = br.getRedirectLocation();
-                    if (redirect != null) {
-                        if (redirect.contains("act=security_check") || redirect.contains("login.vk.com/?role=fast")) {
-                            if (siteHandleSecurityCheck(redirect)) {
-                                br.getPage(req.getUrl());
-                                VKontakteRuHoster.handleTooManyRequests(this, br);
-                            } else {
-                                throw new DecrypterException("Could not solve Security Questions");
-                            }
+            String redirect = null;
+            Request doRequest = req;
+            do {
+                br.getPage(doRequest);
+                VKontakteRuHoster.handleTooManyRequests(plugin, br);
+                redirect = br.getRedirectLocation();
+                if (redirect != null) {
+                    if (redirect.contains("act=security_check") || redirect.contains("login.vk.com/?role=fast")) {
+                        if (siteHandleSecurityCheck(plugin, account, br, redirect)) {
+                            VKontakteRuHoster.handleTooManyRequests(plugin, br);
                         } else {
-                            // maybe multiple redirects before end outcome!
-                            br.getPage(redirect);
-                            VKontakteRuHoster.handleTooManyRequests(this, br);
+                            throw new DecrypterException("Could not solve Security Questions");
                         }
+                    } else {
+                        // maybe multiple redirects before end outcome!
+                        br.getPage(redirect);
+                        VKontakteRuHoster.handleTooManyRequests(plugin, br);
                     }
-                } while ((redirect = br.getRedirectLocation()) != null && counterRedirect++ < 10);
-                if (redirect != null && counterRedirect >= 10) {
-                    throw new DecrypterException("Too many redirects!");
                 }
+                doRequest = req.cloneRequest();
+            } while ((redirect = br.getRedirectLocation()) != null && counterRedirect++ < 10);
+            if (redirect != null && counterRedirect >= 10) {
+                throw new DecrypterException("Too many redirects!");
             }
             /*
              * 2022-06-01: This error happens in some cases even if we do not request the same URL twice in under a second --> Retry up to
@@ -2498,28 +2484,29 @@ public class VKontakteRu extends PluginForDecrypt {
              * TODO: Error can be displayed in different languages (randomly??) --> Be sure to set our preferred language [English] before!
              */
             if (containsErrorSamePageReloadTooFast(br)) {
-                final int maxAttempts = 10;
-                int counterErrorSamePageReloadTooFast = 0;
-                do {
-                    counterErrorSamePageReloadTooFast++;
-                    logger.info("You tried to load the same page more than once in one second | Attempt: " + counterErrorSamePageReloadTooFast + "/" + maxAttempts);
-                    logger.info("URL: " + br.getURL());
-                    /*
-                     * TODO: Fix this: Clearing the cookies doesn't seem to (always) do the job also we do not want to do that because user
-                     * might be logged in!
-                     */
-                    // br.clearCookies(br.getHost());
-                    // Thread.sleep(this.cfg.getLongProperty(VKontakteRuHoster.SLEEP_TOO_MANY_REQUESTS,
-                    // VKontakteRuHoster.defaultSLEEP_TOO_MANY_REQUESTS));
-                    /* TODO: Find the sweet-spot on how long to wait here */
-                    Thread.sleep(20000l);
-                    br.getHeaders().put("Referer", "https://" + br.getHost() + "/");
-                    br.getPage(req);
-                } while (containsErrorSamePageReloadTooFast(br) && counterErrorSamePageReloadTooFast <= maxAttempts);
-                if (containsErrorSamePageReloadTooFast(br)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You tried to load the same page more than once in one second");
-                } else {
-                    logger.info("containsErrorSamePageReloadTooFast success after: " + counterErrorSamePageReloadTooFast);
+                synchronized (VKontakteRuHoster.LOCK) {
+                    final int maxAttempts = 10;
+                    int counterErrorSamePageReloadTooFast = 0;
+                    do {
+                        counterErrorSamePageReloadTooFast++;
+                        plugin.getLogger().info("You tried to load the same page more than once in one second | Attempt: " + counterErrorSamePageReloadTooFast + "/" + maxAttempts);
+                        plugin.getLogger().info("URL: " + br.getURL());
+                        Thread.sleep(10000);
+                        br.getHeaders().put("Referer", "https://" + br.getHost() + "/");
+                        doRequest = req.cloneRequest();
+                        br.getPage(doRequest);
+                        if (!containsErrorSamePageReloadTooFast(br)) {
+                            //
+                            break;
+                        } else {
+                            System.out.println("next try");
+                        }
+                    } while (containsErrorSamePageReloadTooFast(br) && counterErrorSamePageReloadTooFast <= maxAttempts);
+                    if (containsErrorSamePageReloadTooFast(br)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You tried to load the same page more than once in one second");
+                    } else {
+                        plugin.getLogger().info("containsErrorSamePageReloadTooFast success after: " + counterErrorSamePageReloadTooFast);
+                    }
                 }
             }
         } finally {
@@ -2583,7 +2570,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private boolean siteHandleSecurityCheck(final String parameter) throws Exception {
+    static boolean siteHandleSecurityCheck(final Plugin plugin, final Account account, final Browser br, final String parameter) throws Exception {
         // this task shouldn't be done without an account!, ie. login should have taken place
         if (account == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -2607,7 +2594,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     phone = phone.replaceAll("\\D", "");
                 }
                 for (int i = 0; i <= 3; i++) {
-                    logger.info("Entering security check...");
+                    plugin.getLogger().info("Entering security check...");
                     final String to = ajaxBR.getRegex("to: '([^<>\"]*?)'").getMatch(0);
                     final String hash = ajaxBR.getRegex("hash: '([^<>\"]*?)'").getMatch(0);
                     if (to == null || hash == null) {
@@ -2644,7 +2631,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         phone = null;
                         account.setProperty("phone", Property.NULL);
                         if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
-                            logger.info("Failed security check, account is banned for some hours!");
+                            plugin.getLogger().info("Failed security check, account is banned for some hours!");
                             break;
                         }
                     }
@@ -2653,7 +2640,7 @@ public class VKontakteRu extends PluginForDecrypt {
             } else {
                 ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 for (int i = 0; i <= 3; i++) {
-                    logger.info("Entering security check...");
+                    plugin.getLogger().info("Entering security check...");
                     final String to = br.getRegex("to: '([^<>\"]*?)'").getMatch(0);
                     final String hash = br.getRegex("hash: '([^<>\"]*?)'").getMatch(0);
                     if (to == null || hash == null) {
@@ -2666,7 +2653,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         break;
                     }
                     if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
-                        logger.info("Failed security check, account is banned for some hours!");
+                        plugin.getLogger().info("Failed security check, account is banned for some hours!");
                         break;
                     }
                 }
@@ -2739,9 +2726,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Basic preparations on user-added links.</br>
-     * Make sure to remove unneeded things so that in the end, our links match the desired linktypes.</br>
-     * This is especially important because we get required IDs out of these urls or even access them directly without API.
+     * Basic preparations on user-added links.</br> Make sure to remove unneeded things so that in the end, our links match the desired
+     * linktypes.</br> This is especially important because we get required IDs out of these urls or even access them directly without API.
      *
      * @param a
      *
