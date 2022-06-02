@@ -29,7 +29,6 @@ public class RemoveAction extends AppAction {
         this.ignoreSelection = true;
         setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
-
     }
 
     public RemoveAction(PackagizerFilterTable table, java.util.List<PackagizerRule> selected, boolean force) {
@@ -37,11 +36,9 @@ public class RemoveAction extends AppAction {
         this.selected = selected;
         setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
-
     }
 
     protected boolean rly(String msg) {
-
         try {
             Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.literall_are_you_sure(), msg, null, null, null);
             return true;
@@ -51,13 +48,15 @@ public class RemoveAction extends AppAction {
             e.printStackTrace();
         }
         return false;
-
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
-        if (JDGui.bugme(WarnLevel.NORMAL)) {
-            if (!rly(_JDT.T.RemoveAction_actionPerformed_rly_msg())) return;
+        if (!isEnabled()) {
+            return;
+        } else if (JDGui.bugme(WarnLevel.NORMAL)) {
+            if (!rly(_JDT.T.RemoveAction_actionPerformed_rly_msg())) {
+                return;
+            }
         }
         final List<PackagizerRule> remove;
         if (selected != null) {
@@ -67,13 +66,13 @@ public class RemoveAction extends AppAction {
         }
         if (remove != null && remove.size() > 0) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
-                    for (PackagizerRule lf : remove) {
-                        PackagizerController.getInstance().remove(lf);
+                    for (PackagizerRule rule : remove) {
+                        if (!rule.isStaticRule()) {
+                            PackagizerController.getInstance().remove(rule);
+                        }
                     }
-                    table.getModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
                     return null;
                 }
             });
@@ -82,13 +81,15 @@ public class RemoveAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        if (selected != null) {
+        if (ignoreSelection) {
+            return super.isEnabled();
+        } else if (selected != null) {
             for (PackagizerRule rule : selected) {
-                if (rule.isStaticRule()) return false;
+                if (!rule.isStaticRule()) {
+                    return true;
+                }
             }
         }
-        if (ignoreSelection) return super.isEnabled();
-        return selected != null && selected.size() > 0;
+        return false;
     }
-
 }
