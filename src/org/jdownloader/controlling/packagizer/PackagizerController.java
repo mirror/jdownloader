@@ -578,21 +578,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
     }
 
-    public void add(PackagizerRule linkFilter) {
-        if (linkFilter != null) {
-            synchronized (this) {
-                final HashSet<String> dupecheck = createDupeSet();
-                if (!linkFilter.isStaticRule()) {
-                    if (dupecheck.add(JSonStorage.serializeToJson(linkFilter))) {
-                        list.add(linkFilter);
-                    }
-                }
-                save(list);
-            }
-            update();
-        }
-    }
-
     public void setList(final List<PackagizerRule> tableData) {
         final ArrayList<PackagizerRule> newList = new ArrayList<PackagizerRule>();
         if (tableData != null) {
@@ -653,11 +638,19 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
     }
 
+    public void add(PackagizerRule linkFilter) {
+        if (linkFilter != null) {
+            final List<PackagizerRule> addAll = new ArrayList<PackagizerRule>();
+            addAll.add(linkFilter);
+            addAll(addAll);
+        }
+    }
+
     public void addAll(java.util.List<PackagizerRule> all) {
         if (all != null && all.size() > 0) {
             synchronized (this) {
                 final HashSet<String> dupecheck = createDupeSet();
-                for (PackagizerRule rule : all) {
+                for (final PackagizerRule rule : all) {
                     if (!rule.isStaticRule()) {
                         if (dupecheck.add(JSonStorage.serializeToJson(rule))) {
                             list.add(rule);

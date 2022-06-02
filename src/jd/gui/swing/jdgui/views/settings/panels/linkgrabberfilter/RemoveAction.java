@@ -32,7 +32,6 @@ public class RemoveAction extends AppAction {
         this.ignoreSelection = true;
         setName(_GUI.T.literally_remove());
         setIconKey(IconKey.ICON_REMOVE);
-        ;
     }
 
     public RemoveAction(AbstractFilterTable table, java.util.List<LinkgrabberFilterRule> selected, boolean force) {
@@ -55,13 +54,12 @@ public class RemoveAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (JDGui.bugme(WarnLevel.NORMAL)) {
+        if (!isEnabled()) {
+            return;
+        } else if (JDGui.bugme(WarnLevel.NORMAL)) {
             if (!rly(_JDT.T.RemoveAction_actionPerformed_rly_msg())) {
                 return;
             }
-        }
-        if (!isEnabled()) {
-            return;
         }
         final List<LinkgrabberFilterRule> remove;
         if (selected != null) {
@@ -73,10 +71,11 @@ public class RemoveAction extends AppAction {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
-                    for (LinkgrabberFilterRule lf : remove) {
-                        LinkFilterController.getInstance().remove(lf);
+                    for (final LinkgrabberFilterRule rule : remove) {
+                        if (!rule.isStaticRule()) {
+                            LinkFilterController.getInstance().remove(rule);
+                        }
                     }
-                    // getTable().getModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
                     return null;
                 }
             });
@@ -86,22 +85,22 @@ public class RemoveAction extends AppAction {
     private ExtTable<LinkgrabberFilterRule> getTable() {
         if (table != null) {
             return table;
+        } else {
+            return linkgrabberFilter.getTable();
         }
-        return linkgrabberFilter.getTable();
     }
 
     @Override
     public boolean isEnabled() {
-        if (selected != null) {
+        if (ignoreSelection) {
+            return super.isEnabled();
+        } else if (selected != null) {
             for (LinkgrabberFilterRule rule : selected) {
-                if (rule.isStaticRule()) {
-                    return false;
+                if (!rule.isStaticRule()) {
+                    return true;
                 }
             }
         }
-        if (ignoreSelection) {
-            return super.isEnabled();
-        }
-        return selected != null && selected.size() > 0;
+        return false;
     }
 }

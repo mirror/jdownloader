@@ -57,6 +57,9 @@ public class RtlBe extends PluginForDecrypt {
             final Browser brc = br.cloneBrowser();
             ret.addAll(GenericF4MDecrypter.parse(this, brc, f4m, title, null, null));
         }
+        for (final DownloadLink link : ret) {
+            link.setContentUrl(parameter.getCryptedUrl());
+        }
         if (title != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(title));
