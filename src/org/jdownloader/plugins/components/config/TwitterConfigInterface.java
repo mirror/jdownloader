@@ -12,7 +12,8 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "twitter.com", type = Type.HOSTER)
 public interface TwitterConfigInterface extends PluginConfigInterface {
-    public static final TRANSLATION TRANSLATION = new TRANSLATION();
+    public static final TRANSLATION TRANSLATION                      = new TRANSLATION();
+    final String                    text_MarkTweetRepliesViaFilename = "Append '_reply' to filenames of tweets that are replies to other tweets?";
 
     public static class TRANSLATION {
         /* 2022-03-18: Not needed anymore for now. */
@@ -22,6 +23,10 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         // }
         public String getUseOriginalFilenames_label() {
             return "Use original filename instead of plugin filenames?";
+        }
+
+        public String getMarkTweetRepliesViaFilename_label() {
+            return text_MarkTweetRepliesViaFilename;
         }
 
         public String getAddTweetTextAsTextfile_label() {
@@ -65,6 +70,14 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     boolean isUseOriginalFilenames();
 
     void setUseOriginalFilenames(boolean b);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    @DescriptionForConfigEntry(text_MarkTweetRepliesViaFilename)
+    @Order(25)
+    boolean isMarkTweetRepliesViaFilename();
+
+    void setMarkTweetRepliesViaFilename(boolean b);
 
     @DefaultBooleanValue(true)
     @AboutConfig

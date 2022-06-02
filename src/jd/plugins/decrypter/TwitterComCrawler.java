@@ -31,6 +31,17 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -58,17 +69,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TwitterCom;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TwitterConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterComCrawler extends PluginForDecrypt {
     private String resumeURL = null;
@@ -94,6 +94,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     public static final String             PROPERTY_FILENAME_FROM_CRAWLER                                   = "crawlerfilename";
     public static final String             PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY = "video_direct_urls_are_available_via_api_extended_entity";
     public static final String             PROPERTY_TYPE                                                    = "type";
+    public static final String             PROPERTY_REPLY                                                   = "reply";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -342,16 +343,31 @@ public class TwitterComCrawler extends PluginForDecrypt {
      * @throws MalformedURLException
      */
     private ArrayList<DownloadLink> crawlTweetMap(final Map<String, Object> tweet, Map<String, Object> user, FilePackage fp) throws MalformedURLException {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final String tweetID = tweet.get("id_str").toString();
         final Object userInContextOfTweet = tweet.get("user");
         if (userInContextOfTweet != null) {
-            /* Prefer this as our user object. Usually it's only included when adding single tweets. */
+            /**
+             * Prefer this as our user object. </br>
+             * It's only included when adding single tweets.
+             */
             user = (Map<String, Object>) userInContextOfTweet;
         }
         final String username = (String) user.get("screen_name");
         final String formattedDate = formatTwitterDate((String) tweet.get("created_at"));
         final String tweetText = (String) tweet.get("full_text");
+        final Object in_reply_to_status_id_strO = tweet.get("in_reply_to_status_id_str");
+        final boolean isReplyToOtherTweet;
+        String replyTextForFilename = "";
+        if (in_reply_to_status_id_strO != null) {
+            isReplyToOtherTweet = true;
+            /* Mark filenames of tweet-replies if wished by user. */
+            if (cfg.isMarkTweetRepliesViaFilename()) {
+                replyTextForFilename += "_reply";
+            }
+        } else {
+            isReplyToOtherTweet = false;
+        }
         if (fp != null) {
             /* Assume that we're crawling a complete profile. */
             final String profileDescription = (String) user.get("description");
@@ -366,10 +382,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 fp.setComment(tweetText);
             }
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contentURL = createTwitterPostURL(username, tweetID);
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
         String lastFoundOriginalFilename = null;
@@ -411,9 +427,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         if (cfg.isUseOriginalFilenames()) {
                             filename = lastFoundOriginalFilename;
                         } else if (medias.size() > 1) {
-                            filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + ".mp4";
+                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + ".mp4";
                         } else {
-                            filename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
+                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
                         }
                         dl.setProperty(PROPERTY_BITRATE, highestBitrate);
                         dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, streamURL);
@@ -432,9 +448,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         if (cfg.isUseOriginalFilenames()) {
                             filename = lastFoundOriginalFilename;
                         } else if (medias.size() > 1) {
-                            filename = formattedDate + "_" + username + "_" + tweetID + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(photoURL);
+                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(photoURL);
                         } else {
-                            filename = formattedDate + "_" + username + "_" + tweetID + Plugin.getFileNameExtensionFromURL(photoURL);
+                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + Plugin.getFileNameExtensionFromURL(photoURL);
                         }
                     } else {
                         /* Unknown type -> This should never happen! */
@@ -453,13 +469,16 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(tweetText)) {
                         dl.setProperty(PROPERTY_TWEET_TEXT, tweetText);
                     }
+                    if (isReplyToOtherTweet) {
+                        dl.setProperty(PROPERTY_REPLY, true);
+                    }
                     if (dl.getFinalFileName() != null) {
                         dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, dl.getFinalFileName());
                     }
                     if (fp != null) {
                         dl._setFilePackage(fp);
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 } catch (PluginException e) {
                     logger.log(e);
@@ -471,7 +490,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
             final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
             singleVideo.setContentUrl(contentURL);
-            final String finalFilename = formattedDate + "_" + username + "_" + tweetID + ".mp4";
+            final String finalFilename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
             singleVideo.setFinalFileName(finalFilename);
             singleVideo.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, finalFilename);
             singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
@@ -481,12 +500,15 @@ public class TwitterComCrawler extends PluginForDecrypt {
             if (!StringUtils.isEmpty(tweetText)) {
                 singleVideo.setProperty(PROPERTY_TWEET_TEXT, tweetText);
             }
+            if (isReplyToOtherTweet) {
+                singleVideo.setProperty(PROPERTY_REPLY, true);
+            }
             singleVideo.setProperty(PROPERTY_TYPE, "video");
             singleVideo.setAvailable(true);
             if (fp != null) {
                 singleVideo._setFilePackage(fp);
             }
-            decryptedLinks.add(singleVideo);
+            ret.add(singleVideo);
             distribute(singleVideo);
         }
         int itemsSkippedDueToPluginSettings = 0;
@@ -498,7 +520,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     if (fp != null) {
                         dl._setFilePackage(fp);
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
             } else if (urlsInPostText != null) {
@@ -514,7 +536,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                      */
                     filename = lastFoundOriginalFilename.substring(0, lastFoundOriginalFilename.lastIndexOf(".")) + ".txt";
                 } else {
-                    filename = formattedDate + "_" + username + "_" + tweetID + ".txt";
+                    filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".txt";
                 }
                 text.setFinalFileName(filename);
                 try {
@@ -527,26 +549,29 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 text.setProperty(PROPERTY_DATE, formattedDate);
                 text.setProperty(PROPERTY_MEDIA_INDEX, 0);
                 text.setProperty(PROPERTY_TWEET_TEXT, tweetText);
+                if (isReplyToOtherTweet) {
+                    text.setProperty(PROPERTY_REPLY, true);
+                }
                 text.setProperty(PROPERTY_TYPE, "text");
                 text.setAvailable(true);
                 if (fp != null) {
                     text._setFilePackage(fp);
                 }
-                decryptedLinks.add(text);
+                ret.add(text);
                 distribute(text);
             } else {
                 itemsSkippedDueToPluginSettings++;
             }
         }
         /* Logger just in case nothing was added. */
-        if (decryptedLinks.isEmpty()) {
+        if (ret.isEmpty()) {
             if (itemsSkippedDueToPluginSettings == 0) {
                 logger.info("Failed to find any crawlable content in tweet: " + tweetID);
             } else {
                 logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped " + itemsSkippedDueToPluginSettings + " item(s) due to users' plugin settings.");
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private static String formatTwitterDate(String created_at) {
@@ -689,30 +714,30 @@ public class TwitterComCrawler extends PluginForDecrypt {
         Integer maxCount = null;
         final int expected_items_per_page = 20;
         final UrlQuery query = new UrlQuery();
-        query.append("include_profile_interstitial_type", "1", false);
-        query.append("include_blocking", "1", false);
-        query.append("include_blocked_by", "1", false);
-        query.append("include_followed_by", "1", false);
-        query.append("include_want_retweets", "1", false);
-        query.append("include_mute_edge", "1", false);
-        query.append("include_can_dm", "1", false);
-        query.append("include_can_media_tag", "1", false);
-        query.append("skip_status", "1", false);
-        query.append("cards_platform", "Web-12", false);
-        query.append("include_cards", "1", false);
+        query.add("include_profile_interstitial_type", "1");
+        query.add("include_blocking", "1");
+        query.add("include_blocked_by", "1");
+        query.add("include_followed_by", "1");
+        query.add("include_want_retweets", "1");
+        query.add("include_mute_edge", "1");
+        query.add("include_can_dm", "1");
+        query.add("include_can_media_tag", "1");
+        query.add("skip_status", "1");
+        query.add("cards_platform", "Web-12");
+        query.add("include_cards", "1");
         /* 2020-08-24: Not required anymore */
-        // query.append("include_composer_source", "true", false);
-        query.append("include_quote_count", "true", false);
-        query.append("include_ext_alt_text", "true", false);
-        query.append("include_reply_count", "1", false);
-        query.append("tweet_mode", "extended", false);
-        query.append("include_entities", "true", false);
-        query.append("include_user_entities", "true", false);
-        query.append("include_ext_media_color", "true", false);
-        query.append("include_ext_media_availability", "true", false);
-        query.append("include_ext_sensitive_media_warning", "true", false);
-        query.append("send_error_codes", "true", false);
-        query.append("simple_quoted_tweet", "true", false);
+        // query.add("include_composer_source", "true");
+        query.add("include_quote_count", "true");
+        query.add("c", "true");
+        query.add("include_reply_count", "1");
+        query.add("tweet_mode", "extended");
+        query.add("include_entities", "true");
+        query.add("include_user_entities", "true");
+        query.add("include_ext_media_color", "true");
+        query.add("include_ext_media_availability", "true");
+        query.add("include_ext_sensitive_media_warning", "true");
+        query.add("send_error_codes", "true");
+        query.add("simple_quoted_tweet", "true");
         final FilePackage fp = FilePackage.getInstance();
         if (param.getCryptedUrl().matches(TYPE_USER_LIKES)) {
             /* Crawl all liked items of a user */
@@ -772,14 +797,14 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 logger.info("Ignoring user defined 'max_date' parameter because of invalid input format: " + maxTweetDateStr);
             }
         }
-        int totalCrawledTweetsCount = 0;
+        int totalWalkedThroughTweetsCount = 0;
         int page = 1;
         String nextCursor = null;
         try {
             page = Integer.parseInt(addedURLQuery.get("page"));
-            totalCrawledTweetsCount = Integer.parseInt(addedURLQuery.get("totalCrawledTweetsCount"));
+            totalWalkedThroughTweetsCount = Integer.parseInt(addedURLQuery.get("totalCrawledTweetsCount"));
             nextCursor = Encoding.htmlDecode(addedURLQuery.get("nextCursor"));
-            logger.info("Resuming from last state: page = " + page + " | totalCrawledTweetsCount = " + totalCrawledTweetsCount + " | nextCursor = " + nextCursor);
+            logger.info("Resuming from last state: page = " + page + " | totalCrawledTweetsCount = " + totalWalkedThroughTweetsCount + " | nextCursor = " + nextCursor);
         } catch (final Throwable e) {
         }
         final HashSet<String> cursorDupes = new HashSet<String>();
@@ -797,22 +822,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final Map<String, Object> users = (Map<String, Object>) globalObjects.get("users");
             final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(root, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) globalObjects.get("tweets");
-            if (tweetMap == null || tweetMap.isEmpty()) {
-                logger.info("Stopping because: Found 0 tweets on current page --> Reached end?");
-                break;
-            }
             final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
             String lastCreatedAtDateStr = null;
             while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
-                final String userIDStr = tweet.get("user_id_str").toString();
-                final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(userIDStr);
+                final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(tweet.get("user_id_str").toString());
                 decryptedLinks.addAll(crawlTweetMap(tweet, userWhoPostedThisTweet, fp));
-                totalCrawledTweetsCount++;
+                totalWalkedThroughTweetsCount++;
                 lastCreatedAtDateStr = (String) tweet.get("created_at");
                 final long currentTweetTimestamp = TimeFormatter.getMilliSeconds(lastCreatedAtDateStr, "EEE MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
                 /* Check some abort conditions */
-                if (maxTweetsToCrawl != null && totalCrawledTweetsCount >= maxTweetsToCrawl.intValue()) {
+                if (maxTweetsToCrawl != null && totalWalkedThroughTweetsCount >= maxTweetsToCrawl.intValue()) {
                     logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl);
                     break tweetTimeline;
                 } else if (crawlUntilTimestamp != -1 && currentTweetTimestamp > crawlUntilTimestamp) {
@@ -820,11 +840,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     break tweetTimeline;
                 }
             }
-            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
+            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalWalkedThroughTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
             if (tweetMap.size() < expected_items_per_page) {
                 /**
-                 * This can sometimes happen! </br> We'll ignore this and let it run into our other fail-safe for when a page contains zero
-                 * items.
+                 * This can sometimes happen! </br>
+                 * We'll ignore this and let it run into our other fail-safe for when a page contains zero items.
                  */
                 logger.info(String.format("Current page contained only %d of max. %d expected objects --> Reached the end?", tweetMap.size(), expected_items_per_page));
                 // break;
@@ -852,7 +872,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             /** Store this information in URL so in case crawler fails, it will resume from previous position if user adds that URL. */
             addedURLQuery.addAndReplace("page", Integer.toString(page));
-            addedURLQuery.addAndReplace("totalCrawledTweetsCount", Integer.toString(totalCrawledTweetsCount));
+            addedURLQuery.addAndReplace("totalCrawledTweetsCount", Integer.toString(totalWalkedThroughTweetsCount));
             addedURLQuery.addAndReplace("nextCursor", Encoding.urlEncode(nextCursor));
             resumeURL = addedURLWithoutParams + "?" + addedURLQuery.toString();
             page++;
@@ -903,7 +923,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br> Scroll down to "Twitter API error codes"
+     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
+     * Scroll down to "Twitter API error codes"
      */
     private void handleErrorsAPI(final Browser br) throws Exception {
         Map<String, Object> entries = null;
@@ -929,13 +950,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 63:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    // case 88:
-                    /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
-                    // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
-                    // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
-                    // logger.info("Rate-limit reached | Resets in: " +
-                    // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
-                    // }
+                // case 88:
+                /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
+                // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
+                // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
+                // logger.info("Rate-limit reached | Resets in: " +
+                // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
+                // }
                 case 109:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 144:
