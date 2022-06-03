@@ -21,18 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -55,6 +43,18 @@ import jd.plugins.decrypter.TeraboxComFolder;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TeraboxCom extends PluginForHost {
@@ -247,40 +247,47 @@ public class TeraboxCom extends PluginForHost {
 
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            br.setFollowRedirects(true);
-            br.setCookiesExclusive(true);
-            final Cookies cookies = account.loadCookies("");
-            final Cookies userCookies = account.loadUserCookies();
-            if (cookies != null) {
-                logger.info("Attempting cookie login");
-                this.br.setCookies(this.getHost(), cookies);
-                if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                    logger.info("Cookies are still fresh --> Trust cookies without login");
-                    return false;
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                final Cookies userCookies = account.loadUserCookies();
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    if (this.checkLoginStatus(br, account)) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
                 }
-                if (this.checkLoginStatus(br, account)) {
-                    logger.info("Cookie login successful");
-                    /* Refresh cookie timestamp */
-                    return true;
-                } else {
-                    logger.info("Cookie login failed");
+                logger.info("Full login required");
+                if (userCookies == null) {
+                    showCookieLoginInformation();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
-            }
-            logger.info("Full login required");
-            if (userCookies == null) {
-                showCookieLoginInformation();
-                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
-            }
-            logger.info("Performing full (user-cookie) login");
-            br.setCookies(userCookies);
-            if (!this.checkLoginStatus(br, account)) {
-                if (account.hasEverBeenValid()) {
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                } else {
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                logger.info("Performing full (user-cookie) login");
+                br.setCookies(userCookies);
+                if (!this.checkLoginStatus(br, account)) {
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
                 }
+                return true;
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
             }
-            return true;
         }
     }
 
