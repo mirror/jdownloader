@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
@@ -29,29 +30,56 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.FileFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(?:www\\.)?filefactory\\.com/((?:folder|f)/[\\w]+|share/fi[a-z0-9,:]+)" })
+@PluginDependencies(dependencies = { FileFactory.class })
 public class FilefactoryComFolder extends PluginForDecrypt {
     public FilefactoryComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public static List<String[]> getPluginDomains() {
+        return jd.plugins.hoster.FileFactory.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:folder|f)/[\\w]+|share/fi[a-z0-9,:]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString();
-        if (parameter.matches(".+/share/fi.+")) {
+        if (param.getCryptedUrl().matches(".+/share/fi.+")) {
             /* 2019-08-17: New type of folder which contains all fileIDs inside URL */
-            final String[] fileIDs = new Regex(parameter, "fi:([a-z0-9]+)").getColumn(0);
+            final String[] fileIDs = new Regex(param.getCryptedUrl(), "fi:([a-z0-9]+)").getColumn(0);
             for (final String fileid : fileIDs) {
                 final String url = "http://www." + this.getHost() + "/file/" + fileid;
                 decryptedLinks.add(this.createDownloadlink(url));
             }
         } else {
             br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-            br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=1");
+            br.getPage(param.getCryptedUrl() + "/?sort=filename&order=ASC&show=100&page=1");
             /* Error handling */
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -67,7 +95,7 @@ public class FilefactoryComFolder extends PluginForDecrypt {
             }
             for (int i = 1; i <= maxPage; i++) {
                 if (i > 1) {
-                    br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=" + i);
+                    br.getPage(param.getCryptedUrl() + "/?sort=filename&order=ASC&show=100&page=" + i);
                 }
                 add(decryptedLinks);
             }
@@ -87,7 +115,6 @@ public class FilefactoryComFolder extends PluginForDecrypt {
         }
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

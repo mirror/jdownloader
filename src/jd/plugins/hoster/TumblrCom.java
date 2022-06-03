@@ -163,7 +163,7 @@ public class TumblrCom extends PluginForHost {
                     } catch (final Throwable e) {
                         logger.exception("Cookie login with stored token failed", e);
                     }
-                    /* Delete cookies / Headers to perform a full login */
+                    /* Delete cookies / Headers to perform a full login (= try to obtain new token/apikey) */
                     this.br.clearAll();
                 }
             }
