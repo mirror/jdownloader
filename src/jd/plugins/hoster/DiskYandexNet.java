@@ -512,7 +512,7 @@ public class DiskYandexNet extends PluginForHost {
                     /* Check if previous login attempt failed and cookie login is enforced. */
                     if (account.getBooleanProperty(PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN, false)) {
                         showCookieLoginInformation();
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                     }
                     boolean isLoggedIN = false;
                     boolean requiresCaptcha;
@@ -578,7 +578,7 @@ public class DiskYandexNet extends PluginForHost {
                         logger.info("Normal login failed -> Enforcing cookie login");
                         account.setProperty(PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN, true);
                         /* Don't display dialog e.g. during linkcheck/download-attempt. */
-                        if (this.getDownloadLink() == null) {
+                        if (this.getDownloadLink() == null && !account.hasEverBeenValid()) {
                             showCookieLoginInformation();
                         }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed - try cookie login", PluginException.VALUE_ID_PREMIUM_DISABLE);

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
@@ -18,6 +19,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -37,8 +39,7 @@ public class UseNetEwekaNl extends UseNet {
     public static interface EwekaNlConfigInterface extends UsenetAccountConfigInterface {
     };
 
-    private final String USENET_USERNAME            = "USENET_USERNAME";
-    private final String PROPERTY_USED_COOKIE_LOGIN = "used_cookie_login";
+    private final String USENET_USERNAME = "USENET_USERNAME";
 
     @Override
     protected String getUseNetUsername(Account account) {
@@ -73,14 +74,14 @@ public class UseNetEwekaNl extends UseNet {
          * When using cookie login user can enter whatever he wants into username field but we try to have unique usernames so user cannot
          * add same account twice.
          */
-        if (account.hasProperty(PROPERTY_USED_COOKIE_LOGIN) && userNameHTML != null) {
+        if (account.loadUserCookies() != null && userNameHTML != null) {
             account.setUser(userNameHTML);
         }
         account.setProperty(USENET_USERNAME, username);
-        String validUntil = br.getRegex("<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+        String validUntil = br.getRegex("(?i)<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
         if (validUntil == null) {
             /* 2020-01-21 */
-            validUntil = br.getRegex(">Next billing at</b></td>\\s*<td>(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+            validUntil = br.getRegex("(?i)>\\s*Next billing at</b></td>\\s*<td>(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
         }
         if (validUntil == null) {
             /* 2020-01-21 - wide open RegEx as fallback */
@@ -104,7 +105,20 @@ public class UseNetEwekaNl extends UseNet {
         br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
         /* 2021-09-03: Added cookie login as possible workaround for them using Cloudflare on login page. */
-        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+        final Cookies userCookies = account.loadUserCookies();
+        if (userCookies != null) {
+            logger.info("Checking login user cookies");
+            if (checkLogin(br, userCookies)) {
+                logger.info("Successfully loggedin via user cookies");
+                return;
+            } else {
+                if (account.hasEverBeenValid()) {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                } else {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                }
+            }
+        }
         if (cookies != null) {
             if (!verifyCookies) {
                 logger.info("Trust login cookies without check");
@@ -123,19 +137,7 @@ public class UseNetEwekaNl extends UseNet {
                 return;
             }
         }
-        if (userCookies != null) {
-            logger.info("Checking login user cookies");
-            if (checkLogin(br, userCookies)) {
-                logger.info("Successfully loggedin via user cookies");
-                account.saveCookies(br.getCookies(getHost()), "");
-                account.setProperty(PROPERTY_USED_COOKIE_LOGIN, true);
-                return;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
         logger.info("Performing full login");
-        account.removeProperty(PROPERTY_USED_COOKIE_LOGIN);
         getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
         final Form loginform = br.getFormbyProperty("id", "login-form");
         if (loginform == null) {

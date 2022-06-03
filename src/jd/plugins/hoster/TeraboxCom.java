@@ -21,6 +21,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -43,17 +55,6 @@ import jd.plugins.decrypter.TeraboxComFolder;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TeraboxCom extends PluginForHost {
@@ -249,7 +250,7 @@ public class TeraboxCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             final Cookies cookies = account.loadCookies("");
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+            final Cookies userCookies = account.loadUserCookies();
             if (cookies != null) {
                 logger.info("Attempting cookie login");
                 this.br.setCookies(this.getHost(), cookies);
@@ -268,15 +269,15 @@ public class TeraboxCom extends PluginForHost {
             logger.info("Full login required");
             if (userCookies == null) {
                 showCookieLoginInformation();
-                throw new AccountInvalidException("Cookie login required");
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
             logger.info("Performing full (user-cookie) login");
             br.setCookies(userCookies);
             if (!this.checkLoginStatus(br, account)) {
                 if (account.hasEverBeenValid()) {
-                    throw new AccountInvalidException("Expired login cookies");
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                 } else {
-                    throw new AccountInvalidException("Invalid login cookies");
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                 }
             }
             return true;

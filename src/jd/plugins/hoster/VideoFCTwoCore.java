@@ -27,6 +27,7 @@ import javax.script.ScriptEngineManager;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -241,7 +242,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
             final Cookies storedCookies = account.loadCookies("");
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+            final Cookies userCookies = account.loadUserCookies();
             if (storedCookies != null || userCookies != null) {
                 if (userCookies != null) {
                     this.br.setCookies(userCookies);
@@ -271,9 +272,9 @@ public abstract class VideoFCTwoCore extends PluginForHost {
                         if (userCookies != null) {
                             /* User has provided cookies instead of password --> No full login possible! */
                             if (account.hasEverBeenValid()) {
-                                throw new AccountInvalidException("Login cookies expired");
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                             } else {
-                                throw new AccountInvalidException("Login cookies invalid");
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                             }
                         }
                     }

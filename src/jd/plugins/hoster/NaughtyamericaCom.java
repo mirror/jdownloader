@@ -270,7 +270,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 }
                 if (!allowLoginWithUserPW) {
                     showCookieLoginInformation();
-                    throw new AccountInvalidException("Cookie login required");
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 logger.info("Performing full login");
                 br.getPage("https://" + NaughtyamericaComCrawler.DOMAIN_PREFIX_PREMIUM + account.getHoster() + "/");

@@ -777,7 +777,7 @@ public class DropboxCom extends PluginForHost {
             final Cookies userCookies = account.loadUserCookies();
             if (userCookies == null && !allowWebsiteLogin) {
                 showCookieLoginInformation();
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
             if (userCookies != null) {
                 br.setCookies(userCookies);

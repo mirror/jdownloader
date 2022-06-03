@@ -29,8 +29,12 @@ import java.util.Random;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.TiktokConfig;
 import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -38,11 +42,16 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -55,7 +64,7 @@ import jd.plugins.decrypter.TiktokComCrawler;
 public class TiktokCom extends PluginForHost {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://tiktok.com/");
+        this.enablePremium("https://tiktok.com/");
     }
 
     @Override
@@ -125,30 +134,32 @@ public class TiktokCom extends PluginForHost {
     }
 
     // private String dllink = null;
-    public static final String  PROPERTY_DIRECTURL_WEBSITE         = "directurl";
-    public static final String  PROPERTY_DIRECTURL_API             = "directurl_api";
-    public static final String  PROPERTY_USERNAME                  = "username";
-    public static final String  PROPERTY_USER_ID                   = "user_id";
-    public static final String  PROPERTY_VIDEO_ID                  = "videoid";
-    public static final String  PROPERTY_DATE                      = "date";
-    public static final String  PROPERTY_DATE_LAST_MODIFIED_HEADER = "date_last_modified_header";
-    public static final String  PROPERTY_DESCRIPTION               = "description";
-    public static final String  PROPERTY_HASHTAGS                  = "hashtags";
-    public static final String  PROPERTY_LIKE_COUNT                = "like_count";
-    public static final String  PROPERTY_PLAY_COUNT                = "play_count";
-    public static final String  PROPERTY_SHARE_COUNT               = "share_count";
-    public static final String  PROPERTY_COMMENT_COUNT             = "comment_count";
-    public static final String  PROPERTY_HAS_WATERMARK             = "has_watermark";
-    public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE   = "last_used_download_mode";
-    private static final String TYPE_VIDEO                         = "https?://[^/]+/@([^/]+)/video/(\\d+).*?";
+    public static final String  PROPERTY_DIRECTURL_WEBSITE                    = "directurl";
+    public static final String  PROPERTY_DIRECTURL_API                        = "directurl_api";
+    public static final String  PROPERTY_USERNAME                             = "username";
+    public static final String  PROPERTY_USER_ID                              = "user_id";
+    public static final String  PROPERTY_VIDEO_ID                             = "videoid";
+    public static final String  PROPERTY_DATE                                 = "date";
+    public static final String  PROPERTY_DATE_LAST_MODIFIED_HEADER            = "date_last_modified_header";
+    public static final String  PROPERTY_DESCRIPTION                          = "description";
+    public static final String  PROPERTY_HASHTAGS                             = "hashtags";
+    public static final String  PROPERTY_LIKE_COUNT                           = "like_count";
+    public static final String  PROPERTY_PLAY_COUNT                           = "play_count";
+    public static final String  PROPERTY_SHARE_COUNT                          = "share_count";
+    public static final String  PROPERTY_COMMENT_COUNT                        = "comment_count";
+    public static final String  PROPERTY_HAS_WATERMARK                        = "has_watermark";
+    public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE              = "last_used_download_mode";
+    private static final String TYPE_VIDEO                                    = "https?://[^/]+/@([^/]+)/video/(\\d+).*?";
     /* API related stuff */
-    public static final String  API_BASE                           = "https://api-h2.tiktokv.com/aweme/v1";
-    public static final String  API_VERSION_NAME                   = "20.9.3";
-    public static final String  API_VERSION_CODE                   = "293";
+    public static final String  API_BASE                                      = "https://api-h2.tiktokv.com/aweme/v1";
+    public static final String  API_VERSION_NAME                              = "20.9.3";
+    public static final String  API_VERSION_CODE                              = "293";
+    private final String        PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT = "has_shown_download_mode_hint";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
     public static String toHumanReadableNumber(final Number number) {
@@ -162,8 +173,8 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        this.setBrowserExclusive();
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        this.login(account, false);
         final String fid = getFID(link);
         if (fid == null) {
             /* Developer mistake */
@@ -175,9 +186,9 @@ public class TiktokCom extends PluginForHost {
             link.setName(fid + ".mp4");
         }
         if (PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode() == DownloadMode.API) {
-            this.checkAvailablestatusAPI(link, isDownload);
+            this.checkAvailablestatusAPI(link, account, isDownload);
         } else {
-            this.checkAvailablestatusWebsite(link, isDownload);
+            this.checkAvailablestatusWebsite(link, account, isDownload);
         }
         final String dllink = getStoredDirecturl(link);
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet() && !isDownload) {
@@ -264,7 +275,10 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    public void checkAvailablestatusWebsite(final DownloadLink link, final boolean isDownload) throws Exception {
+    public void checkAvailablestatusWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        if (account != null) {
+            this.login(account, false);
+        }
         /* In website mode we neither know whether or not a video is watermarked nor can we download it without watermark. */
         link.removeProperty(PROPERTY_HAS_WATERMARK);
         final String fid = getFID(link);
@@ -432,11 +446,12 @@ public class TiktokCom extends PluginForHost {
         setFilename(link);
     }
 
-    public void checkAvailablestatusAPI(final DownloadLink link, final boolean isDownload) throws Exception {
+    public void checkAvailablestatusAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBRAPI(br);
         final UrlQuery query = getAPIQuery();
         query.add("aweme_id", getFID(link));
         /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
+        // accessAPI(br, "/feed", query);
         accessAPI(br, "/aweme/detail", query);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Object> aweme_detail = (Map<String, Object>) entries.get("aweme_detail");
@@ -506,16 +521,16 @@ public class TiktokCom extends PluginForHost {
         return br;
     }
 
+    public static Browser prepBRWebAPI(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36");
+        return br;
+    }
+
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("User-Agent", String.format("com.ss.android.ugc.trill/%s (Linux; U; Android 10; en_US; Pixel 4; Build/QQ3A.200805.001; Cronet/58.0.2991.0)", API_VERSION_CODE));
         // br.getHeaders().put("User-Agent", "okhttp");
         br.getHeaders().put("Accept", "application/json");
         br.setCookie(API_BASE, "odin_tt", generateRandomString("0123456789abcdef", 160));
-        return br;
-    }
-
-    public static Browser prepBRWebAPI(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36");
         return br;
     }
 
@@ -725,7 +740,7 @@ public class TiktokCom extends PluginForHost {
         if (this.attemptStoredDownloadurlDownload(link)) {
             logger.info("Using stored directurl for downloading");
         } else {
-            requestFileInformation(link, true);
+            requestFileInformation(link, account, true);
             final String dllink = this.getStoredDirecturl(link);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -776,6 +791,111 @@ public class TiktokCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return getUserConfiguredMaxSimultaneousDownloads();
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    public void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies == null) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                }
+                logger.info("Attempting user cookie login");
+                br.setCookies(userCookies);
+                if (!force) {
+                    /* Do not verify cookies */
+                    return;
+                }
+                prepBRWebAPI(br);
+                br.getPage("https://us." + this.getHost() + "/passport/web/account/info/?" + getWebsiteQuery().toString());
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String msg = entries.get("message").toString();
+                if (msg.equals("success")) {
+                    /* Save new cookie timestamp */
+                    logger.info("User Cookie login successful");
+                    /*
+                     * User can enter whatever he wants into the 'username' field but we want unique usernames --> Grab username from json
+                     * response and set it.
+                     */
+                    final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                    account.setUser(data.get("username").toString());
+                    if (PluginJsonConfig.get(TiktokConfig.class).getDownloadMode() == DownloadMode.API && !account.hasProperty(PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT)) {
+                        showAccountLoginDownloadModeHint();
+                        account.setProperty(PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT, true);
+                    }
+                    return;
+                } else {
+                    logger.info("User Cookie login failed");
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
+                }
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    protected Thread showAccountLoginDownloadModeHint() {
+        final String host = this.getHost();
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - Login";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                        message += "Du hast soeben erfolgreich deinen tiktok Account eingetragen.\r\n";
+                        message += "Um damit private Videos herunterladen zu können, musst du noch den Download Modus in den tiktok Plugin Einstellungen auf 'Webseite' ändern!\r\n";
+                    } else {
+                        title = host + " - Login";
+                        message += "Hello dear " + host + " user\r\n";
+                        message += "You've just successfully added your tiktok account to JDownloader.\r\n";
+                        message += "In order to use it to download private videos you need to change the download mode in your tiktok plugin settings to 'Website' first.";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(2 * 60 * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return getUserConfiguredMaxSimultaneousDownloads();
+    }
+
+    private int getUserConfiguredMaxSimultaneousDownloads() {
         return PluginJsonConfig.get(getConfigInterface()).getMaxSimultaneousDownloads();
     }
 

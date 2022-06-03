@@ -28,6 +28,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -246,7 +247,7 @@ public class RecurbateCom extends antiDDoSForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 if (userCookies == null) {
                     /**
                      * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br>
@@ -256,7 +257,7 @@ public class RecurbateCom extends antiDDoSForHost {
                     if (!account.hasEverBeenValid()) {
                         showCookieLoginInformation();
                     }
-                    throw new AccountInvalidException("Cookie login required");
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 logger.info("Attempting user cookie login");
                 this.br.setCookies(this.getHost(), userCookies);
@@ -271,9 +272,9 @@ public class RecurbateCom extends antiDDoSForHost {
                 } else {
                     logger.info("Cookie login failed");
                     if (account.hasEverBeenValid()) {
-                        throw new AccountInvalidException("Login cookies expired");
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                     } else {
-                        throw new AccountInvalidException("Login cookies invalid");
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                     }
                 }
             } catch (final PluginException e) {

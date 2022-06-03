@@ -40,6 +40,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -58,6 +59,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -623,18 +625,12 @@ public class SoundcloudCom extends PluginForHost {
             br.setCookiesExclusive(true);
             try {
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 /* 2020-12-15: Website/API login is broken thus only cookie login is possible */
                 final boolean allowFullLogin = false;
-                if (cookies != null && oauthtoken != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
-                    if (!force) {
-                        logger.info("Trust cookies without checking");
-                        return;
-                    } else if (this.cookieCheck(br)) {
-                        return;
-                    }
+                if (userCookies == null && !allowFullLogin) {
+                    showCookieLoginInformation();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 if (userCookies != null) {
                     logger.info("Attempting user cookie login");
@@ -644,19 +640,28 @@ public class SoundcloudCom extends PluginForHost {
                     br.setCookies(this.getHost(), userCookies);
                     oauthtoken = userCookies.get("oauth_token").getValue(); // Exception will occur if this cookie is not given!
                     br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
-                    if (this.cookieCheck(br)) {
-                        account.saveCookies(br.getCookies(this.getHost()), "");
+                    if (this.checkLogin(br)) {
                         account.setProperty(PROPERTY_ACCOUNT_oauthtoken, oauthtoken);
                         return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
+                if (cookies != null && oauthtoken != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
+                    if (!force) {
+                        logger.info("Trust cookies without checking");
+                        return;
+                    } else if (this.checkLogin(br)) {
+                        return;
                     }
                 }
                 logger.info("Full login required");
-                if (!allowFullLogin) {
-                    showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
                 br.clearAuthentications();
                 br.clearCookies(this.getHost());
                 br.getPage("https://soundcloud.com/");
@@ -764,7 +769,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     /** Checks if we're logged in */
-    private boolean cookieCheck(final Browser br) throws IOException {
+    private boolean checkLogin(final Browser br) throws IOException {
         br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=" + getAppLocaleV2());
         if (br.getHttpConnection().getResponseCode() == 200) {
             logger.info("Cookie login successful");

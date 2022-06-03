@@ -252,7 +252,7 @@ public class SeedrCc extends PluginForHost {
                 }
                 if (cookieLoginOnly) {
                     showCookieLoginInfo();
-                    throw new AccountInvalidException("Cookie login required");
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);
@@ -339,7 +339,7 @@ public class SeedrCc extends PluginForHost {
         // final Map<String, Object> userSettings =(Map<String, Object>)user.get("settings");
         final String email = (String) userAccount.get("email");
         final String userAccountPackageName = (String) userAccount.get("package_name");
-        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+        final Cookies userCookies = account.loadUserCookies();
         /*
          * Users can enter anything into the "username" field when cookie login is used --> Correct that so we got an unique 'username'
          * value. Otherwise users could easily add one account multiple times -> Could cause issues.

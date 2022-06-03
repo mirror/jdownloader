@@ -279,7 +279,7 @@ public class PinterestCom extends PluginForHost {
                 final boolean enforceCookieLoginOnly = true;
                 if (enforceCookieLoginOnly && userCookies == null) {
                     showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 if (userCookies != null) {
                     /* They got a lot of different domains -> Choose the one the user was using */

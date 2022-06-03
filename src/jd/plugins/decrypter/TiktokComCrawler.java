@@ -32,11 +32,13 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
@@ -90,9 +92,15 @@ public class TiktokComCrawler extends PluginForDecrypt {
     private final String TYPE_REDIRECT      = "https?://vm\\.[^/]+/([A-Za-z0-9]+).*";
     private final String TYPE_USER_USERNAME = "https?://[^/]+/@([^\\?/]+).*";
     private final String TYPE_USER_USER_ID  = "https?://[^/]+/share/user/(\\d+).*";
+    /**
+     * E.g. https://www.tiktok.com/foryou?is_from_webapp=v1&item_id=12345#/@jewellry2022/video/12345 </br>
+     * --> URLs to single video from recommendation
+     */
+    private final String TYPE_VIDEO         = "https?://[^/]+.*/(@[^/]+/video/\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
             /* Single redirect URLs */
             br.setFollowRedirects(false);
@@ -104,13 +112,16 @@ public class TiktokComCrawler extends PluginForDecrypt {
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         } else if (plg.canHandle(param.getCryptedUrl())) {
             /* Single video URL --> Is handled by host plugin */
-            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             decryptedLinks.add(this.createDownloadlink(param.getCryptedUrl()));
+            return decryptedLinks;
+        } else if (param.getCryptedUrl().matches(TYPE_VIDEO)) {
+            /* Single video in special form --> Form new URL that host plugin can handle */
+            final String urlpart = new Regex(param.getCryptedUrl(), TYPE_VIDEO).getMatch(0);
+            decryptedLinks.add(this.createDownloadlink("https://" + this.getHost() + "/" + urlpart));
             return decryptedLinks;
         } else if (param.getCryptedUrl().matches(TYPE_USER_USERNAME) || param.getCryptedUrl().matches(TYPE_USER_USER_ID)) {
             return crawlProfile(param);
@@ -137,6 +148,13 @@ public class TiktokComCrawler extends PluginForDecrypt {
      * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
+        TiktokCom.prepBRWebsite(br);
+        /* Login whenever possible */
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            ((TiktokCom) plg).login(account, false);
+        }
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -267,7 +285,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             final Map<String, Object> searchResults = JSonStorage.restoreFromString(website.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(searchResults, "sug_list/{0}/extra_info");
             if (user == null) {
-                /* Profile doesn't exist */
+                logger.info("Profile doesn't exist or it's a private profile");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String sug_uniq_id = user.get("sug_uniq_id").toString();
