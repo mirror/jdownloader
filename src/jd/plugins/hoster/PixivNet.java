@@ -24,6 +24,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -47,22 +64,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixivNet extends PluginForHost {
@@ -398,16 +399,7 @@ public class PixivNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), plugin.getLogger());
-                if (cookies != null) {
-                    plugin.getLogger().info("Attempting normal cookie login");
-                    if (checkCookieLogin(plugin, br, account, cookies, validateCookies)) {
-                        return;
-                    } else {
-                        /* Full login required */
-                        plugin.getLogger().info("Cookie login failed");
-                    }
-                }
+                final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
                     plugin.getLogger().info("Attempting user cookie login");
                     if (checkCookieLogin(plugin, br, account, userCookies, validateCookies)) {
@@ -422,7 +414,20 @@ public class PixivNet extends PluginForHost {
                         return;
                     } else {
                         /* Full login required but not possible! */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "User cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
+                if (cookies != null) {
+                    plugin.getLogger().info("Attempting normal cookie login");
+                    if (checkCookieLogin(plugin, br, account, cookies, validateCookies)) {
+                        return;
+                    } else {
+                        /* Full login required */
+                        plugin.getLogger().info("Cookie login failed");
                     }
                 }
                 plugin.getLogger().info("Performing full login");

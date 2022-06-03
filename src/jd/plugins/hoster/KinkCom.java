@@ -23,15 +23,14 @@ import java.util.Locale;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -48,6 +47,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -73,12 +73,11 @@ public class KinkCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean resume                                  = true;
-    private static final int     maxchunks                               = 0;
-    private static final int     maxdownloads                            = -1;
-    private String               dllink                                  = null;
-    private boolean              server_issues                           = false;
-    private static final String  PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIIN = "has_used_cookie_login";
+    private static final boolean resume        = true;
+    private static final int     maxchunks     = 0;
+    private static final int     maxdownloads  = -1;
+    private String               dllink        = null;
+    private boolean              server_issues = false;
 
     @Override
     public String getAGBLink() {
@@ -292,23 +291,25 @@ public class KinkCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 br.setAllowedResponseCodes(new int[] { 401 });
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 final Cookies cookies = account.loadCookies("");
+                if (userCookies != null) {
+                    if (checkAndSaveCookies(br, userCookies, account)) {
+                        return;
+                    } else {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
                 if (cookies != null) {
                     if (checkAndSaveCookies(br, cookies, account)) {
                         return;
                     }
                 }
-                if (userCookies != null) {
-                    if (checkAndSaveCookies(br, userCookies, account)) {
-                        account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIIN, true);
-                        return;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
                 logger.info("Performing full login");
-                account.removeProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIIN);
                 br.setCookie(this.getHost(), "ktvc", "0");
                 br.setCookie(this.getHost(), "privyOptIn", "false");
                 br.getPage("https://www." + this.getHost() + "/login");
@@ -452,8 +453,7 @@ public class KinkCom extends PluginForHost {
         /* Try to let user know when login session will expire */
         final Cookies allCookies = br.getCookies(br.getHost());
         final Cookie cookie = allCookies.get("kinky.sess");
-        final boolean displaySessionExpireDate = account.hasProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIIN) || DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-        if (cookie != null && displaySessionExpireDate) {
+        if (cookie != null && account.loadUserCookies() != null) {
             final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             final String sessionExpireDateFormatted = formatter.format(new Date(cookie.getExpireDate()));
             ai.setStatus("Sess valid until: " + sessionExpireDateFormatted);

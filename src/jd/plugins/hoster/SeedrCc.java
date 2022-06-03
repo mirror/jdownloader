@@ -23,6 +23,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.gui.translate._GUI;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -227,7 +228,7 @@ public class SeedrCc extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final boolean cookieLoginOnly = false;
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 final Cookies cookies = account.loadCookies("");
                 if (userCookies != null) {
                     logger.info("Attempting user cookie login");
@@ -243,9 +244,9 @@ public class SeedrCc extends PluginForHost {
                     } else {
                         logger.info("User Cookie login failed");
                         if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException("Cookies expired");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
-                            throw new AccountInvalidException("Cookies invalid");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
                 }
