@@ -163,8 +163,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String wallpost_type_poll                        = "poll";
     /* Internal settings / constants */
     /*
-     * Whenever we found this number of links or more, quit the decrypter and add a [b]LOOPBACK_LINK[/b] to continue later in order to avoid
-     * memory problems/freezes.
+     * Whenever this number of items gets reached, return array gets cleared to reduce memory usage.
      */
     private final short         MAX_LINKS_PER_RUN                         = 5000;
     /* Used whenever we request arrays via API */
@@ -2712,7 +2711,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /** Sets basic values/cookies */
     private void prepBrowser(final Browser br) {
-        VKontakteRuHoster.prepBrowser(br, true);
+        VKontakteRuHoster.prepBrowser(br);
     }
 
     /**

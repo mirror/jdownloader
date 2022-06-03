@@ -230,10 +230,7 @@ public class VKontakteRuHoster extends PluginForHost {
         br = new Browser();
         dl = null;
         finalUrl = null;
-        // Initialise
-        int checkstatus = 0;
-        // setters
-        prepBrowser(br, false);
+        prepBrowser(br);
         setConstants(link);
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             finalUrl = link.getPluginPatternMatcher();
@@ -242,8 +239,7 @@ public class VKontakteRuHoster extends PluginForHost {
             if (filename != null) {
                 link.setFinalFileName(filename);
             }
-            checkstatus = linkOk(link, isDownload);
-            if (checkstatus != 1) {
+            if (linkOk(link, isDownload) != 1) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
@@ -306,16 +302,16 @@ public class VKontakteRuHoster extends PluginForHost {
                         link.setFinalFileName(title);
                     }
                 }
-                checkstatus = linkOk(link, isDownload);
-                if (checkstatus != 1) {
+                if (linkOk(link, isDownload) != 1) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else if (link.getPluginPatternMatcher().matches(TYPE_AUDIOLINK)) {
                 finalUrl = link.getStringProperty(PROPERTY_GENERAL_directlink);
-                if (!audioIsValidDirecturl(finalUrl)) {
-                    checkstatus = 0;
-                } else {
+                int checkstatus;
+                if (audioIsValidDirecturl(finalUrl)) {
                     checkstatus = linkOk(link, isDownload);
+                } else {
+                    checkstatus = 0;
                 }
                 if (checkstatus != 1) {
                     if (this.isDRMProtected(link)) {
@@ -384,7 +380,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     link.setFinalFileName(link.getStringProperty(PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + chosenQuality + ".mp4");
                 }
                 /* Check if stored directlink is expired */
-                checkstatus = linkOk(link, isDownload);
+                int checkstatus = linkOk(link, isDownload);
                 if (checkstatus != 1) {
                     /* Refresh directlink */
                     this.finalUrl = null;
@@ -1124,9 +1120,9 @@ public class VKontakteRuHoster extends PluginForHost {
 
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
     public void login(final Browser br, final Account account, final boolean forceCookieCheck) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             br.setCookiesExclusive(true);
-            prepBrowser(br, false);
+            prepBrowser(br);
             this.vkID = account.getStringProperty("vkid");
             final Cookies cookies = account.loadCookies("");
             final Cookies userCookies = account.loadUserCookies();
@@ -1210,6 +1206,7 @@ public class VKontakteRuHoster extends PluginForHost {
             logger.info("Cookie login successful");
             // language set in user profile, so after 'login' OR 'login check' it could be changed!
             if (!"3".equals(br.getCookie(DOMAIN, "remixlang"))) {
+                logger.info("Language preference of user != English, setting English language cookie again");
                 br.setCookie(DOMAIN, "remixlang", "3");
             }
             this.vkID = regExVKAccountID(br);
@@ -1220,7 +1217,7 @@ public class VKontakteRuHoster extends PluginForHost {
             /* Delete cookies / Headers to perform a full login */
             logger.info("Cookie login failed");
             br.clearAll();
-            prepBrowser(br, false);
+            prepBrowser(br);
             return false;
         }
     }
@@ -1278,22 +1275,15 @@ public class VKontakteRuHoster extends PluginForHost {
         generalErrorhandling(br);
     }
 
-    public static Browser prepBrowser(final Browser br, final boolean isDecryption) {
-        String useragent = SubConfiguration.getConfig("vk.com").getStringProperty(VKADVANCED_USER_AGENT, "");
-        if (StringUtils.isEmpty(useragent) || useragent.length() <= 3) {
-            useragent = null;
-        }
-        if (useragent != null) {
+    public static Browser prepBrowser(final Browser br) {
+        final String useragent = SubConfiguration.getConfig("vk.com").getStringProperty(VKADVANCED_USER_AGENT, "");
+        if (!StringUtils.isEmpty(useragent) && useragent.length() > 3) {
             br.getHeaders().put("User-Agent", useragent);
         }
         /* Set English language */
         br.setCookie(DOMAIN, "remixlang", "3");
-        if (isDecryption) {
-            // this causes epic issues in download tasks not timing out in reasonable time. We should refrain from setting in plugin
-            // timeouts unless its _REALLY_ needed! 20160612-raztoki
-            br.setReadTimeout(1 * 60 * 1000);
-            br.setConnectTimeout(2 * 60 * 1000);
-        }
+        br.setReadTimeout(1 * 60 * 1000);
+        br.setConnectTimeout(2 * 60 * 1000);
         /* Loads can be very high. Site sometimes returns more than 10 000 entries with 1 request. */
         br.setLoadLimit(br.getLoadLimit() * 4);
         synchronized (LOCK_429) {
