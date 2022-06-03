@@ -36,6 +36,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -58,6 +59,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -1127,8 +1129,21 @@ public class VKontakteRuHoster extends PluginForHost {
             prepBrowser(br, false);
             this.vkID = account.getStringProperty("vkid");
             final Cookies cookies = account.loadCookies("");
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+            final Cookies userCookies = account.loadUserCookies();
             try {
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
+                    br.setCookies(DOMAIN, userCookies);
+                    if (checkCookieLogin(br, account)) {
+                        return;
+                    } else {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(DOMAIN, cookies);
@@ -1141,15 +1156,6 @@ public class VKontakteRuHoster extends PluginForHost {
                         if (checkCookieLogin(br, account)) {
                             return;
                         }
-                    }
-                }
-                if (userCookies != null) {
-                    logger.info("Attempting user cookie login");
-                    br.setCookies(DOMAIN, userCookies);
-                    if (checkCookieLogin(br, account)) {
-                        return;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 logger.info("Performing full login");
@@ -1714,7 +1720,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String   default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX                                         = ".+";
     public static final boolean  default_VKVIDEO_ALBUM_USEIDASPACKAGENAME                                            = false;
     public static final boolean  default_VKVIDEO_USEIDASPACKAGENAME                                                  = false;
-    public static final boolean  default_VKAUDIOS_USEIDASPACKAGENAME                                                  = false;
+    public static final boolean  default_VKAUDIOS_USEIDASPACKAGENAME                                                 = false;
     public static final boolean  default_VKDOCS_USEIDASPACKAGENAME                                                   = false;
     private static final boolean default_VKDOCS_ADD_UNIQUE_ID                                                        = false;
     private static final boolean default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME                             = false;

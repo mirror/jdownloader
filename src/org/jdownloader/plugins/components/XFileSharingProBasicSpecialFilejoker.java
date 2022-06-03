@@ -162,7 +162,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      */
     protected boolean useAPIZeusCloudManager(final Account account) {
         if (account != null) {
-            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+            final Cookies userCookies = account.loadUserCookies();
             if (userCookies != null) {
                 /* User entered cookies as password -> We can't use the API! */
                 return false;

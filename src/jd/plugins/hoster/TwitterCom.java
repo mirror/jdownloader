@@ -589,6 +589,24 @@ public class TwitterCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 br.setFollowRedirects(true);
+                /* 2020-07-02: Only cookie login is supported! */
+                final boolean allowCookieLoginOnly = true;
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies == null || userCookies.isEmpty() && allowCookieLoginOnly) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                }
+                if (userCookies != null && !userCookies.isEmpty()) {
+                    /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
+                    br.setCookies(userCookies);
+                    if (!checkLogin(br)) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
                 if (cookies != null) {
                     /*
                      * Re-use cookies whenever possible as frequent logins will cause accounts to get blocked and owners will get warnings
@@ -605,38 +623,20 @@ public class TwitterCom extends PluginForHost {
                         br.clearCookies(br.getHost());
                     }
                 }
-                /* 2020-07-02: Only cookie login is supported! */
-                final boolean allowCookieLoginOnly = true;
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies != null && !userCookies.isEmpty()) {
-                    /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
-                    br.setCookies(userCookies);
-                    if (!checkLogin(br)) {
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
-                    }
-                } else if (allowCookieLoginOnly) {
-                    showCookieLoginInfo();
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
-                } else {
-                    br.getPage("https://" + account.getHoster() + "/login");
-                    String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
-                    if (authenticytoken == null) {
-                        authenticytoken = br.getCookie(br.getHost(), "_mb_tk", Cookies.NOTDELETEDPATTERN);
-                    }
-                    if (authenticytoken == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
-                    br.postPage("/sessions", postData);
-                    if (br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN) == null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    account.saveCookies(br.getCookies(br.getHost()), "");
+                br.getPage("https://" + account.getHoster() + "/login");
+                String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
+                if (authenticytoken == null) {
+                    authenticytoken = br.getCookie(br.getHost(), "_mb_tk", Cookies.NOTDELETEDPATTERN);
                 }
+                if (authenticytoken == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
+                br.postPage("/sessions", postData);
+                if (br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -663,7 +663,7 @@ public class TwitterCom extends PluginForHost {
         br.getPage("https://" + this.getHost() + "/i/api/1.1/account/settings.json?include_mention_filter=true&include_nsfw_user_flag=true&include_nsfw_admin_flag=true&include_ranked_timeline=true&include_alt_text_compose=true&ext=ssoConnections&include_country_code=true&include_ext_dm_nsfw_media_filter=true&include_ext_sharing_audiospaces_listening_data_with_followers=true");
         final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String username = (String) user.get("screen_name");
-        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), this.getLogger());
+        final Cookies userCookies = account.loadUserCookies();
         /*
          * Users can enter anything into the "username" field when cookie login is used --> Correct that so we got an unique 'username'
          * value. Otherwise users could easily add one account multiple times -> Could cause issues.

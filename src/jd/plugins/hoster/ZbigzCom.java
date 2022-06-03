@@ -19,6 +19,14 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Cookies;
@@ -29,19 +37,13 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zbigz.com" }, urls = { "https?://(?:www\\.)?zbigz\\.com/file/[a-z0-9]+/\\d+|https?://api\\.zbigz\\.com/v1/storage/get/[a-f0-9]+" })
 public class ZbigzCom extends antiDDoSForHost {
@@ -92,7 +94,9 @@ public class ZbigzCom extends antiDDoSForHost {
             con = br.openGetConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
-                link.setDownloadSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -120,20 +124,8 @@ public class ZbigzCom extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 /* 2021-06-16: Added cookie login as alternative login because their website only allows 1 active session at a time. */
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
-                /* 2019-11-04: Always try to re-use cookies to avoid login captchas! */
-                if (cookies != null) {
-                    if (!force) {
-                        /* Trust cookies without check */
-                        br.setCookies(cookies);
-                        return;
-                    } else if (this.checkCookieLogin(account, cookies)) {
-                        return;
-                    } else {
-                        /* Full login required */
-                        br.clearCookies(br.getHost());
-                    }
-                } else if (userCookies != null) {
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null) {
                     /* Always verify user cookies */
                     if (this.checkCookieLogin(account, userCookies)) {
                         /*
@@ -145,7 +137,22 @@ public class ZbigzCom extends antiDDoSForHost {
                         }
                         return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                } else if (cookies != null) {
+                    if (!force) {
+                        /* Trust cookies without check */
+                        br.setCookies(cookies);
+                        return;
+                    } else if (this.checkCookieLogin(account, cookies)) {
+                        return;
+                    } else {
+                        /* Full login required */
+                        br.clearCookies(br.getHost());
                     }
                 }
                 logger.info("Performing full login");

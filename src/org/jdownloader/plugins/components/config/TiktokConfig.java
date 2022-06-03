@@ -77,13 +77,13 @@ public interface TiktokConfig extends PluginConfigInterface {
         WEBSITE {
             @Override
             public String getLabel() {
-                return "Website [Usually with watermark]";
+                return "Website [Usually with watermark, also private videos]";
             }
         },
         API {
             @Override
             public String getLabel() {
-                return "API [Usually without watermark]";
+                return "API [Usually without watermark, only public videos]";
             }
         };
     }
@@ -100,13 +100,13 @@ public interface TiktokConfig extends PluginConfigInterface {
         WEBSITE {
             @Override
             public String getLabel() {
-                return "Website [Max first ~30 items]";
+                return "Website [Max first ~30 items, also private profiles]";
             }
         },
         API {
             @Override
             public String getLabel() {
-                return "API [All items]";
+                return "API [All items, only public profiles]";
             }
         };
     }

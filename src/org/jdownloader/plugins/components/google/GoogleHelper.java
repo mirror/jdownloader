@@ -14,17 +14,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
-
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -48,6 +37,18 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     // private static final String COOKIES2 = "googleComCookies";
@@ -232,15 +233,29 @@ public class GoogleHelper {
                 /* 2020-06-19: Enable this if login is only possible via exported cookies and NOT via username & password! */
                 /* 2020-06-19: Enabled cookie-only-login! */
                 final boolean cookieLoginOnly = true;
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 final Cookies lastSavedCookies = account.loadCookies("");
                 if (cookieLoginOnly && userCookies == null) {
                     showCookieLoginInformation(account.getHoster());
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter exported cookies in password field to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 /* Check stored cookies */
                 if (lastSavedCookies != null || userCookies != null) {
-                    if (lastSavedCookies != null) {
+                    if (userCookies != null) {
+                        logger.info("Attempting to perform login with user cookies");
+                        br.setCookies(userCookies);
+                        /* No User-Agent given in users' cookies? Add User selected User-Agent */
+                        if (!StringUtils.isEmpty(userCookies.getUserAgent())) {
+                            logger.info("Using User-Agent given in user cookies: " + userCookies.getUserAgent());
+                            /* Save User-Agent so it gets re-used next time */
+                            account.setProperty(PROPERTY_ACCOUNT_user_agent, userCookies.getUserAgent());
+                            /* No need to do this - User-Agent is already set above via setCookies! */
+                            // br.getHeaders().put("User-Agent", userCookies.getUserAgent());
+                        } else {
+                            logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
+                            br.getHeaders().put("User-Agent", userDefinedUserAgent);
+                        }
+                    } else {
                         logger.info("Attempting to login with stored cookies");
                         br.setCookies(lastSavedCookies);
                         /*
@@ -251,21 +266,6 @@ public class GoogleHelper {
                         if (userCookies != null && !StringUtils.isEmpty(lastSavedUserAgent)) {
                             logger.info("Using last saved User-Agent: " + lastSavedUserAgent);
                             br.getHeaders().put("User-Agent", lastSavedUserAgent);
-                        } else {
-                            logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
-                            br.getHeaders().put("User-Agent", userDefinedUserAgent);
-                        }
-                    } else {
-                        /* E.g. first login with user-given cookies */
-                        logger.info("Attempting to perform first login with user cookies");
-                        br.setCookies(userCookies);
-                        /* No User-Agent given in users' cookies? Add User selected User-Agent */
-                        if (!StringUtils.isEmpty(userCookies.getUserAgent())) {
-                            logger.info("Using User-Agent given in user cookies: " + userCookies.getUserAgent());
-                            /* Save User-Agent so it gets re-used next time */
-                            account.setProperty(PROPERTY_ACCOUNT_user_agent, userCookies.getUserAgent());
-                            /* No need to do this - User-Agent is already set above via setCookies! */
-                            // br.getHeaders().put("User-Agent", userCookies.getUserAgent());
                         } else {
                             logger.info("Using user defined User-Agent: " + userDefinedUserAgent);
                             br.getHeaders().put("User-Agent", userDefinedUserAgent);
@@ -287,15 +287,10 @@ public class GoogleHelper {
                             /* Give up. We only got these cookies so login via username and password is not possible! */
                             logger.info("Login failed --> No password available but only cookies --> Give up");
                             account.removeProperty(PROPERTY_ACCOUNT_user_agent);
-                            /*
-                             * 2020-07-13: Don't display cookie info on failed cookie login - obviously user already added his cookies
-                             * successfully.
-                             */
-                            // showCookieLoginInformation();
-                            if (account.getLastValidTimestamp() == -1) {
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            if (account.hasEverBeenValid()) {
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                             } else {
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login cookies expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                             }
                         }
                     }
