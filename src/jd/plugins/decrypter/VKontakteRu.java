@@ -96,14 +96,6 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private static final String EXCEPTION_API_UNKNOWN                     = "EXCEPTION_API_UNKNOWN";
     /* Settings */
-    private static final String VKWALL_GRAB_ALBUMS                        = "VKWALL_GRAB_ALBUMS";
-    private static final String VKWALL_GRAB_PHOTOS                        = "VKWALL_GRAB_PHOTOS";
-    private static final String VKWALL_GRAB_AUDIO                         = "VKWALL_GRAB_AUDIO";
-    private static final String VKWALL_GRAB_VIDEO                         = "VKWALL_GRAB_VIDEO";
-    private static final String VKWALL_GRAB_LINK                          = "VKWALL_GRAB_LINK";
-    private static final String VKWALL_GRAB_DOCS                          = "VKWALL_GRAB_DOCS";
-    private static final String VKAUDIOS_USEIDASPACKAGENAME               = "VKAUDIOS_USEIDASPACKAGENAME";
-    /* Settings 'in action' */
     private boolean             vkwall_grabalbums;
     private boolean             vkwall_grabphotos;
     private boolean             vkwall_grabaudio;
@@ -183,7 +175,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean             vkwall_use_api                            = false;
     private final boolean       docs_add_unique_id                        = true;
     private HashSet<String>     global_dupes                              = new HashSet<String>();
-    /* Properties especially for DownloadLinks which go back into this crawler */
+    /* Properties especially for DownloadLink instances that go back into this crawler */
     private final String        VIDEO_PROHIBIT_FASTCRAWL                  = "prohibit_fastcrawl";
 
     private ArrayList<DownloadLink> getReturnArray() {
@@ -235,12 +227,12 @@ public class VKontakteRu extends PluginForDecrypt {
         cfg = SubConfiguration.getConfig("vk.com");
         fastcheck_photo = cfg.getBooleanProperty(VKontakteRuHoster.FASTLINKCHECK_PICTURES, VKontakteRuHoster.default_FASTLINKCHECK_PICTURES);
         fastcheck_audio = cfg.getBooleanProperty(VKontakteRuHoster.FASTLINKCHECK_AUDIO, VKontakteRuHoster.default_FASTLINKCHECK_AUDIO);
-        vkwall_grabalbums = cfg.getBooleanProperty(VKWALL_GRAB_ALBUMS, false);
-        vkwall_grabphotos = cfg.getBooleanProperty(VKWALL_GRAB_PHOTOS, false);
-        vkwall_grabaudio = cfg.getBooleanProperty(VKWALL_GRAB_AUDIO, false);
-        vkwall_grabvideo = cfg.getBooleanProperty(VKWALL_GRAB_VIDEO, false);
-        vkwall_grablink = cfg.getBooleanProperty(VKWALL_GRAB_LINK, false);
-        vkwall_grabdocs = cfg.getBooleanProperty(VKWALL_GRAB_DOCS, false);
+        vkwall_grabalbums = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_GRAB_ALBUMS, VKontakteRuHoster.default_VKWALL_GRAB_ALBUMS);
+        vkwall_grabphotos = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_GRAB_PHOTOS, VKontakteRuHoster.default_VKWALL_GRAB_PHOTOS);
+        vkwall_grabaudio = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_GRAB_AUDIO, VKontakteRuHoster.default_VKWALL_GRAB_AUDIO);
+        vkwall_grabvideo = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_GRAB_VIDEO, VKontakteRuHoster.default_VKWALL_GRAB_VIDEO);
+        vkwall_grablink = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_GRAB_URLS, VKontakteRuHoster.default_VKWALL_GRAB_URLS);
+        vkwall_grabdocs = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_GRAB_DOCS, VKontakteRuHoster.default_VKWALL_GRAB_DOCS);
         vkwall_graburlsinsideposts = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS, VKontakteRuHoster.default_WALL_ALLOW_lookforurlsinsidewallposts);
         vkwall_use_api = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_USE_API, VKontakteRuHoster.default_VKWALL_USE_API);
         vkwall_graburlsinsideposts_regex_default = VKontakteRuHoster.default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX;
@@ -373,7 +365,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String owner_ID = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)$").getMatch(0);
         final String album_id = UrlQuery.parse(param.getCryptedUrl()).get("album_id");
         String fpName = null;
-        if (cfg.getBooleanProperty(VKAUDIOS_USEIDASPACKAGENAME, false)) {
+        if (cfg.getBooleanProperty(VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKAUDIOS_USEIDASPACKAGENAME)) {
             fpName = "audios" + owner_ID;
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -413,7 +405,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String owner_ID = new Regex(param.getCryptedUrl(), "audios((?:\\-)?\\d+)").getMatch(0);
         final String albumID = UrlQuery.parse(param.getCryptedUrl()).get("album_id");
         final String fpName;
-        if (cfg.getBooleanProperty(VKAUDIOS_USEIDASPACKAGENAME, false)) {
+        if (cfg.getBooleanProperty(VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKAUDIOS_USEIDASPACKAGENAME)) {
             fpName = "audios" + owner_ID;
         } else {
             fpName = "audios_album " + albumID;
@@ -471,7 +463,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String owner_ID = new Regex(param.getCryptedUrl(), PATTERN_AUDIO_AUDIOS_ALBUM_2020).getMatch(0);
         final String albumID = new Regex(param.getCryptedUrl(), PATTERN_AUDIO_AUDIOS_ALBUM_2020).getMatch(1);
         final String fpName;
-        if (cfg.getBooleanProperty(VKAUDIOS_USEIDASPACKAGENAME, false)) {
+        if (cfg.getBooleanProperty(VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKAUDIOS_USEIDASPACKAGENAME)) {
             fpName = "audios" + owner_ID;
         } else {
             fpName = "audios_album " + albumID;
