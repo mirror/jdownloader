@@ -66,6 +66,7 @@ files_and_folders=arquivo(s) ou pasta(s)
 final_delete=Finalmente excluir arquivos
 folders=pasta(s)
 hoster=Servidor
+if_file_exists_dont_show_again=Não mostrar novamente para este arquivo
 local=Situação do Arquivo
 menu_tools_extract_files=Extrair Arquivos
 name=Extrator de Arquivos
