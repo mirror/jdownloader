@@ -6,7 +6,6 @@ import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en" })
 public interface ExtractionTranslation extends TranslateInterface {
-
     @Default(lngs = { "en", "de" }, values = { "Archive Extractor", "Archiv Entpacker" })
     String name();
 
@@ -17,7 +16,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     // @Default(lngs = { "en" }, values = {
     // "Leave x MiB additional space after unpacking" })
     // String gui_config_extraction_additional_space();
-
     @Default(lngs = { "en" }, values = { "Archive has %s1 part(s) and is complete" })
     String ValidateArchiveAction_actionPerformed_(int size);
 
@@ -360,6 +358,9 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "If file exists..." })
     String settings_if_file_exists();
 
+    @Default(lngs = { "en", "de" }, values = { "Don't show again for this archive", "Nicht mehr für dieses Archive anzeigen" })
+    String if_file_exists_dont_show_again();
+
     @Default(lngs = { "en" }, values = { "Archive:" })
     String IfFileExistsDialog_layoutDialogContent_archive();
 
@@ -383,5 +384,4 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Use Custom Extraction Path Setup" })
     String EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH();
-
 }

@@ -65,6 +65,11 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private JTextField    newName;
     private String        newNameString;
 
+    @Override
+    protected String getDontShowAgainLabelText() {
+        return T.T.if_file_exists_dont_show_again();
+    }
+
     public IfFileExistsDialog(File extractTo, Item item, Archive archive) {
         super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
         this.archive = archive;
