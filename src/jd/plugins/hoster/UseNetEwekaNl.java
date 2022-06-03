@@ -4,12 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -23,6 +17,12 @@ import jd.plugins.AccountInvalidException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eweka.nl" }, urls = { "" })
 public class UseNetEwekaNl extends UseNet {
@@ -102,55 +102,64 @@ public class UseNetEwekaNl extends UseNet {
     }
 
     private void login(final Account account, final boolean verifyCookies) throws Exception {
-        br.setFollowRedirects(true);
-        final Cookies cookies = account.loadCookies("");
-        /* 2021-09-03: Added cookie login as possible workaround for them using Cloudflare on login page. */
-        final Cookies userCookies = account.loadUserCookies();
-        if (userCookies != null) {
-            logger.info("Checking login user cookies");
-            if (checkLogin(br, userCookies)) {
-                logger.info("Successfully loggedin via user cookies");
-                return;
-            } else {
-                if (account.hasEverBeenValid()) {
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                } else {
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                /* 2021-09-03: Added cookie login as possible workaround for them using Cloudflare on login page. */
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies != null) {
+                    logger.info("Checking login user cookies");
+                    if (checkLogin(br, userCookies)) {
+                        logger.info("Successfully loggedin via user cookies");
+                        return;
+                    } else {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
                 }
-            }
-        }
-        if (cookies != null) {
-            if (!verifyCookies) {
-                logger.info("Trust login cookies without check");
-                br.setCookies(cookies);
-                return;
-            }
-            logger.info("Checking login cookies");
-            if (checkLogin(br, cookies)) {
-                logger.info("Failed to login via cookies");
-                /* Delete old cookies */
-                account.clearCookies("");
-                br.getCookies(getHost()).clear();
-            } else {
-                logger.info("Successfully loggedin via cookies");
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    if (!verifyCookies) {
+                        logger.info("Trust login cookies without check");
+                        br.setCookies(cookies);
+                        return;
+                    }
+                    logger.info("Checking login cookies");
+                    if (checkLogin(br, cookies)) {
+                        logger.info("Failed to login via cookies");
+                        /* Delete old cookies */
+                        account.clearCookies("");
+                        br.getCookies(getHost()).clear();
+                    } else {
+                        logger.info("Successfully loggedin via cookies");
+                        account.saveCookies(br.getCookies(getHost()), "");
+                        return;
+                    }
+                }
+                logger.info("Performing full login");
+                getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
+                final Form loginform = br.getFormbyProperty("id", "login-form");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.setMethod(MethodType.POST);
+                loginform.put("identifier", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                submitForm(loginform);
+                if (!isLoggedIN(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 account.saveCookies(br.getCookies(getHost()), "");
-                return;
+            } catch (PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
             }
         }
-        logger.info("Performing full login");
-        getPage("https://www." + this.getHost() + "/myeweka/?lang=en");
-        final Form loginform = br.getFormbyProperty("id", "login-form");
-        if (loginform == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        loginform.setMethod(MethodType.POST);
-        loginform.put("identifier", Encoding.urlEncode(account.getUser()));
-        loginform.put("password", Encoding.urlEncode(account.getPass()));
-        submitForm(loginform);
-        if (!isLoggedIN(br)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        account.saveCookies(br.getCookies(getHost()), "");
     }
 
     private boolean checkLogin(final Browser br, final Cookies cookies) throws Exception {
