@@ -85,9 +85,7 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
-
     private static final long          serialVersionUID   = 8843600834248098174L;
-
     private HashMap<KeyStroke, Action> shortCutActions;
     private LogSource                  logger;
     private static LinkGrabberTable    INSTANCE;
@@ -97,10 +95,8 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         super(tableModel);
         INSTANCE = this;
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
-
         if (dupeManagerEnabled) {
             this.addRowHighlighter(new ExtOverlayRowHighlighter(null, LAFOptions.getInstance().getColorForLinkgrabberDupeHighlighter()) {
-
                 @Override
                 public boolean doHighlight(ExtTable<?> extTable, int row) {
                     final AbstractNode object = tableModel.getObjectbyRow(row);
@@ -109,68 +105,50 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                     }
                     return false;
                 }
-
             });
         }
         this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         logger = LogController.getInstance().getLogger(LinkGrabberTable.class.getName());
-
         final MigPanel loaderPanel = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]");
         // loaderPanel.setPreferredSize(new Dimension(200, 200));
-
         loaderPanel.setOpaque(false);
         loaderPanel.setBackground(null);
-
         final CircledProgressBar loader = new CircledProgressBar() {
             public int getAnimationFPS() {
                 return 25;
             }
         };
-
         loader.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 1.0f));
-
         loader.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_BOTTY_ROBOT, 256), 0.1f));
         ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
         ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
         loader.setIndeterminate(true);
-
         loaderPanel.add(loader);
-
         final JProgressBar ph = new JProgressBar();
-
         ph.setString(_GUI.T.DownloadsTable_DownloadsTable_init_plugins());
-
         LinkCollector.CRAWLERLIST_LOADED.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         ph.setString(_GUI.T.LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links());
-
                     }
-
                 };
             }
         });
-
         ph.setStringPainted(true);
         ph.setIndeterminate(true);
         loaderPanel.add(ph, "alignx center");
         // loaderPanel.setSize(400, 400);
-
         final LayoutManager orgLayout = getLayout();
         final Component rendererPane = getComponent(0);
-
         setLayout(new MigLayout("ins 0", "[grow]", "[grow]"));
         removeAll();
         add(loaderPanel, "alignx center,aligny 20%");
         LinkCollector.CRAWLERLIST_LOADED.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
@@ -205,9 +183,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         } else {
                             // clicked on a not-selected row. only add the context item
                             ConfirmLinksContextAction.confirmSelection(MoveLinksMode.MANUAL, new SelectionInfo<CrawledPackage, CrawledLink>(obj), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled(), false, false, null, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction(), CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction());
-
                         }
-
                     }
                 }
             }
@@ -218,10 +194,8 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     protected void fireColumnModelUpdate() {
         super.fireColumnModelUpdate();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 boolean alllocked = true;
                 for (ExtColumn<?> c : getModel().getColumns()) {
                     if (c.isResizable()) {
@@ -231,27 +205,22 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 }
                 if (alllocked) {
                     JScrollPane sp = (JScrollPane) getParent().getParent();
-
                     CFG_GUI.HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED.setValue(true);
                     setColumnSaveID("hBAR");
                     setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
                     sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
                     sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-
                 }
             }
         };
-
     }
 
     protected void removeLoaderPanel(final MigPanel loaderPanel, final LayoutManager orgLayout, final Component rendererPane) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 remove(loaderPanel);
                 setLayout(orgLayout);
-
                 loaderPanel.setVisible(false);
                 add(rendererPane);
                 revalidate();
@@ -277,13 +246,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         if (((LinkGrabberTableModel) getModel()).isTristateSorterEnabled()) {
             return false;
         }
-
         //
         if (JDGui.bugme(WarnLevel.NORMAL)) {
             UIOManager.I().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT.T.getNextSortIdentifier_sort_warning_rly_title_(), _JDT.T.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), new AbstractIcon(IconKey.ICON_HELP, 32), _JDT.T.basics_yes(), _JDT.T.basics_no(), "org.jdownloader.gui.views.linkgrabber.LinkGrabberTable");
         }
         sortPackageChildren(newColumn.getRowSorter(), getModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
-
         return true;
     }
 
@@ -294,19 +261,14 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-
         return false;
     }
 
     @Override
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final java.util.List<AbstractNode> selection, final ExtColumn<AbstractNode> column, MouseEvent event) {
-        long t = System.currentTimeMillis();
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final java.util.List<AbstractNode> selection, final ExtColumn<AbstractNode> column, MouseEvent ev) {
         ExtPopupMenu root = new ExtPopupMenu();
         MenuContainerRoot md = MenuManagerLinkgrabberTableContext.getInstance().getMenuData();
-
-        new MenuBuilder(MenuManagerLinkgrabberTableContext.getInstance(), root, md).run();
-        // createLayer(root, md);
-
+        new MenuBuilder(MenuManagerLinkgrabberTableContext.getInstance(), root, md).setHideOnClick(!ev.isShiftDown()).run();
         return root;
     }
 
@@ -321,7 +283,6 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         final SelectionInfo<CrawledPackage, CrawledLink> selection = getSelectionInfo();
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
@@ -416,12 +377,10 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     public void updateContextShortcuts() {
-
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actions = getActionMap();
-
         if (shortCutActions != null) {
             for (Entry<KeyStroke, Action> ks : shortCutActions.entrySet()) {
                 Object binding = input.get(ks.getKey());
@@ -429,14 +388,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 input2.remove(ks.getKey());
                 input3.remove(ks.getKey());
                 actions.remove(binding);
-
             }
         }
-
         shortCutActions = new HashMap<KeyStroke, Action>();
         fillActions(MenuManagerLinkgrabberTableContext.getInstance().getMenuData());
         fillActions(MenuManagerLinkgrabberTabBottombar.getInstance().getMenuData());
-
     }
 
     private void fillActions(MenuContainer menuData) {
@@ -446,9 +402,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-
         final ActionMap actions = getActionMap();
-
         for (MenuItemData mi : menuData.getItems()) {
             if (!mi._isValidated()) {
                 continue;
@@ -465,7 +419,6 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         if (keystroke != null) {
                             linkAction(input, input2, input3, actions, action, keystroke);
                         }
-
                     }
                 }
                 continue;
@@ -500,7 +453,6 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
         }
     }
@@ -532,15 +484,12 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             } catch (Exception e) {
                 logger.log(e);
             }
-
             logger.info(keystroke + " -> " + action);
-
             input.put(keystroke, key);
             input2.put(keystroke, key);
             input3.put(keystroke, key);
             actions.put(key, action);
             shortCutActions.put(keystroke, action);
-
         }
     }
 
@@ -555,9 +504,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-
         final ActionMap actions = getActionMap();
         this.linkAction(input, input2, input3, actions, focusAction, ks);
     }
-
 }
