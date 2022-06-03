@@ -20,16 +20,18 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 /**
  * c & user values are required in order to not have faked output in other sections of the site.
@@ -61,7 +63,7 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/index\\.php\\?id=([a-zA-Z0-9_/\\+\\=\\-%]+)(\\&.*)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -72,12 +74,17 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String b64 = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), "\\?id=([a-zA-Z0-9_/\\+\\=\\-%]+)").getMatch(0));
+        String b64 = UrlQuery.parse(param.getCryptedUrl()).get("id");
         if (b64 == null) {
             return null;
+        }
+        b64 = Encoding.htmlDecode(b64);
+        final String b64Decoded = Encoding.Base64Decode(b64);
+        if (b64Decoded != null && b64Decoded.matches("^(http|ftp).+")) {
+            decryptedLinks.add(createDownloadlink(b64Decoded));
+            return decryptedLinks;
         }
         // c value is nearly always 1, user value is important.
         // if not present lets just try to decrypt id, as sometimes its not obstructed, other times it is...
@@ -90,11 +97,14 @@ public class SfLnkCnvCm extends antiDDoSForDecrypt {
         }
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl().replace("http://", "https://"));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String link = null;
         if (StringUtils.containsIgnoreCase(br.getURL(), "safelinkconverter.com/decrypt-\\d+/")) {
             // stuff that ends up going to /decrypted-2/ with solvemedia can be bypassed.
             getPage(br.getURL().replace("/decrypt-2/", "/decrypt/"));
-        } else if (br.containsHTML("decrypt.safelinkconverter")) {
+        } else if (br.containsHTML("decrypt\\.safelinkconverter")) {
             link = br.getRegex("onclick=\"window\\.open\\('(.*?)'").getMatch(0);
             if (link != null) {
                 getPage(link);
