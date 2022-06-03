@@ -11,6 +11,20 @@ import java.util.regex.Pattern;
 
 import javax.swing.TransferHandler;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -32,20 +46,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.download.HashInfo;
-
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
     private static final String PATTERN_NAME                  = "{name}";                      // depends on type
     private static final String PATTERN_PACKAGE_NAME          = "{packagename}";               // always package name
@@ -54,7 +54,8 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     private static final String PATTERN_DOWNLOADLINK_PROPERTY = "{jd:prop:yourWishedProperty}";
     private static final String PATTERN_COMMENT               = "{comment}";
     private static final String PATTERN_HASH                  = "{hash}";
-    private static final String PATTERN_FILESIZE              = "{filesize}";
+    private static final String PATTERN_FILESIZE_RAW          = "{filesize_raw}";
+    private static final String PATTERN_FILESIZE_B            = "{filesize}";
     private static final String PATTERN_FILESIZE_KIB          = "{filesize_kib}";
     private static final String PATTERN_FILESIZE_MIB          = "{filesize_mib}";
     private static final String PATTERN_FILESIZE_GIB          = "{filesize_gib}";
@@ -81,7 +82,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         sb.append("<html>");
         sb.append(_JDT.T.CopyGenericContextAction_getTranslationForPatternPackages_v3());
         sb.append("<br><ul>");
-        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME }) {
+        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE_RAW, PATTERN_FILESIZE_B, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME }) {
             sb.append("<li>").append(pattern).append("</li>");
         }
         sb.append("</ul></html>");
@@ -93,7 +94,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         sb.append("<html>");
         sb.append(_JDT.T.CopyGenericContextAction_getTranslationForPatternLinks_v3());
         sb.append("<br><ul>");
-        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME, PATTERN_HOST, PATTERN_NAME_NOEXT, PATTERN_EXTENSION, PATTERN_HASH, PATTERN_URL, PATTERN_URL_CONTAINER, PATTERN_URL_CONTENT, PATTERN_URL_ORIGIN, PATTERN_URL_REFERRER, PATTERN_ARCHIVE_PASSWORD, PATTERN_DOWNLOADLINK_PROPERTY }) {
+        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE_RAW, PATTERN_FILESIZE_B, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME, PATTERN_HOST, PATTERN_NAME_NOEXT, PATTERN_EXTENSION, PATTERN_HASH, PATTERN_URL, PATTERN_URL_CONTAINER, PATTERN_URL_CONTENT, PATTERN_URL_ORIGIN, PATTERN_URL_REFERRER, PATTERN_ARCHIVE_PASSWORD, PATTERN_DOWNLOADLINK_PROPERTY }) {
             sb.append("<li>").append(pattern).append("</li>");
         }
         sb.append("</ul></html>");
@@ -274,7 +275,8 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(pkg)));
             line = line.replace(PATTERN_COMMENT, nulltoString(pkg.getComment()));
             final long fileSize = fpv.getSize();
-            line = line.replace(PATTERN_FILESIZE, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
+            line = line.replace(PATTERN_FILESIZE_RAW, nulltoString(Long.toString(fileSize)));
+            line = line.replace(PATTERN_FILESIZE_B, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
             line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
@@ -293,7 +295,8 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getComment()));
             final long fileSize = link.getView().getBytesTotalEstimated();
-            line = line.replace(PATTERN_FILESIZE, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
+            line = line.replace(PATTERN_FILESIZE_RAW, nulltoString(Long.toString(fileSize)));
+            line = line.replace(PATTERN_FILESIZE_B, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
             line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
@@ -335,7 +338,8 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getDownloadLink().getComment()));
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
             final long fileSize = link.getSize();
-            line = line.replace(PATTERN_FILESIZE, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
+            line = line.replace(PATTERN_FILESIZE_RAW, nulltoString(Long.toString(fileSize)));
+            line = line.replace(PATTERN_FILESIZE_B, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
             line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
@@ -375,7 +379,8 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_COMMENT, nulltoString(pkg.getComment()));
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(pkg)));
             final long fileSize = fpv.getFileSize();
-            line = line.replace(PATTERN_FILESIZE, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
+            line = line.replace(PATTERN_FILESIZE_RAW, nulltoString(Long.toString(fileSize)));
+            line = line.replace(PATTERN_FILESIZE_B, nulltoString(formatFileSize(fileSize, SIZEUNIT.B)));
             line = line.replace(PATTERN_FILESIZE_KIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.KiB)));
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
