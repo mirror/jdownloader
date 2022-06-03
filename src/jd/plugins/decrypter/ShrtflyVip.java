@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shrtfly.vip" }, urls = { "https?://(?:www\\.)?(?:shrtfly\\.vip|shrtvip\\.com|stfly\\.me|smwebs\\.xyz)/([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shrtfly.com" }, urls = { "https?://(?:www\\.)?(?:shrtfly\\.vip|shrtfly\\.com|shrtvip\\.com|stfly\\.me|smwebs\\.xyz)/([A-Za-z0-9]+)" })
 public class ShrtflyVip extends MightyScriptAdLinkFly {
     public ShrtflyVip(PluginWrapper wrapper) {
         super(wrapper);
