@@ -20,6 +20,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.PluralsightComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -146,7 +147,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 /* 2022-02-16: Added cookie login as possible workaround for login issues caused by Cloudflare */
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 if (cookies != null || userCookies != null) {
                     if (userCookies != null) {
                         br.setCookies(this.getHost(), userCookies);
@@ -169,9 +170,9 @@ public class PluralsightCom extends antiDDoSForHost {
                             br.clearCookies(br.getHost());
                             if (userCookies != null) {
                                 if (account.hasEverBeenValid()) {
-                                    throw new AccountInvalidException("Cookies expired");
+                                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                                 } else {
-                                    throw new AccountInvalidException("Invalid login cookies");
+                                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                                 }
                             }
                         }

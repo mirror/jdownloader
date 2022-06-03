@@ -18,6 +18,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,6 +40,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,14 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PinterestComDecrypter;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:at|com|de|fr|it|es|co\\.uk)/pin/[A-Za-z0-9\\-_]+/" })
 public class PinterestCom extends PluginForHost {
@@ -272,28 +274,14 @@ public class PinterestCom extends PluginForHost {
                     last_used_host = "pinterest.com";
                 }
                 final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 /* 2021-01-28: Full login + invisible reCaptcha Enterprise --> Broken -> Use cookie login only */
                 final boolean enforceCookieLoginOnly = true;
-                if (cookies != null) {
-                    br.setCookies(last_used_host, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    br.getPage("https://www." + last_used_host + "/");
-                    if (this.isLoggedINHTML()) {
-                        account.saveCookies(br.getCookies(last_used_host), "");
-                        account.setProperty("host", br.getHost());
-                        return;
-                    }
-                    /* Full login required */
-                }
-                logger.info("Full login required");
                 if (enforceCookieLoginOnly && userCookies == null) {
                     showCookieLoginInformation();
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (userCookies != null) {
+                }
+                if (userCookies != null) {
                     /* They got a lot of different domains -> Choose the one the user was using */
                     final Cookie sessCookie = userCookies.get("_pinterest_sess");
                     if (sessCookie != null && !StringUtils.isEmpty(sessCookie.getHost()) && sessCookie.getHost().contains("pinterest")) {
@@ -301,16 +289,35 @@ public class PinterestCom extends PluginForHost {
                     }
                     br.setCookies(last_used_host, userCookies);
                     br.getPage("https://www." + last_used_host);
-                    if (!this.isLoggedINHTML()) {
+                    if (!this.isLoggedINHTML(br)) {
                         logger.warning("Cookie login failed");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
                     }
                     account.saveCookies(br.getCookies(last_used_host), "");
                     account.setProperty("host", br.getHost());
                     return;
                 }
+                if (cookies != null) {
+                    br.setCookies(last_used_host, cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
+                    br.getPage("https://www." + last_used_host + "/");
+                    if (this.isLoggedINHTML(br)) {
+                        account.saveCookies(br.getCookies(last_used_host), "");
+                        account.setProperty("host", br.getHost());
+                        return;
+                    }
+                    /* Full login required */
+                }
+                logger.info("Full login required");
                 /* May redirect to e.g. pinterest.de */
-                br.getPage("https://www.pinterest.com/login/?action=login");
+                br.getPage("https://www." + this.getHost() + "/login/?action=login");
                 String recaptchaV2Response = null;
                 final DownloadLink dlinkbefore = this.getDownloadLink();
                 try {
@@ -391,8 +398,12 @@ public class PinterestCom extends PluginForHost {
         return thread;
     }
 
-    private boolean isLoggedINHTML() {
-        return br.containsHTML("\"isAuth\":true");
+    private boolean isLoggedINHTML(final Browser br) {
+        if (br.containsHTML("\"isAuth\":true")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

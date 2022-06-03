@@ -12,6 +12,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.MetartConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -208,14 +209,14 @@ public class MetArtCom extends PluginForHost {
         br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
         /* User cookie login is possible as an alternative way to login */
-        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+        final Cookies userCookies = account.loadUserCookies();
         if (cookies != null || userCookies != null) {
-            if (cookies != null) {
-                logger.info("Attempting cookie login");
-                br.setCookies(account.getHoster(), cookies);
-            } else {
+            if (userCookies != null) {
                 logger.info("Attempting user cookie login");
                 br.setCookies(account.getHoster(), userCookies);
+            } else {
+                logger.info("Attempting cookie login");
+                br.setCookies(account.getHoster(), cookies);
             }
             if (!verifyCredentials) {
                 logger.info("Not verifying cookies");
@@ -233,9 +234,9 @@ public class MetArtCom extends PluginForHost {
                     br.clearAll();
                     if (userCookies != null) {
                         if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException("Expired login cookies");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
-                            throw new AccountInvalidException("Invalid login cookies");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
                 }

@@ -26,6 +26,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.NaughtyamericaConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -233,7 +234,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 prepBR(br);
                 /* For developers: Disable this Boolean if normal login process breaks down and you're unable or too lazy to fix it! */
                 final boolean allowLoginWithUserPW = true;
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass(), getLogger());
+                final Cookies userCookies = account.loadUserCookies();
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null || userCookies != null) {
                     /*
@@ -256,9 +257,9 @@ public class NaughtyamericaCom extends PluginForHost {
                         logger.info("Cookie login failed");
                         if (userCookies != null) {
                             if (account.hasEverBeenValid()) {
-                                throw new AccountInvalidException("Login cookies expired");
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                             } else {
-                                throw new AccountInvalidException("Login cookies invalid");
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                             }
                         } else {
                             /* Full login required */
