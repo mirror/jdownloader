@@ -146,212 +146,231 @@ public class ArchiveOrg extends PluginForDecrypt {
         final boolean isOfficiallyDownloadable = br.containsHTML("class=\"download-button\"") && !br.containsHTML("class=\"download-lending-message\"");
         final boolean isBookPreviewAvailable = br.containsHTML("schema\\.org/Book");
         if (isBookPreviewAvailable && !isOfficiallyDownloadable) {
-            /* Crawl all pages of a book */
-            final String bookAjaxURL = br.getRegex("\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
-            if (bookAjaxURL == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(bookAjaxURL);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final Map<String, Object> data = (Map<String, Object>) root.get("data");
-            final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
-            final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
-            final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
-            long loanedMillisecondsLeft = 0;
-            if (daysLeftOnLoan > 0) {
-                loanedMillisecondsLeft += daysLeftOnLoan * 24 * 60 * 60 * 1000;
-            }
-            if (secondsLeftOnLoan > 0) {
-                loanedMillisecondsLeft += secondsLeftOnLoan * 1000;
-            }
-            final Map<String, Object> brOptions = (Map<String, Object>) data.get("brOptions");
-            final String bookId = brOptions.get("bookId").toString();
-            final String title = (String) brOptions.get("bookTitle");
-            final List<Object> imagesO = (List<Object>) brOptions.get("data");
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
-            long loanedUntilTimestamp = 0;
-            /**
-             * 2021-12-02: Currently all we do is detect currently loaned books but they are not (yet) downloadable via JDownloader. </br>
-             * Borrowing books counts per session so if a user borrows a book via browser it won#t be borrowed in JD even if user has added
-             * the same account to JD.
-             */
-            boolean userHasBorrowedThisBook = false;
-            if (loanedMillisecondsLeft > 0 && (Boolean) lendingInfo.get("userHasBorrowed")) {
-                userHasBorrowedThisBook = true;
-                loanedUntilTimestamp = System.currentTimeMillis() + loanedUntilTimestamp;
-                logger.info("User has borrowed book which is currently being crawled: " + title);
-            }
-            for (final Object imageO : imagesO) {
-                /*
-                 * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page
-                 * --> Cover
-                 */
-                final List<Object> pagesO = (List<Object>) imageO;
-                for (final Object pageO : pagesO) {
-                    /* Grab "Preview"(???) version --> Usually "pageType":"NORMAL", "pageSide":"L", "viewable":true */
-                    final Map<String, Object> bookPage = (Map<String, Object>) pageO;
-                    final int pageNum = (int) JavaScriptEngineFactory.toLong(bookPage.get("leafNum"), -1);
-                    final String url = (String) bookPage.get("uri");
-                    if (StringUtils.isEmpty(url) || pageNum == -1) {
-                        /* Skip invalid items (this should never happen) */
-                        continue;
-                    }
-                    final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", url, true);
-                    dl.setName(pageNum + "_ " + title + ".jpg");
-                    if (userHasBorrowedThisBook) {
-                        /* User has currently borrowed this book. */
-                        dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP, loanedUntilTimestamp);
-                    }
-                    /* Assume all are online & downloadable */
-                    dl.setAvailable(true);
-                    dl._setFilePackage(fp);
-                    dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_IS_BOOK_PREVIEW, true);
-                    /* Important! These URLs are not static! Make sure user cannot add the same pages multiple times! */
-                    dl.setLinkID(this.getHost() + "://" + bookId + pageNum);
-                    decryptedLinks.add(dl);
-                }
-            }
+            return crawlBookPreview(param, parameter);
         } else if (isArchiveContent) {
-            /* 2020-09-07: Contents of a .zip/.rar file are also accessible and downloadable separately. */
-            final String archiveName = new Regex(br.getURL(), ".*/([^/]+)$").getMatch(0);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(archiveName));
-            final String[] htmls = br.getRegex("<tr><td>(.*?)</tr>").getColumn(0);
-            for (final String html : htmls) {
-                String url = new Regex(html, "(/download/[^\"\\']+)").getMatch(0);
-                final String filesizeStr = new Regex(html, "id=\"size\">(\\d+)").getMatch(0);
-                if (StringUtils.isEmpty(url)) {
+            return crawlArchiveContent();
+        } else if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
+            return crawlDetails(param, parameter);
+        } else {
+            return crawlFiles(param, parameter);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlFiles(CryptedLink param, String parameter) throws Exception {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The item is not available")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        if (!br.containsHTML("\"/download/")) {
+            logger.info("Maybe invalid link or nothing there to download: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
+        String subfolderPath = new Regex(parameter, "https?://[^/]+/download/(.*?)/?$").getMatch(0);
+        subfolderPath = Encoding.urlDecode(subfolderPath, false);
+        // final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
+        final String fpName = subfolderPath;
+        String html = br.toString().replaceAll("(\\(\\s*<a.*?</a>\\s*\\))", "");
+        final String[] htmls = new Regex(html, "<tr >(.*?)</tr>").getColumn(0);
+        final String xmlURLs[] = br.getRegex("<a href\\s*=\\s*\"([^<>\"]+_files\\.xml)\"").getColumn(0);
+        String xmlSource = null;
+        if (xmlURLs != null && xmlURLs.length > 0) {
+            for (String xmlURL : xmlURLs) {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                xmlSource = brc.getPage(brc.getURL() + "/" + xmlURL);
+                this.crawlXML(brc, subfolderPath);
+            }
+            return decryptedLinks;
+        } else {
+            /* Old/harder way */
+            for (final String htmlsnippet : htmls) {
+                String name = new Regex(htmlsnippet, "<a href=\"([^<>\"]+)\"").getMatch(0);
+                final String[] rows = new Regex(htmlsnippet, "<td>(.*?)</td>").getColumn(0);
+                if (name == null || rows.length < 3) {
                     /* Skip invalid items */
                     continue;
                 }
-                url = "https://archive.org" + url;
-                final DownloadLink dl = this.createDownloadlink(url);
-                if (filesizeStr != null) {
-                    dl.setDownloadSize(Long.parseLong(filesizeStr));
+                String filesize = rows[rows.length - 1];
+                if (StringUtils.endsWithCaseInsensitive(name, "_files.xml") || StringUtils.endsWithCaseInsensitive(name, "_meta.sqlite") || StringUtils.endsWithCaseInsensitive(name, "_meta.xml") || StringUtils.endsWithCaseInsensitive(name, "_reviews.xml")) {
+                    /* Skip invalid content */
+                    continue;
+                } else if (xmlSource != null && preferOriginal) {
+                    /* Skip non-original content if user only wants original content. */
+                    if (!new Regex(xmlSource, "<file name=\"" + Pattern.quote(name) + "\" source=\"original\"").matches()) {
+                        continue;
+                    }
                 }
+                if (filesize.equals("-")) {
+                    /* Folder --> Goes back into decrypter */
+                    final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
+                    decryptedLinks.add(fina);
+                } else {
+                    /* File */
+                    filesize += "b";
+                    final String filename = Encoding.urlDecode(name, false);
+                    final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
+                    fina.setDownloadSize(SizeFormatter.getSize(filesize));
+                    fina.setAvailable(true);
+                    fina.setFinalFileName(filename);
+                    if (xmlSource != null) {
+                        final String sha1 = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<sha1>([a-f0-9]{40})</sha1>").getMatch(0);
+                        if (sha1 != null) {
+                            fina.setSha1Hash(sha1);
+                        }
+                        final String size = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<size>(\\d+)</size>").getMatch(0);
+                        if (size != null) {
+                            fina.setVerifiedFileSize(Long.parseLong(size));
+                        }
+                    }
+                    fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                    decryptedLinks.add(fina);
+                }
+            }
+            /* 2020-03-04: Setting packagenames makes no sense anymore as packages will get split by subfolderpath. */
+            final FilePackage fp = FilePackage.getInstance();
+            if (fpName != null) {
+                fp.setName(fpName);
+                fp.addLinks(decryptedLinks);
+            }
+        }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlDetails(CryptedLink param, String parameter) throws Exception {
+        if (br.containsHTML("id=\"gamepadtext\"")) {
+            /* 2020-09-29: Rare case: Download browser emulated games */
+            final String subfolderPath = new Regex(parameter, "/details/([^/]+)").getMatch(0);
+            br.getPage("https://archive.org/download/" + subfolderPath + "/" + subfolderPath + "_files.xml");
+            this.crawlXML(this.br, subfolderPath);
+            return this.decryptedLinks;
+        }
+        /** TODO: 2020-09-29: Consider taking the shortcut here to always use that XML straight away (?!) */
+        int page = 2;
+        do {
+            if (br.containsHTML("This item is only available to logged in Internet Archive users")) {
+                decryptedLinks.add(createDownloadlink(parameter.replace("/details/", "/download/")));
+                break;
+            }
+            final String showAll = br.getRegex("href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
+            if (showAll != null) {
+                decryptedLinks.add(createDownloadlink(br.getURL(showAll).toString()));
+                logger.info("Creating: " + br.getURL(showAll).toString());
+                break;
+            }
+            final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
+            if (details == null || details.length == 0) {
+                break;
+            }
+            for (final String detail : details) {
+                final DownloadLink link = createDownloadlink(br.getURL(detail).toString());
+                decryptedLinks.add(link);
+                if (isAbort()) {
+                    break;
+                } else {
+                    distribute(link);
+                }
+            }
+            br.getPage("?page=" + (page++));
+        } while (!this.isAbort());
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlArchiveContent() throws Exception {
+        /* 2020-09-07: Contents of a .zip/.rar file are also accessible and downloadable separately. */
+        final String archiveName = new Regex(br.getURL(), ".*/([^/]+)$").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(archiveName));
+        final String[] htmls = br.getRegex("<tr><td>(.*?)</tr>").getColumn(0);
+        for (final String html : htmls) {
+            String url = new Regex(html, "(/download/[^\"\\']+)").getMatch(0);
+            final String filesizeStr = new Regex(html, "id=\"size\">(\\d+)").getMatch(0);
+            if (StringUtils.isEmpty(url)) {
+                /* Skip invalid items */
+                continue;
+            }
+            url = "https://archive.org" + url;
+            final DownloadLink dl = this.createDownloadlink(url);
+            if (filesizeStr != null) {
+                dl.setDownloadSize(Long.parseLong(filesizeStr));
+            }
+            dl.setAvailable(true);
+            dl._setFilePackage(fp);
+            decryptedLinks.add(dl);
+        }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlBookPreview(CryptedLink param, String parameter) throws Exception {
+        /* Crawl all pages of a book */
+        final String bookAjaxURL = br.getRegex("\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
+        if (bookAjaxURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(bookAjaxURL);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> data = (Map<String, Object>) root.get("data");
+        final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
+        final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
+        final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
+        long loanedMillisecondsLeft = 0;
+        if (daysLeftOnLoan > 0) {
+            loanedMillisecondsLeft += daysLeftOnLoan * 24 * 60 * 60 * 1000;
+        }
+        if (secondsLeftOnLoan > 0) {
+            loanedMillisecondsLeft += secondsLeftOnLoan * 1000;
+        }
+        final Map<String, Object> brOptions = (Map<String, Object>) data.get("brOptions");
+        final String bookId = brOptions.get("bookId").toString();
+        final String title = (String) brOptions.get("bookTitle");
+        final List<Object> imagesO = (List<Object>) brOptions.get("data");
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        long loanedUntilTimestamp = 0;
+        /**
+         * 2021-12-02: Currently all we do is detect currently loaned books but they are not (yet) downloadable via JDownloader. </br>
+         * Borrowing books counts per session so if a user borrows a book via browser it won#t be borrowed in JD even if user has added the
+         * same account to JD.
+         */
+        boolean userHasBorrowedThisBook = false;
+        if (loanedMillisecondsLeft > 0 && (Boolean) lendingInfo.get("userHasBorrowed")) {
+            userHasBorrowedThisBook = true;
+            loanedUntilTimestamp = System.currentTimeMillis() + loanedUntilTimestamp;
+            logger.info("User has borrowed book which is currently being crawled: " + title);
+        }
+        for (final Object imageO : imagesO) {
+            /*
+             * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page -->
+             * Cover
+             */
+            final List<Object> pagesO = (List<Object>) imageO;
+            for (final Object pageO : pagesO) {
+                /* Grab "Preview"(???) version --> Usually "pageType":"NORMAL", "pageSide":"L", "viewable":true */
+                final Map<String, Object> bookPage = (Map<String, Object>) pageO;
+                final int pageNum = (int) JavaScriptEngineFactory.toLong(bookPage.get("leafNum"), -1);
+                final String url = (String) bookPage.get("uri");
+                if (StringUtils.isEmpty(url) || pageNum == -1) {
+                    /* Skip invalid items (this should never happen) */
+                    continue;
+                }
+                final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", url, true);
+                dl.setName(pageNum + "_ " + title + ".jpg");
+                if (userHasBorrowedThisBook) {
+                    /* User has currently borrowed this book. */
+                    dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP, loanedUntilTimestamp);
+                }
+                /* Assume all are online & downloadable */
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
+                dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_IS_BOOK_PREVIEW, true);
+                /* Important! These URLs are not static! Make sure user cannot add the same pages multiple times! */
+                dl.setLinkID(this.getHost() + "://" + bookId + pageNum);
                 decryptedLinks.add(dl);
-            }
-        } else if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
-            if (br.containsHTML("id=\"gamepadtext\"")) {
-                /* 2020-09-29: Rare case: Download browser emulated games */
-                final String subfolderPath = new Regex(parameter, "/details/([^/]+)").getMatch(0);
-                br.getPage("https://archive.org/download/" + subfolderPath + "/" + subfolderPath + "_files.xml");
-                this.crawlXML(this.br, subfolderPath);
-                return this.decryptedLinks;
-            }
-            /** TODO: 2020-09-29: Consider taking the shortcut here to always use that XML straight away (?!) */
-            int page = 2;
-            do {
-                if (br.containsHTML("This item is only available to logged in Internet Archive users")) {
-                    decryptedLinks.add(createDownloadlink(parameter.replace("/details/", "/download/")));
-                    break;
-                }
-                final String showAll = br.getRegex("href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
-                if (showAll != null) {
-                    decryptedLinks.add(createDownloadlink(br.getURL(showAll).toString()));
-                    logger.info("Creating: " + br.getURL(showAll).toString());
-                    break;
-                }
-                final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
-                if (details == null || details.length == 0) {
-                    break;
-                }
-                for (final String detail : details) {
-                    final DownloadLink link = createDownloadlink(br.getURL(detail).toString());
-                    decryptedLinks.add(link);
-                    if (isAbort()) {
-                        break;
-                    } else {
-                        distribute(link);
-                    }
-                }
-                br.getPage("?page=" + (page++));
-            } while (!this.isAbort());
-        } else {
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The item is not available")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            if (!br.containsHTML("\"/download/")) {
-                logger.info("Maybe invalid link or nothing there to download: " + parameter);
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
-            String subfolderPath = new Regex(parameter, "https?://[^/]+/download/(.*?)/?$").getMatch(0);
-            subfolderPath = Encoding.urlDecode(subfolderPath, false);
-            // final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
-            final String fpName = subfolderPath;
-            String html = br.toString().replaceAll("(\\(\\s*<a.*?</a>\\s*\\))", "");
-            final String[] htmls = new Regex(html, "<tr >(.*?)</tr>").getColumn(0);
-            final String xmlURLs[] = br.getRegex("<a href\\s*=\\s*\"([^<>\"]+_files\\.xml)\"").getColumn(0);
-            String xmlSource = null;
-            if (xmlURLs != null && xmlURLs.length > 0) {
-                for (String xmlURL : xmlURLs) {
-                    final Browser brc = br.cloneBrowser();
-                    brc.setFollowRedirects(true);
-                    xmlSource = brc.getPage(brc.getURL() + "/" + xmlURL);
-                    this.crawlXML(brc, subfolderPath);
-                }
-                return decryptedLinks;
-            } else {
-                /* Old/harder way */
-                for (final String htmlsnippet : htmls) {
-                    String name = new Regex(htmlsnippet, "<a href=\"([^<>\"]+)\"").getMatch(0);
-                    final String[] rows = new Regex(htmlsnippet, "<td>(.*?)</td>").getColumn(0);
-                    if (name == null || rows.length < 3) {
-                        /* Skip invalid items */
-                        continue;
-                    }
-                    String filesize = rows[rows.length - 1];
-                    if (StringUtils.endsWithCaseInsensitive(name, "_files.xml") || StringUtils.endsWithCaseInsensitive(name, "_meta.sqlite") || StringUtils.endsWithCaseInsensitive(name, "_meta.xml") || StringUtils.endsWithCaseInsensitive(name, "_reviews.xml")) {
-                        /* Skip invalid content */
-                        continue;
-                    } else if (xmlSource != null && preferOriginal) {
-                        /* Skip non-original content if user only wants original content. */
-                        if (!new Regex(xmlSource, "<file name=\"" + Pattern.quote(name) + "\" source=\"original\"").matches()) {
-                            continue;
-                        }
-                    }
-                    if (filesize.equals("-")) {
-                        /* Folder --> Goes back into decrypter */
-                        final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
-                        decryptedLinks.add(fina);
-                    } else {
-                        /* File */
-                        filesize += "b";
-                        final String filename = Encoding.urlDecode(name, false);
-                        final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPath + "/" + name);
-                        fina.setDownloadSize(SizeFormatter.getSize(filesize));
-                        fina.setAvailable(true);
-                        fina.setFinalFileName(filename);
-                        if (xmlSource != null) {
-                            final String sha1 = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<sha1>([a-f0-9]{40})</sha1>").getMatch(0);
-                            if (sha1 != null) {
-                                fina.setSha1Hash(sha1);
-                            }
-                            final String size = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<size>(\\d+)</size>").getMatch(0);
-                            if (size != null) {
-                                fina.setVerifiedFileSize(Long.parseLong(size));
-                            }
-                        }
-                        fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
-                        decryptedLinks.add(fina);
-                    }
-                }
-                /* 2020-03-04: Setting packagenames makes no sense anymore as packages will get split by subfolderpath. */
-                final FilePackage fp = FilePackage.getInstance();
-                if (fpName != null) {
-                    fp.setName(fpName);
-                    fp.addLinks(decryptedLinks);
-                }
             }
         }
         return decryptedLinks;
