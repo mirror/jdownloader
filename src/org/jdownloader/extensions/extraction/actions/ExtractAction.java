@@ -4,10 +4,10 @@ import java.awt.Dialog.ModalityType;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.filechooser.FileFilter;
-
-import jd.gui.UserIO;
 
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.components.ExtMergedIcon;
@@ -31,6 +31,8 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.AbstractIcon;
+
+import jd.gui.UserIO;
 
 public class ExtractAction extends AbstractExtractionContextAction {
     /**
@@ -97,7 +99,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
     public void actionPerformed(ActionEvent e) {
         new Thread("Extracting") {
             public void run() {
-                FileFilter ff = new FileFilter() {
+                final FileFilter fileFilter = new FileFilter() {
                     @Override
                     public boolean accept(final File pathname) {
                         if (pathname.isDirectory()) {
@@ -130,8 +132,30 @@ public class ExtractAction extends AbstractExtractionContextAction {
                         return org.jdownloader.extensions.extraction.translate.T.T.plugins_optional_extraction_filefilter();
                     }
                 };
-                final File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
-                if (files == null || files.length == 0) {
+                final File[] dialogFiles = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_AND_DIRECTORIES, fileFilter, true, null, null);
+                final List<File> files = new ArrayList<File>();
+                if (dialogFiles != null) {
+                    for (final File dialogFile : dialogFiles) {
+                        if (dialogFile.isFile()) {
+                            files.add(dialogFile);
+                        } else if (dialogFile.isDirectory()) {
+                            dialogFile.listFiles(new java.io.FileFilter() {
+                                @Override
+                                public boolean accept(final File pathname) {
+                                    if (pathname.isDirectory()) {
+                                        return false;
+                                    } else if (fileFilter.accept(pathname)) {
+                                        files.add(pathname);
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+                if (files.size() == 0) {
                     return;
                 }
                 try {
