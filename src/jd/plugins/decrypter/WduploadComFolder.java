@@ -60,7 +60,7 @@ public class WduploadComFolder extends antiDDoSForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/.+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?:/v2)?/folder/.+");
         }
         return ret.toArray(new String[0]);
     }
@@ -90,7 +90,7 @@ public class WduploadComFolder extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<h2>Folder :([^<>\"]+): \\d+ Files </h2>").getMatch(0);
-        final String[] links = br.getRegex("(https?://(?:www\\.)?wdupload\\.com/file/[^<>\"]+)\"").getColumn(0);
+        final String[] links = br.getRegex("(https?://(?:www\\.)?wdupload\\.com/(?:v2/)?file/[^<>\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
