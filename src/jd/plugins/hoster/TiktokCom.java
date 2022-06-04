@@ -174,7 +174,9 @@ public class TiktokCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        this.login(account, false);
+        if (account != null) {
+            this.login(account, false);
+        }
         final String fid = getFID(link);
         if (fid == null) {
             /* Developer mistake */
