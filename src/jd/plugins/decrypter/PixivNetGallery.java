@@ -37,21 +37,48 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "https?://(?:www\\.)?pixiv\\.net/([a-z]{2}/)?(artworks/\\d+|member_illust\\.php\\?mode=[a-z0-9]+\\&illust_id=\\d+|users/\\d+(/(?:artworks|illustrations|manga|bookmarks/artworks))?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { PixivNet.class })
 public class PixivNetGallery extends PluginForDecrypt {
     public PixivNetGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return PixivNet.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2}/)?(artworks/\\d+|member_illust\\.php\\?mode=[a-z0-9]+\\&illust_id=\\d+|users/\\d+(/(?:artworks|illustrations|manga|bookmarks/artworks))?)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -61,34 +88,32 @@ public class PixivNetGallery extends PluginForDecrypt {
 
     private static final String TYPE_GALLERY = ".+/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=|artworks/)(\\d+)";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        final PluginForHost hostplugin = getNewPluginForHostInstance(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
+        final PixivNet hostplugin = (PixivNet) getNewPluginForHostInstance(this.getHost());
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         PixivNet.prepBR(br);
         boolean loggedIn = false;
-        if (aa != null) {
+        if (account != null) {
             try {
-                PixivNet.login(this, br, aa, false);
+                hostplugin.login(account, false);
                 loggedIn = true;
             } catch (PluginException e) {
-                handleAccountException(aa, e);
+                handleAccountException(account, e);
             }
         }
-        String itemID = new Regex(parameter, "id=(\\d+)").getMatch(0);
+        String itemID = new Regex(param.getCryptedUrl(), "id=(\\d+)").getMatch(0);
         br.setFollowRedirects(true);
         String uploadDate = null;
-        if (parameter.matches(TYPE_GALLERY)) {
-            itemID = new Regex(parameter, TYPE_GALLERY).getMatch(0);
+        if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
+            itemID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
             if (itemID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find galleryid");
             }
             br.getPage("https://www." + this.getHost() + "/ajax/illust/" + itemID);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 /* {"error":true,"message":"Work has been deleted or the ID does not exist.","body":[]} */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) entries.get("body");
@@ -116,7 +141,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 illustTitle = itemID;
             }
             final String singleLink = (String) JavaScriptEngineFactory.walkJson(entries, "urls/regular");
-            decryptedLinks.add(generateDownloadLink(parameter, itemID, illustTitle, illustUploadDate, username, tags, singleLink));
+            decryptedLinks.add(generateDownloadLink(param.getCryptedUrl(), itemID, illustTitle, illustUploadDate, username, tags, singleLink));
             if (pagecount > 1) {
                 /* == click on "Load more" */
                 br.getPage(String.format("https://www.%s/ajax/illust/%s/pages?lang=en", this.getHost(), itemID));
@@ -135,7 +160,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         /* Skip invalid items */
                         continue;
                     }
-                    decryptedLinks.add(generateDownloadLink(parameter, itemID, illustTitle, illustUploadDate, username, tags, directurl));
+                    decryptedLinks.add(generateDownloadLink(param.getCryptedUrl(), itemID, illustTitle, illustUploadDate, username, tags, directurl));
                 }
             }
             if (illustType == 2) {
@@ -161,7 +186,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                     final String zipURL = PluginJSonUtils.getJson(br, "originalSrc");
                     if (!StringUtils.isEmpty(zipURL)) {
                         final DownloadLink zip = createDownloadlink(zipURL.replaceAll("https?://", "decryptedpixivnet://"));
-                        zip.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
+                        zip.setProperty(PixivNet.PROPERTY_MAINLINK, param.getCryptedUrl());
                         // dl.setProperty(PixivNet.PROPERTY_GALLERYID, userid);
                         if (!StringUtils.isEmpty(uploadDate)) {
                             zip.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
@@ -171,7 +196,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                             zip.setProperty(PixivNet.PROPERTY_UPLOADER, username);
                         }
                         zip.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
-                        zip.setContentUrl(parameter);
+                        zip.setContentUrl(param.getCryptedUrl());
                         zip.setFinalFileName(filenameBase + ".zip");
                         zip.setAvailable(true);
                         decryptedLinks.add(zip);
@@ -188,12 +213,12 @@ public class PixivNetGallery extends PluginForDecrypt {
             /* Decrypt user */
             if (itemID == null) {
                 /* 2020-01-27 */
-                itemID = new Regex(parameter, "users/(\\d+)").getMatch(0);
+                itemID = new Regex(param.getCryptedUrl(), "users/(\\d+)").getMatch(0);
                 if (itemID == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find userid");
                 }
             }
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
             String fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?)(?:\\s*\\[pixiv\\])?\">").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -211,11 +236,10 @@ public class PixivNetGallery extends PluginForDecrypt {
             }
             uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
             if (isOffline(br)) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (isAccountOrRightsRequired(br) && !loggedIn) {
                 logger.info("Account required to crawl this particular content");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM);
+                throw new AccountRequiredException();
             }
             // final String total_numberof_items = br.getRegex("class=\"count-badge\">(\\d+) results").getMatch(0);
             int numberofitems_found_on_current_page = 0;
@@ -228,10 +252,10 @@ public class PixivNetGallery extends PluginForDecrypt {
             boolean isBookmarks = false;
             boolean isManga = false;
             final UrlQuery querybase = new UrlQuery();
-            if (parameter.contains("/bookmarks")) {
+            if (param.getCryptedUrl().contains("/bookmarks")) {
                 url = String.format("https://www.%s/ajax/user/%s/illusts/bookmarks", br.getHost(), itemID);
                 isBookmarks = true;
-            } else if (parameter.contains("/manga")) {
+            } else if (param.getCryptedUrl().contains("/manga")) {
                 url = String.format("https://www.%s/ajax/user/%s/profile/all", br.getHost(), itemID);
                 // url = String.format("https://www.%s/ajax/user/%s/profile/illusts", br.getHost(), userid);
                 // querybase.append("ids[]", "", false);
