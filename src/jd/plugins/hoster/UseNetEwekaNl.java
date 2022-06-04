@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -17,12 +23,6 @@ import jd.plugins.AccountInvalidException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eweka.nl" }, urls = { "" })
 public class UseNetEwekaNl extends UseNet {
@@ -55,7 +55,7 @@ public class UseNetEwekaNl extends UseNet {
         // final String port = br.getRegex("<td><b>Port</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
         // TODO: use these infos for available servers
         getPage("/myeweka?p=acd");
-        final String connections = br.getRegex("<td><b>Connections</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
+        final String connections = br.getRegex("(?i)<td><b>Connections</b></td>.*?<td.*?>(\\d+)</td>").getMatch(0);
         if (connections != null) {
             account.setMaxSimultanDownloads(Integer.parseInt(connections));
         } else {
@@ -109,6 +109,11 @@ public class UseNetEwekaNl extends UseNet {
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
                     logger.info("Checking login user cookies");
+                    if (!verifyCookies) {
+                        logger.info("Trust user login cookies without check");
+                        br.setCookies(userCookies);
+                        return;
+                    }
                     if (checkLogin(br, userCookies)) {
                         logger.info("Successfully loggedin via user cookies");
                         return;
