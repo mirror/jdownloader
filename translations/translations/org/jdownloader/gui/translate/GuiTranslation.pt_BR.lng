@@ -151,6 +151,7 @@ BrowserSolverService_gettypeName=Diálogo (janela) no navegador (Chrome, Firefox
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always=Sempre
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate=Exibir balão de notificações...
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime=Duração da animação (Tempo de Fade In & Out em ms)
+BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdactive=Somente se o JDownloader for o aplicativo ativo
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive=Somente se o JDownloader não for o aplicativo ativo
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never=Nunca
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_=Configurações do balão
