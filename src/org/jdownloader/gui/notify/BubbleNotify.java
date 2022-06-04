@@ -58,13 +58,10 @@ public class BubbleNotify {
                     return JDGui.getInstance().getMainFrame();
                 }
             };
-
             GenericConfigEventListener<Object> update = new GenericConfigEventListener<Object>() {
-
                 @Override
                 public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
                     ballooner.setScreenID(CFG_BUBBLE.CFG.getScreenID());
-
                     if (CFG_BUBBLE.CFG.getAnimationStartPositionAnchor() == Anchor.SYSTEM_DEFAULT) {
                         switch (CrossSystem.getOS().getFamily()) {
                         case WINDOWS:
@@ -75,11 +72,9 @@ public class BubbleNotify {
                             // top right position 10 pixel margin
                             ballooner.setStartPoint(new Point(-11, 0), Anchor.BOTTOM_RIGHT);
                         }
-
                     } else {
                         ballooner.setStartPoint(new Point(CFG_BUBBLE.CFG.getAnimationStartPositionX(), CFG_BUBBLE.CFG.getAnimationStartPositionY()), CFG_BUBBLE.CFG.getAnimationStartPositionAnchor());
                     }
-
                     if (CFG_BUBBLE.CFG.getAnimationEndPositionAnchor() == Anchor.SYSTEM_DEFAULT) {
                         switch (CrossSystem.getOS().getFamily()) {
                         case WINDOWS:
@@ -90,11 +85,9 @@ public class BubbleNotify {
                             // move out to the right
                             ballooner.setEndPoint(new Point(-1, 10), Anchor.TOP_LEFT);
                         }
-
                     } else {
                         ballooner.setEndPoint(new Point(CFG_BUBBLE.CFG.getAnimationEndPositionX(), CFG_BUBBLE.CFG.getAnimationEndPositionY()), CFG_BUBBLE.CFG.getAnimationEndPositionAnchor());
                     }
-
                     if (CFG_BUBBLE.CFG.getFinalPositionAnchor() == Anchor.SYSTEM_DEFAULT) {
                         switch (CrossSystem.getOS().getFamily()) {
                         case WINDOWS:
@@ -103,77 +96,68 @@ public class BubbleNotify {
                         default:
                             ballooner.setAnchorPoint(new Point(-11, 10), Anchor.TOP_RIGHT);
                         }
-
                     } else {
                         ballooner.setAnchorPoint(new Point(CFG_BUBBLE.CFG.getFinalPositionX(), CFG_BUBBLE.CFG.getFinalPositionY()), CFG_BUBBLE.CFG.getFinalPositionAnchor());
                     }
-
                 }
 
                 @Override
                 public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
                 }
-
             };
-
             CFG_BUBBLE.CFG._getStorageHandler().getEventSender().addListener(update);
             update.onConfigValueModified(null, null);
-
             types.add(new LinkCrawlerBubbleSupport());
             types.add(new UpdatesBubbleSupport());
             types.add(new ReconnectBubbleSupport());
-
             types.add(new CaptchaBubbleSupport());
             types.add(new StartDownloadsBubbleSupport());
             types.add(new StartStopPauseBubbleSupport());
-
             types.add(CESBubbleSupport.getInstance());
         } else {
             ballooner = null;
         }
     }
 
+    private boolean isBubbleNotificationEnabled() {
+        if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) {
+            return false;
+        } else {
+            switch (CFG_BUBBLE.CFG.getBubbleNotifyEnabledState()) {
+            case JD_ACTIVE:
+                return WindowManager.getInstance().hasFocus();
+            case JD_NOT_ACTIVE:
+                return !WindowManager.getInstance().hasFocus();
+            case TASKBAR:
+                return WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) == WindowExtendedState.ICONIFIED;
+            case TRAY:
+                return !JDGui.getInstance().getMainFrame().isVisible();
+            case TRAY_OR_TASKBAR:
+                if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) == WindowExtendedState.ICONIFIED) {
+                    return true;
+                } else if (!JDGui.getInstance().getMainFrame().isVisible()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            case NEVER:
+            default:
+                return false;
+            }
+        }
+    }
+
     public void show(final AbstractNotifyWindow no) {
         if (ballooner != null) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     boolean added = false;
                     try {
-                        switch (CFG_BUBBLE.CFG.getBubbleNotifyEnabledState()) {
-                        case JD_NOT_ACTIVE:
-                            if (WindowManager.getInstance().hasFocus()) {
-                                return;
-                            }
-                            break;
-                        case NEVER:
-                            return;
-                        case TASKBAR:
-                            if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) != WindowExtendedState.ICONIFIED) {
-                                return;
-                            }
-                            break;
-                        case TRAY:
-                            if (!JDGui.getInstance().getMainFrame().isVisible()) {
-                                break;
-                            }
-                            return;
-                        case TRAY_OR_TASKBAR:
-                            if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) == WindowExtendedState.ICONIFIED) {
-                                break;
-                            }
-                            if (!JDGui.getInstance().getMainFrame().isVisible()) {
-                                break;
-                            }
-                            return;
+                        if (isBubbleNotificationEnabled()) {
+                            ballooner.add(no);
+                            added = true;
                         }
-                        if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) {
-                            return;
-                        }
-                        System.out.println(" Show  bubble 3" + no);
-                        ballooner.add(no);
-                        added = true;
                     } finally {
                         if (added == false) {
                             /*
@@ -188,49 +172,19 @@ public class BubbleNotify {
     }
 
     public void show(final AbstractNotifyWindowFactory factory) {
-        System.out.println("Show");
         if (ballooner != null) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     boolean added = false;
                     AbstractNotifyWindow<?> notifyWindow = null;
                     try {
-                        switch (CFG_BUBBLE.CFG.getBubbleNotifyEnabledState()) {
-                        case JD_NOT_ACTIVE:
-                            if (WindowManager.getInstance().hasFocus()) {
-                                return;
+                        if (isBubbleNotificationEnabled()) {
+                            notifyWindow = factory.buildAbstractNotifyWindow();
+                            if (notifyWindow != null) {
+                                ballooner.add(notifyWindow);
+                                added = true;
                             }
-                            break;
-                        case NEVER:
-                            return;
-                        case TASKBAR:
-                            if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) != WindowExtendedState.ICONIFIED) {
-                                return;
-                            }
-                            break;
-                        case TRAY:
-                            if (!JDGui.getInstance().getMainFrame().isVisible()) {
-                                break;
-                            }
-                            return;
-                        case TRAY_OR_TASKBAR:
-                            if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) == WindowExtendedState.ICONIFIED) {
-                                break;
-                            }
-                            if (!JDGui.getInstance().getMainFrame().isVisible()) {
-                                break;
-                            }
-                            return;
-                        }
-                        if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) {
-                            return;
-                        }
-                        notifyWindow = factory.buildAbstractNotifyWindow();
-                        if (notifyWindow != null) {
-                            ballooner.add(notifyWindow);
-                            added = true;
                         }
                     } finally {
                         if (added == false && notifyWindow != null) {
@@ -248,7 +202,6 @@ public class BubbleNotify {
     public void hide(final AbstractNotifyWindow notify) {
         if (ballooner != null) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     ballooner.hide(notify);
@@ -267,7 +220,6 @@ public class BubbleNotify {
         if (ballooner != null) {
             if (types.remove(type)) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         if (configPanel != null) {
@@ -283,7 +235,6 @@ public class BubbleNotify {
         if (ballooner != null) {
             types.add(type);
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     if (configPanel != null) {
@@ -310,5 +261,4 @@ public class BubbleNotify {
         }
         return null;
     }
-
 }

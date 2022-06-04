@@ -3791,6 +3791,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Only if JDownloader is not the active application" })
     String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive();
 
+    @Default(lngs = { "en" }, values = { "Only if JDownloader is the active application" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdactive();
+
     @Default(lngs = { "en" }, values = { "Only if JDownloader is minimized to tray or taskbar" })
     String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask();
 

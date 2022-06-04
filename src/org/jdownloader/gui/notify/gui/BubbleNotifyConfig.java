@@ -13,7 +13,6 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface BubbleNotifyConfig extends ConfigInterface {
-
     public static enum Anchor {
         BOTTOM_LEFT,
         BOTTOM_RIGHT,
@@ -129,13 +128,14 @@ public interface BubbleNotifyConfig extends ConfigInterface {
         NEVER,
         @EnumLabel("Only if JDownloader is not the active window")
         JD_NOT_ACTIVE,
+        @EnumLabel("Only if JDownloader is the active window")
+        JD_ACTIVE,
         @EnumLabel("Only if JDownloader is minimized to tray or taskbar")
         TRAY_OR_TASKBAR,
         @EnumLabel("Only if JDownloader is minimized to tray")
         TRAY,
         @EnumLabel("Only if JDownloader is minimized to taskbar")
         TASKBAR
-
     }
 
     @AboutConfig()
