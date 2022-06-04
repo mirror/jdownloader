@@ -20,13 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
@@ -335,7 +330,7 @@ public class KinkCom extends PluginForHost {
                 post.getHeaders().put("Origin", "https://www." + this.getHost());
                 br.getPage(post);
                 if (!isLoggedin(br)) {
-                    showCookieLoginInformation();
+                    showCookieLoginInfo();
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -376,42 +371,6 @@ public class KinkCom extends PluginForHost {
 
     private boolean isLoggedin(final Browser br) {
         return br.containsHTML("/logout\"");
-    }
-
-    private Thread showCookieLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Kink.com - Login";
-                        message += "Hallo liebe(r) Kink.com NutzerIn\r\n";
-                        message += "Um deinen Kink.com Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Kink.com - Login";
-                        message += "Hello dear Kink.com user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     @Override

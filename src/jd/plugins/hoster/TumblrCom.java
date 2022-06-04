@@ -21,12 +21,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.TumblrComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -140,7 +135,7 @@ public class TumblrCom extends PluginForHost {
             final Cookies userCookies = account.loadUserCookies();
             String apikey = account.getStringProperty(PROPERTY_APIKEY);
             if (userCookies == null) {
-                showCookieLoginInformation();
+                showCookieLoginInfo();
                 throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
             if (userCookies != null && apikey != null) {
@@ -190,42 +185,6 @@ public class TumblrCom extends PluginForHost {
             }
             account.setProperty(PROPERTY_APIKEY, apikey);
         }
-    }
-
-    private Thread showCookieLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Tumblr.com - Login";
-                        message += "Hallo liebe(r) Tumblr NutzerIn\r\n";
-                        message += "Um deinen Tumblr Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Tumblr.com - Login";
-                        message += "Hello dear Tumblr user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     @Override
