@@ -449,9 +449,10 @@ public class Ardmediathek extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_json = String.format("https://www.ndr.de/%s-ardjson.json", videoID);
-        br.getPage(url_json);
-        final Map<String, Object> ndrJsonObject = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        return this.crawlNdrJson(param, ndrJsonObject);
+        final Browser brc = br.cloneBrowser();
+        brc.getPage(url_json);
+        final Map<String, Object> ndrJsonObject = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        return this.crawlNdrJson(param, br, ndrJsonObject);
     }
 
     private ArrayList<DownloadLink> crawlWdrMediathek(final CryptedLink param) throws Exception {
@@ -1081,17 +1082,26 @@ public class Ardmediathek extends PluginForDecrypt {
         return this.handleUserQualitySelection(metadata, foundQualitiesMap);
     }
 
-    private ArrayList<DownloadLink> crawlNdrJson(final CryptedLink param, final Map<String, Object> root) throws Exception {
+    private ArrayList<DownloadLink> crawlNdrJson(final CryptedLink param, Browser br, final Map<String, Object> root) throws Exception {
         final ArdMetadata metadata = new ArdMetadata();
         final Map<String, Object> meta = (Map<String, Object>) root.get("meta");
-        final String title = (String) meta.get("title");
-        final String seriesTitle = (String) meta.get("seriesTitle");
+        String title = (String) meta.get("title");
+        if (StringUtils.isEmpty(title)) {
+            title = br.getRegex("@type\"\\s*:\\s*\"VideoObject\"\\s*,\\s*\"name\"\\s*:\\s*\"(.*?)\"\\s*,").getMatch(0);
+            if (StringUtils.isEmpty(title)) {
+                title = br.getRegex("<meta\\s*name\\s*=\\s*\"title\"\\s*content\\s*=\\s*\"(.*?)\"\\s*/>").getMatch(0);
+            }
+        }
+        String seriesTitle = (String) meta.get("seriesTitle");
+        if (StringUtils.isEmpty(seriesTitle)) {
+            seriesTitle = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+        }
         if (!StringUtils.isEmpty(seriesTitle) && !StringUtils.isEmpty(title)) {
-            metadata.setTitle(seriesTitle + " - " + title);
+            metadata.setTitle(seriesTitle + " - " + title.trim());
         } else if (!StringUtils.isEmpty(seriesTitle)) {
             metadata.setTitle(seriesTitle);
         } else if (!StringUtils.isEmpty(title)) {
-            metadata.setTitle(title);
+            metadata.setTitle(title.trim());
         }
         final String broadcastedOnDateTime = meta.get("broadcastedOnDateTime").toString();
         final long timestamp = TimeFormatter.getMilliSeconds(broadcastedOnDateTime, "dd.MM.yyyy HH:mm", Locale.GERMANY);
