@@ -121,53 +121,19 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         // alters 'domain/(g/name/)uid' by removing all but uid
         param.setCryptedUrl(param.getCryptedUrl().replaceAll("https?://[^/]+/g/[\\w\\-]+/", "https://" + this.getHost() + "/"));
         br.getPage(param.getCryptedUrl());
-        /* First check if the item is offline or if it is a single media item. */
-        final boolean subscriberPremiumOnly = MotherLessCom.isWatchSubscriberPremiumOnly(br);
-        if (MotherLessCom.isDownloadPremiumOnly(br)) {
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
-            dl.setProperty(MotherLessCom.PROPERTY_TYPE, "registered");
-            dl.setAvailableStatus(hostPlugin.parseFileInfoAndSetFilename(dl));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        } else if (br.containsHTML("(?i)class=\"red-pill-button rounded-corners-r5\">\\s*Reply\\s*</a>")) {
-            logger.info("This is a forum link without any downloadable content: " + param.getCryptedUrl());
-            return decryptedLinks;
-        } else if (br.containsHTML(MotherLessCom.html_contentFriendsOnly)) {
-            logger.warning("Unsupported format for " + param.getCryptedUrl());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (MotherLessCom.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // Common bug: It can happen that the texts that we use to differ between the kinds of links change so the crawler breaks down,
-        // always check that first!
-        if (subscriberPremiumOnly && br.containsHTML(MotherLessCom.html_contentSubscriberImage)) {
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setProperty(MotherLessCom.PROPERTY_TYPE, "image");
-            dl.setProperty(MotherLessCom.PROPERTY_ONLYREGISTERED, true);
-            dl.setAvailableStatus(hostPlugin.parseFileInfoAndSetFilename(dl));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        } else if (subscriberPremiumOnly && br.containsHTML(MotherLessCom.html_contentSubscriberVideo)) {
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setProperty(MotherLessCom.PROPERTY_TYPE, "video");
-            dl.setProperty(MotherLessCom.PROPERTY_ONLYREGISTERED, true);
-            dl.setAvailableStatus(hostPlugin.parseFileInfoAndSetFilename(dl));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        } else if (MotherLessCom.isOffline(br)) {
-            // this can have text which could be contained in previous if statements... has to be last!
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setProperty(MotherLessCom.PROPERTY_TYPE, "offline");
-            dl.setAvailableStatus(hostPlugin.parseFileInfoAndSetFilename(dl));
-            decryptedLinks.add(dl);
+        if (br.containsHTML("(?i)class=\"red-pill-button rounded-corners-r5\">\\s*Reply\\s*</a>")) {
+            logger.info("This is a forum link without any downloadable content: " + param.getCryptedUrl());
             return decryptedLinks;
         }
         if (param.getCryptedUrl().matches(TYPE_FAVOURITES_ALL)) {
             fpName = this.br.getRegex("<title>([^<>\"]*?)\\- MOTHERLESS\\.COM</title>").getMatch(0);
             crawlGallery(decryptedLinks, param, progress);
         } else {
-            final String[] subGal = br.getRegex("(?i)<a href=\"(/[A-Z0-9]+)\" title=\"More [^ ]+ in this gallery\" class=\"pop plain more\">See More &raquo;</a>").getColumn(0);
+            // TODO: Check if this is still needed
+            final String[] subGal = br.getRegex("(?i)<a href=\"(/[A-Z0-9]+)\" title=\"More [^ ]+ in this gallery\" class=\"pop plain more\">See More").getColumn(0);
             if (subGal.length != 0) {
                 for (final String subuid : subGal) {
                     br.getPage(subuid);
@@ -176,47 +142,27 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                 return decryptedLinks;
             }
             /* Check for single video, image or gallery */
-            final String contentID = br.getRegex("__codename = '([A-Z0-9]+)'").getMatch(0);
-            if (isVideo(br)) {
+            final String contentIDFromHTML = br.getRegex("__codename = '([A-Z0-9]+)'").getMatch(0);
+            String contentID = contentIDFromHTML;
+            if (contentID == null) {
+                contentID = new Regex(br.getURL(), "/([A-Z0-9]+)$").getMatch(0);
+                logger.warning("Developer!! contentID can be null?! Using contentID from URL instead: " + contentID);
+            }
+            if (MotherLessCom.isVideo(br) || MotherLessCom.isImage(br) || contentIDFromHTML != null) {
+                /* Single item */
                 if (contentID == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final DownloadLink dl = createDownloadlink(br.getURL("/" + contentID).toString());
                 dl.setContentUrl(param.getCryptedUrl());
-                dl.setProperty(MotherLessCom.PROPERTY_TYPE, "video");
-                dl.setAvailableStatus(hostPlugin.parseFileInfoAndSetFilename(dl));
-                decryptedLinks.add(dl);
-            } else if (isImage(br)) {
-                if (contentID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final DownloadLink dl = createDownloadlink(br.getURL("/" + contentID).toString());
-                dl.setContentUrl(param.getCryptedUrl());
-                dl.setProperty(MotherLessCom.PROPERTY_TYPE, "image");
                 dl.setAvailableStatus(hostPlugin.parseFileInfoAndSetFilename(dl));
                 decryptedLinks.add(dl);
             } else {
-                /* Assume we have some type of gallery */
+                /* Gallery */
                 crawlGallery(decryptedLinks, param, progress);
             }
         }
         return decryptedLinks;
-    }
-
-    public static final boolean isVideo(final Browser br) {
-        if (br.containsHTML("(mediatype\\s*=\\s*'video'|" + MotherLessCom.html_notOnlineYet + ")")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public static final boolean isImage(final Browser br) {
-        if (br.containsHTML("mediatype\\s*=\\s*'image")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     // finds the uid within the grouping

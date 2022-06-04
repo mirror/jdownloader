@@ -26,16 +26,10 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.PixivNetConfig;
@@ -59,9 +53,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -239,7 +231,7 @@ public class PixivNet extends PluginForHost {
             if (!(Thread.currentThread() instanceof SingleDownloadController)) {
                 this.setBrowserExclusive();
                 if (account != null) {
-                    login(this, br, account, false);
+                    login(account, false);
                 }
             }
             final String galleryurl = link.getStringProperty("galleryurl", null);
@@ -393,7 +385,7 @@ public class PixivNet extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public static void login(Plugin plugin, final Browser br, final Account account, final boolean validateCookies) throws Exception {
+    public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -401,8 +393,8 @@ public class PixivNet extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
-                    plugin.getLogger().info("Attempting user cookie login");
-                    if (checkCookieLogin(plugin, br, account, userCookies, validateCookies)) {
+                    logger.info("Attempting user cookie login");
+                    if (checkCookieLogin(account, userCookies, validateCookies)) {
                         /*
                          * User can put any name into "username" field when doing cookie login --> Try to set a valid, unique username to
                          * display in account manager.
@@ -422,73 +414,51 @@ public class PixivNet extends PluginForHost {
                     }
                 }
                 if (cookies != null) {
-                    plugin.getLogger().info("Attempting normal cookie login");
-                    if (checkCookieLogin(plugin, br, account, cookies, validateCookies)) {
+                    logger.info("Attempting normal cookie login");
+                    if (checkCookieLogin(account, cookies, validateCookies)) {
                         return;
                     } else {
                         /* Full login required */
-                        plugin.getLogger().info("Cookie login failed");
+                        logger.info("Cookie login failed");
                     }
                 }
-                plugin.getLogger().info("Performing full login");
-                br.getPage("https://www.pixiv.net/login.php?ref=wwwtop_accounts_index");
+                logger.info("Performing full login");
+                br.getPage("https://www." + this.getHost() + "/login.php?ref=wwwtop_accounts_index");
                 final String loginJson = br.getRegex("class=\"json-data\" value='(\\{.*?)\\'>").getMatch(0);
                 final Map<String, Object> loginInfo = JSonStorage.restoreFromString(loginJson, TypeRef.HASHMAP);
-                final Form loginform = new Form("https://accounts.pixiv.net/api/login?lang=en");
+                final Form loginform = new Form("/ajax/login?lang=en");
                 loginform.setMethod(MethodType.POST);
-                final String loginPostkey = loginInfo.get("pixivAccount.postKey").toString();
                 final String loginTT = loginInfo.get("pixivAccount.tt").toString();
-                final String loginSource = loginInfo.get("pixivAccount.source").toString(); // usually "pc"
-                final String loginRef = loginInfo.get("pixivAccount.ref").toString(); // usually empty
+                String loginSource = (String) loginInfo.get("pixivAccount.source"); // usually "pc"
+                if (loginSource == null) {
+                    loginSource = "pc";
+                }
+                String loginRef = (String) loginInfo.get("pixivAccount.ref"); // usually empty
+                if (loginRef == null) {
+                    loginRef = "";
+                }
                 final String siteKeyEnterpriseInvisible = loginInfo.get("pixivAccount.recaptchaEnterpriseScoreSiteKey").toString();
-                final String reCaptchaEnterpriseInvisibleAction = loginInfo.get("pixivAccount.recaptchaEnterpriseScoreAction").toString();
-                final String siteKeyEnterpriseNormal = loginInfo.get("pixivAccount.recaptchaEnterpriseCheckboxSiteKey").toString();
+                final String reCaptchaEnterpriseInvisibleAction = (String) loginInfo.get("pixivAccount.recaptchaEnterpriseScoreAction");
+                final String siteKeyEnterpriseNormal = (String) loginInfo.get("pixivAccount.recaptchaEnterpriseCheckboxSiteKey");
                 final boolean requiresNormalReCaptchaV2 = true;
                 String reCaptchaV2Response = "";
                 String reCaptchaEnterpriseInvisibleResponse = "";
-                if (plugin instanceof PluginForHost) {
-                    final PluginForHost plg = (PluginForHost) plugin;
-                    final DownloadLink dlinkbefore = plg.getDownloadLink();
-                    try {
-                        if (dlinkbefore == null) {
-                            plg.setDownloadLink(new DownloadLink(plg, "Account", plg.getHost(), "http://" + account.getHoster(), true));
-                        }
-                        final CaptchaHelperHostPluginRecaptchaV2 v3Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyEnterpriseInvisible) {
-                            @Override
-                            protected boolean isEnterprise(String source) {
-                                return true;
-                            }
-
-                            @Override
-                            protected Map<String, Object> getV3Action(final String source) {
-                                final Map<String, Object> ret = new HashMap<String, Object>();
-                                ret.put("action", reCaptchaEnterpriseInvisibleAction);
-                                return ret;
-                            }
-                        };
-                        reCaptchaEnterpriseInvisibleResponse = v3Captcha.getToken();
-                        if (requiresNormalReCaptchaV2) {
-                            final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyEnterpriseNormal) {
-                                @Override
-                                protected boolean isEnterprise(String source) {
-                                    return true;
-                                }
-
-                                @Override
-                                protected Map<String, Object> getV3Action(final String source) {
-                                    return null;
-                                };
-                            };
-                            reCaptchaV2Response = v2Captcha.getToken();
-                        }
-                    } finally {
-                        if (dlinkbefore != null) {
-                            plg.setDownloadLink(dlinkbefore);
-                        }
+                final CaptchaHelperHostPluginRecaptchaV2 v3Captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKeyEnterpriseInvisible) {
+                    @Override
+                    protected boolean isEnterprise(String source) {
+                        return true;
                     }
-                } else if (plugin instanceof PluginForDecrypt) {
-                    final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
-                    final CaptchaHelperCrawlerPluginRecaptchaV2 v3Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyEnterpriseInvisible) {
+
+                    @Override
+                    protected Map<String, Object> getV3Action(final String source) {
+                        final Map<String, Object> ret = new HashMap<String, Object>();
+                        ret.put("action", reCaptchaEnterpriseInvisibleAction);
+                        return ret;
+                    }
+                };
+                reCaptchaEnterpriseInvisibleResponse = v3Captcha.getToken();
+                if (requiresNormalReCaptchaV2 && siteKeyEnterpriseNormal != null) {
+                    final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKeyEnterpriseNormal) {
                         @Override
                         protected boolean isEnterprise(String source) {
                             return true;
@@ -496,56 +466,42 @@ public class PixivNet extends PluginForHost {
 
                         @Override
                         protected Map<String, Object> getV3Action(final String source) {
-                            final Map<String, Object> ret = new HashMap<String, Object>();
-                            ret.put("action", reCaptchaEnterpriseInvisibleAction);
-                            return ret;
-                        }
-                    };
-                    reCaptchaEnterpriseInvisibleResponse = v3Captcha.getToken();
-                    if (requiresNormalReCaptchaV2) {
-                        final CaptchaHelperCrawlerPluginRecaptchaV2 v2Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyEnterpriseNormal) {
-                            @Override
-                            protected boolean isEnterprise(String source) {
-                                return true;
-                            }
-
-                            @Override
-                            protected Map<String, Object> getV3Action(final String source) {
-                                return null;
-                            };
+                            return null;
                         };
-                        reCaptchaV2Response = v2Captcha.getToken();
-                    }
+                    };
+                    reCaptchaV2Response = v2Captcha.getToken();
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    reCaptchaV2Response = "";
                 }
+                loginform.put("login_id", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("captcha", "");
-                loginform.put("g_recaptcha_response", Encoding.urlEncode(reCaptchaV2Response));
-                loginform.put("pixiv_id", Encoding.urlEncode(account.getUser()));
-                loginform.put("post_key", Encoding.urlEncode(loginPostkey));
+                // loginform.put("post_key", Encoding.urlEncode(loginPostkey));
                 loginform.put("source", Encoding.urlEncode(loginSource));
                 loginform.put("app_ios", "0");
                 loginform.put("ref", Encoding.urlEncode(loginRef));
-                loginform.put("return_to", Encoding.urlEncode("https://www.pixiv.net/en/"));
+                loginform.put("return_to", Encoding.urlEncode("https://www." + br.getHost() + "/en/"));
+                loginform.put("g_recaptcha_response", Encoding.urlEncode(reCaptchaV2Response));
                 loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(reCaptchaEnterpriseInvisibleResponse));
                 loginform.put("tt", Encoding.urlEncode(loginTT));
-                loginform.setAction("/api/login?lang=en");
                 final Request loginRequest = br.createFormRequest(loginform);
                 loginRequest.getHeaders().put("Accept", "application/json");
-                loginRequest.getHeaders().put("Origin", "https://accounts." + account.getHoster());
+                loginRequest.getHeaders().put("Origin", "https://accounts." + br.getHost());
                 br.getPage(loginRequest);
                 final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 if ((Boolean) response.get("error") == Boolean.TRUE) {
                     throw new AccountInvalidException();
                 }
                 final Map<String, Object> body = (Map<String, Object>) response.get("body");
+                final Map<String, Object> errors = (Map<String, Object>) body.get("errors");
+                if (errors != null) {
+                    throw new AccountInvalidException();
+                }
                 final String successURL = (String) JavaScriptEngineFactory.walkJson(body, "success/return_to");
                 if (successURL == null) {
                     final Map<String, Object> validation_errors = (Map<String, Object>) body.get("validation_errors");
                     if (validation_errors != null && validation_errors.containsKey("captcha")) {
                         /* {"error":false,"message":"","body":{"validation_errors":{"captcha":"Complete the reCAPTCHA verification"}}} */
-                        showCookieLoginInformation();
+                        showCookieLoginInfo();
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     throw new AccountInvalidException();
@@ -553,7 +509,7 @@ public class PixivNet extends PluginForHost {
                 br.getPage("https://www." + account.getHoster() + "/en");
                 if (!isLoggedIN(br)) {
                     if (!account.hasEverBeenValid()) {
-                        showCookieLoginInformation();
+                        showCookieLoginInfo();
                     }
                     throw new AccountInvalidException();
                 }
@@ -567,56 +523,20 @@ public class PixivNet extends PluginForHost {
         }
     }
 
-    public static Thread showCookieLoginInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Pixiv.net - Login fehlgeschlagen - versuche es mit der Cookie Login Methode";
-                        message += "Hallo liebe(r) Pixiv.net NutzerIn\r\n";
-                        message += "Um deinen pixiv.net Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Pixiv.net - Login failed - try cookie login";
-                        message += "Hello dear pixiv.net user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
-                        message += help_article_url;
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    // getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
-    }
-
-    public static boolean checkCookieLogin(final Plugin plugin, final Browser br, final Account account, final Cookies cookies, final boolean validateCookies) throws IOException {
+    private boolean checkCookieLogin(final Account account, final Cookies cookies, final boolean validateCookies) throws IOException {
         br.setCookies(account.getHoster(), cookies);
         if (!validateCookies) {
-            plugin.getLogger().info("Trust cookies without check");
+            logger.info("Trust cookies without check");
             return true;
         } else {
             br.getPage("https://www." + account.getHoster() + "/en");
             if (isLoggedIN(br)) {
                 /* Refresh loggedin timestamp */
-                plugin.getLogger().info("Cookie login successful");
+                logger.info("Cookie login successful");
                 account.saveCookies(br.getCookies(account.getHoster()), "");
                 return true;
             }
-            plugin.getLogger().info("Cookie login failed");
+            logger.info("Cookie login failed");
             br.clearCookies(br.getURL());
             return false;
         }
@@ -632,14 +552,12 @@ public class PixivNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this, this.br, account, true);
+        login(account, true);
         ai.setUnlimitedTraffic();
         if (br.containsHTML("premium\\s*:\\s*\\'yes\\'") || br.containsHTML("\"premium\"\\s*:\\s*true")) {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium Account");
         } else {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
         }
         /* 2017-02-06: So far there are only free accounts available for this host. */
         account.setType(AccountType.FREE);
@@ -651,7 +569,7 @@ public class PixivNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(this, this.br, account, false);
+        login(account, false);
         requestFileInformation(link);
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
