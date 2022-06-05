@@ -69,7 +69,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
 
         protected synchronized Pattern getGalleryUrlPattern() {
             if (_galleryUrlPattern == null) {
-                _galleryUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + galleryUrlRegexSuffix);
+                _galleryUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + galleryUrlRegexSuffix, Pattern.CASE_INSENSITIVE);
             }
             return _galleryUrlPattern;
         }
@@ -79,7 +79,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
                 return null;
             }
             if (_galleriesUrlPattern == null) {
-                _galleriesUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + galleriesUrlRegexSuffix);
+                _galleriesUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + galleriesUrlRegexSuffix, Pattern.CASE_INSENSITIVE);
             }
             return _galleriesUrlPattern;
         }
@@ -169,7 +169,6 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     }
 
     private void crawlGallery(ArrayList<DownloadLink> allImageLinks, String url) throws PluginException, IOException {
-        final ArrayList<DownloadLink> galleryImageLinks = new ArrayList<DownloadLink>();
         Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
         /* First check for direct downloadable content */
@@ -177,15 +176,19 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         final URLConnectionAdapter con = brc.openRequestConnection(getRequest);
         if (this.looksLikeDownloadableContent(con)) {
             final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
-            allImageLinks.add(direct.getDownloadLink());
-            con.disconnect();
+            try {
+                allImageLinks.add(direct.getDownloadLink());
+            } finally {
+                con.disconnect();
+            }
             return;
         }
         brc.followConnection();
         if (brc.getHttpConnection().getResponseCode() == 404) {
-            galleryImageLinks.add(this.createOfflinelink(url));
+            allImageLinks.add(this.createOfflinelink(url));
             return;
         }
+        final ArrayList<DownloadLink> galleryImageLinks = new ArrayList<DownloadLink>();
         populateGalleryImageLinks(galleryImageLinks, brc);
         final String title = getFilePackageName(url, brc);
         if (title != null) {
@@ -268,13 +271,13 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     private SiteAndType determineSiteAndType(String url) throws PluginException {
         List<SiteData> siteData = getSiteData();
         for (SiteData sd : siteData) {
-            Pattern galleryUrlPattern = sd.getGalleryUrlPattern();
+            final Pattern galleryUrlPattern = sd.getGalleryUrlPattern();
             if (galleryUrlPattern != null) {
                 if (new Regex(url, galleryUrlPattern).matches()) {
                     return new SiteAndType(sd, Type.GALLERY);
                 }
             }
-            Pattern galleriesUrlPattern = sd.getGalleriesUrlPattern();
+            final Pattern galleriesUrlPattern = sd.getGalleriesUrlPattern();
             if (galleriesUrlPattern != null) {
                 if (new Regex(url, galleriesUrlPattern).matches()) {
                     return new SiteAndType(sd, Type.GALLERIES);
