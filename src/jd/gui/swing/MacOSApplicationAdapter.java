@@ -4,6 +4,7 @@ import java.awt.Image;
 
 import org.appwork.utils.JVMVersion;
 import org.appwork.utils.ReflectionUtils;
+import org.jdownloader.logging.LogController;
 
 public class MacOSApplicationAdapter {
     public static void setDockIcon(final Image icon) {
@@ -20,7 +21,7 @@ public class MacOSApplicationAdapter {
             }
             com.apple.eawt.Application.getApplication().setDockIconImage(icon);
         } catch (final Throwable e) {
-            e.printStackTrace();
+            LogController.CL().log(e);
         }
     }
 }
