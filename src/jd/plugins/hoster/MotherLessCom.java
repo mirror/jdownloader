@@ -246,6 +246,12 @@ public class MotherLessCom extends PluginForHost {
         }
     }
 
+    public static final boolean isGallery(final Browser br) {
+        final String contentIDFromHTML = br.getRegex("__codename = '([A-Z0-9]+)'").getMatch(0);
+        final boolean ret = contentIDFromHTML != null && br.containsHTML("<div\\s*class\\s*=\\s*\"[^\"]*gallery-view-page[^\"]\"");
+        return ret;
+    }
+
     public static final boolean isVideo(final Browser br) {
         final String mediaType = regexMediaType(br);
         if (StringUtils.equalsIgnoreCase(mediaType, "video")) {
@@ -260,7 +266,8 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public static final boolean isImage(final Browser br) {
-        if (StringUtils.equalsIgnoreCase(regexMediaType(br), "image")) {
+        final String mediaType = regexMediaType(br);
+        if (StringUtils.equalsIgnoreCase(mediaType, "image")) {
             return true;
         } else if (br.containsHTML(MotherLessCom.html_contentSubscriberImage)) {
             return true;
