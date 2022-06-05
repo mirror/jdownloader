@@ -124,6 +124,10 @@ public class BubbleNotify {
             return false;
         } else {
             switch (CFG_BUBBLE.CFG.getBubbleNotifyEnabledState()) {
+            case ALWAYS:
+                return true;
+            case NEVER:
+                return false;
             case JD_ACTIVE:
                 return WindowManager.getInstance().hasFocus();
             case JD_NOT_ACTIVE:
@@ -140,7 +144,6 @@ public class BubbleNotify {
                 } else {
                     return false;
                 }
-            case NEVER:
             default:
                 return false;
             }
