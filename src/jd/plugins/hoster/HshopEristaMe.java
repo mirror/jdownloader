@@ -18,11 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -65,7 +64,7 @@ public class HshopEristaMe extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/landing(?:\\.html)?\\?id=(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:landing(?:\\.html)?\\?id=|t/)(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -103,13 +102,22 @@ public class HshopEristaMe extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("https://" + this.getHost() + "/api/title/" + this.getFID(link));
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            /* E.g. {"type":"https://tools.ietf.org/html/rfc7231#section-6.5.4","title":"Not Found","status":404,"traceId":"00-..."} */
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.containsHTML("(?i)<h3[^>]*>\\s*Failed loading Title\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        String filename = (String) entries.get("name");
+        final String size = br.getRegex("<p>\\s*Size\\s*:\\s*<span[^>]*>\\s*([0-9\\.TGMKBi ]+)").getMatch(0);
+        if (size != null) {
+            link.setDownloadSize(SizeFormatter.getSize(size));
+        }
+        final String titleID = br.getRegex("<p>\\s*Title\\s*ID\\s*:\\s*<span[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+        final String titleName = br.getRegex("<div\\s*class\\s*=\\s*\"title-name\"\\s*>\\s*<h2[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+        if (StringUtils.isEmpty(titleName)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (StringUtils.isEmpty(titleName)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String filename = titleID + " " + titleName;
         if (filename != null) {
             link.setName(filename + ".cia");
         }
@@ -125,17 +133,11 @@ public class HshopEristaMe extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             this.requestFileInformation(link);
-            br.getPage("https://download4.erista.me/content/request?id=" + this.getFID(link));
-            /* Double-check for offline */
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final String token = (String) entries.get("token");
-            if (StringUtils.isEmpty(token)) {
+            final String fid = this.getFID(link);
+            final String dllink = br.getRegex("href\\s*=\\s*\"(https?://download\\d+.erista.me/content/" + Pattern.quote(fid) + "\\?token=[a-f0-9]+)\"\\s*>\\s*Direct Download").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String dllink = "https://download4.erista.me/content/" + this.getFID(link) + "?token=" + token;
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
@@ -147,8 +149,9 @@ public class HshopEristaMe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
