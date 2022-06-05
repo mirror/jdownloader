@@ -175,7 +175,7 @@ public class BubbleNotify {
     }
 
     public void show(final AbstractNotifyWindowFactory factory) {
-        if (ballooner != null) {
+        if (ballooner != null && factory != null) {
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
@@ -203,7 +203,7 @@ public class BubbleNotify {
     }
 
     public void hide(final AbstractNotifyWindow notify) {
-        if (ballooner != null) {
+        if (ballooner != null && notify != null) {
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
