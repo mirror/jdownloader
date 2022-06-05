@@ -4,16 +4,16 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.RegexFilter.MatchType;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkInfo;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.RegexFilter.MatchType;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class RuleWrapper<T extends FilterRule> {
     private final CompiledRegexFilter        fileNameRule;
@@ -150,28 +150,40 @@ public class RuleWrapper<T extends FilterRule> {
 
     public static Pattern createPattern(String regex, boolean useRegex) {
         if (useRegex) {
-            return Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+            int flags = 0;
+            if (regex != null && !regex.contains("(?i)") && !regex.contains("(?-i)")) {
+                flags = flags | Pattern.CASE_INSENSITIVE;
+            }
+            if (regex != null && !regex.contains("(?s)") && !regex.contains("(?-s)")) {
+                flags = flags | Pattern.DOTALL;
+            }
+            return Pattern.compile(regex, flags);
         } else {
             final String[] parts = regex.split("\\*+");
             final StringBuilder sb = new StringBuilder();
+            boolean containsWildcard = false;
             if (regex.startsWith("*")) {
+                containsWildcard = true;
                 sb.append("(.*)");
             }
-            int actualParts = 0;
+            int nonEmptyParts = 0;
             for (int i = 0; i < parts.length; i++) {
                 if (parts[i].length() != 0) {
-                    if (actualParts > 0) {
+                    if (nonEmptyParts > 0) {
+                        containsWildcard = true;
                         sb.append("(.*?)");
                     }
                     sb.append(Pattern.quote(parts[i]));
-                    actualParts++;
+                    nonEmptyParts++;
                 }
             }
             if (sb.length() == 0) {
-                sb.append("(.*?)");
-            } else {
+                sb.append("(.*)");
+            } else if (nonEmptyParts > 0) {
                 if (regex.endsWith("*")) {
                     sb.append("(.*)");
+                } else if (containsWildcard) {
+                    sb.append("$");
                 }
             }
             return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
