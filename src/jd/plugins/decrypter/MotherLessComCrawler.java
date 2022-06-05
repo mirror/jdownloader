@@ -148,7 +148,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                 contentID = new Regex(br.getURL(), "/([A-Z0-9]+)$").getMatch(0);
                 logger.warning("Developer!! contentID can be null?! Using contentID from URL instead: " + contentID);
             }
-            if (MotherLessCom.isVideo(br) || MotherLessCom.isImage(br) || contentIDFromHTML != null) {
+            if (MotherLessCom.isVideo(br) || MotherLessCom.isImage(br) || (!MotherLessCom.isGallery(br) && contentIDFromHTML != null)) {
                 /* Single item */
                 if (contentID == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
