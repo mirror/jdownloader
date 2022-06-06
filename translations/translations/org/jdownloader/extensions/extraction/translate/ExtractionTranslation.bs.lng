@@ -66,6 +66,7 @@ files_and_folders=dokument(i) ili folder(i)
 final_delete=Na kraju izbriši dokumente
 folders=foldera
 hoster=Domaćin
+if_file_exists_dont_show_again=Ne pokazuj više za ovu arhivu
 local=Status Dokumenta
 menu_tools_extract_files=Ekstraktuj Dokumente
 name=Ekstraktor Arhive
