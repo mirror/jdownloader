@@ -17,10 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //Links come from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "decryptedsndspnr=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "https?://(?:www\\.)?soundsnap\\.com/node/(\\d+)" })
 public class SoundSnapCom extends PluginForHost {
     public SoundSnapCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,14 +43,23 @@ public class SoundSnapCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
-    // Lets make working links out of the crap that comes from the decrypter
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("decryptedsndspnr=", "http://www.soundsnap.com/audio/play/"));
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.soundsnap.com/tos";
+        return "https://www.soundsnap.com/tos";
     }
 
     @Override
@@ -56,9 +68,49 @@ public class SoundSnapCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(this.getFID(link) + ".mp3");
+        }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
+        if (!looksLikeDownloadableContent(con)) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            String slug = br._getURL().getPath();
+            if (slug != null) {
+                /* Remove slash from the beginning */
+                slug = slug.substring(1, slug.length());
+                link.setName(slug + ".mp3");
+            }
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                /* Account required to download this file */
+                throw new AccountRequiredException();
+            }
+        } else {
+            con.disconnect();
+            final String filename = getFileNameFromHeader(con);
+            if (filename != null) {
+                link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+            }
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+            return AvailableStatus.TRUE;
+        }
+    }
+
+    @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -68,33 +120,6 @@ public class SoundSnapCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
-        if (!looksLikeDownloadableContent(con)) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            con.disconnect();
-            final long filesize = con.getLongContentLength();
-            String filename = getFileNameFromHeader(con);
-            link.setName(filename.trim());
-            if (filesize > 0) {
-                link.setVerifiedFileSize(filesize);
-            }
-            return AvailableStatus.TRUE;
-        }
     }
 
     @Override

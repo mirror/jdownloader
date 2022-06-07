@@ -33,6 +33,7 @@ import jd.plugins.PluginForDecrypt;
  * Please note: right now, if a model has multiple pages worth of galleries, paging must be done manually.
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@Deprecated
 public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
@@ -106,7 +107,6 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         SITE_DATA.add(new SiteData("coedcherry.com", "./*pics/[^/]+", null, null));
         SITE_DATA.add(new SiteData("erocurves.com", "/.+", null, null));
         SITE_DATA.add(new SiteData("pornpics.com", "/galleries/.+", null, null));
-        SITE_DATA.add(new SiteData("prettynubiles.com", "/galleries/[^\\.]+\\.html", null, null));
         SITE_DATA.add(new SiteData("xxxporn.pics", "/sex/(?!\\d+).+", null, null));
         SITE_DATA.add(new SiteData("fapcat.com", "/albums/\\d+/.+", null, null));
         // single gallery and all per model
@@ -185,8 +185,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         }
         brc.followConnection();
         if (brc.getHttpConnection().getResponseCode() == 404) {
-            allImageLinks.add(this.createOfflinelink(url));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<DownloadLink> galleryImageLinks = new ArrayList<DownloadLink>();
         populateGalleryImageLinks(galleryImageLinks, brc);
@@ -203,15 +202,13 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            allImageLinks.add(this.createOfflinelink(url));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String[] galleryUrls = getGalleryUrls(galleryHrefRegex);
         if (galleryUrls == null || galleryUrls.length == 0) {
             // do not throw PluginException(LinkStatus.ERROR_PLUGIN_DEFECT), see e.g. https://svn.jdownloader.org/issues/88913
             logger.warning("found 0 galleries for " + url);
-            allImageLinks.add(this.createOfflinelink(url));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         for (final String galleryUrl : galleryUrls) {
             if (isAbort()) {
