@@ -22,6 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,11 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:pan|yun)\\.baidu\\.com/(?:share|wap)/.+|https?://(?:www\\.)?pan\\.baidu\\.com/s/.+" })
 public class PanBaiduCom extends PluginForDecrypt {
@@ -296,10 +296,10 @@ public class PanBaiduCom extends PluginForDecrypt {
                 }
                 ressourcelist = (List) entries.get("list");
             } else {
-                String json = this.br.getRegex("setData\\((\\{.+?\\})\\);").getMatch(0);
+                String json = this.br.getRegex("setData\\((\\{.*\\})\\);\\n").getMatch(0);
                 if (json == null) {
                     /* 2021-03-22 */
-                    json = this.br.getRegex("locals\\.mset\\((\\{.+\\})\\);").getMatch(0);
+                    json = this.br.getRegex("locals\\.mset\\((\\{.*?\\})\\);\\n").getMatch(0);
                 }
                 if (json == null) {
                     logger.warning("json is null");
