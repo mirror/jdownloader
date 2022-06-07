@@ -16,13 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.SolidFilesComConfig;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -37,15 +38,41 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v|e)/([a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SolidFilesCom extends PluginForHost {
     public SolidFilesCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
         this.setStartIntervall(500l);
         this.enablePremium("https://www.solidfiles.com/premium");
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "solidfiles.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d|v|e)/([a-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -53,7 +80,6 @@ public class SolidFilesCom extends PluginForHost {
         return "http://www.solidfiles.com/terms/";
     }
 
-    public static final String   DECRYPTFOLDERS               = "DECRYPTFOLDERS";
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -109,7 +135,7 @@ public class SolidFilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setName(Encoding.htmlDecode(filename.trim()).replace(" ", "_"));// spaces are replaced by _
+        link.setName(Encoding.htmlDecode(filename).replace(" ", "_").trim());// spaces are replaced by _
         String filesize = PluginJSonUtils.getJsonValue(br, "size");
         if (filesize == null) {
             filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
@@ -165,7 +191,11 @@ public class SolidFilesCom extends PluginForHost {
                 if (dl.getConnection().getResponseCode() == 503) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - use less connections and try again", 10 * 60 * 1000l);
                 }
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 isOffline(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -306,8 +336,9 @@ public class SolidFilesCom extends PluginForHost {
         return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SolidFilesCom.DECRYPTFOLDERS, JDL.L("plugins.hoster.solidfilescom.decryptfolders", "Decrypt subfolders in folders")).setDefaultValue(true));
+    @Override
+    public Class<SolidFilesComConfig> getConfigInterface() {
+        return SolidFilesComConfig.class;
     }
 
     @Override
