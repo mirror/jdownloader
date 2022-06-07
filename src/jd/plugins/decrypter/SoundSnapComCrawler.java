@@ -24,11 +24,13 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "https?://(?:www\\.)?soundsnap\\.com/node/(\\d+)" })
-public class SndSnapDecrypt extends PluginForDecrypt {
-    public SndSnapDecrypt(PluginWrapper wrapper) {
+public class SoundSnapComCrawler extends PluginForDecrypt {
+    public SoundSnapComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -37,27 +39,28 @@ public class SndSnapDecrypt extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // final String thisnodeID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Page not found|Sorry, unable to find that page)")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)(Page not found|Sorry, unable to find that page)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[] ids = br.getRegex("node(-|/)(\\d+)").getColumn(1);
-        if (ids == null || ids.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String[] ids = br.getRegex("node(-|/)(\\d+)").getColumn(1);
+        if (ids.length == 0) {
+            ids = br.getRegex("\"nid\":\"(\\d+)\"").getColumn(0);
         }
-        for (String id : ids) {
-            decryptedLinks.add(createDownloadlink("decryptedsndspnr=" + id));
+        if (ids.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        for (final String id : ids) {
+            decryptedLinks.add(createDownloadlink("https://www." + this.getHost() + "/node/" + id));
         }
         return decryptedLinks;
     }
 
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }

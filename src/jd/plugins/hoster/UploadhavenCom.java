@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,13 +37,38 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadhaven.com" }, urls = { "https?://(?:www\\.)?uploadhaven\\.com/download/([a-f0-9]{32})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UploadhavenCom extends PluginForHost {
     public UploadhavenCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "uploadhaven.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/download/([a-f0-9]{32})");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -98,7 +128,7 @@ public class UploadhavenCom extends PluginForHost {
             br.getHeaders().put("Referer", link.getContainerUrl());
         }
         br.getPage(link.getPluginPatternMatcher());
-        if (this.isRefererProtected()) {
+        if (this.isRefererProtected(br)) {
             /* We can't obtain more file information in this state! */
             link.setComment("Hotlink protection active. Please set original site as DownloadPassword!");
             return AvailableStatus.TRUE;
@@ -107,7 +137,7 @@ public class UploadhavenCom extends PluginForHost {
         }
         String filename = br.getRegex("File: ([^<>\"]+)<br>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex(">Download file \\- ([^<>\"]+)\\s*?<").getMatch(0);
+            filename = br.getRegex(">\\s*Download file \\- ([^<>\"]+)\\s*?<").getMatch(0);
         }
         String filesize = br.getRegex("Size:\\s+(.*?) +\\s+").getMatch(0);
         if (!StringUtils.isEmpty(filename)) {
@@ -122,14 +152,14 @@ public class UploadhavenCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            if (this.isRefererProtected()) {
+            requestFileInformation(link);
+            if (this.isRefererProtected(br)) {
                 /**
                  * 2021-01-19: WTF seems like using different referers multiple times in a row, they will always allow the 3rd string as
                  * valid Referer no matter what is used as a string?! E.g. "dfrghe".
@@ -139,7 +169,7 @@ public class UploadhavenCom extends PluginForHost {
                 for (int i = 0; i <= 2; i++) {
                     br.clearAll();
                     prepBR(this.br);
-                    userReferer = getUserInput("Enter Referer?", link);
+                    userReferer = getUserInput("Enter referer?", link);
                     try {
                         new URL(userReferer);
                     } catch (final MalformedURLException e) {
@@ -148,7 +178,7 @@ public class UploadhavenCom extends PluginForHost {
                     }
                     link.setDownloadPassword(userReferer);
                     requestFileInformation(link);
-                    if (!this.isRefererProtected()) {
+                    if (!this.isRefererProtected(br)) {
                         success = true;
                         break;
                     }
@@ -156,16 +186,13 @@ public class UploadhavenCom extends PluginForHost {
                 if (!success) {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong referer entered");
-                } else {
-                    logger.info("Valid referer == " + userReferer);
-                    /* Is already set in the above loop! */
-                    // link.setDownloadPassword(userReferer);
-                    if (StringUtils.isEmpty(link.getComment())) {
-                        link.setComment("DownloadPassword == Referer");
-                    }
                 }
-            }
-            while (this.isRefererProtected()) {
+                logger.info("Valid referer == " + userReferer);
+                /* Is already set in the above loop! */
+                // link.setDownloadPassword(userReferer);
+                if (StringUtils.isEmpty(link.getComment())) {
+                    link.setComment("DownloadPassword == Referer");
+                }
             }
             Form dlform = br.getFormbyProperty("id", "form-join");
             if (dlform == null) {
@@ -214,8 +241,12 @@ public class UploadhavenCom extends PluginForHost {
     /**
      * @return: true: Special Referer is required to access this URL
      */
-    private boolean isRefererProtected() {
-        return br.containsHTML(">\\s*Hotlink protection active");
+    private boolean isRefererProtected(final Browser br) {
+        if (br.containsHTML(">\\s*Hotlink protection active")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
