@@ -17,14 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.EpornerComConfig;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -42,6 +34,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:\\w+\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
 public class EPornerCom extends PluginForHost {
@@ -257,12 +256,10 @@ public class EPornerCom extends PluginForHost {
         final EpornerComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
         switch (quality) {
-        default:
-            return null;
-        case BEST:
-            return null;
         case Q2160P:
             return "2160p";
+        case Q1440P:
+            return "1440p";
         case Q1080P:
             return "1080p";
         case Q720P:
@@ -273,6 +270,9 @@ public class EPornerCom extends PluginForHost {
             return "360p";
         case Q240P:
             return "240p";
+        case BEST:
+        default:
+            return null;
         }
     }
 
