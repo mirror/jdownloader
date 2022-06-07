@@ -117,7 +117,6 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 5);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 503 });
-        br.getHeaders().put("User-Agent", MotherLessCom.ua);
         // alters 'domain/(g/name/)uid' by removing all but uid
         param.setCryptedUrl(param.getCryptedUrl().replaceAll("https?://[^/]+/g/[\\w\\-]+/", "https://" + this.getHost() + "/"));
         br.getPage(param.getCryptedUrl());
@@ -148,7 +147,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                 contentID = new Regex(br.getURL(), "/([A-Z0-9]+)$").getMatch(0);
                 logger.warning("Developer!! contentID can be null?! Using contentID from URL instead: " + contentID);
             }
-            if (MotherLessCom.isVideo(br) || MotherLessCom.isImage(br) || (!MotherLessCom.isGallery(br) && contentIDFromHTML != null)) {
+            if (MotherLessCom.isSingleMedia(br)) {
                 /* Single item */
                 if (contentID == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
