@@ -27,7 +27,6 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -54,7 +53,6 @@ public class MotherLessCom extends PluginForHost {
     public static final String  text_subscribeFailed        = "Failed to subscribe to the owner of the video";
     public static final String  html_contentSubscriberVideo = "(?i)Here's another video instead\\.";
     public static final String  html_contentSubscriberImage = "(?i)Here's another image instead\\.";
-    public static final String  ua                          = RandomUserAgent.generate();
     private final static String PROPERTY_DIRECTURL          = "directurl";
     public static final String  PROPERTY_TYPE               = "dltype";
     public static String        PROPERTY_TITLE              = "title";
@@ -130,7 +128,6 @@ public class MotherLessCom extends PluginForHost {
             logger.info("Linkcheck done via directurl");
             return AvailableStatus.TRUE;
         }
-        br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (isOffline(br)) {
@@ -246,10 +243,24 @@ public class MotherLessCom extends PluginForHost {
         }
     }
 
-    public static final boolean isGallery(final Browser br) {
-        final String contentIDFromHTML = br.getRegex("__codename = '([A-Z0-9]+)'").getMatch(0);
-        final boolean ret = contentIDFromHTML != null && br.containsHTML("<div\\s*class\\s*=\\s*\"[^\"]*gallery-view-page[^\"]\"");
-        return ret;
+    /** Returns true if we got a single image/video according to HTML code. */
+    public static final boolean isSingleMedia(final Browser br) {
+        final String mediaType = regexMediaType(br);
+        if (mediaType != null) {
+            return true;
+        } else if (isVideo(br)) {
+            return true;
+        } else if (isImage(br)) {
+            return true;
+        } else if (isDownloadAccountOnly(br)) {
+            return true;
+        } else if (isViewSubscriberOnly(br)) {
+            return true;
+        } else if (isViewFriendsOnly(br)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static final boolean isVideo(final Browser br) {
@@ -296,7 +307,7 @@ public class MotherLessCom extends PluginForHost {
         }
     }
 
-    public static boolean isWatchSubscriberOnly(final Browser br) {
+    public static boolean isViewSubscriberOnly(final Browser br) {
         if (br.containsHTML("(?i)The upload is subscriber only\\. You can subscribe to the member from their")) {
             return true;
         } else if (br.containsHTML(html_contentSubscriberVideo)) {
@@ -308,7 +319,7 @@ public class MotherLessCom extends PluginForHost {
         }
     }
 
-    private static boolean isWatchFriendsOnly(final Browser br) {
+    private static boolean isViewFriendsOnly(final Browser br) {
         if (br.containsHTML("(?i)>\\s*The content you are trying to view is for friends only")) {
             return true;
         } else {
@@ -556,9 +567,9 @@ public class MotherLessCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This video is being processed and will be available shortly");
             } else if (isDownloadAccountOnly(br)) {
                 throw new AccountRequiredException("Only downloadable for registered users");
-            } else if (isWatchSubscriberOnly(br)) {
+            } else if (isViewSubscriberOnly(br)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Content is for subscribers only!");
-            } else if (isWatchFriendsOnly(br)) {
+            } else if (isViewFriendsOnly(br)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Content is for friends only!");
             }
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);

@@ -22,6 +22,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "serienfans.org" }, urls = { "https?://(?:www\\.)?serienfans\\.org/external/\\d+\\?.+" })
@@ -37,8 +39,7 @@ public class SrnfnsOrg extends PluginForDecrypt {
         br.getPage(parameter);
         final String finallink = br.getRedirectLocation();
         if (br.getHttpConnection().getResponseCode() == 404 || finallink == null) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
