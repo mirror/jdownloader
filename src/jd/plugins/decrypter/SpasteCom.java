@@ -55,19 +55,24 @@ public class SpasteCom extends antiDDoSForDecrypt {
 
     /* DEV NOTES */
     // Tags: pastebin
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
         final String browserReferrer = getBrowserReferrer();
         if (browserReferrer != null) {
             br.setCurrentURL(browserReferrer);
         }
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         /* Error handling */
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br._getURL().getPath().equals("/site/index")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br._getURL().getPath().endsWith("/login")) {
+            /* 2022-06-07: Binbucks.com e.g. binbucks.com/advertisement */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)Page Not Found|<h4>\\s*Oops\\s*!\\s*</h4>|>\\s*The requested paste has been deleted by")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -188,7 +193,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
                 }
                 if (result.length() != getQuestion.length) {
                     // refresh
-                    getPage(parameter);
+                    getPage(param.getCryptedUrl());
                     continue;
                 }
                 /* E.g. "techCaptcha" or "sPasteCaptcha" */
@@ -212,7 +217,7 @@ public class SpasteCom extends antiDDoSForDecrypt {
             /* Look for other/multiple URLs. */
             final String plaintxt;
             // /s links have a different format
-            if (parameter.contains("spaste.com/s/") || parameter.contains("spaste.com/r/")) {
+            if (param.getCryptedUrl().contains("spaste.com/s/") || param.getCryptedUrl().contains("spaste.com/r/")) {
                 // we need some info
                 final String id = br.getRegex("\\$\\.post\\(\"/site/getRedirectLink\",\\{id:'(\\d+)'\\}").getMatch(0);
                 if (id == null) {
@@ -231,13 +236,13 @@ public class SpasteCom extends antiDDoSForDecrypt {
             }
             if (plaintxt == null) {
                 // this isn't always an error! there might not be any links!
-                logger.info("Could not find 'plaintxt' : " + parameter);
+                logger.info("Could not find 'plaintxt' : " + param.getCryptedUrl());
                 return decryptedLinks;
             }
             final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
             final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
             if (links == null || links.length == 0) {
-                logger.info("Found no links[] from 'plaintxt' : " + parameter);
+                logger.info("Found no links[] from 'plaintxt' : " + param.getCryptedUrl());
                 return decryptedLinks;
             }
             /* Avoid recursion */

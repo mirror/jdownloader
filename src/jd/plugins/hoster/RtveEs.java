@@ -236,6 +236,7 @@ public class RtveEs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        /* 2022-06-27: E.g. check for GEO-block: https://www.rtve.es/api/geoblock/<contentID> */
         final boolean getBestQualityV2 = false;
         if (getBestQualityV2 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* 2020-07-28: TODO: Higher resolutions are "hidden" in their thumbnail. */
@@ -256,6 +257,7 @@ public class RtveEs extends PluginForHost {
             if (use_api_for_availablecheck) {
                 br.getPage(link.getPluginPatternMatcher());
             }
+            final String contentIDAlt = br.getRegex("/api/geoblock/(\\d+)").getMatch(0);
             /* 2021-07-13: Required as assetIDs are not in current html anymore. */
             final boolean useWorkaroundForAssetID = true;
             if (useWorkaroundForAssetID) {
@@ -269,13 +271,21 @@ public class RtveEs extends PluginForHost {
                 }
             }
             /* E.g. "1234567_es_videos" */
-            String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);
-            if (flashVars == null || flashVars.length != 4) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String[] flashVars = br.getRegex("assetID\\s*=\\s*(?:\"|')?(\\d+)_([a-z]{2,3})_(audios|videos)(\\&location=alacarta)?").getRow(0);
+            final String lang;
+            final String contentID;
+            final String mediaType;
+            if (flashVars != null && flashVars.length == 4) {
+                contentID = flashVars[0];
+                lang = flashVars[1];
+                mediaType = "audios".equals(flashVars[2]) ? "audio" : "video";
+            } else {
+                /* Fallback */
+                contentID = contentIDAlt;
+                lang = "es";
+                mediaType = getTypeStringSingularByURL(br.getURL());
             }
-            /* Either "audios" or "videos" */
-            final String mediaType = "audios".equals(flashVars[2]) ? "audio" : "video";
-            String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + mediaType + "_" + flashVars[1])), false), false);
+            String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(contentID + "_default_" + mediaType + "_" + lang)), false), false);
             getEncData = getEncData.replaceAll("/", "_");
             final Browser enc = br.cloneBrowser();
             enc.getPage("https://ztnr.rtve.es/ztnr/res/" + getEncData);
