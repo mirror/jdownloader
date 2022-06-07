@@ -48,6 +48,12 @@ public interface EpornerComConfig extends PluginConfigInterface {
                 return "1080p";
             }
         },
+        Q1440P {
+            @Override
+            public String getLabel() {
+                return "1440p";
+            }
+        },
         Q2160P {
             @Override
             public String getLabel() {
