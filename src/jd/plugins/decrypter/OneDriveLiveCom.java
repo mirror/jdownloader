@@ -105,8 +105,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 br.getPage(parameter);
                 String redirect = br.getRedirectLocation();
                 if (br.getHttpConnection().getResponseCode() == 404) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (redirect == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -138,15 +137,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 authkey = new Regex(parameter, "(?:&|\\?)authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
             }
             if (!parameter.matches(TYPE_ONEDRIVE_ROOT) && (cid == null || id == null)) {
-                if (cid != null) {
-                    main.setFinalFileName(cid);
-                } else {
-                    main.setFinalFileName(new Regex(parameter, "\\.com/(.+)").getMatch(0));
-                }
-                main.setAvailable(false);
-                main.setProperty("offline", true);
-                decryptedLinks.add(main);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             cid = cid.toUpperCase();
             parameter = "https://onedrive.live.com/?cid=" + cid;
@@ -178,10 +169,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                      * might have been deleted, expired, or you might not have permission to access it. Contact the owner of this item for
                      * more information."....
                      */
-                    final DownloadLink offline = this.createOfflinelink(parameter);
-                    offline.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
-                    decryptedLinks.add(offline);
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 List<Map<String, Object>> ressourcelist = (List) entries.get("items");
                 if (ressourcelist.size() > 1 && StringUtils.isEmpty(subFolderBase)) {
@@ -323,10 +311,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 }
             } while (!this.isAbort());
         } catch (final BrowserException e) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return decryptedLinks;
     }
