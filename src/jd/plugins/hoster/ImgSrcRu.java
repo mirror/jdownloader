@@ -179,7 +179,6 @@ public class ImgSrcRu extends PluginForHost {
                     dllink = result.toString();
                 }
             } catch (final Throwable e) {
-                /* 2020-11-18 */
                 logger.log(e);
             }
         }
