@@ -16,6 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import org.jdownloader.plugins.components.config.SolidFilesComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,27 +31,51 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SolidFilesCom;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:folder|v)/[a-z0-9]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { SolidFilesCom.class })
 public class SolidFilesComFolder extends PluginForDecrypt {
     public SolidFilesComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public static List<String[]> getPluginDomains() {
+        return SolidFilesCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:folder|v)/[a-z0-9]+/?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.openGetConnection(parameter);
+        br.openGetConnection(param.getCryptedUrl());
         if (this.looksLikeDownloadableContent(br.getHttpConnection())) {
             br.getHttpConnection().disconnect();
             // direct downloadable
-            final DownloadLink dl = createDownloadlink(parameter);
+            final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
             dl.setProperty(SolidFilesCom.PROPERTY_DIRECT_DOWNLOAD, true);
             final String fileName = getFileNameFromDispositionHeader(br.getHttpConnection());
             if (fileName != null) {
@@ -61,64 +89,69 @@ public class SolidFilesComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.followConnection();
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Not found<|>We couldn't find the file you requested|>This folder is empty\\.<|This file/folder has been disabled")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*Not found\\s*<|>\\s*We couldn't find the file you requested|>\\s*This folder is empty\\.<|This file/folder has been disabled")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex("<title>([^<>\"]*?)(?:-|\\|) Solidfiles</title>").getMatch(0);
-        if (fpName == null) {
-            fpName = new Regex(parameter, "([a-z0-9]+)/$").getMatch(0);
+        String currentFolderTitle = br.getRegex("(?i)<title>([^<>\"]*?)(?:-|\\|) Solidfiles</title>").getMatch(0);
+        if (currentFolderTitle != null) {
+            currentFolderTitle = br.getRegex("<h1 class=\"node-name\">([^<]+)</h1>").getMatch(0);
         }
-        final PluginForHost solidfiles_host = JDUtilities.getPluginForHost("solidfiles.com");
-        final boolean decryptFolders = solidfiles_host.getPluginConfig().getBooleanProperty(jd.plugins.hoster.SolidFilesCom.DECRYPTFOLDERS, false);
+        if (currentFolderTitle == null) {
+            /* Final fallback */
+            currentFolderTitle = new Regex(param.getCryptedUrl(), "([a-z0-9]+)/$").getMatch(0);
+        }
+        currentFolderTitle = Encoding.htmlDecode(currentFolderTitle).trim();
+        String subfolderPath = this.getAdoptedCloudFolderStructure();
+        if (subfolderPath == null) {
+            subfolderPath = currentFolderTitle;
+        } else {
+            subfolderPath += "/" + currentFolderTitle;
+        }
         String filelist = br.getRegex("<ul>(.+?)</ul>").getMatch(0);
         String[] finfos = new Regex(filelist, "(<a href=(?:'|\"|).*?</a>)").getColumn(0);
-        if (finfos == null || finfos.length == 0) {
+        if (finfos.length == 0) {
             if (br.containsHTML("id=\"file-list\"")) {
-                logger.info("Empty folder: " + parameter);
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                logger.info("Empty folder: " + param.getCryptedUrl());
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 // single file-let hoster plugin take over
-                decryptedLinks.add(this.createDownloadlink(parameter));
+                decryptedLinks.add(this.createDownloadlink(param.getCryptedUrl()));
                 return decryptedLinks;
-            }
-        }
-        if (finfos != null && finfos.length != 0) {
-            for (final String finfo : finfos) {
-                final Regex urlfilename = new Regex(finfo, "<a href=(\"|')(/(?:d|v|folder)/.*?)\\1.*?>([^<>]+)</a>");
-                String url = urlfilename.getMatch(1);
-                String filename = urlfilename.getMatch(2);
-                // final String filesize = new Regex(finfo, "(\\d+(?:\\.\\d+)? ?(bytes|KB|MB|GB))").getMatch(0);
-                if (url == null || filename == null) {
-                    logger.info("finfo: " + finfo);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (url.startsWith("/folder/")) {
-                    if (decryptFolders) {
-                        url = Request.getLocation(url, br.getRequest());
-                        decryptedLinks.add(createDownloadlink(url));
-                    }
-                } else {
-                    url = Request.getLocation(url, br.getRequest());
-                    final DownloadLink dl = createDownloadlink(url);
-                    filename = Encoding.htmlDecode(filename);
-                    dl.setName(filename.replace(" ", "_"));// spaces are replaced by _
-                    // dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
-                }
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
+        fp.setName(subfolderPath);
+        for (final String finfo : finfos) {
+            final Regex urlfilename = new Regex(finfo, "<a href=(\"|')(/(?:d|v|folder)/.*?)\\1.*?>([^<>]+)</a>");
+            String url = urlfilename.getMatch(1);
+            String title = urlfilename.getMatch(2);
+            // final String filesize = new Regex(finfo, "(\\d+(?:\\.\\d+)? ?(bytes|KB|MB|GB))").getMatch(0);
+            if (url == null || title == null) {
+                logger.info("finfo: " + finfo);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            url = Request.getLocation(url, br.getRequest());
+            if (url.contains("/folder/")) {
+                if (PluginJsonConfig.get(SolidFilesComConfig.class).isFolderCrawlerCrawlSubfolders()) {
+                    final DownloadLink folder = createDownloadlink(url);
+                    folder.setRelativeDownloadFolderPath(subfolderPath);
+                    decryptedLinks.add(folder);
+                }
+            } else {
+                final DownloadLink file = createDownloadlink(url);
+                title = Encoding.htmlDecode(title);
+                file.setName(title.replace(" ", "_"));
+                // dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                file.setAvailable(true);
+                file.setRelativeDownloadFolderPath(subfolderPath);
+                file._setFilePackage(fp);
+                decryptedLinks.add(file);
+            }
+        }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
