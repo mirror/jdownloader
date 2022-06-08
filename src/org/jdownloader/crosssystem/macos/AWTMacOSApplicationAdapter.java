@@ -1,4 +1,4 @@
-package jd.gui.swing;
+package org.jdownloader.crosssystem.macos;
 
 import java.awt.Desktop;
 import java.io.File;

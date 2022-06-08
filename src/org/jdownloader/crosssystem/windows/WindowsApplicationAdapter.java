@@ -49,11 +49,9 @@ public class WindowsApplicationAdapter {
     private void initWin7PlusTaskbarExtension() {
         if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_7)) {
             SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
                 @Override
                 public void run() {
                     CFG_GUI.WINDOWS_TASKBAR_PROGRESS_DISPLAY.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-
                         @Override
                         public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
                         }
@@ -69,7 +67,6 @@ public class WindowsApplicationAdapter {
                     });
                     final DownloadWatchdogListener listener;
                     DownloadWatchDog.getInstance().getEventSender().addListener(listener = new DownloadWatchdogListener() {
-
                         @Override
                         public void onDownloadWatchdogStateIsStopping() {
                         }
@@ -116,6 +113,11 @@ public class WindowsApplicationAdapter {
 
     private final AtomicReference<Thread> thread = new AtomicReference<Thread>(null);
 
+    /**
+     * TODO: update to support Taskbar.setIconImage and Taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)
+     *
+     * TODO: update to support Taskbar.setProgressValue and Taskbar.isSupported(Taskbar.Feature.PROGRESS_VALUE)
+     */
     private void startDockUpdater() {
         if (CFG_GUI.CFG.getWindowsTaskbarProgressDisplay() != WindowsTaskBarProgressDisplay.NOTHING) {
             final Thread thread = new Thread("WindowsTaskbarProgress") {
@@ -204,5 +206,4 @@ public class WindowsApplicationAdapter {
             Log.log(er);
         }
     }
-
 }
