@@ -18,7 +18,8 @@ public enum FileContainer implements LabelInterface, TooltipInterface {
     MP3("mp3", "MP3 Audio"),
     M4A("m4a", "M4A Audio"),
     AAC("aac", "AAC Audio"),
-    OGG("ogg", "OGG Audio"),
+    OGG("ogg", "Vorbis Audio"),
+    OPUS("opus", "Opus Audio"),
     // rest
     JPG("jpg", "JPEG Image"),
     SRT("srt", "Subtitle"),
@@ -88,25 +89,20 @@ public enum FileContainer implements LabelInterface, TooltipInterface {
     }
 
     public static FileContainer getAudioContainer(YoutubeITAG dashVideo, YoutubeITAG audioCodec) {
-        switch (audioCodec.getRawContainer()) {
-        case DASH_AUDIO:
-            switch (audioCodec.getAudioCodec()) {
-            case AAC:
-            case AAC_SPATIAL:
-                return FileContainer.AAC;
-            default:
-                return FileContainer.OGG;
-            }
+        switch (audioCodec.getAudioCodec()) {
+        case AAC:
+        case AAC_SPATIAL:
+            return FileContainer.AAC;
+        case OPUS:
+        case OPUS_SPATIAL:
+            return FileContainer.OPUS;
+        case VORBIS:
+        case VORBIS_SPATIAL:
+            return FileContainer.OGG;
+        case MP3:
+            return FileContainer.MP3;
         default:
-            switch (audioCodec.getAudioCodec()) {
-            case AAC:
-            case AAC_SPATIAL:
-                return FileContainer.AAC;
-            case MP3:
-                return FileContainer.MP3;
-            default:
-                return FileContainer.OGG;
-            }
+            return FileContainer.MKV;
         }
     }
 
