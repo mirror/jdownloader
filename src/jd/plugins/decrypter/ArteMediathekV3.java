@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -110,6 +113,10 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlProgram(final CryptedLink param, final Map<String, Object> program) throws IOException {
         // TODO: Add support for multiple videos(?), implement plugin settings
         final Map<String, Object> vid = (Map<String, Object>) program.get("mainVideo");
+        return crawlVideo(param, vid);
+    }
+
+    private ArrayList<DownloadLink> crawlVideo(final CryptedLink param, final Map<String, Object> vid) throws IOException {
         final String title = vid.get("title").toString();
         final String subtitle = (String) vid.get("subtitle");
         final String dateFormatted = new Regex(vid.get("firstBroadcastDate").toString(), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
@@ -120,7 +127,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         // "&reassembly=A&platform=ARTE_NEXT&channel=DE&kind=SHOW&protocol=%24in:HTTPS,HLS&quality=%24in:EQ,HQ,MQ,SQ,XQ&profileAmm=%24in:AMM-PTWEB,AMM-PTHLS,AMM-OPERA,AMM-CONCERT-NEXT,AMM-Tvguide&limit=100");
         br.getPage(videoStreamsAPIURL);
         String titleBase = dateFormatted + "_" + vid.get("platform") + "_" + title;
-        if (!StringUtils.isEmpty(titleBase)) {
+        if (!StringUtils.isEmpty(subtitle)) {
             titleBase += " - " + subtitle;
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -129,39 +136,76 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             fp.setComment(fullDescription);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        /* Crawl thumbnail */
-        final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
-        final String imageCaption = (String) mainImage.get("caption");
-        final DownloadLink thumbnail = this.createDownloadlink("directhttp://" + mainImage.get("url"));
-        thumbnail.setFinalFileName(titleBase + "." + mainImage.get("extension"));
-        if (imageCaption != null) {
-            thumbnail.setComment(imageCaption);
+        /* Crawl thumbnail if wished by user */
+        final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        if (cfg.isCrawlThumbnail()) {
+            final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
+            final String imageCaption = (String) mainImage.get("caption");
+            final DownloadLink thumbnail = this.createDownloadlink("directhttp://" + mainImage.get("url"));
+            thumbnail.setFinalFileName(titleBase + "." + mainImage.get("extension"));
+            if (imageCaption != null) {
+                thumbnail.setComment(imageCaption);
+            }
+            thumbnail.setAvailable(true);
+            ret.add(thumbnail);
+            distribute(thumbnail);
         }
-        thumbnail.setAvailable(true);
-        ret.add(thumbnail);
-        distribute(thumbnail);
         /* Crawl video streams */
-        // TODO: Implement pagination
+        // TODO: Implement pagination?
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
+        final ArrayList<DownloadLink> allResults = new ArrayList<DownloadLink>();
+        final Map<String, List<Map<String, Object>>> languagePacks = new HashMap<String, List<Map<String, Object>>>();
         for (final Map<String, Object> videoStream : videoStreams) {
-            final String protocol = videoStream.get("protocol").toString();
-            if (!protocol.equalsIgnoreCase("https")) {
-                /* 2022-05-25: Only grab HTTP streams for now */
-                continue;
+            final String language = videoStream.get("language").toString();
+            if (!languagePacks.containsKey(language)) {
+                languagePacks.put(language, new ArrayList<Map<String, Object>>());
             }
-            final long durationSeconds = ((Number) videoStream.get("durationSeconds")).longValue();
-            final long bitrate = ((Number) videoStream.get("bitrate")).longValue();
-            final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
-            final String finalFilename = titleBase + videoStream.get("filename");
-            link.setFinalFileName(finalFilename);
-            link.setProperty(DirectHTTP.FIXNAME, finalFilename);
-            link.setAvailable(true);
-            link.setDownloadSize(bitrate / 8 * 1024 * durationSeconds);
-            link._setFilePackage(fp);
-            ret.add(link);
-            distribute(link);
+            languagePacks.get(language).add(videoStream);
+        }
+        /* Now filter by language, user selected qualities and so on */
+        for (final List<Map<String, Object>> videoStreamsByLanguage : languagePacks.values()) {
+            /* TODO: Add BEST handling */
+            long highestFilesize = 0;
+            DownloadLink bestForThisLanguage = null;
+            for (final Map<String, Object> videoStream : videoStreamsByLanguage) {
+                // final String language = videoStream.get("language").toString();
+                final String protocol = videoStream.get("protocol").toString();
+                if (!protocol.equalsIgnoreCase("https")) {
+                    /* 2022-05-25: Only grab HTTP streams for now */
+                    continue;
+                }
+                final long durationSeconds = ((Number) videoStream.get("durationSeconds")).longValue();
+                final long bitrate = ((Number) videoStream.get("bitrate")).longValue();
+                final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
+                final String finalFilename = titleBase + "_" + videoStream.get("filename");
+                link.setFinalFileName(finalFilename);
+                link.setProperty(DirectHTTP.FIXNAME, finalFilename);
+                link.setAvailable(true);
+                /* Calculate filesize in a very simple way */
+                link.setDownloadSize(bitrate / 8 * 1024 * durationSeconds);
+                link._setFilePackage(fp);
+                allResults.add(link);
+                /* Now check for skip conditions based on user settings */
+                final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) videoStream.get("subtitles");
+                if (!subtitles.isEmpty() && !cfg.isCrawlSubtitledBurnedInVersions()) {
+                    continue;
+                }
+                if (link.getView().getBytesTotal() > highestFilesize) {
+                    bestForThisLanguage = link;
+                    highestFilesize = link.getView().getBytesTotal();
+                }
+                ret.add(link);
+                distribute(link);
+            }
+            // ret.add(bestForThisLanguage);
+            // distribute(bestForThisLanguage);
         }
         return ret;
+    }
+
+    @Override
+    public Class<? extends ArteMediathekConfig> getConfigInterface() {
+        return ArteMediathekConfig.class;
     }
 }

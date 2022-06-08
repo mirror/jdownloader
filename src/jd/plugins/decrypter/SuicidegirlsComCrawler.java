@@ -25,17 +25,20 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.SuicidegirlsCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/(?:album/\\d+/[A-Za-z0-9\\-_]+/)?" })
-public class SuicidegirlsCom extends PluginForDecrypt {
-    public SuicidegirlsCom(PluginWrapper wrapper) {
+public class SuicidegirlsComCrawler extends PluginForDecrypt {
+    public SuicidegirlsComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -62,52 +65,48 @@ public class SuicidegirlsCom extends PluginForDecrypt {
         }
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<String> dupecheck = new ArrayList<String>();
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        String fpName = null;
-        final PluginForHost plugin = JDUtilities.getPluginForHost("suicidegirls.com");
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final PluginForHost plugin = this.getNewPluginForHostInstance(this.getHost());
         plugin.setBrowser(this.br);
         final boolean loggedin = ((jd.plugins.hoster.SuicidegirlsCom) plugin).login(br) != null;
         ((jd.plugins.hoster.SuicidegirlsCom) plugin).prepBR(br);
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final ArrayList<String> dupecheck = new ArrayList<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (br.containsHTML("class=\"album-join-message\"")) {
             logger.info("User added member-only url but has no (valid) account");
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "(girls|members)/([A-Za-z0-9\\-_]+)/");
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), "(girls|members)/([A-Za-z0-9\\-_]+)/");
         final String member_type = urlinfo.getMatch(0);
         final String username = urlinfo.getMatch(1);
-        if (parameter.matches(TYPE_ALBUM)) {
+        String fpName = null;
+        if (param.getCryptedUrl().matches(TYPE_ALBUM)) {
             fpName = br.getRegex("<h2 class=\"title\">([^<>\"]*?)</h2>").getMatch(0);
             if (fpName == null) {
                 /* Fallback to url-packagename */
-                fpName = new Regex(parameter, "([A-Za-z0-9\\-_]+)/$").getMatch(0);
+                fpName = new Regex(param.getCryptedUrl(), "([A-Za-z0-9\\-_]+)/$").getMatch(0);
             }
             fpName = username + " - " + fpName;
             final String[] links = br.getRegex("<li class=\"photo-container\" id=\"thumb-\\d+\" data-index=\"\\d+\"[^>]*>\\s*<a href=\"(http[^<>\"]*?)\"").getColumn(0);
             if ((links == null || links.length == 0) && !loggedin) {
                 /* Account is needed most times */
-                logger.info("Account needed to crawl link: " + parameter);
-                return decryptedLinks;
+                throw new AccountRequiredException();
             }
             if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             int imageIndex = 1;
             for (final String directlink : links) {
                 final DownloadLink dl = this.createDownloadlink("http://suicidegirlsdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String extension = getFileNameExtensionFromURL(directlink, ".jpg");
                 final String imageName = String.format(Locale.US, "%0" + padLength(links.length) + "d", imageIndex++) + "_" + fpName + extension;
-                dl.setProperty("directlink", directlink);
-                dl.setProperty("imageName", imageName);
+                dl.setProperty(SuicidegirlsCom.PROPERTY_DIRECTURL, directlink);
+                dl.setProperty(SuicidegirlsCom.PROPERTY_IMAGE_NAME, imageName);
                 dl.setFinalFileName(imageName);
                 dl.setLinkID(directlink);
                 dl.setAvailable(true);
@@ -134,8 +133,7 @@ public class SuicidegirlsCom extends PluginForDecrypt {
                 final String[] links = br.getRegex("\"(/(?:girls|members)/[^/]+/album/\\d+/[A-Za-z0-9\\-_]+/)[^<>\"]*?\"").getColumn(0);
                 if ((links == null || links.length == 0) && addedlinks_total == 0 && !loggedin) {
                     /* Account is needed most times */
-                    logger.info("Account needed to crawl link: " + parameter);
-                    return decryptedLinks;
+                    throw new AccountRequiredException();
                 }
                 if (links == null || links.length == 0) {
                     break;
