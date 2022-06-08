@@ -334,6 +334,11 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         }
     }
 
+    /**
+     * Returns max page number for pagination according to current html code. </br>
+     * This can vary e.g. on first page it looks like last page is number 6 but once we are on page 4 the highest page number visible
+     * changes to 8.
+     */
     private int getMaxPage(final Browser br) throws MalformedURLException {
         final String[] pageURLs = br.getRegex("<a href=\"([^\"]+page=\\d+[^\"]*)\"").getColumn(0);
         int maxPage = 1;
