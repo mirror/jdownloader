@@ -1,4 +1,4 @@
-package jd.gui.swing;
+package org.jdownloader.crosssystem.macos;
 
 import java.awt.Image;
 import java.util.HashMap;
@@ -108,6 +108,9 @@ public class MacOSDockAdapter {
         }
     }
 
+    /**
+     * TODO: update to support Taskbar.setProgressValue and Taskbar.isSupported(Taskbar.Feature.PROGRESS_VALUE)
+     */
     private static void startDockUpdater() {
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).getMacDockProgressDisplay() != MacDockProgressDisplay.TOTAL_PROGRESS) {
             return;

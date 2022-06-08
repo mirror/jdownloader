@@ -1,4 +1,4 @@
-package jd.gui.swing;
+package org.jdownloader.crosssystem.macos;
 
 import java.awt.Image;
 
@@ -13,7 +13,7 @@ public class MacOSApplicationAdapter {
                 final String className = "java.awt.Taskbar";
                 final boolean isTaskbarSupported = ReflectionUtils.invoke(className, "isTaskbarSupported", null, boolean.class);
                 if (isTaskbarSupported) {
-                    // check for Taskbar.Feature.ICON_IMAGE
+                    // update to check Taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)
                     final Object taskBar = ReflectionUtils.invoke(className, "getTaskbar", null, Class.forName(className));
                     ReflectionUtils.invoke(taskBar.getClass(), "setIconImage", taskBar, void.class, icon);
                     return;
