@@ -52,7 +52,7 @@ public class ShrinkServiceIt extends PluginForDecrypt {
         } else if (br._getURL().getPath().equals("/HTTP404.html")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2022-06-07: Plugin broken */
+        /* 2022-06-07: Plugin broken --> And website is broken */
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

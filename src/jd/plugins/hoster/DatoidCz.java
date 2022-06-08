@@ -21,7 +21,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -64,6 +63,8 @@ public class DatoidCz extends antiDDoSForHost {
     }
 
     private static final String API_BASE = "https://api.datoid.cz/v1";
+    /* 2022-06-08: API doesn't work anymore due to ERR_SSL_VERSION_OR_CIPHER_MISMATCH */
+    private final boolean       USE_API  = false;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -81,9 +82,27 @@ public class DatoidCz extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String linkid = this.getFID(link);
-        final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-        boolean set_final_filename = true;
+        if (USE_API) {
+            return this.requestFileInformationAPI(link);
+        } else {
+            return this.requestFileInformationWebsite(link);
+        }
+    }
+
+    private void setWeakFilename(final DownloadLink link) {
+        if (!link.isNameSet()) {
+            final String fid = this.getFID(link);
+            final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+            if (filename_url != null) {
+                link.setName(filename_url);
+            } else {
+                link.setName(fid);
+            }
+        }
+    }
+
+    public AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
+        setWeakFilename(link);
         String filename = null;
         String filesize = null;
         String downloadURL = link.getPluginPatternMatcher();
@@ -91,31 +110,17 @@ public class DatoidCz extends antiDDoSForHost {
         boolean api_failed = false;
         final boolean trust_API = true;
         getPage(API_BASE + "/get-file-details?url=" + Encoding.urlEncode(api_param_url));
-        if (fileIsOfflineAPI() && StringUtils.startsWithCaseInsensitive(downloadURL, "https://")) {
+        if (fileIsOfflineAPI(br) && StringUtils.startsWithCaseInsensitive(downloadURL, "https://")) {
             downloadURL = downloadURL.replace("https://", "http://");
             api_param_url = prepareApiParam_URL(downloadURL);
             getPage(API_BASE + "/get-file-details?url=" + Encoding.urlEncode(api_param_url));
-            if (fileIsOfflineAPI() && !trust_API) {
-                /* Double-check - API fallback */
-                api_failed = true;
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                getPage(brc, downloadURL);
-                if (!brc.getURL().contains(linkid) || brc.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                filename = brc.getRegex("class=\"filename\">([^<>\"]+)<").getMatch(0);
-                filesize = brc.getRegex("class=\"icon-size\"></i>([^<>\"]+)<").getMatch(0);
-                if (filename != null) {
-                    link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-                    if (filesize != null) {
-                        link.setDownloadSize(SizeFormatter.getSize(filesize));
-                    }
-                }
+            if (fileIsOfflineAPI(br) && !trust_API) {
+                /* Fallback to website */
+                return requestFileInformationWebsite(link);
             }
         }
         if (!api_failed) {
-            if (fileIsOfflineAPI()) {
+            if (fileIsOfflineAPI(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"error\":\"File is password protected\"")) {
                 logger.info("Password protected links are not yet supported (via API)!");
@@ -124,21 +129,8 @@ public class DatoidCz extends antiDDoSForHost {
             filename = PluginJSonUtils.getJsonValue(br, "filename");
             filesize = PluginJSonUtils.getJsonValue(br, "filesize_bytes");
         }
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = filename_url;
-            if (StringUtils.isEmpty(filename)) {
-                /* Final fallback */
-                filename = linkid;
-            }
-        }
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (set_final_filename) {
+        if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
-        } else {
-            link.setName(filename);
         }
         if (filesize != null && filesize.matches("\\d+")) {
             /* Filesize via API */
@@ -150,13 +142,31 @@ public class DatoidCz extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
+        setWeakFilename(link);
+        final String fid = this.getFID(link);
+        getPage(link.getPluginPatternMatcher());
+        if (!br.getURL().contains(fid) || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("class=\"filename\">([^<>\"]+)<").getMatch(0);
+        final String filesize = br.getRegex("class=\"icon-size\"></i>([^<>\"]+)<").getMatch(0);
+        if (filename != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
+    }
+
     /* 2019-02-04: Basically a workaround as their API only accepts URLs with one of their (at least) 2 domains.F */
     private String prepareApiParam_URL(final String url_source) {
         final String curr_domain = Browser.getHost(url_source);
         return url_source.replace(curr_domain, "datoid.cz");
     }
 
-    private boolean fileIsOfflineAPI() {
+    private boolean fileIsOfflineAPI(final Browser br) {
         return br.containsHTML("\"error\":\"(File not found|File was blocked|File was deleted)\"");
     }
 
@@ -165,10 +175,11 @@ public class DatoidCz extends antiDDoSForHost {
         requestFileInformation(link);
         final String fid = getFID(link);
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        if (USE_API) {
+            getPage(link.getPluginPatternMatcher());
+        }
         if (br.containsHTML("<div class=\"bPopup free-popup file-on-page big-file\">")) {
-            logger.info("Only downloadable by Premium Account holders");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         } else if (br.containsHTML(">\\s*Soubor byl zablokován\\.")) {
             /* 2019-08-12: WTF: Log: 6759186935451 : svn.jdownloader.org/issues/87302 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Soubor byl zablokován.", 30 * 60 * 1000l);
@@ -298,10 +309,8 @@ public class DatoidCz extends antiDDoSForHost {
         ai.setTrafficLeft(trafficleft);
         if (trafficleft > 0) {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium Account");
         } else {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
         }
         /* Allow downloads without credits, see comments in handlePremium! */
         ai.setSpecialTraffic(true);
@@ -314,8 +323,7 @@ public class DatoidCz extends antiDDoSForHost {
          * 2019-08-25: Free accounts may not have any credits (= premium traffic) but are required to e.g. download files > 1 GB. The same
          * accounts for premium accounts which do not have enough traffic left.
          */
-        final boolean enforceFreeAccountDownload = account.getType() == AccountType.FREE || link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft();
-        if (enforceFreeAccountDownload) {
+        if (account.getType() == AccountType.FREE || link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft()) {
             loginWebsite(account);
             handleFree(link);
         } else {
@@ -337,12 +345,11 @@ public class DatoidCz extends antiDDoSForHost {
             if (br.containsHTML("\"error\":\"Lack of credits\"")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            if (fileIsOfflineAPI()) {
+            if (fileIsOfflineAPI(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String dllink = PluginJSonUtils.getJsonValue(br, "download_link");
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, -3);

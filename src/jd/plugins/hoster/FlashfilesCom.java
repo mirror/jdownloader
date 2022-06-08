@@ -161,26 +161,20 @@ public class FlashfilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(freeform);
+        final String waitSecondsStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
+        int waitSeconds = Integer.parseInt(waitSecondsStr);
+        /* 2020-02-13: Normal waittime is 30 seconds, if waittime > 10 Minutes reconnect */
+        if (waitSeconds > 600) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
+        }
         final Form freeform2 = br.getFormbyActionRegex(".*?linkgenerate\\.php");
         if (freeform2 == null) {
             logger.warning("Failed to find freeform2");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String waitStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
-        int waittime = 30;
-        if (waitStr != null) {
-            logger.info("Found pre-download-waittime: " + waitStr);
-            waittime = Integer.parseInt(waitStr);
-        } else {
-            logger.warning("Failed to find pre-download-waittime, using default: " + waittime);
-        }
-        /* 2020-02-13: Normal waittime is 30 seconds, if waittime > 10 Minutes reconnect */
-        if (waittime > 600) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1001l);
-        }
         final long timeBefore = System.currentTimeMillis();
         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-        waitTime(link, timeBefore, waitStr);
+        waitTime(link, timeBefore, waitSecondsStr);
         freeform2.put("g-recaptcha-response", recaptchaV2Response);
         br.submitForm(freeform2);
         final Form freeform3 = br.getFormbyActionRegex(".*?downloadfile\\.php");
