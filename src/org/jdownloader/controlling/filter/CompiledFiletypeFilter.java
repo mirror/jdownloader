@@ -291,6 +291,8 @@ public class CompiledFiletypeFilter {
         MID,
         MOD,
         OGG,
+        OGA, // ogg audio media
+        OPUS,
         S3M,
         FourMP("4MP"),
         AIF,
@@ -308,6 +310,7 @@ public class CompiledFiletypeFilter {
         OMG,
         OMF,
         SND,
+        SPX, // Speex
         NSF;// NES Sound Format, https://wiki.nesdev.com/w/index.php/NSF
         private final Pattern  pattern;
         private static Pattern allPattern;
