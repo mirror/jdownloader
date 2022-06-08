@@ -52,13 +52,6 @@ public class ArteTv extends PluginForHost {
     private static final String http_1500                             = "http_1500";
     private static final String http_2200                             = "http_2200";
     public static final String  hls                                   = "hls";
-    /* creative.arte.tv extern qualities */
-    private static final String http_extern_1000                      = "http_extern_1000";
-    private static final String hls_extern_250                        = "hls_extern_250";
-    private static final String hls_extern_500                        = "hls_extern_500";
-    private static final String hls_extern_1000                       = "hls_extern_1000";
-    private static final String hls_extern_2000                       = "hls_extern_2000";
-    private static final String hls_extern_4000                       = "hls_extern_4000";
     public static final String  LOAD_LANGUAGE_URL                     = "LOAD_LANGUAGE_URL_RESET_2019_01_23";
     private static final String LOAD_BEST                             = "LOAD_BEST";
     public static final String  LOAD_LANGUAGE_GERMAN                  = "LOAD_LANGUAGE_GERMAN_RESET_2019_01_23";
@@ -88,6 +81,9 @@ public class ArteTv extends PluginForHost {
     public static final String  default_CUSTOM_FILE_NAME_PATTERN      = "*date*_arte_*title*_*vpi*__*language*_*shortlanguage*_*resolution*_*bitrate*";
     public static final String  default_CUSTOM_PACKAGE_NAME_PATTERN   = "*date*_arte_*title*";
     public static final String  default_CUSTOM_THUMBNAIL_NAME_PATTERN = "*title*";
+    public static final String  PROPERTY_date                         = "date";
+    public static final String  PROPERTY_title                        = "title";
+    public static final String  PROPERTY_directurl                    = "directURL";
     private String              dllink                                = null;
     private String              quality_intern                        = null;
 
@@ -369,15 +365,6 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LOAD_BEST, JDL.L("plugins.hoster.arte.loadbest", "Nur die beste Qualität(aus der Auswahl) wählen?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Qualitätsstufen für externe creative.arte.tv Videos:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der immer verfügbaren http Qualitätsstufen:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_extern_1000, JDL.L("plugins.hoster.arte.http_extern_1000", "1000kBit/s 504x284")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der immer verfügbaren hls Qualitätsstufen für spezielle externe creative.arte.tv Videos:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_250, JDL.L("plugins.hoster.arte.hls_extern_250", "250kBit/s 192x144 oder ähnlich")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_500, JDL.L("plugins.hoster.arte.hls_extern_500", "500kBit/s 308x232 oder ähnlich")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_1000, JDL.L("plugins.hoster.arte.hls_extern_1000", "1000kBit/s 496x372 oder ähnlich")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_2000, JDL.L("plugins.hoster.arte.hls_extern_2000", "2000kBit/s 720x408 oder ähnlich")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls_extern_4000, JDL.L("plugins.hoster.arte.hls_extern_4000", "4000kBit/s oder ähnlich")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der Qualitätsstufen für normale creative.arte.tv/concert.arte.tv/arte.tv Videos:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), hls, JDL.L("plugins.hoster.arte.hls", "HLS")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Auswahl der manchmal verfügbaren Qualitätsstufen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), http_300, JDL.L("plugins.hoster.arte.http_300", "300kBit/s 384x216 (http)")).setDefaultValue(true));

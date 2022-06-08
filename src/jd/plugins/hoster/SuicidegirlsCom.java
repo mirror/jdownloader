@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -28,7 +29,6 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -60,6 +60,9 @@ public class SuicidegirlsCom extends PluginForHost {
     /* Linktypes */
     private static final String  TYPE_DECRYPTED               = "http://suicidegirlsdecrypted/\\d+";
     private static final String  TYPE_VIDEO                   = "https?://(?:www\\.)?suicidegirls\\.com/videos/(\\d+)/[A-Za-z0-9\\-_]+/";
+    /* Properties */
+    public static final String   PROPERTY_DIRECTURL           = "directlink";
+    public static final String   PROPERTY_IMAGE_NAME          = "imageName";
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -71,6 +74,37 @@ public class SuicidegirlsCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private String               dllink                       = null;
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0);
+        } else {
+            // TYPE_DECRYPTED
+            return link.getStringProperty(PROPERTY_IMAGE_NAME);
+        }
+    }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = new Browser();
@@ -97,31 +131,28 @@ public class SuicidegirlsCom extends PluginForHost {
             filename = br.getRegex("<h2 class=\"title\">(?:SuicideGirls:\\s*)?([^<>\"]*?)</h2>").getMatch(0);
             if (filename == null) {
                 /* Fallback to url-filename */
-                filename = new Regex(link.getDownloadURL(), "suicidegirls\\.com/videos/\\d+/([A-Za-z0-9\\-_]+)/").getMatch(0);
+                filename = new Regex(link.getPluginPatternMatcher(), "suicidegirls\\.com/videos/\\d+/([A-Za-z0-9\\-_]+)/").getMatch(0);
             }
             filename = Encoding.htmlDecode(filename).trim();
             filename += ".mp4";
         } else {
-            filename = link.getStringProperty("imageName", null);
-            dllink = link.getStringProperty("directlink", null);
+            filename = link.getStringProperty(PROPERTY_IMAGE_NAME);
+            dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         }
         if (dllink != null && !dllink.contains(".m3u8")) {
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br.openHeadConnection(dllink);
-                } catch (final BrowserException e) {
+                con = br.openHeadConnection(dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (con.isOK() && !con.getContentType().contains("text")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    if (filename == null) {
-                        filename = getFileNameFromHeader(con);
-                    }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setProperty("directlink", dllink);
+                if (filename == null) {
+                    filename = getFileNameFromHeader(con);
+                }
+                link.setProperty(PROPERTY_DIRECTURL, dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -132,7 +163,6 @@ public class SuicidegirlsCom extends PluginForHost {
             link.setName(filename);
         }
         if (link.getFinalFileName() == null && filename != null) {
-            filename = encodeUnicode(filename);
             link.setFinalFileName(filename);
         }
         return AvailableStatus.TRUE;
@@ -169,13 +199,17 @@ public class SuicidegirlsCom extends PluginForHost {
             dl.startDownload();
         } else {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directlinkproperty, dllink);
@@ -188,27 +222,24 @@ public class SuicidegirlsCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public static final String MAINPAGE = "http://suicidegirls.com";
-    private static Object      LOCK     = new Object();
-
     public void login(final Account account, final boolean validateCookies) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 prepBR(br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br.setCookies(MAINPAGE, cookies);
+                    br.setCookies(this.getHost(), cookies);
                     if (!validateCookies) {
                         logger.info("Trust cookies without checking");
                         return;
                     }
                     logger.info("Checking login cookies");
                     // do a test
-                    br.getPage("https://www.suicidegirls.com/member/account/");
+                    br.getPage("https://www." + this.getHost() + "/member/account/");
                     if (br.containsHTML(">Log Out<")) {
                         logger.info("Successfully logged in via cookies");
-                        account.saveCookies(br.getCookies(MAINPAGE), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -216,7 +247,7 @@ public class SuicidegirlsCom extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage("https://www.suicidegirls.com");
+                br.getPage("https://www." + this.getHost());
                 final Form loginform = br.getFormbyProperty("id", "login-form");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -252,7 +283,7 @@ public class SuicidegirlsCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(MAINPAGE), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -265,7 +296,7 @@ public class SuicidegirlsCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (br.getURL() == null || !br.getURL().contains("/member/account")) {
-            br.getPage("https://www.suicidegirls.com/member/account/");
+            br.getPage("https://www." + this.getHost() + "/member/account/");
         }
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("YOUR ACCOUNT IS CLOSING IN <a>(\\d+ weeks?, \\d+ days?)<").getMatch(0);
@@ -286,13 +317,11 @@ public class SuicidegirlsCom extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium Account");
         } else {
             // free account
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Free Account");
         }
         return ai;
     }
@@ -313,14 +342,18 @@ public class SuicidegirlsCom extends PluginForHost {
             // }
             // }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty("premium_directlink", dllink);
@@ -349,8 +382,8 @@ public class SuicidegirlsCom extends PluginForHost {
     }
 
     public Browser prepBR(final Browser br) {
-        br.setCookie(MAINPAGE, "burlesque_ad_closed", "True");
-        br.setCookie(MAINPAGE, "django_language", "en");
+        br.setCookie(this.getHost(), "burlesque_ad_closed", "True");
+        br.setCookie(this.getHost(), "django_language", "en");
         br.setFollowRedirects(true);
         return br;
     }
