@@ -983,7 +983,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             logger.info("Crawling qualities 1");
             int foundQualities = 0;
             /* Try to find the highest quality possible --> Example website that has multiple qualities available: camwhoresbay.com */
-            final String[][] videoInfos = br.getRegex("([a-z0-9_]+_text)\\s*:\\s*'(\\d+p(\\s*HD)?|HQ|2K|4K)'").getMatches();
+            final String[][] videoInfos = br.getRegex("(?i)([a-z0-9_]+_text)\\s*:\\s*'(\\d+p(\\s*(HD|HQ|2K|4K))?)'").getMatches();
             for (final String[] vidInfo : videoInfos) {
                 final String varNameText = vidInfo[0];
                 final String videoQualityStr = vidInfo[1];
