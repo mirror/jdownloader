@@ -24,6 +24,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Scanner;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,16 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -382,13 +382,40 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     public static interface ZdfmediathekConfigInterface extends PluginConfigInterface {
+        final String text_UseVideoResolutionAsQualityModifierForHTTPVideoStreams = "Use video resolution in http video stream filenames e.g. '1280x720' instead of 'hd'?";
+        final String text_FastLinkcheckEnabled                                   = "Enable fast linkcheck?";
+        final String text_GrabSubtitleEnabled                                    = "Grab subtitle?";
+        final String text_GrabSubtitleForDisabledPeopleEnabled                   = "Grab subtitle for disabled people?";
+        final String text_GrabVideoVersionAudioDeskription                       = "Grab video quality 'Audiodeskription'?";
+        final String text_GrabVideoVersionOriginalAudio                          = "Grab video quality 'Original sound'?";
+
         public static class TRANSLATION {
+            public String getUseVideoResolutionAsQualityModifierForHTTPVideoStreams_label() {
+                return text_UseVideoResolutionAsQualityModifierForHTTPVideoStreams;
+            }
+
             public String getFastLinkcheckEnabled_label() {
                 return _JDT.T.lit_enable_fast_linkcheck();
             }
 
+            public String getGrabSubtitleEnabled_label() {
+                return text_GrabSubtitleEnabled;
+            }
+
+            public String getGrabSubtitleForDisabledPeopleEnabled_label() {
+                return text_GrabSubtitleForDisabledPeopleEnabled;
+            }
+
             public String getGrabAudio_label() {
                 return _JDT.T.lit_add_audio();
+            }
+
+            public String getGrabVideoVersionAudioDeskription_label() {
+                return text_GrabVideoVersionAudioDeskription;
+            }
+
+            public String getGrabVideoVersionOriginalAudio_label() {
+                return text_GrabVideoVersionOriginalAudio;
             }
 
             public String getGrabBESTEnabled_label() {
@@ -406,21 +433,29 @@ public class ZdfDeMediathek extends PluginForHost {
 
         public static final TRANSLATION TRANSLATION = new TRANSLATION();
 
+        @DefaultBooleanValue(false)
+        @DescriptionForConfigEntry(text_UseVideoResolutionAsQualityModifierForHTTPVideoStreams)
+        @Order(8)
+        boolean isUseVideoResolutionAsQualityModifierForHTTPVideoStreams();
+
+        void setUseVideoResolutionAsQualityModifierForHTTPVideoStreams(boolean b);
+
         @DefaultBooleanValue(true)
+        @DescriptionForConfigEntry(text_FastLinkcheckEnabled)
         @Order(9)
         boolean isFastLinkcheckEnabled();
 
         void setFastLinkcheckEnabled(boolean b);
 
         @DefaultBooleanValue(false)
-        @DescriptionForConfigEntry("Grab subtitle?")
+        @DescriptionForConfigEntry(text_GrabSubtitleEnabled)
         @Order(10)
         boolean isGrabSubtitleEnabled();
 
         void setGrabSubtitleEnabled(boolean b);
 
         @DefaultBooleanValue(false)
-        @DescriptionForConfigEntry("Grab subtitle for disabled people?")
+        @DescriptionForConfigEntry(text_GrabSubtitleForDisabledPeopleEnabled)
         @Order(10)
         boolean isGrabSubtitleForDisabledPeopleEnabled();
 
@@ -434,14 +469,14 @@ public class ZdfDeMediathek extends PluginForHost {
         void setGrabAudio(boolean b);
 
         @DefaultBooleanValue(false)
-        @DescriptionForConfigEntry("Grab video quality 'Audiodeskription'?")
+        @DescriptionForConfigEntry(text_GrabVideoVersionAudioDeskription)
         @Order(15)
         boolean isGrabVideoVersionAudioDeskription();
 
         void setGrabVideoVersionAudioDeskription(boolean b);
 
         @DefaultBooleanValue(false)
-        @DescriptionForConfigEntry("Grab video quality 'Original sound'?")
+        @DescriptionForConfigEntry(text_GrabVideoVersionOriginalAudio)
         @Order(16)
         boolean isGrabVideoVersionOriginalAudio();
 

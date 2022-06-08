@@ -31,6 +31,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -46,15 +55,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -399,7 +399,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     /** Handles ZDF json present in given browser after API request has been made before. */
     private ArrayList<DownloadLink> handleZdfJson(final CryptedLink param, final Browser br, final String apiToken) throws Exception {
         final ArrayList<DownloadLink> allDownloadLinks = new ArrayList<DownloadLink>();
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String contentType = (String) entries.get("contentType");
         String title = (String) entries.get("title");
         if (StringUtils.isEmpty(title)) {
@@ -572,17 +572,17 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 logger.info("Stopping as we've crawled all qualities");
                 break;
             }
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            logger.info("Crawling playerId: " + entries.get("playerId"));
+            final Map<String, Object> player = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            logger.info("Crawling playerId: " + player.get("playerId"));
             if (internalVideoID == null) {
                 /* Set this on our first round */
-                internalVideoID = (String) entries.get("basename");
+                internalVideoID = (String) player.get("basename");
             }
             /* 1. Collect subtitles */
-            final Object captionsO = JavaScriptEngineFactory.walkJson(entries, "captions");
+            final Object captionsO = JavaScriptEngineFactory.walkJson(player, "captions");
             if (captionsO instanceof List && this.allSubtitles.isEmpty()) {
                 /* Captions can be available in different versions (languages- and types) */
-                final List<Object> subtitlesO = (List<Object>) entries.get("captions");
+                final List<Object> subtitlesO = (List<Object>) player.get("captions");
                 Map<String, Object> subInfo = null;
                 for (final Object subtitleO : subtitlesO) {
                     subInfo = (Map<String, Object>) subtitleO;
@@ -600,34 +600,25 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
             }
             /* 2. Grab video streams */
-            final Object downloadAllowed_o = JavaScriptEngineFactory.walkJson(entries, "attributes/downloadAllowed/value");
+            final Object downloadAllowed_o = JavaScriptEngineFactory.walkJson(player, "attributes/downloadAllowed/value");
             if (downloadAllowed_o != null && downloadAllowed_o instanceof Boolean) {
                 /* Are official video download-URLs existant? */
                 grabDownloadUrlsPossible = ((Boolean) downloadAllowed_o).booleanValue();
             }
-            final List<Object> priorityList = (List<Object>) entries.get("priorityList");
-            for (final Object priority_o : priorityList) {
-                entries = (Map<String, Object>) priority_o;
-                final List<Object> formitaeten = (List<Object>) entries.get("formitaeten");
-                for (final Object formitaet_o : formitaeten) {
-                    /* 2020-12-21: Skips (two) lower http qualities - just a test */
-                    // final String facet = (String) JavaScriptEngineFactory.walkJson(entries, "facets/{0}");
-                    // if ("restriction_useragent".equalsIgnoreCase(facet)) {
-                    // continue;
-                    // }
-                    entries = (Map<String, Object>) formitaet_o;
-                    final boolean isAdaptive = ((Boolean) entries.get("isAdaptive")).booleanValue();
-                    final String type = (String) entries.get("type");
+            final List<Map<String, Object>> priorityList = (List<Map<String, Object>>) player.get("priorityList");
+            for (final Map<String, Object> priority : priorityList) {
+                final List<Map<String, Object>> formitaeten = (List<Map<String, Object>>) priority.get("formitaeten");
+                for (final Map<String, Object> formitaet : formitaeten) {
+                    final boolean isAdaptive = ((Boolean) formitaet.get("isAdaptive")).booleanValue();
+                    final String type = (String) formitaet.get("type");
                     /* Process qualities */
-                    final List<Object> qualities = (List<Object>) entries.get("qualities");
-                    for (final Object qualities_o : qualities) {
-                        entries = (Map<String, Object>) qualities_o;
-                        final String quality = (String) entries.get("quality");
-                        entries = (Map<String, Object>) entries.get("audio");
-                        final List<Object> tracks = (List<Object>) entries.get("tracks");
+                    final List<Map<String, Object>> qualities = (List<Map<String, Object>>) formitaet.get("qualities");
+                    for (final Map<String, Object> quality : qualities) {
+                        final Map<String, Object> audio = (Map<String, Object>) quality.get("audio");
+                        final List<Map<String, Object>> tracks = (List<Map<String, Object>>) audio.get("tracks");
                         for (final Object trackO : tracks) {
-                            entries = (Map<String, Object>) trackO;
-                            final String audio_class = (String) entries.get("class");
+                            final Map<String, Object> track = (Map<String, Object>) trackO;
+                            final String audio_class = (String) track.get("class");
                             if (!atLeastOneSelectedVideoAudioVersionIsAvailable && selectedAudioVideoVersions.contains(audio_class)) {
                                 atLeastOneSelectedVideoAudioVersionIsAvailable = true;
                             }
@@ -638,10 +629,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 qualitiesForThisLang = new ArrayList<Object>();
                                 audioVideoMap.put(audio_class, qualitiesForThisLang);
                             }
-                            entries.put("isAdaptive", isAdaptive);
-                            entries.put("type", type);
-                            entries.put("quality", quality);
-                            qualitiesForThisLang.add(entries);
+                            track.put("isAdaptive", isAdaptive);
+                            track.put("type", type);
+                            track.put("quality", quality.get("quality"));
+                            qualitiesForThisLang.add(track);
                         }
                     }
                 }
@@ -668,9 +659,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             int highestHTTPQualityValue = 0;
             final Set<String> httpQualities = new HashSet<String>();
             for (final Object qualityO : qualitiesList) {
-                entries = (Map<String, Object>) qualityO;
-                final boolean isAdaptive = ((Boolean) entries.get("isAdaptive"));
-                final String type = (String) entries.get("type");
+                final Map<String, Object> quality = (Map<String, Object>) qualityO;
+                final boolean isAdaptive = ((Boolean) quality.get("isAdaptive"));
+                final String type = (String) quality.get("type");
                 String protocol = "http";
                 /* First check for global skip conditions */
                 if (isAdaptive && !type.contains("m3u8")) {
@@ -689,20 +680,20 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     /* http mp4- and segment streams. */
                     ext = "mp4";
                 }
-                final String language = (String) entries.get("language");
-                String uri = (String) entries.get("uri");
+                final String language = (String) quality.get("language");
+                String uri = (String) quality.get("uri");
                 if (StringUtils.isEmpty(audio_class) || StringUtils.isEmpty(language) || StringUtils.isEmpty(uri)) {
                     /* Skip invalid objects */
                     continue;
                 }
                 /* Often the same quality is available twice: Via https://nrodlzdf-a.akamaihd.net/ and https://rodlzdf-a.akamaihd.net/ */
-                final String URIDeduped = uri.replaceFirst("(?i)https://[^/]+/", "");
-                if (directurlDupesList.contains(URIDeduped)) {
+                final String uriDeduped = uri.replaceFirst("(?i)https://[^/]+/", "");
+                if (directurlDupesList.contains(uriDeduped)) {
                     continue;
                 }
-                directurlDupesList.add(URIDeduped);
-                final String cdn = (String) entries.get("cdn");
-                long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
+                directurlDupesList.add(uriDeduped);
+                final String cdn = (String) quality.get("cdn");
+                long filesize = JavaScriptEngineFactory.toLong(quality.get("filesize"), 0);
                 final String audio_class_user_readable = convertInternalAudioClassToUserReadable(audio_class);
                 String linkid;
                 String final_filename;
@@ -786,7 +777,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                 } else {
                     /* http download */
-                    final String realQuality = ((String) entries.get("quality")).toLowerCase(Locale.ENGLISH);
+                    final String realQuality = ((String) quality.get("quality")).toLowerCase(Locale.ENGLISH);
                     final ArrayList<Object[]> qualities = new ArrayList<Object[]>();
                     /**
                      * Sometimes we can modify the final downloadurls and thus get higher quality streams. We want to keep all versions
@@ -840,23 +831,29 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         httpQualities.add(realQuality);
                     }
                     for (final Object[] qualityInfo : qualities) {
-                        final String quality = qualityInfo[0].toString();
+                        final String httpQualityIdentifierWeak = qualityInfo[0].toString();
                         final String finalDownloadURL = qualityInfo[1].toString();
                         filesize = ((Number) qualityInfo[2]).longValue();
-                        linkid = this.getHost() + "://" + String.format(linkid_format, internalVideoID, type, cdn, language, audio_class, protocol, quality);
-                        final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
+                        linkid = this.getHost() + "://" + String.format(linkid_format, internalVideoID, type, cdn, language, audio_class, protocol, httpQualityIdentifierWeak);
+                        final String qualityIdentifierForFilename;
+                        if (cfg.isUseVideoResolutionAsQualityModifierForHTTPVideoStreams()) {
+                            qualityIdentifierForFilename = convertInternalHttpQualityIdentifierToVideoResolution(httpQualityIdentifierWeak);
+                        } else {
+                            qualityIdentifierForFilename = httpQualityIdentifierWeak;
+                        }
+                        final_filename = filename_packagename_base_title + "_" + protocol + "_" + qualityIdentifierForFilename + "_" + language + "_" + audio_class_user_readable + "." + ext;
                         final DownloadLink dl = createDownloadlink(finalDownloadURL);
                         dl.setContentUrl(param.getCryptedUrl());
                         /**
-                         * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the
-                         * original downloadurls!
+                         * Usually filesize is only given for the official downloads.</br>
+                         * Only set it here if we haven't touched the original downloadurls!
                          */
                         if (filesize > 0) {
                             dl.setAvailable(true);
                             dl.setVerifiedFileSize(filesize);
                         }
                         setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
-                        final String qualitySelectorString = generateQualitySelectorString(protocol, ext, quality, language, audio_class);
+                        final String qualitySelectorString = generateQualitySelectorString(protocol, ext, httpQualityIdentifierWeak, language, audio_class);
                         all_found_downloadlinks.put(qualitySelectorString, dl);
                         addDownloadLinkAndGenerateSubtitleDownloadLink(allDownloadLinks, dl);
                         if (containsQuality(selectedQualityStrings, qualitySelectorString)) {
@@ -865,7 +862,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         } else if (grabUnknownQualities && !containsQuality(allKnownQualities, qualitySelectorString)) {
                             userSelectedQualitiesTmp.add(dl);
                         }
-                        final int httpQualityValueTmp = convertInternalHttpQualityIdentifierToIntegerValue(quality);
+                        final int httpQualityValueTmp = convertInternalHttpQualityIdentifierToIntegerValue(httpQualityIdentifierWeak);
                         if (httpQualityValueTmp > highestHTTPQualityValue) {
                             highestHTTPQualityValue = httpQualityValueTmp;
                             highestHTTPDownloadLink = dl;
@@ -1083,7 +1080,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             return 0;
         } else if (httpQualityIdentifier.equalsIgnoreCase("low")) {
             return 100;
-        } else if (httpQualityIdentifier.equalsIgnoreCase("med")) {
+        } else if (httpQualityIdentifier.equalsIgnoreCase("med") || httpQualityIdentifier.equalsIgnoreCase("medium")) {
             return 200;
         } else if (httpQualityIdentifier.equalsIgnoreCase("high")) {
             return 300;
@@ -1094,6 +1091,26 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         } else {
             /* Unknown quality identifier! */
             return 1;
+        }
+    }
+
+    private static String convertInternalHttpQualityIdentifierToVideoResolution(final String httpQualityIdentifier) {
+        if (httpQualityIdentifier == null) {
+            return null;
+        } else if (httpQualityIdentifier.equalsIgnoreCase("low")) {
+            return "480x270";
+        } else if (httpQualityIdentifier.equalsIgnoreCase("med") || httpQualityIdentifier.equalsIgnoreCase("medium")) {
+            /* TODO: 2022-06-08 This doesn't look right. "high" should be higher than "med"? But filesize implies otherwise... */
+            return "960x540";
+        } else if (httpQualityIdentifier.equalsIgnoreCase("high")) {
+            return "640x360";
+        } else if (httpQualityIdentifier.equalsIgnoreCase("veryhigh")) {
+            return "1024x576";
+        } else if (httpQualityIdentifier.equalsIgnoreCase("hd")) {
+            return "1280x720";
+        } else {
+            /* Unknown quality identifier! */
+            return null;
         }
     }
 
