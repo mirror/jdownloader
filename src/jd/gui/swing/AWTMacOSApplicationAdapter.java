@@ -44,6 +44,7 @@ public class AWTMacOSApplicationAdapter {
             adapter.setQuitHandler(desktop);
             adapter.setOpenFileHandler(desktop);
             adapter.setOpenURIHandler​(desktop);
+            MacOSDockAdapter.init();
         }
     }
 
@@ -61,7 +62,7 @@ public class AWTMacOSApplicationAdapter {
                                 RestartController.getInstance().exitAsynch(new SmartRlyExitRequest() {
                                     @Override
                                     public void onShutdown() {
-                                        new Thread() {
+                                        new Thread("QuitResponse:performQuit") {
                                             public void run() {
                                                 /*
                                                  * own thread because else it will block, performQuit calls exit again
@@ -79,7 +80,7 @@ public class AWTMacOSApplicationAdapter {
 
                                     @Override
                                     public void onShutdownVeto() {
-                                        new Thread() {
+                                        new Thread("QuitResponse:cancelQuit") {
                                             public void run() {
                                                 /*
                                                  * own thread because else it will block, performQuit calls exit again
