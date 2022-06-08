@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -421,6 +422,15 @@ public class PixivNet extends PluginForHost {
                         /* Full login required */
                         logger.info("Cookie login failed");
                     }
+                }
+                /**
+                 * 2022-06-08: TODO: Full login via website is broken (captcha fails) --> Inform user to use cookie login in the meanwhile
+                 * </br>
+                 * RE ticket https://svn.jdownloader.org/issues/90125
+                 */
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 logger.info("Performing full login");
                 br.getPage("https://www." + this.getHost() + "/login.php?ref=wwwtop_accounts_index");
