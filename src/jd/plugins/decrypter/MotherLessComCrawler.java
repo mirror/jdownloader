@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -129,14 +130,20 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         }
         if (param.getCryptedUrl().matches(TYPE_FAVOURITES_ALL)) {
             fpName = this.br.getRegex("<title>([^<>\"]*?)\\- MOTHERLESS\\.COM</title>").getMatch(0);
-            crawlGallery(decryptedLinks, param, progress);
+            crawlGallery(decryptedLinks, param);
         } else {
-            // TODO: Check if this is still needed
-            final String[] subGal = br.getRegex("(?i)<a href=\"(/[A-Z0-9]+)\" title=\"More [^ ]+ in this gallery\" class=\"pop plain more\">See More").getColumn(0);
-            if (subGal.length != 0) {
-                for (final String subuid : subGal) {
+            /* E.g. https://motherless.com/G8261627 */
+            final String[] subGals = br.getRegex("<a href=\"([^\"]+)\"[^>]*title=\"Show More\"").getColumn(0);
+            if (subGals.length != 0) {
+                int counter = 1;
+                for (final String subuid : subGals) {
+                    logger.info("Crawling subGallery " + counter + "/" + subGals.length);
                     br.getPage(subuid);
-                    crawlGallery(decryptedLinks, param, progress);
+                    crawlGallery(decryptedLinks, param);
+                    if (this.isAbort()) {
+                        break;
+                    }
+                    counter++;
                 }
                 return decryptedLinks;
             }
@@ -158,7 +165,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             } else {
                 /* Gallery */
-                crawlGallery(decryptedLinks, param, progress);
+                crawlGallery(decryptedLinks, param);
             }
         }
         return decryptedLinks;
@@ -177,8 +184,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
     }
 
     /** Supports all kinds of multiple page urls that motherless.com has. */
-    @SuppressWarnings("deprecation")
-    private void crawlGallery(ArrayList<DownloadLink> ret, final CryptedLink param, ProgressController progress) throws IOException {
+    private void crawlGallery(ArrayList<DownloadLink> ret, final CryptedLink param) throws IOException {
         String relative_path = null;
         final HashSet<String> dupes = new HashSet<String>();
         if (param.getCryptedUrl().matches(TYPE_FAVOURITES_ALL)) {
@@ -211,16 +217,12 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         if (GM != null) {
             br.getPage(GM);
         }
-        /* Find number of pages to walk through */
-        final String[] pageURLs = br.getRegex("<a href=\"([^\"]+page=\\d+[^\"]*)\"").getColumn(0);
-        int maxPage = 1;
-        for (final String pageURL : pageURLs) {
-            final UrlQuery query = UrlQuery.parse(pageURL);
-            final int page = Integer.parseInt(query.get("page"));
-            if (page > maxPage) {
-                maxPage = page;
-            }
-        }
+        /**
+         * Find number of pages to walk through. Website displays max 6 pages so for galleries containing more than 6 pages this value will
+         * be updated after each loop! </br>
+         * Example with a lot of pages: https://motherless.com/GIAEE5076
+         */
+        int maxPage = getMaxPage(br);
         final HashSet<String> pages = new HashSet<String>();
         logger.info("Found " + maxPage + " page(s), crawling now...");
         int page = 1;
@@ -326,16 +328,30 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                     break;
                 }
                 br.getPage(nextPageURL);
+                maxPage = getMaxPage(br);
                 page++;
             }
         }
+    }
+
+    private int getMaxPage(final Browser br) throws MalformedURLException {
+        final String[] pageURLs = br.getRegex("<a href=\"([^\"]+page=\\d+[^\"]*)\"").getColumn(0);
+        int maxPage = 1;
+        for (final String pageURL : pageURLs) {
+            final UrlQuery query = UrlQuery.parse(pageURL);
+            final int page = Integer.parseInt(query.get("page"));
+            if (page > maxPage) {
+                maxPage = page;
+            }
+        }
+        return maxPage;
     }
 
     private static String regexMediaTitle(final Browser br, final String contentID) {
         return br.getRegex("<a href=\"[^\"]+[^/]+/" + contentID + "\" title=\"([^\"]+)\"").getMatch(0);
     }
 
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 
