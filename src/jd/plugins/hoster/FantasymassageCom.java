@@ -158,9 +158,9 @@ public class FantasymassageCom extends PluginForHost {
     public static void login(Browser br, final Account account, final boolean verifyCookies) throws Exception {
         prepBR(br);
         synchronized (account) {
-            final PluginForHost hostplugin = JDUtilities.getPluginForHost("evilangel.com");
+            final PluginForHost hostplugin = JDUtilities.getPluginForHost("evilangel.legacy");
             hostplugin.setBrowser(br);
-            ((jd.plugins.hoster.EvilAngelCom) hostplugin).loginEvilAngelNetwork(account, verifyCookies, "http://www." + account.getHoster() + "/en/login", html_loggedin);
+            ((jd.plugins.hoster.EvilAngelLegacy) hostplugin).loginEvilAngelNetwork(account, verifyCookies, "http://www." + account.getHoster() + "/en/login", html_loggedin);
         }
     }
 

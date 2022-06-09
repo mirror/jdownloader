@@ -157,9 +157,9 @@ public class AnalacrobatsCom extends antiDDoSForHost {
 
     private void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
-            final PluginForHost hostplugin = JDUtilities.getPluginForHost("evilangel.com");
+            final PluginForHost hostplugin = JDUtilities.getPluginForHost("evilangel.legacy");
             hostplugin.setBrowser(this.br);
-            ((jd.plugins.hoster.EvilAngelCom) hostplugin).loginEvilAngelNetwork(account, verifyCookies, LOGIN_PAGE, HTML_LOGGEDIN);
+            ((jd.plugins.hoster.EvilAngelLegacy) hostplugin).loginEvilAngelNetwork(account, verifyCookies, LOGIN_PAGE, HTML_LOGGEDIN);
         }
     }
 
