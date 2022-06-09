@@ -15,13 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
+import jd.controlling.faviconcontroller.FavIcons;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XfpanCc extends PluginForHost {
@@ -73,11 +76,32 @@ public class XfpanCc extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.FAVICON };
+    }
+
+    @Override
+    public BufferedImage getFavIcon(String host) throws IOException {
+        if (getHost().equals(host)) {
+            final Browser br = new Browser();
+            br.setFollowRedirects(true);
+            br.setLogger(getLogger());
+            br.setConnectTimeout(10000);
+            br.setReadTimeout(10000);
+            br.getPage("http://" + host);// https not configured, returns different favicon
+            return FavIcons.download_FavIconTag(br, host, getLogger());
+        } else {
+            return null;
+        }
+    }
+
     /* Connection stuff */
     /* 2022-06-02: All limits are untested */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 1;
+
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -87,7 +111,6 @@ public class XfpanCc extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = getFID(link);

@@ -34,6 +34,7 @@ import javax.swing.ImageIcon;
 import jd.captcha.utils.GifDecoder;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginForHost;
 import net.sf.image4j.codec.ico.ICODecoder;
 
 import org.appwork.shutdown.ShutdownController;
@@ -47,6 +48,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.PublicSuffixList;
 import org.jdownloader.controlling.FileCreationManager;
@@ -227,41 +229,61 @@ public class FavIcons {
             if (enqueueFavIcon) {
                 THREAD_POOL.execute(new Runnable() {
                     public void run() {
+                        BufferedImage favicon = null;
                         final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
-                        if (existingHostPlugin != null && existingHostPlugin.hasFeature(LazyPlugin.FEATURE.INTERNAL)) {
-                            synchronized (LOCK) {
-                                QUEUE.remove(host);
-                                if (!REFRESHED_ICONS.contains(host) && FAILED_ICONS.get(host) == null) {
-                                    FAILED_ICONS.put(host, getDefaultIcon(host, true));
+                        if (existingHostPlugin != null) {
+                            if (existingHostPlugin.hasFeature(LazyPlugin.FEATURE.INTERNAL)) {
+                                synchronized (LOCK) {
+                                    QUEUE.remove(host);
+                                    if (!REFRESHED_ICONS.contains(host) && FAILED_ICONS.get(host) == null) {
+                                        FAILED_ICONS.put(host, getDefaultIcon(host, true));
+                                    }
+                                }
+                                return;
+                            }
+                            if (existingHostPlugin.hasFeature(LazyPlugin.FEATURE.FAVICON)) {
+                                final LogSource logger = LogController.getFastPluginLogger("FavIcons");
+                                try {
+                                    final PluginForHost pluginInstance = existingHostPlugin.newInstance(null, false);
+                                    pluginInstance.setLogger(logger);
+                                    favicon = pluginInstance.getFavIcon(host);
+                                } catch (Exception e) {
+                                    logger.log(e);
+                                } finally {
+                                    if (favicon != null) {
+                                        logger.clear();
+                                    }
+                                    logger.close();
                                 }
                             }
-                            return;
                         }
-                        final List<String> tryHosts = new ArrayList<String>();
-                        tryHosts.add(host);
-                        if (!host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
-                            final String domain;
-                            if (PublicSuffixList.getInstance() != null) {
-                                domain = PublicSuffixList.getInstance().getDomain(host);
-                            } else {
-                                domain = null;
-                            }
-                            String tryHost = host;
-                            int index = 0;
-                            while (true) {
-                                /* this loop adds every subdomain and the tld to tryHosts and we try to fetch a favIcon in same order */
-                                if ((index = tryHost.indexOf(".")) >= 0 && tryHost.length() >= index + 1) {
-                                    tryHost = tryHost.substring(index + 1);
-                                    if (domain != null && !tryHost.contains(domain) || tryHost.indexOf('.') == -1) {
+                        if (favicon == null) {
+                            final List<String> tryHosts = new ArrayList<String>();
+                            tryHosts.add(host);
+                            if (!host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
+                                final String domain;
+                                if (PublicSuffixList.getInstance() != null) {
+                                    domain = PublicSuffixList.getInstance().getDomain(host);
+                                } else {
+                                    domain = null;
+                                }
+                                String tryHost = host;
+                                int index = 0;
+                                while (true) {
+                                    /* this loop adds every subdomain and the tld to tryHosts and we try to fetch a favIcon in same order */
+                                    if ((index = tryHost.indexOf(".")) >= 0 && tryHost.length() >= index + 1) {
+                                        tryHost = tryHost.substring(index + 1);
+                                        if (domain != null && !tryHost.contains(domain) || tryHost.indexOf('.') == -1) {
+                                            break;
+                                        }
+                                        tryHosts.add(tryHost);
+                                    } else {
                                         break;
                                     }
-                                    tryHosts.add(tryHost);
-                                } else {
-                                    break;
                                 }
                             }
+                            favicon = downloadFavIcon(tryHosts);
                         }
-                        final BufferedImage favicon = downloadFavIcon(tryHosts);
                         synchronized (LOCK) {
                             final List<FavIconRequestor> requestors = QUEUE.remove(host);
                             if (favicon == null) {
@@ -421,32 +443,36 @@ public class FavIcons {
         return null;
     }
 
-    private static BufferedImage download_FavIconTag(String host, LogSource logger) throws IOException {
+    public static BufferedImage download_FavIconTag(String host, LogInterface logger) throws IOException {
         final Browser favBr = new Browser();
         favBr.setLogger(logger);
         favBr.setConnectTimeout(10000);
         favBr.setReadTimeout(10000);
+        try {
+            favBr.getPage("https://" + host);
+            if (favBr.getRedirectLocation() != null) {
+                favBr.followRedirect(true);
+                if (!StringUtils.containsIgnoreCase(favBr._getURL().getHost(), host)) {
+                    throw new IOException("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+                }
+            }
+        } catch (final IOException e) {
+            logger.log(e);
+            favBr.getPage("http://" + host);
+            if (favBr.getRedirectLocation() != null) {
+                favBr.followRedirect(true);
+                if (!StringUtils.containsIgnoreCase(favBr._getURL().getHost(), host)) {
+                    logger.info("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+                }
+            }
+        }
+        return download_FavIconTag(favBr, host, logger);
+    }
+
+    public static BufferedImage download_FavIconTag(final Browser favBr, final String host, LogInterface logger) throws IOException {
         URLConnectionAdapter con = null;
         byte[] bytes = null;
         try {
-            try {
-                favBr.getPage("https://" + host);
-                if (favBr.getRedirectLocation() != null) {
-                    favBr.followRedirect(true);
-                    if (!StringUtils.containsIgnoreCase(favBr._getURL().getHost(), host)) {
-                        throw new IOException("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
-                    }
-                }
-            } catch (final IOException e) {
-                logger.log(e);
-                favBr.getPage("http://" + host);
-                if (favBr.getRedirectLocation() != null) {
-                    favBr.followRedirect(true);
-                    if (!StringUtils.containsIgnoreCase(favBr._getURL().getHost(), host)) {
-                        logger.info("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
-                    }
-                }
-            }
             String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")").getMatch(4);
             if (StringUtils.isEmpty(url)) {
                 url = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);

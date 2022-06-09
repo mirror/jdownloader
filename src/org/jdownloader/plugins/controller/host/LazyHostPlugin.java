@@ -140,16 +140,15 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         return getProperty(PROPERTY.REWRITE);
     }
 
-    @Override
-    public PluginForHost newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
+    public PluginForHost newInstance(PluginClassLoaderChild classLoader, final boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException {
         try {
             final PluginForHost ret = super.newInstance(classLoader);
             ret.setLazyP(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
             final LazyHostPlugin lFallBackPlugin = getFallBackPlugin();
-            if (lFallBackPlugin != null && lFallBackPlugin != this) {
-                final PluginForHost ret = lFallBackPlugin.newInstance(classLoader);
+            if (lFallBackPlugin != null && lFallBackPlugin != this && fallBackPlugin) {
+                final PluginForHost ret = lFallBackPlugin.newInstance(classLoader, fallBackPlugin);
                 if (ret != null) {
                     ret.setLazyP(lFallBackPlugin);
                     return ret;
@@ -157,6 +156,11 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             }
             throw e;
         }
+    }
+
+    @Override
+    public PluginForHost newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
+        return newInstance(classLoader, true);
     }
 
     private LazyHostPlugin getFallBackPlugin() {
@@ -167,16 +171,15 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         }
     }
 
-    @Override
-    public PluginForHost getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
+    public PluginForHost getPrototype(PluginClassLoaderChild classLoader, final boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException {
         try {
             final PluginForHost ret = super.getPrototype(classLoader);
             ret.setLazyP(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
             final LazyHostPlugin lFallBackPlugin = getFallBackPlugin();
-            if (lFallBackPlugin != null && lFallBackPlugin != this) {
-                final PluginForHost ret = lFallBackPlugin.getPrototype(classLoader);
+            if (lFallBackPlugin != null && lFallBackPlugin != this && fallBackPlugin) {
+                final PluginForHost ret = lFallBackPlugin.getPrototype(classLoader, fallBackPlugin);
                 if (ret != null) {
                     ret.setLazyP(lFallBackPlugin);
                     return ret;
@@ -184,5 +187,10 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             }
             throw e;
         }
+    }
+
+    @Override
+    public PluginForHost getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
+        return getPrototype(classLoader, true);
     }
 }
