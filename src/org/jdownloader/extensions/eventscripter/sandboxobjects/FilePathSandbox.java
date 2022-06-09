@@ -149,6 +149,10 @@ public class FilePathSandbox {
         return ret;
     }
 
+    public String getPathSeparator() {
+        return File.pathSeparator;
+    }
+
     public long getFreeDiskSpace() {
         final File file = getFile();
         if (file == null) {

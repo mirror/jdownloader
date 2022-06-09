@@ -533,6 +533,11 @@ public class ScriptEnvironment {
         }
     }
 
+    @ScriptAPI(description = "Get the current path separator / or \\")
+    public String getPathSeparator() {
+        return File.pathSeparator;
+    }
+
     @ScriptAPI(description = "Gets the value of the specified environment variable", parameters = { "environment variable" })
     public static String getEnv(final String variable) throws EnvironmentException {
         try {
