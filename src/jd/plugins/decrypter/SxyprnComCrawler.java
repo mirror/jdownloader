@@ -18,12 +18,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.SxyprnCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/.+", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/.+" })
-public class SxyprnCom extends antiDDoSForDecrypt {
-    public SxyprnCom(PluginWrapper wrapper) {
+public class SxyprnComCrawler extends antiDDoSForDecrypt {
+    public SxyprnComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -33,30 +35,21 @@ public class SxyprnCom extends antiDDoSForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        final boolean isSpecificPageGivenInURL = UrlQuery.parse(parameter.getCryptedUrl()).get("page") != null;
+        final boolean isSpecificPageGivenInURL = UrlQuery.parse(param.getCryptedUrl()).get("page") != null;
         if (account != null) {
-            try {
-                ((jd.plugins.hoster.SxyprnCom) plg).login(this.br, account, false);
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
+            ((jd.plugins.hoster.SxyprnCom) plg).login(this.br, account, false);
         }
-        getPage(parameter.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
-            return ret;
-        } else if (br.containsHTML("class='page_message'[^>]*>\\s*Post Not Found")) {
-            /* 2020-11-19 */
-            ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
-            return ret;
+        getPage(param.getCryptedUrl());
+        if (SxyprnCom.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(parameter.getCryptedUrl(), plg.getSupportedLinks()).matches()) {
-            final String packageName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (new Regex(param.getCryptedUrl(), plg.getSupportedLinks()).matches()) {
+            final String packageName = SxyprnCom.regexTitle(br);
             if (packageName != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(packageName);
@@ -76,7 +69,7 @@ public class SxyprnCom extends antiDDoSForDecrypt {
                 }
             }
             /* This kind of URL also has a selfhosted video which will be handled by our host plugin */
-            final DownloadLink main = this.createDownloadlink(parameter.getCryptedUrl());
+            final DownloadLink main = this.createDownloadlink(param.getCryptedUrl());
             if (packageName != null) {
                 main.setName(packageName + ".mp4");
             } else {
@@ -104,13 +97,13 @@ public class SxyprnCom extends antiDDoSForDecrypt {
                 final String pages[] = br.getRegex("<a href=(?:\"|')(/[^/]*?\\.html\\?page=\\d+)").getColumn(0);
                 for (final String page : pages) {
                     final String url = br.getURL(page).toString();
-                    if (!StringUtils.equals(parameter.getCryptedUrl(), url)) {
+                    if (!StringUtils.equals(param.getCryptedUrl(), url)) {
                         final DownloadLink link = createDownloadlink(url);
                         ret.add(link);
                     }
                 }
             }
-            final String packageName = new Regex(parameter.getCryptedUrl(), "/([^/]*?)\\.html").getMatch(0);
+            final String packageName = new Regex(param.getCryptedUrl(), "/([^/]*?)\\.html").getMatch(0);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(packageName);
             fp.addLinks(ret);

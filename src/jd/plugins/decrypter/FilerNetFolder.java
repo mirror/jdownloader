@@ -17,8 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -72,47 +74,50 @@ public class FilerNetFolder extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", "JDownloader");
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        br.getPage("http://api.filer.net/api/folder/" + folderID + ".json");
-        if (getJson("code", br.toString()).equals("506")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (getJson("count", br.toString()).equals("0")) {
+        br.getPage(FilerNet.API_BASE + "/folder/" + folderID + ".json");
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        int code = ((Number) entries.get("code")).intValue();
+        if (code == 506) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (getJson("count", br.toString()).equals("599")) {
-            logger.info("unknown file error for link: " + param.getCryptedUrl());
-            return decryptedLinks;
-        }
-        if (getJson("code", br.toString()).equals("201")) {
+        if (code == 201) {
+            /* Password protected folder */
             for (int i = 1; i <= 3; i++) {
                 final String passCode = getUserInput("Password?", param);
-                br.getPage("http://api.filer.net/api/folder/" + folderID + ".json?password=" + Encoding.urlEncode(passCode));
-                if (getJson("code", br.toString()).equals("201")) {
+                br.getPage("/api/folder/" + folderID + ".json?password=" + Encoding.urlEncode(passCode));
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                code = ((Number) entries.get("code")).intValue();
+                if (code == 201) {
+                    logger.info("Wrong password: " + passCode);
                     continue;
                 }
                 break;
             }
-            if (getJson("code", br.toString()).equals("201")) {
+            if (code == 201) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String fpName = getJson("name", br.toString());
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final int count = ((Number) data.get("count")).intValue();
+        if (count == 0) {
+            logger.info("Empty folder");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String fpName = (String) data.get("name");
         if (fpName == null) {
+            /* Fallback */
             fpName = "filer.net folder: " + folderID;
         }
-        final String allLinks = br.getRegex("\"files\":\\[(.*?)\\]").getMatch(0);
-        final String[] linkInfo = new Regex(allLinks, "\\{(.*?)\\}").getColumn(0);
-        if (linkInfo == null || linkInfo.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        for (final String singleLinkInfo : linkInfo) {
-            final DownloadLink link = createDownloadlink(getJson("link", singleLinkInfo).replace("\\", ""));
-            link.setFinalFileName(getJson("name", singleLinkInfo).replace("\\", ""));
-            link.setDownloadSize(SizeFormatter.getSize(getJson("size", singleLinkInfo).replace("\\", "")));
+        final List<Map<String, Object>> files = (List<Map<String, Object>>) data.get("files");
+        for (final Map<String, Object> file : files) {
+            final DownloadLink link = createDownloadlink(file.get("link").toString());
+            link.setFinalFileName(file.get("name").toString());
+            link.setVerifiedFileSize(((Number) file.get("size")).longValue());
             link.setAvailable(true);
             decryptedLinks.add(link);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.setName(fpName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
