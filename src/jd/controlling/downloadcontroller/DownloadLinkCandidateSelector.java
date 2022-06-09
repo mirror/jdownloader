@@ -26,6 +26,7 @@ import org.jdownloader.controlling.domainrules.CompiledDomainRule;
 import org.jdownloader.controlling.domainrules.DomainRuleController;
 import org.jdownloader.controlling.domainrules.DomainRuleSet;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
@@ -152,10 +153,13 @@ public class DownloadLinkCandidateSelector {
                 }
             }
         }
-        // final int maxNumberOfDownloadLinkCandidates = -1;// disabled for now
-        // if (maxNumberOfDownloadLinkCandidates > 0 && history.size() > maxNumberOfDownloadLinkCandidates) {
-            // return new DownloadLinkCandidateResult(SkipReason.TOO_MANY_RETRIES, null, null);
-            // }
+        final int maxNumberOfDownloadLinkCandidates = -1;// disabled for now
+        if (maxNumberOfDownloadLinkCandidates > 0 && history.size() > maxNumberOfDownloadLinkCandidates) {
+            final DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(SkipReason.TOO_MANY_RETRIES, null, candidate.getCachedAccount().getHost(), false);
+            history.attach(candidate);
+            history.dettach(candidate, ret);
+            return ret;
+        }
         return null;
     }
 
