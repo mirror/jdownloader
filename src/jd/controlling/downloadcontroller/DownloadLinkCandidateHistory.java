@@ -12,9 +12,9 @@ import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
+import org.jdownloader.logging.LogController;
 
 public class DownloadLinkCandidateHistory {
-
     public static interface DownloadLinkCandidateHistorySelector {
         boolean select(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result);
     }
@@ -29,14 +29,12 @@ public class DownloadLinkCandidateHistory {
             return false;
         }
         try {
-            DownloadLink link = candidate.getLink();
+            final DownloadLink link = candidate.getLink();
             if (link != null) {
                 link.addHistoryEntry(HistoryEntry.create(candidate));
-
             }
         } catch (Throwable e) {
-            // just to be sure
-            e.printStackTrace();
+            LogController.CL().log(e);
         }
         history.put(candidate, null);
         return true;
@@ -45,21 +43,19 @@ public class DownloadLinkCandidateHistory {
     public synchronized boolean dettach(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         if (history.containsKey(candidate) && history.get(candidate) == null) {
             try {
-                DownloadLink link = candidate.getLink();
+                final DownloadLink link = candidate.getLink();
                 if (link != null) {
-                    HistoryEntry history = link.getLatestHistoryEntry();
+                    final HistoryEntry history = link.getLatestHistoryEntry();
                     if (history != null && history.getCandidate() == candidate) {
                         HistoryEntry.updateResult(history, candidate, result);
                     } else {
                         System.out.println("Candidate Misnach");
                     }
-
                 } else {
                     System.out.println("No LInk");
                 }
             } catch (Throwable e) {
-                // just to be sure
-                e.printStackTrace();
+                LogController.CL().log(e);
             }
             history.put(candidate, result);
             return true;
@@ -83,7 +79,6 @@ public class DownloadLinkCandidateHistory {
 
     public List<DownloadLinkCandidateResult> getResults(final CachedAccount cachedAccount) {
         return selectResults(new DownloadLinkCandidateHistorySelector() {
-
             @Override
             public boolean select(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
                 return candidate != null && cachedAccount.equals(candidate.getCachedAccount());
