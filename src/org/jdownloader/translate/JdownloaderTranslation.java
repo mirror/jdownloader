@@ -1034,6 +1034,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Generic" })
     String LazyHostPlugin_FEATURE_GENERIC();
 
+    @Default(lngs = { "en" }, values = { "FavIcon" })
+    String LazyHostPlugin_FEATURE_FAVICON();
+
     @Default(lngs = { "en" }, values = { "This service supports UseNet downloads (*.nzb files)" })
     String LazyHostPlugin_FEATURE_USENET_TOOLTIP();
 
@@ -1078,6 +1081,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "This plugin implements generic support. Please use the dedicated plugin instead. " })
     String LazyHostPlugin_FEATURE_GENERIC_TOOLTIP();
+
+    @Default(lngs = { "en" }, values = { "This plugin implements FavIcon support." })
+    String LazyHostPlugin_FEATURE_FAVICON_TOOLTIP();
 
     @Default(lngs = { "en" }, values = { "Vorbis Spatial 4 Channel" })
     String AudioCodec_vorbis_spatial();
