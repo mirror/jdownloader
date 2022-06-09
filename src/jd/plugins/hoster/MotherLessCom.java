@@ -124,7 +124,7 @@ public class MotherLessCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setWeakFilename(link);
-        if (this.checkDirectLink(link) != null) {
+        if (this.checkDirectLinkAndSetFilesize(link) != null) {
             logger.info("Linkcheck done via directurl");
             return AvailableStatus.TRUE;
         }
@@ -139,30 +139,14 @@ public class MotherLessCom extends PluginForHost {
         }
         final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.getHeaders().put("Accept-Encoding", "identity");
-                con = brc.openHeadConnection(dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            this.checkDirectLinkAndSetFilesize(link);
         }
         return AvailableStatus.TRUE;
     }
 
     public void setWeakFilename(final DownloadLink link) {
         if (!link.isNameSet()) {
-            /* Set fallback name */
+            /* Set fallback filename */
             final String ext = getAssumedFileExtension(link);
             if (ext != null) {
                 link.setName(this.getFID(link) + ext);
@@ -380,16 +364,20 @@ public class MotherLessCom extends PluginForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink link) {
+    private String checkDirectLinkAndSetFilesize(final DownloadLink link) {
         String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
+                br2.getHeaders().put("Accept-Encoding", "identity");
                 prepHeadersDownload(link, br2);
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     return dllink;
                 } else {
                     throw new IOException();

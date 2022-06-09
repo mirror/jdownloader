@@ -132,21 +132,6 @@ public class MotherLessComCrawler extends PluginForDecrypt {
             fpName = this.br.getRegex("<title>([^<>\"]*?)\\- MOTHERLESS\\.COM</title>").getMatch(0);
             crawlGallery(decryptedLinks, param);
         } else {
-            /* E.g. https://motherless.com/G8261627 */
-            final String[] subGals = br.getRegex("<a href=\"([^\"]+)\"[^>]*title=\"Show More\"").getColumn(0);
-            if (subGals.length != 0) {
-                int counter = 1;
-                for (final String subuid : subGals) {
-                    logger.info("Crawling subGallery " + counter + "/" + subGals.length);
-                    br.getPage(subuid);
-                    crawlGallery(decryptedLinks, param);
-                    if (this.isAbort()) {
-                        break;
-                    }
-                    counter++;
-                }
-                return decryptedLinks;
-            }
             /* Check for single video, image or gallery */
             final String contentIDFromHTML = br.getRegex("__codename = '([A-Z0-9]+)'").getMatch(0);
             String contentID = contentIDFromHTML;
@@ -164,6 +149,21 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                 dl.setAvailableStatus(hostPlugin.parseFileInfoAndSetFilename(dl));
                 decryptedLinks.add(dl);
             } else {
+                /* Check for "multiple galleries in one" e.g. https://motherless.com/G8261627 */
+                final String[] subGals = br.getRegex("<a href=\"([^\"]+)\"[^>]*title=\"Show More\"").getColumn(0);
+                if (subGals.length > 0) {
+                    int counter = 1;
+                    for (final String subuid : subGals) {
+                        logger.info("Crawling subGallery " + counter + "/" + subGals.length);
+                        br.getPage(subuid);
+                        crawlGallery(decryptedLinks, param);
+                        if (this.isAbort()) {
+                            break;
+                        }
+                        counter++;
+                    }
+                    return decryptedLinks;
+                }
                 /* Gallery */
                 crawlGallery(decryptedLinks, param);
             }
@@ -328,7 +328,11 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                     break;
                 }
                 br.getPage(nextPageURL);
-                maxPage = getMaxPage(br);
+                final int newMaxPage = getMaxPage(br);
+                if (newMaxPage != maxPage) {
+                    logger.info("maxPage changed: Old: " + maxPage + " | New: " + newMaxPage);
+                    maxPage = newMaxPage;
+                }
                 page++;
             }
         }
