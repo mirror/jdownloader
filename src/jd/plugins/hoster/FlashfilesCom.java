@@ -160,7 +160,11 @@ public class FlashfilesCom extends PluginForHost {
             logger.warning("Failed to find freeform1");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.submitForm(freeform);
+        final URLConnectionAdapter con = br.openFormConnection(freeform);
+        if (con.getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
+        }
+        br.followConnection();
         final String waitSecondsStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
         int waitSeconds = Integer.parseInt(waitSecondsStr);
         /* 2020-02-13: Normal waittime is 30 seconds, if waittime > 10 Minutes reconnect */

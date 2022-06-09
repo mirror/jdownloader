@@ -24,10 +24,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "https?://(?:www\\.)?sexuria\\.(com|to)/(v1/)?Pornos_Kostenlos_.*?_(\\d+)\\.html|https?://(www\\.)?sexuria\\.(com|to)/(v1/)?dl_links_\\d+_\\d+\\.html|https?://(www\\.)?sexuria\\.(com|to)/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" })
@@ -65,13 +69,13 @@ public class Sxrcm extends PluginForDecrypt {
                 br.getPage(parameter);
                 br.setFollowRedirects(false);
                 if (!this.br.containsHTML("melden\\.php")) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final String password = br.getRegex(PATTERN_PASSWORD).getMatch(0);
                 if (password != null && !password.equalsIgnoreCase("no password")) {
                     param.setDecrypterPassword(password);
                 }
+                String packageName = new Regex(br._getURL().getPath(), "/(?:Pornos_Kostenlos_)?(.+)\\.html$").getMatch(0);
                 final String[] final_links = br.getRegex("onclick=\"this\\.className\\+=\\' disabled\\'\" href=\"(https?[^<>\"]*?)\"").getColumn(0);
                 if (final_links != null && final_links.length != 0) {
                     for (final String finallink : final_links) {
@@ -91,6 +95,11 @@ public class Sxrcm extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink("http://sexuria.to/v1/" + link));
                     }
                 }
+                if (packageName != null) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(Encoding.htmlDecode(packageName).trim());
+                    fp.addLinks(decryptedLinks);
+                }
                 return decryptedLinks;
             } else if (new Regex(parameter, PATTERN_SUPPORTED_CRYPT).matches()) {
                 downloadId = new Regex(parameter, PATTERN_SUPPORTED_CRYPT).getMatch(2);
@@ -105,7 +114,7 @@ public class Sxrcm extends PluginForDecrypt {
                 this.br.setFollowRedirects(false);
                 final String links[] = br.getRegex(PATTERN_REDIRECT_LINKS).getColumn(0);
                 if (links == null || links.length == 0) {
-                    logger.info("Seems like there is nothing to decrypt ...");
+                    logger.info("Seems like there is nothing to crawl...");
                     return decryptedLinks;
                 }
                 for (String link : links) {
@@ -138,13 +147,13 @@ public class Sxrcm extends PluginForDecrypt {
                 String id = new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).getMatch(0);
                 decryptedLinks.add(createDownloadlink("https://sexuria.com/Pornos_Kostenlos_liebe_" + id + ".html"));
                 return decryptedLinks;
+            } else {
+                /* Unsupported URL */
+                return null;
             }
-            return null;
         }
     }
 
-    // @Override
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
