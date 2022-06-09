@@ -4,16 +4,16 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.RegexFilter.MatchType;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkInfo;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.RegexFilter.MatchType;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class RuleWrapper<T extends FilterRule> {
     private final CompiledRegexFilter        fileNameRule;
@@ -148,7 +148,13 @@ public class RuleWrapper<T extends FilterRule> {
         return onlineStatusFilter;
     }
 
-    public static Pattern createPattern(String regex, boolean useRegex) {
+    public static enum AUTO_PATTERN_MODE {
+        FINDS,
+        MATCHES,
+        WILDCARD
+    }
+
+    public static Pattern createPattern(String regex, final boolean useRegex, final AUTO_PATTERN_MODE mode) {
         if (useRegex) {
             int flags = 0;
             if (regex != null && !regex.contains("(?i)") && !regex.contains("(?-i)")) {
@@ -159,6 +165,9 @@ public class RuleWrapper<T extends FilterRule> {
             }
             return Pattern.compile(regex, flags);
         } else {
+            // https://en.wikipedia.org/wiki/Wildcard_character
+            // *, it matches zero or more characters.
+            // ?, it matches exactly one character.
             final String[] parts = regex.split("\\*+");
             final StringBuilder sb = new StringBuilder();
             boolean containsWildcard = false;
@@ -167,22 +176,49 @@ public class RuleWrapper<T extends FilterRule> {
                 sb.append("(.*)");
             }
             int nonEmptyParts = 0;
+            final StringBuilder partSb = new StringBuilder();
             for (int i = 0; i < parts.length; i++) {
                 if (parts[i].length() != 0) {
                     if (nonEmptyParts > 0) {
                         containsWildcard = true;
                         sb.append("(.*?)");
                     }
-                    sb.append(Pattern.quote(parts[i]));
+                    final String part = parts[i];
+                    for (int index = 0; index < part.length(); index++) {
+                        final char c = part.charAt(index);
+                        if (c == '?') {
+                            if (partSb.length() > 0) {
+                                sb.append(Pattern.quote(partSb.toString()));
+                                partSb.setLength(0);
+                            }
+                            sb.append(".");
+                        } else {
+                            partSb.append(c);
+                        }
+                    }
+                    if (partSb.length() > 0) {
+                        sb.append(Pattern.quote(partSb.toString()));
+                        partSb.setLength(0);
+                    }
                     nonEmptyParts++;
                 }
             }
             if (sb.length() == 0) {
                 sb.append("(.*)");
             } else if (nonEmptyParts > 0) {
+                if (regex.endsWith("?")) {
+                    // ?, it matches exactly one character. If the question mark is placed at the end of the word, it will also match
+                    // missing (zero) trailing characters.
+                    if (sb.charAt(sb.length() - 1) == '.') {
+                        sb.append("?");
+                    } else {
+                        sb.append(".");
+                        sb.append("?");
+                    }
+                }
                 if (regex.endsWith("*")) {
                     sb.append("(.*)");
-                } else if (containsWildcard) {
+                } else if (containsWildcard && (AUTO_PATTERN_MODE.WILDCARD.equals(mode) || AUTO_PATTERN_MODE.MATCHES.equals(mode))) {
                     sb.append("$");
                 }
             }

@@ -7,6 +7,11 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.SingleFilterResultTableModel;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
+import jd.gui.swing.laf.LookAndFeelController;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.SwingUtils;
@@ -21,13 +26,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.SingleFilterResultTableModel;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
-import jd.gui.swing.laf.LookAndFeelController;
-
 public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
-
     private LinkgrabberFilterRule rule;
 
     public FilterRuleDialog(LinkgrabberFilterRule filterRule) {
@@ -41,26 +40,21 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     protected void runTest(String text) {
         TestWaitDialog d;
         try {
-
             LinkFilterController lfc = LinkFilterController.createEmptyTestInstance();
             LinkgrabberFilterRule rule = getCurrentCopy();
             rule.setEnabled(true);
             lfc.add(rule);
-
             java.util.List<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI.T.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {
-
                 @Override
                 protected ExtTableModel<CrawledLink> createTableModel() {
                     return new SingleFilterResultTableModel();
                 }
-
             });
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
             e.printStackTrace();
         }
-
     }
 
     @Override
@@ -124,15 +118,13 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         rule.setAccept(false);
         rule.setTestUrl(getTxtTestUrl());
         rule.setIconKey(getIconKey());
-
     }
 
     private void updateGUI() {
-
+        regexFields.clear();
         setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
         setPackagenameFilter(rule.getPackagenameFilter());
-
         setHosterFilter(rule.getHosterURLFilter());
         setName(rule.getName());
         setOriginFilter(rule.getOriginFilter());
@@ -154,7 +146,6 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         MigPanel ret = (MigPanel) super.layoutDialogContent();
         // ret.add(createHeader(_GUI.T.FilterRuleDialog_layoutDialogContent_then()),
         // "gaptop 10, spanx,growx,pushx");
-
         updateGUI();
         JScrollPane sp = new JScrollPane(ret);
         sp.setBorder(null);
@@ -167,7 +158,6 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     }
 
     private void disable(JComponent ret) {
-
         ret.setEnabled(false);
         for (Component c : ret.getComponents()) {
             if (c instanceof JComponent) {

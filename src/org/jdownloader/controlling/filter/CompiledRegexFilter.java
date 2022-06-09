@@ -13,7 +13,7 @@ public class CompiledRegexFilter extends RegexFilter implements Storable {
 
     public CompiledRegexFilter(RegexFilter filter) {
         super(filter.enabled, filter.getMatchType(), filter.getRegex(), filter.isUseRegex());
-        pattern = LinkgrabberFilterRuleWrapper.createPattern(filter.getRegex(), filter.isUseRegex());
+        pattern = buildPattern();
     }
 
     public Pattern _getPattern() {

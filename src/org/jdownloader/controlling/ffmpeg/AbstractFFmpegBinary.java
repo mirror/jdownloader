@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,13 +26,16 @@ import jd.plugins.download.raf.FileBytesMap;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.resources.AWUTheme;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.NullOutputStream;
 import org.appwork.utils.net.httpserver.HttpServer;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -41,6 +45,7 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.ARCHFamily;
 import org.appwork.utils.processes.ProcessBuilderFactory;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
@@ -790,6 +795,41 @@ public abstract class AbstractFFmpegBinary {
         return false;
     }
 
+    private static final AtomicBoolean ROSETTA_2_DIALOG_SHOWN = new AtomicBoolean(false);
+
+    public static void showRosetta2Dialog(final AbstractFFmpegBinary ffmpeg) throws InterruptedException {
+        if (ROSETTA_2_DIALOG_SHOWN.get() == false) {
+            final Thread thread = new Thread("RosettaDialog") {
+                {
+                    setDaemon(true);
+                }
+
+                public void run() {
+                    if (ROSETTA_2_DIALOG_SHOWN.compareAndSet(false, true)) {
+                        // check if rosetta is installed: "/usr/bin/pgrep oahd" returns process id if installed
+                        try {
+                            try {
+                                Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _AWU.T.DIALOG_MESSAGE_TITLE(), "Intel ffmpeg binary requires Rosetta 2 to be installed! Do you want to install Rosetta 2 now?", AWUTheme.I().getIcon(Dialog.ICON_WARNING, 32), null, null, "test3");
+                                final ProcessBuilder pb = ProcessBuilderFactory.create(Arrays.asList(new String[] { "/usr/sbin/softwareupdate", "--install-rosetta", "--agree-to-license" }));
+                                ProcessBuilderFactory.runCommand(pb, new NullOutputStream(), new NullOutputStream());
+                            } catch (Exception e) {
+                                if (ffmpeg == null) {
+                                    e.printStackTrace();
+                                } else {
+                                    ffmpeg.getLogger().log(e);
+                                }
+                            }
+                        } finally {
+                            ROSETTA_2_DIALOG_SHOWN.compareAndSet(true, false);
+                        }
+                    }
+                };
+            };
+            thread.start();
+            thread.join();
+        }
+    }
+
     public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
         final LogInterface logger = getLogger();
         logger.info("runCommand(ProcessBuilderFactory):" + commandLine);
@@ -805,8 +845,7 @@ public abstract class AbstractFFmpegBinary {
             process = pb.start();
         } catch (IOException e) {
             if (CrossSystem.isMac() && ARCHFamily.ARM.equals(CrossSystem.getARCHFamily()) && StringUtils.contains(e.getMessage(), "Bad CPU type in executable")) {
-                // check if rosetta is installed: "/usr/bin/pgrep oahd" returns process id if installed
-                // install: /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+                showRosetta2Dialog(this);
                 throw new FFMpegException("Rosetta required to use intel ffmpeg binary", e);
             } else {
                 throw e;

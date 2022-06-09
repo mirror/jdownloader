@@ -13,12 +13,14 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -69,14 +71,12 @@ import org.jdownloader.controlling.filter.FiletypeFilter;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
-import org.jdownloader.controlling.filter.RuleWrapper;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.gui.views.components.PseudoMultiCombo;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     protected ExtTextField txtName;
@@ -273,6 +273,8 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         return new PluginStatusFilter(PluginStatusMatchtype.values()[cobPlugin.getSelectedIndex()], cbPlugin.isSelected(), PluginStatus.values()[cobPluginOptions.getSelectedIndex()]);
     }
 
+    protected final Map<ExtTextField, JToggleButton> regexFields = new HashMap<ExtTextField, JToggleButton>();
+
     protected void addRegexHighlighter(final ExtTextField txt, final JToggleButton toggle) {
         final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
         txt.addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")) {
@@ -311,6 +313,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
         });
         txt.refreshTextHighlighter();
+        regexFields.put(txt, toggle);
     }
 
     public void setSourceFilter(RegexFilter filter) {
@@ -905,44 +908,23 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtHoster.setBorder(txtName.getBorder());
         txtSource.setBorder(txtName.getBorder());
         boolean ok = true;
-        if (cbFilename.isSelected()) {
-            try {
-                RuleWrapper.createPattern(txtFilename.getText(), cbRegFilename.isSelected());
-            } catch (Throwable e) {
-                ok = false;
-                txtFilename.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForErrorForeground())));
-            }
-        }
-        // if (cbCustom.isSelected() && cbType.isSelected()) {
-        // try {
-        // RuleWrapper.createPattern(txtCustumMime.getText(), cbRegFileType.isSelected());
-        //
-        // } catch (Throwable e) {
-        // ok = false;
-        // txtCustumMime.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForErrorForeground())));
-        // }
-        // }
-        if (cbHoster.isSelected()) {
-            try {
-                RuleWrapper.createPattern(txtHoster.getText(), cbRegHoster.isSelected());
-            } catch (Throwable e) {
-                ok = false;
-                txtHoster.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForErrorForeground())));
-            }
-        }
-        if (cbSource.isSelected()) {
-            try {
-                RuleWrapper.createPattern(txtSource.getText(), cbRegSource.isSelected());
-            } catch (Throwable e) {
-                ok = false;
-                txtSource.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForErrorForeground())));
+        for (Entry<ExtTextField, JToggleButton> regexField : regexFields.entrySet()) {
+            final ExtTextField txtField = regexField.getKey();
+            if (txtField.isEnabled() && regexField.getValue().isSelected()) {
+                try {
+                    Pattern.compile(txtField.getText());
+                } catch (Throwable e) {
+                    ok = false;
+                    break;
+                }
             }
         }
         if (!ok) {
             Dialog.getInstance().showErrorDialog(_GUI.T.ConditionDialog_validate_object_());
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     private String convert(String text, boolean regex2) {

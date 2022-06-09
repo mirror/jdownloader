@@ -1,5 +1,7 @@
 package org.jdownloader.controlling.filter;
 
+import java.util.regex.Pattern;
+
 import org.appwork.storage.Storable;
 import org.jdownloader.gui.translate._GUI;
 
@@ -19,7 +21,6 @@ public class RegexFilter extends Filter implements Storable {
         default:
             return _GUI.T.RegexFilter_toString_matches_not(regex);
         }
-
     }
 
     public MatchType getMatchType() {
@@ -64,15 +65,27 @@ public class RegexFilter extends Filter implements Storable {
         EQUALS_NOT
     }
 
+    protected Pattern buildPattern() {
+        switch (getMatchType()) {
+        case CONTAINS:
+        case CONTAINS_NOT:
+            return LinkgrabberFilterRuleWrapper.createPattern(getRegex(), isUseRegex(), RuleWrapper.AUTO_PATTERN_MODE.FINDS);
+        case EQUALS:
+        case EQUALS_NOT:
+            return LinkgrabberFilterRuleWrapper.createPattern(getRegex(), isUseRegex(), RuleWrapper.AUTO_PATTERN_MODE.MATCHES);
+        default:
+            return LinkgrabberFilterRuleWrapper.createPattern(getRegex(), isUseRegex(), RuleWrapper.AUTO_PATTERN_MODE.WILDCARD);
+        }
+    }
+
     public int calcPlaceholderCount() {
         if (isEnabled()) {
             try {
-                return LinkgrabberFilterRuleWrapper.createPattern(regex, useRegex).matcher("").groupCount();
+                return buildPattern().matcher("").groupCount();
             } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
         return 0;
-
     }
 }

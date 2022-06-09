@@ -23,7 +23,6 @@ import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 
 public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
-
     private LinkgrabberFilterRule rule;
 
     public ExceptionsRuleDialog(LinkgrabberFilterRule filterRule) {
@@ -37,19 +36,15 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
     protected void runTest(String text) {
         TestWaitDialog d;
         try {
-
             LinkFilterController lfc = LinkFilterController.createEmptyTestInstance();
             LinkgrabberFilterRule rule = getCurrentCopy();
             rule.setEnabled(true);
             lfc.add(rule);
-
             java.util.List<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI.T.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {
-
                 @Override
                 protected ExtTableModel<CrawledLink> createTableModel() {
                     return new ViewTestResultTableModel();
                 }
-
             });
         } catch (DialogClosedException e) {
             e.printStackTrace();
@@ -60,7 +55,7 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
 
     /**
      * Returns a Linkgrabberfilter representing current settings. does NOT save the original one
-     * 
+     *
      * @return
      */
     private LinkgrabberFilterRule getCurrentCopy() {
@@ -108,11 +103,10 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         rule.setAccept(true);
         rule.setTestUrl(getTxtTestUrl());
         rule.setIconKey(getIconKey());
-
     }
 
     private void updateGUI() {
-
+        regexFields.clear();
         setIconKey(rule.getIconKey());
         setPackagenameFilter(rule.getPackagenameFilter());
         setFilenameFilter(rule.getFilenameFilter());
@@ -133,7 +127,6 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
     }
 
     private void disable(JComponent ret) {
-
         ret.setEnabled(false);
         for (Component c : ret.getComponents()) {
             if (c instanceof JComponent) {
@@ -147,7 +140,6 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         MigPanel ret = (MigPanel) super.layoutDialogContent();
         // ret.add(createHeader(_GUI.T.ExceptionsRuleDialog_layoutDialogContent_then()),
         // "gaptop 10, spanx,growx,pushx");
-
         updateGUI();
         if (rule.isStaticRule()) {
             okButton.setEnabled(false);
@@ -158,8 +150,6 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         sp.setBorder(null);
-
         return sp;
     }
-
 }
