@@ -1280,7 +1280,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (!StringUtils.isEmpty(useragent) && useragent.length() > 3) {
             br.getHeaders().put("User-Agent", useragent);
         }
-        /* Set English language */
+        /* Set prefer English language */
         br.setCookie(DOMAIN, "remixlang", "3");
         br.setReadTimeout(1 * 60 * 1000);
         br.setConnectTimeout(2 * 60 * 1000);

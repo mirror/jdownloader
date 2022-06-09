@@ -651,7 +651,7 @@ public abstract class EvilangelCore extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium subscription expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (!isLoggedIn(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.removeProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN);
                 account.saveCookies(br.getCookies(host_account), "");
@@ -703,7 +703,11 @@ public abstract class EvilangelCore extends PluginForHost {
         // br.getCookie(br.getHost(), "autologin_hash", Cookies.NOTDELETEDPATTERN) != null;
         // return loggedIN_html || loggedINCookie;
         /* 2021-10-11: Based on HTML only is safer than html and/OR cookies! */
-        return loggedIN_html;
+        if (loggedIN_html) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

@@ -13,10 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,34 +29,57 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.FilerNet;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer.net/folder/[a-z0-9]+" }) 
-public class Flr extends PluginForDecrypt {
-
-    public Flr(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { FilerNet.class })
+public class FilerNetFolder extends PluginForDecrypt {
+    public FilerNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public static List<String[]> getPluginDomains() {
+        return FilerNet.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/([a-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", "JDownloader");
-        final String folderID = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.getPage("http://api.filer.net/api/folder/" + folderID + ".json");
         if (getJson("code", br.toString()).equals("506")) {
-            logger.info("Folderlink offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (getJson("count", br.toString()).equals("0")) {
-            logger.info("Folderlink empty: " + parameter);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (getJson("count", br.toString()).equals("0")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (getJson("count", br.toString()).equals("599")) {
-            logger.info("unknown file error for link: " + parameter);
+            logger.info("unknown file error for link: " + param.getCryptedUrl());
             return decryptedLinks;
         }
         if (getJson("code", br.toString()).equals("201")) {
@@ -77,10 +102,8 @@ public class Flr extends PluginForDecrypt {
         final String allLinks = br.getRegex("\"files\":\\[(.*?)\\]").getMatch(0);
         final String[] linkInfo = new Regex(allLinks, "\\{(.*?)\\}").getColumn(0);
         if (linkInfo == null || linkInfo.length == 0) {
-            logger.warning("Decrypter broken for link:" + parameter);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         for (final String singleLinkInfo : linkInfo) {
             final DownloadLink link = createDownloadlink(getJson("link", singleLinkInfo).replace("\\", ""));
             link.setFinalFileName(getJson("name", singleLinkInfo).replace("\\", ""));
@@ -106,5 +129,4 @@ public class Flr extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
