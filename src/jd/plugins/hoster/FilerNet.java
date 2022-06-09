@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -61,6 +64,7 @@ public class FilerNet extends PluginForHost {
     private static final String SETTING_ENABLE_HTTP                                    = "ENABLE_HTTP";
     private static final String SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS                  = "WAIT_MINUTES_ON_NO_FREE_SLOTS";
     private static final int    defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS           = 10;
+    public static final String  API_BASE                                               = "http://filer.net/api";
 
     @SuppressWarnings("deprecation")
     public FilerNet(PluginWrapper wrapper) {
@@ -122,14 +126,15 @@ public class FilerNet extends PluginForHost {
         }
     }
 
-    private void prepBrowser() {
-        br.setFollowRedirects(false);
+    private Browser prepBrowserAPI(final Browser br) {
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
     }
 
     @Override
     public String getAGBLink() {
-        return "http://filer.net/agb.htm";
+        return "https://filer.net/agb.htm";
     }
 
     @Override
@@ -149,8 +154,8 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        prepBrowser();
-        callAPI(null, "http://api.filer.net/api/status/" + getFID(link) + ".json");
+        prepBrowserAPI(br);
+        callAPI(null, API_BASE + "/status/" + getFID(link) + ".json");
         if (statusCode == STATUSCODE_APIDISABLED) {
             link.getLinkStatus().setStatusText(ERRORMESSAGE_APIDISABLEDTEXT);
             return AvailableStatus.UNCHECKABLE;
@@ -218,6 +223,7 @@ public class FilerNet extends PluginForHost {
                     if (recaptchaV2Response == null) {
                         continue;
                     }
+                    br.setFollowRedirects(false);
                     br.postPage("http://filer.net/get/" + getFID(link) + ".json", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&hash=" + getFID(link));
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
@@ -262,10 +268,10 @@ public class FilerNet extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", waitMinutes * 60 * 1000l);
     }
 
-    private void doFreeWebsite(final Account account, final DownloadLink downloadLink) throws Exception {
-        String dllink = checkDirectLink(downloadLink, DIRECT_WEB);
+    private void doFreeWebsite(final Account account, final DownloadLink link) throws Exception {
+        String dllink = checkDirectLink(link, DIRECT_WEB);
         if (dllink == null) {
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
             handleErrors(account, false);
             Form continueForm = br.getFormbyKey("token");
             if (continueForm != null) {
@@ -275,7 +281,7 @@ public class FilerNet extends PluginForHost {
                 if (waittime_str != null) {
                     wait = Integer.parseInt(waittime_str);
                 }
-                sleep(wait * 1001l, downloadLink);
+                sleep(wait * 1001l, link);
                 br.submitForm(continueForm);
             }
             int maxCaptchaTries = 4;
@@ -294,13 +300,14 @@ public class FilerNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.setFollowRedirects(false);
                 br.submitForm(continueForm);
                 dllink = br.getRedirectLocation();
-                tries++;
-                if (dllink == null) {
-                    continue;
+                if (dllink != null) {
+                    break;
                 }
-                break;
+                tries++;
+                continue;
             }
             if (dllink == null && this.br.containsHTML("data-sitekey")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -311,7 +318,7 @@ public class FilerNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -322,7 +329,7 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
-        downloadLink.setProperty(DIRECT_WEB, dl.getConnection().getURL().toString());
+        link.setProperty(DIRECT_WEB, dl.getConnection().getURL().toString());
         this.dl.startDownload();
     }
 
@@ -336,27 +343,24 @@ public class FilerNet extends PluginForHost {
     }
 
     private Browser prepBrowser(final Browser prepBr) {
-        prepBr.setFollowRedirects(false);
+        prepBr.setFollowRedirects(true);
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11");
         return prepBr;
     }
 
-    // do not add @Override here to keep 0.* compatibility
+    @Override
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
-    public void login(final Account account) throws Exception {
+    public void loginAPI(final Account account) throws Exception {
         synchronized (account) {
             /** Load cookies */
             br.setCookiesExclusive(true);
-            prepBrowser();
+            prepBrowserAPI(br);
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-            callAPI(account, "http://api.filer.net/api/profile.json");
-            if (br.getRedirectLocation() != null) {
-                callAPI(account, br.getRedirectLocation());
-            }
+            callAPI(account, API_BASE + "/profile.json");
         }
     }
 
@@ -368,12 +372,24 @@ public class FilerNet extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    return;
+                    if (!force) {
+                        /* Do not validate cookies */
+                        return;
+                    }
+                    br.getPage("https://" + this.getHost());
+                    if (this.isLoggedInWebsite(br)) {
+                        logger.info("Successfully logged in via cookies");
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
+                    }
                 }
-                br.setFollowRedirects(true);
-                this.br.getPage("https://filer.net/login");
+                logger.info("Performing full login");
+                this.br.getPage("https://" + this.getHost() + "/login");
                 final Form loginform = this.br.getFormbyKey("_username");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -387,7 +403,7 @@ public class FilerNet extends PluginForHost {
                 loginform.remove("_remember_me");
                 loginform.put("_remember_me", "on");
                 this.br.submitForm(loginform);
-                if (br.getCookie(this.getHost(), "REMEMBERME") == null) {
+                if (!isLoggedInWebsite(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -402,24 +418,34 @@ public class FilerNet extends PluginForHost {
         }
     }
 
+    private boolean isLoggedInWebsite(final Browser br) {
+        if (br.getCookie(this.getHost(), "REMEMBERME", Cookies.NOTDELETEDPATTERN) != null && br.containsHTML("/logout")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        login(account);
-        if ("free".equals(PluginJSonUtils.getJson(br, "state"))) {
+        loginAPI(account);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        if (data.get("state").toString().equalsIgnoreCase("free")) {
             account.setType(AccountType.FREE);
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.PREMIUM);
-            ai.setTrafficLeft(Long.parseLong(PluginJSonUtils.getJson(br, "traffic")));
-            final String maxTraffic = PluginJSonUtils.getJson(br, "maxtraffic");
-            if (maxTraffic != null) {
-                ai.setTrafficMax(Long.parseLong(maxTraffic));
+            ai.setTrafficLeft(((Number) data.get("traffic")).longValue());
+            final Object maxtraffic = data.get("maxtraffic");
+            if (maxtraffic instanceof Number) {
+                ai.setTrafficMax(((Number) maxtraffic).longValue());
             } else {
                 ai.setTrafficMax(SizeFormatter.getSize("125gb"));// fallback
             }
-            ai.setValidUntil(Long.parseLong(PluginJSonUtils.getJson(br, "until")) * 1000);
+            ai.setValidUntil(((Number) data.get("until")).longValue() * 1000);
         }
         return ai;
     }
@@ -435,7 +461,8 @@ public class FilerNet extends PluginForHost {
             requestFileInformation(link);
             handleDownloadErrors();
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-            callAPI(account, "http://filer.net/api/dl/" + getFID(link) + ".json");
+            br.setFollowRedirects(false);
+            callAPI(account, API_BASE + "/dl/" + getFID(link) + ".json");
             if (statusCode == 504) {
                 if (StringUtils.isEmpty(statusMessage)) {
                     throw new AccountUnavailableException("Traffic limit reached", 60 * 60 * 1000l);
@@ -590,9 +617,8 @@ public class FilerNet extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
     }
 
     private void callAPI(final Account account, final String url) throws Exception {

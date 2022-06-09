@@ -77,13 +77,13 @@ public class SxyprnCom extends antiDDoSForHost {
             this.login(this.br, account, false);
         }
         getPage(link.getPluginPatternMatcher());
-        final String title = br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
         /** 2019-07-08: yourporn.sexy now redirects to youporn.com but sxyprn.com still exists. */
-        if (title == null || br.getHost().equals("youporn.com") || br.getHttpConnection().getResponseCode() == 404) {
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (link.getFinalFileName() == null) {
-            link.setFinalFileName(title.trim() + ".mp4");
+        final String title = br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
+        if (link.getFinalFileName() == null && title != null) {
+            link.setFinalFileName(Encoding.htmlDecode(title).trim() + ".mp4");
         }
         final String fid = this.getFID(link);
         // authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
@@ -102,6 +102,25 @@ public class SxyprnCom extends antiDDoSForHost {
             dllink = getDllink(link, vnfo);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static final String regexTitle(final Browser br) {
+        return br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
+    }
+
+    public static final boolean isOffline(final Browser br) {
+        final String title = regexTitle(br);
+        if (title == null) {
+            return true;
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.containsHTML("(?i)class='page_message'[^>]*>\\s*Post Not Found")) {
+            return true;
+        } else if (br.getHost().equals("youporn.com")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private long ssut51(final String input) {

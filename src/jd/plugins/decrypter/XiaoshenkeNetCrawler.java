@@ -70,7 +70,7 @@ public class XiaoshenkeNetCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        decryptedLinks.add(createDownloadlink(SxyprnCom.getContentURL("sxyprn.com", contentID)));
+        decryptedLinks.add(createDownloadlink(SxyprnComCrawler.getContentURL("sxyprn.com", contentID)));
         return decryptedLinks;
     }
 }
