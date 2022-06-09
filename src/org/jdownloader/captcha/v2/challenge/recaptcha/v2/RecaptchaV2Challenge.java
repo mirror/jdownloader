@@ -250,7 +250,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     public boolean isInvisible() {
-        return AbstractRecaptchaV2.TYPE.INVISIBLE.equals(getType());
+        return AbstractRecaptchaV2.TYPE.INVISIBLE.name().equals(getType());
     }
 
     public String getType() {
