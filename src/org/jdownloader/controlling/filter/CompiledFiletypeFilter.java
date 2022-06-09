@@ -603,13 +603,14 @@ public class CompiledFiletypeFilter {
         if (filetypeFilter.isExeFilesEnabled()) {
             filterInterfaces.add(ExecutableExtensions.EXE);
         }
+        matchType = filetypeFilter.getMatchType();
         try {
             if (filetypeFilter.getCustoms() != null) {
                 if (filetypeFilter.isUseRegex()) {
                     list.add(Pattern.compile(filetypeFilter.getCustoms(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE));
                 } else {
                     for (String s : filetypeFilter.getCustoms().split("\\,")) {
-                        list.add(LinkgrabberFilterRuleWrapper.createPattern(s, false));
+                        list.add(LinkgrabberFilterRuleWrapper.createPattern(s, false, RuleWrapper.AUTO_PATTERN_MODE.MATCHES));
                     }
                 }
             }
@@ -617,7 +618,6 @@ public class CompiledFiletypeFilter {
             /* custom regex may contain errors */
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
-        matchType = filetypeFilter.getMatchType();
         this.list = list.toArray(new Pattern[list.size()]);
         this.filterInterfaces = filterInterfaces.toArray(new ExtensionsFilterInterface[filterInterfaces.size()]);
     }

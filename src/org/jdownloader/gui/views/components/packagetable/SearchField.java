@@ -43,6 +43,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
+import org.jdownloader.controlling.filter.RuleWrapper;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;
@@ -266,11 +267,11 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                     if (filterRegex.startsWith(REGEX_FILTER)) {
                         filterRegex = filterRegex.substring(REGEX_FILTER.length());
                     }
-                    list.add(LinkgrabberFilterRuleWrapper.createPattern(filterRegex, true));
+                    list.add(LinkgrabberFilterRuleWrapper.createPattern(filterRegex, true, null));
                 } else {
                     String[] filters = filterRegex.split("\\|");
                     for (String filter : filters) {
-                        list.add(LinkgrabberFilterRuleWrapper.createPattern(filter, false));
+                        list.add(LinkgrabberFilterRuleWrapper.createPattern(filter, false, RuleWrapper.AUTO_PATTERN_MODE.WILDCARD));
                     }
                 }
                 newFilter = getFilter(list, getSelectedCategory());

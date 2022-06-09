@@ -831,6 +831,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     }
 
     private void updateGUI() {
+        regexFields.clear();
         setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
         setPackagenameFilter(rule.getPackagenameFilter());

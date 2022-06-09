@@ -171,6 +171,24 @@ public class DownloadLinkSandBox {
         }
     }
 
+    public boolean isAborting() {
+        if (downloadLink != null) {
+            final SingleDownloadController controller = downloadLink.getDownloadLinkController();
+            return controller != null && controller.isAborting();
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isActive() {
+        if (downloadLink != null) {
+            final SingleDownloadController controller = downloadLink.getDownloadLinkController();
+            return controller != null && controller.isActive();
+        } else {
+            return false;
+        }
+    }
+
     public Object getProperty(String key) {
         if (downloadLink != null) {
             return downloadLink.getProperty(key);
