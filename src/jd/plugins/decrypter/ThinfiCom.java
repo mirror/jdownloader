@@ -25,6 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thinfi.com" }, urls = { "https?://(?:www\\.)?thinfi\\.com/[a-z0-9]+" })
@@ -39,8 +41,7 @@ public class ThinfiCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().endsWith("/404")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(false);
         String finallink = null;
@@ -60,11 +61,10 @@ public class ThinfiCom extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         } else {
-            finallink = this.br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+;URL=(https[^\"]+)\">").getMatch(0);
+            finallink = this.br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+;URL=(https?[^\"]+)\">").getMatch(0);
         }
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
