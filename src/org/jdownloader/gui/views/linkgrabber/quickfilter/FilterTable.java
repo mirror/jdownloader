@@ -262,13 +262,13 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             return 0;
         }
         int ret = 0;
-        for (CrawledLink link : tableModelData.getFilteredChildren()) {
+        next: for (CrawledLink link : tableModelData.getFilteredChildren()) {
             if (filter.isFiltered(link)) {
                 try {
                     filterException = filter;
                     for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
                         if (f.isFiltered(link)) {
-                            break;
+                            continue next;
                         }
                     }
                 } finally {
@@ -277,13 +277,13 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                 ret++;
             }
         }
-        for (CrawledLink link : tableModelData.getInvisibleChildren()) {
+        next: for (CrawledLink link : tableModelData.getInvisibleChildren()) {
             if (filter.isFiltered(link)) {
                 try {
                     filterException = filter;
                     for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
                         if (f.isFiltered(link)) {
-                            break;
+                            continue next;
                         }
                     }
                 } finally {
