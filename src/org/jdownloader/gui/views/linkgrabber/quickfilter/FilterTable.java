@@ -9,11 +9,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,7 +21,6 @@ import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -40,6 +37,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelCustomizer;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData.PackageControllerTableModelDataPackage;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
@@ -78,13 +76,13 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     protected static final long                            SELECTION_REFRESH_MIN = 25l;
     protected static final long                            SELECTION_REFRESH_MAX = 100l;
     private static final DelayedRunnable                   SELECTIONUPDATER      = new DelayedRunnable(EXECUTER, SELECTION_REFRESH_MIN, SELECTION_REFRESH_MAX) {
-                                                                                     @Override
-                                                                                     public void delayedrun() {
-                                                                                         if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.isEnabled()) {
-                                                                                             LinkGrabberTableModel.getInstance().addTableModifier(getTableDataModification(null), false);
-                                                                                         }
-                                                                                     };
-                                                                                 };
+        @Override
+        public void delayedrun() {
+            if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.isEnabled()) {
+                LinkGrabberTableModel.getInstance().addTableModifier(getTableDataModification(null), false);
+            }
+        };
+    };
 
     private static LinkGrabberTableModel.TableDataModification getTableDataModification(final Runnable runnable) {
         return LinkGrabberTableModel.getInstance().new TableDataModification() {
@@ -127,32 +125,32 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     protected static final long                 FILTER_REFRESH_MIN     = 1000l;
     protected static final long                 FILTER_REFRESH_MAX     = 3000l;
     private static final DelayedRunnable        FILTERTABLESUPDATER    = new DelayedRunnable(EXECUTER, FILTER_REFRESH_MIN, FILTER_REFRESH_MAX) {
-                                                                           @Override
-                                                                           public String getID() {
-                                                                               return "FilterTable";
-                                                                           }
+        @Override
+        public String getID() {
+            return "FilterTable";
+        }
 
-                                                                           @Override
-                                                                           public void delayedrun() {
-                                                                               try {
-                                                                                   ArrayList<FilterTableDataUpdater> updater = new ArrayList<FilterTableDataUpdater>();
-                                                                                   for (FilterTableUpdater filterTable : FILTERTABLES) {
-                                                                                       if (filterTable.getUpdate().getAndSet(false)) {
-                                                                                           updater.add(filterTable.getTable().getFilterTableDataUpdater());
-                                                                                       }
-                                                                                   }
-                                                                                   updateFilterTables(updater);
-                                                                               } catch (final Throwable e) {
-                                                                                   org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
-                                                                               }
-                                                                           }
-                                                                       };
+        @Override
+        public void delayedrun() {
+            try {
+                ArrayList<FilterTableDataUpdater> updater = new ArrayList<FilterTableDataUpdater>();
+                for (FilterTableUpdater filterTable : FILTERTABLES) {
+                    if (filterTable.getUpdate().getAndSet(false)) {
+                        updater.add(filterTable.getTable().getFilterTableDataUpdater());
+                    }
+                }
+                updateFilterTables(updater);
+            } catch (final Throwable e) {
+                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+            }
+        }
+    };
     private static final PropertyChangeListener PROPERTYCHANGELISTENER = new PropertyChangeListener() {
-                                                                           @Override
-                                                                           public void propertyChange(PropertyChangeEvent evt) {
-                                                                               updateAllFiltersInstant();
-                                                                           }
-                                                                       };
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            updateAllFiltersInstant();
+        }
+    };
     private static volatile Filter              filterException        = null;
     private static volatile Thread              filterExceptionThread  = null;
     private BooleanKeyHandler                   visibleKeyHandler;
@@ -173,26 +171,37 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         for (FilterTableDataUpdater update : updater) {
             update.reset();
         }
-        Set<CrawledLink> processedLinks = new HashSet<CrawledLink>();
-        List<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
-        List<CrawledLink> allCollectorChildren = LinkCollector.getInstance().getAllChildren();
-        PackageControllerTableModelData<CrawledPackage, CrawledLink> tableData = LinkGrabberTableModel.getInstance().getTableData();
-        final Iterator<CrawledLink> it = tableData.getVisibleChildrenIterator();
-        while (it.hasNext()) {
-            final CrawledLink link = it.next();
-            processedLinks.add(link);
-            for (FilterTableDataUpdater update : updater) {
-                update.updateVisible(link);
+        final PackageControllerTableModelData<CrawledPackage, CrawledLink> tableData = LinkGrabberTableModel.getInstance().getTableData();
+        int invisibleChildren = 0;
+        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableData.getModelDataPackages()) {
+            if (modelDataPackage.getVisibleChildrenSize() > 0) {
+                for (CrawledLink link : modelDataPackage.getVisibleChildren()) {
+                    for (FilterTableDataUpdater update : updater) {
+                        update.updateVisible(link);
+                    }
+                }
             }
         }
         for (FilterTableDataUpdater update : updater) {
             update.afterVisible();
         }
-        for (CrawledLink link : allCollectorChildren) {
-            if (processedLinks.add(link)) {
-                filteredLinks.add(link);
-                for (FilterTableDataUpdater update : updater) {
-                    update.updateFiltered(link);
+        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableData.getModelDataPackages()) {
+            if (modelDataPackage.getInvisibleChildrenSize() > 0) {
+                invisibleChildren += modelDataPackage.getInvisibleChildrenSize();
+                for (CrawledLink link : modelDataPackage.getInvisibleChildren()) {
+                    for (FilterTableDataUpdater update : updater) {
+                        update.updateVisible(link);
+                    }
+                }
+            }
+        }
+        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableData.getInvisibleModelDataPackages()) {
+            if (modelDataPackage.getInvisibleChildrenSize() > 0) {
+                invisibleChildren += modelDataPackage.getInvisibleChildrenSize();
+                for (CrawledLink link : modelDataPackage.getInvisibleChildren()) {
+                    for (FilterTableDataUpdater update : updater) {
+                        update.updateVisible(link);
+                    }
                 }
             }
         }
@@ -208,31 +217,14 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                 try {
                     filterExceptionThread = Thread.currentThread();
                     for (Filter filter : filters) {
-                        if (filter.getCounter() == 0) {
-                            filter.setCounter(getCountWithout(filter, filteredLinks, tableData.getChildrenFilters()));
+                        if (filter.getCounter() == 0 && invisibleChildren > 0) {
+                            filter.setCounter(getCountWithout(filter, tableData));
                         }
                     }
                 } finally {
                     filterExceptionThread = null;
                 }
-                try {
-                    Collections.sort(filters, new Comparator<Filter>() {
-                        public int compare(boolean x, boolean y) {
-                            return (x == y) ? 0 : (x ? -1 : 1);
-                        }
-
-                        @Override
-                        public int compare(Filter o1, Filter o2) {
-                            if (o1.isEnabled() == o2.isEnabled()) {
-                                return o1.getName().compareToIgnoreCase(o2.getName());
-                            } else {
-                                return compare(o1.isEnabled(), o2.isEnabled());
-                            }
-                        }
-                    });
-                } catch (final Throwable e) {
-                    LogController.CL(true).log(e);
-                }
+                update.getFilterTable().sort(filters);
             }
             updateTableData.put(filterTable, filters);
         }
@@ -246,24 +238,74 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         }
     }
 
-    protected static int getCountWithout(Filter filter, List<CrawledLink> filteredLinks, List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters) {
+    public boolean isSortingEnabledDisabled() {
+        return false;
+    }
+
+    protected void sort(List<Filter> filters) {
+        try {
+            final boolean sortEnabledDisabled = isSortingEnabledDisabled();
+            Collections.sort(filters, new Comparator<Filter>() {
+                public int compare(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? -1 : 1);
+                }
+
+                @Override
+                public int compare(Filter o1, Filter o2) {
+                    if (!sortEnabledDisabled || o1.isEnabled() == o2.isEnabled()) {
+                        return o1.getName().compareToIgnoreCase(o2.getName());
+                    } else {
+                        return compare(o1.isEnabled(), o2.isEnabled());
+                    }
+                }
+            });
+        } catch (final Throwable e) {
+            LogController.CL(true).log(e);
+        }
+    }
+
+    protected static int getCountWithout(Filter filter, PackageControllerTableModelData<CrawledPackage, CrawledLink> tableModelData) {
+        final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = tableModelData.getChildrenFilters();
         if (tableFilters == null || tableFilters.size() == 0) {
             return 0;
         }
         int ret = 0;
-        main: for (CrawledLink l : filteredLinks) {
-            if (filter.isFiltered(l)) {
-                try {
-                    filterException = filter;
-                    for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
-                        if (f.isFiltered(l)) {
-                            continue main;
+        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableModelData.getModelDataPackages()) {
+            if (modelDataPackage.getInvisibleChildrenSize() > 0) {
+                for (CrawledLink link : modelDataPackage.getInvisibleChildren()) {
+                    if (filter.isFiltered(link)) {
+                        try {
+                            filterException = filter;
+                            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
+                                if (f.isFiltered(link)) {
+                                    break;
+                                }
+                            }
+                        } finally {
+                            filterException = null;
                         }
+                        ret++;
                     }
-                } finally {
-                    filterException = null;
                 }
-                ret++;
+            }
+        }
+        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableModelData.getInvisibleModelDataPackages()) {
+            if (modelDataPackage.getInvisibleChildrenSize() > 0) {
+                for (CrawledLink link : modelDataPackage.getInvisibleChildren()) {
+                    if (filter.isFiltered(link)) {
+                        try {
+                            filterException = filter;
+                            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
+                                if (f.isFiltered(link)) {
+                                    break;
+                                }
+                            }
+                        } finally {
+                            filterException = null;
+                        }
+                        ret++;
+                    }
+                }
             }
         }
         return ret;
@@ -457,28 +499,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         return null;
     }
 
-    //
-    // protected int getCountWithout(Filter filter, java.util.List<CrawledLink> filteredLinks) {
-    // java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters =
-    // getLinkgrabberTable().getModel().getTableFilters();
-    // int ret = 0;
-    // main: for (CrawledLink l : filteredLinks) {
-    // if (filter.isFiltered(l)) {
-    // filterException = filter;
-    // try {
-    // for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
-    // if (f.isFiltered(l)) {
-    // continue main;
-    // }
-    // }
-    // } finally {
-    // filterException = null;
-    // }
-    // ret++;
-    // }
-    // }
-    // return ret;
-    // }
     public LinkGrabberTable getLinkgrabberTable() {
         return linkgrabberTable;
     }

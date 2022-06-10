@@ -22,7 +22,7 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
 
     PackageControllerComparator<AbstractNode> getCurrentSorter();
 
-    ChildrenView<V> getView();
+    ChildrenView<E, V> getView();
 
     boolean isExpanded();
 

@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackageView;
@@ -23,7 +22,7 @@ import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.GeneralSettings;
 
-public class CrawledPackageView extends ChildrenView<CrawledLink> {
+public class CrawledPackageView extends ChildrenView<CrawledPackage, CrawledLink> {
     private static class LinkInfo {
         private long bytesTotal = -1;
     }
@@ -52,10 +51,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         synchronized (this) {
             final Temp tmp = new Temp();
             /* this is called for repaint, so only update values that could have changed for existing items */
-            final PackageControllerTableModelDataPackage tableModelDataPackage = getTableModelDataPackage();
+            final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> tableModelDataPackage = getTableModelDataPackage();
             if (tableModelDataPackage != null) {
-                for (final AbstractNode child : tableModelDataPackage.getVisibleChildren()) {
-                    addLinkToTemp(tmp, (CrawledLink) child);
+                for (final CrawledLink child : tableModelDataPackage.getVisibleChildren()) {
+                    addLinkToTemp(tmp, child);
                 }
             } else {
                 final boolean readL = pkg.getModifyLock().readLock();
