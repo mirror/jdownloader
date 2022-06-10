@@ -3,6 +3,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -15,12 +20,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "warez-world.org", "ddl-mdh.org", "funxd.tv" }, urls = { "https?://(?:www\\.)?warez-world\\.org/(?:download/[^/]+|link/\\d+/\\d+)", "https?://(?:www\\.)?ddl-mdh\\.org/(?:download/[^/]+|link/\\d+/\\d+)", "https?://(?:www\\.)?funxd\\.tv/(?:download/[^/]+|link/\\d+/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "warez-world.org", "ddl-mdh.org", "funxd.tv" }, urls = { "https?://(?:www\\.)?(?:warez-world\\.org|3ddl\\.tv)/(?:download/[^/]+|link/\\d+/\\d+)", "https?://(?:www\\.)?ddl-mdh\\.org/(?:download/[^/]+|link/\\d+/\\d+)", "https?://(?:www\\.)?funxd\\.tv/(?:download/[^/]+|link/\\d+/\\d+)" })
 public class GenericWBoardDecrypter extends antiDDoSForDecrypt {
     public GenericWBoardDecrypter(PluginWrapper wrapper) {
         super(wrapper);
