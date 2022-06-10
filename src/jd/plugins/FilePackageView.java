@@ -15,7 +15,6 @@ import javax.swing.Icon;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
@@ -39,7 +38,7 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class FilePackageView extends ChildrenView<DownloadLink> {
+public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
     private static class LinkInfo {
         private long         bytesTotal = -1;
         private long         bytesDone  = -1;
@@ -140,10 +139,10 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             final Temp tmp = new Temp();
             /* this is called for repaint, so only update values that could have changed for existing items */
-            final PackageControllerTableModelDataPackage tableModelDataPackage = getTableModelDataPackage();
+            final PackageControllerTableModelDataPackage<FilePackage, DownloadLink> tableModelDataPackage = getTableModelDataPackage();
             if (tableModelDataPackage != null) {
-                for (final AbstractNode child : tableModelDataPackage.getVisibleChildren()) {
-                    addLinkToTemp(tmp, (DownloadLink) child);
+                for (final DownloadLink child : tableModelDataPackage.getVisibleChildren()) {
+                    addLinkToTemp(tmp, child);
                 }
             } else {
                 final boolean readL = pkg.getModifyLock().readLock();

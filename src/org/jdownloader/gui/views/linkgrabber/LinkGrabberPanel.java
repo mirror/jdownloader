@@ -61,7 +61,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         return table;
     }
 
-    private JScrollPane                tableScrollPane;
+    private final JScrollPane          tableScrollPane;
     private LinkGrabberSidebar         sidebar;
     private HeaderScrollPane           sidebarScrollPane;
     private CustomizeableActionBar     rightBar;
@@ -287,7 +287,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     private void createSidebar() {
-        sidebar = new LinkGrabberSidebar(table);
+        sidebar = new LinkGrabberSidebar(this, table) {
+            @Override
+            protected boolean isScrollbarVisible() {
+                return sidebarScrollPane != null && sidebarScrollPane.getVerticalScrollBar().isVisible();
+            }
+        };
         sidebarContainer = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]");
         SwingUtils.setOpaque(sidebarContainer, false);
         sidebarScrollPane = new HeaderScrollPane(sidebar) {

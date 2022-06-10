@@ -5,7 +5,7 @@ import java.lang.ref.WeakReference;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData.PackageControllerTableModelDataPackage;
 
-public abstract class ChildrenView<T> {
+public abstract class ChildrenView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
     public static enum ChildrenAvailablility {
         ONLINE,
         OFFLINE,
@@ -13,7 +13,7 @@ public abstract class ChildrenView<T> {
         UNKNOWN;
     }
 
-    abstract public ChildrenView<T> aggregate();
+    abstract public ChildrenView<PackageType, ChildrenType> aggregate();
 
     abstract public void requestUpdate();
 
@@ -29,10 +29,10 @@ public abstract class ChildrenView<T> {
 
     abstract public String getMessage(Object requestor);
 
-    protected volatile WeakReference<PackageControllerTableModelDataPackage> tableModelDataPackage = null;
+    protected volatile WeakReference<PackageControllerTableModelDataPackage<PackageType, ChildrenType>> tableModelDataPackage = null;
 
-    public PackageControllerTableModelDataPackage getTableModelDataPackage() {
-        final WeakReference<PackageControllerTableModelDataPackage> ltableModelDataPackage = tableModelDataPackage;
+    public PackageControllerTableModelDataPackage<PackageType, ChildrenType> getTableModelDataPackage() {
+        final WeakReference<PackageControllerTableModelDataPackage<PackageType, ChildrenType>> ltableModelDataPackage = tableModelDataPackage;
         if (ltableModelDataPackage != null) {
             return ltableModelDataPackage.get();
         } else {
@@ -40,11 +40,11 @@ public abstract class ChildrenView<T> {
         }
     }
 
-    public void setTableModelDataPackage(PackageControllerTableModelDataPackage tableModelDataPackage) {
+    public void setTableModelDataPackage(PackageControllerTableModelDataPackage<PackageType, ChildrenType> tableModelDataPackage) {
         if (tableModelDataPackage == null) {
             this.tableModelDataPackage = null;
         } else {
-            this.tableModelDataPackage = new WeakReference<PackageControllerTableModelDataPackage>(tableModelDataPackage);
+            this.tableModelDataPackage = new WeakReference<PackageControllerTableModelDataPackage<PackageType, ChildrenType>>(tableModelDataPackage);
         }
         aggregate();
     }

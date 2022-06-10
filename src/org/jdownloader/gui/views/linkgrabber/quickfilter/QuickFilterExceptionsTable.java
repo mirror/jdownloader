@@ -9,6 +9,11 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
+
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -18,13 +23,7 @@ import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
-
 public class QuickFilterExceptionsTable extends FilterTable {
-
     /**
      *
      */
@@ -39,11 +38,9 @@ public class QuickFilterExceptionsTable extends FilterTable {
 
     private void init() {
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
                 LinkFilterController.getInstance().getEventSender().addListener(new ChangeListener() {
-
                     public void onChangeEvent(ChangeEvent event) {
                         convertLinkgrabberFilterRuleWrapper();
                     }
@@ -191,5 +188,4 @@ public class QuickFilterExceptionsTable extends FilterTable {
     public boolean isFilteringChildrenNodes() {
         return isEnabled() && enabledFilters.size() > 0;
     }
-
 }
