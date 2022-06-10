@@ -15,6 +15,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     final String                                        text_CrawlThumbnail                 = "Crawl thumbnail?";
     final String                                        text_QualitySelectionMode           = "Define how this plugin should pick your desired qualities";
     final String                                        text_CrawlSubtitledBurnedInVersions = "Crawl subtitled burned in versions?";
+    final String                                        text_QualitySelectionFallbackMode   = "Define what to add if based on your selection no results are found";
     // final String text_CrawlSubtitledBurnedInVersionsHearingImpaired = "Crawl subtitled burned in versions for hearing impaired?";
     public static final ArteMediathekConfig.TRANSLATION TRANSLATION                         = new TRANSLATION();
 
@@ -32,6 +33,10 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
         public String getQualitySelectionMode_label() {
             return text_QualitySelectionMode;
+        }
+
+        public String getQualitySelectionFallbackMode_label() {
+            return text_QualitySelectionFallbackMode;
         }
     }
 
@@ -126,4 +131,27 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     // boolean isCrawlSubtitledBurnedInVersionsHearingImpaired();
     //
     // void setCrawlSubtitledBurnedInVersionsHearingImpaired(boolean b);
+
+    public static enum QualitySelectionFallbackMode implements LabelInterface {
+        BEST {
+            @Override
+            public String getLabel() {
+                return "Best quality";
+            }
+        },
+        ALL {
+            @Override
+            public String getLabel() {
+                return "All qualities";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("ALL")
+    @DescriptionForConfigEntry(text_QualitySelectionFallbackMode)
+    @Order(200)
+    QualitySelectionFallbackMode getQualitySelectionFallbackMode();
+
+    void setQualitySelectionFallbackMode(QualitySelectionFallbackMode mode);
 }
