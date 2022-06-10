@@ -26,6 +26,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -138,6 +139,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Crawl thumbnail if wished by user */
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final QualitySelectionMode mode = cfg.getQualitySelectionMode();
         if (cfg.isCrawlThumbnail()) {
             final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
             final String imageCaption = (String) mainImage.get("caption");
@@ -151,23 +153,50 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             distribute(thumbnail);
         }
         /* Crawl video streams */
+        /* Collect list of user desired/allowed qualities */
+        final List<Integer> selectedQualities = new ArrayList<Integer>();
+        if (cfg.isCrawlHTTP1080p()) {
+            selectedQualities.add(1080);
+        }
+        if (cfg.isCrawlHTTP720p()) {
+            selectedQualities.add(720);
+        }
+        if (cfg.isCrawlHTTP480p()) {
+            selectedQualities.add(480);
+        }
+        if (cfg.isCrawlHTTP360p()) {
+            selectedQualities.add(360);
+        }
+        if (cfg.isCrawlHTTP240p()) {
+            selectedQualities.add(240);
+        }
+        if (selectedQualities.isEmpty()) {
+            logger.warning("User has deselected all qualities");
+        }
         // TODO: Implement pagination?
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
         final ArrayList<DownloadLink> allResults = new ArrayList<DownloadLink>();
+        /* First put each language + audio version in separate lists. */
         final Map<String, List<Map<String, Object>>> languagePacks = new HashMap<String, List<Map<String, Object>>>();
         for (final Map<String, Object> videoStream : videoStreams) {
-            final String language = videoStream.get("language").toString();
-            if (!languagePacks.containsKey(language)) {
-                languagePacks.put(language, new ArrayList<Map<String, Object>>());
+            final String audioCode = videoStream.get("audioCode").toString();
+            if (!languagePacks.containsKey(audioCode)) {
+                languagePacks.put(audioCode, new ArrayList<Map<String, Object>>());
             }
-            languagePacks.get(language).add(videoStream);
+            languagePacks.get(audioCode).add(videoStream);
         }
-        /* Now filter by language, user selected qualities and so on */
+        /*
+         * Now filter by language, user selected qualities and so on. User can e.g. select multiple languages and best video quality of each
+         * combined with subtitle preferences.
+         */
         for (final List<Map<String, Object>> videoStreamsByLanguage : languagePacks.values()) {
             /* TODO: Add BEST handling */
+            final ArrayList<DownloadLink> userSelected = new ArrayList<DownloadLink>();
             long highestFilesize = 0;
-            DownloadLink bestForThisLanguage = null;
+            DownloadLink bestForThisPack = null;
+            long highestFilesizeOfUserSelected = 0;
+            DownloadLink bestOfUserSelected = null;
             for (final Map<String, Object> videoStream : videoStreamsByLanguage) {
                 // final String language = videoStream.get("language").toString();
                 final String protocol = videoStream.get("protocol").toString();
@@ -175,8 +204,10 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                     /* 2022-05-25: Only grab HTTP streams for now */
                     continue;
                 }
-                final long durationSeconds = ((Number) videoStream.get("durationSeconds")).longValue();
-                final long bitrate = ((Number) videoStream.get("bitrate")).longValue();
+                // final int width = ((Number) videoStream.get("width")).intValue();
+                final int height = ((Number) videoStream.get("height")).intValue();
+                final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
+                final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
                 final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
                 final String finalFilename = titleBase + "_" + videoStream.get("filename");
                 link.setFinalFileName(finalFilename);
@@ -187,21 +218,57 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link._setFilePackage(fp);
                 allResults.add(link);
                 /* Now check for skip conditions based on user settings */
+                /* Skip subtitled versions if not wished by user */
                 final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) videoStream.get("subtitles");
                 if (!subtitles.isEmpty() && !cfg.isCrawlSubtitledBurnedInVersions()) {
                     continue;
                 }
                 if (link.getView().getBytesTotal() > highestFilesize) {
-                    bestForThisLanguage = link;
+                    bestForThisPack = link;
                     highestFilesize = link.getView().getBytesTotal();
                 }
-                ret.add(link);
-                distribute(link);
+                if (selectedQualities.contains(height)) {
+                    userSelected.add(link);
+                    if (link.getView().getBytesTotal() > highestFilesizeOfUserSelected) {
+                        bestOfUserSelected = link;
+                        highestFilesizeOfUserSelected = link.getView().getBytesTotal();
+                    }
+                }
             }
-            // ret.add(bestForThisLanguage);
-            // distribute(bestForThisLanguage);
+            if (mode == QualitySelectionMode.BEST) {
+                userSelected.clear();
+                /* Should never be null */
+                if (bestForThisPack != null) {
+                    userSelected.add(bestForThisPack);
+                } else {
+                    logger.warning("Failed to find bestForThisPack");
+                }
+            } else if (mode == QualitySelectionMode.BEST_OF_SELECTED) {
+                userSelected.clear();
+                /* Should never be null */
+                if (bestOfUserSelected != null) {
+                    userSelected.add(bestOfUserSelected);
+                } else {
+                    logger.warning("Failed to find bestOfUserSelected");
+                }
+            }
+            for (final DownloadLink selected : userSelected) {
+                distribute(selected);
+                ret.add(selected);
+            }
+        }
+        /*
+         * TODO: Either add auto fallback to "Return all" or add setting to define behavior on
+         * "no results found due to users' plugin settings"!
+         */
+        if (ret.isEmpty()) {
+            logger.info("Returning zero results due to users' plugin settings!");
         }
         return ret;
+    }
+
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
+        return false;
     }
 
     @Override

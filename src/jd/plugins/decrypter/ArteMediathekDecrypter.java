@@ -928,7 +928,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return formattedFileName;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
