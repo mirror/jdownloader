@@ -262,42 +262,34 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             return 0;
         }
         int ret = 0;
-        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableModelData.getModelDataPackages()) {
-            if (modelDataPackage.getInvisibleChildrenSize() > 0) {
-                for (CrawledLink link : modelDataPackage.getInvisibleChildren()) {
-                    if (filter.isFiltered(link)) {
-                        try {
-                            filterException = filter;
-                            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
-                                if (f.isFiltered(link)) {
-                                    break;
-                                }
-                            }
-                        } finally {
-                            filterException = null;
+        for (CrawledLink link : tableModelData.getFilteredChildren()) {
+            if (filter.isFiltered(link)) {
+                try {
+                    filterException = filter;
+                    for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
+                        if (f.isFiltered(link)) {
+                            break;
                         }
-                        ret++;
                     }
+                } finally {
+                    filterException = null;
                 }
+                ret++;
             }
         }
-        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableModelData.getInvisibleModelDataPackages()) {
-            if (modelDataPackage.getInvisibleChildrenSize() > 0) {
-                for (CrawledLink link : modelDataPackage.getInvisibleChildren()) {
-                    if (filter.isFiltered(link)) {
-                        try {
-                            filterException = filter;
-                            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
-                                if (f.isFiltered(link)) {
-                                    break;
-                                }
-                            }
-                        } finally {
-                            filterException = null;
+        for (CrawledLink link : tableModelData.getInvisibleChildren()) {
+            if (filter.isFiltered(link)) {
+                try {
+                    filterException = filter;
+                    for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
+                        if (f.isFiltered(link)) {
+                            break;
                         }
-                        ret++;
                     }
+                } finally {
+                    filterException = null;
                 }
+                ret++;
             }
         }
         return ret;
