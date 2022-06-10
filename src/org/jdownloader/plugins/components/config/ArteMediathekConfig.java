@@ -136,7 +136,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
         BEST {
             @Override
             public String getLabel() {
-                return "Best quality";
+                return "Best quality/qualities";
             }
         },
         ALL {
