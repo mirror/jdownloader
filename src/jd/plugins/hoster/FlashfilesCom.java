@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +37,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -118,11 +118,13 @@ public class FlashfilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">\\s*FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
-        String filesize = br.getRegex(">\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
+        final String filesize = br.getRegex(">\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             filename = this.getFID(link);
+        } else {
+            filename = Encoding.htmlDecode(filename.trim());
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setName(filename);
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -157,38 +159,31 @@ public class FlashfilesCom extends PluginForHost {
             }
         }
         if (freeform == null) {
-            logger.warning("Failed to find freeform1");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final URLConnectionAdapter con = br.openFormConnection(freeform);
         if (con.getResponseCode() == 500) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
+        } else {
+            br.followConnection();
         }
-        br.followConnection();
         final String waitSecondsStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
         int waitSeconds = Integer.parseInt(waitSecondsStr);
         /* 2020-02-13: Normal waittime is 30 seconds, if waittime > 10 Minutes reconnect */
         if (waitSeconds > 600) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
         }
-        final Form freeform2 = br.getFormbyActionRegex(".*?linkgenerate\\.php");
-        if (freeform2 == null) {
-            logger.warning("Failed to find freeform2");
+        final Form downloadFileForm = br.getFormbyActionRegex(".*?download(file)?\\.php");
+        if (downloadFileForm == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final long timeBefore = System.currentTimeMillis();
         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
         waitTime(link, timeBefore, waitSecondsStr);
-        freeform2.put("g-recaptcha-response", recaptchaV2Response);
-        br.submitForm(freeform2);
-        final Form freeform3 = br.getFormbyActionRegex(".*?downloadfile\\.php");
-        if (freeform3 == null) {
-            logger.warning("Failed to find freeform3");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, freeform3, resumable, maxchunks);
+        downloadFileForm.put("g-recaptcha-response", recaptchaV2Response);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadFileForm, resumable, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
             } catch (IOException e) {
@@ -202,7 +197,6 @@ public class FlashfilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        // link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
