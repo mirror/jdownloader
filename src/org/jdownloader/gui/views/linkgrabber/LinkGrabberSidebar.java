@@ -39,9 +39,7 @@ public class LinkGrabberSidebar extends MigPanel {
         hosterFilterTable = new QuickFilterHosterTable(hosterFilter, table) {
             @Override
             public boolean isSortingEnabledDisabled() {
-                boolean ret = isScrollbarVisible();
-                System.out.println("hoster :" + ret);
-                return ret;
+                return isScrollbarVisible();
             }
         };
         hosterFilterTable.setVisible(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED.isEnabled());
