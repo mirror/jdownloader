@@ -26,6 +26,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -170,13 +171,10 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         if (cfg.isCrawlHTTP240p()) {
             selectedQualities.add(240);
         }
-        if (selectedQualities.isEmpty()) {
-            logger.warning("User has deselected all qualities");
-        }
         // TODO: Implement pagination?
+        final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
-        final ArrayList<DownloadLink> allResults = new ArrayList<DownloadLink>();
         /* First put each language + audio version in separate lists. */
         final Map<String, List<Map<String, Object>>> languagePacks = new HashMap<String, List<Map<String, Object>>>();
         for (final Map<String, Object> videoStream : videoStreams) {
@@ -190,11 +188,12 @@ public class ArteMediathekV3 extends PluginForDecrypt {
          * Now filter by language, user selected qualities and so on. User can e.g. select multiple languages and best video quality of each
          * combined with subtitle preferences.
          */
+        final ArrayList<DownloadLink> allResults = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> allBestResults = new ArrayList<DownloadLink>();
         for (final List<Map<String, Object>> videoStreamsByLanguage : languagePacks.values()) {
-            /* TODO: Add BEST handling */
             final ArrayList<DownloadLink> userSelected = new ArrayList<DownloadLink>();
             long highestFilesize = 0;
-            DownloadLink bestForThisPack = null;
+            DownloadLink best = null;
             long highestFilesizeOfUserSelected = 0;
             DownloadLink bestOfUserSelected = null;
             for (final Map<String, Object> videoStream : videoStreamsByLanguage) {
@@ -223,8 +222,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 if (!subtitles.isEmpty() && !cfg.isCrawlSubtitledBurnedInVersions()) {
                     continue;
                 }
-                if (link.getView().getBytesTotal() > highestFilesize) {
-                    bestForThisPack = link;
+                if (link.getView().getBytesTotal() > highestFilesize || best == null) {
+                    best = link;
                     highestFilesize = link.getView().getBytesTotal();
                 }
                 if (selectedQualities.contains(height)) {
@@ -235,34 +234,40 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                     }
                 }
             }
+            allBestResults.add(best);
             if (mode == QualitySelectionMode.BEST) {
                 userSelected.clear();
                 /* Should never be null */
-                if (bestForThisPack != null) {
-                    userSelected.add(bestForThisPack);
-                } else {
-                    logger.warning("Failed to find bestForThisPack");
-                }
+                userSelected.add(best);
             } else if (mode == QualitySelectionMode.BEST_OF_SELECTED) {
                 userSelected.clear();
-                /* Should never be null */
+                /* Can be null if user has bad settings */
                 if (bestOfUserSelected != null) {
                     userSelected.add(bestOfUserSelected);
                 } else {
                     logger.warning("Failed to find bestOfUserSelected");
                 }
+            } else {
+                // ALL_SELECTED
             }
-            for (final DownloadLink selected : userSelected) {
-                distribute(selected);
-                ret.add(selected);
+            ret.addAll(userSelected);
+        }
+        if (ret.isEmpty()) {
+            /* No results based on user selection --> Fallback */
+            logger.info("Found no results based on user selection --> Using fallback");
+            if (qualitySelectionFallbackMode == QualitySelectionFallbackMode.BEST && !allBestResults.isEmpty()) {
+                ret.addAll(allBestResults);
+            } else {
+                // QualitySelectionFallbackMode.ALL
+                ret.addAll(allResults);
             }
         }
-        /*
-         * TODO: Either add auto fallback to "Return all" or add setting to define behavior on
-         * "no results found due to users' plugin settings"!
-         */
+        for (final DownloadLink result : ret) {
+            distribute(result);
+        }
         if (ret.isEmpty()) {
-            logger.info("Returning zero results due to users' plugin settings!");
+            /* This should never happen! */
+            logger.warning("WTF Failed to find any results");
         }
         return ret;
     }
