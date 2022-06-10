@@ -27,6 +27,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -290,7 +291,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         sidebar = new LinkGrabberSidebar(this, table) {
             @Override
             protected boolean isScrollbarVisible() {
-                return sidebarScrollPane != null && sidebarScrollPane.getVerticalScrollBar().isVisible();
+                return Boolean.TRUE.equals(new EDTHelper<Boolean>() {
+                    @Override
+                    public Boolean edtRun() {
+                        return sidebarScrollPane != null && sidebarScrollPane.getVerticalScrollBar().isVisible();
+                    }
+                }.getReturnValue());
             }
         };
         sidebarContainer = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]");

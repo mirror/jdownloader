@@ -185,24 +185,16 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         for (FilterTableDataUpdater update : updater) {
             update.afterVisible();
         }
-        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableData.getModelDataPackages()) {
-            if (modelDataPackage.getInvisibleChildrenSize() > 0) {
-                invisibleChildren += modelDataPackage.getInvisibleChildrenSize();
-                for (CrawledLink link : modelDataPackage.getInvisibleChildren()) {
-                    for (FilterTableDataUpdater update : updater) {
-                        update.updateVisible(link);
-                    }
-                }
+        invisibleChildren += tableData.getFilteredChildren().size();
+        for (CrawledLink link : tableData.getFilteredChildren()) {
+            for (FilterTableDataUpdater update : updater) {
+                update.updateVisible(link);
             }
         }
-        for (final PackageControllerTableModelDataPackage<CrawledPackage, CrawledLink> modelDataPackage : tableData.getInvisibleModelDataPackages()) {
-            if (modelDataPackage.getInvisibleChildrenSize() > 0) {
-                invisibleChildren += modelDataPackage.getInvisibleChildrenSize();
-                for (CrawledLink link : modelDataPackage.getInvisibleChildren()) {
-                    for (FilterTableDataUpdater update : updater) {
-                        update.updateVisible(link);
-                    }
-                }
+        invisibleChildren += tableData.getInvisibleChildren().size();
+        for (CrawledLink link : tableData.getInvisibleChildren()) {
+            for (FilterTableDataUpdater update : updater) {
+                update.updateVisible(link);
             }
         }
         HashMap<FilterTable, List<Filter>> updateTableData = new HashMap<FilterTable, List<Filter>>();
