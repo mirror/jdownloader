@@ -124,6 +124,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             pattern.append("\\d+(?:/[a-f0-9]+)?").append("|");
             /* Single video of a channel */
             pattern.append("(?:[a-z]{2}/)?channels/[a-z0-9\\-_]+/\\d+").append("|");
+            /* manage own video */
+            pattern.append("manage/videos/(\\d+)").append("|");
             /* All videos of a user/channel */
             pattern.append("[A-Za-z0-9\\-_]+/videos").append("|");
             pattern.append("ondemand/[A-Za-z0-9\\-_]+(/\\d+)?").append("|");

@@ -461,7 +461,7 @@ public class RuleWrapper<T extends FilterRule> {
             if (origin == null) {
                 return false;
             } else {
-                return originFiler.matches(origin.getOrigin());
+                return originFiler.matches(origin.getOrigin(), link);
             }
         } else {
             return true;
