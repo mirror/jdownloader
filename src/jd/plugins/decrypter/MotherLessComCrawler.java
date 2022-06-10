@@ -93,7 +93,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
     // - set same User-Agent from hoster plugin, making it harder to distinguish.
     // - Server issues can return many 503's in high load situations.
     // - Server also punishes user who downloads with too many connections. This is a linkchecking issue also, as grabs info from headers.
-    private final String TYPE_USER                               = "https?://[^/]+/(m|u)/.*";
+    private final String TYPE_USER                               = "https?://[^/]+/u/.*";
     private final String TYPE_GALLERY_IMAGE_AND_VIDEO            = "https?://[^/]+/(G([A-F0-9]+))";
     private final String TYPE_GALLERY_IMAGE                      = "https?://[^/]+/GI[A-F0-9]+";
     private final String TYPE_GALLERY_VIDEO                      = "https?://[^/]+/GV[A-F0-9]+";
