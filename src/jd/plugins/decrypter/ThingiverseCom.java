@@ -2,6 +2,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -9,6 +10,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,20 +31,30 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private final String API_BASE = "https://api.thingiverse.com";
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl());
-        String fpName = br.getRegex("<title>\\s*([^<]+?)\\s*-\\s*Thingiverse").getMatch(0);
-        if (new Regex(br.getURL(), "/([^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)|groups/[^/]+(/(things|about))?)").matches()) {
+        String fpName = null;
+        if (new Regex(param.getCryptedUrl(), "/([^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)|groups/[^/]+(/(things|about))?)").matches()) {
+            getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String[] links = getAPISearchLinks(br);
             if (links != null && links.length > 0) {
                 for (String link : links) {
                     decryptedLinks.add(createDownloadlink(br.getURL(link).toString()));
                 }
             }
-        } else if (StringUtils.containsIgnoreCase(br.getURL(), "/thing:")) {
+        } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/thing:")) {
             // a thing
+            getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            fpName = br.getRegex("<title>\\s*([^<]+?)\\s*-\\s*Thingiverse").getMatch(0);
             final String thingID = new Regex(br.getURL(), "thing:(\\d+).*").getMatch(0);
             final DownloadLink link = createDownloadlink("directhttp://https://www.thingiverse.com/thing:" + thingID + "/zip");
             if (fpName != null) {
@@ -55,31 +67,55 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
             if (imageLinks != null && imageLinks.length > 0) {
                 for (String imageLink : imageLinks) {
                     imageLink = Encoding.htmlDecode(imageLink);
-                    DownloadLink imageDL = createDownloadlink(imageLink);
+                    final DownloadLink imageDL = createDownloadlink(imageLink);
                     if (fpName != null) {
                         imageDL.setFinalFileName(fpName + "_" + imageLink.hashCode() + ".jpg");
                     }
                     decryptedLinks.add(imageDL);
                 }
             }
-        } else if (StringUtils.containsIgnoreCase(br.getURL(), "/make:")) {
+        } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/make:")) {
             // a make
-            final String thingID = br.getRegex("href=\"/thing:(\\d+)\"\\s*class=\"card-img-holder\"").getMatch(0);
-            if (thingID != null) {
-                final DownloadLink thing = createDownloadlink("https://www.thingiverse.com/thing:" + thingID);
-                decryptedLinks.add(thing);
-            } else {
+            final String contentID = new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
+            if (contentID == null) {
+                /* Developer mistake */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final String authtoken = this.getAuthToken(this.br);
+            if (authtoken == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getHeaders().put("Authorization", "Bearer " + authtoken);
+            getPage(API_BASE + "/copies/" + contentID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final String thingURL = JavaScriptEngineFactory.walkJson(entries, "thing/public_url").toString();
+            if (StringUtils.isEmpty(thingURL)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* This result will go back into this crawler to find the .zip files. */
+            decryptedLinks.add(createDownloadlink(thingURL));
         } else {
+            /* Unsupported URL --> Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String getAuthToken(final Browser br) throws Exception {
+        getPage(br, "https://cdn." + this.getHost() + "/site/js/app.bundle.js");
+        final String authtoken = br.getRegex("u=\"([a-f0-9]{32})\"").getMatch(0);
+        if (StringUtils.isEmpty(authtoken)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return authtoken;
     }
 
     private String[] getAPISearchLinks(Browser br) throws Exception {

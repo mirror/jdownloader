@@ -89,7 +89,7 @@ public class MotherLessCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Z0-9]+)$");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-F0-9]+)$");
         }
         return ret.toArray(new String[0]);
     }
@@ -186,7 +186,7 @@ public class MotherLessCom extends PluginForHost {
                 dllink = br.getRegex("fileurl\\s*=\\s*\'(http://.*?)\'").getMatch(0);
             }
             // No link there but link to the full picture -> Offline
-            if (dllink == null && br.containsHTML("<div id=\"media-media\">\\s*<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) {
+            if (dllink == null && br.containsHTML("<div id=\"media-media\">\\s*<div>\\s*<a href=\"/[A-Z0-9]+\\?full\"")) {
                 return AvailableStatus.FALSE;
             }
         } else {
@@ -205,6 +205,8 @@ public class MotherLessCom extends PluginForHost {
     /** Returns true if the content is offline. */
     public static boolean isOffline(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.containsHTML("class=\"error-not-found\"")) {
             return true;
         } else if (br.containsHTML("(?i)Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to")) {
             return true;
@@ -232,6 +234,7 @@ public class MotherLessCom extends PluginForHost {
     }
 
     /** Returns true if we got a single image/video according to HTML code. */
+    @Deprecated
     public static final boolean isSingleMedia(final Browser br) {
         final String mediaType = regexMediaType(br);
         if (mediaType != null) {
