@@ -17,6 +17,7 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.IconKey;
@@ -29,6 +30,11 @@ public class LatestChangesAction extends CustomizableAppAction {
         setTooltipText(_GUI.T.action_changelog_tooltip());
         setIconKey(IconKey.ICON_CHANGELOG);
         setName(_GUI.T.action_changelog());
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     }
 
     @Override
