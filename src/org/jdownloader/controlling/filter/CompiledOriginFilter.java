@@ -30,7 +30,8 @@ public class CompiledOriginFilter extends OriginFilter implements Storable {
 
     public boolean matches(LinkOrigin source, CrawledLink link) {
         if (LinkOrigin.MYJD.equals(source) && checkMyJDCNL) {
-            CrawledLink current = link;
+            // only check origin and ignore dummyCNL results
+            CrawledLink current = link.getOriginLink();
             final Matcher matcher = dummyCNL.matcher("");
             while (current != null) {
                 final String url = current.getURL();
