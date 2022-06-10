@@ -123,6 +123,10 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         setWeakFilename(link);
         if (this.checkDirectLinkAndSetFilesize(link) != null) {
             logger.info("Linkcheck done via directurl");
@@ -138,7 +142,7 @@ public class MotherLessCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (dllink != null) {
+        if (dllink != null && !isDownload) {
             this.checkDirectLinkAndSetFilesize(link);
         }
         return AvailableStatus.TRUE;
@@ -339,19 +343,18 @@ public class MotherLessCom extends PluginForHost {
         }
     }
 
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account, final int maxchunks) throws Exception {
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
         final String url = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(url)) {
             return false;
         }
         try {
-            final Browser brc = br.cloneBrowser();
-            prepHeadersDownload(link, brc);
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, isResumeable(link, null), 1);
+            prepHeadersDownload(link, br);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, isResumeable(link, null), this.getMaxChunks());
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
-                brc.followConnection(true);
+                br.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {
@@ -547,9 +550,8 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        final int maxchunks = 1;
-        if (!attemptStoredDownloadurlDownload(link, account, maxchunks)) {
-            requestFileInformation(link);
+        if (!attemptStoredDownloadurlDownload(link, account)) {
+            requestFileInformation(link, true);
             /* Errorhandling */
             if (isVideoNotOnlineYet(br)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This video is being processed and will be available shortly");
@@ -565,8 +567,7 @@ public class MotherLessCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             prepHeadersDownload(link, br);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            if (!attemptStoredDownloadurlDownload(link, account)) {
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
@@ -589,6 +590,10 @@ public class MotherLessCom extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private int getMaxChunks() {
+        return 1;
     }
 
     public void reset() {
