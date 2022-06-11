@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -76,7 +77,7 @@ public class FilerNetFolder extends PluginForDecrypt {
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.getPage(FilerNet.API_BASE + "/folder/" + folderID + ".json");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        int code = ((Number) entries.get("code")).intValue();
+        int code = (int) ReflectionUtils.cast(entries.get("code"), Integer.class);
         if (code == 506) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -86,7 +87,7 @@ public class FilerNetFolder extends PluginForDecrypt {
                 final String passCode = getUserInput("Password?", param);
                 br.getPage("/api/folder/" + folderID + ".json?password=" + Encoding.urlEncode(passCode));
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                code = ((Number) entries.get("code")).intValue();
+                code = (int) ReflectionUtils.cast(entries.get("code"), Integer.class);
                 if (code == 201) {
                     logger.info("Wrong password: " + passCode);
                     continue;
@@ -98,7 +99,7 @@ public class FilerNetFolder extends PluginForDecrypt {
             }
         }
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-        final int count = ((Number) data.get("count")).intValue();
+        final int count = (int) ReflectionUtils.cast(data.get("count"), Integer.class);
         if (count == 0) {
             logger.info("Empty folder");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -112,7 +113,7 @@ public class FilerNetFolder extends PluginForDecrypt {
         for (final Map<String, Object> file : files) {
             final DownloadLink link = createDownloadlink(file.get("link").toString());
             link.setFinalFileName(file.get("name").toString());
-            link.setVerifiedFileSize(((Number) file.get("size")).longValue());
+            link.setVerifiedFileSize((Long) ReflectionUtils.cast(file.get("size"), Long.class));
             link.setAvailable(true);
             decryptedLinks.add(link);
         }

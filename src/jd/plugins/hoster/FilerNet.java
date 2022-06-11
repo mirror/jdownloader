@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -438,14 +439,17 @@ public class FilerNet extends PluginForHost {
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.PREMIUM);
-            ai.setTrafficLeft(((Number) data.get("traffic")).longValue());
-            final Object maxtraffic = data.get("maxtraffic");
-            if (maxtraffic instanceof Number) {
-                ai.setTrafficMax(((Number) maxtraffic).longValue());
+            final Long trafficLeft = (Long) ReflectionUtils.cast(data.get("traffic"), Long.class);
+            ai.setTrafficLeft(trafficLeft.longValue());
+            final Object maxtrafficObject = data.get("maxtraffic");
+            if (maxtrafficObject != null) {
+                final Long maxtrafficValue = (Long) ReflectionUtils.cast(maxtrafficObject, Long.class);
+                ai.setTrafficMax(maxtrafficValue.longValue());
             } else {
                 ai.setTrafficMax(SizeFormatter.getSize("125gb"));// fallback
             }
-            ai.setValidUntil(((Number) data.get("until")).longValue() * 1000);
+            final Long validUntil = (Long) ReflectionUtils.cast(data.get("until"), Long.class);
+            ai.setValidUntil(validUntil.longValue() * 1000);
         }
         return ai;
     }
