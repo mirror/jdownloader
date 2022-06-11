@@ -17,8 +17,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
-import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,9 +34,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FotografDe extends PluginForDecrypt {
@@ -64,22 +70,24 @@ public class FotografDe extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://[\\w\\-]+\\." + buildHostsPatternPart(domains) + "/login");
+            ret.add("https?://[\\w\\-]+\\." + buildHostsPatternPart(domains) + "/[^/]+");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            logger.warning("This plugin isn't finished yet.");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* TODO: Add support for pre authed URLs like: https://thormedia.fotograf.de/kunden/subscribe/blabla */
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        /* 2022-06-11: No matter which URL the user adds we will most likely be redirected to /login */
         br.getPage(param.getCryptedUrl());
-        /* All galleries are password protected */
+        if (br.getHttpConnection().getResponseCode() == 404 || getPassForm(br) == null) {
+            /* Fallback in case user adds bad URL. */
+            logger.info("Executing fallback");
+            br.getPage("/login");
+        }
+        /* 2022-06-11: All galleries are password protected and it seems like passwords are case insensitive. */
         String passCode = null;
+        String photoOverviewURL = null;
         for (int i = 0; i <= 2; i++) {
             final Form passform = getPassForm(br);
             if (passform == null) {
@@ -88,7 +96,8 @@ public class FotografDe extends PluginForDecrypt {
             passCode = getUserInput("Password?", param);
             passform.put(Encoding.urlEncode("data[GuestAccess][code][]"), Encoding.urlEncode(passCode));
             br.submitForm(passform);
-            if (getPassForm(br) == null) {
+            photoOverviewURL = br.getRegex("(/funnel/overview/\\d+)").getMatch(0);
+            if (photoOverviewURL != null || getPassForm(br) == null) {
                 logger.info("Correct password is: " + passCode);
                 break;
             } else {
@@ -96,26 +105,93 @@ public class FotografDe extends PluginForDecrypt {
                 continue;
             }
         }
-        if (getPassForm(br) != null) {
-            throw new DecrypterException(DecrypterException.PASSWORD);
-        }
         if (br.containsHTML("(?i)Wir verleihen Ihren Fotos gerade den letzten Schliff")) {
             throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "GALLERY_IS_NOT_YET_READY_" + passCode, "This gallery is not yet ready. Try again later. Password: " + passCode);
+        } else if (photoOverviewURL == null) {
+            throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        // String fpName = br.getRegex("").getMatch(0);
-        // final String[] links = br.getRegex("").getColumn(0);
-        // if (links == null || links.length == 0) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // for (final String singleLink : links) {
-        // decryptedLinks.add(createDownloadlink(singleLink));
-        // }
-        // if (fpName != null) {
-        // final FilePackage fp = FilePackage.getInstance();
-        // fp.setName(Encoding.htmlDecode(fpName).trim());
-        // fp.addLinks(decryptedLinks);
-        // }
-        return decryptedLinks;
+        br.getPage(photoOverviewURL);
+        String packagename = null;
+        String galleryTitle = br.getRegex("class=\"ws-title\">([^<]+)</div>").getMatch(0);
+        if (galleryTitle != null) {
+            final String photographerName = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            galleryTitle = Encoding.htmlDecode(galleryTitle).trim();
+            String galleryTitleSecondary = br.getRegex("class=\"ws-secondary\">([^<]+)</div>").getMatch(0);
+            if (galleryTitleSecondary != null) {
+                galleryTitleSecondary = Encoding.htmlDecode(galleryTitleSecondary).trim();
+            }
+            if (StringUtils.equals(galleryTitle, galleryTitleSecondary)) {
+                packagename = galleryTitle;
+            } else {
+                packagename = galleryTitle + " - " + galleryTitleSecondary;
+            }
+            if (photographerName != null) {
+                packagename = Encoding.htmlDecode(photographerName).trim() + " - " + packagename;
+            }
+        }
+        /* Get list of all photoIDs */
+        final String[] photoIDs = br.getRegex("/shop/photo/([a-f0-9\\-]+)\"").getColumn(0);
+        /*
+         * Pick randm photoID and access single photo page to get json containing information about all images of whole gallery -> This way
+         * we don't have to deal with pagination.
+         */
+        final String randomChosenPhotoID = photoIDs[new Random().nextInt(photoIDs.length)];
+        br.getPage(getPhotoContentURL(randomChosenPhotoID));
+        final String photoJson = br.getRegex("Photo\\.setData\\((\\[.*?\\])\\);\\n").getMatch(0);
+        final List<Map<String, Object>> photos = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(photoJson);
+        for (final Map<String, Object> photoinfo : photos) {
+            final String photoID = photoinfo.get("id").toString();
+            String url = photoinfo.get("photoUrlL").toString();
+            if (url.contains("_l.jpg")) {
+                /* Get best quality */
+                url = url.replaceFirst("_l\\.jpg", "_xl.jpg");
+            } else {
+                logger.warning("Unable to find best quality for image: " + url + " | ID: " + photoID);
+            }
+            String title = photoinfo.get("photoName").toString();
+            final String photoDescription = (String) photoinfo.get("photoDescription");
+            final DownloadLink photo = this.createDownloadlink(url);
+            if (!StringUtils.isEmpty(title)) {
+                title = title.trim();
+                /* 2022-06-11: File-extension should always be .jpg */
+                String ext = Plugin.getFileNameExtensionFromURL(url);
+                if (ext == null) {
+                    ext = ".jpg";
+                }
+                final String finalFilename = this.correctOrApplyFileNameExtension(title, ext);
+                photo.setFinalFileName(finalFilename);
+                photo.setProperty(DirectHTTP.FIXNAME, finalFilename);
+            }
+            photo.setAvailable(true);
+            if (!StringUtils.isEmpty(photoDescription)) {
+                photo.setComment(photoDescription);
+            } else {
+                photo.setComment(br.getURL(getPhotoContentURL(photoID)).toString());
+            }
+            /* Do not set contentURL because we need to login in browser to access it. Rather use directURLs here. */
+            // final String contentURL = getPhotoContentURL(photoID);
+            // photo.setContentUrl("");
+            // photo.setContentUrl(url);
+            /* We do not really need this password anymore but let's set it for completion to be able to view it later. */
+            if (passCode != null) {
+                photo.setDownloadPassword(passCode);
+            }
+            photo.setLinkID(this.getHost() + "://" + photoID);
+            ret.add(photo);
+        }
+        if (packagename != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(packagename);
+            if (passCode != null) {
+                fp.setComment("Gallery password: " + passCode);
+            }
+            fp.addLinks(ret);
+        }
+        return ret;
+    }
+
+    private static String getPhotoContentURL(final String photoID) {
+        return "/shop/photo/" + photoID;
     }
 
     private Form getPassForm(final Browser br) {
