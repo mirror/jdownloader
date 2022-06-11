@@ -77,7 +77,7 @@ public class FilerNetFolder extends PluginForDecrypt {
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.getPage(FilerNet.API_BASE + "/folder/" + folderID + ".json");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        int code = (int) ReflectionUtils.cast(entries.get("code"), Integer.class);
+        int code = ((Integer) ReflectionUtils.cast(entries.get("code"), Integer.class)).intValue();
         if (code == 506) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -87,7 +87,7 @@ public class FilerNetFolder extends PluginForDecrypt {
                 final String passCode = getUserInput("Password?", param);
                 br.getPage("/api/folder/" + folderID + ".json?password=" + Encoding.urlEncode(passCode));
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                code = (int) ReflectionUtils.cast(entries.get("code"), Integer.class);
+                code = ((Integer) ReflectionUtils.cast(entries.get("code"), Integer.class)).intValue();
                 if (code == 201) {
                     logger.info("Wrong password: " + passCode);
                     continue;
@@ -99,7 +99,7 @@ public class FilerNetFolder extends PluginForDecrypt {
             }
         }
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-        final int count = (int) ReflectionUtils.cast(data.get("count"), Integer.class);
+        final int count = ((Integer) ReflectionUtils.cast(data.get("count"), Integer.class)).intValue();
         if (count == 0) {
             logger.info("Empty folder");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -113,7 +113,7 @@ public class FilerNetFolder extends PluginForDecrypt {
         for (final Map<String, Object> file : files) {
             final DownloadLink link = createDownloadlink(file.get("link").toString());
             link.setFinalFileName(file.get("name").toString());
-            link.setVerifiedFileSize((Long) ReflectionUtils.cast(file.get("size"), Long.class));
+            link.setVerifiedFileSize(((Long) ReflectionUtils.cast(file.get("size"), Long.class)).longValue());
             link.setAvailable(true);
             decryptedLinks.add(link);
         }
