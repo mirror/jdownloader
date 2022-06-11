@@ -40,14 +40,6 @@ import javax.swing.JPanel;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.Factory;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.io.JDIO;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -65,6 +57,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.Docker;
 import org.appwork.utils.os.Snap;
 import org.appwork.utils.os.hardware.HardwareType;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -77,6 +70,14 @@ import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.Factory;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.io.JDIO;
+import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog<Integer> {
     private int labelHeight = 0;
@@ -96,8 +97,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
     }
 
     public static Thread showNonBlocking() {
-        final AboutDialog aboutDialog = new AboutDialog();
-        aboutDialog.setModalityType(ModalityType.MODELESS);
         final Thread thread = new Thread("AboutDialog") {
             {
                 setDaemon(true);
@@ -105,6 +104,14 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
             @Override
             public void run() {
+                final AboutDialog aboutDialog = new EDTHelper<AboutDialog>() {
+                    @Override
+                    public AboutDialog edtRun() {
+                        final AboutDialog ret = new AboutDialog();
+                        ret.setModalityType(ModalityType.MODELESS);
+                        return ret;
+                    }
+                }.getReturnValue();
                 try {
                     Dialog.getInstance().showDialog(aboutDialog);
                 } catch (DialogNoAnswerException e1) {
