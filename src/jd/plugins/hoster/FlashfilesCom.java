@@ -174,6 +174,7 @@ public class FlashfilesCom extends PluginForHost {
         if (waitSeconds > 600) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
         }
+        // cat/mouse?
         Form downloadFileForm = br.getFormbyActionRegex(".*?download(file)?\\.php");
         if (downloadFileForm == null) {
             downloadFileForm = br.getFormbyActionRegex(".*?linkgenerate\\.php");
