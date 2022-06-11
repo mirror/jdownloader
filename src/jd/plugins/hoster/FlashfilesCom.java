@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,11 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -174,9 +174,12 @@ public class FlashfilesCom extends PluginForHost {
         if (waitSeconds > 600) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
         }
-        final Form downloadFileForm = br.getFormbyActionRegex(".*?download(file)?\\.php");
+        Form downloadFileForm = br.getFormbyActionRegex(".*?download(file)?\\.php");
         if (downloadFileForm == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadFileForm = br.getFormbyActionRegex(".*?linkgenerate\\.php");
+            if (downloadFileForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final long timeBefore = System.currentTimeMillis();
         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
