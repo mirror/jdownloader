@@ -27,6 +27,22 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,27 +77,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 /**
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
-"https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
+        "https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
 public class DirectHTTP extends antiDDoSForHost {
     public static final String  ENDINGS                  = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
     public static final String  NORESUME                 = "nochunkload";
@@ -327,7 +327,8 @@ public class DirectHTTP extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        if (this.requestFileInformation(downloadLink) == AvailableStatus.UNCHECKABLE) {
+        final Set<String> optionSet = getOptionSet(downloadLink);
+        if (this.requestFileInformation(downloadLink, 0, optionSet) == AvailableStatus.UNCHECKABLE) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         }
         /*
@@ -363,7 +364,7 @@ public class DirectHTTP extends antiDDoSForHost {
             resume = true;
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         }
-        this.setCustomHeaders(this.br, downloadLink, null);
+        this.setCustomHeaders(this.br, downloadLink, optionSet);
         if (resume && downloadLink.getVerifiedFileSize() > 0) {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         } else {
@@ -596,7 +597,8 @@ public class DirectHTTP extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return requestFileInformation(downloadLink, 0);
+        final Set<String> optionSet = getOptionSet(downloadLink);
+        return requestFileInformation(downloadLink, 0, optionSet);
     }
 
     private void followURLConnection(Browser br, URLConnectionAdapter urlConnection) {
@@ -653,16 +655,16 @@ public class DirectHTTP extends antiDDoSForHost {
     private String preSetFinalName = null;
     private String preSetFIXNAME   = null;
 
-    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws Exception {
-        final HashSet<String> optionSet = downloadLink.getObjectProperty(PROPERTY_OPTION_SET, TypeRef.STRING_HASHSET);
-        return requestFileInformation(downloadLink, 0, optionSet);
-    }
-
-    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry, Set<String> optionSet) throws Exception {
+    private Set<String> getOptionSet(final DownloadLink downloadLink) {
+        HashSet<String> optionSet = downloadLink.getObjectProperty(PROPERTY_OPTION_SET, TypeRef.STRING_HASHSET);
         if (optionSet == null) {
             optionSet = new HashSet<String>();
             downloadLink.setProperty(PROPERTY_OPTION_SET, optionSet);
         }
+        return optionSet;
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry, Set<String> optionSet) throws Exception {
         if (retry == 0) {
             preSetFinalName = downloadLink.getFinalFileName();
             preSetFIXNAME = downloadLink.getStringProperty(FIXNAME, null);
@@ -670,9 +672,10 @@ public class DirectHTTP extends antiDDoSForHost {
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (retry == 5) {
+        } else if (retry == 5) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (optionSet == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         applyRateLimits(downloadLink, br);
         final int ioExceptions = downloadLink.getIntegerProperty(IOEXCEPTIONS, 0);
