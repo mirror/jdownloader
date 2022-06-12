@@ -218,6 +218,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             if (postID == null) {
                 postID = new Regex(post, "<div class=\\\"wrap-post del(\\d+)").getMatch(0);
             }
+            final String type = new Regex(post, "<div class=\"wrap-post del\\d+\\s*(pubvideo|typeimage|pubimage)").getMatch(0);
             String username = postInfo.getMatch(1);
             if (username == null) {
                 username = new Regex(br.getURL(), "https?://(.*?)\\.bdsmlr\\.com").getMatch(0);
@@ -231,13 +232,13 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             }
             final Regex direct;
             /* Video posts will also contain URLs to video-thumbnails so let's make sure we only grab exactly what we want. */
-            if (post.contains("pubvideo")) {
+            if ("pubvideo".equals(type)) {
                 direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/videos/(\\d{4})/(\\d{2})[^\"\\']+\\.mp4)(?:\"|\\')");
             } else {
                 direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/photos/(\\d{4})/(\\d{2})[^\"\\']+\\.[a-zA-Z0-9]{2,5})(?:\"|\\')");
             }
             if (!direct.matches()) {
-                logger.warning("Failed to find any media for post: " + postURL);
+                logger.warning("Failed to find any media for post: " + postURL + " type:" + type);
                 continue;
             }
             final String directurl = direct.getMatch(0);
