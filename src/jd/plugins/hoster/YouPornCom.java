@@ -233,6 +233,11 @@ public class YouPornCom extends PluginForHost {
                 for (Object entry : list) {
                     Map<String, Object> video = (Map<String, Object>) entry;
                     final String videoUrl = (String) video.get("videoUrl");
+                    final String format = (String) video.get("format");
+                    if ("hls".equals(format)) {
+                        // not yet supported
+                        continue;
+                    }
                     final Object quality = video.get("quality");
                     if (StringUtils.isEmpty(videoUrl)) {
                         continue;
