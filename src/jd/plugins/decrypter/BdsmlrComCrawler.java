@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,10 +41,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BdsmlrComCrawler extends PluginForDecrypt {
@@ -74,11 +75,12 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
-        if (acc == null) {
+        if (acc != null) {
+            final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.BdsmlrCom) hostPlugin).login(acc, false);
+        } else if (false) {
             throw new AccountRequiredException();
         }
-        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
-        ((jd.plugins.hoster.BdsmlrCom) hostPlugin).login(acc, false);
         if (param.getCryptedUrl().matches(TYPE_USER_PROFILE)) {
             return crawlUser(param);
         } else {
@@ -207,14 +209,23 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> crawlPosts(final Browser br, final FilePackage fp) throws PluginException {
+    private ArrayList<DownloadLink> crawlPosts(final Browser br, final FilePackage fp) throws PluginException, IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage)\\s*\">.*?class=\"countinf\")").getColumn(0);
+        final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage|pubimage)\\s*\">.*?class=\"countinf\")").getColumn(0);
         for (final String post : posts) {
             final Regex postInfo = new Regex(post, "(https?://([\\w\\-]+)\\.[^/]+/post/(\\d+))");
-            final String postURL = postInfo.getMatch(0);
-            final String username = postInfo.getMatch(1);
-            final String postID = postInfo.getMatch(2);
+            String postID = postInfo.getMatch(2);
+            if (postID == null) {
+                postID = new Regex(post, "<div class=\\\"wrap-post del(\\d+)").getMatch(0);
+            }
+            String username = postInfo.getMatch(1);
+            if (username == null) {
+                username = new Regex(br.getURL(), "https?://(.*?)\\.bdsmlr\\.com").getMatch(0);
+            }
+            String postURL = postInfo.getMatch(0);
+            if (postURL == null && StringUtils.isAllNotEmpty(postID, username)) {
+                postURL = br.getURL("/post/" + postID).toString();
+            }
             if (postURL == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
