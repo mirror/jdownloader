@@ -9,13 +9,6 @@ import java.util.Map.Entry;
 
 import javax.swing.JLabel;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.reconnect.Reconnecter.ReconnectResult;
-import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.reflection.Clazz;
@@ -40,6 +33,13 @@ import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 public enum EventTrigger implements LabelInterface {
     ON_DOWNLOAD_CONTROLLER_START {
@@ -112,6 +112,7 @@ public enum EventTrigger implements LabelInterface {
 
         public HashMap<String, Object> getTestProperties() {
             final HashMap<String, Object> ret = new HashMap<String, Object>();
+            ret.put("link", new DownloadLinkSandBox());
             ret.put("package", new FilePackageSandBox());
             return ret;
         }
@@ -912,6 +913,7 @@ public enum EventTrigger implements LabelInterface {
             return defaultAPIDescription(this);
         }
     };
+
     public String getAPIDescription() {
         return T.T.none_trigger();
     }
