@@ -82,10 +82,10 @@ public class FlashfilesCom extends PluginForHost {
     /* Connection stuff */
     private final boolean FREE_RESUME                  = false;
     private final int     FREE_MAXCHUNKS               = 1;
-    private final int     FREE_MAXDOWNLOADS            = 20;
+    private final int     FREE_MAXDOWNLOADS            = 1;
     private final boolean ACCOUNT_FREE_RESUME          = false;
     private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     /* 2020-09-21: Chunkload & resume impossible in premium mode (wtf?) */
     private final boolean ACCOUNT_PREMIUM_RESUME       = false;
     private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
@@ -164,7 +164,7 @@ public class FlashfilesCom extends PluginForHost {
         final URLConnectionAdapter con = br.openFormConnection(freeform);
         if (con.getResponseCode() == 500) {
             br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
         } else {
             br.followConnection();
         }
