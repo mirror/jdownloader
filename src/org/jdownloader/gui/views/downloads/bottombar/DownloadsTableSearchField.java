@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.bottombar;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -15,6 +16,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
@@ -29,11 +31,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
     public DownloadsTableSearchField(PackageControllerTable<FilePackage, DownloadLink> table2Filter, LinktablesSearchCategory defCategory) {
         super(table2Filter, defCategory);
-        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT, LinktablesSearchCategory.COMMENT_PACKAGE, LinktablesSearchCategory.STATUS });
+        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.FILEPATH, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT, LinktablesSearchCategory.COMMENT_PACKAGE, LinktablesSearchCategory.STATUS });
         setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
-
         addKeyListener(new KeyListener() {
-
             public void keyTyped(KeyEvent e) {
             }
 
@@ -61,7 +61,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
         switch (searchCat) {
         case PACKAGE:
             return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return true;
@@ -93,7 +92,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
             };
         case FILENAME:
             return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return false;
@@ -123,9 +121,39 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     return 0;
                 }
             };
+        case FILEPATH:
+            return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return false;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(DownloadLink v) {
+                    final File directory = LinkTreeUtils.getDownloadDirectory(v);
+                    if (directory != null && isMatching(pattern, new File(directory, v.getName()).toString())) {
+                        return false;
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(FilePackage e) {
+                    return false;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 0;
+                }
+            };
         case COMMENT:
             return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return false;
@@ -160,7 +188,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
             };
         case COMMENT_PACKAGE:
             return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return true;
@@ -195,7 +222,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
             };
         case HOSTER:
             return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                 private HashMap<String, Boolean> fastCheck = new HashMap<String, Boolean>();
 
                 @Override
@@ -235,7 +261,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
             };
         case STATUS:
             return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return false;
@@ -248,7 +273,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
                 @Override
                 public synchronized boolean isFiltered(DownloadLink link) {
-
                     PluginProgress prog = link.getPluginProgress();
                     if (prog != null) {
                         String txt = prog.getMessage(DownloadsTableModel.getInstance().getTaskColumn());
@@ -261,7 +285,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     }
                     ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
                     if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
-
                         String txt = conditionalSkipReason.getMessage(DownloadsTableModel.getInstance().getTaskColumn(), null);
                         for (Pattern filterPattern : pattern) {
                             if (filterPattern.matcher(txt).find()) {
@@ -272,9 +295,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     }
                     SkipReason skipReason = link.getSkipReason();
                     if (skipReason != null) {
-
                         String txt = skipReason.getExplanation(DownloadsTableModel.getInstance().getTaskColumn());
-
                         for (Pattern filterPattern : pattern) {
                             if (filterPattern.matcher(txt).find()) {
                                 return false;
@@ -285,9 +306,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     final FinalLinkState finalLinkState = link.getFinalLinkState();
                     if (finalLinkState != null) {
                         if (FinalLinkState.CheckFailed(finalLinkState)) {
-
                             String txt = finalLinkState.getExplanation(DownloadsTableModel.getInstance().getTaskColumn(), link);
-
                             for (Pattern filterPattern : pattern) {
                                 if (filterPattern.matcher(txt).find()) {
                                     return false;
@@ -303,7 +322,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                             case ERROR_CRC:
                             case ERROR_NOT_ENOUGH_SPACE:
                             case ERRROR_FILE_NOT_FOUND:
-
                                 String txt = extractionStatus.getExplanation();
                                 for (Pattern filterPattern : pattern) {
                                     if (filterPattern.matcher(txt).find()) {
@@ -312,7 +330,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                                 }
                                 return true;
                             case SUCCESSFUL:
-
                                 txt = extractionStatus.getExplanation();
                                 for (Pattern filterPattern : pattern) {
                                     if (filterPattern.matcher(txt).find()) {
@@ -321,7 +338,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                                 }
                                 return true;
                             case RUNNING:
-
                                 txt = extractionStatus.getExplanation();
                                 for (Pattern filterPattern : pattern) {
                                     if (filterPattern.matcher(txt).find()) {
@@ -331,7 +347,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                                 return true;
                             }
                         }
-
                         String txt = finalLinkState.getExplanation(this, link);
                         for (Pattern filterPattern : pattern) {
                             if (filterPattern.matcher(txt).find()) {
@@ -348,9 +363,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                             }
                         }
                         return true;
-
                     }
-
                     return true;
                 }
 
@@ -364,14 +377,12 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     return 0;
                 }
             };
-
         }
         return null;
     }
 
     public static DownloadsTableSearchField getInstance() {
         return new EDTHelper<DownloadsTableSearchField>() {
-
             @Override
             public DownloadsTableSearchField edtRun() {
                 if (INSTANCE != null) {
@@ -380,9 +391,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 INSTANCE = new DownloadsTableSearchField(DownloadsTableModel.getInstance().getTable(), LinktablesSearchCategory.FILENAME);
                 return INSTANCE;
             }
-
         }.getReturnValue();
-
     }
-
 }
