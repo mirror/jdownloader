@@ -218,10 +218,14 @@ public class RuleWrapper<T extends FilterRule> {
                         sb.append(".");
                         sb.append("?");
                     }
-                }
-                if (regex.endsWith("*")) {
+                } else if (regex.endsWith("*")) {
                     sb.append("(.*)");
-                } else if ((containsWildcard || containsQuestionMark) && (AUTO_PATTERN_MODE.WILDCARD.equals(mode) || AUTO_PATTERN_MODE.MATCHES.equals(mode))) {
+                }
+                if (AUTO_PATTERN_MODE.MATCHES.equals(mode)) {
+                    sb.insert(0, "^");
+                    sb.append("$");
+                } else if ((containsWildcard || containsQuestionMark) && AUTO_PATTERN_MODE.WILDCARD.equals(mode)) {
+                    sb.insert(0, "^");
                     sb.append("$");
                 }
             }
