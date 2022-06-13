@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -12,6 +13,7 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
@@ -22,7 +24,6 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
 
     public static LinkgrabberSearchField getInstance() {
         return new EDTHelper<LinkgrabberSearchField>() {
-
             @Override
             public LinkgrabberSearchField edtRun() {
                 if (INSTANCE != null) {
@@ -31,32 +32,26 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                 INSTANCE = new LinkgrabberSearchField(LinkGrabberTableModel.getInstance().getTable(), LinktablesSearchCategory.FILENAME);
                 return INSTANCE;
             }
-
         }.getReturnValue();
-
     }
 
     private LinkgrabberSearchField(PackageControllerTable<CrawledPackage, CrawledLink> packageControllerTable, LinktablesSearchCategory categories) {
         super(packageControllerTable, categories);
-
         addKeyListener(new KeyListener() {
-
             public void keyTyped(KeyEvent e) {
             }
 
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     setText("");
-
                 }
             }
 
             public void keyPressed(KeyEvent e) {
             }
         });
-        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT, LinktablesSearchCategory.COMMENT_PACKAGE });
+        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.FILEPATH, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT, LinktablesSearchCategory.COMMENT_PACKAGE });
         setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedLinkgrabberSearchCategory());
-
     }
 
     @Override
@@ -73,7 +68,6 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
         switch (searchCat) {
         case PACKAGE:
             return new PackageControllerTableModelFilter<CrawledPackage, CrawledLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return true;
@@ -105,7 +99,6 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
             };
         case FILENAME:
             return new PackageControllerTableModelFilter<CrawledPackage, CrawledLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return false;
@@ -135,10 +128,39 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     return 0;
                 }
             };
+        case FILEPATH:
+            return new PackageControllerTableModelFilter<CrawledPackage, CrawledLink>() {
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return false;
+                }
 
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(CrawledLink v) {
+                    final File directory = LinkTreeUtils.getDownloadDirectory(v);
+                    if (directory != null && isMatching(pattern, new File(directory, v.getName()).toString())) {
+                        return false;
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(CrawledPackage e) {
+                    return false;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 0;
+                }
+            };
         case COMMENT:
             return new PackageControllerTableModelFilter<CrawledPackage, CrawledLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return false;
@@ -173,7 +195,6 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
             };
         case COMMENT_PACKAGE:
             return new PackageControllerTableModelFilter<CrawledPackage, CrawledLink>() {
-
                 @Override
                 public boolean isFilteringPackageNodes() {
                     return true;
