@@ -388,6 +388,7 @@ public class TiktokCom extends PluginForHost {
                 // brc.getHeaders().put("upgrade-insecure-requests", "1");
                 // brc.getHeaders().put("Referer", link.getPluginPatternMatcher());
                 brc.getPage("https://www." + this.getHost() + "/embed/v2/" + fid);
+                brc.followRedirect(); // without this we have different videoJson
                 if (brc.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (brc.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
@@ -398,7 +399,22 @@ public class TiktokCom extends PluginForHost {
                     videoJson = brc.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
                 }
                 final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
-                final Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
+                Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
+                if (videoData == null) {
+                    // different videoJson when we do not follow the embed/v2 redirect
+                    Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "source/data/");
+                    if (data != null) {
+                        String key = null;
+                        for (String keyEntry : data.keySet()) {
+                            if (StringUtils.containsIgnoreCase(keyEntry, fid)) {
+                                key = keyEntry;
+                                break;
+                            }
+                        }
+                        // key contains / separator, so we must use different walkJson here
+                        videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "source", "data", key, "videoData");
+                    }
+                }
                 /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
                 if (videoData == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
