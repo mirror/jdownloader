@@ -9,7 +9,7 @@ import org.jdownloader.images.NewTheme;
 
 public enum LinktablesSearchCategory implements SearchCatInterface, LabelInterface {
     FILENAME(_GUI.T.searchcategory_filename(), IconKey.ICON_TEXT, _GUI.T.searchcategory_filename_help()),
-    FILEPATH(_GUI.T.searchcategory_filepath(), IconKey.ICON_TEXT, _GUI.T.searchcategory_filename_help()),
+    FILEPATH(_GUI.T.searchcategory_filepath(), IconKey.ICON_TEXT, _GUI.T.searchcategory_filepath_help()),
     HOSTER(_GUI.T.searchcategory_hoster(), IconKey.ICON_BROWSE, _GUI.T.searchcategory_hoster_help()),
     PACKAGE(_GUI.T.searchcategory_package(), IconKey.ICON_PACKAGE_OPEN, _GUI.T.searchcategory_package_help()),
     COMMENT(_GUI.T.searchcategory_comment(), IconKey.ICON_LIST, _GUI.T.searchcategory_comment_help()),
