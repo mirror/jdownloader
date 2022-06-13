@@ -20,8 +20,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,6 +31,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webtoons.com" }, urls = { "https?://(?:www\\.)?webtoons\\.com/[a-z\\-]+/[^/]+/[^/]+/(?:[^/]+/viewer\\?title_no=\\d+\\&episode_no=\\d+|list\\?title_no=\\d+)" })
 public class WebtoonsCom extends PluginForDecrypt {
@@ -67,7 +67,7 @@ public class WebtoonsCom extends PluginForDecrypt {
         String[] links;
         if (episodenumber != null) {
             /* Decrypt single episode */
-            links = br.getRegex("class=\"_images\" data\\-url=\"(http[^<>\"]*?)\"").getColumn(0);
+            links = br.getRegex("class=\"_images\" data\\-url=\"(https?://[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -103,7 +103,7 @@ public class WebtoonsCom extends PluginForDecrypt {
                     }
                 }
                 /* Find urls of all episode of a title --> Re-Add these single episodes to the crawler. */
-                links = br.getRegex("<li id=\"episode_\\d+\"[^>]+>[^<>]*?<a href=\"(https?://[^<>\"]+title_no=" + titlenumber + "\\&episode_no=\\d+)\"").getColumn(0);
+                links = br.getRegex("<li[^>]*id=\"episode_\\d+\"[^>]+>[^<>]*?<a href=\"(https?://[^<>\"]+title_no=" + titlenumber + "\\&episode_no=\\d+)\"").getColumn(0);
                 if (links.length == 0) {
                     /* Maybe we already found everything or there simply isn't anything. */
                     logger.info("Stopping because: Failed to find any item on current page");
@@ -135,7 +135,7 @@ public class WebtoonsCom extends PluginForDecrypt {
                 }
             }
             if (decryptedLinks.size() == 0) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return decryptedLinks;

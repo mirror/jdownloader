@@ -37,6 +37,12 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     void setProfileCrawlerEnableFastLinkcheck(boolean b);
 
     public static enum FilenameScheme implements LabelInterface {
+        DATE_UPLOADER_VIDEOID_TITLE {
+            @Override
+            public String getLabel() {
+                return "date_uploader_videoid_title.ext";
+            }
+        },
         UPLOADER_VIDEOID_TITLE {
             @Override
             public String getLabel() {

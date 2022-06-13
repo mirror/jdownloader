@@ -407,6 +407,7 @@ public class VimeoCom extends PluginForHost {
         SHOWCASE_VIDEO,
         RAW,
         PLAYER,
+        PLAYER_UNLISTED,
         CONFIG_TOKEN,
         UNLISTED,
         NORMAL
@@ -420,20 +421,24 @@ public class VimeoCom extends PluginForHost {
             } else {
                 final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url);
                 if (unlistedHash != null) {
-                    return VIMEO_URL_TYPE.UNLISTED;
-                } else if (url.matches("^https?://player\\.vimeo.com/play/.+")) {
+                    if (url.matches("^https?://player\\.vimeo.com/video/.+")) {
+                        return VIMEO_URL_TYPE.PLAYER_UNLISTED;
+                    } else {
+                        return VIMEO_URL_TYPE.UNLISTED;
+                    }
+                } else if (url.matches("(?i)^https?://player\\.vimeo.com/play/.+")) {
                     return VIMEO_URL_TYPE.PLAY;
-                } else if (url.matches("^https?://player\\.vimeo.com/external/.+")) {
+                } else if (url.matches("(?i)^https?://player\\.vimeo.com/external/.+")) {
                     return VIMEO_URL_TYPE.EXTERNAL;
-                } else if (url.matches("^https?://player\\.vimeo.com/.+")) {
-                    if (url.matches(".*(\\?|&)portfolio_id=\\d+.*")) {
+                } else if (url.matches("(?i)^https?://player\\.vimeo.com/.+")) {
+                    if (url.matches("(?i).*(\\?|&)portfolio_id=\\d+.*")) {
                         return VIMEO_URL_TYPE.RAW;
                     } else {
                         return VIMEO_URL_TYPE.PLAYER;
                     }
                 } else if (url.matches(jd.plugins.decrypter.VimeoComDecrypter.LINKTYPE_SHOWCASE_VIDEO)) {
                     return VIMEO_URL_TYPE.SHOWCASE_VIDEO;
-                } else if (url.matches("^https?://(www\\.)?vimeo.com/showcase/\\d+(/embed)?")) {
+                } else if (url.matches("(?i)^https?://(www\\.)?vimeo.com/showcase/\\d+(/embed)?")) {
                     return VIMEO_URL_TYPE.SHOWCASE;
                 }
             }
@@ -533,7 +538,7 @@ public class VimeoCom extends PluginForHost {
                 br.getHeaders().put("Referer", referer);
             }
             plugin.getLogger().info("urlTypeRequested:" + urlTypeRequested);
-            final VIMEO_URL_TYPE newUrlType;
+            VIMEO_URL_TYPE newUrlType = null;
             if (reviewHash != null) {
                 newUrlType = getUrlType(url_source);
                 br.getPage(url_source.replace("/review/", "/review/data/"));
@@ -589,15 +594,23 @@ public class VimeoCom extends PluginForHost {
                 } else {
                     br.getPage("https://player.vimeo.com/video/" + videoID);
                 }
-            } else if (unlistedHash != null && (urlTypeRequested == VIMEO_URL_TYPE.UNLISTED || urlTypeRequested == VIMEO_URL_TYPE.PLAYER || urlTypeRequested == null)) {
+            } else if (unlistedHash != null && (urlTypeRequested == VIMEO_URL_TYPE.UNLISTED || urlTypeRequested == VIMEO_URL_TYPE.PLAYER || urlTypeRequested == VIMEO_URL_TYPE.PLAYER_UNLISTED || urlTypeRequested == null)) {
                 newUrlType = VIMEO_URL_TYPE.UNLISTED;
                 Browser brc = br.cloneBrowser();
                 final Map<String, Object> apiResponse = accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null);
                 if (apiResponse != null) {
+                    if (urlTypeRequested == VIMEO_URL_TYPE.PLAYER_UNLISTED) {
+                        newUrlType = VIMEO_URL_TYPE.PLAYER_UNLISTED;
+                    }
                     br.setRequest(brc.getRequest());
                 } else if (brc.getHttpConnection().getResponseCode() == 404) {
-                    /* {"error": "The requested video couldn't be found."} */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (urlTypeRequested == VIMEO_URL_TYPE.PLAYER_UNLISTED) {
+                        newUrlType = VIMEO_URL_TYPE.PLAYER_UNLISTED;
+                        br.getPage("https://player.vimeo.com/video/" + videoID + "?h=" + unlistedHash);
+                    } else {
+                        /* {"error": "The requested video couldn't be found."} */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -933,7 +946,7 @@ public class VimeoCom extends PluginForHost {
          * little pause needed so the next call does not return trash
          */
         Thread.sleep(1000);
-        if (!ibr.getURL().contains("api.vimeo.com/")) {
+        if (!ibr.getURL().contains("api.vimeo.com/") && !VIMEO_URL_TYPE.PLAYER_UNLISTED.equals(urlTypeUsed)) {
             final Browser brc = ibr.cloneBrowser();
             if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
                 ibr = brc;
