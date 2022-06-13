@@ -148,7 +148,14 @@ public class ImgSrcRu extends PluginForHost {
                 dllink = br.getRegex("img[^>]*id\\s*=\\s*'bpi'[^>]*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
                 if (dllink == null) {
                     /* 2021-06-07 */
-                    dllink = br.getRegex("img[^>]*style\\s*=[^>]*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
+                    final String clickImage = br.getRegex(">\\s*Click the image(.*?)</a>").getMatch(0);
+                    dllink = new Regex(clickImage, "img[^>]*src\\s*=\\s*'(//[^<>\"\\']+)").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("img[^>]*style\\s*=[^>]*src\\s*=\\s*'(//[^<>\"\\']+)").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br.getRegex("img[^>]*src\\s*=\\s*'(//[^<>\"\\']+)[^>]*style\\s*=[^>]*").getMatch(0);
+                        }
+                    }
                 }
             }
         }
