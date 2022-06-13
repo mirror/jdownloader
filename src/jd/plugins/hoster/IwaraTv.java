@@ -20,17 +20,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.IwaraTvConfig;
-import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameScheme;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -51,6 +40,16 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.IwaraTvConfig;
+import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameScheme;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?iwara\\.tv/videos/([A-Za-z0-9]+)" })
 public class IwaraTv extends PluginForHost {
@@ -279,6 +278,8 @@ public class IwaraTv extends PluginForHost {
             filename = "[" + date + "]" + " " + title;
         } else if (scheme == FilenameScheme.UPLOADER_VIDEOID_TITLE && uploader != null && title != null) {
             filename = uploader + "_" + videoid + "_" + title;
+        } else if (scheme == FilenameScheme.DATE_UPLOADER_VIDEOID_TITLE && date != null && uploader != null && title != null) {
+            filename = date + "_" + uploader + "_" + videoid + "_" + title;
         } else if (scheme == FilenameScheme.TITLE && title != null) {
             filename = title;
         } else if (title != null && uploader != null) {

@@ -31,6 +31,8 @@ import jd.plugins.PluginException;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -89,10 +91,19 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (br.containsHTML("g-recaptcha")) {
+        if (AbstractHCaptcha.containsHCaptcha(br)) {
             final Form form = br.getFormbyActionRegex("/mirror/");
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            final String response = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
+            form.put("h-captcha-response", Encoding.urlEncode(response));
+            form.put("g-recaptcha-response", Encoding.urlEncode(response));
+            submitForm(form);
+            if (br.containsHTML("h-recaptcha")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        } else if (br.containsHTML("g-recaptcha")) {
+            final Form form = br.getFormbyActionRegex("/mirror/");
+            final String response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            form.put("g-recaptcha-response", Encoding.urlEncode(response));
             submitForm(form);
             if (br.containsHTML("g-recaptcha")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);

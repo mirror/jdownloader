@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +37,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -161,15 +161,34 @@ public class FlashfilesCom extends PluginForHost {
         if (freeform == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setFollowRedirects(false);
         final URLConnectionAdapter con = br.openFormConnection(freeform);
+        if (con.getResponseCode() == 200 || con.getResponseCode() == 302) {
+            /**
+             * HTTP/1.1 302 Found
+             *
+             * Location: https://flash-files.com/ip-blocked.php
+             */
+            br.followConnection(true);
+            final String waitSecondsStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
+            final int waitSeconds = Integer.parseInt(waitSecondsStr);
+            if (waitSeconds > 600) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
+            }
+        }
         if (con.getResponseCode() == 500) {
             br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
+            if (StringUtils.contains(br.getURL(), "/ip-blocked") || StringUtils.contains(br.getRedirectLocation(), "/ip-blocked")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1001l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
+            }
         } else {
             br.followConnection();
         }
+        br.setFollowRedirects(true);
         final String waitSecondsStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
-        int waitSeconds = Integer.parseInt(waitSecondsStr);
+        final int waitSeconds = Integer.parseInt(waitSecondsStr);
         /* 2020-02-13: Normal waittime is 30 seconds, if waittime > 10 Minutes reconnect */
         if (waitSeconds > 600) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);

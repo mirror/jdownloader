@@ -27,20 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -59,6 +45,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TiktokComCrawler;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends PluginForHost {
@@ -333,7 +333,10 @@ public class TiktokCom extends PluginForHost {
                 } else if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
                 }
-                final String videoJson = br.getRegex("crossorigin=\"anonymous\">(.*?)</script>").getMatch(0);
+                String videoJson = br.getRegex("crossorigin=\"anonymous\">\\s*(.*?)\\s*</script>").getMatch(0);
+                if (videoJson == null) {
+                    videoJson = br.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
+                }
                 Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
                 entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/itemInfo/itemStruct");
                 /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
@@ -390,7 +393,10 @@ public class TiktokCom extends PluginForHost {
                 } else if (brc.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
                 }
-                final String videoJson = brc.getRegex("crossorigin=\"anonymous\">(.*?)</script>").getMatch(0);
+                String videoJson = brc.getRegex("crossorigin=\"anonymous\">\\s*(.*?)\\s*</script>").getMatch(0);
+                if (videoJson == null) {
+                    videoJson = brc.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
+                }
                 final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
                 final Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
                 /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
@@ -496,8 +502,8 @@ public class TiktokCom extends PluginForHost {
             link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
             if (downloadInfo != null) {
                 /**
-                 * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
-                 * If a video is watermarked and downloads are prohibited both versions should be identical.
+                 * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video is
+                 * watermarked and downloads are prohibited both versions should be identical.
                  */
                 link.setDownloadSize(((Number) downloadInfo.get("data_size")).longValue());
             }

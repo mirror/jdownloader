@@ -171,6 +171,7 @@ public class RuleWrapper<T extends FilterRule> {
             final String[] parts = regex.split("\\*+");
             final StringBuilder sb = new StringBuilder();
             boolean containsWildcard = false;
+            boolean containsQuestionMark = false;
             if (regex.startsWith("*")) {
                 containsWildcard = true;
                 sb.append("(.*)");
@@ -191,6 +192,7 @@ public class RuleWrapper<T extends FilterRule> {
                                 sb.append(Pattern.quote(partSb.toString()));
                                 partSb.setLength(0);
                             }
+                            containsQuestionMark = true;
                             sb.append(".");
                         } else {
                             partSb.append(c);
@@ -206,7 +208,8 @@ public class RuleWrapper<T extends FilterRule> {
             if (sb.length() == 0) {
                 sb.append("(.*)");
             } else if (nonEmptyParts > 0) {
-                if (regex.endsWith("?")) {
+                if (regex.endsWith("?") && false) {
+                    // this special handling is disabled, maybe add advanced setting for it
                     // ?, it matches exactly one character. If the question mark is placed at the end of the word, it will also match
                     // missing (zero) trailing characters.
                     if (sb.charAt(sb.length() - 1) == '.') {
@@ -218,7 +221,7 @@ public class RuleWrapper<T extends FilterRule> {
                 }
                 if (regex.endsWith("*")) {
                     sb.append("(.*)");
-                } else if (containsWildcard && (AUTO_PATTERN_MODE.WILDCARD.equals(mode) || AUTO_PATTERN_MODE.MATCHES.equals(mode))) {
+                } else if ((containsWildcard || containsQuestionMark) && (AUTO_PATTERN_MODE.WILDCARD.equals(mode) || AUTO_PATTERN_MODE.MATCHES.equals(mode))) {
                     sb.append("$");
                 }
             }
