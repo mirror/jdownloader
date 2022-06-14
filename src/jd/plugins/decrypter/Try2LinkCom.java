@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,6 +24,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "try2link.com" }, urls = { "https?://(?:www\\.)?try2link\\.com/([A-Za-z0-9]+)" })
 public class Try2LinkCom extends MightyScriptAdLinkFly {
@@ -43,7 +43,12 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
         final UrlQuery query = UrlQuery.parse(location);
         final String urlBase64Decoded = Encoding.Base64Decode(query.get("k"));
         final String timestampBase64 = new Regex(urlBase64Decoded, "d=([^&]+)").getMatch(0);
-        final String timestamp = Encoding.Base64Decode(timestampBase64);
+        final String timestamp;
+        if (timestampBase64.matches("[0-9]+")) {
+            timestamp = timestampBase64;
+        } else {
+            timestamp = Encoding.Base64Decode(timestampBase64);
+        }
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl() + "/?d=" + timestamp);
         if (this.regexAppVars(this.br) == null) {
