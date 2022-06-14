@@ -1029,7 +1029,7 @@ public class LinkCrawler {
     protected void crawlerFinished() {
     }
 
-    private LinkCrawlerTask checkStartNotify(final LinkCrawlerGeneration generation, final String taskID) {
+    protected LinkCrawlerTask checkStartNotify(final LinkCrawlerGeneration generation, final String taskID) {
         if (generation != null && generation.isValid()) {
             final LinkCrawlerTask task = new LinkCrawlerTask(this, generation, taskID);
             boolean event;
@@ -1910,7 +1910,7 @@ public class LinkCrawler {
 
     protected boolean distributeFinalCrawledLink(final LinkCrawlerGeneration generation, final CrawledLink crawledLink) {
         if (generation != null && generation.isValid() && crawledLink != null) {
-            this.handleFinalCrawledLink(crawledLink);
+            this.handleFinalCrawledLink(generation, crawledLink);
             return true;
         } else {
             return false;
@@ -3729,7 +3729,7 @@ public class LinkCrawler {
         return null;
     }
 
-    protected void handleFinalCrawledLink(CrawledLink link) {
+    protected void handleFinalCrawledLink(LinkCrawlerGeneration generation, CrawledLink link) {
         if (link != null) {
             if (link.getMatchingRule() != null && link.getDownloadLink() != null) {
                 link.getDownloadLink().setProperty("lcrID", link.getMatchingRule().getId());
@@ -3773,11 +3773,15 @@ public class LinkCrawler {
                     }
                 }
             }
-            if (isCrawledLinkFiltered(link) == false) {
-                /* link is not filtered, so we can process it normally */
-                crawledLinksCounter.incrementAndGet();
-                getHandler().handleFinalLink(link);
-            }
+            enqueueFinalCrawledLink(generation, link);
+        }
+    }
+
+    protected void enqueueFinalCrawledLink(LinkCrawlerGeneration generation, CrawledLink link) {
+        if (isCrawledLinkFiltered(link) == false) {
+            /* link is not filtered, so we can process it normally */
+            crawledLinksCounter.incrementAndGet();
+            getHandler().handleFinalLink(link);
         }
     }
 
@@ -3792,8 +3796,9 @@ public class LinkCrawler {
             filteredLinksCounter.incrementAndGet();
             getHandler().handleFilteredLink(link);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     protected void onCrawledLinkDuplicate(CrawledLink link, DUPLICATE duplicate) {

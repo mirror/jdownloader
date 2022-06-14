@@ -450,7 +450,7 @@ public class TiktokCom extends PluginForHost {
                 if (commentCountO != null) {
                     setCommentCount(link, (Number) commentCountO);
                 }
-                if (!StringUtils.isEmpty(createDate)) {
+                if (!StringUtils.isEmpty(createDate) && !"0".equals(createDate)) {
                     link.setProperty(PROPERTY_DATE, convertDateFormat(createDate));
                 }
                 if (dllink == null && isDownload) {
