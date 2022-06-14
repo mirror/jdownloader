@@ -260,6 +260,38 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
 
+        @Override
+        protected void enqueueFinalCrawledLink(final LinkCrawlerGeneration generation, final CrawledLink link) {
+            if (linkCollector.isDupeManagerEnabled) {
+                final LinkCrawlerTask task;
+                if ((task = checkStartNotify(generation, "enqueueFinalCrawledLink")) != null) {
+                    linkCollector.getQueue().add(new QueueAction<Boolean, RuntimeException>() {
+                        @Override
+                        protected void postRun() {
+                            checkFinishNotify(task);
+                        }
+
+                        @Override
+                        protected Boolean run() throws RuntimeException {
+                            if (generation.isValid()) {
+                                final CrawledLink existing = linkCollector.findDupe(link);
+                                if (existing == null) {
+                                    JobLinkCrawler.super.enqueueFinalCrawledLink(generation, link);
+                                    return Boolean.TRUE;
+                                } else {
+                                    onCrawledLinkDuplicate(link, DUPLICATE.FINAL);
+                                    return Boolean.FALSE;
+                                }
+                            }
+                            return null;
+                        }
+                    });
+                }
+            } else {
+                super.enqueueFinalCrawledLink(generation, link);
+            }
+        }
+
         public LinkCollectingJob getJob() {
             return job;
         }
@@ -999,17 +1031,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (info != null && info.isAborted()) {
                             return null;
                         }
-                        String linkID = link.getLinkID();
-                        CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
-                        // give the hPLugin a chance to fix this;
-                        while (existingLink != null) {
-                            PluginForHost hPlugin = link.gethPlugin();
-                            if (hPlugin == null || !hPlugin.onLinkCollectorDupe(existingLink, link)) {
-                                break;
-                            }
-                            linkID = link.getLinkID();
-                            existingLink = getCrawledLinkByLinkID(linkID);
-                        }
+                        final CrawledLink existingLink = findDupe(link);
                         if (existingLink != null && existingLink != link) {
                             /* clear references */
                             clearCrawledLinkReferences(link);
@@ -1017,6 +1039,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             return null;
                         }
                         if (info == null || !info.isAborted()) {
+                            final String linkID = link.getLinkID();
                             putCrawledLinkByLinkID(linkID, link);
                             if (link.getDownloadLink() != null) {
                                 /* set CrawledLink as changeListener to its DownloadLink */
@@ -1277,7 +1300,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             clearCrawledLinkReferences(filtered);
             return;
         } else {
-            QUEUE.add(new QueueAction<Void, RuntimeException>() {
+            QUEUE.addAsynch(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected void onEnqueu(Queue queue) {
                     if (info != null) {
@@ -1294,18 +1317,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    String linkID = filtered.getLinkID();
                     if (checkDupe) {
-                        CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
-                        // give the hPLugin a chance to fix this;
-                        while (existingLink != null) {
-                            PluginForHost hPlugin = filtered.gethPlugin();
-                            if (hPlugin == null || !hPlugin.onLinkCollectorDupe(existingLink, filtered)) {
-                                break;
-                            }
-                            linkID = filtered.getLinkID();
-                            existingLink = getCrawledLinkByLinkID(linkID);
-                        }
+                        final CrawledLink existingLink = findDupe(filtered);
                         if (existingLink != null) {
                             /* clear references */
                             clearCrawledLinkReferences(filtered);
@@ -1313,6 +1326,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             return null;
                         }
                     }
+                    final String linkID = filtered.getLinkID();
                     putCrawledLinkByLinkID(linkID, filtered);
                     filteredStuff.add(filtered);
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
@@ -1320,6 +1334,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             });
         }
+    }
+
+    protected CrawledLink findDupe(CrawledLink filtered) {
+        String linkID = filtered.getLinkID();
+        CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
+        // give the hPLugin a chance to fix this;
+        while (existingLink != null) {
+            final PluginForHost hPlugin = filtered.gethPlugin();
+            if (hPlugin == null || !hPlugin.onLinkCollectorDupe(existingLink, filtered)) {
+                break;
+            } else {
+                linkID = filtered.getLinkID();
+                existingLink = getCrawledLinkByLinkID(linkID);
+            }
+        }
+        return existingLink;
     }
 
     // clean up offline/various/dupeCheck maps
@@ -1374,9 +1404,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1513,19 +1543,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         } else {
                             /* avoid additional linkCheck when linkID already exists */
                             /* update dupeCheck map */
-                            String linkID = link.getLinkID();
-                            CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
-                            // give the hPLugin a chance to fix this;
-                            while (existingLink != null) {
-                                PluginForHost hPlugin = link.gethPlugin();
-                                if (hPlugin == null || !hPlugin.onLinkCollectorDupe(existingLink, link)) {
-                                    break;
-                                }
-                                linkID = link.getLinkID();
-                                existingLink = getCrawledLinkByLinkID(linkID);
-                            }
+                            final CrawledLink existingLink = findDupe(link);
                             if (existingLink != null) {
                                 /* clear references */
+                                final String linkID = link.getLinkID();
                                 logger.info("Filtered Dupe: " + linkID);
                                 clearCrawledLinkReferences(link);
                                 eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));

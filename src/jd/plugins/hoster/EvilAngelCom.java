@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigEvilangel;
-
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigEvilangel;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EvilAngelCom extends EvilangelCore {
@@ -33,7 +33,7 @@ public class EvilAngelCom extends EvilangelCore {
         this.enablePremium("https://www.evilangel.com/en/join");
     }
 
-    private static final String URL_MOVIE = "https?://members\\.[^/]+/[a-z]{2}/video/([A-Za-z0-9\\-_]+)/(\\d+)";
+    private static final String URL_MOVIE = "https?://members\\.[^/]+/[a-z]{2}/video/(?:[A-Za-z0-9\\-_]+/)?([A-Za-z0-9\\-_]+)/(\\d+)";
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -54,7 +54,7 @@ public class EvilAngelCom extends EvilangelCore {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://members\\." + buildHostsPatternPart(domains) + "/[a-z]{2}/video/([A-Za-z0-9\\-_]+)/(\\d+)");
+            ret.add("https?://members\\." + buildHostsPatternPart(domains) + "/[a-z]{2}/video/(?:[A-Za-z0-9\\-_]+/)?([A-Za-z0-9\\-_]+)/(\\d+)");
         }
         return ret.toArray(new String[0]);
     }

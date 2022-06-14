@@ -23,6 +23,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.HostPlugin;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.TurbobitCore;
@@ -30,12 +36,6 @@ import org.jdownloader.plugins.components.config.TurbobitCoreConfigTurbobitNet;
 import org.jdownloader.plugins.components.config.TurbobitCoreConfigTurbobitNet.PreferredDomain;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurboBitNet extends TurbobitCore {
@@ -58,11 +58,17 @@ public class TurboBitNet extends TurbobitCore {
         final String customDefinedPreferredDomain = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).getCustomDomain();
         if (!StringUtils.isEmpty(customDefinedPreferredDomain)) {
             try {
-                new URL("https://" + customDefinedPreferredDomain);
+                final URL url;
+                if (customDefinedPreferredDomain.matches("(?i)https?://.+")) {
+                    url = new URL(customDefinedPreferredDomain);
+                } else {
+                    url = new URL("https://" + customDefinedPreferredDomain);
+                }
+                org.appwork.utils.net.URLHelper.verifyURL(url);
                 logger.info("Using user defined domain: " + customDefinedPreferredDomain);
-                return customDefinedPreferredDomain;
+                return url.getHost();
             } catch (final Throwable e) {
-                logger.warning("User defined domain is invalid:" + customDefinedPreferredDomain);
+                logger.exception("User defined domain is invalid:" + customDefinedPreferredDomain, e);
             }
         }
         PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).getPreferredDomain();
