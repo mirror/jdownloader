@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -99,6 +101,16 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember_me", "1");
+                if (containsRecaptchaV2Class(loginform)) {
+                    final String rcKey = br.getRegex("data-recaptcha-key=\"([^\"]+)\"").getMatch(0);
+                    final String token;
+                    if (rcKey != null) {
+                        token = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
+                    } else {
+                        token = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    }
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(token));
+                }
                 this.submitForm(loginform);
                 if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

@@ -947,7 +947,15 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected boolean isLoggedIN() {
-        return br.getCookie(br.getHost(), "kt_member", Cookies.NOTDELETEDPATTERN) != null;
+        return isLoggedIN(br);
+    }
+
+    protected boolean isLoggedIN(final Browser br) {
+        if (br.getCookie(br.getHost(), "kt_member", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {

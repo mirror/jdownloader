@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -33,21 +34,33 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tr.link" }, urls = { "https?://(?:www\\.)?tr\\.link/([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tr.link" }, urls = { "https?://(?:www\\.)?tr\\.link/(?!dmca|skype|webroot)([A-Za-z0-9]+)" })
 public class TrLink extends antiDDoSForDecrypt {
     public TrLink(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
+        br.setFollowRedirects(false);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String alias = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        int loop = 0;
+        while (br.getRedirectLocation() != null && loop <= 2) {
+            if (!this.canHandle(br.getRedirectLocation())) {
+                /* Direct redirect to external website */
+                decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+                return decryptedLinks;
+            }
+            br.followRedirect();
+            loop++;
+        }
+        if (br.getRedirectLocation() != null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Too many redirects");
+        }
+        final String alias = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String csrf = br.getRegex("app\\['csrf'\\] = '([^<>\"\\']+)';").getMatch(0);
         final String token = br.getRegex("app\\['token'\\] = '([^<>\"\\']+)';").getMatch(0);
         if (csrf == null || token == null) {
@@ -64,9 +77,8 @@ public class TrLink extends antiDDoSForDecrypt {
         // this.sleep(5 * 1001l, param);
         getPage("/links/go2?" + query.toString());
         String finallink = PluginJSonUtils.getJson(br, "url");
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (StringUtils.isEmpty(finallink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (Browser.getHost(finallink).equals(br.getHost())) {
             logger.info("Looking for internal redirect");

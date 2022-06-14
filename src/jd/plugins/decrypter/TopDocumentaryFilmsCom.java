@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "topdocumentaryfilms.com" }, urls = { "https?://(www\\.)?topdocumentaryfilms\\.com/[^/]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "topdocumentaryfilms.com" }, urls = { "https?://(?:www\\.)?topdocumentaryfilms\\.com/([^/]+)/" })
 public class TopDocumentaryFilmsCom extends antiDDoSForDecrypt {
     public TopDocumentaryFilmsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,15 +38,15 @@ public class TopDocumentaryFilmsCom extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String page = br.toString();
+        // String page = br.toString();
         String fpName = br.getRegex("<title>\\s*([^<]+)\\s*- Top Documentary Films").getMatch(0);
-        String link = br.getRegex("itemprop=\"embedUrl\"\\s+content=\"([^\"]+)\"").getMatch(0);
+        String link = br.getRegex("itemprop=\"embedUrl\"\\s*content=\"([^\"]+)\"").getMatch(0);
         if (link != null && link.length() > 0) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
