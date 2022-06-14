@@ -18,11 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -30,6 +27,10 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XubsterCom extends XFileSharingProBasic {
@@ -117,10 +118,10 @@ public class XubsterCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+    public void handleCaptcha(final DownloadLink link, final Browser br, final Form captchaForm) throws Exception {
         if (br.getURL().contains("/login") && captchaForm.hasInputFieldByName("g-recaptcha-response") && captchaForm.containsHTML("recaptcha\\.com")) {
             /* 2020-11-13: Special - login reCaptchaV2 required */
-            if (handleRecaptchaV2(link, captchaForm)) {
+            if (handleRecaptchaV2(link, br, captchaForm)) {
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
             }
         } else if (StringUtils.containsIgnoreCase(getCorrectBR(br), "/captchas/")) {
@@ -152,7 +153,7 @@ public class XubsterCom extends XFileSharingProBasic {
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
             link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
         } else {
-            super.handleCaptcha(link, captchaForm);
+            super.handleCaptcha(link, br, captchaForm);
         }
     }
     /**

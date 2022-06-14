@@ -162,7 +162,7 @@ public class TinyfilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+    public void handleCaptcha(final DownloadLink link, final Browser br, final Form captchaForm) throws Exception {
         /* 2020-02-27: Special reCaptchaV2 invisible */
         final String reCaptchaKey = br.getRegex("grecaptcha\\.execute\\('([^<>\"\\']+)'").getMatch(0);
         if (captchaForm != null && captchaForm.containsHTML("googletoken") && reCaptchaKey != null) {
@@ -178,7 +178,7 @@ public class TinyfilesCom extends XFileSharingProBasic {
             // br.getHeaders().put("sec-fetch-user", "?1");
         } else {
             /* Fallback to template handling and hope that it will work */
-            super.handleCaptcha(link, captchaForm);
+            super.handleCaptcha(link, br, captchaForm);
         }
     }
 }

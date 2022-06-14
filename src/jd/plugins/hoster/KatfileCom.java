@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -28,6 +26,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KatfileCom extends XFileSharingProBasic {
@@ -88,7 +88,7 @@ public class KatfileCom extends XFileSharingProBasic {
         final Form ret = super.findFormDownload2Premium(downloadLink, account, br);
         if (ret != null) {
             /* 2022-01-07: Special antiBot handling / captcha in premium mode. */
-            handleCaptcha(downloadLink, ret);
+            handleCaptcha(downloadLink, br, ret);
         }
         return ret;
     }

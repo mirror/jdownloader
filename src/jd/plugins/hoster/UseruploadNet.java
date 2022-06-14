@@ -19,16 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UseruploadNet extends XFileSharingProBasic {
@@ -145,11 +146,11 @@ public class UseruploadNet extends XFileSharingProBasic {
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+    public void handleCaptcha(final DownloadLink link, final Browser br, final Form captchaForm) throws Exception {
         if (captchaForm != null && captchaForm.hasInputFieldByName("adblock_detected")) {
             captchaForm.remove("");
             captchaForm.put("adblock_detected", "0");
         }
-        super.handleCaptcha(link, captchaForm);
+        super.handleCaptcha(link, br, captchaForm);
     }
 }

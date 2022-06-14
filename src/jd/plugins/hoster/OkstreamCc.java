@@ -20,9 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -32,6 +29,9 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OkstreamCc extends XFileSharingProBasic {
@@ -167,7 +167,7 @@ public class OkstreamCc extends XFileSharingProBasic {
             return;
         } else {
             /* 2020-06-05: Special */
-            this.handleCaptcha(link, dlform);
+            this.handleCaptcha(link, br, dlform);
             this.submitForm(dlform);
             dllink = new Regex(correctedBR, "else\\s*\\{\\s*var\\s*srclink\\s*=\\s*\"(/[^<>\"]+)\"").getMatch(0);
             // dllink = new Regex(correctedBR, "srclink\\s*=\\s*\"(/[^<>\"]+)\"").getMatch(0);

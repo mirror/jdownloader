@@ -21,9 +21,8 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -33,6 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ExLoadCom extends XFileSharingProBasic {
@@ -150,7 +151,7 @@ public class ExLoadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+    public void handleCaptcha(final DownloadLink link, final Browser br, final Form captchaForm) throws Exception {
         /* 2020-03-05: Special */
         if (captchaForm.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
@@ -174,7 +175,7 @@ public class ExLoadCom extends XFileSharingProBasic {
             captchaForm.put("code", code.toString());
         } else {
             /* Use template handling */
-            super.handleCaptcha(link, captchaForm);
+            super.handleCaptcha(link, br, captchaForm);
         }
     }
 }

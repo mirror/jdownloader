@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.Time;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -32,6 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.Time;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HexuploadNet extends XFileSharingProBasic {
@@ -168,11 +168,11 @@ public class HexuploadNet extends XFileSharingProBasic {
             /* 2022-04-07: Currently they require one reCaptchaV3 (invisible) + one hCaptcha to be solved. */
             if (containsHCaptcha(securityVerification)) {
                 captchaRequired = true;
-                handleHCaptcha(getDownloadLink(), securityVerification);
+                handleHCaptcha(getDownloadLink(), br, securityVerification);
             }
             if (containsRecaptchaV2Class(securityVerification)) {
                 captchaRequired = true;
-                handleRecaptchaV2(getDownloadLink(), securityVerification);
+                handleRecaptchaV2(getDownloadLink(), br, securityVerification);
             }
             if (!captchaRequired) {
                 logger.warning("No captcha required --> Possible failure");
