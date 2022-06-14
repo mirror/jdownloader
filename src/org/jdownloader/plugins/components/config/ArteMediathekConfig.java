@@ -16,11 +16,11 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     final String                                        text_QualitySelectionMode           = "Define how this plugin should pick your desired qualities";
     final String                                        text_CrawlSubtitledBurnedInVersions = "Crawl subtitled burned in versions?";
     final String                                        text_QualitySelectionFallbackMode   = "Define what to add if based on your selection no results are found";
-    final String                                        text_CrawlHTTP240p                     = "Crawl 240p?";
-    final String                                        text_CrawlHTTP360p                     = "Crawl 360p?";
-    final String                                        text_CrawlHTTP480p                     = "Crawl 480p?";
-    final String                                        text_CrawlHTTP720p                     = "Crawl 720p?";
-    final String                                        text_CrawlHTTP1080p                    = "Crawl 1080p?";
+    final String                                        text_CrawlHTTP240p                  = "Crawl 240p?";
+    final String                                        text_CrawlHTTP360p                  = "Crawl 360p?";
+    final String                                        text_CrawlHTTP480p                  = "Crawl 480p?";
+    final String                                        text_CrawlHTTP720p                  = "Crawl 720p?";
+    final String                                        text_CrawlHTTP1080p                 = "Crawl 1080p?";
     // final String text_CrawlSubtitledBurnedInVersionsHearingImpaired = "Crawl subtitled burned in versions for hearing impaired?";
     public static final ArteMediathekConfig.TRANSLATION TRANSLATION                         = new TRANSLATION();
 
@@ -168,6 +168,12 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
             @Override
             public String getLabel() {
                 return "All qualities";
+            }
+        },
+        NONE {
+            @Override
+            public String getLabel() {
+                return "Nothing";
             }
         };
     }

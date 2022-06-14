@@ -90,6 +90,12 @@ public class ArteMediathekV3 extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlPrograms(final CryptedLink param) throws IOException, PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final List<Integer> selectedQualitiesHeight = getSelectedHTTPQualities();
+        if (selectedQualitiesHeight.isEmpty() && cfg.getQualitySelectionFallbackMode() == QualitySelectionFallbackMode.NONE) {
+            logger.info("User has deselected all qualities and set QualitySelectionFallbackMode to QualitySelectionFallbackMode.NONE --> Doing nothing");
+            return ret;
+        }
         final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String urlLanguage = urlinfo.getMatch(0);
         final String contentID = urlinfo.getMatch(1);
@@ -112,13 +118,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlProgram(final CryptedLink param, final Map<String, Object> program) throws IOException {
+    private ArrayList<DownloadLink> crawlProgram(final CryptedLink param, final Map<String, Object> program) throws IOException, PluginException {
         // TODO: Add support for multiple videos(?), implement plugin settings
         final Map<String, Object> vid = (Map<String, Object>) program.get("mainVideo");
         return crawlVideo(param, vid);
     }
 
-    private ArrayList<DownloadLink> crawlVideo(final CryptedLink param, final Map<String, Object> vid) throws IOException {
+    private ArrayList<DownloadLink> crawlVideo(final CryptedLink param, final Map<String, Object> vid) throws IOException, PluginException {
         final String title = vid.get("title").toString();
         final String subtitle = (String) vid.get("subtitle");
         final String dateFormatted = new Regex(vid.get("firstBroadcastDate").toString(), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
@@ -155,26 +161,15 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         }
         /* Crawl video streams */
         /* Collect list of user desired/allowed qualities */
-        final List<Integer> selectedQualities = new ArrayList<Integer>();
-        if (cfg.isCrawlHTTP1080p()) {
-            selectedQualities.add(1080);
-        }
-        if (cfg.isCrawlHTTP720p()) {
-            selectedQualities.add(720);
-        }
-        if (cfg.isCrawlHTTP480p()) {
-            selectedQualities.add(480);
-        }
-        if (cfg.isCrawlHTTP360p()) {
-            selectedQualities.add(360);
-        }
-        if (cfg.isCrawlHTTP240p()) {
-            selectedQualities.add(240);
-        }
+        final List<Integer> selectedQualitiesHeight = getSelectedHTTPQualities();
         // TODO: Implement pagination?
         final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
+        if (videoStreams == null || videoStreams.isEmpty()) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /* First put each language + audio version in separate lists. */
         final Map<String, List<Map<String, Object>>> languagePacks = new HashMap<String, List<Map<String, Object>>>();
         for (final Map<String, Object> videoStream : videoStreams) {
@@ -200,7 +195,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 // final String language = videoStream.get("language").toString();
                 final String protocol = videoStream.get("protocol").toString();
                 if (!protocol.equalsIgnoreCase("https")) {
-                    /* 2022-05-25: Only grab HTTP streams for now */
+                    /* 2022-05-25: Only grab HTTP streams for now, skip all others */
                     continue;
                 }
                 // final int width = ((Number) videoStream.get("width")).intValue();
@@ -226,7 +221,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                     best = link;
                     highestFilesize = link.getView().getBytesTotal();
                 }
-                if (selectedQualities.contains(height)) {
+                if (selectedQualitiesHeight.contains(getHeightForQualitySelection(height))) {
                     userSelected.add(link);
                     if (link.getView().getBytesTotal() > highestFilesizeOfUserSelected) {
                         bestOfUserSelected = link;
@@ -257,9 +252,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             logger.info("Found no results based on user selection --> Using fallback");
             if (qualitySelectionFallbackMode == QualitySelectionFallbackMode.BEST && !allBestResults.isEmpty()) {
                 ret.addAll(allBestResults);
-            } else {
-                // QualitySelectionFallbackMode.ALL
+            } else if (qualitySelectionFallbackMode == QualitySelectionFallbackMode.ALL) {
                 ret.addAll(allResults);
+            } else if (qualitySelectionFallbackMode == QualitySelectionFallbackMode.NONE) {
+                // Return nothing
+            } else {
+                // Developer mistake
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         for (final DownloadLink result : ret) {
@@ -270,6 +269,48 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             logger.warning("WTF Failed to find any results");
         }
         return ret;
+    }
+
+    private List<Integer> getSelectedHTTPQualities() {
+        final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final List<Integer> selectedQualitiesHeight = new ArrayList<Integer>();
+        if (cfg.isCrawlHTTP1080p()) {
+            selectedQualitiesHeight.add(1080);
+        }
+        if (cfg.isCrawlHTTP720p()) {
+            selectedQualitiesHeight.add(720);
+        }
+        if (cfg.isCrawlHTTP480p()) {
+            selectedQualitiesHeight.add(480);
+        }
+        if (cfg.isCrawlHTTP360p()) {
+            selectedQualitiesHeight.add(360);
+        }
+        if (cfg.isCrawlHTTP240p()) {
+            selectedQualitiesHeight.add(240);
+        }
+        return selectedQualitiesHeight;
+    }
+
+    /*
+     * Height of ARTE videos may vary but we only got a fixed quality selection for our users e.g. they can have 364x216 -> We'd consider
+     * this 240p for quality selection handling.
+     */
+    int getHeightForQualitySelection(final int height) {
+        if (height > 180 && height <= 300) {
+            return 240;
+        } else if (height > 300 && height <= 400) {
+            return 360;
+        } else if (height > 400 && height <= 600) {
+            return 480;
+        } else if (height > 600 && height <= 900) {
+            return 720;
+        } else if (height > 900 && height <= 1200) {
+            return 1080;
+        } else {
+            /* No fitting pre given height --> Return input */
+            return height;
+        }
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
