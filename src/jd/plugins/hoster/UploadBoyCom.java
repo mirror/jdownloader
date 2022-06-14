@@ -20,10 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +29,10 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UploadBoyCom extends XFileSharingProBasic {
@@ -136,7 +136,7 @@ public class UploadBoyCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+    public void handleCaptcha(final DownloadLink link, final Browser br, final Form captchaForm) throws Exception {
         /* 2019-05-29: Special */
         if (captchaForm != null && captchaForm.containsHTML("grecaptcha\\.render")) {
             /* Special reCaptchaV2 handling */
@@ -145,7 +145,7 @@ public class UploadBoyCom extends XFileSharingProBasic {
             captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         } else {
             /* Fallback to normal handling */
-            super.handleCaptcha(link, captchaForm);
+            super.handleCaptcha(link, br, captchaForm);
         }
     }
 

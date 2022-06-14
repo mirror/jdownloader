@@ -19,12 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -36,6 +30,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamsbNet extends XFileSharingProBasic {
@@ -58,8 +57,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /**
          * 2021-06-17: streamsb.com = only user interface/website. streamsb.net and all other domains: used for video hosting/downloadlinks.
-         * </br>
-         * streamsb.com is basically only a dummy entry here as no downloadlinks exist that can be used via this domain.
+         * </br> streamsb.com is basically only a dummy entry here as no downloadlinks exist that can be used via this domain.
          */
         ret.add(new String[] { "streamsb.com" });
         ret.add(new String[] { "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com" });
@@ -324,17 +322,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
         download1 = brc.getFormbyProperty("id", "F1");
         if (download1 != null) {
-            this.handleCaptcha(link, download1);
-            if (this.containsRecaptchaV2Class(download1)) {
-                logger.info("Detected captcha method \"RecaptchaV2\" type 'INVISIBLE' for this host");
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc) {
-                    @Override
-                    public TYPE getType() {
-                        return TYPE.INVISIBLE;
-                    }
-                }.getToken();
-                download1.put("g-recaptcha-response", recaptchaV2Response);
-            }
+            this.handleCaptcha(link, brc, download1);
             this.submitForm(brc, download1);
             this.checkErrors(brc, brc.toString(), link, account, false);
         }

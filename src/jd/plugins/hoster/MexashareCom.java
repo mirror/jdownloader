@@ -178,7 +178,7 @@ public class MexashareCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+    public void handleCaptcha(final DownloadLink link, final Browser br, final Form captchaForm) throws Exception {
         /* 2020-05-22: Special */
         // if (captchaForm.containsHTML("class=\"captcha_code\"")) {
         /* 2020-05-23: New attempt: */
@@ -204,7 +204,7 @@ public class MexashareCom extends XFileSharingProBasic {
             captchaForm.put("code", code.toString());
         } else {
             /* Use template handling */
-            super.handleCaptcha(link, captchaForm);
+            super.handleCaptcha(link, br, captchaForm);
         }
     }
 }

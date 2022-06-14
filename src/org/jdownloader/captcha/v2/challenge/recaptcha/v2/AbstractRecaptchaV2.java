@@ -107,11 +107,36 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
     protected Map<String, Object> getV3Action(final String source) {
         if (source != null) {
             final String actionJson = new Regex(source, "grecaptcha(?:\\.enterprise)?\\.execute\\s*\\([^{]*,\\s*(\\{.*?\\}\\s*)").getMatch(0);
-            final String action = new Regex(actionJson, "action(?:\"|')?\\s*:\\s*(?:\"|')(.*?)(\"|')").getMatch(0);
+            String action = null;
+            if (actionJson != null) {
+                action = new Regex(actionJson, "action(?:\"|')?\\s*:\\s*(?:\"|')(.*?)(\"|')").getMatch(0);
+            } else {
+                action = getAlternativeV3Action(source);
+            }
             if (action != null) {
                 final Map<String, Object> ret = new HashMap<String, Object>();
                 ret.put("action", action);
                 return ret;
+            }
+        }
+        return null;
+    }
+
+    protected String getAlternativeV3Action(final String source) {
+        if (source != null) {
+            final String[] divs = getDIVs(source);
+            if (divs != null) {
+                for (final String div : divs) {
+                    if (new Regex(div, "class\\s*=\\s*('|\")(?:.*?\\s+)?g-recaptcha(-response)?(\\1|\\s+)").matches()) {
+                        final String siteKey = new Regex(div, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                        if (siteKey != null && StringUtils.equals(siteKey, getSiteKey())) {
+                            final String action = new Regex(div, "data-action\\s*=\\s*('|\")\\s*(.*?)\\s*\\1").getMatch(1);
+                            if (action != null) {
+                                return action;
+                            }
+                        }
+                    }
+                }
             }
         }
         return null;

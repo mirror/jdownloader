@@ -166,12 +166,12 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+    public void handleCaptcha(final DownloadLink link, Browser br, final Form captchaForm) throws Exception {
         /* 2019-08-14: Special: This might increase downloadspeed for free users */
         if (captchaForm != null && captchaForm.hasInputFieldByName("adblock_detected")) {
             captchaForm.put("adblock_detected", "0");
         }
-        super.handleCaptcha(link, captchaForm);
+        super.handleCaptcha(link, br, captchaForm);
     }
 
     @Override

@@ -245,7 +245,7 @@ public class MyqloudOrg extends XFileSharingProBasic {
                 /* 2020-03-20: Try catch is small workaround attempt before the weekend. */
                 if (containsRecaptchaV2Class(download1)) {
                     logger.info("download1 Form: Captcha required");
-                    handleCaptcha(link, download1);
+                    handleCaptcha(link, brc, download1);
                 } else {
                     logger.info("download1 Form: No captcha required");
                 }

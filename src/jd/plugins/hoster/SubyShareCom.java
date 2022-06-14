@@ -23,10 +23,6 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -41,6 +37,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -273,7 +273,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                     if (download1 != null) {
                         logger.info("Found download1 Form");
                         /* 2020-06-15: Special: Two captchas in the row possible! */
-                        this.handleCaptcha(link, download1);
+                        this.handleCaptcha(link, br, download1);
                         submitForm(download1);
                         checkErrors(br, correctedBR, link, account, false);
                         dllink = getDllink(link, account, br, correctedBR);
@@ -316,7 +316,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                 download2.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 handlePassword(download2, link);
-                handleCaptcha(link, download2);
+                handleCaptcha(link, br, download2);
                 /* 2019-02-08: MD5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
                 if (link.getMD5Hash() == null) {
                     final String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -371,7 +371,7 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+    public void handleCaptcha(final DownloadLink link, final Browser br, final Form captchaForm) throws Exception {
         /*
          * 2019-07-08: Special for two reasons: 1. Upper handling won't find the '/captchas/' URL. 2. These captchas are special: 6 digits
          * instead of 4 and colored (orange instead of black) - thus our standard XFS captcha-mathod won't be able to recognize them!
@@ -392,7 +392,7 @@ public class SubyShareCom extends XFileSharingProBasic {
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
             link.setProperty(PROPERTY_captcha_required, true);
         } else {
-            super.handleCaptcha(link, captchaForm);
+            super.handleCaptcha(link, br, captchaForm);
         }
     }
 
