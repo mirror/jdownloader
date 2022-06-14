@@ -16,6 +16,11 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     final String                                        text_QualitySelectionMode           = "Define how this plugin should pick your desired qualities";
     final String                                        text_CrawlSubtitledBurnedInVersions = "Crawl subtitled burned in versions?";
     final String                                        text_QualitySelectionFallbackMode   = "Define what to add if based on your selection no results are found";
+    final String                                        text_CrawlHTTP240p                     = "Crawl 240p?";
+    final String                                        text_CrawlHTTP360p                     = "Crawl 360p?";
+    final String                                        text_CrawlHTTP480p                     = "Crawl 480p?";
+    final String                                        text_CrawlHTTP720p                     = "Crawl 720p?";
+    final String                                        text_CrawlHTTP1080p                    = "Crawl 1080p?";
     // final String text_CrawlSubtitledBurnedInVersionsHearingImpaired = "Crawl subtitled burned in versions for hearing impaired?";
     public static final ArteMediathekConfig.TRANSLATION TRANSLATION                         = new TRANSLATION();
 
@@ -37,6 +42,26 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
         public String getQualitySelectionFallbackMode_label() {
             return text_QualitySelectionFallbackMode;
+        }
+
+        public String getCrawlHTTP240p_label() {
+            return text_CrawlHTTP240p;
+        }
+
+        public String getCrawlHTTP360p_label() {
+            return text_CrawlHTTP360p;
+        }
+
+        public String getCrawlHTTP480p_label() {
+            return text_CrawlHTTP480p;
+        }
+
+        public String getCrawlHTTP720p_label() {
+            return text_CrawlHTTP720p;
+        }
+
+        public String getCrawlHTTP1080p_label() {
+            return text_CrawlHTTP1080p;
         }
     }
 
@@ -87,7 +112,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    // @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersions)
+    @DescriptionForConfigEntry(text_CrawlHTTP240p)
     @Order(102)
     boolean isCrawlHTTP240p();
 
@@ -95,7 +120,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    // @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersions)
+    @DescriptionForConfigEntry(text_CrawlHTTP360p)
     @Order(103)
     boolean isCrawlHTTP360p();
 
@@ -103,7 +128,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    // @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersions)
+    @DescriptionForConfigEntry(text_CrawlHTTP480p)
     @Order(104)
     boolean isCrawlHTTP480p();
 
@@ -111,7 +136,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    // @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersions)
+    @DescriptionForConfigEntry(text_CrawlHTTP720p)
     @Order(105)
     boolean isCrawlHTTP720p();
 
@@ -119,7 +144,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    // @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersions)
+    @DescriptionForConfigEntry(text_CrawlHTTP1080p)
     @Order(106)
     boolean isCrawlHTTP1080p();
 

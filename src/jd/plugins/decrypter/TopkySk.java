@@ -33,7 +33,7 @@ import jd.plugins.hoster.YoutubeDashV2;
  * @author butkovip
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://(www\\.)?topky\\.sk/cl/[0-9]+/[0-9]+/(VIDEO\\-[-a-zA-Z0-9]+)?" }, names = { "topky.sk" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "https?://(?:www\\.)?topky\\.sk/cl/\\d+/\\d+/([a-zA-Z0-9\\-]+)" }, names = { "topky.sk" })
 public class TopkySk extends PluginForDecrypt {
     public TopkySk(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,6 +67,11 @@ public class TopkySk extends PluginForDecrypt {
         final String finallink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink != null) {
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        }
+        /* 2022-06-14: Selfhosted hls */
+        final String[] hlsplaylists = br.getRegex("(https://img\\.topky\\.sk/video/\\d+/master\\.m3u8)").getColumn(0);
+        for (final String hlsplaylist : hlsplaylists) {
+            decryptedLinks.add(createDownloadlink(hlsplaylist));
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.info("Found no downloadable content for link: " + parameter);
