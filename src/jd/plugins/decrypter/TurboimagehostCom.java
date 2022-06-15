@@ -15,26 +15,70 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
-
-import org.appwork.utils.Regex;
+import java.util.HashSet;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "turboimagehost.com" }, urls = { "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/[^/]+\\.html|https?://[a-z0-9\\-]+\\.turboimg\\.net/t1/\\d+_[^/]+" })
+import org.appwork.utils.Regex;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "turboimagehost.com", "turboimagehost.com" }, urls = { "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/[^/]+\\.html|https?://[a-z0-9\\-]+\\.turboimg\\.net/t1/\\d+_[^/]+", "https?://(?:www\\.)?turboimagehost\\.com/album/\\d+/[^/]+" })
 public class TurboimagehostCom extends PluginForDecrypt {
     public TurboimagehostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        if (param.getCryptedUrl().matches("(?i).*/album/\\d+/.+")) {
+            return crawlAlbum(param);
+        } else {
+            return crawlImage(param);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlAlbum(CryptedLink param) throws Exception {
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("^/?$")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String galleryTitle = br.getRegex("class\\s*=\\s*\"galleryTitle\">\\s*<h1>\\s*(.*?)\\s*</h1>").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        if (galleryTitle == null) {
+            galleryTitle = new Regex(param.getCryptedUrl(), "/album/(\\d+)").getMatch(0);
+        }
+        fp.setName(galleryTitle);
+        final Set<String> pages = new HashSet<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        while (!isAbort()) {
+            final String links[] = br.getRegex("(https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/[^/]+\\.html)").getColumn(0);
+            for (String link : links) {
+                final DownloadLink downloadLink = createDownloadlink(link);
+                fp.add(downloadLink);
+                distribute(downloadLink);
+                decryptedLinks.add(downloadLink);
+            }
+            final String nextPage = br.getRegex("label\\s*=\\s*\"Next\"\\s*href\\s*=\\s*\"(\\?p=\\d+)\"").getMatch(0);
+            if (nextPage != null && pages.add(nextPage)) {
+                br.getPage(nextPage);
+            } else {
+                break;
+            }
+        }
+        return null;
+    }
+
+    private ArrayList<DownloadLink> crawlImage(CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Regex thumbnail = new Regex(param.getCryptedUrl(), "https?://[a-z0-9\\-]+\\.turboimg\\.net/t1/(\\d+)_([^/]+)");
         if (thumbnail.matches()) {
@@ -44,15 +88,23 @@ public class TurboimagehostCom extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("^/?$")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String finallink = this.br.getRegex("\"(https?://s\\d+d\\d+\\.(?:turboimagehost\\.com|turboimg\\.net)/sp/[a-z0-9]+/.*?)\"").getMatch(0);
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            final DownloadLink link = createDownloadlink(finallink);
+            String filename = getFileNameFromURL(new URL(finallink));
+            if (filename != null) {
+                filename = filename.replaceFirst("\\.html?$", "");
+                link.setName(filename);
+            }
+            link.setAvailable(true);
+            link.setContentUrl(param.getCryptedUrl());
+            decryptedLinks.add(link);
+            return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
     }
 }
