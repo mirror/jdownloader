@@ -187,9 +187,12 @@ public class TiktokCom extends PluginForHost {
             /* Fallback-filename */
             link.setName(fid + ".mp4");
         }
+        boolean webMode;
         if (PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode() == DownloadMode.API) {
+            webMode = false;
             this.checkAvailablestatusAPI(link, account, isDownload);
         } else {
+            webMode = true;
             this.checkAvailablestatusWebsite(link, account, isDownload);
         }
         final String dllink = getStoredDirecturl(link);
@@ -218,6 +221,9 @@ public class TiktokCom extends PluginForHost {
                     final String lastModifiedHeaderValue = brc.getRequest().getResponseHeader("Last-Modified");
                     if (lastModifiedHeaderValue != null) {
                         link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
+                        if (webMode && !link.hasProperty(PROPERTY_DATE)) {
+                            setFilename(link);
+                        }
                     }
                 }
             } finally {
