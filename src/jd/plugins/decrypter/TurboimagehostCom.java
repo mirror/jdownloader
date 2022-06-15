@@ -75,7 +75,7 @@ public class TurboimagehostCom extends PluginForDecrypt {
                 break;
             }
         }
-        return null;
+        return decryptedLinks;
     }
 
     private ArrayList<DownloadLink> crawlImage(CryptedLink param) throws Exception {
