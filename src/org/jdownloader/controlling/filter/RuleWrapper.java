@@ -4,16 +4,16 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.RegexFilter.MatchType;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkInfo;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.RegexFilter.MatchType;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class RuleWrapper<T extends FilterRule> {
     private final CompiledRegexFilter        fileNameRule;
@@ -209,6 +209,7 @@ public class RuleWrapper<T extends FilterRule> {
                 sb.append("(.*)");
             } else if (nonEmptyParts > 0) {
                 if (regex.endsWith("?") && false) {
+                    containsQuestionMark = true;
                     // this special handling is disabled, maybe add advanced setting for it
                     // ?, it matches exactly one character. If the question mark is placed at the end of the word, it will also match
                     // missing (zero) trailing characters.
@@ -219,6 +220,7 @@ public class RuleWrapper<T extends FilterRule> {
                         sb.append("?");
                     }
                 } else if (regex.endsWith("*")) {
+                    containsWildcard = true;
                     sb.append("(.*)");
                 }
                 if (AUTO_PATTERN_MODE.MATCHES.equals(mode)) {

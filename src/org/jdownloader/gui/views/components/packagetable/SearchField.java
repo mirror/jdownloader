@@ -32,9 +32,6 @@ import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthLookAndFeel;
 import javax.swing.plaf.synth.SynthPainter;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
@@ -49,6 +46,9 @@ import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public class SearchField<SearchCat extends SearchCatInterface, PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> extends ExtTextField implements MouseMotionListener, MouseListener {
     /**
@@ -233,19 +233,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         // g2.dispose();
     }
 
-    protected final boolean isFullMatchPattern(Pattern pattern) {
-        final String stringPattern = pattern.pattern();
-        return stringPattern.charAt(0) == '^' && stringPattern.charAt(stringPattern.length() - 1) == '$';
-    }
-
     protected final boolean isMatching(List<Pattern> pattern, String string) {
         if (string != null) {
             for (final Pattern filterPattern : pattern) {
-                // if (isFullMatchPattern(filterPattern)) {
-                // if (filterPattern.matcher(string).matches()) {
-                // return true;
-                // }
-                // } else
                 if (filterPattern.matcher(string).find()) {
                     return true;
                 }
@@ -269,7 +259,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                     }
                     list.add(LinkgrabberFilterRuleWrapper.createPattern(filterRegex, true, null));
                 } else {
-                    String[] filters = filterRegex.split("\\|");
+                    final String[] filters = filterRegex.split("\\|");
                     for (String filter : filters) {
                         list.add(LinkgrabberFilterRuleWrapper.createPattern(filter, false, RuleWrapper.AUTO_PATTERN_MODE.WILDCARD));
                     }

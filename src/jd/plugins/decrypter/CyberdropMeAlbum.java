@@ -20,6 +20,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,11 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -104,16 +104,21 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             final HashSet<String> dups = new HashSet<String>();
             final String albumDescription = br.getRegex("<span id=\"description-box\"[^>]*>([^<>\"]+)</span>").getMatch(0);
             /* 2022-01-04: New, for albums with mixed content (e.g. NOT only photos). */
+            // TODO: bunkr.is: update to parse json <script id="__NEXT_DATA__" type="application/json">{"props
             final String[] htmls = br.getRegex("<div class=\"image-container column\"[^>]*>(.*?)/p>\\s*</div>").getColumn(0);
             for (final String html : htmls) {
-                String directurl = new Regex(html, "href=\"(https?://[^\"]+)\"").getMatch(0);
-                directurl = correctDirecturl(directurl);
                 String filename = new Regex(html, "target=\"_blank\" title=\"([^<>\"]+)\"").getMatch(0);
                 if (filename == null) {
                     // bunkr.is
                     filename = new Regex(html, "<p\\s*class\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
                 }
+                String directurl = new Regex(html, "href=\"(https?://[^\"]+)\"").getMatch(0);
+                if (filename != null && directurl == null && "bunkr.is".equals(getHost())) {
+                    directurl = "https://cdn.bunkr.is/" + filename;
+                }
+                directurl = correctDirecturl(directurl);
                 final String filesizeBytes = new Regex(html, "class=\"(?:is-hidden)?\\s*file-size\"[^>]*>(\\d+) B").getMatch(0);
+                final String filesize = new Regex(html, "class=\"(?:is-hidden)?\\s*file-size\"[^>]*>([0-9\\.]+\\s+[MKG]B)").getMatch(0);
                 if (dups.add(directurl)) {
                     final DownloadLink dl = this.createDownloadlink(directurl);
                     dl.setProperty(DirectHTTP.PROPERTY_RATE_LIMIT, 500);
@@ -123,6 +128,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                     }
                     if (filesizeBytes != null) {
                         dl.setVerifiedFileSize(Long.parseLong(filesizeBytes));
+                    } else if (filesize != null) {
+                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     }
                     decryptedLinks.add(dl);
                 }
@@ -147,6 +154,9 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 }
             }
             if (decryptedLinks.size() == 0) {
+                if (br.containsHTML(">\\s*0 files\\s*<")) {
+                    return decryptedLinks;
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (fpName != null) {

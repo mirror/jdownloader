@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvshows.club" }, urls = { "https?://(www\\.)?tvshows\\.club/[^/]+(/[^/]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvshows.club" }, urls = { "https?://(www\\.)?tvshows\\.(club|show)/[^/]+(/[^/]+)?" })
 public class TvShowsClub extends antiDDoSForDecrypt {
     public TvShowsClub(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +46,13 @@ public class TvShowsClub extends antiDDoSForDecrypt {
         String[] encodedLinks = br.getRegex("arr\\s*\\[\\s*\"[^\"]+\"\\s*\\]\\s*=\\s*\"([^\"]+)\"").getColumn(0);
         if (encodedLinks != null && encodedLinks.length > 0) {
             for (String encodedLink : encodedLinks) {
-                links.add(Encoding.Base64Decode(encodedLink));
+                encodedLink = Encoding.Base64Decode(encodedLink);
+                if (StringUtils.startsWithCaseInsensitive(encodedLink, "aHR")) {
+                    encodedLink = Encoding.Base64Decode(encodedLink);
+                }
+                if (StringUtils.isNotEmpty(encodedLink)) {
+                    links.add(encodedLink);
+                }
             }
         }
         for (String link : links) {
