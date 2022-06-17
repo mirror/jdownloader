@@ -893,16 +893,16 @@ public class NitroFlareCom extends antiDDoSForHost {
             final String status = (String) result.get("status");
             final Number trafficLeft = (Number) result.get("trafficLeft");
             final Number trafficMax = (Number) result.get("trafficMax");
-            final String expiryDate = (String) result.get("expiryDate");
+            final Object expiryDateO = result.get("expiryDate");
             if (trafficLeft != null && trafficMax != null) {
                 ai.setTrafficLeft(trafficLeft.longValue());
                 ai.setTrafficMax(trafficMax.longValue());
             }
-            if (!"active".equalsIgnoreCase(status) || expiryDate == null || expiryDate.toString().equals("0")) {
+            if (!"active".equalsIgnoreCase(status) || expiryDateO == null || expiryDateO.toString().equals("0")) {
                 account.setType(AccountType.FREE);
             } else {
                 account.setType(AccountType.PREMIUM);
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expiryDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expiryDateO.toString(), "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
             }
             return ai;
         }
@@ -958,6 +958,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             if (!br.toString().equalsIgnoreCase("passed")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
+                // br.getPage(br.getURL() + "&solved=1");
                 /* Looks like captcha was solved successfully --> Re-do previous request and re-check for errors. */
                 br.getPage(previousRequest);
                 this.checkErrorsAPI(br, link, account, false);
