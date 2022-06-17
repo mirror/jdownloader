@@ -27,9 +27,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -41,7 +43,9 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -49,6 +53,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -382,7 +387,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             if (useAPIFreeMode()) {
                 /* API mode */
                 this.getPage(getAPIBase() + "/getDownloadLink?file=" + Encoding.urlEncode(this.getFID(link)));
-                this.checkErrorsAPI(link, account);
+                this.checkErrorsAPI(br, link, account);
                 final String waittime = PluginJSonUtils.getJson(br, "delay");
                 final String reCaptchaKey = PluginJSonUtils.getJson(br, "recaptchaPublic");
                 String accessLink = PluginJSonUtils.getJson(br, "accessLink");
@@ -416,7 +421,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 accessLink += "&captcha=" + Encoding.urlEncode(c) + "&g-recaptcha-response=" + Encoding.urlEncode(c);
                 /* 2020-06-24: TODO: This would always return "Invalid captcha"?! */
                 this.getPage(accessLink);
-                this.checkErrorsAPI(link, account);
+                this.checkErrorsAPI(br, link, account);
                 this.dllink = PluginJSonUtils.getJson(br, "url");
                 if (StringUtils.isEmpty(this.dllink) || !this.dllink.startsWith("http")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error in free download step 2");
@@ -648,7 +653,7 @@ public class NitroFlareCom extends antiDDoSForHost {
      * @throws PluginException
      */
     @Deprecated
-    private String validateAccount(final Account account) throws PluginException {
+    private String validateAccountUserInputs(final Account account) throws PluginException {
         synchronized (account) {
             final String user = account.getUser().toLowerCase(Locale.ENGLISH);
             final String pass = account.getPass();
@@ -657,17 +662,16 @@ public class NitroFlareCom extends antiDDoSForHost {
                 // "\r\nYou haven't provided a valid password or premiumKey (this field can not be empty)!",
                 // PluginException.VALUE_ID_PREMIUM_DISABLE);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid password (this field can not be empty)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (pass.matches("(?-i)NF[a-zA-Z0-9]{10}")) {
+            } else if (pass.matches("(?-i)NF[a-zA-Z0-9]{10}")) {
                 // no need to urlencode, this is always safe.
                 // return "user=&premiumKey=" + pass;
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremiumKeys not accepted, you need to use Account (email and password).", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (inValidate(user) || !user.matches(".+@.+")) {
+            } else if (inValidate(user) || !user.matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            } else
             // check to see if the user added the email username with caps.. this can make login incorrect
             if (!user.equals(account.getUser())) {
+                logger.info("Corrected username: Old: " + account.getUser() + " | New: " + user);
                 account.setUser(user);
             }
             // urlencode required!
@@ -680,11 +684,11 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (useAPIAccountMode()) {
             return fetchAccountInfoAPI(account);
         } else {
-            return fetchAccountInfoWeb(account, false, true);
+            return fetchAccountInfoWeb(account, true);
         }
     }
 
-    private AccountInfo fetchAccountInfoWeb(final Account account, boolean fullLogin, boolean fullInfo) throws Exception {
+    private AccountInfo fetchAccountInfoWeb(final Account account, boolean fullInfo) throws Exception {
         synchronized (account) {
             if (!account.getUser().matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -693,68 +697,70 @@ public class NitroFlareCom extends antiDDoSForHost {
                 final String host = getBaseDomain(this, br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !fullLogin) {
-                    if (account.isValid()) {
-                        br.setCookies(cookies);
-                        // lets do a test
-                        final Browser br2 = br.cloneBrowser();
-                        getPage(br2, "https://" + host);
-                        if (br2.containsHTML(">\\s*Your password has expired") || br2.containsHTML(">\\s*Change Password\\s*<")) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        final String user = br2.getCookie(host, "user");
-                        if (user != null && !"deleted".equalsIgnoreCase(user)) {
-                            if (!fullInfo) {
-                                return null;
-                            } else {
-                                // else we need to do stats!
-                            }
+                boolean fullLogin;
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    br.setCookies(cookies);
+                    // lets do a test
+                    final Browser br2 = br.cloneBrowser();
+                    getPage(br2, "https://" + host);
+                    if (br2.containsHTML(">\\s*Your password has expired") || br2.containsHTML(">\\s*Change Password\\s*<")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    final String user = br2.getCookie(host, "user", Cookies.NOTDELETEDPATTERN);
+                    if (user != null) {
+                        logger.info("Cookie login successful");
+                        fullLogin = false;
+                        if (!fullInfo) {
+                            return null;
                         } else {
-                            fullLogin = true;
+                            // else we need to do stats!
                         }
                     } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                         fullLogin = true;
                     }
                 } else {
                     fullLogin = true;
                 }
                 if (fullLogin) {
+                    logger.info("Attempting full login");
                     getPage("https://" + host + "/login");
-                    Form f = null;
+                    boolean captchaSolved = false;
                     for (int retry = 0; retry < 3; retry++) {
-                        f = br.getFormbyProperty("id", "login");
+                        final Form f = getLoginFormWebsite(br);
                         if (f == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        // recaptcha2
-                        if (f.containsHTML("<div class=\"g-recaptcha\"")) {
-                            if (this.getDownloadLink() == null) {
-                                // login wont contain downloadlink
-                                this.setDownloadLink(new DownloadLink(this, "Account Login!", host, host, true));
-                            }
+                        if (requiresCaptchaWebsite(br)) {
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                             f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                            captchaSolved = true;
                         }
                         f.put("email", Encoding.urlEncode(account.getUser().toLowerCase(Locale.ENGLISH)));
                         f.put("password", Encoding.urlEncode(account.getPass()));
                         f.put("login", "");
                         submitForm(f);
-                        // place in incorrect password here
-                        f = br.getFormbyProperty("id", "login");
-                        if (f == null) {
+                        if (getLoginFormWebsite(br) == null) {
+                            break;
+                        } else if (!requiresCaptchaWebsite(br)) {
+                            /* No captcha required for possible next run --> Looks like login failed --> Do not retry */
+                            break;
+                        } else if (captchaSolved) {
+                            /* Do not allow multiple captcha attempts */
                             break;
                         }
                     }
-                    if (f != null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect User/Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    if (br.containsHTML(">\\s*Your password has expired") || br.containsHTML(">\\s*Change Password\\s*<")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (getLoginFormWebsite(br) != null) {
+                        throw new AccountInvalidException("Incorrect User/Password");
+                    } else if (br.containsHTML("(?i)>\\s*Your password has expired") || br.containsHTML("(?i)>\\s*Change Password\\s*<")) {
+                        throw new AccountInvalidException("Your password has expired. Please visit website and set new password!");
                     }
                     // final failover, we expect 'user' cookie
-                    final String user = br.getCookie(host, "user");
-                    if (user == null || "deleted".equalsIgnoreCase(user)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCould not find Account Cookie", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    final String user = br.getCookie(host, "user", Cookies.NOTDELETEDPATTERN);
+                    if (user == null) {
+                        throw new AccountInvalidException("Could not find Account Cookie");
                     }
                 }
                 final AccountInfo ai = new AccountInfo();
@@ -769,7 +775,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     } else {
                         // Expired (red) = free
                         account.setType(AccountType.FREE);
-                        ai.setStatus("Free Account");
+                        ai.setStatus("Free Account (premium expired)");
                     }
                 } else {
                     account.setType(AccountType.FREE);
@@ -818,12 +824,12 @@ public class NitroFlareCom extends antiDDoSForHost {
                     ai.setValidUntil(System.currentTimeMillis() + waittime);
                 }
                 account.setAccountInfo(ai);
-                if (account.isValid()) {
-                    /** Save cookies */
-                    account.saveCookies(br.getCookies(br.getHost()), "");
-                    return ai;
+                if (!account.isValid()) {
+                    throw new AccountInvalidException("Non Valid Account");
                 }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Non Valid Account", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /** Save cookies */
+                account.saveCookies(br.getCookies(br.getHost()), "");
+                return ai;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -833,14 +839,26 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
+    private Form getLoginFormWebsite(final Browser br) {
+        return br.getFormbyProperty("id", "login");
+    }
+
+    private boolean requiresCaptchaWebsite(final Browser br) {
+        if (br.containsHTML("<div class=\"g-recaptcha\"")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         synchronized (account) {
             if (!account.getUser().matches(".+@.+")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("Username must be email address!");
             }
             br.setCookiesExclusive(true);
             getPage(getAPIBase() + "/getKeyInfo?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()));
-            checkErrorsAPI(null, account);
+            checkErrorsAPI(br, null, account);
             final AccountInfo ai = new AccountInfo();
             final String trafficLeftStr = PluginJSonUtils.getJson(br, "trafficLeft");
             final String trafficMaxStr = PluginJSonUtils.getJson(br, "trafficMax");
@@ -862,7 +880,12 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private void checkErrorsAPI(final DownloadLink link, final Account account) throws Exception {
+    /** Wrapper */
+    private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws Exception {
+        checkErrorsAPI(br, link, account, true);
+    }
+
+    private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account, final boolean solveCaptcha) throws Exception {
         int errorcode = -1;
         String msg = null;
         try {
@@ -871,6 +894,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             msg = (String) entries.get("message");
             errorcode = ((Number) entries.get("code")).intValue();
         } catch (final Throwable e) {
+            logger.warning("Bad API response");
             // logger.log(e);
         }
         switch (errorcode) {
@@ -890,17 +914,35 @@ public class NitroFlareCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         case 8:
             /* Invalid logindata */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException(msg);
         case 12:
-            /* API captcha required to continue using their API! */
-            /* TODO: Add handling for this captcha */
-            // this.getPage(this.API_BASE + "/solveCaptcha?user=" + Encoding.urlEncode(account.getUser()));
-            // data-sitekey="6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy"
-            // var response = grecaptcha.getResponse();
-            // var user = "dd";
-            // $.post("/api/v2/solveCaptcha?user=" + user, {response: response}, function (data) {
-            // if (data === 'passed') {
-            // window.location = '/api/v2/solveCaptcha?user=' + user + '&solved=1';
+            /* API captcha required to continue/start using their API! */
+            if (!solveCaptcha || !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* Captcha has been tried before and something went wrong... */
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            final Request previousRequest = br.getRequest().cloneRequest();
+            previousRequest.resetConnection();
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy").getToken();
+            final UrlQuery query = new UrlQuery();
+            query.add("response", Encoding.urlEncode(recaptchaV2Response));
+            this.postPage(getAPIBase() + "/solveCaptcha?user=" + Encoding.urlEncode(account.getUser()), query.toMap());
+            if (!br.toString().equalsIgnoreCase("passed")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                /* Looks like captcha was solved successfully --> Re-do previous request and re-check for errors. */
+                if (previousRequest.getRequestMethod() == RequestMethod.POST) {
+                    // br.postPage(previousRequest.getUrl(), previousRequest.g);
+                    final Request req = new PostRequest(previousRequest);
+                    br.getPage(req);
+                } else if (previousRequest.getRequestMethod() == RequestMethod.GET) {
+                    br.getPage(previousRequest.getUrl());
+                } else {
+                    // unsupported
+                    br.getPage(previousRequest);
+                }
+                this.checkErrorsAPI(br, link, account, false);
+            }
         default:
             /* Handle unknown errors */
             if (link == null) {
@@ -917,7 +959,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         /* is free user? */
         if (account.getType() == AccountType.FREE) {
             requestFileInformationWeb(link);
-            fetchAccountInfoWeb(account, false, false);
+            fetchAccountInfoWeb(account, false);
             requestFileInformationApi(link); // Required, to do checkLinks to check premiumOnly
             doFree(account, link);
         } else {
@@ -946,7 +988,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 handlePremiumDownloadAPI(link, account);
             } else {
                 // requestFileInformationWeb(link);
-                fetchAccountInfoWeb(account, false, false);
+                fetchAccountInfoWeb(account, false);
                 requestFileInformationApi(link);
                 /* 2020-06-24: Not required anymore (?) */
                 // randomHash(br, link);
@@ -989,7 +1031,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     private void handlePremiumDownloadAPI(final DownloadLink link, final Account account) throws Exception {
         this.getPage(getAPIBase() + "/getDownloadLink?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(this.getFID(link)));
-        this.checkErrorsAPI(link, account);
+        this.checkErrorsAPI(br, link, account);
         this.dllink = PluginJSonUtils.getJson(br, "url");
         if (StringUtils.isEmpty(this.dllink) || !this.dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API download failure");
@@ -1013,7 +1055,6 @@ public class NitroFlareCom extends antiDDoSForHost {
     private boolean handlePremiumVPNWarningCaptcha(final DownloadLink link) throws Exception {
         if (br.containsHTML("To get rid of the captcha, please avoid using a dedicated server")) {
             logger.info("Premium VPN captcha required");
-            /* 2020-02-20: Here is their reCaptchaV2 site-key for testing: 6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy */
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             Browser ajax = ajaxPost(br, "/ajax/validate-dl-recaptcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             if (!ajax.containsHTML("passed")) {

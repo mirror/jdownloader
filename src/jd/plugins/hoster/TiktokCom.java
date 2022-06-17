@@ -27,6 +27,20 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -45,20 +59,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TiktokComCrawler;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends PluginForHost {
@@ -233,6 +233,10 @@ public class TiktokCom extends PluginForHost {
                     if (lastModifiedHeaderValue != null) {
                         link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
                         if (webMode && !link.hasProperty(PROPERTY_DATE)) {
+                            /*
+                             * Filename has already been set before but date was not available --> Set filename again as date information is
+                             * given now.
+                             */
                             setFilename(link);
                         }
                     }
@@ -539,8 +543,8 @@ public class TiktokCom extends PluginForHost {
             link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
             if (downloadInfo != null) {
                 /**
-                 * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video is
-                 * watermarked and downloads are prohibited both versions should be identical.
+                 * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+                 * If a video is watermarked and downloads are prohibited both versions should be identical.
                  */
                 link.setDownloadSize(((Number) downloadInfo.get("data_size")).longValue());
             }
