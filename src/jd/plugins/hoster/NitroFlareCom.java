@@ -25,21 +25,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.NitroflareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -63,6 +48,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.NitroflareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NitroFlareCom extends antiDDoSForHost {
@@ -132,8 +131,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Use website or API: https://nitroflare.com/member?s=api </br>
      *
-     * @return true: Use API for account login and premium downloading </br>
-     *         false: Use website for everything (except linkcheck)
+     * @return true: Use API for account login and premium downloading </br> false: Use website for everything (except linkcheck)
      */
     private boolean useAPIAccountMode() {
         return PluginJsonConfig.get(NitroflareConfig.class).isUsePremiumAPIEnabled();
@@ -703,11 +701,11 @@ public class NitroFlareCom extends antiDDoSForHost {
             } else if (inValidate(user) || !user.matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else
-            // check to see if the user added the email username with caps.. this can make login incorrect
-            if (!user.equals(account.getUser())) {
-                logger.info("Corrected username: Old: " + account.getUser() + " | New: " + user);
-                account.setUser(user);
-            }
+                // check to see if the user added the email username with caps.. this can make login incorrect
+                if (!user.equals(account.getUser())) {
+                    logger.info("Corrected username: Old: " + account.getUser() + " | New: " + user);
+                    account.setUser(user);
+                }
             // urlencode required!
             return "user=" + Encoding.urlEncode(user) + "&premiumKey=" + Encoding.urlEncode(pass);
         }
@@ -944,9 +942,8 @@ public class NitroFlareCom extends antiDDoSForHost {
             /* Invalid logindata */
             throw new AccountInvalidException(msg);
         case 12:
-            /* TODO: Under development see https://svn.jdownloader.org/issues/86377 */
             /* API captcha required to continue/start using their API! */
-            if (!solveCaptcha || !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (!solveCaptcha) {
                 /* Captcha has been tried before and something went wrong... */
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -954,14 +951,16 @@ public class NitroFlareCom extends antiDDoSForHost {
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy").getToken();
             final UrlQuery query = new UrlQuery();
             query.add("response", Encoding.urlEncode(recaptchaV2Response));
-            this.postPage(getAPIBase() + "/solveCaptcha?user=" + Encoding.urlEncode(account.getUser()), query.toMap());
+            final String solveCaptchaURL = getAPIBase() + "/solveCaptcha?user=" + Encoding.urlEncode(account.getUser());
+            this.postPage(solveCaptchaURL, query.toMap());
             if (!br.toString().equalsIgnoreCase("passed")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                br.getPage(br.getURL() + "&solved=1");
+                br.getPage(solveCaptchaURL + "&solved=1");
                 /* Looks like captcha was solved successfully --> Re-do previous request and re-check for errors. */
                 br.getPage(previousRequest);
                 this.checkErrorsAPI(br, link, account, false);
+                break;
             }
         default:
             /* Handle unknown errors */
@@ -1066,9 +1065,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Handle rare case: User uses VPN, nitroflare recognizes that and lets user solve an extra captcha to proceed via VPN. </br>
      *
-     * @return: true: Captcha required and successfully solved by user </br>
-     *          false: Captcha not required </br>
-     *          exception: Wrong captcha
+     * @return: true: Captcha required and successfully solved by user </br> false: Captcha not required </br> exception: Wrong captcha
      */
     private boolean handlePremiumVPNWarningCaptcha(final DownloadLink link) throws Exception {
         if (br.containsHTML("To get rid of the captcha, please avoid using a dedicated server")) {
