@@ -31,7 +31,6 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -45,7 +44,6 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -916,13 +914,13 @@ public class NitroFlareCom extends antiDDoSForHost {
             /* Invalid logindata */
             throw new AccountInvalidException(msg);
         case 12:
+            /* TODO: Under development see https://svn.jdownloader.org/issues/86377 */
             /* API captcha required to continue/start using their API! */
             if (!solveCaptcha || !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /* Captcha has been tried before and something went wrong... */
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             final Request previousRequest = br.getRequest().cloneRequest();
-            previousRequest.resetConnection();
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy").getToken();
             final UrlQuery query = new UrlQuery();
             query.add("response", Encoding.urlEncode(recaptchaV2Response));
@@ -931,16 +929,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
                 /* Looks like captcha was solved successfully --> Re-do previous request and re-check for errors. */
-                if (previousRequest.getRequestMethod() == RequestMethod.POST) {
-                    // br.postPage(previousRequest.getUrl(), previousRequest.g);
-                    final Request req = new PostRequest(previousRequest);
-                    br.getPage(req);
-                } else if (previousRequest.getRequestMethod() == RequestMethod.GET) {
-                    br.getPage(previousRequest.getUrl());
-                } else {
-                    // unsupported
-                    br.getPage(previousRequest);
-                }
+                br.getPage(previousRequest);
                 this.checkErrorsAPI(br, link, account, false);
             }
         default:
