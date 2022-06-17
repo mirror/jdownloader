@@ -188,7 +188,7 @@ public class TvnowDe extends PluginForHost {
         if (newAPI) {
             final long code = JavaScriptEngineFactory.toLong(entries.get("code"), 0);
             final String error = (String) entries.get("error");
-            final boolean geoBlockedNew = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "videoConfig/constraints/geoBlocking/enabled")).booleanValue();
+            final boolean geoBlockedNew = Boolean.TRUE.equals(JavaScriptEngineFactory.walkJson(entries, "videoConfig/constraints/geoBlocking/enabled"));
             // if ("User not authorized!".equalsIgnoreCase(error)) {
             if (code == 403) {
                 /* Paid content - goes along with response 403, also json will not contain anything else but the thumbnail-URL. */
@@ -203,13 +203,13 @@ public class TvnowDe extends PluginForHost {
             } else {
                 isFree = true;
                 if (geoBlockedNew) {
-                    isDRM = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "videoConfig/constraints/drmPlatformIssue/enabled"));
+                    isDRM = Boolean.TRUE.equals(JavaScriptEngineFactory.walkJson(entries, "videoConfig/constraints/drmPlatformIssue/enabled"));
                     geoBLOCKED = true;
                 } else {
-                    isDRM = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isDrm"));
+                    isDRM = Boolean.TRUE.equals(JavaScriptEngineFactory.walkJson(entries, "rights/isDrm"));
                     /* TODO: Find out what this means? 1080p = DRM protected, other qualities not? */
                     // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
-                    geoBLOCKED = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "config/boards/geoBlocking/block"));
+                    geoBLOCKED = Boolean.TRUE.equals(JavaScriptEngineFactory.walkJson(entries, "config/boards/geoBlocking/block"));
                 }
                 /* TODO: Re-Check this - this might not be the same as "broadcastDate" in the old API! */
                 entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoConfig/meta");
@@ -222,10 +222,10 @@ public class TvnowDe extends PluginForHost {
             description = null;
             season = -1;
         } else {
-            isFree = ((Boolean) entries.get("free")).booleanValue();
-            isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
+            isFree = Boolean.TRUE.equals(entries.get("free"));
+            isDRM = Boolean.TRUE.equals(entries.get("isDrm"));
             // isStrictDrm1080p = ((Boolean) entries.get("isStrictDrm1080p")).booleanValue();;
-            geoBLOCKED = ((Boolean) entries.get("geoblocked"));
+            geoBLOCKED = Boolean.TRUE.equals(entries.get("geoblocked"));
             date = (String) entries.get("broadcastStartDate");
             description = (String) entries.get("articleLong");
             season = (int) JavaScriptEngineFactory.toLong(entries.get("season"), -1);

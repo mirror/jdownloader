@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +28,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ThisvidComAlbums extends PluginForDecrypt {
@@ -60,7 +60,7 @@ public class ThisvidComAlbums extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/albums/(?!most-popular)([a-z0-9\\-]+)/");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(/albums/(?!most-popular)([a-z0-9\\-]+)/|/playlist/\\d+/videos?/[^/\\?#]+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -70,6 +70,12 @@ public class ThisvidComAlbums extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches("(?i).*/playlist/\\d+/.+")) {
+            final String videoURL = parameter.replaceFirst("/playlist/\\d+/videos?/", "/videos/");
+            final DownloadLink playlistVideo = createDownloadlink(videoURL);
+            decryptedLinks.add(playlistVideo);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
