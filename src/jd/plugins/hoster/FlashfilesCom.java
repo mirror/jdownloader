@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +37,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -121,10 +121,12 @@ public class FlashfilesCom extends PluginForHost {
         final String filesize = br.getRegex(">\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             filename = this.getFID(link);
+            link.setName(filename);
         } else {
+            // Content-Disposition header not always correct filename
             filename = Encoding.htmlDecode(filename.trim());
+            link.setFinalFileName(filename);
         }
-        link.setName(filename);
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -173,7 +175,7 @@ public class FlashfilesCom extends PluginForHost {
             final String waitSecondsStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
             final int waitSeconds = Integer.parseInt(waitSecondsStr);
             if (waitSeconds > 600) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Math.max(2100, waitSeconds) * 1001l);
             }
         }
         if (con.getResponseCode() == 500) {
@@ -191,7 +193,7 @@ public class FlashfilesCom extends PluginForHost {
         final int waitSeconds = Integer.parseInt(waitSecondsStr);
         /* 2020-02-13: Normal waittime is 30 seconds, if waittime > 10 Minutes reconnect */
         if (waitSeconds > 600) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Math.max(2100, waitSeconds) * 1001l);
         }
         // cat/mouse?
         Form downloadFileForm = br.getFormbyActionRegex(".*?download(file)?\\.php");

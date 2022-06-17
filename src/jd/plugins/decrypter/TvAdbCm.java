@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -28,9 +26,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "https?://(www\\.)?tv\\.adobe\\.com/(?:watch|embed)/[a-z0-9\\-]+/[a-z0-9\\-]+/?" })
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "https?://(www\\.|video\\.)?tv\\.adobe\\.com/((?:watch|embed)/[a-z0-9\\-]+/[a-z0-9\\-]+/?|v/[a-z0-9\\-]+)" })
 public class TvAdbCm extends PluginForDecrypt {
     // dev notes
     // final links seem to not have any session info bound, nor restricted to IP and are hotlinkable, hoster plugin not required.
@@ -68,15 +70,18 @@ public class TvAdbCm extends PluginForDecrypt {
             }
             final String embedurl = br.getRegex("tv\\.adobe\\.com/embed/([^<>\"]*?)\"").getMatch(0);
             if (embedurl == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage("https://tv.adobe.com/embed/" + embedurl);
         } else {
             br.getPage(parameter);
         }
+        if (br.containsHTML(">\\s*Staged video playback forbidden")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String html5player = br.getRegex("var bridge = (\\{.*?\\});").getMatch(0);
         if (html5player == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // parse for qualities
         Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(html5player);

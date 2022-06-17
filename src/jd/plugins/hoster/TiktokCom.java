@@ -148,6 +148,7 @@ public class TiktokCom extends PluginForHost {
     public static final String  PROPERTY_SHARE_COUNT                          = "share_count";
     public static final String  PROPERTY_COMMENT_COUNT                        = "comment_count";
     public static final String  PROPERTY_HAS_WATERMARK                        = "has_watermark";
+    public static final String  PROPERTY_FORCE_API                            = "force_api";
     public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE              = "last_used_download_mode";
     private static final String TYPE_VIDEO                                    = "https?://[^/]+/@([^/]+)/video/(\\d+).*?";
     /* API related stuff */
@@ -187,13 +188,23 @@ public class TiktokCom extends PluginForHost {
             /* Fallback-filename */
             link.setName(fid + ".mp4");
         }
-        boolean webMode;
-        if (PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode() == DownloadMode.API) {
+        boolean webMode = false;
+        if (PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode() == DownloadMode.API || link.getBooleanProperty(PROPERTY_FORCE_API, false)) {
             webMode = false;
             this.checkAvailablestatusAPI(link, account, isDownload);
         } else {
-            webMode = true;
-            this.checkAvailablestatusWebsite(link, account, isDownload);
+            try {
+                this.checkAvailablestatusWebsite(link, account, isDownload);
+                webMode = true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"status_msg\"\\s*:\\s*\"Something went wrong\"")) {
+                    webMode = false;
+                    this.checkAvailablestatusAPI(link, account, isDownload);
+                    link.setProperty(PROPERTY_FORCE_API, Boolean.TRUE);
+                } else {
+                    throw e;
+                }
+            }
         }
         final String dllink = getStoredDirecturl(link);
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet() && !isDownload) {
@@ -385,6 +396,10 @@ public class TiktokCom extends PluginForHost {
                     br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
                 } else {
                     br.getPage(link.getPluginPatternMatcher());
+                }
+                if (br.containsHTML("\"status_msg\"\\s*:\\s*\"Something went wrong\"")) {
+                    // webmode not possible!? retry with api
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 /* Required headers! */
                 final Browser brc = this.br.cloneBrowser();
@@ -941,6 +956,7 @@ public class TiktokCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
+            link.removeProperty(PROPERTY_FORCE_API);
             link.removeProperty(PROPERTY_HAS_WATERMARK);
         }
     }
