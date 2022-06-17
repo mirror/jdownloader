@@ -16,6 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,39 +28,64 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unionmangas.com" }, urls = { "https?://(?:www\\.)?(?:unionmangas|unionleitor)\\.(?:com|net|cc|site|top)/(?:leitor/[^/]+/[a-z0-9\\.]+[^/\\s]*|manga/[a-z0-9\\-\\.]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UnionmangasCom extends antiDDoSForDecrypt {
     public UnionmangasCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "unionmangas.com", "unionmangas.net", "unionmangas.top", "unionleitor.top" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:leitor/[^/]+/[a-z0-9\\.]+[^/\\s]*|manga/[a-z0-9\\-\\.]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         final String url_fpname;
         final String url_name;
-        if (parameter.matches(".+/leitor/.+")) {
+        if (param.getCryptedUrl().matches(".+/leitor/.+")) {
             /* Decrypt single chapter */
             if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/leitor/")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Regex urlinfo = new Regex(parameter, "(?:unionmangas|unionleitor)\\.[a-z0-9]+/leitor/([^/]+)/([a-z0-9\\-\\.]+)");
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), "https?://[^/]+/leitor/([^/]+)/([a-z0-9\\-\\.]+)");
             final String chapter_str = urlinfo.getMatch(1);
             url_name = urlinfo.getMatch(0);
             url_fpname = Encoding.urlDecode(url_name + "_chapter_" + chapter_str, false);
             String[] links = br.getRegex("data\\-lazy=\"(http[^<>\"]+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
+            if (links.length == 0) {
                 links = br.getRegex("<img\\s*src=\"(.*?\\.(jpe?g|png|gif))\"").getColumn(0);
             }
             if (links == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (String url : links) {
                 url = br.getURL(url).toString();
@@ -66,11 +94,10 @@ public class UnionmangasCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
-            url_name = new Regex(parameter, "/([^/]+)$").getMatch(0);
+            url_name = new Regex(param.getCryptedUrl(), "/([^/]+)$").getMatch(0);
             url_fpname = url_name;
             if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/manga/")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String[] chapterUrls = br.getRegex("\"(https?://(?:unionmangas|unionleitor)\\.[a-z0-9]+/leitor/[^\"\\']+)\"").getColumn(0);
             for (final String chapterUrl : chapterUrls) {
