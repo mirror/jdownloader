@@ -25,8 +25,21 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.NitroflareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -49,26 +62,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.NitroflareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NitroFlareCom extends antiDDoSForHost {
-    private final String         baseURL = "https://nitroflare.com";
+    private final String         baseURL                   = "https://nitroflare.com";
     /* Documentation: https://nitroflare.com/member?s=api */
     /* don't touch the following! */
-    private static AtomicInteger maxFree = new AtomicInteger(1);
+    private static AtomicInteger maxFree                   = new AtomicInteger(1);
+    private final String         PROPERTY_PREMIUM_REQUIRED = "premiumRequired";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -131,7 +131,8 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Use website or API: https://nitroflare.com/member?s=api </br>
      *
-     * @return true: Use API for account login and premium downloading </br> false: Use website for everything (except linkcheck)
+     * @return true: Use API for account login and premium downloading </br>
+     *         false: Use website for everything (except linkcheck)
      */
     private boolean useAPIAccountMode() {
         return PluginJsonConfig.get(NitroflareConfig.class).isUsePremiumAPIEnabled();
@@ -268,7 +269,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (link != null) {
             if (account == null || account.getType() == AccountType.FREE) {
-                return !(link.getBooleanProperty("premiumRequired", false));
+                return !(link.getBooleanProperty(PROPERTY_PREMIUM_REQUIRED, false));
             }
         }
         return true;
@@ -301,7 +302,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                     atLeastOneDL = true;
                 }
                 getPage(br, getAPIBase() + "/getFileInfo?" + sb);
-                if (br.containsHTML("In these moments we are upgrading the site system")) {
+                /* TODO: Use json parser */
+                if (br.containsHTML("(?i)In these moments we are upgrading the site system")) {
                     for (final DownloadLink dl : links) {
                         dl.getLinkStatus().setStatusText("Nitroflare.com is maintenance mode. Try again later.");
                         dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
@@ -311,7 +313,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 for (final DownloadLink dl : links) {
                     final String filter = br.getRegex("(\"" + getFID(dl) + "\":\\{.*?\\})").getMatch(0);
                     if (filter == null) {
-                        dl.setProperty("apiInfo", Property.NULL);
+                        dl.removeProperty("apiInfo");
                         okay = false;
                         continue;
                     }
@@ -337,15 +339,15 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                     if (PluginJsonConfig.get(NitroflareConfig.class).isTrustAPIAboutPremiumOnlyFlag()) {
                         if (prem != null) {
-                            dl.setProperty("premiumRequired", Boolean.parseBoolean(prem));
+                            dl.setProperty(PROPERTY_PREMIUM_REQUIRED, Boolean.parseBoolean(prem));
                         } else {
-                            dl.setProperty("premiumRequired", Property.NULL);
+                            dl.removeProperty(PROPERTY_PREMIUM_REQUIRED);
                         }
                     }
                     if (pass != null) {
-                        dl.setProperty("passwordRequired", Boolean.parseBoolean(pass));
+                        dl.setPasswordProtected(true);
                     } else {
-                        dl.setProperty("passwordRequired", Property.NULL);
+                        dl.setPasswordProtected(false);
                     }
                     dl.setProperty("apiInfo", Boolean.TRUE);
                 }
@@ -409,12 +411,11 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        if (link.getBooleanProperty("premiumRequired", false)) {
+        if (link.hasProperty(PROPERTY_PREMIUM_REQUIRED)) {
             throwPremiumRequiredException(link, true);
         }
         freedl = true;
-        br = new Browser();
-        dllink = checkDirectLink(link, directlinkproperty);
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             if (useAPIFreeMode()) {
                 /* API mode */
@@ -454,8 +455,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                 /* 2020-06-24: TODO: This would always return "Invalid captcha"?! */
                 this.getPage(accessLink);
                 this.checkErrorsAPI(br, link, account);
-                this.dllink = PluginJSonUtils.getJson(br, "url");
-                if (StringUtils.isEmpty(this.dllink) || !this.dllink.startsWith("http")) {
+                dllink = PluginJSonUtils.getJson(br, "url");
+                if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error in free download step 2");
                 }
             } else {
@@ -701,11 +702,11 @@ public class NitroFlareCom extends antiDDoSForHost {
             } else if (inValidate(user) || !user.matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else
-                // check to see if the user added the email username with caps.. this can make login incorrect
-                if (!user.equals(account.getUser())) {
-                    logger.info("Corrected username: Old: " + account.getUser() + " | New: " + user);
-                    account.setUser(user);
-                }
+            // check to see if the user added the email username with caps.. this can make login incorrect
+            if (!user.equals(account.getUser())) {
+                logger.info("Corrected username: Old: " + account.getUser() + " | New: " + user);
+                account.setUser(user);
+            }
             // urlencode required!
             return "user=" + Encoding.urlEncode(user) + "&premiumKey=" + Encoding.urlEncode(pass);
         }
@@ -720,7 +721,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
-    private AccountInfo fetchAccountInfoWeb(final Account account, boolean fullInfo) throws Exception {
+    private AccountInfo fetchAccountInfoWeb(final Account account, boolean validateCookies) throws Exception {
         synchronized (account) {
             if (!account.getUser().matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -733,6 +734,10 @@ public class NitroFlareCom extends antiDDoSForHost {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(cookies);
+                    if (!validateCookies) {
+                        /* Trust cookies without check */
+                        return null;
+                    }
                     // lets do a test
                     final Browser br2 = br.cloneBrowser();
                     getPage(br2, "https://" + host);
@@ -743,11 +748,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                     if (user != null) {
                         logger.info("Cookie login successful");
                         fullLogin = false;
-                        if (!fullInfo) {
-                            return null;
-                        } else {
-                            // else we need to do stats!
-                        }
                     } else {
                         logger.info("Cookie login failed");
                         br.clearCookies(br.getHost());
@@ -984,18 +984,18 @@ public class NitroFlareCom extends antiDDoSForHost {
         } else {
             /* Premium download */
             /* check cached download */
-            dllink = link.getStringProperty(directlinkproperty);
+            String dllink = link.getStringProperty(directlinkproperty);
             if (!inValidate(dllink)) {
                 logger.info("Trying to re-use stored generated directurl");
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-                if (!looksLikeDownloadableContent(dl.getConnection())) {
+                if (looksLikeDownloadableContent(dl.getConnection())) {
                     logger.info("Successfully re-used stored generated directurl");
                     link.setProperty(directlinkproperty, dllink);
                     dl.startDownload();
                     return;
                 } else {
                     logger.info("Failed to re-use stored generated directurl");
-                    link.setProperty(directlinkproperty, Property.NULL);
+                    link.removeProperty(directlinkproperty);
                     handleDownloadErrors(account, link, false);
                 }
             }
@@ -1006,32 +1006,54 @@ public class NitroFlareCom extends antiDDoSForHost {
                 /* Additional login is not required. */
                 handlePremiumDownloadAPI(link, account);
             } else {
-                // requestFileInformationWeb(link);
+                /* We can't trust their API 100% thus check via website and API. */
                 fetchAccountInfoWeb(account, false);
                 requestFileInformationApi(link);
                 /* 2020-06-24: Not required anymore (?) */
                 // randomHash(br, link);
                 // ajaxPost(br, "https://" + this.getHost() + "/ajax/setCookie.php", "fileId=" + getFUID(link));
-                /* / could be directlink */
-                dllink = getCorrectedDownloadURL(link);
+                /* Check if we can download right away */
                 int counter = 0;
                 final int maxtries = 2;
+                boolean askedForCaptcha = false;
                 do {
-                    logger.info(String.format("Downloadloop %d / %d", counter + 1, maxtries));
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+                    logger.info(String.format("Premium downloadloop %d / %d", counter + 1, maxtries));
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, getCorrectedDownloadURL(link), resumes, chunks);
                     if (looksLikeDownloadableContent(dl.getConnection())) {
                         /* Directurl */
                         logger.info("Seems like user has direct downloads enabled");
-                        link.setProperty(directlinkproperty, dllink);
+                        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
                         dl.startDownload();
                         return;
                     }
                     logger.info("Seems like user has direct downloads disabled or VPN captcha required");
                     br.followConnection();
-                    handlePremiumVPNWarningCaptcha(link);
+                    if (!requiresCaptchaVPNWarning(br)) {
+                        /* Something else might have gone wrong. */
+                        break;
+                    }
+                    /*
+                     * Handle rare case: User uses VPN, nitroflare recognizes that and lets user solve an extra captcha to proceed via VPN.
+                     */
+                    logger.info("Premium captcha/VPN-captcha required");
+                    if (askedForCaptcha) {
+                        logger.info("Premium captcha/VPN-captcha failure: Captcha required although user has already solved one");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    final Browser ajax = ajaxPost(br, "/ajax/validate-dl-recaptcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                    if (!ajax.getRequest().getHtmlCode().equalsIgnoreCase("passed")) {
+                        /* This should never happen */
+                        logger.info("Premium captcha/VPN-captcha failure");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    logger.info("Premium captcha/VPN-captcha success");
+                    askedForCaptcha = true;
+                    /* TODO: Add handling for "normal" premium captcha. */
                     counter++;
-                } while (handlePremiumVPNWarningCaptcha(link) && counter < maxtries);
+                } while (counter < maxtries);
                 handleDownloadErrors(account, link, false);
+                /* Needed if user has disabled direct downloads in his nitroflare account. */
                 dllink = br.getRegex("<a[^>]*id=\"download\"[^>]*href\\s*=\\s*\"([^\"]+)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
@@ -1049,43 +1071,29 @@ public class NitroFlareCom extends antiDDoSForHost {
     private void handlePremiumDownloadAPI(final DownloadLink link, final Account account) throws Exception {
         this.getPage(getAPIBase() + "/getDownloadLink?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(this.getFID(link)));
         this.checkErrorsAPI(br, link, account);
-        this.dllink = PluginJSonUtils.getJson(br, "url");
-        if (StringUtils.isEmpty(this.dllink) || !this.dllink.startsWith("http")) {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> result = (Map<String, Object>) entries.get("result");
+        final String dllink = result.get("url").toString();
+        if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API download failure");
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-        if (looksLikeDownloadableContent(dl.getConnection())) {
-            link.setProperty(directlinkproperty, dllink);
-            dl.startDownload();
-        } else {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             handleDownloadErrors(account, link, true);
         }
+        link.setProperty(directlinkproperty, dllink);
+        dl.startDownload();
     }
 
-    /**
-     * Handle rare case: User uses VPN, nitroflare recognizes that and lets user solve an extra captcha to proceed via VPN. </br>
-     *
-     * @return: true: Captcha required and successfully solved by user </br> false: Captcha not required </br> exception: Wrong captcha
-     */
-    private boolean handlePremiumVPNWarningCaptcha(final DownloadLink link) throws Exception {
-        if (br.containsHTML("To get rid of the captcha, please avoid using a dedicated server")) {
-            logger.info("Premium VPN captcha required");
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            Browser ajax = ajaxPost(br, "/ajax/validate-dl-recaptcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-            if (!ajax.containsHTML("passed")) {
-                logger.info("Premium captcha failure");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            logger.info("Premium captcha success");
+    private boolean requiresCaptchaVPNWarning(final Browser br) {
+        if (br.containsHTML("(?i)To get rid of the captcha, please avoid using a dedicated server|/ajax/validate-dl-recaptcha")) {
             return true;
         } else {
-            logger.info("Premium VPN captcha NOT required!");
             return false;
         }
     }
 
     private final void handleDownloadErrors(final Account account, final DownloadLink downloadLink, final boolean lastChance) throws PluginException, IOException {
-        // don't fill logger with crapola
         try {
             br.followConnection(true);
         } catch (IOException e) {
@@ -1095,9 +1103,9 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (br.containsHTML(err1)) {
             // I don't see why this would happening logs contain no proxy!
             throw new PluginException(LinkStatus.ERROR_FATAL, err1);
-        } else if (account != null && br.getHttpConnection() != null && (br.toString().equals("Your premium has reached the maximum volume for today") || br.containsHTML("<p id=\"error\"[^>]+>Your premium has reached the maximum volume for today|>This download exceeds the daily download limit"))) {
+        } else if (account != null && br.getHttpConnection() != null && (br.toString().equals("Your premium has reached the maximum volume for today") || br.containsHTML("(?i)<p id=\"error\"[^>]+>\\s*Your premium has reached the maximum volume for today|>\\s*This download exceeds the daily download limit"))) {
             throw new AccountUnavailableException("Daily downloadlimit reached", 5 * 60 * 1000l);
-        } else if (br.containsHTML(">This download exceeds the daily download limit\\. You can purchase")) {
+        } else if (br.containsHTML("(?i)>\\s*This download exceeds the daily download limit\\. You can purchase")) {
             // not enough traffic to download THIS file, doesn't mean zero traffic left.
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You do not have enough traffic left to start this download.");
         }
@@ -1114,7 +1122,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     private void throwPremiumRequiredException(final DownloadLink link, final boolean setProperty) throws PluginException {
         if (setProperty && link != null) {
-            link.setProperty("premiumRequired", Boolean.TRUE);
+            link.setProperty(PROPERTY_PREMIUM_REQUIRED, Boolean.TRUE);
         }
         throw new AccountRequiredException();
     }
@@ -1135,7 +1143,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                 } catch (final Exception e) {
                     logger.log(e);
-                    link.setProperty(property, Property.NULL);
+                    link.removeProperty(property);
                     return null;
                 } finally {
                     try {
@@ -1196,12 +1204,10 @@ public class NitroFlareCom extends antiDDoSForHost {
             // link.setProperty("freelink2", Property.NULL);
             // link.setProperty("freelink", Property.NULL);
             // link.setProperty("premlink", Property.NULL);
-            link.setProperty("premiumRequired", Property.NULL);
-            // link.setProperty("passwordRequired", Property.NULL);
+            link.removeProperty(PROPERTY_PREMIUM_REQUIRED);
         }
     }
 
-    private String  dllink             = null;
     private String  directlinkproperty = null;
     private int     chunks             = 0;
     private boolean resumes            = true;
