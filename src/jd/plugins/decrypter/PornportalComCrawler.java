@@ -367,11 +367,6 @@ public class PornportalComCrawler extends PluginForDecrypt {
         return foundQualities;
     }
 
-    @Override
-    public Class<? extends PornportalComConfig> getConfigInterface() {
-        return PornportalComConfig.class;
-    }
-
     public static String getProtocol() {
         return "https://";
     }
