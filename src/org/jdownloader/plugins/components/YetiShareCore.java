@@ -2008,6 +2008,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             generateAPIKeyForm.put("privateFileStatistics", "0");
                             generateAPIKeyForm.put("watermarkPosition", "top left");
                             generateAPIKeyForm.put("watermarkPadding", "10");
+                            // TODO: remove and remove setNullFieldValuesToEmptyFields
                             generateAPIKeyForm.setNullFieldValuesToEmptyFields();
                             this.submitForm(brc, generateAPIKeyForm);
                             /* Assume that this was successful */
