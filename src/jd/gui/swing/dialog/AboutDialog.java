@@ -40,6 +40,14 @@ import javax.swing.JPanel;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.ClipboardMonitoring;
+import jd.gui.swing.Factory;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.io.JDIO;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -70,14 +78,6 @@ import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-
-import jd.SecondLevelLaunch;
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.swing.Factory;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.io.JDIO;
-import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog<Integer> {
     private int labelHeight = 0;
@@ -163,7 +163,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             links1stRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_uninstall(), new AbstractIcon(IconKey.ICON_CLEAR, 16), new URL("https://support.jdownloader.org/Knowledgebase/Article/View/how-can-i-uninstall-jdownloader")));
             links2ndRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_contributers(), new AbstractIcon(IconKey.ICON_EDIT, 16), new URL("https://support.jdownloader.org/Knowledgebase/Article/View/setup-ide-eclipse")));
             links2ndRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_imprint(), new AbstractIcon(IconKey.ICON_ABOUT, 16), new URL("https://jdownloader.org/impressum")));
-            links2ndRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_privacy(), new AbstractIcon(IconKey.ICON_ABOUT, 16), new URL("https://my.jdownloader.org/legal/privacy.html")));
+            links2ndRow.add(new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_privacy(), new AbstractIcon(IconKey.ICON_ABOUT, 16), new URL("https://my.jdownloader.org/legal/privacy.html#jdownloader")));
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }

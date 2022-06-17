@@ -38,7 +38,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Exit JDownloader" })
     String action_exit_tooltip();
 
-    @Default(lngs = { "en" }, values = { "Help" })
+    @Default(lngs = { "en", "de" }, values = { "Help", "Hilfe" })
     String action_help();
 
     String action_help_tooltip();
@@ -292,7 +292,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "How to uninstall?" })
     String jd_gui_swing_components_AboutDialog_uninstall();
 
-    @Default(lngs = { "en" }, values = { "Privacy Policy" })
+    @Default(lngs = { "en", "de" }, values = { "Privacy Policy", "Datenschutzerklärung" })
     String jd_gui_swing_components_AboutDialog_privacy();
 
     @Default(lngs = { "en" }, values = { "Show license" })
