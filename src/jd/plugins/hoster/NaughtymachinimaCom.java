@@ -17,10 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,6 +35,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtymachinima.com" }, urls = { "https?://(?:www\\.)?naughtymachinima\\.com/video/(\\d+)(/([a-z0-9\\-_]+))?" })
 public class NaughtymachinimaCom extends PluginForHost {
@@ -240,11 +239,6 @@ public class NaughtymachinimaCom extends PluginForHost {
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("login_remember", "on");
-                /*
-                 * Workaround for: possible bad Form handling/bug: Fields with "null" values won't be sent. See
-                 * https://svn.jdownloader.org/issues/89825
-                 */
-                loginform.put("submit_login", "");
                 br.submitForm(loginform);
                 if (!isLoggedin(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

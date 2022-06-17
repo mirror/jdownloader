@@ -4,6 +4,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 import jd.plugins.Account;
+import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -23,8 +24,9 @@ public class AccountEntry {
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
-        if (account != null) {
-            ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(account.getPlugin().getLazyP());
+        final PluginForHost plugin;
+        if (account != null && (plugin = account.getPlugin()) != null) {
+            ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(plugin.getLazyP());
             ConfigurationView.getInstance().getSubPanel(PluginSettings.class).scrollToAccount(account);
         }
     }
