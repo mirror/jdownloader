@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -29,8 +31,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "https?://(www\\.|video\\.)?tv\\.adobe\\.com/((?:watch|embed)/[a-z0-9\\-]+/[a-z0-9\\-]+/?|v/[a-z0-9\\-]+)" })
 public class TvAdbCm extends PluginForDecrypt {
@@ -49,24 +49,23 @@ public class TvAdbCm extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String url_name = null;
         br.setFollowRedirects(true);
-        if (parameter.matches("(?i).*/watch/.+")) {
-            url_name = new Regex(parameter, "adobe\\.com/watch/(.+)").getMatch(0).replace("/", "_");
-            br.getPage(parameter);
+        if (param.getCryptedUrl().matches("(?i).*/watch/.+")) {
+            url_name = new Regex(param.getCryptedUrl(), "adobe\\.com/watch/(.+)").getMatch(0).replace("/", "_");
+            br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("/player/player\\.swf")) {
                 // No need to randomise URL when exporting offline links!
                 // Please always use directhttp && property OFFLINE from decrypters! Using 'OFFLINE' property, ensures when the user checks
                 // online status again it will _always_ return offline status.
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setFinalFileName(new Regex(parameter, "([a-z0-9\\-]+)/?$").getMatch(0) + ".mp4");
+                final DownloadLink offline = createDownloadlink("directhttp://" + param.getCryptedUrl());
+                offline.setFinalFileName(new Regex(param.getCryptedUrl(), "([a-z0-9\\-]+)/?$").getMatch(0) + ".mp4");
                 offline.setProperty("OFFLINE", true);
                 offline.setAvailable(false);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+                ret.add(offline);
+                return ret;
             }
             final String embedurl = br.getRegex("tv\\.adobe\\.com/embed/([^<>\"]*?)\"").getMatch(0);
             if (embedurl == null) {
@@ -74,14 +73,19 @@ public class TvAdbCm extends PluginForDecrypt {
             }
             br.getPage("https://tv.adobe.com/embed/" + embedurl);
         } else {
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
         }
         if (br.containsHTML(">\\s*Staged video playback forbidden")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String html5player = br.getRegex("var bridge = (\\{.*?\\});").getMatch(0);
         if (html5player == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!this.canHandle(br.getURL())) {
+                /* Redirect to somewhere else --> Content offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         // parse for qualities
         Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(html5player);
@@ -99,13 +103,13 @@ public class TvAdbCm extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + u);
             dl.setFinalFileName(name + " - " + q + u.substring(u.lastIndexOf(".")));
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         if (name != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(name);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

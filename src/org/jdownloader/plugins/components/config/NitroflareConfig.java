@@ -11,10 +11,29 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "nitroflare.com", type = Type.HOSTER)
 public interface NitroflareConfig extends PluginConfigInterface {
+    public static final TRANSLATION TRANSLATION                       = new TRANSLATION();
+    final String                    text_AllowMultipleFreeDownloads   = "Allow multiple free downloads?\r\nThis might result in fatal errors!";
+    final String                    text_TrustAPIAboutPremiumOnlyFlag = "Trust API about Premium-only flag?";
+    final String                    text_UsePremiumAPIEnabled         = "Use API for account check and premium account downloading [recommended]?";
+
+    public static class TRANSLATION {
+        public String getAllowMultipleFreeDownloads_label() {
+            return text_AllowMultipleFreeDownloads;
+        }
+
+        public String getTrustAPIAboutPremiumOnlyFlag_label() {
+            return text_TrustAPIAboutPremiumOnlyFlag;
+        }
+
+        public String getUsePremiumAPIEnabled_label() {
+            return text_UsePremiumAPIEnabled;
+        }
+    }
+
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("allowMultipleFreeDownloads")
-    @DescriptionForConfigEntry("Allow multiple free downloads?\r\nThis might result in fatal errors!")
+    @DescriptionForConfigEntry(text_AllowMultipleFreeDownloads)
     @Order(10)
     boolean isAllowMultipleFreeDownloads();
 
@@ -23,7 +42,7 @@ public interface NitroflareConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @TakeValueFromSubconfig("trustAPIPremiumOnly")
-    @DescriptionForConfigEntry("Trust API about Premium Only flag?")
+    @DescriptionForConfigEntry(text_TrustAPIAboutPremiumOnlyFlag)
     @Order(20)
     boolean isTrustAPIAboutPremiumOnlyFlag();
 
@@ -31,7 +50,7 @@ public interface NitroflareConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Use API for account check and premium account downloading [recommended]?")
+    @DescriptionForConfigEntry(text_UsePremiumAPIEnabled)
     @Order(30)
     boolean isUsePremiumAPIEnabled();
 
