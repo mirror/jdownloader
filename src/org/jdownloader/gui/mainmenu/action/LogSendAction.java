@@ -31,7 +31,7 @@ public class LogSendAction extends CustomizableAppAction {
                 return new SendLogDialog(folders) {
                     @Override
                     protected MigPanel createBottomPanel() {
-                        final MigPanel ret = new MigPanel("ins 0", "[][][]20[grow,fill][]", "[]");
+                        final MigPanel ret = new MigPanel("ins 0", "[][]20[grow,fill][]", "[]");
                         try {
                             final JLink help = new JLink(_GUI.T.action_help(), new AbstractIcon(IconKey.ICON_DIALOG_HELP, 16), new URL("https://support.jdownloader.org/Knowledgebase/Article/View/how-to-create-and-upload-session-logs"));
                             final JLink privacy = new JLink(_GUI.T.jd_gui_swing_components_AboutDialog_privacy(), new AbstractIcon(IconKey.ICON_ABOUT, 16), new URL("https://my.jdownloader.org/legal/privacy.html#jdownloader"));
