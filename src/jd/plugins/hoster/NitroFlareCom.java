@@ -958,7 +958,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             if (!br.toString().equalsIgnoreCase("passed")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                // br.getPage(br.getURL() + "&solved=1");
+                br.getPage(br.getURL() + "&solved=1");
                 /* Looks like captcha was solved successfully --> Re-do previous request and re-check for errors. */
                 br.getPage(previousRequest);
                 this.checkErrorsAPI(br, link, account, false);
