@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -37,6 +38,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.NitroflareConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -62,13 +64,51 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?(?:nitroflare\\.(?:com|net)|nitro\\.download)/(?:view|watch)/([A-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NitroFlareCom extends antiDDoSForHost {
-    private final String         baseURL            = "https://nitroflare.com";
+    private final String         baseURL = "https://nitroflare.com";
     /* Documentation: https://nitroflare.com/member?s=api */
     /* don't touch the following! */
-    private static AtomicInteger maxFree            = new AtomicInteger(1);
-    private static String[]      siteSupportedNames = new String[] { "nitroflare.com", "nitroflare.net", "nitro.download" };
+    private static AtomicInteger maxFree = new AtomicInteger(1);
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "nitroflare.com", "nitroflare.net", "nitro.download" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:view|watch)/([A-Z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static String[] getSupportedNamesStatic(final String targetDomain) {
+        for (final String[] domains : getPluginDomains()) {
+            for (final String domain : domains) {
+                if (domain.equals(targetDomain)) {
+                    return domains;
+                }
+            }
+        }
+        return null;
+    }
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,11 +127,6 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
             }
         }
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return siteSupportedNames;
     }
 
     /**
@@ -123,7 +158,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     brc = new Browser();
                 }
                 brc.setFollowRedirects(true);
-                for (final String siteSupportedName : siteSupportedNames) {
+                for (final String siteSupportedName : getSupportedNamesStatic(plugin.getHost())) {
                     try {
                         brc.getPage("https://" + siteSupportedName);
                         baseDomain = brc.getHost();
@@ -135,6 +170,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         plugin.getLogger().log(e);
                     }
                 }
+                /* Possibly blocked by ISP? */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "No working Nitroflare base domain found! Blocked?!");
             }
             return baseDomain;
@@ -269,7 +305,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 getPage(br, getAPIBase() + "/getFileInfo?" + sb);
                 if (br.containsHTML("In these moments we are upgrading the site system")) {
                     for (final DownloadLink dl : links) {
-                        dl.getLinkStatus().setStatusText("Nitroflare.com is maintenance mode. Try again later");
+                        dl.getLinkStatus().setStatusText("Nitroflare.com is maintenance mode. Try again later.");
                         dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                     }
                     return true;
@@ -763,27 +799,21 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 final AccountInfo ai = new AccountInfo();
                 getPage("https://" + host + "/member?s=premium");
-                // status
-                final String status = br.getRegex("<label>Status</label><strong[^>]+>\\s*([^<]+)\\s*</strong>").getMatch(0);
+                final String status = br.getRegex("(?i)<label>Status</label><strong[^>]+>\\s*([^<]+)\\s*</strong>").getMatch(0);
                 if (!inValidate(status)) {
                     if (StringUtils.equalsIgnoreCase(status, "Active")) {
-                        // Active (green) = premium
                         account.setType(AccountType.PREMIUM);
-                        ai.setStatus("Premium Account");
                     } else {
-                        // Expired (red) = free
                         account.setType(AccountType.FREE);
-                        ai.setStatus("Free Account (premium expired)");
                     }
                 } else {
                     account.setType(AccountType.FREE);
-                    ai.setStatus("Free Account");
                 }
                 // extra traffic in webmode isn't added to daily traffic, so we need to do it manually. (api mode is has been added to
                 // traffic left/max)
-                final String extraTraffic = br.getRegex("<label>Your Extra Bandwidth</label><strong>(.*?)</strong>").getMatch(0);
+                final String extraTraffic = br.getRegex("(?i)<label>Your Extra Bandwidth</label><strong>(.*?)</strong>").getMatch(0);
                 // do we have traffic?
-                final String[] traffic = br.getRegex("<label>[^>]*Daily Limit</label><strong>(\\d+(?:\\.\\d+)?(?:\\s*[KMGT]{0,1}B)?) / (\\d+(?:\\.\\d+)?\\s*[KMGT]{0,1}B)</strong>").getRow(0);
+                final String[] traffic = br.getRegex("(?i)<label>[^>]*Daily Limit\\s*</label><strong>(\\d+(?:\\.\\d+)?(?:\\s*[KMGT]{0,1}B)?) / (\\d+(?:\\.\\d+)?\\s*[KMGT]{0,1}B)</strong>").getRow(0);
                 if (traffic != null) {
                     final long extratraffic = !inValidate(extraTraffic) ? SizeFormatter.getSize(extraTraffic) : 0;
                     final long trafficmax = SizeFormatter.getSize(traffic[1]);
@@ -794,7 +824,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     ai.setTrafficMax(trafficmax + extratraffic);
                 }
                 // expire time
-                final String expire = br.getRegex("<label>Time Left</label><strong>(.*?)</strong>").getMatch(0);
+                final String expire = br.getRegex("(?i)<label>\\s*Time Left\\s*</label><strong>(.*?)</strong>").getMatch(0);
                 if (!inValidate(expire)) {
                     // <strong>11 days, 7 hours, 53 minutes.</strong>
                     final String tmpyears = new Regex(expire, "(\\d+)\\s*years?").getMatch(0);
@@ -857,21 +887,21 @@ public class NitroFlareCom extends antiDDoSForHost {
             br.setCookiesExclusive(true);
             getPage(getAPIBase() + "/getKeyInfo?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()));
             checkErrorsAPI(br, null, account);
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> result = (Map<String, Object>) entries.get("result");
             final AccountInfo ai = new AccountInfo();
-            final String trafficLeftStr = PluginJSonUtils.getJson(br, "trafficLeft");
-            final String trafficMaxStr = PluginJSonUtils.getJson(br, "trafficMax");
-            final String expiryDate = PluginJSonUtils.getJson(br, "expiryDate");
-            final String accountStatus = PluginJSonUtils.getJson(br, "status");
-            if (!StringUtils.isEmpty(trafficLeftStr) && !StringUtils.isEmpty(trafficMaxStr)) {
-                ai.setTrafficLeft(trafficLeftStr);
-                ai.setTrafficMax(trafficMaxStr);
+            final String status = (String) result.get("status");
+            final Number trafficLeft = (Number) result.get("trafficLeft");
+            final Number trafficMax = (Number) result.get("trafficMax");
+            final String expiryDate = (String) result.get("expiryDate");
+            if (trafficLeft != null && trafficMax != null) {
+                ai.setTrafficLeft(trafficLeft.longValue());
+                ai.setTrafficMax(trafficMax.longValue());
             }
-            if (!"active".equalsIgnoreCase(accountStatus) || "0".equals(expiryDate)) {
+            if (!"active".equalsIgnoreCase(status) || expiryDate == null || expiryDate.toString().equals("0")) {
                 account.setType(AccountType.FREE);
-                ai.setStatus("Free Account");
             } else {
                 account.setType(AccountType.PREMIUM);
-                ai.setStatus("Premium Account");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expiryDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
             }
             return ai;
@@ -958,7 +988,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             if (!inValidate(dllink)) {
                 logger.info("Trying to re-use stored generated directurl");
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-                if (looksLikeDownloadableContent(dl.getConnection())) {
+                if (!looksLikeDownloadableContent(dl.getConnection())) {
                     logger.info("Successfully re-used stored generated directurl");
                     link.setProperty(directlinkproperty, dllink);
                     dl.startDownload();
@@ -1007,13 +1037,11 @@ public class NitroFlareCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-                if (looksLikeDownloadableContent(dl.getConnection())) {
-                    link.setProperty(directlinkproperty, dllink);
-                    dl.startDownload();
-                    return;
-                } else {
+                if (!looksLikeDownloadableContent(dl.getConnection())) {
                     handleDownloadErrors(account, link, true);
                 }
+                link.setProperty(directlinkproperty, dllink);
+                dl.startDownload();
             }
         }
     }
