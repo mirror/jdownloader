@@ -229,6 +229,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             if (dlform == null) {
                 logger.warning("Failed to find dlform");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                final String action = br.getRegex("href\\s*=\\s*\"(/download/\\d+/.*?)\"").getMatch(0);
+                if (action != null) {
+                    dlform.setAction(action);
+                }
             }
             if (dlform.containsHTML("g-recaptcha-response")) {
                 int attempt = 0;
