@@ -1041,7 +1041,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    final Browser ajax = ajaxPost(br, "/ajax/validate-dl-recaptcha", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+                    final Browser ajax = ajaxPost(br, "/ajax/validate-dl-recaptcha", "response=" + Encoding.urlEncode(recaptchaV2Response));
                     if (!ajax.getRequest().getHtmlCode().equalsIgnoreCase("passed")) {
                         /* This should never happen */
                         logger.info("Premium captcha/VPN-captcha failure");
