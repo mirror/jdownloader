@@ -37,6 +37,7 @@ public class LAFOptions {
     }
 
     private final LAFSettings           cfg;
+    private final String                path;
     private static LookAndFeelExtension LAFEXTENSION;
 
     public static LookAndFeelExtension getLookAndFeelExtension() {
@@ -47,6 +48,10 @@ public class LAFOptions {
         return cfg;
     }
 
+    public String getPath() {
+        return path;
+    }
+
     /**
      * Create a new instance of LAFOptions. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      *
@@ -55,7 +60,7 @@ public class LAFOptions {
     private LAFOptions(String laf) {
         final int i = laf.lastIndexOf(".");
         final String name = (i >= 0 ? laf.substring(i + 1) : laf);
-        final String path = "cfg/laf/" + name;
+        path = "cfg/laf/" + name;
         LookAndFeelExtension ext = null;
         if (!"org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel".equals(laf)) {
             try {
