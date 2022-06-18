@@ -274,10 +274,14 @@ public class NitroFlareCom extends antiDDoSForHost {
         return prepBr;
     }
 
+    private boolean isPremiumOnly(final DownloadLink link) {
+        return link != null && link.getBooleanProperty(PROPERTY_PREMIUM_REQUIRED, false);
+    }
+
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (link != null) {
-            if ((account == null || account.getType() == AccountType.FREE) && link.hasProperty(PROPERTY_PREMIUM_REQUIRED)) {
+            if ((account == null || account.getType() == AccountType.FREE) && isPremiumOnly(link)) {
                 return false;
             }
         }
@@ -480,7 +484,7 @@ public class NitroFlareCom extends antiDDoSForHost {
              * whether or not this file is downloadable for free users.
              */
             requestFileInformationAPI(link);
-            if (link.hasProperty(PROPERTY_PREMIUM_REQUIRED)) {
+            if (isPremiumOnly(link)) {
                 throwPremiumRequiredException(link);
             }
             requestFileInformationWebsite(link);
@@ -1145,7 +1149,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private void throwPremiumRequiredException(final DownloadLink link) throws PluginException {
-        if (!link.hasProperty(PROPERTY_PREMIUM_REQUIRED)) {
+        if (link != null) {
             link.setProperty(PROPERTY_PREMIUM_REQUIRED, Boolean.TRUE);
         }
         throw new AccountRequiredException();
