@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -30,13 +31,10 @@ public class CheckOnlineStatusAction extends AbstractMyJDSelectionAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         final List<?> children = getSelection().getChildren();
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
-
                 final List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
                 final LinkCheckProgress linkCheckProgress = new LinkCheckProgress();
                 for (Object l : children) {
@@ -49,9 +47,7 @@ public class CheckOnlineStatusAction extends AbstractMyJDSelectionAction {
                     }
                 }
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-
                 linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CheckableLink>() {
-
                     @Override
                     public void linkCheckDone(CheckableLink l) {
                         if (l instanceof DownloadLink) {
@@ -64,7 +60,8 @@ public class CheckOnlineStatusAction extends AbstractMyJDSelectionAction {
                 return null;
             }
         });
-        DownloadsTableModel.getInstance().setAvailableColumnVisible(true);
+        if (!Application.isHeadless()) {
+            DownloadsTableModel.getInstance().setAvailableColumnVisible(true);
+        }
     }
-
 }
