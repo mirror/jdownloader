@@ -23,9 +23,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bestcash2020.com" }, urls = { "https?://(?:www\\.)?bestcash2020\\.com/([A-Za-z0-9]+)" })
-public class Bestcash2020Com extends MightyScriptAdLinkFly {
-    public Bestcash2020Com(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ez4short.com" }, urls = { "https?://(?:www\\.)?ez4short\\.com/([A-Za-z0-9]+)" })
+public class Ez4shortCom extends MightyScriptAdLinkFly {
+    public Ez4shortCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -33,14 +33,15 @@ public class Bestcash2020Com extends MightyScriptAdLinkFly {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(false);
+        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
         br.getPage(param.getCryptedUrl());
+        /* E.g. redirect to techmody.io fake blog --> 2 steps --> Back to ez4short.com */
         refererHost = br.getRequest().getLocation();
         return super.decryptIt(param, progress);
     }
 
     @Override
     protected String getSpecialReferer() {
-        /* Pre-set Referer to skip multiple ad pages e.g. bestcash2020.com -> e3raftech.online -> bestcash2020.com */
         return refererHost;
     }
 }
