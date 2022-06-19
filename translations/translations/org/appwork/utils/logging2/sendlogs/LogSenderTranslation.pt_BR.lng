@@ -1,9 +1,10 @@
+LogAction_actionPerformed_upload_=Fazer upload agora
 LogAction_actionPerformed_wait_=Aguarde...
 LogAction_actionPerformed_zip_title_=Criando Pacote de Log
 LogAction_getString_uploading_=Preparando seus logs...
 LogModel_getStringValue_between_=Entre %s1 e %s2
+LogModel_initColumns_check_upload_=Fazer upload?
 LogModel_initColumns_time_=Data
-LogModel_initColumns_x_=Marcar
 LogTable_onContextMenu_disable_=Desmarcar
 LogTable_onContextMenu_enable_=Marcar
 SendLogDialog_SendLogDialog_title_=Enviar Relatório de Erro
