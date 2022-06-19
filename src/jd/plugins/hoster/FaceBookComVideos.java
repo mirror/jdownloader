@@ -67,6 +67,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/(?:photo\\.php|photo/)\\?fbid=(\\d+)";
     private static final String TYPE_GROUP_PERMALINK                   = "(?i)https://[^/]+/groups/[^/]+/permalink/\\d+";
+    private static final String TYPE_POSTS                             = "(?i)https://[^/]+/([^/]+)/posts/(\\d+).*";
     private static final String TYPE_PHOTO_PART_OF_ALBUM               = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
     /* Allow parameter 'v' to be anywhere in that URL. */
     private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
@@ -111,6 +112,7 @@ public class FaceBookComVideos extends PluginForHost {
             regex += ".*?video\\.php\\?v=\\d+|";
             regex += "video/embed\\?video_id=\\d+|";
             regex += ".*?/videos/(?:[^/]+/)?\\d+|";
+            regex += ".*?/posts/(?:[^/]+/)?\\d+|";
             regex += "groups/[^/]+/permalink/\\d+|";
             regex += "watch/\\?.*v=\\d+|";
             regex += "watch/live/\\?.*v=\\d+";
@@ -187,14 +189,14 @@ public class FaceBookComVideos extends PluginForHost {
         }
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
         final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
-        if (link.getPluginPatternMatcher().matches(TYPE_GROUP_PERMALINK)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_GROUP_PERMALINK) || link.getPluginPatternMatcher().matches(TYPE_POSTS)) {
             br.getPage(link.getPluginPatternMatcher());
             String video = null;
             boolean loggedIn = false;
             boolean search = true;
             while (search) {
                 search = false;
-                video = br.getRegex("href\\s*=\\s*(https://www.facebook.com/[^/]+/videos/\\d+)").getMatch(0);
+                video = br.getRegex("href\\s*=\\s*(?:\"|')(https://www.facebook.com/[^/]+/videos/(?:[^/]+/)?\\d+)").getMatch(0);
                 if (video == null) {
                     video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/\\d+)").getMatch(0);
                     if (video != null) {

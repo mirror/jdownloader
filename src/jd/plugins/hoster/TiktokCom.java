@@ -514,6 +514,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     public static void parseFileInfoAPI(final DownloadLink link, final Map<String, Object> aweme_detail) throws PluginException {
+        link.setProperty(PROPERTY_VIDEO_ID, aweme_detail.get("aweme_id").toString());
         final Map<String, Object> status = (Map<String, Object>) aweme_detail.get("status");
         if ((Boolean) status.get("is_delete")) {
             link.setAvailable(false);
