@@ -212,6 +212,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 dl.setProperty(TiktokCom.PROPERTY_USERNAME, author);
                 dl.setProperty(TiktokCom.PROPERTY_USER_ID, video.get("authorId"));
                 dl.setProperty(TiktokCom.PROPERTY_DATE, dateFormatted);
+                dl.setProperty(TiktokCom.PROPERTY_VIDEO_ID, videoID);
                 TiktokCom.setLikeCount(dl, (Number) stats.get("diggCount"));
                 TiktokCom.setPlayCount(dl, (Number) stats.get("playCount"));
                 TiktokCom.setShareCount(dl, (Number) stats.get("shareCount"));
