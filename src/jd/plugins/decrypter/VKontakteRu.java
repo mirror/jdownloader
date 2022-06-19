@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -1075,7 +1076,7 @@ public class VKontakteRu extends PluginForDecrypt {
         this.getPage(param.getCryptedUrl());
         handleVideoErrorsWebsite(br);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String internalSectionName;
+        String internalSectionName;
         final String sectionNameURL = UrlQuery.parse(br.getURL()).get("section");
         if (sectionNameURL != null) {
             internalSectionName = sectionNameURL;
@@ -1091,6 +1092,16 @@ public class VKontakteRu extends PluginForDecrypt {
         final String oid = Integer.toString(((Number) entries.get("oid")).intValue());
         final int maxItemsPerPage = ((Number) entries.get("VIDEO_SILENT_VIDEOS_CHUNK_SIZE")).intValue();
         Map<String, Object> videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + oid + "/" + internalSectionName);
+        if (videoInfoMap == null) {
+            Map<String, Object> pageVideosList = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + oid);
+            if (pageVideosList != null && pageVideosList.size() == 1) {
+                final Entry<String, Object> entry = pageVideosList.entrySet().iterator().next();
+                internalSectionName = entry.getKey();
+                videoInfoMap = (Map<String, Object>) entry.getValue();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         final int numberofVideos = ((Number) videoInfoMap.get("count")).intValue();
         logger.info("numberofVideos=" + numberofVideos + "|maxVideosPerPage=" + maxItemsPerPage);
         int offset = 0;
