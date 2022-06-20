@@ -24,6 +24,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -60,22 +61,34 @@ public class PornHubComGallery extends PluginForDecrypt {
             hosterPlugin.login(account, false);
         }
         final String url;
+        final String domainFromURL = Browser.getHost(param.getCryptedUrl());
         if (account != null && AccountType.PREMIUM.equals(account.getType())) {
-            url = param.getCryptedUrl().replace("pornhub.com", "pornhubpremium.com");
+            /* Premium account available --> Use premium domain */
+            if (PornHubCom.isPremiumDomain(domainFromURL)) {
+                url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), domainFromURL));
+            } else {
+                url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.DOMAIN_PORNHUB_PREMIUM));
+            }
         } else {
-            url = param.getCryptedUrl().replace("pornhubpremium.com", "pornhub.com");
+            /* No account or free account --> User free domain */
+            if (PornHubCom.isPremiumDomain(domainFromURL)) {
+                url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.DOMAIN_PORNHUB_FREE));
+            } else {
+                url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), domainFromURL));
+            }
         }
+        final String domainFromURLNew = Browser.getHost(url);
         jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(hosterPlugin, account, url);
-        final boolean privateImage = br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final boolean privateImage = br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage);
         String fpName = br.getRegex("class=\"photoAlbumTitleV2\">\\s*([^<>\"]*?)\\s*<").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
         }
         if (fpName == null) {
-            fpName = "pornhub.com album " + new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
+            fpName = domainFromURLNew + " album " + new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
         }
         final Set<String> pages = new HashSet<String>();
         while (true) {

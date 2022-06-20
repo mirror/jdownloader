@@ -871,8 +871,8 @@ public class PornHubCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String DOMAIN_PORNHUB_FREE    = "pornhub.com";
-    private static final String DOMAIN_PORNHUB_PREMIUM = "pornhubpremium.com";
+    public static final String  DOMAIN_PORNHUB_FREE    = "pornhub.com";
+    public static final String  DOMAIN_PORNHUB_PREMIUM = "pornhubpremium.com";
     private static final String COOKIE_ID_FREE         = "v2_free";
     private static final String COOKIE_ID_PREMIUM      = "v2_premium";
 
