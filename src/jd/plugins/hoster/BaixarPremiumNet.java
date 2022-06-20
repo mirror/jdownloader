@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -121,8 +120,6 @@ public class BaixarPremiumNet extends PluginForHost {
             crippledhost = crippledhost.toLowerCase();
             if (crippledhost.equals("icerbox")) {
                 supportedHosts.add("icerbox.com");
-            } else if (crippledhost.equals("shareonline")) {
-                supportedHosts.add("share-online.biz");
             } else {
                 supportedHosts.add(crippledhost);
             }

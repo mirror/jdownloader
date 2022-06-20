@@ -24,7 +24,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -308,9 +307,7 @@ public class RapidoxPl extends PluginForHost {
             }
             crippledhost = crippledhost.toLowerCase();
             /* First cover special cases */
-            if (crippledhost.equals("share_online")) {
-                supportedHosts.add("share-online.biz");
-            } else if (crippledhost.equals("ul.to") || crippledhost.equals("uploaded")) {
+            if (crippledhost.equals("ul.to") || crippledhost.equals("uploaded")) {
                 supportedHosts.add("uploaded.net");
             } else if (crippledhost.equals("_4shared")) {
                 supportedHosts.add("4shared.com");

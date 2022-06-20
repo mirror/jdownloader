@@ -17,6 +17,14 @@ package jd.plugins.hoster;
 
 import java.net.URL;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -28,14 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
     public static final String PRESET_NAME_PROPERTY = "preSetName";
@@ -45,15 +45,15 @@ public class GenericM3u8 extends PluginForHost {
     }
 
     @Override
-    public String getHost(DownloadLink link, Account account) {
+    public String getHost(final DownloadLink link, final Account account) {
         if (link != null) {
-            return Browser.getHost(link.getDownloadURL());
+            return Browser.getHost(link.getPluginPatternMatcher());
         }
         return super.getHost(link, account);
     }
 
     @Override
-    public boolean isSpeedLimited(DownloadLink link, Account account) {
+    public boolean isSpeedLimited(final DownloadLink link, final Account account) {
         return false;
     }
 
@@ -81,41 +81,41 @@ public class GenericM3u8 extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return requestFileInformation(downloadLink, downloadLink.getPluginPatternMatcher());
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, link.getPluginPatternMatcher());
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink, final String dllink) throws Exception {
-        checkFFProbe(downloadLink, "Download a HLS Stream");
+    public AvailableStatus requestFileInformation(final DownloadLink link, final String dllink) throws Exception {
+        checkFFProbe(link, "Download a HLS Stream");
         this.setBrowserExclusive();
-        final String cookiesString = downloadLink.getStringProperty("cookies", null);
+        final String cookiesString = link.getStringProperty("cookies", null);
         if (cookiesString != null) {
             final String host = Browser.getHost(dllink);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
-        final String referer = downloadLink.getStringProperty("Referer", null);
+        final String referer = link.getStringProperty("Referer", null);
         if (referer != null) {
             br.getPage(referer);
             br.followRedirect();
         }
-        final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
+        final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
         final StreamInfo streamInfo = downloader.getProbe();
         if (downloader.isEncrypted()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS(" + downloader.getEncryptionMethod() + ") is not supported!");
         } else if (streamInfo == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final int hlsBandwidth = downloadLink.getIntegerProperty("hlsBandwidth", -1);
+        final int hlsBandwidth = link.getIntegerProperty("hlsBandwidth", -1);
         if (hlsBandwidth > 0) {
             for (M3U8Playlist playList : downloader.getPlayLists()) {
                 playList.setAverageBandwidth(hlsBandwidth);
             }
         }
         final long estimatedSize = downloader.getEstimatedSize();
-        if (downloadLink.getKnownDownloadSize() == -1) {
-            downloadLink.setDownloadSize(estimatedSize);
+        if (link.getKnownDownloadSize() == -1) {
+            link.setDownloadSize(estimatedSize);
         } else {
-            downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+            link.setDownloadSize(Math.max(link.getKnownDownloadSize(), estimatedSize));
         }
         String videoq = null;
         String audioq = null;
@@ -140,10 +140,10 @@ public class GenericM3u8 extends PluginForHost {
                 }
             }
         }
-        if (downloadLink.getFinalFileName() == null) {
-            String name = downloadLink.getStringProperty(PRESET_NAME_PROPERTY, null);
+        if (link.getFinalFileName() == null) {
+            String name = link.getStringProperty(PRESET_NAME_PROPERTY);
             if (name == null) {
-                name = downloadLink.isNameSet() ? downloadLink.getName() : getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
+                name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
             }
             if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
                 name = name.substring(0, name.length() - 5);
@@ -159,34 +159,43 @@ public class GenericM3u8 extends PluginForHost {
                 }
             }
             name += "." + extension;
-            downloadLink.setFinalFileName(name);
+            link.setFinalFileName(name);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        handleFree(downloadLink, downloadLink.getPluginPatternMatcher());
+    public void handleFree(final DownloadLink link) throws Exception {
+        handleFree(link, link.getPluginPatternMatcher());
     }
 
-    public void handleFree(final DownloadLink downloadLink, final String dllink) throws Exception {
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        final String cookiesString = downloadLink.getStringProperty("cookies", null);
+    public void handleFree(final DownloadLink url, final String dllink) throws Exception {
+        checkFFmpeg(url, "Download a HLS Stream");
+        final String cookiesString = url.getStringProperty("cookies", null);
         if (cookiesString != null) {
             final String host = Browser.getHost(dllink);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
-        final String referer = downloadLink.getStringProperty("Referer", null);
+        final String referer = url.getStringProperty("Referer", null);
         if (referer != null) {
             br.getPage(referer);
             br.followRedirect();
         }
-        dl = new HLSDownloader(downloadLink, br, dllink);
+        dl = new HLSDownloader(url, br, dllink);
         dl.startDownload();
     }
 
+    public static String createURLForThisPlugin(final String url) {
+        final String protocolPart = new Regex(url, "http(s?://)").getMatch(0);
+        if (protocolPart != null) {
+            return url.replaceFirst("https?://", "m3u8" + protocolPart);
+        } else {
+            return url;
+        }
+    }
+
     @Override
-    public boolean hasCaptcha(DownloadLink link, Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
         return false;
     }
 
