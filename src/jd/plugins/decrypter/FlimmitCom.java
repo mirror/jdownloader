@@ -47,6 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.GenericM3u8;
 
 /**
  *
@@ -203,7 +204,7 @@ public class FlimmitCom extends PluginForDecrypt {
             selectedQualities.addAll(qualities);
         }
         for (final HlsContainer quality : selectedQualities) {
-            final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
+            final DownloadLink dl = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(quality.getDownloadurl()));
             dl.setFinalFileName(baseFilename + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
             dl.setAvailable(true);
             dl._setFilePackage(fp);
