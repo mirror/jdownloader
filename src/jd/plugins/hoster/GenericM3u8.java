@@ -185,6 +185,7 @@ public class GenericM3u8 extends PluginForHost {
         dl.startDownload();
     }
 
+    /** Converts given URL into an URL which this plugin can handle. */
     public static String createURLForThisPlugin(final String url) {
         final String protocolPart = new Regex(url, "http(s?://)").getMatch(0);
         if (protocolPart != null) {
