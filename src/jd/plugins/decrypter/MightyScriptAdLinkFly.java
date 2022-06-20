@@ -177,7 +177,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }.getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(hCaptchaResponse));
                         form.put("h-captcha-response", Encoding.urlEncode(hCaptchaResponse));
-                        form.getInputField("submit").setDisabled(false);
                     } else if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
                         requiresCaptchaWhichCanFail = false;
                         final String key;
@@ -220,7 +219,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                             }
                         }.getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        form.getInputField("submit").setDisabled(false);
                     } else if (captchaType == CaptchaType.solvemedia) {
                         final String solvemediaChallengeKey = this.getAppVarsResult("solvemedia_challenge_key");
                         if (StringUtils.isEmpty(solvemediaChallengeKey)) {
