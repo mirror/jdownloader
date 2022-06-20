@@ -2677,7 +2677,9 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private static boolean isSinglePicture(final String input) {
-        if (input.matches(PATTERN_PHOTO_SINGLE) || input.matches(PATTERN_PHOTO_SINGLE_Z) && !input.matches(PATTERN_PHOTO_MODULE)) {
+        if (input.matches(PATTERN_PHOTO_SINGLE)) {
+            return true;
+        } else if (input.matches(PATTERN_PHOTO_SINGLE_Z) && !input.matches(PATTERN_PHOTO_MODULE)) {
             return true;
         } else {
             return false;
