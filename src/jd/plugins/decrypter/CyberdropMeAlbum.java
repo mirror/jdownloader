@@ -23,14 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -42,6 +34,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -90,6 +90,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             directurl = correctDirecturl(directurl);
             final DownloadLink dl = this.createDownloadlink(directurl);
             dl.setProperty(DirectHTTP.PROPERTY_RATE_LIMIT, 500);
+            dl.setProperty(DirectHTTP.PROPERTY_MAX_CONCURRENT, 1);
             if (getHost().equals("bunkr.is")) {
                 dl.setProperty(DirectHTTP.FORCE_NOCHUNKS, true);
             }
