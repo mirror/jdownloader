@@ -31,7 +31,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.PornportalComConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
 import jd.PluginWrapper;
@@ -984,7 +983,7 @@ public class PornportalCom extends PluginForHost {
                                      * Set pornhubpremium cookies with a new browser instance. Then update pornhub cookies each time, the
                                      * main account of this plugin gets refreshed.
                                      */
-                                    jd.plugins.hoster.PornHubCom.saveCookies(br2, pornhubAccount);
+                                    jd.plugins.hoster.PornHubCom.saveCookies(this, br2, pornhubAccount);
                                     if (addNewAccount) {
                                         AccountController.getInstance().addAccount(pornhubPlugin, pornhubAccount);
                                     }

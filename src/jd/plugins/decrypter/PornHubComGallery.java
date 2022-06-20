@@ -67,12 +67,12 @@ public class PornHubComGallery extends PluginForDecrypt {
             if (PornHubCom.isPremiumDomain(domainFromURL)) {
                 url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), domainFromURL));
             } else {
-                url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.DOMAIN_PORNHUB_PREMIUM));
+                url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.gerPrimaryPremiumDomain()));
             }
         } else {
             /* No account or free account --> User free domain */
             if (PornHubCom.isPremiumDomain(domainFromURL)) {
-                url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.DOMAIN_PORNHUB_FREE));
+                url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.gerPrimaryFreeDomain()));
             } else {
                 url = param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), domainFromURL));
             }
