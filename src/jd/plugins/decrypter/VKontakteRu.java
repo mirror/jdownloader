@@ -139,7 +139,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_VIDEO_ALBUM                       = "(https?://)?.*?/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|video/.*|videos(?:-)?\\d+(?:\\?section=[^\\&]+)?)";
     private static final String PATTERN_VIDEO_COMMUNITY_ALBUM             = "(https?://)?[^/]*/video\\?gid=\\d+.*";
     private static final String PATTERN_PHOTO_SINGLE                      = "https?://[^/]+/photo(\\-)?\\d+_\\d+.*?";
-    private static final String PATTERN_PHOTO_SINGLE_Z                    = "https?://[^/]+/.+z=photo(?:\\-)?\\d+_\\d+.*?";
+    private static final String PATTERN_PHOTO_SINGLE_Z                    = "https?://[^/]+/.*z=photo(-?\\d+_\\d+).*";
     private static final String PATTERN_PHOTO_MODULE                      = "https?://[^/]+/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
     private static final String PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String PATTERN_PHOTO_ALBUMS                      = "https?://[^/]+/.*?albums((?:\\-)?\\d+)";
@@ -2575,7 +2575,7 @@ public class VKontakteRu extends PluginForDecrypt {
     static boolean siteHandleSecurityCheck(final Plugin plugin, final Account account, final Browser br, final String parameter) throws Exception {
         // this task shouldn't be done without an account!, ie. login should have taken place
         if (account == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new AccountRequiredException();
         }
         // this is effectively a login (verification) task! We should synchronise before continuing!
         synchronized (VKontakteRuHoster.LOCK) {
@@ -2677,7 +2677,11 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private static boolean isSinglePicture(final String input) {
-        return (input.matches(PATTERN_PHOTO_SINGLE) || input.matches(PATTERN_PHOTO_SINGLE_Z) && !input.matches(PATTERN_PHOTO_MODULE));
+        if (input.matches(PATTERN_PHOTO_SINGLE) || input.matches(PATTERN_PHOTO_SINGLE_Z) && !input.matches(PATTERN_PHOTO_MODULE)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private static boolean isSingleWallPost(final String input) {

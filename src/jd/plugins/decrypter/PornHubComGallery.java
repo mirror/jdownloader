@@ -36,6 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.PornHubCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/album/\\d+" })
 public class PornHubComGallery extends PluginForDecrypt {
@@ -53,15 +54,10 @@ public class PornHubComGallery extends PluginForDecrypt {
         param.setCryptedUrl(param.getCryptedUrl().replaceAll("https://", "http://"));
         param.setCryptedUrl(param.getCryptedUrl().replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "https://www."));
         br.setFollowRedirects(true);
-        Account account = AccountController.getInstance().getValidAccount(getHost());
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
+        final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
-            try {
-                jd.plugins.hoster.PornHubCom.login(this, br, account, false);
-            } catch (PluginException e) {
-                logger.info("Login failure");
-                handleAccountException(account, e);
-                account = null;
-            }
+            hosterPlugin.login(account, false);
         }
         final String url;
         if (account != null && AccountType.PREMIUM.equals(account.getType())) {
@@ -69,7 +65,7 @@ public class PornHubComGallery extends PluginForDecrypt {
         } else {
             url = param.getCryptedUrl().replace("pornhubpremium.com", "pornhub.com");
         }
-        jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, url);
+        jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(hosterPlugin, account, url);
         final boolean privateImage = br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
