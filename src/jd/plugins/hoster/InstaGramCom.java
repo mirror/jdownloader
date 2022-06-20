@@ -372,6 +372,11 @@ public class InstaGramCom extends PluginForHost {
         checkErrorsAltAPI(account, br);
     }
 
+    public static void postPageAltAPI(final Account account, final Browser br, final String url, final UrlQuery query) throws PluginException, IOException {
+        br.postPage(url, query);
+        checkErrorsAltAPI(account, br);
+    }
+
     public static void checkErrorsAltAPI(final Account account, final Browser br) throws PluginException {
         /* Offline errorhandling */
         if (br.getHttpConnection().getResponseCode() == 200) {
