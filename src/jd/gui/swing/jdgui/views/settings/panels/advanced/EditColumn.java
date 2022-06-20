@@ -9,7 +9,7 @@ import java.lang.reflect.Array;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
-import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
 
 import org.appwork.storage.JSonStorage;
@@ -22,6 +22,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
@@ -239,7 +240,7 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     @Override
     public JPopupMenu createHeaderPopup() {
         final JPopupMenu ret = new JPopupMenu();
-        final JCheckBox cb = new JCheckBox("Show only modified values");
+        final JCheckBoxMenuItem cb = new JCheckBoxMenuItem(_GUI.T.AdvancedTableModel_initColumns_modifiedonly_checkboxaction_());
         cb.setSelected(isResetOnlyFilterEnabled());
         cb.addActionListener(new ActionListener() {
             @Override
