@@ -39,6 +39,7 @@ import javax.script.ScriptException;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -74,9 +75,10 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.PornHubComVideoCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-@PluginDependencies(dependencies = { jd.plugins.decrypter.PornHubCom.class })
+@PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
 public class PornHubCom extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
@@ -113,6 +115,7 @@ public class PornHubCom extends PluginForHost {
     public static final String                    CRAWL_VIDEO_MP4                       = "CRAWL_VIDEO_MP4";
     public static final String                    CRAWL_THUMBNAIL                       = "CRAWL_THUMBNAIL";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
+    private static final String                   USE_ORIGINAL_SERVER_FILENAME          = "USE_ORIGINAL_SERVER_FILENAME";
     public static final String                    GIFS_WEBM                             = "GIFS_WEBM";
     private final String                          REMOVED_VIDEO                         = ">\\s*This video has been removed\\s*<";
     public static final String                    PROPERT_FORMAT                        = "format";
@@ -125,7 +128,7 @@ public class PornHubCom extends PluginForHost {
     public static final String                    PROPERTY_ACCOUNT_is_cookie_login_only = "is_cookie_login_only";
 
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.PornHubCom.getPluginDomains();
+        return PornHubComVideoCrawler.getPluginDomains();
     }
 
     @Override
@@ -309,7 +312,7 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation", "static-access" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String source_url = link.getStringProperty("mainlink");
@@ -447,7 +450,7 @@ public class PornHubCom extends PluginForHost {
             format = "mp4";
         }
         server_filename = getFilenameFromURL(dlUrl);
-        if (this.getPluginConfig().getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false) && server_filename != null) {
+        if (this.getPluginConfig().getBooleanProperty(USE_ORIGINAL_SERVER_FILENAME, false) && server_filename != null) {
             link.setFinalFileName(server_filename);
         } else {
             link.setFinalFileName(html_filename);
@@ -1402,6 +1405,9 @@ public class PornHubCom extends PluginForHost {
         return "JDownloader's Pornhub plugin helps downloading videoclips from pornhub.com.";
     }
 
+    public static final String   SELECTED_DOMAIN = "selected_domain";
+    public static final String[] DOMAINS         = new String[] { "Auto (prefers pornhub(premium).com)", "pornhub(premium).com", "pornhub(premium).org" };
+
     private void setConfigElements() {
         final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BEST_ONLY, "Always only grab the best resolution available?").setDefaultValue(false);
         getConfig().addEntry(best);
@@ -1448,8 +1454,11 @@ public class PornHubCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_VIDEO_MP4, "Crawl video (MP4)?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_THUMBNAIL, "Crawl video thumbnail?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_ORIGINAL_SERVER_FILENAME", "Use original server filename?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_ORIGINAL_SERVER_FILENAME, "Use original server filename?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GIFS_WEBM, "Prefer webm over old gif format?").setDefaultValue(true));
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_DOMAIN, DOMAINS, "Select preferred domain").setDefaultValue(0));
+        }
     }
 
     @Override
