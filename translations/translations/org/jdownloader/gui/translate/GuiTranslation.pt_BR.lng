@@ -84,6 +84,7 @@ AdvancedSettings_onShow_msg_=Estas configurações avançadas não devem ser mod
 AdvancedSettings_onShow_title_=Se ainda houver alguma garantia, ela termina aqui!
 AdvancedTableModel_initColumns_desc_=Descrição
 AdvancedTableModel_initColumns_key_=Chave
+AdvancedTableModel_initColumns_modifiedonly_checkboxaction_=Mostrar somente valores modificados
 AdvancedTableModel_initColumns_type_=Tipo
 AdvancedTable_onContextMenu_advanced_value_edit=Editor avançado para este valor
 AdvancedTable_onContextMenu_reset_selection=Restaurar entradas selecionadas aos valores padrão
