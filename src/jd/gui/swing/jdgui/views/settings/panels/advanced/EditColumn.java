@@ -2,12 +2,15 @@ package jd.gui.swing.jdgui.views.settings.panels.advanced;
 
 import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Array;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
+import javax.swing.JCheckBox;
+import javax.swing.JPopupMenu;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -86,23 +89,27 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         }
     }
 
-    class ResetAction extends AbstractAction {
+    public static class ResetAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
         private final Icon          reset_no         = NewTheme.I().getIcon(IconKey.ICON_RESET, 16);
         private final Icon          reset_yes        = NewTheme.I().getDisabledIcon(reset_no);
         private boolean             resetable        = false;
+        private final EditColumn    editColumn;
 
-        public ResetAction() {
+        public ResetAction(EditColumn editcolumn) {
             super("Reset to Default");
             setEnabledIntern(true);
+            this.editColumn = editcolumn;
         }
 
         public void actionPerformed(ActionEvent e) {
             if (!resetable) {
                 return;
             }
-            EditColumn.this.stopCellEditing();
+            if (editColumn != null) {
+                editColumn.stopCellEditing();
+            }
             new EDTHelper<Void>() {
                 @Override
                 public Void edtRun() {
@@ -110,7 +117,9 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
                         final Object defaultValue = value.getDefault();
                         Dialog.getInstance().showConfirmDialog(0, "Reset to default?", "Really reset " + value.getKey() + " to " + defaultValue);
                         value.setValue(defaultValue);
-                        EditColumn.this.getModel().getTable().repaint();
+                        if (editColumn != null) {
+                            editColumn.getModel().getTable().repaint();
+                        }
                     } catch (DialogClosedException e1) {
                         e1.printStackTrace();
                     } catch (DialogCanceledException e1) {
@@ -191,7 +200,7 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         iconDE = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_HELP, 16)), new AbstractIcon(IconKey.ICON_RESET, 16));
         iconEE = new MergedIcon(new AbstractIcon(IconKey.ICON_HELP, 16), new AbstractIcon(IconKey.ICON_RESET, 16));
         info = new InfoAction();
-        reset = new ResetAction();
+        reset = new ResetAction(this);
         setRowSorter(new ExtDefaultRowSorter<AdvancedConfigEntry>() {
             @Override
             public int compare(AdvancedConfigEntry o1, AdvancedConfigEntry o2) {
@@ -228,6 +237,21 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     }
 
     @Override
+    public JPopupMenu createHeaderPopup() {
+        final JPopupMenu ret = new JPopupMenu();
+        final JCheckBox cb = new JCheckBox("Show only modified values");
+        cb.setSelected(isResetOnlyFilterEnabled());
+        cb.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                setResetOnlyFilterEnabled(cb.isSelected());
+            }
+        });
+        ret.add(cb);
+        return ret;
+    }
+
+    @Override
     public int getMaxWidth() {
         return getMinWidth();
     }
@@ -254,18 +278,23 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         return this.tooltip;
     }
 
+    protected boolean isResetOnlyFilterEnabled() {
+        return false;
+    }
+
+    protected void setResetOnlyFilterEnabled(boolean enabled) {
+    }
+
     @Override
     public boolean onSingleClick(MouseEvent e, AdvancedConfigEntry obj) {
         if (e.getPoint().x - getBounds().x < getWidth() / 2) {
             // left
-            System.out.println("LEFT");
-            InfoAction info = new InfoAction();
+            final InfoAction info = new InfoAction();
             info.setEntry(obj);
             info.actionPerformed(null);
         } else {
             // right
-            System.out.println("RIGHT");
-            ResetAction reset = new ResetAction();
+            final ResetAction reset = new ResetAction(this);
             reset.setEntry(obj);
             reset.actionPerformed(null);
         }

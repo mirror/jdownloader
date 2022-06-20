@@ -19,7 +19,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.encoding.URLEncode;
@@ -121,9 +120,6 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                 } else {
                     if (rc.isInvisible()) {
                         // recaptchav2 invisible
-                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            throw new Exception("RecaptchaV2 invisible not yet supported");
-                        }
                         type = "RecaptchaV2 invisible";
                         r.addFormData(new FormData("type", "4"));
                     } else {
