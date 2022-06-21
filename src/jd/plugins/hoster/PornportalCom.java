@@ -23,16 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PornportalComConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -55,7 +45,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornportalCom extends PluginForHost {
@@ -769,8 +768,8 @@ public class PornportalCom extends PluginForHost {
                     ai.setStatus("Free Account (Trial)");
                 } else {
                     /**
-                     * Premium accounts must not have any expire-date! </br>
-                     * 2021-06-05: Only set expire-date if it is still valid. Premium accounts are premium as long as "isExpired" != true.
+                     * Premium accounts must not have any expire-date! </br> 2021-06-05: Only set expire-date if it is still valid. Premium
+                     * accounts are premium as long as "isExpired" != true.
                      */
                     account.setType(AccountType.PREMIUM);
                     final String expiryDate = (String) map.get("expiryDate");
@@ -789,8 +788,8 @@ public class PornportalCom extends PluginForHost {
                 }
                 if (!foundValidExpireDate && map.containsKey("addons")) {
                     /**
-                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
-                     * Each bundle can have different expire-dates and also separate pricing and so on.
+                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br> Each bundle can have
+                     * different expire-dates and also separate pricing and so on.
                      */
                     logger.info("Looking for alternative expiredate");
                     long highestExpireTimestamp = -1;
@@ -953,7 +952,7 @@ public class PornportalCom extends PluginForHost {
                                      */
                                     logger.info("Pornhub external login successful");
                                     boolean addNewAccount = false;
-                                    final PluginForHost pornhubPlugin = JDUtilities.getPluginForHost(domain_pornhub);
+                                    final PluginForHost pornhubPlugin = getNewPluginForHostInstance(domain_pornhub);
                                     if (pornhubAccount == null) {
                                         /* Adds account if non existant */
                                         logger.info("Failed to find special pornhub account --> Creating it");
@@ -983,7 +982,7 @@ public class PornportalCom extends PluginForHost {
                                      * Set pornhubpremium cookies with a new browser instance. Then update pornhub cookies each time, the
                                      * main account of this plugin gets refreshed.
                                      */
-                                    jd.plugins.hoster.PornHubCom.saveCookies(this, br2, pornhubAccount);
+                                    saveCookies(this, br2, pornhubAccount);
                                     if (addNewAccount) {
                                         AccountController.getInstance().addAccount(pornhubPlugin, pornhubAccount);
                                     }
@@ -1008,6 +1007,33 @@ public class PornportalCom extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    public static void saveCookies(final Plugin plg, final Browser br, final Account acc) {
+        boolean successFree = false;
+        for (final String domain : PornHubCom.domainsFree) {
+            final Cookies cookies = br.getCookies(domain);
+            if (cookies != null && !cookies.isEmpty()) {
+                acc.saveCookies(cookies, PornHubCom.COOKIE_ID_FREE);
+                successFree = true;
+                break;
+            }
+        }
+        if (!successFree) {
+            plg.getLogger().info("Failed to find any FREE cookies to save");
+        }
+        boolean successPremium = false;
+        for (final String domain : PornHubCom.domainsPremium) {
+            final Cookies cookies = br.getCookies(domain);
+            if (cookies != null && !cookies.isEmpty()) {
+                acc.saveCookies(cookies, PornHubCom.COOKIE_ID_PREMIUM);
+                successPremium = true;
+                break;
+            }
+        }
+        if (!successPremium) {
+            plg.getLogger().info("Failed to find any PREMIUM cookies to save");
         }
     }
 
