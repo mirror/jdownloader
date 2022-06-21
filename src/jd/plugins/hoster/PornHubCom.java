@@ -101,15 +101,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+        }
+    });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
@@ -885,11 +885,11 @@ public class PornHubCom extends PluginForHost {
     public static final String COOKIE_ID_FREE    = "v2_free";
     public static final String COOKIE_ID_PREMIUM = "v2_premium";
 
-    public static String gerPrimaryFreeDomain() {
+    public static String getPrimaryFreeDomain() {
         return PornHubCom.domainsFree[0];
     }
 
-    public static String gerPrimaryPremiumDomain() {
+    public static String getPrimaryPremiumDomain() {
         return PornHubCom.domainsPremium[0];
     }
 
@@ -1327,7 +1327,7 @@ public class PornHubCom extends PluginForHost {
 
     /** Returns embed url for free- and free account mode. */
     public static String createPornhubVideoLinkEmbedFree(final String pluginDomain, final String viewkey) {
-        return String.format("https://www.%s/embed/%s", getConfiguredDomainURL(pluginDomain, gerPrimaryFreeDomain()), viewkey);
+        return String.format("https://www.%s/embed/%s", getConfiguredDomainURL(pluginDomain, getPrimaryFreeDomain()), viewkey);
     }
 
     /** Returns embed url for premium account mode. */
@@ -1438,8 +1438,8 @@ public class PornHubCom extends PluginForHost {
         return "JDownloader's Pornhub plugin helps downloading videoclips from pornhub(premium).com.";
     }
 
-    public static final String   SELECTED_DOMAIN = "selected_domain";
-    public static final String[] DOMAINS         = new String[] { "Auto (prefers pornhub(premium).com)", "Use domain in added URLs (uses auto handling for login)", "pornhub(premium).com", "pornhub(premium).org" };
+    public static final String   SELECTED_DOMAIN = "selected_domain2";
+    public static final String[] DOMAINS         = new String[] { "pornhub(premium).com", "pornhub.org" };
 
     /** Returns user configured domain based on domain given in URL we want to access. */
     public static String getConfiguredDomainURL(final String pluginDomain, final String domainFromURL) {
@@ -1449,44 +1449,25 @@ public class PornHubCom extends PluginForHost {
         final SubConfiguration cfg = SubConfiguration.getConfig(pluginDomain);
         switch (cfg.getIntegerProperty(SELECTED_DOMAIN, 0)) {
         case 1:
-            return domainFromURL;
-        case 2:
-            return domainFromURL.replaceFirst("\\.org$", ".com");
-        case 3:
             return domainFromURL.replaceFirst("\\.com$", ".org");
-        case 0: /* Case 0 = auto handling */
+        case 0:
         default:
-            /* Auto handling */
-            return cfg.getStringProperty(PornHubComVideoCrawler.PROPERTY_LAST_WORKING_DOMAIN, domainFromURL);
+            return domainFromURL.replaceFirst("\\.org$", ".com");
         }
     }
 
     /** Returns user configured domain for login process free account. */
     public static String getConfiguredDomainLoginFree(final String pluginDomain) {
-        return getConfiguredDomainLogin(pluginDomain, gerPrimaryFreeDomain());
+        return getConfiguredDomainURL(pluginDomain, getPrimaryFreeDomain());
     }
 
     /** Returns user configured domain for login process premium account. */
     public static String getConfiguredDomainLoginPremium(final String pluginDomain) {
-        return getConfiguredDomainLogin(pluginDomain, gerPrimaryPremiumDomain());
-    }
-
-    /** Returns user configured domain for login process. */
-    public static String getConfiguredDomainLogin(final String pluginDomain, final String fallback) {
-        if (fallback == null) {
-            throw new IllegalArgumentException("fallback is null!");
-        }
-        final SubConfiguration cfg = SubConfiguration.getConfig(pluginDomain);
-        switch (cfg.getIntegerProperty(SELECTED_DOMAIN, 0)) {
-        case 2:
-            return fallback.replaceFirst("\\.org$", ".com");
-        case 3:
-            return fallback.replaceFirst("\\.com$", ".org");
-        case 0:
-        case 1: /* Case 0 + 1 = Auto handling */
-        default:
-            /* Auto handling */
-            return cfg.getStringProperty(PornHubComVideoCrawler.PROPERTY_LAST_WORKING_DOMAIN, fallback);
+        if (true) {
+            /* right now https://pornhubpremium.org does not work */
+            return getPrimaryPremiumDomain();
+        } else {
+            return getConfiguredDomainURL(pluginDomain, getPrimaryPremiumDomain());
         }
     }
 
