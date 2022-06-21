@@ -55,9 +55,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 import org.jdownloader.updatev2.gui.LookAndFeelType;
 
 public class LookAndFeelController implements LAFManagerInterface {
-    public static final String                 DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel";
-    public static final String                 JD_PLAIN                                                      = "org.jdownloader.gui.laf.plain.PlainLookAndFeel";
-    private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
+    private static final LookAndFeelController INSTANCE = new LookAndFeelController();
 
     /**
      * get the only existing instance of LookAndFeelController. This is a singleton
@@ -183,7 +181,7 @@ public class LookAndFeelController implements LAFManagerInterface {
             } finally {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Use Look & Feel: " + laf);
             }
-            if (laf.contains("Synthetica") || laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL) || laf.equals(JD_PLAIN)) {
+            if (laf.contains("Synthetica") || laf.equals(LookAndFeelType.DEFAULT.getClazz()) || laf.equals(LookAndFeelType.PLAIN.getClazz())) {
                 //
                 String liz = null;
                 try {
