@@ -32,22 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -68,6 +52,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends antiDDoSForHost {
@@ -1080,23 +1080,31 @@ public class RapidGatorNet extends antiDDoSForHost {
             br.clearCookies(this.getHost());
             getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+            final Object status = entries.get("status");
             final Map<String, Object> response = (Map<String, Object>) entries.get("response");
-            /* 2019-12-14: session_id == PHPSESSID cookie */
-            sessionID = (String) response.get("session_id");
-            if (StringUtils.isEmpty(sessionID)) {
-                /* 2019-12-14: APIv2 */
-                sessionID = (String) response.get("token");
+            if (response == null) {
+                if ("401".equals(StringUtils.valueOfOrNull(status))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong e-mail or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown error:" + status, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                /* 2019-12-14: session_id == PHPSESSID cookie */
+                sessionID = (String) response.get("session_id");
+                if (StringUtils.isEmpty(sessionID)) {
+                    /* 2019-12-14: APIv2 */
+                    sessionID = (String) response.get("token");
+                }
+                if (StringUtils.isEmpty(sessionID)) {
+                    logger.info("Failed to find session_id");
+                    handleErrors_api(null, null, account, br.getHttpConnection());
+                    logger.warning("Unknown login failure");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /* Store session_id */
+                account.setProperty(PROPERTY_sessionid, sessionID);
+                account.setProperty(PROPERTY_timestamp_session_create_api, System.currentTimeMillis());
+                return sessionID;
             }
-            if (StringUtils.isEmpty(sessionID)) {
-                logger.info("Failed to find session_id");
-                handleErrors_api(null, null, account, br.getHttpConnection());
-                logger.warning("Unknown login failure");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            /* Store session_id */
-            account.setProperty(PROPERTY_sessionid, sessionID);
-            account.setProperty(PROPERTY_timestamp_session_create_api, System.currentTimeMillis());
-            return sessionID;
         }
     }
 
