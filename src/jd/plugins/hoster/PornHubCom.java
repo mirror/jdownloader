@@ -176,7 +176,7 @@ public class PornHubCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         try {
             link.setPluginPatternMatcher(correctAddedURL(this.getHost(), link.getPluginPatternMatcher()));
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
         }
     }
 
@@ -216,7 +216,7 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    /** Corrects URL based on given/not given premium account (pornhubpremium.com or pornhub.com) and user preference. */
+    /** Corrects single video/gif URL based on given/not given premium account (pornhubpremium.com or pornhub.com) and user preference. */
     public static String correctAddedURL(final String pluginDomain, final String url) throws PluginException {
         final String viewKey = getViewkeyFromURL(url);
         final String urlDomain = Browser.getHost(url);
@@ -313,7 +313,6 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -908,6 +907,9 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
+    public static final String[] domainsFree    = new String[] { "pornhub.com", "pornhub.org" };
+    public static final String[] domainsPremium = new String[] { "pornhubpremium.com", "pornhubpremium.org", "modelhub.com" };
+
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -923,17 +925,18 @@ public class PornHubCom extends PluginForHost {
                 if (!force && cookiesOk && (System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID_FREE) <= trust_cookie_age) && (System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID_PREMIUM) <= trust_cookie_age)) {
                     setCookiesFree(br, freeCookies);
                     setCookiesPremium(br, premiumCookies);
-                    logger.info("Trust login cookies:" + account.getType());
+                    logger.info("Trust login cookies without check:" + account.getType());
                     /* We trust these cookies --> Do not check them */
                     return false;
                 }
                 if (freeCookies != null && premiumCookies != null) {
+                    /* 2022-06-21: TODO: Refactor this as it's quite unreadable and contains duplicated code */
                     /* Check cookies - only perform a full login if they're not valid anymore. */
                     setCookiesFree(br, freeCookies);
                     setCookiesPremium(br, premiumCookies);
                     if (AccountType.PREMIUM.equals(account.getType())) {
                         // fast check
-                        getPage(br, (getProtocolPremium() + getConfiguredDomainLogin(this.getHost(), gerPrimaryPremiumDomain()) + "/user/login_status?ajax=1"));
+                        getPage(br, (getProtocolPremium() + getConfiguredDomainLoginPremium(this.getHost()) + "/user/login_status?ajax=1"));
                         if (br.containsHTML("\"success\"\\s*:\\s*(\"1\"|true)") && isLoggedInPremiumCookie(br.getCookies(br.getHost()))) {
                             setAccountType(account, AccountType.PREMIUM);
                             logger.info("Verified(fast) premium->premium login cookies:" + account.getType());
@@ -955,7 +958,7 @@ public class PornHubCom extends PluginForHost {
                         }
                     } else {
                         getPage(br, (getProtocolFree() + "www." + getConfiguredDomainLoginFree(this.getHost())));
-                        if (br.containsHTML("/authenticate/goToLoggedIn\"\\s*>\\s*Access your Pornhub Premium")) {
+                        if (br.containsHTML("(?i)/authenticate/goToLoggedIn\"\\s*>\\s*Access your Pornhub Premium")) {
                             // 2020-12-29 - no auto redirect to pornhub premium
                             getPage(br, "/authenticate/goToLoggedIn");
                         }
@@ -1107,9 +1110,6 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    public static final String[] domainsFree    = new String[] { "pornhub.com", "pornhub.org" };
-    public static final String[] domainsPremium = new String[] { "pornhubpremium.com", "pornhubpremium.org", "modelhub.com" };
-
     public static void setCookiesFree(final Browser br, final Cookies cookies) {
         for (final String domain : domainsFree) {
             br.setCookies(domain, cookies);
@@ -1123,7 +1123,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isLoggedInHtml(final Browser br) {
-        return br != null && br.containsHTML("class\\s*=\\s*\"signOut\"|/premium/lander\"\\s*>\\s*Logout\\s*<");
+        return br != null && br.containsHTML("(?i)class\\s*=\\s*\"signOut\"|/premium/lander\"\\s*>\\s*Logout\\s*<");
     }
 
     public static boolean isLoggedInHtmlPremium(final Browser br) {
@@ -1134,11 +1134,15 @@ public class PornHubCom extends PluginForHost {
         return br != null && br.getURL() != null && !PornHubCom.isPremiumDomain(br.getHost()) && isLoggedInFreeCookieFree(br.getCookies(br.getHost())) && isLoggedInHtml(br);
     }
 
-    public static boolean isLoggedInFreeCookieFree(Cookies cookies) {
-        return cookies != null && (cookies.get("gateway_security_key", Cookies.NOTDELETEDPATTERN) != null || cookies.get("il", Cookies.NOTDELETEDPATTERN) != null);
+    public static boolean isLoggedInFreeCookieFree(final Cookies cookies) {
+        return isLoggedInCookie(cookies);
     }
 
-    public static boolean isLoggedInPremiumCookie(Cookies cookies) {
+    public static boolean isLoggedInPremiumCookie(final Cookies cookies) {
+        return isLoggedInCookie(cookies);
+    }
+
+    public static boolean isLoggedInCookie(final Cookies cookies) {
         return cookies != null && (cookies.get("gateway_security_key", Cookies.NOTDELETEDPATTERN) != null || cookies.get("il", Cookies.NOTDELETEDPATTERN) != null);
     }
 
