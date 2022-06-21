@@ -113,46 +113,45 @@ public class VKontakteRu extends PluginForDecrypt {
     private String              vkwall_graburlsinsideposts_regex;
     private String              vkwall_graburlsinsideposts_regex_default;
     /* Some supported url patterns */
-    private static final String PATTERN_SHORT                             = "https?://vk\\.cc/.+";
-    private static final String PATTERN_URL_EXTERN                        = "https?://[^/]+/away\\.php\\?to=.+";
+    private static final String PATTERN_SHORT                             = "(?i)https?://vk\\.cc/.+";
+    private static final String PATTERN_URL_EXTERN                        = "(?i)https?://[^/]+/away\\.php\\?to=.+";
     /** 2022-01-19: Audio stuff is deprecated because it's all DRM protected. No need to fix crawl methods for audio content! */
     @Deprecated
-    private static final String PATTERN_GENERAL_AUDIO                     = "https?://[^/]+/audio.*?";
+    private static final String PATTERN_GENERAL_AUDIO                     = "(?i)https?://[^/]+/audio.*?";
     @Deprecated
-    private static final String PATTERN_AUDIO_ALBUM                       = "https?://[^/]+/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
+    private static final String PATTERN_AUDIO_ALBUM                       = "(?i)https?://[^/]+/(?:audio(?:\\.php)?\\?id=(?:\\-)?\\d+|audios(?:\\-)?\\d+).*?";
     @Deprecated
-    private static final String PATTERN_AUDIO_PAGE                        = "https?://[^/]+/page\\-\\d+_\\d+.*?";
+    private static final String PATTERN_AUDIO_PAGE                        = "(?i)https?://[^/]+/page\\-\\d+_\\d+.*?";
     @Deprecated
-    private static final String PATTERN_AUDIO_PAGE_oid                    = "https?://[^/]+/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
+    private static final String PATTERN_AUDIO_PAGE_oid                    = "(?i)https?://[^/]+/pages\\?oid=\\-\\d+\\&p=(?!va_c)[^<>/\"]+";
     @Deprecated
-    private static final String PATTERN_AUDIO_AUDIOS_ALBUM                = "https?://[^/]+/(audios\\-\\d+\\?album_id=\\d+|music/album/-?\\d+_\\d+)";
+    private static final String PATTERN_AUDIO_AUDIOS_ALBUM                = "(?i)https?://[^/]+/(audios\\-\\d+\\?album_id=\\d+|music/album/-?\\d+_\\d+)";
     @Deprecated
-    private static final String PATTERN_AUDIO_AUDIOS_ALBUM_2020           = "https?://[^/]+/music/album/(-?\\d+)_(\\d+).*?";
+    private static final String PATTERN_AUDIO_AUDIOS_ALBUM_2020           = "(?i)https?://[^/]+/music/album/(-?\\d+)_(\\d+).*?";
     public static final String  PATTERN_VIDEO_SINGLE_Z                    = "(?i)https?://[^/]+/.*?z=video(-?\\d+_\\d+).*?";
     private static final String PATTERN_CLIP_SINGLE_Z                     = "(?i)https?://[^/]+/.*?z=clip((?:\\-)?\\d+_\\d+).*?";
     private static final String PATTERN_VIDEO_SINGLE_ORIGINAL             = "(?i)https?://[^/]+/video((?:\\-)?\\d+_\\d+).*";
     private static final String PATTERN_CLIP_SINGLE_ORIGINAL              = "(?i)https?://[^/]+/clip((?:\\-)?\\d+_\\d+).*";
-    private static final String PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "https?://[^/]+/video(\\-)?\\d+_\\d+\\?listid=[a-z0-9]+";
-    private static final String PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "https?://[^/]+/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
-    private static final String PATTERN_VIDEO_SINGLE_EMBED                = "https?://[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
-    private static final String PATTERN_VIDEO_SINGLE_EMBED_HASH           = "https?://[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[^&]+.*?";
+    private static final String PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "(?i)https?://[^/]+/video(\\-)?\\d+_\\d+\\?listid=[a-z0-9]+";
+    private static final String PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "(?i)https?://[^/]+/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
+    private static final String PATTERN_VIDEO_SINGLE_EMBED                = "(?i)https?://[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
+    private static final String PATTERN_VIDEO_SINGLE_EMBED_HASH           = "(?i)https?://[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[^&]+.*?";
     private static final String PATTERN_VIDEO_ALBUM                       = "(https?://)?.*?/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|video/.*|videos(?:-)?\\d+(?:\\?section=[^\\&]+)?)";
     private static final String PATTERN_VIDEO_COMMUNITY_ALBUM             = "(https?://)?[^/]*/video\\?gid=\\d+.*";
     private static final String PATTERN_PHOTO_SINGLE                      = "https?://[^/]+/photo(\\-)?\\d+_\\d+.*?";
-    private static final String PATTERN_PHOTO_SINGLE_Z                    = "https?://[^/]+/.*z=photo(-?\\d+_\\d+).*";
-    private static final String PATTERN_PHOTO_MODULE                      = "https?://[^/]+/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
+    private static final String PATTERN_PHOTO_SINGLE_Z                    = "(?i)https?://[^/]+/([a-z0-9]+)\\?z=photo(-?\\d+_\\d+)((/|%2F).+)";
     private static final String PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
-    private static final String PATTERN_PHOTO_ALBUMS                      = "https?://[^/]+/.*?albums((?:\\-)?\\d+)";
-    private static final String PATTERN_GENERAL_WALL_LINK                 = "https?://[^/]+/wall(?:\\-)?\\d+(?:\\?maxoffset=\\d+\\&currentoffset=\\d+)?";
-    private static final String PATTERN_USER_STORY                        = "https?://[^/]+/[^\\?]+\\?w=story-?(\\d+)_(\\d+).*";
-    private static final String PATTERN_WALL_LOOPBACK_LINK                = "https?://[^/]+/wall\\-\\d+.*maxoffset=(\\d+)\\&currentoffset=(\\d+).*";
+    private static final String PATTERN_PHOTO_ALBUMS                      = "(?i)https?://[^/]+/.*?albums((?:\\-)?\\d+)";
+    private static final String PATTERN_GENERAL_WALL_LINK                 = "(?i)https?://[^/]+/wall(?:\\-)?\\d+(?:\\?maxoffset=\\d+\\&currentoffset=\\d+)?";
+    private static final String PATTERN_USER_STORY                        = "(?i)https?://[^/]+/[^\\?]+\\?w=story-?(\\d+)_(\\d+).*";
+    private static final String PATTERN_WALL_LOOPBACK_LINK                = "(?i)https?://[^/]+/wall\\-\\d+.*maxoffset=(\\d+)\\&currentoffset=(\\d+).*";
     private static final String PATTERN_WALL_POST_LINK                    = ".+wall(?:\\-)?\\d+_\\d+.*?";
     private static final String PATTERN_WALL_CLIPS                        = "(?)https?://[^/]+/clips/([^/]+)";
-    private static final String PATTERN_PUBLIC_LINK                       = "https?://[^/]+/public\\d+";
-    private static final String PATTERN_CLUB_LINK                         = "https?://[^/]+/club\\d+.*?";
-    private static final String PATTERN_EVENT_LINK                        = "https?://[^/]+/event\\d+";
-    private static final String PATTERN_ID_LINK                           = "https?://[^/]+/id(-?\\d+).*";
-    private static final String PATTERN_DOCS                              = "https?://[^/]+/docs\\?oid=\\-\\d+";
+    private static final String PATTERN_PUBLIC_LINK                       = "(?i)https?://[^/]+/public\\d+";
+    private static final String PATTERN_CLUB_LINK                         = "(?i)https?://[^/]+/club\\d+.*?";
+    private static final String PATTERN_EVENT_LINK                        = "(?i)https?://[^/]+/event\\d+";
+    private static final String PATTERN_ID_LINK                           = "(?i)https?://[^/]+/id(-?\\d+).*";
+    private static final String PATTERN_DOCS                              = "(?i)https?://[^/]+/docs\\?oid=\\-\\d+";
     private static final String FILEOFFLINE                               = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     /* Possible/Known types of single vk-wall-posts */
     private static final String wallpost_type_photo                       = "photo";
@@ -265,7 +264,7 @@ public class VKontakteRu extends PluginForDecrypt {
             /**
              * Single photo links, those are just passed to the hoster plugin! Example:http://vk.com/photo125005168_269986868
              */
-            ret.add(decryptWallPostSpecifiedPhoto(param));
+            ret.add(processSinglePicture(param));
             return ret;
         }
         /* Now process all items that require http requests to be able to return results. */
@@ -339,10 +338,12 @@ public class VKontakteRu extends PluginForDecrypt {
             return true;
         } else if (isSingleVideo(url)) {
             return true;
+        } else if (isSinglePicture(url)) {
+            return true;
         } else if (isUserStory(url)) {
             return true;
         } else {
-            if (url.matches(PATTERN_VIDEO_SINGLE_Z) || url.matches(PATTERN_PHOTO_ALBUM) || url.matches(PATTERN_PHOTO_ALBUMS) || url.matches(PATTERN_AUDIO_PAGE) || url.matches(PATTERN_GENERAL_WALL_LINK) || url.matches(PATTERN_GENERAL_AUDIO) || url.matches(PATTERN_WALL_POST_LINK) || url.matches(PATTERN_PHOTO_MODULE) || url.matches(PATTERN_AUDIO_PAGE_oid) || url.matches(PATTERN_DOCS)) {
+            if (url.matches(PATTERN_VIDEO_SINGLE_Z) || url.matches(PATTERN_PHOTO_ALBUM) || url.matches(PATTERN_PHOTO_ALBUMS) || url.matches(PATTERN_AUDIO_PAGE) || url.matches(PATTERN_GENERAL_WALL_LINK) || url.matches(PATTERN_GENERAL_AUDIO) || url.matches(PATTERN_WALL_POST_LINK) || url.matches(PATTERN_AUDIO_PAGE_oid) || url.matches(PATTERN_DOCS)) {
                 return true;
             } else {
                 return false;
@@ -351,7 +352,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private boolean isClubUrl(final String url) {
-        if (new Regex(url, PATTERN_CLUB_LINK).matches() && !new Regex(url, PATTERN_PHOTO_MODULE).matches() && !isSingleVideo(url)) {
+        if (new Regex(url, PATTERN_CLUB_LINK).matches() && !isSinglePicture(url) && !isSingleVideo(url)) {
             return true;
         } else {
             return false;
@@ -647,14 +648,21 @@ public class VKontakteRu extends PluginForDecrypt {
         final String oid = ids[0];
         final String id = ids[1];
         final String oid_and_id = oid + "_" + id;
+        String module = null;
         String listID;
         if (param.getCryptedUrl().matches(PATTERN_VIDEO_SINGLE_Z)) {
             listID = new Regex(param.getCryptedUrl(), "z=video-?\\d+_\\d+(?:%2F|/)([A-Za-z0-9\\-_]+)").getMatch(0);
         } else {
             listID = UrlQuery.parse(param.getCryptedUrl()).get("listid");
-            if (listID == null && param.getDownloadLink() != null) {
+        }
+        if (param.getDownloadLink() != null) {
+            if (listID == null) {
                 listID = param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_VIDEO_LIST_ID);
             }
+            module = param.getDownloadLink().getStringProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module);
+        }
+        if (module == null) {
+            module = "public";
         }
         /* Check if fast-crawl is allowed */
         final QualitySelectionMode qualitySelectionMode = getQualitySelectionMode();
@@ -689,12 +697,18 @@ public class VKontakteRu extends PluginForDecrypt {
             this.getPage(br, br.createPostRequest("/al_video.php?act=show", query));
         } else if (listID != null) {
             final UrlQuery query = new UrlQuery();
-            query.add("act", "show_inline");
+            query.add("act", "show");
             query.add("al", "1");
+            query.add("claim", "");
+            query.add("dmcah", "");
+            query.add("hd", "");
             query.add("list", listID);
-            query.add("module", "public");
+            query.add("module", module);
+            // query.add("playlist_id", "-12345678_-2");
+            query.add("show_original", "");
+            query.add("t", "");
             query.add("video", oid_and_id);
-            br.postPage(getProtocol() + "vk.com/al_video.php", query);
+            br.postPage(getProtocol() + "vk.com/al_video.php?act=show", query);
         } else {
             getPage(getProtocol() + "vk.com/video" + oid_and_id);
         }
@@ -2120,30 +2134,31 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Works offline, simply converts the added link into a DownloadLink for the host plugin and sets required properties. */
-    private DownloadLink decryptWallPostSpecifiedPhoto(final CryptedLink param) throws Exception {
+    private DownloadLink processSinglePicture(final CryptedLink param) throws Exception {
         String module = null;
-        String list_id = null;
+        String listID = null;
         /* URLs may contain multiple list_id-like strings! It is important to use the source URL as an orientation. */
-        if (new Regex(param.getCryptedUrl(), "https?://[^/]+/photo-?\\d+_\\d+\\?tag=\\d+").matches()) {
+        final Regex photoTag = new Regex(param.getCryptedUrl(), "https?://[^/]+/photo-?\\d+_\\d+\\?tag=(\\d+)");
+        final Regex photoZ = new Regex(param.getCryptedUrl(), PATTERN_PHOTO_SINGLE_Z);
+        if (photoTag.matches()) {
             module = "photos";
-            list_id = "tag" + new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
-        } else if (!isSinglePicture(param.getCryptedUrl())) {
-            if (param.getCryptedUrl().contains("/wall")) {
-                module = "wall";
-            } else {
-                module = "public";
-            }
-            list_id = new Regex(param.getCryptedUrl(), "((?:wall|album)(\\-)?\\d+_\\d+)$").getMatch(0);
+            listID = "tag" + new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
+        } else if (photoZ.matches()) {
+            module = photoZ.getMatch(0); // e.g. wall, album, feed
+            listID = photoZ.getMatch(2);
         }
-        final String owner_id = new Regex(param.getCryptedUrl(), "photo(-?\\d+)_\\d+").getMatch(0);
-        final String content_id = new Regex(param.getCryptedUrl(), "photo-?\\d+_(\\d+)").getMatch(0);
-        final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id, null);
+        final String ownerID = new Regex(param.getCryptedUrl(), "photo(-?\\d+)_\\d+").getMatch(0);
+        final String contentID = new Regex(param.getCryptedUrl(), "photo-?\\d+_(\\d+)").getMatch(0);
+        if (ownerID == null || contentID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final DownloadLink dl = getSinglePhotoDownloadLink(ownerID + "_" + contentID, null);
         dl.setContentUrl(param.getCryptedUrl());
         dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         if (module != null) {
             dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, module);
         }
-        dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_list_id, list_id);
+        dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_list_id, listID);
         return dl;
     }
 
@@ -2679,7 +2694,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static boolean isSinglePicture(final String input) {
         if (input.matches(PATTERN_PHOTO_SINGLE)) {
             return true;
-        } else if (input.matches(PATTERN_PHOTO_SINGLE_Z) && !input.matches(PATTERN_PHOTO_MODULE)) {
+        } else if (input.matches(PATTERN_PHOTO_SINGLE_Z)) {
             return true;
         } else {
             return false;
@@ -2777,10 +2792,6 @@ public class VKontakteRu extends PluginForDecrypt {
             /* PATTERN_AUDIO_PAGE RegEx is wide open --> Make sure that our URL is correct! */
             final String pageID = get_ID_PAGE(url);
             url = getBaseURL() + "/page-" + pageID;
-        } else if (isSingleVideo(param.getCryptedUrl())) {
-            if (url.matches(PATTERN_VIDEO_SINGLE_Z) || url.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
-                url = "https://" + this.getHost() + "/" + new Regex(url, "(video(?:\\-)?\\d+_\\d+)").getMatch(0);
-            }
         } else if (isKnownType(param.getCryptedUrl())) {
             /* Don't change anything */
         } else {
