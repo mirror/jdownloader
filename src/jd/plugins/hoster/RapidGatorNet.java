@@ -33,6 +33,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -430,25 +432,24 @@ public class RapidGatorNet extends antiDDoSForHost {
             Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            getPage(br2, "https://" + this.getHost() + "/download/AjaxStartTimer?fid=" + fid);
-            final String sid = br2.getRegex("sid\":\"([a-zA-Z0-9]{32})").getMatch(0);
-            String state = br2.getRegex("state\":\"([^\"]+)").getMatch(0);
+            getPage(br2, "/download/AjaxStartTimer?fid=" + fid);
+            Map<String, Object> entries = JSonStorage.restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final String sid = (String) entries.get("sid");
+            String state = (String) entries.get("state");
             if (!"started".equalsIgnoreCase(state)) {
                 if (br2.toString().equals("No htmlCode read")) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                logger.info(br2.toString());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (sid == null) {
-                logger.info(br2.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             sleep((wait + 5) * 1001l, link);
-            /* needed so we have correct referrer ;) (back to original br) */
-            br2 = br.cloneBrowser();
+            /* Needed so we have correct referrer ;) (back to original br) */
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            getPage(br2, "https://" + this.getHost() + "/download/AjaxGetDownloadLink?sid=" + sid);
+            getPage(br2, "/download/AjaxGetDownloadLink?sid=" + sid);
             state = br2.getRegex("state\":\"(.*?)\"").getMatch(0);
             if (!"done".equalsIgnoreCase(state)) {
                 if (br2.containsHTML("wait specified time")) {
@@ -457,7 +458,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 logger.info(br2.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final URLConnectionAdapter con1 = openAntiDDoSRequestConnection(br, br.createGetRequest("https://" + this.getHost() + "/download/captcha"));
+            final URLConnectionAdapter con1 = openAntiDDoSRequestConnection(br, br.createGetRequest("/download/captcha"));
             if (con1.getResponseCode() == 302) {
                 try {
                     br.followConnection(true);
@@ -503,9 +504,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 captcha = br.getFormbyProperty("id", "captchaform");
                 if (captcha == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    captcha.put("DownloadCaptchaForm[captcha]", "");
                 }
+                captcha.put("DownloadCaptchaForm[captcha]", "");
                 final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new SolveMedia(br);
                 final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                 final String code = getCaptchaCode(cf, link);
@@ -518,9 +518,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 captcha = br.getFormbyProperty("id", "captchaform");
                 if (captcha == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    captcha.put("DownloadCaptchaForm[captcha]", "");
                 }
+                captcha.put("DownloadCaptchaForm[captcha]", "");
                 final String captchaAdress = captcha.getRegex("<iframe src=\'(https?://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
                 final String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
                 if (captchaAdress == null || captchaType == null) {
@@ -553,16 +552,16 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             final String redirect = br.getRedirectLocation();
             // Set-Cookie: failed_on_captcha=1; path=/ response if the captcha expired.
-            if ("1".equals(br.getCookie(br.getHost(), "failed_on_captcha")) || br.containsHTML("(?i)(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)") || (redirect != null && redirect.matches("https?://rapidgator\\.net/file/[a-z0-9]+"))) {
+            if ("1".equals(br.getCookie(br.getHost(), "failed_on_captcha")) || br.containsHTML("(?i)(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)") || (redirect != null && redirect.matches("https?://[^/]+/file/[a-z0-9]+"))) {
                 invalidateLastChallengeResponse();
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
                 validateLastChallengeResponse();
             }
-            finalDownloadURL = br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+            finalDownloadURL = br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.[^/]+//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
             if (finalDownloadURL == null) {
                 // Old regex
-                finalDownloadURL = br.getRegex("location\\.href = '(https?://.*?)'").getMatch(0);
+                finalDownloadURL = br.getRegex("location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
             }
             if (finalDownloadURL == null) {
                 /* 2020-02-06 */
