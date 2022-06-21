@@ -1079,12 +1079,13 @@ public class RapidGatorNet extends antiDDoSForHost {
             /* Remove cookies from possible previous attempt to re-use old session_id! */
             br.clearCookies(this.getHost());
             getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+            final Map<String, Object> response = (Map<String, Object>) entries.get("response");
             /* 2019-12-14: session_id == PHPSESSID cookie */
-            sessionID = (String) entries.get("session_id");
+            sessionID = (String) response.get("session_id");
             if (StringUtils.isEmpty(sessionID)) {
                 /* 2019-12-14: APIv2 */
-                sessionID = (String) entries.get("token");
+                sessionID = (String) response.get("token");
             }
             if (StringUtils.isEmpty(sessionID)) {
                 logger.info("Failed to find session_id");
