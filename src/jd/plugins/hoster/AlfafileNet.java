@@ -59,11 +59,6 @@ public class AlfafileNet extends PluginForHost {
         return "http://alfafile.net/terms";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
-    }
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -107,7 +102,7 @@ public class AlfafileNet extends PluginForHost {
         String filesize = null;
         String md5 = null;
         boolean api_works = false;
-        Account aa = AccountController.getInstance().getValidAccount(this);
+        Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         String api_token = null;
         if (aa != null) {
             api_token = getLoginToken(aa);
@@ -155,7 +150,7 @@ public class AlfafileNet extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         if (StringUtils.isNotEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize.contains(".") && filesize.contains(",") ? filesize.replace(",", "") : filesize));
         }
@@ -332,13 +327,13 @@ public class AlfafileNet extends PluginForHost {
                 if (cookies != null && token != null) {
                     /* We do not really need the cookies but we need the timstamp! */
                     br.setCookies(this.getHost(), cookies);
-                    if (!validateLoginToken && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                    if (!validateLoginToken) {
                         logger.info("Trust token without check");
                         return;
                     }
                     logger.info("Checking token");
                     br.postPage(API_BASE + "/user/info", "token=" + Encoding.urlEncode(token));
-                    if (this.isLoggedIN()) {
+                    if (this.isLoggedIN(br)) {
                         logger.info("Token login successful");
                         return;
                     } else {
@@ -346,9 +341,12 @@ public class AlfafileNet extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
+                /*
+                 * Using the same API as rapidgator.net (alfafile uses "/v1" in baseURL, rapidgator uses "v2" but responses are the same.)
+                 */
                 br.getPage(API_BASE + "/user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 token = PluginJSonUtils.getJsonValue(br, "token");
-                if (token == null || !isLoggedIN()) {
+                if (token == null || !isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getURL()), "");
@@ -360,8 +358,12 @@ public class AlfafileNet extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN() {
-        return "200".equals(PluginJSonUtils.getJsonValue(br, "status"));
+    private boolean isLoggedIN(final Browser br) {
+        if ("200".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @SuppressWarnings({ "unchecked" })

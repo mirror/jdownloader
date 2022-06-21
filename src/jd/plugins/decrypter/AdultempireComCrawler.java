@@ -86,6 +86,14 @@ public class AdultempireComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             internalID = br.getRegex("item:\\s*'(\\d+)'").getMatch(0);
+            final String[] scenesSnapshotURLs = br.getRegex("a rel=\"scenescreenshots\"\\s*href=\"(https?://[^\"]+)\"").getColumn(0);
+            if (scenesSnapshotURLs.length > 0) {
+                for (final String scenesSnapshotURL : scenesSnapshotURLs) {
+                    final DownloadLink image = this.createDownloadlink(scenesSnapshotURL);
+                    image.setAvailable(true);
+                    ret.add(image);
+                }
+            }
         }
         if (internalID == null) {
             /* Assume that content is offline or no trailer is available. */
@@ -99,7 +107,7 @@ public class AdultempireComCrawler extends PluginForDecrypt {
         brc.getHeaders().put("Accept", "application/json, text/plain, */*");
         brc.getHeaders().put("Content-Type", "application/json");
         brc.getHeaders().put("Origin", "https://www." + this.getHost());
-        brc.postPageRaw("https://player.digiflix.video/verify", "{\"item_id\":3349957,\"encrypted_customer_id\":null,\"signature\":null,\"timestamp\":null,\"stream_type\":\"trailer\",\"initiate_tracking\":false,\"forcehd\":false}");
+        brc.postPageRaw("https://player.digiflix.video/verify", "{\"item_id\":" + internalID + ",\"encrypted_customer_id\":null,\"signature\":null,\"timestamp\":null,\"stream_type\":\"trailer\",\"initiate_tracking\":false,\"forcehd\":false}");
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
         final Map<String, Object> item_detail = (Map<String, Object>) entries.get("item_detail");
         final String title = (String) item_detail.get("title");

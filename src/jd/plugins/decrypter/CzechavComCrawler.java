@@ -214,9 +214,7 @@ public class CzechavComCrawler extends PluginForDecrypt {
         return new Regex(url, "(\\d+x\\d+)").getMatch(0);
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
+    @Override
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
