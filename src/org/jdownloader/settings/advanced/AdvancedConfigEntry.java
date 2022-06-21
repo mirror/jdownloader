@@ -1,6 +1,7 @@
 package org.jdownloader.settings.advanced;
 
 import java.awt.Dialog.ModalityType;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Locale;
@@ -64,6 +65,36 @@ public class AdvancedConfigEntry {
         } else {
             return key;
         }
+    }
+
+    public static boolean equals(Object x, Object y) {
+        if (x == null && y == null) {
+            return true;
+        } else if (x != null && y != null) {
+            if (x == y || x.equals(y)) {
+                return true;
+            } else {
+                if (ReflectionUtils.isList(x) && ReflectionUtils.isList(y)) {
+                    final int xL = Array.getLength(x);
+                    final int yL = Array.getLength(y);
+                    if (xL == yL) {
+                        for (int index = 0; index < xL; index++) {
+                            final Object xE = ReflectionUtils.getListElement(x, index);
+                            final Object yE = ReflectionUtils.getListElement(y, index);
+                            if (equals(xE, yE) == false) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+        return false;
     }
 
     public String getHandlerKey() {
@@ -197,19 +228,6 @@ public class AdvancedConfigEntry {
                 }.start();
             }
         }
-    }
-
-    private boolean equals(Object v, Object value) {
-        if (value == null && v == null) {
-            return true;
-        }
-        if (v == null && value != null) {
-            return false;
-        }
-        if (value == null && v != null) {
-            return false;
-        }
-        return v.equals(value);
     }
 
     public Object getDefault() {

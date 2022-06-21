@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 
-import org.appwork.utils.net.URLHelper;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,6 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.net.URLHelper;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)|ul\\.to)/(f|folder)/[a-z0-9]+" })
 public class UploadedToFolder extends PluginForDecrypt {
@@ -75,7 +75,11 @@ public class UploadedToFolder extends PluginForDecrypt {
         final URL url = new URL(baseURL);
         if (links != null && links.length != 0) {
             for (final String dl : links) {
-                decryptedLinks.add(createDownloadlink(URLHelper.parseLocation(url, dl)));
+                final String dlURL = URLHelper.parseLocation(url, dl);
+                final String contentURL = dlURL + "/from/" + fid;
+                final DownloadLink downloadLink = createDownloadlink(dlURL);
+                downloadLink.setContentUrl(contentURL);
+                decryptedLinks.add(downloadLink);
             }
         }
         if (folders != null && folders.length != 0) {
