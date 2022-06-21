@@ -54,7 +54,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -103,7 +102,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
-    private static final String            PREMIUMONLYTEXT                            = "(?is)This file can be downloaded by premium only</div>";
+    private static final String            PREMIUMONLYTEXT                            = "(?is)This file can be downloaded by premium only\\s*</div>";
     /*
      * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
      * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
@@ -113,7 +112,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     /* Old V1 endpoint */
     // private final String API_BASEv1 = "https://rapidgator.net/api/";
     /* https://rapidgator.net/article/api/index */
-    private final String                   API_BASEv2                                 = "https://rapidgator.net/api/v2/";
+    // private final String API_BASEv2 = "https://rapidgator.net/api/v2/";
     /* Enforce new session once current one is older than X minutes. 0 or -1 = never refresh session_id unless it is detected as invalid. */
     private final long                     API_SESSION_ID_REFRESH_TIMEOUT_MINUTES     = 45;
     /*
@@ -145,24 +144,21 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if (host == null || "rapidgator.net".equals(host) || "rg.to".equals(host)) {
-            return "rapidgator.net";
-        }
-        return super.rewriteHost(host);
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
+    }
+
+    protected String getAPIBase() {
+        return "https://" + this.getHost() + "/api/v2/";
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) throws Exception {
-        if (link.getPluginPatternMatcher().contains("rg.to/")) {
-            String url = link.getPluginPatternMatcher();
-            url = url.replaceFirst("rg.to/", "rapidgator.net/");
-            link.setPluginPatternMatcher(url);
-        }
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
-        final String linkID = getFID(link);
-        if (linkID != null) {
-            link.setLinkID(getHost() + "://" + linkID);
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
         }
     }
 
@@ -210,18 +206,17 @@ public class RapidGatorNet extends antiDDoSForHost {
         return true;
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     @Override
-    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (!Account.AccountType.PREMIUM.equals(acc.getType())) {
+        } else if (!Account.AccountType.PREMIUM.equals(acc.getType())) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -244,7 +239,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             prepBr.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
             prepBr.getHeaders().put("Cache-Control", null);
             prepBr.getHeaders().put("Pragma", null);
-            prepBr.setCookie("https://rapidgator.net/", "lang", "en");
+            prepBr.setCookie(this.getHost(), "lang", "en");
             prepBr.setCustomCharset("UTF-8");
             /*
              * 2020-04-09: According to user he has timeout issues which do not happen in browser thus let's test a higher readtimeout:
@@ -427,8 +422,6 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (fid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // far as I can tell it's not needed.
-            simulateBrowser();
             int wait = 30;
             final String waittime = br.getRegex("var secs = (\\d+);").getMatch(0);
             if (waittime != null) {
@@ -464,7 +457,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 logger.info(br2.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final URLConnectionAdapter con1 = openAntiDDoSRequestConnection(br, br.createGetRequest("https://rapidgator.net/download/captcha"));
+            final URLConnectionAdapter con1 = openAntiDDoSRequestConnection(br, br.createGetRequest("https://" + this.getHost() + "/download/captcha"));
             if (con1.getResponseCode() == 302) {
                 try {
                     br.followConnection(true);
@@ -560,7 +553,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             final String redirect = br.getRedirectLocation();
             // Set-Cookie: failed_on_captcha=1; path=/ response if the captcha expired.
-            if ("1".equals(br.getCookie("http://rapidgator.net", "failed_on_captcha")) || br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)") || (redirect != null && redirect.matches("https?://rapidgator\\.net/file/[a-z0-9]+"))) {
+            if ("1".equals(br.getCookie(br.getHost(), "failed_on_captcha")) || br.containsHTML("(?i)(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)") || (redirect != null && redirect.matches("https?://rapidgator\\.net/file/[a-z0-9]+"))) {
                 invalidateLastChallengeResponse();
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
@@ -782,7 +775,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
         synchronized (account) {
             try {
-                login_api(account, false);
+                loginAPI(account, false);
                 final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
                 if (StringUtils.isEmpty(expire_date)) {
@@ -869,7 +862,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     public AccountInfo fetchAccountInfo_web(final Account account, final AccountInfo ai) throws Exception {
-        login_web(account, true);
+        loginWebsite(account, true);
         if (Account.AccountType.FREE.equals(account.getType())) {
             // free accounts still have captcha.
             account.setMaxSimultanDownloads(1);
@@ -928,7 +921,7 @@ public class RapidGatorNet extends antiDDoSForHost {
      *            false = Set stored cookies and trust them if they're not older than 300000l
      *
      */
-    private boolean login_web(final Account account, final boolean validateCookies) throws Exception {
+    private boolean loginWebsite(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             /* Keep followRedirects information */
             final boolean ifr = br.isFollowingRedirects();
@@ -941,9 +934,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                      * really it doesn't hurt anybody.
                      */
                     br.setCookies(getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust login-cookies without checking as they should still be fresh");
+                    if (!validateCookies) {
+                        /* Do not validate cookies */
                         return false;
                     }
                     /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
@@ -956,9 +948,11 @@ public class RapidGatorNet extends antiDDoSForHost {
                             account.saveCookies(br.getCookies(getHost()), "");
                             return true;
                         }
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
                 }
-                br = new Browser();
                 br.setFollowRedirects(true);
                 accessMainpage(br);
                 for (int i = 1; i <= 3; i++) {
@@ -969,7 +963,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                     final String captcha_url = br.getRegex("\"(/auth/captcha/v/[a-z0-9]+)\"").getMatch(0);
                     String code = null;
                     if (captcha_url != null) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "rapidgator.net", "http://rapidgator.net", true);
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
                         code = getCaptchaCode(captcha_url, dummyLink);
                         loginPostData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                     }
@@ -1051,33 +1045,30 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private void setAccountTypeWebsite(final Account account, final Browser br) {
-        if (br.containsHTML("Account\\s*:\\&nbsp;<a href=\"/article/premium\">Free</a>")) {
+        if (br.containsHTML("(?i)Account\\s*:\\&nbsp;<a href=\"/article/premium\">\\s*Free\\s*</a>")) {
             account.setType(AccountType.FREE);
         } else {
             account.setType(AccountType.PREMIUM);
         }
     }
 
-    private String login_api(final Account account, boolean isDownloadMode) throws Exception {
+    private String loginAPI(final Account account, boolean isDownloadMode) throws Exception {
         synchronized (account) {
             final long lastPleaseWait = account.getLongProperty("lastPleaseWait", -1);
             final long pleaseWait = lastPleaseWait > 0 ? ((5 * 60 * 1000l) - (System.currentTimeMillis() - lastPleaseWait)) : 0;
             if (pleaseWait > 5000) {
                 throw new AccountUnavailableException("Frequest logins. Please wait!", pleaseWait);
             }
-            /* Before this was called 'avoidBlock' but it is not required anymore (in API mode)! */
-            // accessMainpage(br);
-            String session_id = account.getStringProperty(PROPERTY_sessionid);
-            if (session_id != null) {
+            String sessionID = account.getStringProperty(PROPERTY_sessionid);
+            if (sessionID != null) {
                 logger.info("session_create = " + account.getLongProperty(PROPERTY_timestamp_session_create_api, 0));
-                /* First try to re-use last token */
-                getPage(API_BASEv2 + "user/info?token=" + Encoding.urlEncode(session_id));
+                /* Try to re-use last token */
+                getPage(getAPIBase() + "user/info?token=" + Encoding.urlEncode(sessionID));
                 try {
                     handleErrors_api(null, null, account, br.getHttpConnection());
                     logger.info("Successfully validated last session");
                     if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_api, API_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
-                        account.setProperty("session_last_checked", System.currentTimeMillis());
-                        return session_id;
+                        return sessionID;
                     }
                 } catch (final PluginException e) {
                     logger.info("Failed to re-use last session_id");
@@ -1088,28 +1079,29 @@ public class RapidGatorNet extends antiDDoSForHost {
             logger.info("Performing full login");
             /* Remove cookies from possible previous attempt to re-use old session_id! */
             br.clearCookies(this.getHost());
-            getPage(API_BASEv2 + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             /* 2019-12-14: session_id == PHPSESSID cookie */
-            session_id = PluginJSonUtils.getJsonValue(br, "session_id");
-            if (StringUtils.isEmpty(session_id)) {
+            sessionID = (String) entries.get("session_id");
+            if (StringUtils.isEmpty(sessionID)) {
                 /* 2019-12-14: APIv2 */
-                session_id = PluginJSonUtils.getJsonValue(br, "token");
+                sessionID = (String) entries.get("token");
             }
-            if (StringUtils.isEmpty(session_id)) {
+            if (StringUtils.isEmpty(sessionID)) {
                 logger.info("Failed to find session_id");
                 handleErrors_api(null, null, account, br.getHttpConnection());
                 logger.warning("Unknown login failure");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             /* Store session_id */
-            account.setProperty(PROPERTY_sessionid, session_id);
+            account.setProperty(PROPERTY_sessionid, sessionID);
             account.setProperty(PROPERTY_timestamp_session_create_api, System.currentTimeMillis());
-            return session_id;
+            return sessionID;
         }
     }
 
-    private void accessMainpage(Browser br) throws Exception {
-        getPage(br, "https://rapidgator.net/");
+    private void accessMainpage(final Browser br) throws Exception {
+        getPage(br, "https://" + this.getHost() + "/");
     }
 
     @Override
@@ -1297,7 +1289,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         String session_id = null;
         final boolean isPremium;
         synchronized (account) {
-            session_id = login_api(account, true);
+            session_id = loginAPI(account, true);
             isPremium = Account.AccountType.PREMIUM.equals(account.getType());
         }
         if (!isPremium) {
@@ -1321,7 +1313,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 // this.getPage(API_BASEv2 + "file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
                 /* No final filename yet? Do linkcheck! */
                 /* Check via API */
-                this.getPage(API_BASEv2 + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
+                this.getPage(getAPIBase() + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
                 /* Error-Response maybe wrong - do not check for errors here! */
                 // handleErrors_api(session_id, true, link, account, br.getHttpConnection());
                 fileName = PluginJSonUtils.getJsonValue(br, "filename");
@@ -1343,7 +1335,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
             }
         }
-        this.getPage(API_BASEv2 + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
+        this.getPage(getAPIBase() + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
         handleErrors_api(session_id, link, account, br.getHttpConnection());
         String url = PluginJSonUtils.getJsonValue(br, "url");
         if (StringUtils.isEmpty(url)) {
@@ -1463,7 +1455,7 @@ public class RapidGatorNet extends antiDDoSForHost {
              * 2019-12-16: Check running remote uploads to validate session as there is no extra API call available for verifying sessions
              * --> This should return the following for most users: {"response":[],"status":200,"details":null}
              */
-            this.getPage(this.API_BASEv2 + "remote/info?token=" + session_id);
+            this.getPage(getAPIBase() + "remote/info?token=" + session_id);
             // this.getPage(this.API_BASEv2 + "trashcan/content?token=" + session_id);
             final String status = PluginJSonUtils.getJson(br, "status");
             if ("200".equals(status)) {
@@ -1519,7 +1511,7 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
         logger.info("Performing cached login sequence!!");
-        boolean validated_cookies = login_web(account, false);
+        boolean validated_cookies = loginWebsite(account, false);
         boolean logged_in = false;
         final int repeat = 2;
         for (int i = 0; i <= repeat; i++) {
@@ -1530,7 +1522,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                 // lets login fully again, as hoster as removed premium cookie for some unknown reason...
                 logger.info("Performing login sequence with cookie validation");
                 br = new Browser();
-                validated_cookies = login_web(account, true);
+                validated_cookies = loginWebsite(account, true);
                 continue;
             } else {
                 break;
@@ -1619,25 +1611,6 @@ public class RapidGatorNet extends antiDDoSForHost {
                 throw new AccountUnavailableException("Denied by IP", 2 * 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Denied by IP", 2 * 60 * 60 * 1000l);
-            }
-        }
-    }
-
-    private void simulateBrowser() {
-        final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        for (final String link : sitelinks) {
-            if (link.matches("(.+\\.(js|css))")) {
-                URLConnectionAdapter con = null;
-                try {
-                    final Browser rb = br.cloneBrowser();
-                    con = openAntiDDoSRequestConnection(rb, rb.createGetRequest(link));
-                } catch (final Throwable e) {
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Exception e) {
-                    }
-                }
             }
         }
     }
