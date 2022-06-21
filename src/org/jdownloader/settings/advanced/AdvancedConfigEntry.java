@@ -1,7 +1,6 @@
 package org.jdownloader.settings.advanced;
 
 import java.awt.Dialog.ModalityType;
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Locale;
@@ -75,8 +74,8 @@ public class AdvancedConfigEntry {
                 return true;
             } else {
                 if (ReflectionUtils.isList(x) && ReflectionUtils.isList(y)) {
-                    final int xL = Array.getLength(x);
-                    final int yL = Array.getLength(y);
+                    final int xL = ReflectionUtils.getListLength(x);
+                    final int yL = ReflectionUtils.getListLength(y);
                     if (xL == yL) {
                         for (int index = 0; index < xL; index++) {
                             final Object xE = ReflectionUtils.getListElement(x, index);
