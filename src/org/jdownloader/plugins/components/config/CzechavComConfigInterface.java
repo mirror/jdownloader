@@ -1,6 +1,10 @@
 package org.jdownloader.plugins.components.config;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
@@ -8,11 +12,19 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "czechav.com", type = Type.HOSTER)
 public interface CzechavComConfigInterface extends PluginConfigInterface {
-    @DefaultBooleanValue(true)
-    @Order(9)
-    boolean isFastLinkcheckEnabled();
+    final String                                              text_QualitySelectionFallbackMode = "Define what to add if based on your selection no results are found";
+    final String                                              text_CrawlImages                  = "Crawl images?";
+    public static final CzechavComConfigInterface.TRANSLATION TRANSLATION                       = new TRANSLATION();
 
-    void setFastLinkcheckEnabled(boolean b);
+    public static class TRANSLATION {
+        public String getQualitySelectionFallbackMode_label() {
+            return text_QualitySelectionFallbackMode;
+        }
+
+        public String getCrawlImages_label() {
+            return text_CrawlImages;
+        }
+    }
 
     @DefaultBooleanValue(false)
     @Order(10)
@@ -56,4 +68,39 @@ public interface CzechavComConfigInterface extends PluginConfigInterface {
 
     void setGrabOtherResolutionsVideoEnabled(boolean b);
 
+    public static enum QualitySelectionFallbackMode implements LabelInterface {
+        BEST {
+            @Override
+            public String getLabel() {
+                return "Best quality/qualities";
+            }
+        },
+        ALL {
+            @Override
+            public String getLabel() {
+                return "All qualities";
+            }
+        },
+        NONE {
+            @Override
+            public String getLabel() {
+                return "Nothing";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("ALL")
+    @DescriptionForConfigEntry(text_QualitySelectionFallbackMode)
+    @Order(80)
+    QualitySelectionFallbackMode getQualitySelectionFallbackMode();
+
+    void setQualitySelectionFallbackMode(QualitySelectionFallbackMode mode);
+
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_CrawlImages)
+    @Order(90)
+    boolean isCrawlImages();
+
+    void setCrawlImages(boolean b);
 }

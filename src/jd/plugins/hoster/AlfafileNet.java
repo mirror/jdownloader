@@ -20,6 +20,12 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -40,12 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alfafile.net" }, urls = { "https?://(?:www\\.)?alfafile\\.net/file/([A-Za-z0-9]+)" })
 public class AlfafileNet extends PluginForHost {
@@ -102,7 +102,7 @@ public class AlfafileNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         isDirecturl = false;
         this.setBrowserExclusive();
-        prepBR();
+        prepBR(br);
         String filename = null;
         String filesize = null;
         String md5 = null;
@@ -308,9 +308,9 @@ public class AlfafileNet extends PluginForHost {
         return null;
     }
 
-    private void prepBR() {
-        this.br.setCookie(this.getHost(), "lang", "en");
-        this.br.setFollowRedirects(true);
+    private void prepBR(final Browser br) {
+        br.setCookie(this.getHost(), "lang", "en");
+        br.setFollowRedirects(true);
     }
 
     @Override
@@ -325,7 +325,7 @@ public class AlfafileNet extends PluginForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                prepBR();
+                prepBR(br);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 String token = getLoginToken(account);
@@ -468,9 +468,9 @@ public class AlfafileNet extends PluginForHost {
             } else if (errorcode.equals("409")) {
                 /*
                  * E.g. detailed errormessages:
-                 * 
+                 *
                  * Conflict. Delay between downloads must be not less than 60 minutes. Try again in 51 minutes.
-                 * 
+                 *
                  * Conflict. DOWNLOAD::ERROR::You can't download not more than 1 file at a time in free mode.
                  */
                 String minutes_regexed = null;
