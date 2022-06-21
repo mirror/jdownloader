@@ -77,6 +77,9 @@ public class TvAdbCm extends PluginForDecrypt {
         }
         if (br.containsHTML(">\\s*Staged video playback forbidden")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            /* E.g. http://video.tv.adobe.com/v/0 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String html5player = br.getRegex("var bridge = (\\{.*?\\});").getMatch(0);
         if (html5player == null) {
