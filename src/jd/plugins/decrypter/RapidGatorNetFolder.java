@@ -174,7 +174,7 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
         return 1;
     }
 
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
