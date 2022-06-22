@@ -12,6 +12,7 @@ import org.jdownloader.plugins.components.RefreshSessionLink;
 
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
@@ -101,10 +102,7 @@ public class VideoGoogle extends PluginForHost {
             dllink = Encoding.htmlDecode(dllink);
             dllink = Encoding.urlDecode(dllink, true);
         }
-        /* 2020-07-08: Google doesn't like users using old User-Agents and might return 403 if done so. */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
-        br.setFollowRedirects(true);
-        // In case the link redirects to the finallink
+        prepBR(br);
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(Encoding.unicodeDecode(dllink));
@@ -172,6 +170,12 @@ public class VideoGoogle extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static void prepBR(final Browser br) {
+        /* 2020-07-08: Google doesn't like users using old User-Agents and might return 403 if done so. */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36");
+        br.setFollowRedirects(true);
     }
 
     @Override

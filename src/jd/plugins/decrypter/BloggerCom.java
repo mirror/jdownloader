@@ -9,6 +9,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.VideoGoogle;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blogger.com" }, urls = { "https?://([a-z0-9\\-]+\\.)?blogger\\.com/video\\.g\\?token=[a-zA-Z0-9\\-_]+" })
 public class BloggerCom extends PluginForDecrypt {
@@ -17,10 +18,10 @@ public class BloggerCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.getPage(parameter.getCryptedUrl());
+        VideoGoogle.prepBR(br);
+        br.getPage(param.getCryptedUrl());
         final String iframe_id = br.getRegex("\"iframe_id\"\\s*:\\s*\"(.*?)\"").getMatch(0);
         final String[] play_urls = br.getRegex("\"play_url\"\\s*:\\s*\"(https?://.*?)\"").getColumn(0);
         if (play_urls != null) {
