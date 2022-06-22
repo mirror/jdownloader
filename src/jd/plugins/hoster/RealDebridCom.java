@@ -41,6 +41,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.CaptchaException;
+import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -60,6 +61,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -72,7 +74,9 @@ import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.realDebridCom.RealDebridComConfig;
 import org.jdownloader.plugins.components.realDebridCom.api.Error;
 import org.jdownloader.plugins.components.realDebridCom.api.json.CheckLinkResponse;
@@ -86,7 +90,6 @@ import org.jdownloader.plugins.components.realDebridCom.api.json.UserResponse;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://(?:\\w+(?:\\.download)?\\.)?(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+(?:/.+)?" })
@@ -556,6 +559,20 @@ public class RealDebridCom extends PluginForHost {
         return callRestAPIInternal(null, API + "/oauth/v2/device/credentials?client_id=" + Encoding.urlEncode(CLIENT_ID) + "&code=" + Encoding.urlEncode(code.getDevice_code()), null, ClientSecret.TYPE);
     }
 
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername()) {
+            @Override
+            public boolean validateInputs() {
+                if (StringUtils.isNotEmpty(getUsername())) {
+                    return true;
+                } else {
+                    return super.validateInputs();
+                }
+            }
+        };
+    }
+
     private TokenResponse login(Account account, boolean force) throws PluginException, IOException, APIException, InterruptedException {
         synchronized (account) {
             try {
@@ -613,8 +630,8 @@ public class RealDebridCom extends PluginForHost {
 
                     @Override
                     public void poll(SolverJob<Boolean> job) {
-                        if (System.currentTimeMillis() - lastValidation >= code.getInterval() * 1000) {
-                            lastValidation = System.currentTimeMillis();
+                        if (Time.systemIndependentCurrentJVMTimeMillis() - lastValidation >= code.getInterval() * 1000) {
+                            lastValidation = Time.systemIndependentCurrentJVMTimeMillis();
                             try {
                                 final ClientSecret clientSecret = checkCredentials(code);
                                 if (clientSecret != null) {
@@ -689,7 +706,8 @@ public class RealDebridCom extends PluginForHost {
                                 handler.throwCloseExceptions();
                                 loginForm.getInputField("pa").setValue(Encoding.urlEncode(mfaDialog.getText()));
                             } else {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                                logger.info("Skip autoSolveChallenge: 2fa required");
+                                return null;
                             }
                         }
                         return loginForm;
@@ -697,12 +715,18 @@ public class RealDebridCom extends PluginForHost {
 
                     private Boolean handleLoginForm(SolverJob<Boolean> job, Browser br) throws Exception {
                         Form loginForm = handleLoginForm(br, getLoginForm(br));
+                        if (loginForm == null) {
+                            return Boolean.FALSE;
+                        }
                         br.submitForm(loginForm);
                         Boolean result = check(job, br);
                         if (result != null) {
                             return result;
                         } else if (is2FARequired(br.toString())) {
                             loginForm = handleLoginForm(br, getLoginForm(br));
+                            if (loginForm == null) {
+                                return Boolean.FALSE;
+                            }
                             br.submitForm(loginForm);
                             result = check(job, br);
                             if (result != null) {
@@ -714,6 +738,11 @@ public class RealDebridCom extends PluginForHost {
 
                     private final boolean handleAutoSolveChallenge(SolverJob<Boolean> job) {
                         try {
+                            final Account acc = getAccount();
+                            if (StringUtils.isAllNotEmpty(acc.getUser(), acc.getPass())) {
+                                logger.info("Skip autoSolveChallenge: user/pass is missing");
+                                return false;
+                            }
                             final String verificationUrl = getUrl();
                             autoSolveBr.clearCookies(verificationUrl);
                             autoSolveBr.getPage(verificationUrl);
@@ -781,6 +810,13 @@ public class RealDebridCom extends PluginForHost {
                 });
                 if (newToken.validate()) {
                     final UserResponse user = callRestAPIInternal(newToken, "https://api.real-debrid.com/rest/1.0" + "/user", null, UserResponse.TYPE);
+                    if (StringUtils.isEmpty(account.getUser())) {
+                        if (StringUtils.isNotEmpty(user.getUsername())) {
+                            account.setUser(user.getUsername());
+                        } else {
+                            account.setUser(user.getEmail());
+                        }
+                    }
                     if (!StringUtils.equalsIgnoreCase(account.getUser(), user.getEmail()) && !StringUtils.equalsIgnoreCase(account.getUser(), user.getUsername())) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "User Mismatch. You try to add the account " + account.getUser() + "\r\nBut in your browser you are logged in as " + user.getUsername() + "\r\nPlease make sure that there is no username mismatch!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
