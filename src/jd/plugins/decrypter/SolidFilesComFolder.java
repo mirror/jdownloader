@@ -63,7 +63,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:folder|v)/[a-z0-9]+/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:folder|v)/[A-Za-z0-9]+/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -109,7 +109,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         }
         String filelist = br.getRegex("<ul>(.+?)</ul>").getMatch(0);
         String[] finfos = new Regex(filelist, "(<a href=(?:'|\"|).*?</a>)").getColumn(0);
-        if (finfos.length == 0) {
+        if (finfos == null || finfos.length == 0) {
             if (br.containsHTML("id=\"file-list\"")) {
                 logger.info("Empty folder: " + param.getCryptedUrl());
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
