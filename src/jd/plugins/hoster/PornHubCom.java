@@ -36,18 +36,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -78,6 +66,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
 public class PornHubCom extends PluginForHost {
@@ -100,15 +100,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+        }
+    });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
@@ -928,7 +928,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static final String[] domainsFree                     = new String[] { "pornhub.com", "pornhub.org" };
-    public static final String[] domainsPremium                  = new String[] { "pornhubpremium.com", "pornhubpremium.org", "modelhub.com" };
+    public static final String[] domainsPremium                  = new String[] { "pornhubpremium.com", "modelhub.com" };
     public static final String   PROPERTY_LAST_USED_LOGIN_DOMAIN = "last_used_login_domain";
 
     public boolean login(final Account account, final boolean force) throws Exception {
@@ -1142,10 +1142,7 @@ public class PornHubCom extends PluginForHost {
                     /* Free cookies shall be available and we're currently on a free domain -> Get cookies from that domain */
                     account.saveCookies(br.getCookies(br.getHost()), COOKIE_ID_FREE);
                     logger.info("User preferred free domain: " + preferredLoginFreeDomain + " | Actually used free domain: " + br.getHost());
-                    if (!account.hasProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN)) {
-                        /* Set property for the first time e.g. first login */
-                        account.setProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN, br.getHost());
-                    } else if (!account.getStringProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN).equals(br.getHost())) {
+                    if (!account.getStringProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN, br.getHost()).equals(br.getHost())) {
                         logger.info("Old free domain: " + freeCookieDomain + " | New free domain: " + br.getHost());
                         account.setProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN, br.getHost());
                     }
@@ -1377,9 +1374,8 @@ public class PornHubCom extends PluginForHost {
         if (domain == null) {
             return false;
         } else {
-            domain = domain.toLowerCase(Locale.ENGLISH);
             for (final String premiumDomain : domainsPremium) {
-                if (domain.equals(premiumDomain)) {
+                if (StringUtils.containsIgnoreCase(domain, premiumDomain)) {
                     return true;
                 }
             }
