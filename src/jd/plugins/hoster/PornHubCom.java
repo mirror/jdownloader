@@ -36,6 +36,18 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -66,18 +78,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
 public class PornHubCom extends PluginForHost {
@@ -88,7 +88,6 @@ public class PornHubCom extends PluginForHost {
     private static final boolean                  ACCOUNT_FREE_RESUME                   = true;
     private static final int                      ACCOUNT_FREE_MAXCHUNKS                = 0;
     private static final int                      ACCOUNT_FREE_MAXDOWNLOADS             = 5;
-    public static final long                      trust_cookie_age                      = 5 * 60 * 1000l;
     public static final boolean                   use_download_workarounds              = true;
     private static final String                   type_photo                            = "(?i).+/photo/\\d+";
     private static final String                   type_gif_webm                         = "(?i).+/(embed)?gif/\\d+";
@@ -101,15 +100,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
@@ -163,6 +162,15 @@ public class PornHubCom extends PluginForHost {
             ret.add(urlPattern);
         }
         return ret.toArray(new String[0]);
+    }
+
+    private boolean isSupportedDomain(final String domain) {
+        for (final String domainTmp : getAnnotationNames()) {
+            if (domainTmp.equalsIgnoreCase(domain)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings("deprecation")
@@ -919,26 +927,34 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    public static final String[] domainsFree    = new String[] { "pornhub.com", "pornhub.org" };
-    public static final String[] domainsPremium = new String[] { "pornhubpremium.com", "pornhubpremium.org", "modelhub.com" };
+    public static final String[] domainsFree                     = new String[] { "pornhub.com", "pornhub.org" };
+    public static final String[] domainsPremium                  = new String[] { "pornhubpremium.com", "pornhubpremium.org", "modelhub.com" };
+    public static final String   PROPERTY_LAST_USED_LOGIN_DOMAIN = "last_used_login_domain";
 
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                final String loginFreeDomain = getConfiguredDomainLoginFree(this.getHost());
-                final String loginPremiumDomain = getConfiguredDomainLoginPremium(this.getHost());
+                final String preferredLoginFreeDomain = getConfiguredDomainLoginFree(this.getHost());
+                final String preferredLoginPremiumDomain = getConfiguredDomainLoginPremium(this.getHost());
                 // Load cookies
                 br.setCookiesExclusive(true);
                 /* 2017-01-25: Important - we often have redirects! */
                 br.setFollowRedirects(true);
                 prepBr(br);
+                final String freeCookieDomain;
+                final String lastUsedLoginDomain = account.getStringProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN);
+                if (lastUsedLoginDomain != null && !isPremiumDomain(lastUsedLoginDomain)) {
+                    freeCookieDomain = lastUsedLoginDomain;
+                } else {
+                    freeCookieDomain = preferredLoginFreeDomain;
+                }
                 final Cookies freeCookies = account.loadCookies(COOKIE_ID_FREE);
                 final Cookies premiumCookies = account.loadCookies(COOKIE_ID_PREMIUM);
                 final boolean is_cookie_only_login = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
                 final boolean cookiesOk = freeCookies != null && premiumCookies != null && (isLoggedInFreeCookieFree(freeCookies) || isLoggedInPremiumCookie(premiumCookies));
-                if (!force && cookiesOk && (System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID_FREE) <= trust_cookie_age) && (System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID_PREMIUM) <= trust_cookie_age)) {
-                    br.setCookies(loginFreeDomain, freeCookies);
-                    br.setCookies(loginPremiumDomain, premiumCookies);
+                if (!force && cookiesOk) {
+                    br.setCookies(freeCookieDomain, freeCookies);
+                    br.setCookies(preferredLoginPremiumDomain, premiumCookies);
                     logger.info("Trust login cookies without check:" + account.getType());
                     /* We trust these cookies --> Do not check them */
                     return false;
@@ -946,36 +962,36 @@ public class PornHubCom extends PluginForHost {
                 if (freeCookies != null && premiumCookies != null) {
                     /* 2022-06-21: TODO: Refactor this as it's quite unreadable and contains duplicated code */
                     /* Check cookies - only perform a full login if they're not valid anymore. */
-                    br.setCookies(loginFreeDomain, freeCookies);
-                    br.setCookies(loginPremiumDomain, premiumCookies);
+                    br.setCookies(freeCookieDomain, freeCookies);
+                    br.setCookies(preferredLoginPremiumDomain, premiumCookies);
                     if (AccountType.PREMIUM.equals(account.getType())) {
                         // fast check
-                        getPage(br, (getProtocolPremium() + loginPremiumDomain + "/user/login_status?ajax=1"));
+                        getPage(br, (getProtocolPremium() + preferredLoginPremiumDomain + "/user/login_status?ajax=1"));
                         if (br.containsHTML("\"success\"\\s*:\\s*(\"1\"|true)") && isLoggedInPremiumCookie(br.getCookies(br.getHost()))) {
                             setAccountType(account, AccountType.PREMIUM);
                             logger.info("Verified(fast) premium->premium login cookies:" + account.getType());
-                            account.saveCookies(br.getCookies(loginFreeDomain), COOKIE_ID_FREE);
-                            account.saveCookies(br.getCookies(loginPremiumDomain), COOKIE_ID_PREMIUM);
+                            account.saveCookies(br.getCookies(freeCookieDomain), COOKIE_ID_FREE);
+                            account.saveCookies(br.getCookies(preferredLoginPremiumDomain), COOKIE_ID_PREMIUM);
                             return true;
                         } else {
                             // slow check
-                            getPage(br, (getProtocolPremium() + loginPremiumDomain));
+                            getPage(br, (getProtocolPremium() + preferredLoginPremiumDomain));
                             if (isLoggedInHtmlPremium(br)) {
                                 setAccountType(account, AccountType.PREMIUM);
                                 logger.info("Verified(slow) premium->premium login cookies:");
-                                account.saveCookies(br.getCookies(loginFreeDomain), COOKIE_ID_FREE);
-                                account.saveCookies(br.getCookies(loginPremiumDomain), COOKIE_ID_PREMIUM);
+                                account.saveCookies(br.getCookies(freeCookieDomain), COOKIE_ID_FREE);
+                                account.saveCookies(br.getCookies(preferredLoginPremiumDomain), COOKIE_ID_PREMIUM);
                                 return true;
                             } else if (isLoggedInHtmlFree(br)) {
                                 setAccountType(account, AccountType.FREE);
                                 logger.info("Verified(slow) premium->free login cookies:" + account.getType());
-                                account.saveCookies(br.getCookies(loginFreeDomain), COOKIE_ID_FREE);
-                                account.saveCookies(br.getCookies(loginPremiumDomain), COOKIE_ID_PREMIUM);
+                                account.saveCookies(br.getCookies(freeCookieDomain), COOKIE_ID_FREE);
+                                account.saveCookies(br.getCookies(preferredLoginPremiumDomain), COOKIE_ID_PREMIUM);
                                 return true;
                             }
                         }
                     } else {
-                        getPage(br, (getProtocolFree() + "www." + loginFreeDomain));
+                        getPage(br, (getProtocolFree() + "www." + preferredLoginFreeDomain));
                         if (br.containsHTML("(?i)/authenticate/goToLoggedIn\"\\s*>\\s*Access your Pornhub Premium")) {
                             // 2020-12-29 - no auto redirect to pornhub premium
                             getPage(br, "/authenticate/goToLoggedIn");
@@ -983,16 +999,16 @@ public class PornHubCom extends PluginForHost {
                         if (isLoggedInHtmlFree(br)) {
                             setAccountType(account, AccountType.FREE);
                             logger.info("Verified(slow) free->free login cookies:" + account.getType());
-                            account.saveCookies(br.getCookies(loginFreeDomain), COOKIE_ID_FREE);
-                            account.saveCookies(br.getCookies(loginPremiumDomain), COOKIE_ID_PREMIUM);
+                            account.saveCookies(br.getCookies(freeCookieDomain), COOKIE_ID_FREE);
+                            account.saveCookies(br.getCookies(preferredLoginPremiumDomain), COOKIE_ID_PREMIUM);
                             return true;
                         } else {
-                            getPage(br, (getProtocolPremium() + loginPremiumDomain + "/user/login_status?ajax=1"));
-                            if (br.containsHTML("\"success\"\\s*:\\s*(\"1\"|true)") && isLoggedInPremiumCookie(br.getCookies(loginPremiumDomain))) {
+                            getPage(br, (getProtocolPremium() + preferredLoginPremiumDomain + "/user/login_status?ajax=1"));
+                            if (br.containsHTML("\"success\"\\s*:\\s*(\"1\"|true)") && isLoggedInPremiumCookie(br.getCookies(preferredLoginPremiumDomain))) {
                                 setAccountType(account, AccountType.PREMIUM);
                                 logger.info("Verified(fast) free->premium login cookies:" + account.getType());
-                                account.saveCookies(br.getCookies(loginFreeDomain), COOKIE_ID_FREE);
-                                account.saveCookies(br.getCookies(loginPremiumDomain), COOKIE_ID_PREMIUM);
+                                account.saveCookies(br.getCookies(freeCookieDomain), COOKIE_ID_FREE);
+                                account.saveCookies(br.getCookies(preferredLoginPremiumDomain), COOKIE_ID_PREMIUM);
                                 return true;
                             }
                         }
@@ -1001,7 +1017,6 @@ public class PornHubCom extends PluginForHost {
                     logger.info("Cached login cookies failed:" + account.getType());
                 }
                 if (is_cookie_only_login) {
-                    logger.info("Cannot perform full login because this account only has cookies available");
                     if (account.hasEverBeenValid()) {
                         throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                     } else {
@@ -1009,10 +1024,11 @@ public class PornHubCom extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                getPage(br, "https://www." + loginFreeDomain);
-                getPage(br, "https://www." + loginFreeDomain + "/login");
+                getPage(br, "https://www." + preferredLoginFreeDomain);
+                getPage(br, "https://www." + preferredLoginFreeDomain + "/login");
                 if (br.containsHTML("Sorry we couldn't find what you were looking for")) {
-                    getPage(br, "https://www." + loginFreeDomain + "/login");
+                    /* Try again */
+                    getPage(br, "https://www." + preferredLoginFreeDomain + "/login");
                 }
                 final Form loginform = br.getFormbyKey("username");
                 // final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -1086,7 +1102,7 @@ public class PornHubCom extends PluginForHost {
                         premiumExpired = isPremiumFromURL(redirect) && redirect.contains("expired");
                     }
                     getPage(br, redirect);
-                    if (premiumExpired && !br.getURL().contains(loginFreeDomain)) {
+                    if (premiumExpired && !isPremiumDomain(br.getHost())) {
                         /*
                          * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url
                          * which redirects us to the pornhub free mainpage and sets the cookies.
@@ -1095,6 +1111,8 @@ public class PornHubCom extends PluginForHost {
                         final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
                         if (pornhubMainpageCookieRedirectUrl != null) {
                             getPage(br, pornhubMainpageCookieRedirectUrl);
+                        } else {
+                            logger.info("Failed to find pornhubMainpageCookieRedirectUrl");
                         }
                     }
                 }
@@ -1117,8 +1135,22 @@ public class PornHubCom extends PluginForHost {
                     setAccountType(account, AccountType.FREE);
                 }
                 logger.info("Verified fresh login:" + account.getType());
-                account.saveCookies(br.getCookies(loginFreeDomain), COOKIE_ID_FREE);
-                account.saveCookies(br.getCookies(loginPremiumDomain), COOKIE_ID_PREMIUM);
+                if (isPremiumDomain(br.getHost())) {
+                    /* Maybe no free cookies available --> Use user defined domain to get cookies from */
+                    account.saveCookies(br.getCookies(freeCookieDomain), COOKIE_ID_FREE);
+                } else {
+                    /* Free cookies shall be available and we're currently on a free domain -> Get cookies from that domain */
+                    account.saveCookies(br.getCookies(br.getHost()), COOKIE_ID_FREE);
+                    logger.info("User preferred free domain: " + preferredLoginFreeDomain + " | Actually used free domain: " + br.getHost());
+                    if (!account.hasProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN)) {
+                        /* Set property for the first time e.g. first login */
+                        account.setProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN, br.getHost());
+                    } else if (!account.getStringProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN).equals(br.getHost())) {
+                        logger.info("Old free domain: " + freeCookieDomain + " | New free domain: " + br.getHost());
+                        account.setProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN, br.getHost());
+                    }
+                }
+                account.saveCookies(br.getCookies(preferredLoginPremiumDomain), COOKIE_ID_PREMIUM);
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -1340,10 +1372,17 @@ public class PornHubCom extends PluginForHost {
         return isPremiumDomain(Browser.getHost(url));
     }
 
-    public static boolean isPremiumDomain(final String domain) {
-        if (domain != null && (domain.matches("(?i).*pornhubpremium\\.(com|org)") || domain.matches("(?i).*modelhub\\.com"))) {
-            return true;
+    /** Checks if given domain is a <b>supported</b> premium domain. */
+    public static boolean isPremiumDomain(String domain) {
+        if (domain == null) {
+            return false;
         } else {
+            domain = domain.toLowerCase(Locale.ENGLISH);
+            for (final String premiumDomain : domainsPremium) {
+                if (domain.equals(premiumDomain)) {
+                    return true;
+                }
+            }
             return false;
         }
     }
@@ -1439,7 +1478,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static final String   SELECTED_DOMAIN = "selected_domain2";
-    public static final String[] DOMAINS         = new String[] { "pornhub(premium).com", "pornhub.org" };
+    public static final String[] DOMAINS         = new String[] { "pornhub.com & pornhubpremium.com", "pornhub.org & pornhubpremium.com" };
 
     /** Returns user configured domain based on domain given in URL we want to access. */
     public static String getConfiguredDomainURL(final String pluginDomain, final String domainFromURL) {
