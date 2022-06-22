@@ -17,8 +17,11 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -30,6 +33,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
@@ -513,6 +517,26 @@ public class HotlinkCc extends XFileSharingProBasic {
         if (videoDownloadForm == null) {
             this.checkErrors(brc, brc.toString(), link, account, false);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* 2022-06-22: Workaround: Remove double key from Form */
+        // videoDownloadForm.remove("method_premium");
+        final Map<String, Integer> fieldMap = new HashMap<String, Integer>();
+        for (final InputField field : videoDownloadForm.getInputFields()) {
+            if (!fieldMap.containsKey(field.getKey())) {
+                fieldMap.put(field.getKey(), 0);
+            }
+            fieldMap.put(field.getKey(), fieldMap.get(field.getKey()) + 1);
+        }
+        final Iterator<Entry<String, Integer>> iterator = fieldMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Entry<String, Integer> entry = iterator.next();
+            if (entry.getValue() > 1) {
+                /* Remove all except one of those entries. */
+                final int removeTimes = entry.getValue() - 1;
+                for (int i = 0; i < removeTimes; i++) {
+                    videoDownloadForm.remove(entry.getKey());
+                }
+            }
         }
         try {
             /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
