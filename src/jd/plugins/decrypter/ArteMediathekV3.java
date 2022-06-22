@@ -26,6 +26,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.FilenameSchemeType;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -77,7 +78,20 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String API_BASE = "https://api.arte.tv/api/opa/v3";
+    private static final String API_BASE                    = "https://api.arte.tv/api/opa/v3";
+    private final String        PROPERTY_VIDEO_ID           = "video_id";
+    private final String        PROPERTY_TITLE              = "title";
+    private final String        PROPERTY_SUBTITLE           = "subtitle";
+    private final String        PROPERTY_TITLE_AND_SUBTITLE = "title_and_subtitle";
+    private final String        PROPERTY_DATE               = "date";
+    private final String        PROPERTY_ORIGINAL_FILENAME  = "original_filename";
+    private final String        PROPERTY_AUDIO_CODE         = "audio_code";                    // ex versionCode e.g. VF, VF-STA, VA
+    private final String        PROPERTY_AUDIO_SHORT_LABEL  = "audioShortLabel";               // e.g. DE, FR
+    private final String        PROPERTY_AUDIO_LABEL        = "audioLabel";                    // e.g. Deutsch, Französisch
+    private final String        PROPERTY_WIDTH              = "width";
+    private final String        PROPERTY_HEIGHT             = "height";
+    private final String        PROPERTY_BITRATE            = "bitrate";
+    private final String        PROPERTY_PLATFORM           = "platform";
 
     private static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("Authorization", "Bearer Nzc1Yjc1ZjJkYjk1NWFhN2I2MWEwMmRlMzAzNjI5NmU3NWU3ODg4ODJjOWMxNTMxYzEzZGRjYjg2ZGE4MmIwOA");
@@ -129,15 +143,17 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final String subtitle = (String) vid.get("subtitle");
         final String dateFormatted = new Regex(vid.get("firstBroadcastDate").toString(), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         final String fullDescription = (String) vid.get("fullDescription");
+        final String platform = vid.get("platform").toString();
         final String videoStreamsAPIURL = JavaScriptEngineFactory.walkJson(vid, "links/videoStreams/web/href").toString();
+        String titleAndSubtitle = title;
+        if (!StringUtils.isEmpty(subtitle)) {
+            titleAndSubtitle += " - " + subtitle;
+        }
         prepBRAPI(br);
         // br.getPage(API_BASE + "/videoStreams?programId=" + Encoding.urlEncode(programId) +
         // "&reassembly=A&platform=ARTE_NEXT&channel=DE&kind=SHOW&protocol=%24in:HTTPS,HLS&quality=%24in:EQ,HQ,MQ,SQ,XQ&profileAmm=%24in:AMM-PTWEB,AMM-PTHLS,AMM-OPERA,AMM-CONCERT-NEXT,AMM-Tvguide&limit=100");
         br.getPage(videoStreamsAPIURL);
-        String titleBase = dateFormatted + "_" + vid.get("platform") + "_" + title;
-        if (!StringUtils.isEmpty(subtitle)) {
-            titleBase += " - " + subtitle;
-        }
+        String titleBase = dateFormatted + "_" + platform + "_" + titleAndSubtitle;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(titleBase);
         if (!StringUtils.isEmpty(fullDescription)) {
@@ -202,10 +218,24 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 final int height = ((Number) videoStream.get("height")).intValue();
                 final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
                 final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
+                final String audioCode = videoStream.get("audioCode").toString(); // e.g. VF, VF-STA, VA, ...
                 final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
-                final String finalFilename = titleBase + "_" + videoStream.get("filename");
-                link.setFinalFileName(finalFilename);
-                link.setProperty(DirectHTTP.FIXNAME, finalFilename);
+                link.setProperty(PROPERTY_VIDEO_ID, videoStream.get("programId").toString());
+                link.setProperty(PROPERTY_TITLE, title);
+                link.setProperty(PROPERTY_SUBTITLE, subtitle);
+                link.setProperty(PROPERTY_TITLE_AND_SUBTITLE, titleAndSubtitle);
+                link.setProperty(PROPERTY_DATE, dateFormatted);
+                link.setProperty(PROPERTY_WIDTH, videoStream.get("width"));
+                link.setProperty(PROPERTY_HEIGHT, height);
+                link.setProperty(PROPERTY_BITRATE, bitrate);
+                link.setProperty(PROPERTY_AUDIO_CODE, audioCode);
+                link.setProperty(PROPERTY_AUDIO_SHORT_LABEL, videoStream.get("audioShortLabel"));
+                link.setProperty(PROPERTY_AUDIO_LABEL, videoStream.get("audioLabel"));
+                link.setProperty(PROPERTY_PLATFORM, platform);
+                link.setProperty(PROPERTY_ORIGINAL_FILENAME, videoStream.get("filename"));
+                final String filename = this.getAndSetFilename(link);
+                /* Make sure that our directHTTP plugin will never change this filename. */
+                link.setProperty(DirectHTTP.FIXNAME, filename);
                 link.setAvailable(true);
                 /* Calculate filesize in a very simple way */
                 link.setDownloadSize(bitrate / 8 * 1024 * durationSeconds);
@@ -269,6 +299,47 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             logger.warning("WTF Failed to find any results");
         }
         return ret;
+    }
+
+    private String getAndSetFilename(final DownloadLink link) {
+        String filename;
+        final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final FilenameSchemeType schemeType = cfg.getFilenameSchemeType();
+        String customFilenameScheme = cfg.getFilenameScheme();
+        if (schemeType == FilenameSchemeType.DEFAULT) {
+            filename = "*date*_*platform*_*title*_*video_id*_*language*_*shortlanguage*_*resolution*_*bitrate**ext*";
+        } else if (schemeType == FilenameSchemeType.LEGACY) {
+            filename = "*date*_arte_*title*_*video_id*_*language*_*shortlanguage*_*resolution*_*bitrate**ext*";
+        } else if (schemeType == FilenameSchemeType.CUSTOM && !StringUtils.isEmpty(customFilenameScheme)) {
+            /* User customized filename scheme */
+            /* Legacy compatibility for old arte config/crawler version 46182 */
+            customFilenameScheme = customFilenameScheme.replace("*vpi*__*language*", "*vpi*_*language*"); // fix old mistake: one
+                                                                                                          // underscore too much
+            customFilenameScheme = customFilenameScheme.replace("*vpi*", "*video_id*"); // update changed tag name
+            customFilenameScheme = customFilenameScheme.replace("*title*", "*title_and_subtitle*"); // update changed tag name
+            filename = customFilenameScheme;
+        } else {
+            /* FilenameSchemeType.ORIGINAL and fallback */
+            filename = "*original_filename*";
+        }
+        final String width = link.getStringProperty(PROPERTY_WIDTH);
+        final String height = link.getStringProperty(PROPERTY_HEIGHT);
+        filename = filename.replace("*video_id*", link.getStringProperty(PROPERTY_VIDEO_ID));
+        filename = filename.replace("*platform*", link.getStringProperty(PROPERTY_PLATFORM));
+        filename = filename.replace("*date*", link.getStringProperty(PROPERTY_DATE));
+        filename = filename.replace("*shortlanguage*", link.getStringProperty(PROPERTY_AUDIO_SHORT_LABEL));
+        filename = filename.replace("*language*", link.getStringProperty(PROPERTY_AUDIO_LABEL));
+        filename = filename.replace("*width*", width);
+        filename = filename.replace("*height*", height);
+        filename = filename.replace("*resolution*", width + "x" + height);
+        filename = filename.replace("*bitrate*", link.getStringProperty(PROPERTY_BITRATE));
+        filename = filename.replace("*original_filename*", link.getStringProperty(PROPERTY_ORIGINAL_FILENAME));
+        filename = filename.replace("*ext*", ".mp4");
+        filename = filename.replace("*title*", link.getStringProperty(PROPERTY_TITLE));
+        filename = filename.replace("*subtitle*", link.getStringProperty(PROPERTY_SUBTITLE));
+        filename = filename.replace("*title_and_subtitle*", link.getStringProperty(PROPERTY_TITLE_AND_SUBTITLE));
+        link.setFinalFileName(filename);
+        return filename;
     }
 
     private List<Integer> getSelectedHTTPQualities() {

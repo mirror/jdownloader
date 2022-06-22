@@ -3,11 +3,13 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "arte.tv", type = Type.CRAWLER)
@@ -21,6 +23,10 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     final String                                        text_CrawlHTTP480p                  = "Crawl 480p?";
     final String                                        text_CrawlHTTP720p                  = "Crawl 720p?";
     final String                                        text_CrawlHTTP1080p                 = "Crawl 1080p?";
+    final String                                        text_GetFilenameSchemeType          = "Select filename scheme type";
+    final String                                        text_GetFilenameScheme              = "Enter filename scheme";
+    final String                                        text_GetPackagenameSchemeType       = "Select package name scheme type";
+    final String                                        text_GetPackagenameScheme           = "Enter package name scheme";
     // final String text_CrawlSubtitledBurnedInVersionsHearingImpaired = "Crawl subtitled burned in versions for hearing impaired?";
     public static final ArteMediathekConfig.TRANSLATION TRANSLATION                         = new TRANSLATION();
 
@@ -63,6 +69,21 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
         public String getCrawlHTTP1080p_label() {
             return text_CrawlHTTP1080p;
         }
+
+        public String getFilenameSchemeType_label() {
+            return text_GetFilenameSchemeType;
+        }
+
+        public String getFilenameScheme_label() {
+            return text_GetFilenameScheme;
+        }
+        // public String getPackagenameSchemeType_label() {
+        // return text_GetPackagenameSchemeType;
+        // }
+        //
+        // public String getPackagenameScheme_label() {
+        // return text_GetPackagenameScheme;
+        // }
     }
 
     @AboutConfig
@@ -185,4 +206,85 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     QualitySelectionFallbackMode getQualitySelectionFallbackMode();
 
     void setQualitySelectionFallbackMode(QualitySelectionFallbackMode mode);
+
+    @AboutConfig
+    @DefaultEnumValue("ORIGINAL")
+    @DescriptionForConfigEntry(text_GetFilenameSchemeType)
+    @Order(500)
+    FilenameSchemeType getFilenameSchemeType();
+
+    void setFilenameSchemeType(FilenameSchemeType mode);
+
+    public static enum FilenameSchemeType implements LabelInterface {
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: *date*_*platform*_*title_and_subtitle*_*video_id*_*language*_*shortlanguage*_*resolution*_*bitrate**ext*";
+            }
+        },
+        ORIGINAL {
+            @Override
+            public String getLabel() {
+                return "Original";
+            }
+        },
+        CUSTOM {
+            @Override
+            public String getLabel() {
+                return "Custom";
+            }
+        },
+        LEGACY {
+            @Override
+            public String getLabel() {
+                return "Legacy (like old plugin: *date*_arte_*title_and_subtitle*_*video_id*_*language*_*shortlanguage*_*resolution*_*bitrate*)";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultStringValue("*date*_*platform*_*title_and_subtitle*_*title*_*subtitle*_*video_id*_*language*_*shortlanguage*_*resolution*_*width*_*height*_*bitrate**original_filename**ext*")
+    @TakeValueFromSubconfig("CUSTOM_FILE_NAME_PATTERN")
+    @DescriptionForConfigEntry(text_GetFilenameScheme)
+    @Order(501)
+    String getFilenameScheme();
+
+    void setFilenameScheme(String str);
+    // @AboutConfig
+    // @DefaultEnumValue("ORIGINAL")
+    // @DescriptionForConfigEntry(text_GetFilenameSchemeType)
+    // @Order(600)
+    // FilenameSchemeType getPackagenameSchemeType();
+    //
+    // void setPackagenameSchemeType(PackagenameSchemeType mode);
+    //
+    // public static enum PackagenameSchemeType implements LabelInterface {
+    // DEFAULT {
+    // @Override
+    // public String getLabel() {
+    // return "Default: *date*_arte_*title_and_subtitle*";
+    // }
+    // },
+    // CUSTOM {
+    // @Override
+    // public String getLabel() {
+    // return "Custom";
+    // }
+    // },
+    // LEGACY {
+    // @Override
+    // public String getLabel() {
+    // return "Legacy (like old plugin: *date*_arte_*title_and_subtitle*)";
+    // }
+    // };
+    // }
+    //
+    // @AboutConfig
+    // @DefaultStringValue("*date*_*platform*_*title_and_subtitle*_*video_id*_*language*_*shortlanguage*_*resolution*_*width*_*height*_*bitrate**ext*")
+    // @TakeValueFromSubconfig("CUSTOM_PACKAGE_NAME_PATTERN")
+    // @DescriptionForConfigEntry(text_GetFilenameScheme)
+    // @Order(601)
+    // String getPackagenameScheme();
+    //
+    // void setPackagenameScheme(String str);
 }
