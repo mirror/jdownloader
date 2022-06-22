@@ -16,7 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -29,18 +31,45 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viet69.net" }, urls = { "https?://(www\\.)?viet69\\.(?:net|co)/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class Viet69Net extends antiDDoSForDecrypt {
     public Viet69Net(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("viet69.net/", "viet69.co/");
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "viet69.in", "viet69.net", "viet69.co" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-]+)/?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        getPage(parameter);
-        String fpName = br.getRegex("<title>\\s*([^<]+)\\s+-\\s+Phim\\s+sex\\s+-\\s+Clip\\s+sex").getMatch(0);
+        getPage(param.getCryptedUrl());
+        final String title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
         String[] videoDetails = br.getRegex("<div\\s+class\\s*=\\s*\"movieLoader\"\\s+data-movie\\s*=\\s*\"([^\"\\s]+)\"\\s+data-type\\s*=\\s*\"([^\"]*)\"").getRow(0);
         if (videoDetails != null && videoDetails.length > 1) {
             final Browser br2 = br.cloneBrowser();
@@ -54,23 +83,31 @@ public class Viet69Net extends antiDDoSForDecrypt {
                     if (StringUtils.containsIgnoreCase(link, ".m3u8")) {
                         final Browser brc = br2.cloneBrowser();
                         brc.getPage(link);
-                        final ArrayList<DownloadLink> downloadLinks = GenericM3u8Decrypter.parseM3U8(this, link, brc, parameter, null, null, fpName);
+                        final ArrayList<DownloadLink> downloadLinks = GenericM3u8Decrypter.parseM3U8(this, link, brc, param.getCryptedUrl(), null, null, title);
                         if (downloadLinks != null) {
                             decryptedLinks.addAll(downloadLinks);
                         }
                     } else {
                         final DownloadLink downloadLink = createDownloadlink(Encoding.htmlDecode(link));
-                        if (fpName != null) {
-                            downloadLink.setName(fpName);
+                        if (title != null) {
+                            downloadLink.setName(title);
                         }
                         decryptedLinks.add(downloadLink);
                     }
                 }
+            } else {
+                /* Look for embedded content */
+                final String[] embedURLs = br2.getRegex("<iframe[^>]*src=\"(https?://[^\"]+)").getColumn(0);
+                if (embedURLs != null && embedURLs.length > 0) {
+                    for (final String embedURL : embedURLs) {
+                        decryptedLinks.add(this.createDownloadlink(embedURL));
+                    }
+                }
             }
         }
-        if (fpName != null) {
+        if (title != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(title.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
