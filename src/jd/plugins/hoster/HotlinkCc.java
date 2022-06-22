@@ -577,11 +577,16 @@ public class HotlinkCc extends XFileSharingProBasic {
         } catch (final InterruptedException e) {
             throw e;
         } catch (final Throwable e) {
-            logger.log(e);
-            logger.warning("Official video download failed: Exception occured");
-            /*
-             * Continue via upper handling - usually videohosts will have streaming URLs available so a failure of this is not fatal for us.
-             */
+            if (account == null || account.getType() == AccountType.FREE) {
+                /* Only throw exception in free download mode as premium users may have other download modes available. */
+                throw e;
+            } else {
+                logger.log(e);
+                logger.warning("Official video download failed: Exception occured");
+                /*
+                 * Continue via upper handling - usually videohosts will have streaming URLs available so a failure of this is not fatal for
+                 * us.
+                 */}
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
