@@ -71,8 +71,6 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         }
     }
 
-    public static final String PROPERTY_LAST_WORKING_DOMAIN = "last_working_domain";
-
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
@@ -136,43 +134,30 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         if (PornHubCom.requiresPremiumAccount(param.getCryptedUrl()) && (account == null || account.getType() != AccountType.PREMIUM)) {
             throw new AccountRequiredException();
         }
-        try {
-            if (param.getCryptedUrl().matches("(?i).*/playlist/.*")) {
+        if (param.getCryptedUrl().matches("(?i).*/playlist/.*")) {
+            PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+            handleErrorsAndCaptcha(this.br, account);
+            return crawlAllVideosOfAPlaylist(account);
+        } else if (param.getCryptedUrl().matches("(?i).*/gifs.*")) {
+            PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+            handleErrorsAndCaptcha(this.br, account);
+            return crawlAllGifsOfAUser(param, account);
+        } else if (param.getCryptedUrl().matches("(?i).*/model/.*")) {
+            return crawlModel(br, param, account);
+        } else if (param.getCryptedUrl().matches("(?i).*/pornstar/.*")) {
+            return this.crawlPornstar(br, param, account);
+        } else if (param.getCryptedUrl().matches("(?i).*/(?:users|channels).*")) {
+            if (new Regex(br.getURL(), "/(model|pornstar)/").matches()) { // Handle /users/ that has been switched to model|pornstar
+                logger.info("Users->Model|pornstar");
                 PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
                 handleErrorsAndCaptcha(this.br, account);
-                return crawlAllVideosOfAPlaylist(account);
-            } else if (param.getCryptedUrl().matches("(?i).*/gifs.*")) {
-                PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
-                handleErrorsAndCaptcha(this.br, account);
-                return crawlAllGifsOfAUser(param, account);
-            } else if (param.getCryptedUrl().matches("(?i).*/model/.*")) {
-                return crawlModel(br, param, account);
-            } else if (param.getCryptedUrl().matches("(?i).*/pornstar/.*")) {
-                return this.crawlPornstar(br, param, account);
-            } else if (param.getCryptedUrl().matches("(?i).*/(?:users|channels).*")) {
-                if (new Regex(br.getURL(), "/(model|pornstar)/").matches()) { // Handle /users/ that has been switched to model|pornstar
-                    logger.info("Users->Model|pornstar");
-                    PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
-                    handleErrorsAndCaptcha(this.br, account);
-                    return crawlAllVideosOf(br, account, new HashSet<String>());
-                } else {
-                    logger.info("Users / Channels");
-                    return crawlAllVideosOfAUser(param, hosterPlugin, account);
-                }
+                return crawlAllVideosOf(br, account, new HashSet<String>());
             } else {
-                return crawlSingleVideo(this.br, param, account);
+                logger.info("Users / Channels");
+                return crawlAllVideosOfAUser(param, hosterPlugin, account);
             }
-        } finally {
-            /**
-             * Store last used and working domain so we can e.g. re-use that later during login. </br>
-             * Useful e.g. if ISP blocks pornhub.com but user adds pornhub.org URLs --> Auto handling will use pornhub.org if user ever
-             * decides to add a pornhub account.
-             */
-            try {
-                this.getPluginConfig().setProperty(PROPERTY_LAST_WORKING_DOMAIN, br.getHost());
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
+        } else {
+            return crawlSingleVideo(this.br, param, account);
         }
     }
 
