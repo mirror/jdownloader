@@ -36,6 +36,18 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -65,18 +77,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
@@ -1143,6 +1143,7 @@ public class PornHubCom extends PluginForHost {
                     account.saveCookies(br.getCookies(br.getHost()), COOKIE_ID_FREE);
                     logger.info("User preferred free domain: " + preferredLoginFreeDomain + " | Actually used free domain: " + br.getHost());
                     if (!account.getStringProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN, freeCookieDomain).equals(br.getHost())) {
+                        /* This is needed so when we check the login cookies next time, cookies will be set on the correct domain. */
                         logger.info("Old free domain: " + freeCookieDomain + " | New free domain: " + br.getHost());
                         account.setProperty(PROPERTY_LAST_USED_LOGIN_DOMAIN, br.getHost());
                     }
