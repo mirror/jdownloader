@@ -16,9 +16,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -27,14 +30,17 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -71,87 +77,164 @@ public class AdultempireComCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_EMBED = "https://www.adultempire.com/gw/player/[^/]*item_id=(\\d+).*";
+    private final String TYPE_EMBED     = "https://www.adultempire.com/gw/player/[^/]*item_id=(\\d+).*";
+    private final String PROPERTY_TITLE = "title";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String internalID;
+        final String internalIDStr;
+        String[] scenesHTMLs = null;
         if (param.getCryptedUrl().matches(TYPE_EMBED)) {
             /* Internal ID given inside URL. */
-            internalID = new Regex(param.getCryptedUrl(), TYPE_EMBED).getMatch(0);
+            internalIDStr = new Regex(param.getCryptedUrl(), TYPE_EMBED).getMatch(0);
         } else {
             /* Internal ID needs to be parsed via HTML code. */
             br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            internalID = br.getRegex("item:\\s*'(\\d+)'").getMatch(0);
-            final String[] scenesSnapshotURLs = br.getRegex("a rel=\"scenescreenshots\"\\s*href=\"(https?://[^\"]+)\"").getColumn(0);
-            if (scenesSnapshotURLs.length > 0) {
-                for (final String scenesSnapshotURL : scenesSnapshotURLs) {
-                    final DownloadLink image = this.createDownloadlink(scenesSnapshotURL);
-                    image.setAvailable(true);
-                    ret.add(image);
-                }
-            }
+            internalIDStr = br.getRegex("item:\\s*'(\\d+)'").getMatch(0);
+            scenesHTMLs = br.getRegex("href=\"/Account/BuyMinutesPage\"(.*?)class=\"btn btn-primary\"><i class=\"fa fa-play\"></i> Watch Now\\s*</a></div>").getColumn(0);
         }
-        if (internalID == null) {
+        if (internalIDStr == null) {
             /* Assume that content is offline or no trailer is available. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Website will include more parameters but really only "item_id" is required! */
-        br.getPage("https://www." + this.getHost() + "/gw/player/?type=trailer&item_id=" + internalID);
+        br.getPage("https://www." + this.getHost() + "/gw/player/?type=trailer&item_id=" + internalIDStr);
         final String thumbnailUrl = PluginJSonUtils.getJson(br, "thumbnailUrl");
         final String httpStreamingURL = PluginJSonUtils.getJson(br, "contentUrl");
-        final Browser brc = new Browser();
-        brc.getHeaders().put("Accept", "application/json, text/plain, */*");
-        brc.getHeaders().put("Content-Type", "application/json");
-        brc.getHeaders().put("Origin", "https://www." + this.getHost());
-        brc.postPageRaw("https://player.digiflix.video/verify", "{\"item_id\":" + internalID + ",\"encrypted_customer_id\":null,\"signature\":null,\"timestamp\":null,\"stream_type\":\"trailer\",\"initiate_tracking\":false,\"forcehd\":false}");
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
-        final Map<String, Object> item_detail = (Map<String, Object>) entries.get("item_detail");
-        final String title = (String) item_detail.get("title");
-        final String back_cover = (String) item_detail.get("back_cover");
-        final String front_cover = (String) item_detail.get("front_cover");
-        final String posterURL = (String) item_detail.get("poster");
         if (!StringUtils.isEmpty(thumbnailUrl)) {
             final DownloadLink thumbnail = this.createDownloadlink(thumbnailUrl);
             thumbnail.setAvailable(true);
             ret.add(thumbnail);
         }
+        final ArrayList<DownloadLink> trailerResults = this.crawlVideo(br.cloneBrowser(), internalIDStr, null, "trailer", "trailer");
+        ret.addAll(trailerResults);
+        final String title = trailerResults.get(0).getStringProperty(PROPERTY_TITLE);
         if (!StringUtils.isEmpty(httpStreamingURL)) {
             final DownloadLink httpStream = this.createDownloadlink(httpStreamingURL);
             httpStream.setFinalFileName(title + "_http.mp4");
             httpStream.setAvailable(true);
             ret.add(httpStream);
         }
-        if (!StringUtils.isEmpty(posterURL) && !posterURL.contains("/nophoto_")) {
-            final DownloadLink poster = this.createDownloadlink(posterURL);
-            poster.setAvailable(true);
-            ret.add(poster);
-        }
-        if (!StringUtils.isEmpty(back_cover)) {
-            final DownloadLink backcover = this.createDownloadlink(back_cover);
-            backcover.setAvailable(true);
-            ret.add(backcover);
-        }
-        if (!StringUtils.isEmpty(front_cover)) {
-            final DownloadLink frontcover = this.createDownloadlink(front_cover);
-            frontcover.setAvailable(true);
-            ret.add(frontcover);
-        }
-        final String hlsMaster = (String) entries.get("playlist_url");
-        br.getPage(hlsMaster);
-        final List<HlsContainer> containers = HlsContainer.getHlsQualities(br);
-        for (final HlsContainer container : containers) {
-            final DownloadLink video = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(container.getDownloadurl()));
-            video.setFinalFileName(title + "_hls_" + container.getHeight() + "p.mp4");
-            video.setAvailable(true);
-            ret.add(video);
+        /* Add snapshots + trailer of each scene */
+        if (scenesHTMLs.length > 0) {
+            int sceneCounter = 1;
+            for (final String scenesHTML : scenesHTMLs) {
+                String sceneTitle = new Regex(scenesHTML, "class=\"modal-title\">([^<]+)</h3>").getMatch(0);
+                if (sceneTitle != null) {
+                    sceneTitle = Encoding.htmlDecode(sceneTitle).trim();
+                }
+                logger.info("Crawling scene " + sceneCounter + "/" + scenesHTMLs.length + " | Title: " + sceneTitle);
+                final String[] scenesSnapshotURLs = getSnapshotURLs(scenesHTML);
+                if (scenesSnapshotURLs.length > 0) {
+                    final ArrayList<String> allScreenshotURLs = new ArrayList<String>();
+                    allScreenshotURLs.addAll(Arrays.asList(scenesSnapshotURLs));
+                    final Regex showMoreScreenshotsInfo = new Regex(scenesHTML, "ShowMoreScreens2017\\((\\d+),(\\d+),(\\d+),(\\d+), \\'(/\\d+/[^\\']+)'");
+                    if (showMoreScreenshotsInfo.matches()) {
+                        logger.info("Crawling more screenshots");
+                        final String item = showMoreScreenshotsInfo.getMatch(0), start = showMoreScreenshotsInfo.getMatch(1), end = showMoreScreenshotsInfo.getMatch(2), sceneID = showMoreScreenshotsInfo.getMatch(3);
+                        final Browser br3 = br.cloneBrowser();
+                        br3.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        br3.getPage("/Item/LoadSceneScreenshots?item=" + item + "&start=" + start + "&end=" + end + "&sceneID=" + sceneID + "&_=" + System.currentTimeMillis());
+                        final String[] scenesSnapshotURLs2 = getSnapshotURLs(br3.getRequest().getHtmlCode());
+                        logger.info("Found " + scenesSnapshotURLs2.length + " more scene snapshots");
+                        allScreenshotURLs.addAll(Arrays.asList(scenesSnapshotURLs2));
+                    }
+                    int snapshotCounter = 1;
+                    final int padLength = StringUtils.getPadLength(allScreenshotURLs.size());
+                    for (final String scenesSnapshotURL : allScreenshotURLs) {
+                        final DownloadLink image = this.createDownloadlink(scenesSnapshotURL);
+                        final String ext = Plugin.getFileNameExtensionFromURL(scenesSnapshotURL);
+                        if (sceneTitle != null && ext != null) {
+                            final String filename = title + " - " + sceneTitle + "_" + StringUtils.formatByPadLength(padLength, snapshotCounter) + ext;
+                            image.setFinalFileName(filename);
+                            image.setProperty(DirectHTTP.FIXNAME, filename);
+                        }
+                        image.setAvailable(true);
+                        ret.add(image);
+                        snapshotCounter++;
+                    }
+                }
+                /* Add scene preview video if available */
+                final String sceneIDStr = new Regex(scenesHTML, "data-video=\"scenePreview_(\\d+)\"").getMatch(0);
+                if (sceneIDStr != null) {
+                    logger.info("Crawling scene preview");
+                    ret.addAll(this.crawlVideo(br.cloneBrowser(), internalIDStr, sceneIDStr, "preview", sceneTitle));
+                }
+                sceneCounter++;
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(ret);
         return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlVideo(final Browser br, final String itemID, final String sceneID, final String stream_type, final String subtitle) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        br.getHeaders().put("Content-Type", "application/json");
+        br.getHeaders().put("Origin", "https://www." + this.getHost());
+        final Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("encrypted_customer_id", null);
+        postData.put("forcehd", false);
+        postData.put("initiate_tracking", false);
+        postData.put("item_id", Integer.parseInt(itemID));
+        if (sceneID != null) {
+            postData.put("scene_id", Integer.parseInt(sceneID));
+        }
+        postData.put("signature", null);
+        postData.put("stream_type", stream_type);
+        postData.put("timestamp", null);
+        br.postPageRaw("https://player.digiflix.video/verify", JSonStorage.serializeToJson(postData));
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final Map<String, Object> item_detail = (Map<String, Object>) entries.get("item_detail");
+        final String title = (String) item_detail.get("title");
+        if (stream_type.equalsIgnoreCase("trailer")) {
+            /* Only add extra images for trailer */
+            final String back_cover = (String) item_detail.get("back_cover");
+            final String front_cover = (String) item_detail.get("front_cover");
+            final String posterURL = (String) item_detail.get("poster");
+            if (!StringUtils.isEmpty(posterURL) && !posterURL.contains("/nophoto_")) {
+                final DownloadLink poster = this.createDownloadlink(posterURL);
+                poster.setProperty(PROPERTY_TITLE, title);
+                poster.setAvailable(true);
+                ret.add(poster);
+            }
+            if (!StringUtils.isEmpty(back_cover)) {
+                final DownloadLink backcover = this.createDownloadlink(back_cover);
+                backcover.setProperty(PROPERTY_TITLE, title);
+                backcover.setAvailable(true);
+                ret.add(backcover);
+            }
+            if (!StringUtils.isEmpty(front_cover)) {
+                final DownloadLink frontcover = this.createDownloadlink(front_cover);
+                frontcover.setProperty(PROPERTY_TITLE, title);
+                frontcover.setAvailable(true);
+                ret.add(frontcover);
+            }
+        }
+        /* Add main trailer */
+        final String hlsMaster = (String) entries.get("playlist_url");
+        br.getPage(hlsMaster);
+        final List<HlsContainer> containers = HlsContainer.getHlsQualities(br);
+        for (final HlsContainer container : containers) {
+            final DownloadLink video = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(container.getDownloadurl()));
+            if (subtitle != null) {
+                video.setFinalFileName(title + " - " + subtitle + "_hls_" + container.getHeight() + "p.mp4");
+            } else {
+                video.setFinalFileName(title + "_hls_" + container.getHeight() + "p.mp4");
+            }
+            video.setProperty(PROPERTY_TITLE, title);
+            video.setAvailable(true);
+            ret.add(video);
+        }
+        return ret;
+    }
+
+    private String[] getSnapshotURLs(final String html) {
+        return new Regex(html, "a rel=\"(?:scenescreenshots|morescreenshots)\"\\s*href=\"(https?://[^\"]+)\"").getColumn(0);
     }
 }
