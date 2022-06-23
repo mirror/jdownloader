@@ -33,6 +33,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -47,20 +49,24 @@ public class VscoCo extends PluginForDecrypt {
     private static final String PROPERTY_DATE_CAPTURED = "date_captured";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        String username = new Regex(parameter, "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
+        String username = new Regex(param.getCryptedUrl(), "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
         if (username == null) {
-            username = new Regex(parameter, "vsco\\.co/([\\w-]+)").getMatch(0);
+            username = new Regex(param.getCryptedUrl(), "vsco\\.co/([\\w-]+)").getMatch(0);
         }
-        br.setCurrentURL("https://vsco.co/" + username + "/images/1");
+        br.setCurrentURL("https://" + this.getHost() + "/" + username + "/images/1");
         br.getPage("https://vsco.co/content/Static/userinfo");
+        // final String json = br.getRegex("define\\((.*?)\\)").getMatch(0);
+        // final Map<String, Object> userInfo = JavaScriptEngineFactory.jsonToJavaMap(json);
         final String cookie_vs = br.getCookie(this.getHost(), "vs");
-        br.getPage("https://vsco.co/ajxp/" + cookie_vs + "/2.0/sites?subdomain=" + username);
+        br.getPage("/ajxp/" + cookie_vs + "/2.0/sites?subdomain=" + username);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String siteid = PluginJSonUtils.getJsonValue(br, "id");
         if (cookie_vs == null || siteid == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         long amount_total = 0;
         /* More than 500 possible */
@@ -77,9 +83,8 @@ public class VscoCo extends PluginForDecrypt {
             if (page == 1 || page > 1) {
                 amount_total = JavaScriptEngineFactory.toLong(entries.get("total"), 0);
                 if (page == 1 && amount_total == 0) {
-                    logger.info("User has zero content!");
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    logger.info("User owns zero media content!");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (page > 1 && amount_total == 0) {
                     return decryptedLinks;
                 }
