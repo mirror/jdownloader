@@ -21,7 +21,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
@@ -60,9 +59,9 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
             logger.warning("Could not find pastebin textfield");
             return decryptedLinks;
         }
-        final PluginForHost sisterPlugin = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost sisterPlugin = this.getNewPluginForHostInstance(this.getHost());
         if (sisterPlugin != null) {
-            final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata.getPastebinText());
+            final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
             decryptedLinks.add(textfile);
         }
         /* TODO: Differentiate between URLs that we support (= have plugin for) and those we don't support. */
@@ -83,7 +82,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         correctCryptedLink(param);
         this.preProcess(param);
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
-        final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata.getPastebinText());
+        final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
         return textfile;
     }
 
@@ -94,13 +93,13 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         return metadata;
     }
 
-    protected DownloadLink getDownloadlinkForHosterplugin(final CryptedLink link, final String pastebinText) {
-        final DownloadLink textfile = this.createDownloadlink(link.getCryptedUrl());
-        if (StringUtils.isEmpty(pastebinText)) {
+    protected DownloadLink getDownloadlinkForHosterplugin(final CryptedLink link, final PastebinMetadata metadata) {
+        if (StringUtils.isEmpty(metadata.getPastebinText())) {
             return null;
         }
+        final DownloadLink textfile = this.createDownloadlink(link.getCryptedUrl());
         try {
-            textfile.setDownloadSize(pastebinText.getBytes("UTF-8").length);
+            textfile.setDownloadSize(metadata.getPastebinText().getBytes("UTF-8").length);
         } catch (final UnsupportedEncodingException ignore) {
             ignore.printStackTrace();
         }

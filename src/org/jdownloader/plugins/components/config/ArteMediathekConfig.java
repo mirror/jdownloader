@@ -77,13 +77,14 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
         public String getFilenameScheme_label() {
             return text_GetFilenameScheme;
         }
-        // public String getPackagenameSchemeType_label() {
-        // return text_GetPackagenameSchemeType;
-        // }
-        //
-        // public String getPackagenameScheme_label() {
-        // return text_GetPackagenameScheme;
-        // }
+
+        public String getPackagenameSchemeType_label() {
+            return text_GetPackagenameSchemeType;
+        }
+
+        public String getPackagenameScheme_label() {
+            return text_GetPackagenameScheme;
+        }
     }
 
     @AboutConfig
@@ -250,41 +251,42 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     String getFilenameScheme();
 
     void setFilenameScheme(String str);
-    // @AboutConfig
-    // @DefaultEnumValue("ORIGINAL")
-    // @DescriptionForConfigEntry(text_GetFilenameSchemeType)
-    // @Order(600)
-    // FilenameSchemeType getPackagenameSchemeType();
-    //
-    // void setPackagenameSchemeType(PackagenameSchemeType mode);
-    //
-    // public static enum PackagenameSchemeType implements LabelInterface {
-    // DEFAULT {
-    // @Override
-    // public String getLabel() {
-    // return "Default: *date*_arte_*title_and_subtitle*";
-    // }
-    // },
-    // CUSTOM {
-    // @Override
-    // public String getLabel() {
-    // return "Custom";
-    // }
-    // },
-    // LEGACY {
-    // @Override
-    // public String getLabel() {
-    // return "Legacy (like old plugin: *date*_arte_*title_and_subtitle*)";
-    // }
-    // };
-    // }
-    //
-    // @AboutConfig
-    // @DefaultStringValue("*date*_*platform*_*title_and_subtitle*_*video_id*_*language*_*shortlanguage*_*resolution*_*width*_*height*_*bitrate**ext*")
-    // @TakeValueFromSubconfig("CUSTOM_PACKAGE_NAME_PATTERN")
-    // @DescriptionForConfigEntry(text_GetFilenameScheme)
-    // @Order(601)
-    // String getPackagenameScheme();
-    //
-    // void setPackagenameScheme(String str);
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    @DescriptionForConfigEntry(text_GetFilenameSchemeType)
+    @Order(600)
+    PackagenameSchemeType getPackagenameSchemeType();
+
+    void setPackagenameSchemeType(PackagenameSchemeType mode);
+
+    public static enum PackagenameSchemeType implements LabelInterface {
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: *title_and_subtitle*";
+            }
+        },
+        CUSTOM {
+            @Override
+            public String getLabel() {
+                return "Custom";
+            }
+        },
+        LEGACY {
+            @Override
+            public String getLabel() {
+                return "Legacy (like old plugin: *date*_arte_*title_and_subtitle*)";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultStringValue("*date*_*platform*_*title_and_subtitle*_*title*_*subtitle*_*video_id*")
+    @TakeValueFromSubconfig("CUSTOM_PACKAGE_NAME_PATTERN")
+    @DescriptionForConfigEntry(text_GetFilenameScheme)
+    @Order(601)
+    String getPackagenameScheme();
+
+    void setPackagenameScheme(String str);
 }
