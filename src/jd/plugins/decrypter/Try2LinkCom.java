@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -25,8 +27,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.parser.UrlQuery;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "try2link.com" }, urls = { "https?://(?:www\\.)?try2link\\.com/([A-Za-z0-9]+)" })
 public class Try2LinkCom extends MightyScriptAdLinkFly {
     public Try2LinkCom(PluginWrapper wrapper) {
@@ -34,7 +34,8 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+    protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);
         // /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
@@ -55,6 +56,7 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
             logger.warning("Possible crawler failure...");
         }
         /* Now continue with parent class code (requires captcha + waittime) */
+        return ret;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

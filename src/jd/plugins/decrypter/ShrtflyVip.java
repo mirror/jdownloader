@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,8 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shrtfly.com" }, urls = { "https?://(?:www\\.)?(?:shrtfly\\.vip|shrtfly\\.com|shrtvip\\.com|stfly\\.me|smwebs\\.xyz)/([A-Za-z0-9]+)" })
 public class ShrtflyVip extends MightyScriptAdLinkFly {
     public ShrtflyVip(PluginWrapper wrapper) {
@@ -37,7 +37,8 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+    protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         /* Pre-setting Referer was an attempt to skip their captcha but this did not work. */
@@ -77,6 +78,7 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
             logger.warning("Possible crawler failure...");
         }
         /* Now continue with parent class code (requires 2nd captcha + waittime) */
+        return ret;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

@@ -33,7 +33,8 @@ public class MiklproCom extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+    protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);
         getPage(param.getCryptedUrl());
@@ -49,6 +50,7 @@ public class MiklproCom extends MightyScriptAdLinkFly {
             logger.warning("Possible crawler failure...");
         }
         /* Now continue with parent class code (requires captcha + waittime) */
+        return ret;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

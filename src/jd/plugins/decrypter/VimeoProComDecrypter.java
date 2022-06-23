@@ -20,17 +20,18 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.appwork.utils.formatter.HexFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://vimeopro.com/[^/]+/[^/]+(/video/\\d+)?" })
 public class VimeoProComDecrypter extends PluginForDecrypt {
@@ -45,19 +46,27 @@ public class VimeoProComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         final String videoID = new Regex(param.getCryptedUrl(), pattern).getMatch(0);
-        if (videoID != null) {
-            final String iframe = br.getRegex("iframe\\s*src\\s*=\\s*\"((?:https:)?//player.vimeo.com/video/" + videoID + ".*?)\"").getMatch(0);
-            if (iframe == null) {
+        final String iframe = br.getRegex("<iframe\\s*src\\s*=\\s*\"((?:https:)?//player.vimeo.com/video/\\d+[^\"]*)\"").getMatch(0);
+        if (iframe == null) {
+            final String otherIframe = br.getRegex("<iframe\\s*src\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+            if (otherIframe != null) {
+                /**
+                 * 2022-06-23 e.g. https://vimeopro.com/user111222222/online-exercise-classes </br>
+                 * 2nd example: https://vimeopro.com/cwdc/bla-training/video/69901718
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("\\{VIMEO_URL\\}/log_in")) {
+                /* E.g. age restricted */
+                throw new AccountRequiredException();
+            } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        }
+        if (videoID != null) {
             final String url = br.getURL(iframe).toString() + "#forced_referer=" + HexFormatter.byteArrayToHex(param.getCryptedUrl().getBytes("UTF-8"));
             decryptedLinks.add(createDownloadlink(url));
         } else {
-            final String iframe = br.getRegex("iframe\\s*src\\s*=\\s*\"((?:https:)?//player.vimeo.com/video/.*?)\"").getMatch(0);
             final String portfolio_id = new Regex(iframe, "portfolio_id=(\\d+)").getMatch(0);
-            if (portfolio_id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             final Set<String> videoIDs = new HashSet<String>();
             int page = 0;
             boolean nextPage = true;
@@ -78,7 +87,6 @@ public class VimeoProComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

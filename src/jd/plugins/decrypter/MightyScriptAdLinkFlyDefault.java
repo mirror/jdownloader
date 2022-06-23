@@ -19,11 +19,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
@@ -42,6 +42,8 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
 
     private static final String[]     domains                    = { "arabtvlink.com", "medche.com", "go-urls.tk", "topklink.com", "shorts-link.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com", "oke.io", "vivads.net", "pnd.tl", "met.bz",
             "urlcloud.us", "clik.pw", "z2i.com", "fant1asy.com",
+            /** 2022-06-23 */
+            "ez4short.com",
             /** 2022-02-21: linksly.co domains */
             "linksly.co",
             /** 2021-08-26: rapid-cut.com domains */
@@ -137,7 +139,7 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             /** shortawy.com links */
             "shortawy.com",
             /** up4cash.com links */
-            "up4cash.com"                                       };
+            "up4cash.com" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */

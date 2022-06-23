@@ -18,6 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,17 +32,13 @@ import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -101,13 +102,13 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String sourceHost = Browser.getHost(param.getCryptedUrl());
         correctURL(param);
-        handlePreCrawlProcess(param, decryptedLinks);
-        if (!decryptedLinks.isEmpty()) {
+        ret.addAll(handlePreCrawlProcess(param));
+        if (!ret.isEmpty()) {
             /* E.g. direct redirect */
-            return decryptedLinks;
+            return ret;
         } else if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().length() < 100) {
@@ -124,8 +125,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         appVars = regexAppVars(this.br);
         Form form = getCaptchaForm(br);
         if (form == null) {
-            if (decryptedLinks.size() > 0) {
-                return decryptedLinks;
+            if (ret.size() > 0) {
+                return ret;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -190,9 +191,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         /**
                          * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                         * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another
-                         * website as the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from
-                         * happening.
+                         * </br>
+                         * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
+                         * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
                          */
                         final String reCaptchaSiteURL;
                         if (this.getSpecialReferer() != null) {
@@ -322,15 +323,16 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         }
         final String finallink = getFinallink();
         if (finallink == null) {
-            if (br.containsHTML("<h1>Whoops, looks like something went wrong\\.</h1>")) {
-                logger.warning("Hoster has issue");
+            if (br.containsHTML("(?i)<h1>Whoops, looks like something went wrong\\.</h1>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 
     /** Override to do something after the captcha (also gets called when no captcha was needed). */
@@ -338,7 +340,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     }
 
     /** Accesses input URL and handles "Pre-AdLinkFly" redirects. */
-    protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+    protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (getSpecialReferer() != null) {
             br.getHeaders().put("Referer", getSpecialReferer());
             /* Do not expect direct redirects to our target-URL. */
@@ -349,6 +352,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         getPage(param.getCryptedUrl());
         // 2019-11-13: http->https->different domain(https)
         // 2019-11-13: http->https->different domain(http)->different domain(https)
+        String firstRedirect = null;
+        int count = 1;
         while (true) {
             if (isAbort()) {
                 throw new InterruptedException();
@@ -370,18 +375,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 /* document.getElementById('clickable').click() */
                 redirect = br.containsHTML("\\('clickable'\\)\\.click\\(\\)") ? br.getRegex("<a\\s*href\\s*=\\s*\"(https?://[^\"]+)\"\\s*id\\s*=\\s*\"clickable\"").getMatch(0) : null;
             }
-            // if (redirect == null) {
-            // /*
-            // * 2021-01-14: shortzzy.link --> janusnotes.com --> This code is incomplete but so far not needed. We need to make this
-            // * class extendable to be able to easily implement such special cases!
-            // */
-            // final String specialRedirect = br.getRegex("var api = \"(https?://[^\"]+)\";").getMatch(0);
-            // final String clickarlink = br.getRegex("var fetch = \"(https?://[^\"]+)\";").getMatch(0);
-            // if (specialRedirect != null && clickarlink != null) {
-            // this.postPage(specialRedirect, "clickarlink=" + Encoding.urlEncode(clickarlink));
-            // redirect = br.getRedirectLocation();
-            // }
-            // }
             if (redirect == null) {
                 break;
             }
@@ -390,12 +383,47 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                  * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.
                  * wi.cr --> wicr.me
                  */
-                decryptedLinks.add(this.createDownloadlink(redirect));
-                return;
+                firstRedirect = redirect;
+                break;
             } else {
                 getPage(redirect);
+                count++;
+                if (count > 10) {
+                    throw new DecrypterException("Too many redirects!");
+                }
             }
         }
+        if (firstRedirect != null) {
+            /**
+             * Check if this is redirect redirect or if it really is the one we expect. </br>
+             * Some websites redirect e.g. to a fake blog and only redirect back to the usual handling if you re-access the main URL with
+             * that fake blog as referer header e.g.: adshort.co, ez4short.com </br>
+             * In some cases this special referer is pre-given via getSpecialReferer in which we do not have to re-check.
+             */
+            if (getSpecialReferer() != null) {
+                /* Assume that redirect redirects to external website and use it as our final result. */
+                ret.add(this.createDownloadlink(firstRedirect));
+            } else {
+                logger.info("Checking if redirect is external redirect or redirect to fake blog");
+                br.getHeaders().put("Referer", firstRedirect);
+                br.setFollowRedirects(false);
+                getPage(param.getCryptedUrl());
+                final String secondRedirect = br.getRedirectLocation();
+                if (secondRedirect != null) {
+                    if (!StringUtils.equalsIgnoreCase(firstRedirect, secondRedirect)) {
+                        logger.warning("Got different redirect on 2nd attempt: First: " + firstRedirect + " | Second: " + secondRedirect);
+                        ret.add(this.createDownloadlink(firstRedirect));
+                        ret.add(this.createDownloadlink(secondRedirect));
+                    } else {
+                        logger.info("Same redirect happens even with Referer --> Returning final result: " + secondRedirect);
+                        ret.add(this.createDownloadlink(firstRedirect));
+                    }
+                } else if (regexAppVars(this.br) == null) {
+                    logger.warning("Result looks like plugin failure");
+                }
+            }
+        }
+        return ret;
     }
 
     protected boolean waittimeIsSkippable(final String source_host) {
@@ -534,13 +562,13 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         /* For >90%, this json-attempt should work! */
         String finallink = PluginJSonUtils.getJsonValue(br, "url");
         if (inValidate(finallink) || !finallink.startsWith("http")) {
-            finallink = br.getRegex(".+<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s+Link\\s*</a>").getMatch(1);
+            finallink = br.getRegex("<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s*Link\\s*</a>").getMatch(1);
             if (inValidate(finallink)) {
-                finallink = br.getRegex(".+<a\\s+[^>]*href=(\"|')(.*?)\\1[^>]*>Continue[^<]*</a>").getMatch(1);
+                finallink = br.getRegex("<a[^>]*href=(\"|')(.*?)\\1[^>]*>Continue[^<]*</a>").getMatch(1);
             }
         }
         /* 2020-02-03: clk.in: p.clk.in/?n=bla */
-        if (!this.inValidate(finallink) && finallink.matches("https?://p\\.[^/]+/\\?n=.+")) {
+        if (!StringUtils.isEmpty(finallink) && finallink.matches("https?://p\\.[^/]+/\\?n=.+")) {
             logger.info("Special case: Finallink seems to lead to another step: " + finallink);
             this.getPage(finallink);
             /* 2020-110-6: E.g. clicksfly.com */

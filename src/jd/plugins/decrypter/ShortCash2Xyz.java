@@ -30,7 +30,8 @@ public class ShortCash2Xyz extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected void handlePreCrawlProcess(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
+    protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://").replace("short2.cash", "short-cash2.xyz"));
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
@@ -38,6 +39,7 @@ public class ShortCash2Xyz extends MightyScriptAdLinkFly {
             logger.warning("Possible crawler failure...");
         }
         /* Now continue with parent class code (requires 2nd captcha + waittime) */
+        return ret;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
