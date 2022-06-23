@@ -578,7 +578,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 }
                 switch (getCaptchaTypeNumber()) {
                 case 0:
-                    /* No captcha */
+                /* No captcha */
                 {
                     timesNoUserInput++;
                     if (decryptMultipleLinks(param).size() > 0) {
@@ -750,7 +750,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             for (final String[] fpip : inputProperties) {
                 d++;
                 v.add(d, null);
-                if ("type".equalsIgnoreCase(fpip[0]) && fpip[1].equalsIgnoreCase(i.getType())) {
+                if ("type".equalsIgnoreCase(fpip[0]) && fpip[1].equalsIgnoreCase(i.getElementType().type())) {
                     v.add(d, Boolean.TRUE);
                 } else if ("name".equalsIgnoreCase(fpip[0]) && fpip[1].equalsIgnoreCase(i.getKey())) {
                     v.add(d, Boolean.TRUE);

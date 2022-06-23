@@ -19,13 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,12 +27,20 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.com" }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/(?:\\?v=|v/|embed/)([A-Za-z0-9]+)" })
 public class BitpornoCom extends PluginForHost {
@@ -97,7 +98,7 @@ public class BitpornoCom extends PluginForHost {
     private boolean handleConfirm(Browser br) throws IOException {
         final Form f = br.getForm(0);
         if (f != null) {
-            if (f.hasInputFieldByName("confirm") && "image".equals(f.getInputField("confirm").getType())) {
+            if (f.hasInputFieldByName("confirm") && (f.getInputField("confirm").isType(InputField.InputType.IMAGE))) {
                 f.put("confirm.x", "62");
                 f.put("confirm.y", "70");
             }

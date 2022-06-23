@@ -18,13 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -41,6 +34,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https://books\\.fakku\\.net/images/manga/[^/]+/.+" })
 public class FakkuNet extends antiDDoSForHost {
@@ -181,7 +180,7 @@ public class FakkuNet extends antiDDoSForHost {
                 loginform.put("username", account.getUser());
                 InputField pwField = null;
                 for (final InputField ifield : loginform.getInputFields()) {
-                    if (StringUtils.equalsIgnoreCase(ifield.getType(), "password")) {
+                    if (ifield.isType(InputField.InputType.PASSWORD)) {
                         pwField = ifield;
                         break;
                     }
