@@ -607,7 +607,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private final boolean containsErrorTitle(final Browser br) {
-        if (br.containsHTML("(?i)<div class=\"message_page_title\">Error</div>")) {
+        if (br.containsHTML("(?i)<div class=\"message_page_title\"[^>]*>Error</div>")) {
             return true;
         } else {
             return false;
@@ -712,7 +712,6 @@ public class VKontakteRu extends PluginForDecrypt {
         } else {
             getPage(getProtocol() + "vk.com/video" + oid_and_id);
         }
-        handleVideoErrorsWebsite(br);
         String embeddedVideoURL = new Regex(PluginJSonUtils.unescape(br.toString()), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
         if (embeddedVideoURL != null) {
             if (embeddedVideoURL.startsWith("//")) {
@@ -723,7 +722,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final Map<String, Object> video = findVideoMap(this.br, id);
         if (video == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, this.getMessageBodyText(br));
         }
         final String embedHash = (String) video.get("embed_hash");
         if (embedHash == null) {
@@ -847,35 +846,12 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    /** Handles video related error-traits according to current website html code. */
-    private void handleVideoErrorsWebsite(final Browser br) throws DecrypterException, PluginException {
-        final boolean isError = containsErrorTitle(br);
-        if ((isError && br.containsHTML("div class=\"message_page_body\">\\s+You need to be a member of this group to view its video files.")) || br.getHttpConnection().getResponseCode() == 403) {
-            throw new AccountRequiredException();
-        } else if (isError && br.containsHTML("<div class=\"message_page_body\">\\s*Access denied")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)The owner of this video has either been suspended or deleted")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.toString().contains("<\\/b> was removed from public access by request of the copyright holder.<\\/div>\\n<\\/div>\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.toString().contains("(?i)This video is not available in your region")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This video is not available in your region");
-        } else if (br.toString().contains("id=\"video_ext_msg\"")) {
-            /* 2017-11-21: Basic trait for all kinds of errormessage (shall be language-independent) */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("profile_deleted_text")) {
-            /* 2019-07-26: E.g. <h5 class="profile_deleted_text">Dieses Profil ist nur f&#252;r autorisierte Nutzer verf&#252;gbar.</h5> */
-            /* 2020-11-30: E.g. <h5 class="profile_deleted_text">You have to log in to view this page.</h5> */
-            /*
-             * 2020-11-30: E.g. <h5 class="profile_deleted_text">This profile has been deleted.<br>Information on this profile is
-             * unavailable.</h5>
-             */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)class=\"message_page_body\">\\s*Видео удалено")) {
-            /* "Video deleted" */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)This video has been removed from public access")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    private String getMessageBodyText(final Browser br) {
+        final String msgBody = br.getRegex("<div class=\"message_page_body\">([^<]+)<").getMatch(0);
+        if (msgBody != null) {
+            return Encoding.htmlDecode(msgBody).trim();
+        } else {
+            return null;
         }
     }
 
@@ -1030,15 +1006,14 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         if (numberOfEntriesStr == null) {
             /* 2020-06-17 */
-            numberOfEntriesStr = br.getRegex("Show all (\\d+) albums").getMatch(0);
+            numberOfEntriesStr = br.getRegex("(?i)Show all (\\d+) albums").getMatch(0);
         }
         if (numberOfEntriesStr == null) {
             /* 2020-1^0-26 */
-            numberOfEntriesStr = br.getRegex(">Photo Albums<span class=\"ui_crumb_count\">(\\d+)<").getMatch(0);
+            numberOfEntriesStr = br.getRegex("(?i)>\\s*Photo Albums<span class=\"ui_crumb_count\">(\\d+)<").getMatch(0);
         }
         final String startOffset = br.getRegex("var preload\\s*=\\s*\\[(\\d+),\"").getMatch(0);
         if (numberOfEntriesStr == null) {
-            this.handleVideoErrorsWebsite(this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         numberOfEntriesStr = numberOfEntriesStr.replace(",", "");
@@ -1088,7 +1063,6 @@ public class VKontakteRu extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlVideoAlbum(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = this.getReturnArray();
         this.getPage(param.getCryptedUrl());
-        handleVideoErrorsWebsite(br);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String internalSectionName;
         final String sectionNameURL = UrlQuery.parse(br.getURL()).get("section");
@@ -1101,6 +1075,9 @@ public class VKontakteRu extends PluginForDecrypt {
         if (albumsJson == null) {
             /* Wider RegEx */
             albumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
+        }
+        if (albumsJson == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(albumsJson, TypeRef.HASHMAP);
         final String oid = Integer.toString(((Number) entries.get("oid")).intValue());

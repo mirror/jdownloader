@@ -29,7 +29,7 @@ public class Bestcash2020Com extends MightyScriptAdLinkFly {
         super(wrapper);
     }
 
-    private String refererHost = "";
+    private String refererHost = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(false);
