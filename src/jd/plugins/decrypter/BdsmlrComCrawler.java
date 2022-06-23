@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -41,6 +36,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BdsmlrComCrawler extends PluginForDecrypt {
@@ -129,6 +129,9 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         }
         final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
         if (csrftoken == null) {
+            if (br.containsHTML("\"sorry\"\\s*>\\s*Sorry, please login")) {
+                throw new AccountRequiredException();
+            }
             logger.warning("Pagination failed");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
