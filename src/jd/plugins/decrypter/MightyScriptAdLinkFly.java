@@ -16,8 +16,11 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -321,7 +324,24 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             }
             submitForm(f2);
         }
-        final String finallink = getFinallink();
+        String finallink = null;
+        if (StringUtils.containsIgnoreCase(br.getRequest().getResponseHeader("Content-Type"), "application/json")) {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            finallink = (String) entries.get("url");
+        } else {
+            finallink = br.getRegex("<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s*Link\\s*</a>").getMatch(1);
+            if (StringUtils.isEmpty(finallink)) {
+                finallink = br.getRegex("<a[^>]*href=(\"|')(.*?)\\1[^>]*>Continue[^<]*</a>").getMatch(1);
+            }
+        }
+        /* 2020-02-03: clk.in: p.clk.in/?n=bla */
+        if (!StringUtils.isEmpty(finallink) && finallink.matches("https?://p\\.[^/]+/\\?n=.+")) {
+            /* TODO: 2022-06-23: This should not be needed anymore */
+            logger.info("Special case: Finallink seems to lead to another step: " + finallink);
+            this.getPage(finallink);
+            /* 2020-110-6: E.g. clicksfly.com */
+            finallink = br.getRegex("<div class=\"button\">\\s*<center>\\s*<a name=\"a\"[^>]*href=\"(http[^\"]+)\">").getMatch(0);
+        }
         if (finallink == null) {
             if (br.containsHTML("(?i)<h1>Whoops, looks like something went wrong\\.</h1>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -556,25 +576,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             result = PluginJSonUtils.getJson(this.appVars, input);
         }
         return result;
-    }
-
-    private String getFinallink() throws Exception {
-        /* For >90%, this json-attempt should work! */
-        String finallink = PluginJSonUtils.getJsonValue(br, "url");
-        if (inValidate(finallink) || !finallink.startsWith("http")) {
-            finallink = br.getRegex("<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s*Link\\s*</a>").getMatch(1);
-            if (inValidate(finallink)) {
-                finallink = br.getRegex("<a[^>]*href=(\"|')(.*?)\\1[^>]*>Continue[^<]*</a>").getMatch(1);
-            }
-        }
-        /* 2020-02-03: clk.in: p.clk.in/?n=bla */
-        if (!StringUtils.isEmpty(finallink) && finallink.matches("https?://p\\.[^/]+/\\?n=.+")) {
-            logger.info("Special case: Finallink seems to lead to another step: " + finallink);
-            this.getPage(finallink);
-            /* 2020-110-6: E.g. clicksfly.com */
-            finallink = br.getRegex("<div class=\"button\">\\s*<center>\\s*<a name=\"a\"[^>]*href=\"(http[^\"]+)\">").getMatch(0);
-        }
-        return finallink;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

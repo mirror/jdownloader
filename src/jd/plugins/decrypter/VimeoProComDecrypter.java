@@ -46,7 +46,7 @@ public class VimeoProComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         final String videoID = new Regex(param.getCryptedUrl(), pattern).getMatch(0);
-        final String iframe = br.getRegex("<iframe\\s*src\\s*=\\s*\"((?:https:)?//player.vimeo.com/video/\\d+[^\"]*)\"").getMatch(0);
+        final String iframe = br.getRegex("<iframe\\s*src\\s*=\\s*\"((?:https:)?//player\\.vimeo\\.com/video/\\d+[^\"]*)\"").getMatch(0);
         if (iframe == null) {
             final String otherIframe = br.getRegex("<iframe\\s*src\\s*=\\s*\"([^\"]+)\"").getMatch(0);
             if (otherIframe != null) {
