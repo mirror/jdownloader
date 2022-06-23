@@ -98,7 +98,8 @@ public class BitpornoCom extends PluginForHost {
     private boolean handleConfirm(Browser br) throws IOException {
         final Form f = br.getForm(0);
         if (f != null) {
-            if (f.hasInputFieldByName("confirm") && (f.getInputField("confirm").isType(InputField.InputType.IMAGE))) {
+            final InputField confirm = f.getInputField("confirm");
+            if (confirm != null && confirm.isType(InputField.InputType.IMAGE)) {
                 f.put("confirm.x", "62");
                 f.put("confirm.y", "70");
             }
