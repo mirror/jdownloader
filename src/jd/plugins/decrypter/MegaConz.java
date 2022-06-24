@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -34,13 +35,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonObjectHashMap;
+import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.storage.simplejson.JsonByteArrayStringValue;
 import org.appwork.storage.simplejson.mapper.JSonMapper;
+import org.appwork.utils.ByteArrayWrapper;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.MegaConzConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -76,6 +82,31 @@ public class MegaConz extends PluginForDecrypt {
 
     private static Object                                                           GLOBAL_LOCK = new Object();
     private static WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>> CACHE       = new WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>>();
+    private final Charset                                                           UTF8        = Charset.forName("UTF-8");
+
+    protected Object toObject(final Object object) {
+        if (object == null) {
+            return object;
+        } else if (object instanceof JSonValue) {
+            return ((JSonValue) object).getValue();
+        } else {
+            return object;
+        }
+    }
+
+    protected String toString(final Object object) {
+        if (object == null) {
+            return null;
+        } else if (object instanceof JSonValue) {
+            return toString(((JSonValue) object).getValue());
+        } else if (object instanceof String) {
+            return (String) object;
+        } else if (object instanceof ByteArrayWrapper) {
+            return ((ByteArrayWrapper) object).toString(UTF8);
+        } else {
+            throw new WTFException("unsupported type:" + object.getClass());
+        }
+    }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
@@ -146,9 +177,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                                /*
-                                 * + "&domain=meganz
-                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                        /*
+                         * + "&domain=meganz
+                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -190,7 +221,32 @@ public class MegaConz extends PluginForDecrypt {
                                 };
                             }
                         };
-                        response = mapper.inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
+                        if (true) {
+                            JSonFactory factory = new JSonFactory(IO.BOM.read(IO.readStream(-1, con.getInputStream()), IO.BOM.UTF8.getCharSet())) {
+                                @Override
+                                protected JSonObject createJSonObject(JSonObject map) {
+                                    if (map == null) {
+                                        return new JSonObjectHashMap();
+                                    } else {
+                                        return new JSonObjectHashMap(map);
+                                    }
+                                }
+
+                                @Override
+                                protected JSonValue createJSonValue(String value) {
+                                    if (value == null) {
+                                        return super.createJSonValue(value);
+                                    } else {
+                                        return new JsonByteArrayStringValue(value);
+                                    }
+                                }
+                            };
+                            response = factory.parse();
+                            // allow GC of JSonFactory
+                            factory = null;
+                        } else {
+                            response = mapper.inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
+                        }
                     } finally {
                         con.disconnect();
                     }
@@ -210,7 +266,7 @@ public class MegaConz extends PluginForDecrypt {
                             logger.info("no more nodes found->abort pagination");
                             break;
                         }
-                        final String nextSN = (String) JavaScriptEngineFactory.walkJson(response, "{0}/sn");
+                        final String nextSN = toString(JavaScriptEngineFactory.walkJson(response, "{0}/sn"));
                         if (StringUtils.isEmpty(nextSN)) {
                             logger.info("no next page");
                             break;
@@ -239,7 +295,7 @@ public class MegaConz extends PluginForDecrypt {
                             logger.info("no more nodes found->abort pagination");
                             break;
                         }
-                        final String nextSN = (String) JavaScriptEngineFactory.walkJson(response, "sn");
+                        final String nextSN = toString(JavaScriptEngineFactory.walkJson(response, "sn"));
                         if (StringUtils.isEmpty(nextSN)) {
                             logger.info("no next page");
                             break;
@@ -251,7 +307,7 @@ public class MegaConz extends PluginForDecrypt {
                             break;
                         }
                         if (wscSupport && w == null) {
-                            w = (String) JavaScriptEngineFactory.walkJson(response, "w");
+                            w = toString(JavaScriptEngineFactory.walkJson(response, "w"));
                             if (StringUtils.isEmpty(w)) {
                                 logger.info("wsc missing");
                                 break;
@@ -299,7 +355,7 @@ public class MegaConz extends PluginForDecrypt {
                         if (isAbort()) {
                             throw new InterruptedException();
                         } else {
-                            final String encryptedNodeKey = new Regex(parsedNode.remove("k"), ":([^:]*?)$").getMatch(0);
+                            final String encryptedNodeKey = new Regex(toString(parsedNode.remove("k")), ":([^:]*?)$").getMatch(0);
                             if (encryptedNodeKey == null) {
                                 it.remove();
                                 logger.info("NodeKey missing:" + JSonStorage.toString(parsedNode));
@@ -313,19 +369,19 @@ public class MegaConz extends PluginForDecrypt {
                                 decryptedLinks.add(createOfflinelink(parameter.toString()));
                                 return decryptedLinks;
                             }
-                            final String nodeAttr = decrypt((String) parsedNode.remove("a"), nodeKey);
+                            final String nodeAttr = decrypt(toString(parsedNode.remove("a")), nodeKey);
                             if (nodeAttr == null) {
                                 it.remove();
                                 logger.info("NodeAttr missing:" + JSonStorage.toString(parsedNode));
                                 continue;
                             }
                             final String nodeName = removeEscape(new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)(?<!\\\\)\"").getMatch(0));
-                            final String nodeType = String.valueOf(parsedNode.remove("t"));
+                            final String nodeType = String.valueOf(toObject(parsedNode.remove("t")));
                             if ("1".equals(nodeType)) {
                                 parsedNode.put("nodeDirectory", Boolean.TRUE);
                             } else if ("0".equals(nodeType)) {
                                 // parsedNode.put("nodeDirectory", Boolean.FALSE);
-                                final Long nodeSize = JavaScriptEngineFactory.toLong(parsedNode.remove("s"), -1);
+                                final Long nodeSize = JavaScriptEngineFactory.toLong(toObject(parsedNode.remove("s")), -1);
                                 if (nodeSize == -1) {
                                     it.remove();
                                     logger.info("NodeSize missing:" + JSonStorage.toString(parsedNode));
@@ -349,19 +405,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         *
+         * 
          * s = size
-         *
+         * 
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         *
+         * 
          * ts = timestamp
-         *
+         * 
          * h = node (ID)
-         *
+         * 
          * u = owner
-         *
+         * 
          * a = attribute (contains name)
-         *
+         * 
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
@@ -369,16 +425,16 @@ public class MegaConz extends PluginForDecrypt {
             if (isAbort()) {
                 break;
             }
-            final String nodeID = (String) folderNode.get("h");
-            final String nodeParentID = (String) folderNode.get("p");
+            final String nodeID = toString(folderNode.get("h"));
+            final String nodeParentID = toString(folderNode.get("p"));
             if (folderNode.containsKey("nodeDirectory")) {
-                final String nodeName = (String) folderNode.get("nodeName");
+                final String nodeName = toString(folderNode.get("nodeName"));
                 final MegaFolder fo = new MegaFolder(nodeID);
                 fo.parent = nodeParentID;
                 fo.name = nodeName;
                 folders.put(nodeID, fo);
             } else {
-                final Long nodeSize = (Long) folderNode.get("nodeSize");
+                final Long nodeSize = (Long) toObject(folderNode.get("nodeSize"));
                 final MegaFolder folder = folders.get(nodeParentID);
                 if (StringUtils.isNotEmpty(preferredNodeID)) {
                     // see RewriteMegaConz
@@ -422,8 +478,8 @@ public class MegaConz extends PluginForDecrypt {
                 if (folderNodeID != null && !StringUtils.equalsIgnoreCase(nodeID, folderNodeID)) {
                     continue;
                 }
-                final String nodeName = (String) folderNode.get("nodeName");
-                final String nodeKey = (String) folderNode.get("nodeKey");
+                final String nodeName = toString(folderNode.get("nodeName"));
+                final String nodeKey = toString(folderNode.get("nodeKey"));
                 final String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
                 final DownloadLink link;
                 if (folderID == null) {
@@ -444,7 +500,7 @@ public class MegaConz extends PluginForDecrypt {
                     link.setLinkID(getHost() + "N" + "/" + nodeID);
                 }
                 // alternative: https://mega.nz/folder/folderID#masterKey/file/nodeID
-                link.setProperty("fa", folderNode.get("fa"));// file attributes
+                link.setProperty("fa", toObject(folderNode.get("fa")));// file attributes
                 link.setContentUrl("https://mega.co.nz/#F!" + folderID + "!" + masterKey + "?" + nodeID);
                 link.setContainerUrl(containerURL);
                 link.setFinalFileName(nodeName);
