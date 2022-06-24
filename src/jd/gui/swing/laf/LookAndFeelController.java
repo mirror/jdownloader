@@ -181,7 +181,7 @@ public class LookAndFeelController implements LAFManagerInterface {
             } finally {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Use Look & Feel: " + laf);
             }
-            if (laf.contains("Synthetica") || laf.equals(LookAndFeelType.DEFAULT.getClazz()) || laf.equals(LookAndFeelType.PLAIN.getClazz())) {
+            if (laf.contains("Synthetica") || laf.equals(LookAndFeelType.DEFAULT.getClazz()) || laf.equals(LookAndFeelType.JD_PLAIN.getClazz())) {
                 //
                 String liz = null;
                 try {
