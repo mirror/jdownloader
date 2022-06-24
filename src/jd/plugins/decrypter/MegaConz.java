@@ -177,9 +177,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                        /*
-                         * + "&domain=meganz
-                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                                /*
+                                 * + "&domain=meganz
+                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -315,9 +315,9 @@ public class MegaConz extends PluginForDecrypt {
                                 logger.info("next page:" + w + "|" + sn);
                             }
                         }
-                    } else if (response instanceof Number) {
+                    } else if (response instanceof Number || response instanceof JSonValue) {
                         logger.info("Response:" + JSonStorage.toString(response));
-                        final Number num = ((Number) response);
+                        final Number num = ((Number) toObject(response));
                         if (num.intValue() == 0 && w != null) {
                             // WebSocket(wsc) = empty
                             break;
@@ -405,19 +405,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
