@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.Map;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
@@ -179,32 +178,32 @@ public class Main {
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
             // set MyJDownloaderCLient JsonHandler
             final SimpleMapper mapper = new SimpleMapper() {
-                @Override
-                protected JSonFactory newJsonFactory(String jsonString) {
-                    return new JSonFactory(jsonString) {
-                        @Override
-                        protected Map<String, String> getDedupeMap() {
-                            return null;
-                        };
-                    };
-                }
+                                          @Override
+                                          protected JSonFactory newJsonFactory(String jsonString) {
+                                              return new JSonFactory(jsonString) {
+                                                  @Override
+                                                  protected String dedupeString(String string) {
+                                                      return string;
+                                                  }
+                                              };
+                                          }
 
-                @Override
-                protected void initMapper() {
-                    super.initMapper();
-                    putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
-                        @Override
-                        public String toJSonString(Object object, Object mapper) {
-                            return ((JsonFactoryInterface) object).toJsonString();
-                        }
-                    });
-                }
+                                          @Override
+                                          protected void initMapper() {
+                                              super.initMapper();
+                                              putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
+                                                  @Override
+                                                  public String toJSonString(Object object, Object mapper) {
+                                                      return ((JsonFactoryInterface) object).toJsonString();
+                                                  }
+                                              });
+                                          }
 
-                @Override
-                public boolean isPrettyPrintEnabled() {
-                    return false;
-                }
-            };
+                                          @Override
+                                          public boolean isPrettyPrintEnabled() {
+                                              return false;
+                                          }
+                                      };
 
             @Override
             public String objectToJSon(Object payload) {
