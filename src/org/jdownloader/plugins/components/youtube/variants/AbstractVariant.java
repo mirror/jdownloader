@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import jd.config.Property;
 import jd.http.Request;
@@ -266,25 +267,25 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
     }
 
     private static final SimpleMapper MAPPER = new SimpleMapper() {
-        @Override
-        protected JSonFactory newJsonFactory(String jsonString) {
-            return new JSonFactory(jsonString) {
-                @Override
-                protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
-                    return null;
-                };
-            };
-        }
+                                                 @Override
+                                                 protected JSonFactory newJsonFactory(String jsonString) {
+                                                     return new JSonFactory(jsonString) {
+                                                         @Override
+                                                         protected Map<String, String> getDedupeMap() {
+                                                             return null;
+                                                         };
+                                                     };
+                                                 }
 
-        @Override
-        protected void initMapper() {
-        }
+                                                 @Override
+                                                 protected void initMapper() {
+                                                 }
 
-        @Override
-        public boolean isPrettyPrintEnabled() {
-            return false;
-        }
-    };
+                                                 @Override
+                                                 public boolean isPrettyPrintEnabled() {
+                                                     return false;
+                                                 }
+                                             };
 
     public String getStorableString() {
         String ret = storableString;

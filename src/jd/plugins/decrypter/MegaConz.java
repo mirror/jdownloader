@@ -7,9 +7,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -19,13 +21,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.MegaConzConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -40,6 +35,19 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.storage.simplejson.JSonObjectHashMap;
+import org.appwork.storage.simplejson.mapper.JSonMapper;
+import org.appwork.storage.simplejson.mapper.MapperException;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MegaConzConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((!|%21)[a-zA-Z0-9]+)?(\\?[a-zA-Z0-9]+)?" })
 public class MegaConz extends PluginForDecrypt {
@@ -160,7 +168,46 @@ public class MegaConz extends PluginForDecrypt {
                     }
                     final Object response;
                     try {
-                        response = JSonStorage.getMapper().inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
+                        final SimpleMapper mapper = new SimpleMapper() {
+                            @Override
+                            protected JSonFactory newJsonFactory(String jsonString) {
+                                return new JSonFactory(jsonString) {
+                                    @Override
+                                    protected JSonObject createJSonObject(JSonObject map) {
+                                        if (map == null) {
+                                            return new JSonObjectHashMap();
+                                        } else {
+                                            return new JSonObjectHashMap(map);
+                                        }
+                                    }
+                                };
+                            };
+
+                            @Override
+                            protected JSonMapper buildMapper() {
+                                return new JSonMapper() {
+                                    {
+                                        autoMapJsonObjectClass = HashMap.class;
+                                        autoMapJsonArrayclass = ArrayList.class;
+                                    }
+
+                                    @Override
+                                    protected Class<?> mapClasses(Class<?> class1) throws MapperException {
+                                        if (class1.isInterface()) {
+                                            if (List.class.isAssignableFrom(class1)) {
+                                                return ArrayList.class;
+                                            } else if (Map.class.isAssignableFrom(class1)) {
+                                                return HashMap.class;
+                                            } else if (Set.class.isAssignableFrom(class1)) {
+                                                return HashSet.class;
+                                            }
+                                        }
+                                        return super.mapClasses(class1);
+                                    }
+                                };
+                            }
+                        };
+                        response = mapper.inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
                     } finally {
                         con.disconnect();
                     }
@@ -319,19 +366,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         *
+         * 
          * s = size
-         *
+         * 
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         *
+         * 
          * ts = timestamp
-         *
+         * 
          * h = node (ID)
-         *
+         * 
          * u = owner
-         *
+         * 
          * a = attribute (contains name)
-         *
+         * 
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
