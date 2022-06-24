@@ -76,7 +76,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2})/videos/(\\d+-\\d+-[ADF]+)/([a-z0-9\\-]+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2})/videos/(\\d+-\\d+-[ADF]+)(/([a-z0-9\\-]+)/?)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -186,21 +186,10 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Crawl thumbnail if wished by user */
         final QualitySelectionMode mode = cfg.getQualitySelectionMode();
-        if (cfg.isCrawlThumbnail()) {
-            final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
-            final String imageCaption = (String) mainImage.get("caption");
-            final DownloadLink thumbnail = this.createDownloadlink("directhttp://" + mainImage.get("url"));
-            thumbnail.setFinalFileName(packageName + "." + mainImage.get("extension"));
-            if (imageCaption != null) {
-                thumbnail.setComment(imageCaption);
-            }
-            thumbnail.setAvailable(true);
-            ret.add(thumbnail);
-            distribute(thumbnail);
-        }
         /* Crawl video streams */
         /* Collect list of user desired/allowed qualities */
         final List<Integer> selectedQualitiesHeight = getSelectedHTTPQualities();
+        final List<String> selectedLanguages = getSelectedLanguages(null);
         // TODO: Implement pagination?
         final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -226,9 +215,11 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final ArrayList<DownloadLink> allBestResults = new ArrayList<DownloadLink>();
         for (final List<Map<String, Object>> videoStreamsByLanguage : languagePacks.values()) {
             final ArrayList<DownloadLink> userSelected = new ArrayList<DownloadLink>();
-            long highestFilesize = 0;
+            long bestFilesize = 0;
             DownloadLink best = null;
-            long highestFilesizeOfUserSelected = 0;
+            long bestAllowedFilesize = 0;
+            DownloadLink bestAllowed = null;
+            long bestOfUserSelectedFilesize = 0;
             DownloadLink bestOfUserSelected = null;
             for (final Map<String, Object> videoStream : videoStreamsByLanguage) {
                 // final String language = videoStream.get("language").toString();
@@ -242,6 +233,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
                 final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
                 final String audioCode = videoStream.get("audioCode").toString(); // e.g. VF, VF-STA, VA, ...
+                final String audioCodeWithoutSubtitleSpec = new Regex(audioCode, "^([A-Z]{1,2})").getMatch(0);
                 final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
                 /* Set properties which we later need for custom filenames. */
                 link.setProperty(PROPERTY_VIDEO_ID, videoID);
@@ -268,23 +260,34 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setDownloadSize(bitrate / 8 * 1024 * durationSeconds);
                 link._setFilePackage(fp);
                 allResults.add(link);
+                /* Try to find the best version regardless of user settings. */
+                if (link.getView().getBytesTotal() > bestFilesize || best == null) {
+                    best = link;
+                    bestFilesize = link.getView().getBytesTotal();
+                }
                 /* Now check for skip conditions based on user settings */
-                /* Skip subtitled versions if not wished by user */
+                /*
+                 * Skip subtitled versions if not wished by user. This needs to happen before BEST selection otherwise subtitled versions
+                 * would still be incorperated in BEST selection which would be wrong.
+                 */
                 final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) videoStream.get("subtitles");
                 if (!subtitles.isEmpty() && !cfg.isCrawlSubtitledBurnedInVersions()) {
                     continue;
                 }
-                /* Try to find the best version. */
-                if (link.getView().getBytesTotal() > highestFilesize || best == null) {
-                    best = link;
-                    highestFilesize = link.getView().getBytesTotal();
+                // if (!selectedLanguages.contains(audioCodeWithoutSubtitleSpec)) {
+                // /* Skip unwanted languages */
+                // continue;
+                // }
+                if (link.getView().getBytesTotal() > bestAllowedFilesize || bestAllowed == null) {
+                    bestAllowed = link;
+                    bestAllowedFilesize = link.getView().getBytesTotal();
                 }
                 /* Check if user wants this video resolution. */
                 if (selectedQualitiesHeight.contains(getHeightForQualitySelection(height))) {
                     userSelected.add(link);
-                    if (link.getView().getBytesTotal() > highestFilesizeOfUserSelected || bestOfUserSelected == null) {
+                    if (link.getView().getBytesTotal() > bestOfUserSelectedFilesize || bestOfUserSelected == null) {
                         bestOfUserSelected = link;
-                        highestFilesizeOfUserSelected = link.getView().getBytesTotal();
+                        bestOfUserSelectedFilesize = link.getView().getBytesTotal();
                     }
                 }
             }
@@ -293,8 +296,11 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             /* Decide what to do based on users' settings. */
             final ArrayList<DownloadLink> finalSelection = new ArrayList<DownloadLink>();
             if (mode == QualitySelectionMode.BEST) {
-                /* Should never be null */
-                finalSelection.add(best);
+                if (bestAllowed != null) {
+                    finalSelection.add(best);
+                } else {
+                    logger.warning("Failed to find bestAllowed -> User must have bad plugin settings");
+                }
             } else if (mode == QualitySelectionMode.BEST_OF_SELECTED) {
                 /*
                  * Can be null if user has bad settings e.g. deselected all qualities or only selected qualities which are not available for
@@ -324,6 +330,32 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 // Developer mistake
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        }
+        logger.info("Adding results " + ret.size() + "/" + allResults.size());
+        if (cfg.isCrawlThumbnail()) {
+            final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
+            final String imageCaption = (String) mainImage.get("caption");
+            final DownloadLink thumbnail = this.createDownloadlink("directhttp://" + mainImage.get("url"));
+            final String extension = mainImage.get("extension").toString();
+            if (ret.size() == 1) {
+                /* Only one result --> Use same filename as that result */
+                final String filenameOfTheOnlyAddedVideo = ret.get(0).getFinalFileName();
+                thumbnail.setFinalFileName(filenameOfTheOnlyAddedVideo.substring(0, filenameOfTheOnlyAddedVideo.lastIndexOf(".")) + "." + extension);
+            } else {
+                final FilenameSchemeType filenameSchemeType = cfg.getFilenameSchemeType();
+                if (filenameSchemeType == FilenameSchemeType.ORIGINAL) {
+                    thumbnail.setFinalFileName(mainImage.get("name").toString());
+                } else {
+                    thumbnail.setFinalFileName(packageName + "." + extension);
+                }
+                if (imageCaption != null) {
+                    thumbnail.setComment(imageCaption);
+                }
+            }
+            thumbnail.setAvailable(true);
+            thumbnail._setFilePackage(fp);
+            ret.add(thumbnail);
+            distribute(thumbnail);
         }
         for (final DownloadLink result : ret) {
             distribute(result);
@@ -374,6 +406,15 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         filename = filename.replace("*title_and_subtitle*", link.getStringProperty(PROPERTY_TITLE_AND_SUBTITLE));
         link.setFinalFileName(filename);
         return filename;
+    }
+
+    private List<String> getSelectedLanguages(final String url) {
+        // TODO: Work in progress
+        // final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        // final String langURL = "";
+        final List<String> selectedLanguages = new ArrayList<String>();
+        selectedLanguages.add("VA");
+        return selectedLanguages;
     }
 
     private List<Integer> getSelectedHTTPQualities() {
