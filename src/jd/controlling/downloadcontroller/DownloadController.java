@@ -43,6 +43,18 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.packagecontroller.PackageController;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.DownloadLinkStorable;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -85,18 +97,6 @@ import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GeneralSettings.CreateFolderTrigger;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
-
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.packagecontroller.PackageController;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkProperty;
-import jd.plugins.DownloadLinkStorable;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageProperty;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
     private final transient DownloadControllerEventSender eventSender         = new DownloadControllerEventSender();
@@ -601,15 +601,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
         private final ArrayList<IndexedDownloadLink>         downloadLinks = new ArrayList<IndexedDownloadLink>();
         private final static Comparator<IndexedDownloadLink> COMPARATOR    = new Comparator<IndexedDownloadLink>() {
-                                                                               private final int compare(int x, int y) {
-                                                                                   return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                               }
+            private final int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
 
-                                                                               @Override
-                                                                               public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
-                                                                                   return compare(o1.getIndex(), o2.getIndex());
-                                                                               }
-                                                                           };
+            @Override
+            public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
+                return compare(o1.getIndex(), o2.getIndex());
+            }
+        };
 
         private FilePackage getLoadedPackage() {
             final FilePackage filePackage = this.filePackage;
@@ -662,8 +662,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 protected JSonFactory newJsonFactory(String jsonString) {
                     return new JSonFactory(jsonString) {
                         @Override
-                        protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
-                            return null;
+                        protected String dedupeString(String string) {
+                            return string;
                         };
                     };
                 }
@@ -1064,9 +1064,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     protected JSonFactory newJsonFactory(String jsonString) {
                         return new JSonFactory(jsonString) {
                             @Override
-                            protected java.util.WeakHashMap<String, java.lang.ref.WeakReference<String>> getDedupeMap() {
-                                return null;
-                            };
+                            protected String dedupeString(String string) {
+                                return string;
+                            }
                         };
                     }
 

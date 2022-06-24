@@ -15,7 +15,7 @@ import org.jdownloader.controlling.Priority;
 
 public class CrawledPackageStorable implements Storable {
     public static final TypeRef<CrawledPackageStorable> TYPEREF = new TypeRef<CrawledPackageStorable>() {
-                                                                };
+    };
 
     public static enum TYPE {
         NORMAL,
