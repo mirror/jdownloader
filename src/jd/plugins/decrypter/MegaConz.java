@@ -7,11 +7,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,7 +41,6 @@ import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonObjectHashMap;
 import org.appwork.storage.simplejson.mapper.JSonMapper;
-import org.appwork.storage.simplejson.mapper.MapperException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.MegaConzConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -149,9 +146,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                        /*
-                         * + "&domain=meganz
-                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                                /*
+                                 * + "&domain=meganz
+                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -189,20 +186,6 @@ public class MegaConz extends PluginForDecrypt {
                                     {
                                         autoMapJsonObjectClass = HashMap.class;
                                         autoMapJsonArrayclass = ArrayList.class;
-                                    }
-
-                                    @Override
-                                    protected Class<?> mapClasses(Class<?> class1) throws MapperException {
-                                        if (class1.isInterface()) {
-                                            if (List.class.isAssignableFrom(class1)) {
-                                                return ArrayList.class;
-                                            } else if (Map.class.isAssignableFrom(class1)) {
-                                                return HashMap.class;
-                                            } else if (Set.class.isAssignableFrom(class1)) {
-                                                return HashSet.class;
-                                            }
-                                        }
-                                        return super.mapClasses(class1);
                                     }
                                 };
                             }
@@ -366,19 +349,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
