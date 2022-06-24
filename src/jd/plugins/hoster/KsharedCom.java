@@ -22,20 +22,22 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -54,7 +56,7 @@ public class KsharedCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.kshared.com/";
+        return "https://www.kshared.com/help/tos";
     }
 
     private static List<String[]> getPluginDomains() {
@@ -82,19 +84,32 @@ public class KsharedCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean       FREE_RESUME                  = true;
-    private final int           FREE_MAXCHUNKS               = 0;
-    private final int           FREE_MAXDOWNLOADS            = 20;
-    private final boolean       ACCOUNT_FREE_RESUME          = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean       ACCOUNT_PREMIUM_RESUME       = true;
-    private final int           ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final int           FREE_MAXDOWNLOADS            = -1;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS    = -1;
+    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     private static final String PROPERTY_PREMIUMONLY         = "premiumonly";
     private static final String PROPERTY_ACCOUNT_TOKEN       = "access_token";
     private static final String PROPERTY_ACCOUNT_UT          = "ut";
     private static final String PROPERTY_ACCOUNT_UD          = "ud";
+
+    @Override
+    public boolean isResumeable(DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return 0;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return 0;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 0;
+        }
+    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -130,11 +145,14 @@ public class KsharedCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(getFallbackFilename(link));
+        }
         if (account == null) {
             prepBR(this.br);
             this.setBrowserExclusive();
             br.getPage(link.getPluginPatternMatcher());
-            findAndSetBearerToken();
+            findAndSetBearerToken(br);
         }
         final Map<String, Object> data = new HashMap<String, Object>();
         if (account != null) {
@@ -146,13 +164,13 @@ public class KsharedCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         if (entries == null) {
             /* 2021-02-18: Returns broken json for offline items */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (Map<String, Object>) entries.get("file");
-        if (entries == null) {
+        final Map<String, Object> fileinfo = (Map<String, Object>) entries.get("file");
+        if (fileinfo == null) {
             /* 2021-02-18: Returns broken json for offline items */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -160,23 +178,21 @@ public class KsharedCom extends PluginForHost {
         // if (errorO != null) {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // }
-        final String filename = (String) entries.get("name");
-        final long filesize = ((Number) entries.get("size")).longValue();
-        final String lockedStatus = (String) entries.get("locked");
+        final String filename = (String) fileinfo.get("name");
+        final Number filesizeN = (Number) fileinfo.get("size");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
-        } else if (!link.isNameSet()) {
-            link.setName(getFallbackFilename(link));
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize > 0) {
-            link.setVerifiedFileSize(filesize);
+        if (filesizeN != null) {
+            link.setVerifiedFileSize(filesizeN.longValue());
         }
-        if (StringUtils.equalsIgnoreCase(lockedStatus, "premium")) {
+        if (StringUtils.equalsIgnoreCase((String) fileinfo.get("locked"), "premium")) {
             link.setProperty(PROPERTY_PREMIUMONLY, true);
         } else {
             link.removeProperty(PROPERTY_PREMIUMONLY);
         }
+        link.setPasswordProtected((Boolean) fileinfo.get("hasPassword"));
         return AvailableStatus.TRUE;
     }
 
@@ -184,7 +200,7 @@ public class KsharedCom extends PluginForHost {
         return link.getBooleanProperty(PROPERTY_PREMIUMONLY, false);
     }
 
-    private String findAndSetBearerToken() {
+    private String findAndSetBearerToken(final Browser br) {
         final String hash = br.getRegex("hash\\s*:\\s*\"([^\"]+)\"").getMatch(0);
         if (hash != null) {
             br.getHeaders().put("Authorization", "Bearer " + hash);
@@ -195,68 +211,44 @@ public class KsharedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            if (isPremiumonly(link)) {
-                throw new AccountRequiredException();
-            }
-            /* TODO */
-            /*
-             * 2021-02-18: Seems like this filehost is so new they didn't even yet develop the free download process... (can be set in
-             * premium accounts but all files are displayed as premiumonly nontheless!)
-             */
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* 2021-02-18: Unfinished plugin */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = br.getRegex("").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+    private String getDirecturlProperty(final DownloadLink link, final Account account) {
+        if (account == null) {
+            return "free_directlink";
+        } else if (AccountType.PREMIUM.equals(account.getType()) || AccountType.LIFETIME.equals(account.getType())) {
+            return "premium_directlink";
+        } else {
+            return "free_directlink";
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    return dllink;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
+        final String property = getDirecturlProperty(link, account);
+        final String url = link.getStringProperty(property);
+        if (StringUtils.isEmpty(url)) {
+            return false;
         }
-        return null;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, true, 1);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                /* Remove that so we don't waste time checking this again. */
+                link.removeProperty(property);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
+        }
     }
 
     @Override
@@ -271,48 +263,74 @@ public class KsharedCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBR(this.br);
                 String accessToken = this.accountGetAccessToken(account);
-                String ut = this.accountGetUT(account);
                 String ud = this.accountGetUD(account);
-                Map<String, Object> data2 = new HashMap<String, Object>();
+                String ut = this.accountGetUT(account);
+                final Map<String, Object> data2 = new HashMap<String, Object>();
+                final Cookies userCookies = account.loadUserCookies();
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && accessToken != null && ut != null && ud != null) {
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
+                    this.br.setCookies(this.getHost(), userCookies);
+                    ud = br.getCookie(this.getHost(), "__ud");
+                    ut = br.getCookie(this.getHost(), "__ut");
+                    if (ud == null || ut == null) {
+                        /* Invalid cookies */
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
+                    account.setProperty(PROPERTY_ACCOUNT_UD, ud);
+                    account.setProperty(PROPERTY_ACCOUNT_UT, ut);
+                    if (accessToken == null || force) {
+                        /* Fetch this on first attempt and when routine account check is happening. */
+                        /* 2022-06-24: This will most likely fail here due to Cloudflare! */
+                        br.getPage("https://www." + this.getHost() + "/account/signin");
+                        accessToken = findAndSetBearerToken(br);
+                        if (accessToken == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        account.setProperty(PROPERTY_ACCOUNT_TOKEN, accessToken);
+                    }
+                    if (!force) {
+                        /* Do not verify cookies */
+                        return false;
+                    }
+                    if (checkLogin(br, account)) {
+                        logger.info("User cookie login successful");
+                        return true;
+                    } else {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                } else if (cookies != null && accessToken != null && ut != null && ud != null) {
                     logger.info("Attempting token login");
                     this.br.setCookies(this.getHost(), cookies);
                     this.br.getHeaders().put("Authorization", "Bearer " + accessToken);
-                    br.getHeaders().put("Origin", "https://www.kshared.com");
-                    br.getHeaders().put("Referer", "https://www.kshared.com/drive");
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                    br.getHeaders().put("Origin", "https://www." + this.getHost());
+                    br.getHeaders().put("Referer", "https://www." + this.getHost() + "/drive");
+                    if (!force) {
+                        /* Do not verify cookies */
                         return false;
                     }
-                    data2.put("ud", ud);
-                    data2.put("ut", ut);
-                    br.postPageRaw("https://www." + this.getHost() + "/v1/account/is_user", JSonStorage.serializeToJson(data2));
-                    boolean success = false;
-                    try {
-                        this.handleErrors(null, account);
-                        success = true;
-                    } catch (final Throwable e) {
-                        e.printStackTrace();
-                    }
-                    if (success) {
+                    if (checkLogin(br, account)) {
                         logger.info("Token login successful");
                         /* Refresh cookie timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return true;
                     } else {
                         logger.info("Token login failed");
-                        br.clearAll();
+                        br.clearCookies(br.getHost());
                     }
                 }
                 logger.info("Performing full login");
                 br.getPage("https://" + this.getHost() + "/account/signin");
-                accessToken = findAndSetBearerToken();
+                accessToken = findAndSetBearerToken(br);
                 final Map<String, Object> data = new HashMap<String, Object>();
                 data.put("email", account.getUser());
                 data.put("passw", account.getPass());
                 br.postPageRaw("/v1/account/signin", JSonStorage.serializeToJson(data));
-                this.handleErrors(null, account);
+                this.handleErrors(br, null, account);
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 // accessToken = (String) entries.get("accesstoken");
                 ut = (String) entries.get("ut");
@@ -327,8 +345,8 @@ public class KsharedCom extends PluginForHost {
                 br.getHeaders().put("Authorization", "Bearer " + accessToken);
                 br.postPageRaw("/v1/account/is_user", JSonStorage.serializeToJson(data2));
                 account.setProperty(PROPERTY_ACCOUNT_TOKEN, accessToken);
-                account.setProperty(PROPERTY_ACCOUNT_UT, ut);
                 account.setProperty(PROPERTY_ACCOUNT_UD, ud);
+                account.setProperty(PROPERTY_ACCOUNT_UT, ut);
                 /* No error? Login was successful! */
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
                 return true;
@@ -338,6 +356,21 @@ public class KsharedCom extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    private boolean checkLogin(final Browser br, final Account account) throws StorageException, IOException {
+        Map<String, Object> data2 = new HashMap<String, Object>();
+        data2.put("ud", this.accountGetUD(account));
+        data2.put("ut", this.accountGetUT(account));
+        br.postPageRaw("https://www." + this.getHost() + "/v1/account/is_user", JSonStorage.serializeToJson(data2));
+        try {
+            this.handleErrors(br, null, account);
+            logger.info("User cookie login successful");
+            return true;
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
@@ -353,18 +386,17 @@ public class KsharedCom extends PluginForHost {
         return account.getStringProperty(PROPERTY_ACCOUNT_UD);
     }
 
-    private void handleErrors(final DownloadLink link, final Account account) throws PluginException {
+    private void handleErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         /** 2021-02-18: In some rare cases "error" can be true WITHOUT "reason" and without "message"! */
-        /* TODO */
         final boolean isError = entries.containsKey("error") ? ((Boolean) entries.get("error")).booleanValue() : false;
         if (isError) {
             final String reason = (String) entries.get("reason");
-            String message = (String) entries.get("message");
+            // final String message = (String) entries.get("message");
             if (reason == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (reason.equalsIgnoreCase("AccountNotFound") || reason.equalsIgnoreCase("InvalidPassword")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException();
             } else if (reason.equalsIgnoreCase("notfound")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (reason.equalsIgnoreCase("bandwidth")) {
@@ -383,31 +415,33 @@ public class KsharedCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        entries = (Map<String, Object>) entries.get("me");
-        final Map<String, Object> spaceInfo = (Map<String, Object>) entries.get("disk");
-        final Map<String, Object> trafficInfo = (Map<String, Object>) entries.get("bandwidth");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> userinfo = (Map<String, Object>) entries.get("me");
+        final Map<String, Object> spaceInfo = (Map<String, Object>) userinfo.get("disk");
+        final Map<String, Object> trafficInfo = (Map<String, Object>) userinfo.get("bandwidth");
+        final String email = (String) userinfo.get("em");
+        if (!StringUtils.equalsIgnoreCase(account.getUser(), email)) {
+            account.setUser(email);
+        }
         final long trafficMax = ((Number) trafficInfo.get("total")).longValue();
         final long trafficUsed = ((Number) trafficInfo.get("used")).longValue();
         ai.setTrafficMax(trafficMax);
         ai.setTrafficLeft(trafficMax - trafficUsed);
         ai.setUsedSpace(((Number) spaceInfo.get("used")).longValue());
-        final boolean hasPremium = ((Boolean) entries.get("hasPremium")).booleanValue();
-        if (!hasPremium) {
+        if (!(Boolean) userinfo.get("hasPremium")) {
             account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
+            /* Free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
         } else {
             /* E.g. "1 Month" */
-            final String proPlan = (String) entries.get("proPlan");
-            final long expireTimestamp = JavaScriptEngineFactory.toLong(entries.get("premiumExpires"), 0);
+            final String proPlan = (String) userinfo.get("proPlan");
+            final long expireTimestamp = JavaScriptEngineFactory.toLong(userinfo.get("premiumExpires"), 0);
             ai.setValidUntil(expireTimestamp * 1000l, this.br);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
-            ai.setStatus("Premium account: " + proPlan);
+            ai.setStatus("Premium account | " + proPlan);
         }
         return ai;
     }
@@ -415,29 +449,39 @@ public class KsharedCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
-        requestFileInformation(link, account);
-        if (account.getType() == AccountType.FREE) {
-            /* TODO */
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-        } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                final Map<String, Object> data = new HashMap<String, Object>();
-                data.put("ud", this.accountGetUD(account));
-                data.put("ut", this.accountGetUT(account));
-                data.put("passw", link.getDownloadPassword());
-                data.put("fileid", this.getFID(link));
-                br.postPageRaw("https://www." + this.getHost() + "/v1/drive/get_download_link", JSonStorage.serializeToJson(data));
-                this.handleErrors(link, account);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                dllink = (String) entries.get("link");
-                /* 2021-11-29: No idea why they got this field two times. Maybe different data-servers. */
-                // dllink = (String) entries.get("linnk");
-                if (StringUtils.isEmpty(dllink)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 5 * 60 * 1000l);
-                }
+        handleDownload(link, account);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        if (!this.attemptStoredDownloadurlDownload(link, account)) {
+            requestFileInformation(link, account);
+            if (isPremiumonly(link)) {
+                throw new AccountRequiredException();
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            final Map<String, Object> data = new HashMap<String, Object>();
+            data.put("ud", this.accountGetUD(account));
+            data.put("ut", this.accountGetUT(account));
+            data.put("passw", link.getDownloadPassword());
+            data.put("fileid", this.getFID(link));
+            if (account == null || account.getType() != AccountType.PREMIUM) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("/zuz-assets/themes/drive/js/bct.js");
+                String rcKey = br.getRegex("sitekey:\"([^\"]+)\"").getMatch(0);
+                if (rcKey == null) {
+                    /* Static fallback */
+                    rcKey = "6LfdKAYaAAAAACFOmDNWJX4MeGSAEpbRJsbBXkbi";
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
+                data.put("captcha", recaptchaV2Response);
+            }
+            br.postPageRaw("/v1/drive/get_download_link", JSonStorage.serializeToJson(data));
+            this.handleErrors(br, link, account);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String dllink = (String) entries.get("link");
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 5 * 60 * 1000l);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -452,9 +496,9 @@ public class KsharedCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-            dl.startDownload();
+            link.setProperty(this.getDirecturlProperty(link, account), dl.getConnection().getURL().toString());
         }
+        dl.startDownload();
     }
 
     @Override
@@ -481,6 +525,6 @@ public class KsharedCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }
