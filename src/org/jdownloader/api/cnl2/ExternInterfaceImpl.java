@@ -41,6 +41,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.storage.simplejson.JsonObjectLinkedHashMap;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -111,7 +112,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void jdcheckjson(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException {
         final MyJDownloaderSettings set = CFG_MYJD.CFG;
-        final JSonObject obj = new JSonObject();
+        final JSonObject obj = new JsonObjectLinkedHashMap();
         obj.put("version", new JSonValue(JDUtilities.getRevision()));
         obj.put("deviceId", new JSonValue(set.getUniqueDeviceIDV2()));
         obj.put("name", new JSonValue(set.getDeviceName()));
