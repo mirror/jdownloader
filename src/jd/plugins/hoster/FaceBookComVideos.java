@@ -198,7 +198,7 @@ public class FaceBookComVideos extends PluginForHost {
                 search = false;
                 video = br.getRegex("href\\s*=\\s*(?:\"|')(https://www.facebook.com/[^/]+/videos/(?:[^/]+/)?\\d+)").getMatch(0);
                 if (video == null) {
-                    video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/\\d+)").getMatch(0);
+                    video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/(?:[^/]+/)?\\d+)").getMatch(0);
                     if (video != null) {
                         video = JSonStorage.restoreFromString("\"" + video + "\"", TypeRef.STRING);
                     }
