@@ -84,6 +84,7 @@ AdvancedSettings_onShow_msg_=Ove napredne postavke ne treba mijenjati osim ako z
 AdvancedSettings_onShow_title_=Ako je ikada bilo ikakve garancije za bilo šta, ona završava ovdje!
 AdvancedTableModel_initColumns_desc_=Opis
 AdvancedTableModel_initColumns_key_=Ključ
+AdvancedTableModel_initColumns_modifiedonly_checkboxaction_=Prikaži samo modifikovane vrijednosti
 AdvancedTableModel_initColumns_type_=Tip
 AdvancedTable_onContextMenu_advanced_value_edit=Napredni uređivač za ovu vrijednosti
 AdvancedTable_onContextMenu_reset_selection=Resetuj selektovane unose na unaprijed podrazumijevane vrijednsoti
