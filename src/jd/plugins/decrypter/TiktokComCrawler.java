@@ -167,6 +167,14 @@ public class TiktokComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (TiktokCom.isBotProtectionActive(this.br)) {
+            final UrlQuery query = TiktokCom.getWebsiteQuery();
+            query.add("keyword", Encoding.urlEncode(usernameSlug));
+            br.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
+            sleep(1000, param);// this somehow bypass the protection, maybe calling api twice sets a cookie?
+            br.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
+            br.getPage(param.getCryptedUrl());
+        }
+        if (TiktokCom.isBotProtectionActive(this.br)) {
             throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items of user " + usernameSlug, null, null);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -265,7 +273,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> crawlProfileAPI(final CryptedLink param) throws Exception {
-        String user_id;
+        String user_id = null;
         if (param.getCryptedUrl().matches(TYPE_USER_USER_ID)) {
             /* user_id is given inside URL. */
             user_id = new Regex(param.getCryptedUrl(), TYPE_USER_USER_ID).getMatch(0);
@@ -284,18 +292,29 @@ public class TiktokComCrawler extends PluginForDecrypt {
             query.add("keyword", Encoding.urlEncode(usernameSlug));
             website.getPage("https://www." + this.getHost() + "/api/search/user/preview/?" + query.toString());
             final Map<String, Object> searchResults = JSonStorage.restoreFromString(website.getRequest().getHtmlCode(), TypeRef.HASHMAP);
-            final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(searchResults, "sug_list/{0}/extra_info");
-            if (user == null) {
+            final List<Map<String, Object>> sug_list = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(searchResults, "sug_list/");
+            for (Map<String, Object> sug : sug_list) {
+                final Map<String, Object> info = (Map<String, Object>) sug.get("extra_info");
+                final String sug_uniq_id = info != null ? StringUtils.valueOfOrNull(info.get("sug_uniq_id")) : null;
+                if (StringUtils.equals(usernameSlug, sug_uniq_id)) {
+                    user_id = info.get("sug_user_id").toString();
+                    break;
+                }
+            }
+            if (user_id == null) {
+                website.getPage(param.getCryptedUrl());
+                user_id = website.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                if (user_id == null && TiktokCom.isBotProtectionActive(website)) {
+                    sleep(1000, param);// this somehow bypass the protection, maybe calling api twice sets a cookie?
+                    website.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
+                    website.getPage(param.getCryptedUrl());
+                    user_id = website.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                }
+            }
+            if (user_id == null) {
                 logger.info("Profile doesn't exist or it's a private profile");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String sug_uniq_id = user.get("sug_uniq_id").toString();
-            if (!sug_uniq_id.equalsIgnoreCase(usernameSlug)) {
-                /* Possibly wrong search result --> Profile we were looking for does not exist */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Now we got the user_id which we need for subsequent API requests. */
-            user_id = user.get("sug_user_id").toString();
         }
         TiktokCom.prepBRAPI(this.br);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();

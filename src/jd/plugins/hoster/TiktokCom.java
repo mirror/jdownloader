@@ -534,25 +534,27 @@ public class TiktokCom extends PluginForHost {
             final Map<String, Object> misc_download_addrs = JSonStorage.restoreFromString(downloadJson, TypeRef.HASHMAP);
             downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
         }
-        if (has_watermark || ((Boolean) aweme_detail.get("prevent_download") && downloadInfo == null)) {
-            /* Get stream downloadurl because it comes without watermark */
-            if (has_watermark) {
-                link.setProperty(PROPERTY_HAS_WATERMARK, true);
-            } else {
-                link.removeProperty(PROPERTY_HAS_WATERMARK);
-            }
-            link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
-            if (downloadInfo != null) {
-                /**
-                 * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
-                 * If a video is watermarked and downloads are prohibited both versions should be identical.
-                 */
-                link.setDownloadSize(((Number) downloadInfo.get("data_size")).longValue());
-            }
+        /* Get stream downloadurl because it comes without watermark */
+        if (has_watermark) {
+            link.setProperty(PROPERTY_HAS_WATERMARK, true);
         } else {
-            /* Grab official downloadlink whenever possible because this video doesn't come with a watermark. */
-            link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}").toString());
-            link.setVerifiedFileSize(((Number) downloadInfo.get("data_size")).longValue());
+            link.removeProperty(PROPERTY_HAS_WATERMARK);
+        }
+        link.setProperty(PROPERTY_DIRECTURL_API, JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}"));
+        if (downloadInfo != null && downloadInfo.containsKey("data_size")) {
+            /**
+             * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+             * If a video is watermarked and downloads are prohibited both versions should be identical.
+             */
+            link.setDownloadSize(((Number) downloadInfo.get("data_size")).longValue());
+        }
+        /* Grab official downloadlink whenever possible because this video doesn't come with a watermark. */
+        final Object directURL = JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}");
+        if (directURL != null) {
+            link.setProperty(PROPERTY_DIRECTURL_API, StringUtils.valueOfOrNull(directURL));
+            if (downloadInfo.containsKey("data_size")) {
+                link.setVerifiedFileSize(((Number) downloadInfo.get("data_size")).longValue());
+            }
             link.removeProperty(PROPERTY_HAS_WATERMARK);
         }
         setLikeCount(link, (Number) statistics.get("digg_count"));
@@ -639,7 +641,7 @@ public class TiktokCom extends PluginForHost {
         query.add("focus_state", "true");
         /* Can e.g. be "user" or "fyp". We'll leave that blank for now. */
         query.add("from_page", "");
-        query.add("history_len", "0");
+        query.add("history_len", "4");
         query.add("is_fullscreen", "false");
         query.add("is_page_visible", "true");
         query.add("os", "windows");
