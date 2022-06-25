@@ -269,7 +269,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             page++;
             logger.info(String.format("Crawling page %s| %d / %d", br.getURL(), page, maxPage));
             final Set<String> viewKeys = new HashSet<String>();
-            if (account != null) {
+            if (account != null && page == 1) {
+                // layout has changed, we only want to deep dive into other pages on first page
                 final String paidVideosSection = findVideoSection(br, "paidVideosSection");// /videos/paid
                 if (paidVideosSection != null) {
                     // /videos/premium contains paid/available premium videos while
