@@ -196,14 +196,22 @@ public class FaceBookComVideos extends PluginForHost {
             boolean search = true;
             while (search) {
                 search = false;
-                video = br.getRegex("href\\s*=\\s*(?:\"|')(https://www.facebook.com/[^/]+/videos/(?:[^/]+/)?\\d+)").getMatch(0);
+                video = br.getRegex("video_url\\s*:\\s*\"(/[^/]+/videos/\\d+/?)\"").getMatch(0);
+                if (video != null) {
+                    br.getPage(video);
+                    search = true;
+                    continue;
+                }
                 if (video == null) {
-                    video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/(?:[^/]+/)?\\d+)").getMatch(0);
-                    if (video != null) {
-                        video = JSonStorage.restoreFromString("\"" + video + "\"", TypeRef.STRING);
+                    video = br.getRegex("href\\s*=\\s*(?:\"|')(https://www.facebook.com/[^/]+/videos/(?:[^/]+/)?\\d+)").getMatch(0);
+                    if (video == null) {
+                        video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/(?:[^/]+/)?\\d+)").getMatch(0);
+                        if (video != null) {
+                            video = JSonStorage.restoreFromString("\"" + video + "\"", TypeRef.STRING);
+                        }
                     }
                 }
-                if (video == null && (br.containsHTML("When this happens, it's usually because the owner only shared it") || br.containsHTML("\"Private group\""))) {
+                if (video == null && (br.containsHTML("When this happens, it('|&#039;)s usually because the owner only shared it") || br.containsHTML("\"Private group\""))) {
                     if (loggedIn || account == null) {
                         /* Account needed or given account is lacking permissions to view that content. */
                         throw new AccountRequiredException();
