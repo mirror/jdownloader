@@ -729,7 +729,15 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         }
         final boolean prefer_server_filename = cfg.getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false);
         /* Convert embed links to normal links */
-        if (param.getCryptedUrl().matches(".+/embed_player\\.php\\?id=\\d+")) {
+        if (param.getCryptedUrl().matches("(?i).+/embed/[a-z0-9]+")) {
+            final String viewkey = PornHubCom.getViewkeyFromURL(param.getCryptedUrl());
+            final String newLink = br.getRegex("(https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/view_video\\.php\\?viewkey=" + Pattern.quote(viewkey) + ")").getMatch(0);
+            if (newLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            param.setCryptedUrl(newLink);
+            PornHubCom.getPage(br, param.getCryptedUrl());
+        } else if (param.getCryptedUrl().matches("(?i).+/embed_player\\.php\\?id=\\d+")) {
             if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -764,8 +772,12 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             logger.info("Debug info: html_premium_only: " + param.getCryptedUrl());
             throw new AccountRequiredException();
         } else if (isOfflineVideo(br)) {
-            logger.info("Debug info: offline: " + param.getCryptedUrl());
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (qualities == null || qualities.size() == 0) {
+                logger.info("Debug info: offline: " + param.getCryptedUrl());
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.info("TODO: check isOfflineVideo");
+            }
         } else if (!br.getURL().contains(viewkey)) {
             logger.info("Debug info: unknown: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -940,7 +952,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     }
 
     public static boolean isOfflineVideo(final Browser br) {
-        return !br.containsHTML("\\'embedSWF\\'") || br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of") || br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>") || isOfflineGeneral(br);
+        return (!StringUtils.containsIgnoreCase(br.getURL(), "/embed/") && !br.containsHTML("\\'embedSWF\\'")) || br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of") || br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>") || isOfflineGeneral(br);
     }
 
     public static boolean isOfflineGeneral(final Browser br) {

@@ -611,13 +611,24 @@ public class PornHubCom extends PluginForHost {
                 /* Wide open - risky */
                 flashVars = br.getRegex("(var\\s*flashvars_\\d+.*?)(loadScriptUniqueId|</script)").getMatch(0);
             }
+            boolean embed = false;
+            if (flashVars == null) {
+                /* Wide open - risky, embed */
+                flashVars = br.getRegex("(var\\s*flashvars[^_].*?)(loadScriptUniqueId|</script)").getMatch(0);
+                embed = flashVars != null;
+            }
             final String flashVarsID = new Regex(flashVars, "flashvars_(\\d+)").getMatch(0);
-            if (flashVarsID != null) {
+            if (flashVarsID != null || embed) {
                 try {
                     flashVars = flashVars.replaceFirst("(?s)(playerObjList.+)", "");
                     final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(plugin);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
-                    engine.eval(flashVars + "var result=JSON.stringify(flashvars_" + flashVarsID + ");");
+                    engine.eval("var document={};document.referrer=\"\";");
+                    if (embed) {
+                        engine.eval(flashVars + "var result=JSON.stringify(flashvars);");
+                    } else {
+                        engine.eval(flashVars + "var result=JSON.stringify(flashvars_" + flashVarsID + ");");
+                    }
                     flashVars = String.valueOf(engine.get("result"));
                 } catch (final Exception e) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
@@ -651,37 +662,42 @@ public class PornHubCom extends PluginForHost {
                     }
                     dllink_temp = (String) e.get("videoUrl");
                     format = format.toLowerCase(Locale.ENGLISH);
-                    final Object qualityInfo = e.get("quality");
+                    Object qualityInfo = e.get("quality");
                     if (qualityInfo == null) {
                         continue;
                     } else if (qualityInfo instanceof List) {
-                        if (StringUtils.equalsIgnoreCase(format, "mp4")) {
-                            try {
-                                final Browser brc = br.cloneBrowser();
-                                brc.setFollowRedirects(true);
-                                final List<Object> mp4Medias = JSonStorage.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
-                                medias.addAll(mp4Medias);
-                            } catch (IOException ioe) {
-                                plugin.getLogger().log(ioe);
-                            } catch (JSonMapperException jme) {
-                                plugin.getLogger().log(jme);
+                        final int size = ((List) qualityInfo).size();
+                        if (size == 1) {
+                            qualityInfo = ((List) qualityInfo).get(0);
+                        } else {
+                            if (StringUtils.equalsIgnoreCase(format, "mp4")) {
+                                try {
+                                    final Browser brc = br.cloneBrowser();
+                                    brc.setFollowRedirects(true);
+                                    final List<Object> mp4Medias = JSonStorage.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
+                                    medias.addAll(mp4Medias);
+                                } catch (IOException ioe) {
+                                    plugin.getLogger().log(ioe);
+                                } catch (JSonMapperException jme) {
+                                    plugin.getLogger().log(jme);
+                                }
+                                continue;
+                            } else if (StringUtils.equalsIgnoreCase(format, "hls") || !StringUtils.containsIgnoreCase(dllink_temp, "master.m3u8")) {
+                                try {
+                                    final Browser brc = br.cloneBrowser();
+                                    brc.setFollowRedirects(true);
+                                    final List<Object> mp4Medias = JSonStorage.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
+                                    medias.addAll(mp4Medias);
+                                } catch (IOException ioe) {
+                                    plugin.getLogger().log(ioe);
+                                } catch (JSonMapperException jme) {
+                                    plugin.getLogger().log(jme);
+                                }
+                                continue;
                             }
-                            continue;
-                        } else if (StringUtils.equalsIgnoreCase(format, "hls") && !StringUtils.containsIgnoreCase(dllink_temp, "master.m3u8")) {
-                            try {
-                                final Browser brc = br.cloneBrowser();
-                                brc.setFollowRedirects(true);
-                                final List<Object> mp4Medias = JSonStorage.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
-                                medias.addAll(mp4Medias);
-                            } catch (IOException ioe) {
-                                plugin.getLogger().log(ioe);
-                            } catch (JSonMapperException jme) {
-                                plugin.getLogger().log(jme);
-                            }
+                            plugin.getLogger().info("Skip:" + JSonStorage.toString(e));
                             continue;
                         }
-                        plugin.getLogger().info("Skip:" + JSonStorage.toString(e));
-                        continue;
                     }
                     final Boolean encrypted = e.get("encrypted") == null ? null : ((Boolean) e.get("encrypted")).booleanValue();
                     if (encrypted == Boolean.TRUE) {
