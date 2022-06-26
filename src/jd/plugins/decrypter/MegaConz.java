@@ -203,6 +203,17 @@ public class MegaConz extends PluginForDecrypt {
                                 protected Map<String, ? extends Object> createJSonObject() {
                                     return new MinimalMemoryMap<Object>();
                                 }
+
+                                @Override
+                                protected void putKeyValuePair(Object newPath, Map<String, Object> map, String key, Object value) {
+                                    if (("p".equals(key) || "u".equals(key)) && value instanceof String) {
+                                        // dedupe parent node (ID)
+                                        value = dedupeString((String) value);
+                                    } else if ("ts".equals(key)) {// remove unused timestamp
+                                        return;
+                                    }
+                                    super.putKeyValuePair(newPath, map, key, value);
+                                }
                             };
                             response = factory.parse();
                             // allow GC of JSonFactory
