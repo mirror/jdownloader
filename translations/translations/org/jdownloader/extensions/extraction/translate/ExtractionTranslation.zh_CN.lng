@@ -66,6 +66,7 @@ files_and_folders=个文件或文件夹
 final_delete=最终删除文件
 folders=文件夹
 hoster=主机服务供应商
+if_file_exists_dont_show_again=对这个档案不再显示
 local=文件状态
 menu_tools_extract_files=提取文件
 name=压缩档案提取器
