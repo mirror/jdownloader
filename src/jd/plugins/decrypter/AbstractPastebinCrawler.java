@@ -10,6 +10,8 @@ import java.util.Set;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -59,10 +61,13 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
             logger.warning("Could not find pastebin textfield");
             return decryptedLinks;
         }
-        final PluginForHost sisterPlugin = this.getNewPluginForHostInstance(this.getHost());
-        if (sisterPlugin != null) {
-            final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
-            decryptedLinks.add(textfile);
+        final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
+        if (lazyHostPlugin != null) {
+            final PluginForHost sisterPlugin = getNewPluginInstance(lazyHostPlugin);
+            if (sisterPlugin != null && sisterPlugin.canHandle(param.getCryptedUrl())) {
+                final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
+                decryptedLinks.add(textfile);
+            }
         }
         /* TODO: Differentiate between URLs that we support (= have plugin for) and those we don't support. */
         final Set<String> pws = PasswordUtils.getPasswords(metadata.getPastebinText());
