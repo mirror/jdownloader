@@ -29,6 +29,7 @@ import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.uio.CloseReason;
+import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -36,6 +37,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment;
 import org.jdownloader.gui.IconKey;
@@ -221,12 +223,12 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     public void notifyAboutException(Throwable e) {
-        if (isNotifyOnException()) {
-            Dialog.getInstance().showExceptionDialog("An Error Occured:ID=" + script.getID() + "|Name=" + script.getName() + "|Trigger=" + script.getEventTrigger(), e.getMessage(), e);
-        }
         if (isDisableOnException()) {
             script.setEnabled(false);
             extension.refreshScripts();
+        }
+        if (isNotifyOnException()) {
+            UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | UIOManager.BUTTONS_HIDE_CANCEL, "An Error Occured:ID=" + script.getID() + "|Name=" + script.getName() + "|Trigger=" + script.getEventTrigger(), e.getMessage(), e, null, null));
         }
     }
 

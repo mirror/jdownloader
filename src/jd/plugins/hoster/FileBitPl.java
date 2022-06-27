@@ -44,7 +44,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "" })
@@ -630,6 +629,9 @@ public class FileBitPl extends PluginForHost {
                 /* Login/PW missing (should never happen) */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 203:
+                if (StringUtils.containsIgnoreCase(statusMessage, "Twoje IP zostalo zablokowane")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 /* Invalid API key (should never happen) */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 204:
