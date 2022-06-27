@@ -132,7 +132,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_CLIP_SINGLE_Z                     = "(?i)https?://[^/]+/.*?z=clip((?:\\-)?\\d+_\\d+).*?";
     private static final String PATTERN_VIDEO_SINGLE_ORIGINAL             = "(?i)https?://[^/]+/video((?:\\-)?\\d+_\\d+).*";
     private static final String PATTERN_CLIP_SINGLE_ORIGINAL              = "(?i)https?://[^/]+/clip((?:\\-)?\\d+_\\d+).*";
-    private static final String PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "(?i)https?://[^/]+/video(\\-)?\\d+_\\d+\\?listid=[a-z0-9]+";
+    private static final String PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID = "(?i)https?://[^/]+/video(-?\\d+_\\d+)\\?list=([a-z0-9]+)";
     private static final String PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = "(?i)https?://[^/]+/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
     private static final String PATTERN_VIDEO_SINGLE_EMBED                = "(?i)https?://[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
     private static final String PATTERN_VIDEO_SINGLE_EMBED_HASH           = "(?i)https?://[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[^&]+.*?";
@@ -653,7 +653,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(PATTERN_VIDEO_SINGLE_Z)) {
             listID = new Regex(param.getCryptedUrl(), "z=video-?\\d+_\\d+(?:%2F|/)([A-Za-z0-9\\-_]+)").getMatch(0);
         } else {
-            listID = UrlQuery.parse(param.getCryptedUrl()).get("listid");
+            listID = UrlQuery.parse(param.getCryptedUrl()).get("list");
         }
         if (param.getDownloadLink() != null) {
             if (listID == null) {
@@ -694,6 +694,8 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             query.add("module", "");
             query.add("video", oid_and_id);
+            br.getHeaders().put("Origin", "https://" + this.getHost());
+            br.getHeaders().put("Referer", param.getCryptedUrl());
             this.getPage(br, br.createPostRequest("/al_video.php?act=show", query));
         } else if (listID != null) {
             final UrlQuery query = new UrlQuery();
@@ -708,7 +710,10 @@ public class VKontakteRu extends PluginForDecrypt {
             query.add("show_original", "");
             query.add("t", "");
             query.add("video", oid_and_id);
-            br.postPage(getProtocol() + "vk.com/al_video.php?act=show", query);
+            br.getHeaders().put("Origin", "https://" + this.getHost());
+            br.getHeaders().put("Referer", param.getCryptedUrl());
+            // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            this.getPage(br, br.createPostRequest(getProtocol() + "vk.com/al_video.php?act=show", query));
         } else {
             getPage(getProtocol() + "vk.com/video" + oid_and_id);
         }
@@ -1481,7 +1486,7 @@ public class VKontakteRu extends PluginForDecrypt {
                      */
                     final String listID = this.br.getRegex("\"/video" + owner_id + "_" + content_id + "\\?list=([a-z0-9]+)\"").getMatch(0);
                     if (listID != null) {
-                        videolink += "?listid=" + listID;
+                        videolink += "?list=" + listID;
                     }
                     dl = createDownloadlink(videolink);
                 } else if (type.equals(wallpost_type_album) && vkwall_grabalbums) {

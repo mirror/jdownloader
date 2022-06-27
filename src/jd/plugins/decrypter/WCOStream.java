@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -28,11 +33,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wcostream.com" }, urls = { "https?://(?:www[0-9]*\\.)?wcostream\\.com/(?:anime/)?.+$" })
 public class WCOStream extends antiDDoSForDecrypt {
@@ -45,7 +47,6 @@ public class WCOStream extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String page = br.toString();
         String fpName = br.getRegex("<title>\\s*([^<]+)\\s+\\|\\s+Watch").getMatch(0);
         ArrayList<String> links = new ArrayList<String>();
         // Handle list page
@@ -75,32 +76,50 @@ public class WCOStream extends antiDDoSForDecrypt {
         Collections.addAll(embedPageLinks, br.getRegex("<meta[^>]+itemprop\\s*=\\s*\"embedURL\"[^>]+content=\"\\s*([^\"]+)\\s*\"").getColumn(0));
         if (!embedPageLinks.isEmpty()) {
             for (String embedPageLink : embedPageLinks) {
-                if (StringUtils.isNotEmpty(embedPageLink) && isAbort()) {
-                    Browser br2 = br.cloneBrowser();
-                    br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                    br2.getPage(embedPageLink);
-                    String embedServiceLink = br2.getRegex("get\\s*\\(\\s*\"\\s*([^\"]+)\\s*\"\\s*\\)").getMatch(0);
-                    if (StringUtils.isNotEmpty(embedServiceLink)) {
-                        br2.getPage(embedServiceLink);
-                        String embedServiceResponse = br2.toString();
-                        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(embedServiceResponse);
-                        if (entries != null) {
-                            String server = (String) entries.get("server");
-                            String enc = (String) entries.get("enc");
-                            String hd = (String) entries.get("hd");
-                            if (StringUtils.isNotEmpty(server)) {
-                                if (StringUtils.isNotEmpty(enc)) {
-                                    links.add(server + "/getvid?evid=" + enc);
-                                    links.add("directhttp://" + server + "/getvid?evid=" + enc);
+                if (StringUtils.isEmpty(embedPageLink)) {
+                    continue;
+                }
+                final Browser br2 = br.cloneBrowser();
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br2.getPage(embedPageLink);
+                String embedServiceLink = br2.getRegex("get\\s*\\(\\s*\"\\s*([^\"]+)\\s*\"\\s*\\)").getMatch(0);
+                if (StringUtils.isNotEmpty(embedServiceLink)) {
+                    br2.getPage(embedServiceLink);
+                    String embedServiceResponse = br2.toString();
+                    final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(embedServiceResponse);
+                    if (entries != null) {
+                        final Browser br3 = br2.cloneBrowser();
+                        br3.setFollowRedirects(false);
+                        final String server = (String) entries.get("server");
+                        final String enc = (String) entries.get("enc");
+                        final String hd = (String) entries.get("hd");
+                        if (StringUtils.isNotEmpty(server)) {
+                            if (StringUtils.isNotEmpty(enc)) {
+                                final String url = server + "/getvid?evid=" + enc;
+                                br3.getPage(url);
+                                final String finallink = br3.getRedirectLocation();
+                                if (finallink == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
-                                if (StringUtils.isNotEmpty(hd)) {
-                                    links.add(server + "/getvid?evid=" + hd);
-                                    links.add("directhttp://" + server + "/getvid?evid=" + hd);
+                                links.add(finallink);
+                                links.add("directhttp://" + finallink);
+                            }
+                            if (StringUtils.isNotEmpty(hd)) {
+                                final String url = server + "/getvid?evid=" + hd;
+                                br3.getPage(url);
+                                final String finallink = br3.getRedirectLocation();
+                                if (finallink == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
+                                links.add(server + url);
+                                links.add("directhttp://" + finallink);
                             }
                         }
                     }
+                }
+                if (this.isAbort()) {
+                    break;
                 }
             }
         }
