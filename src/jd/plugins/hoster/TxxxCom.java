@@ -67,16 +67,4 @@ public class TxxxCom extends KernelVideoSharingComV2 {
     protected boolean useAPI() {
         return true;
     }
-
-    @Override
-    protected String getAPIParam1(final String videoID) {
-        final String ret = videoID.replaceFirst("(.{6})$", "000000");
-        return ret;
-    }
-
-    @Override
-    protected String getAPICroppedVideoID(final String videoID) {
-        final String ret = videoID.replaceFirst("(.{3})$", "000");
-        return ret;
-    }
 }
