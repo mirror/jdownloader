@@ -21,6 +21,7 @@ public interface TiktokConfig extends PluginConfigInterface {
     final String                                 text_DownloadMode                                          = "Select download mode";
     final String                                 text_CrawlMode                                             = "Select profile crawl mode";
     final String                                 text_ProfileCrawlerMaxItemsLimit                           = "Profile crawler: Define max number of items to be fetched: 0 = disable profile crawler, -1 = fetch all items";
+    final String                                 text_TagCrawlerMaxItemsLimit                               = "Tag crawler: Define max number of items to be fetched: 0 = disable tag crawler, -1 = fetch all items";
 
     public static class TRANSLATION {
         public String getEnableFastLinkcheck_label() {
@@ -45,6 +46,10 @@ public interface TiktokConfig extends PluginConfigInterface {
 
         public String getProfileCrawlerMaxItemsLimit_label() {
             return text_ProfileCrawlerMaxItemsLimit;
+        }
+
+        public String getTagCrawlerMaxItemsLimit_label() {
+            return text_TagCrawlerMaxItemsLimit;
         }
     }
 
@@ -127,4 +132,13 @@ public interface TiktokConfig extends PluginConfigInterface {
     int getProfileCrawlerMaxItemsLimit();
 
     void setProfileCrawlerMaxItemsLimit(int items);
+
+    @AboutConfig
+    @SpinnerValidator(min = -1, max = 10000, step = 20)
+    @DefaultIntValue(20)
+    @DescriptionForConfigEntry(text_TagCrawlerMaxItemsLimit)
+    @Order(70)
+    int getTagCrawlerMaxItemsLimit();
+
+    void setTagCrawlerMaxItemsLimit(int items);
 }
