@@ -40,9 +40,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class Scriptvalidator {
-
     protected RouterData rd;
-
     private LogSource    logger;
 
     public Scriptvalidator(RouterData rd) {
@@ -59,18 +57,13 @@ public class Scriptvalidator {
         if (xmlString == null) {
             return null;
         }
-
         // Create a builder factory
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setValidating(validating);
-
         final InputSource inSource = new InputSource(new StringReader(xmlString));
-
         // Create the builder and parse the file
         final Document doc = factory.newDocumentBuilder().parse(inSource);
-
         return doc;
-
     }
 
     public String toOverView(String script) throws Exception {
@@ -81,7 +74,6 @@ public class Scriptvalidator {
         if (!lc.contains("[[[request")) {
             throw new Exception("No Request Tag");
         }
-
         final HashMap<String, String> map = new HashMap<String, String>();
         // map.put("user", Encoding.urlEncode("<Username required>"));
         // map.put("pass", Encoding.urlEncode("<Password required>"));
@@ -93,9 +85,7 @@ public class Scriptvalidator {
         map.put("ip", "your.router.ip");
         map.put("routerip", "your.router.ip");
         map.put("host", "your.router.ip");
-
         this.internalVariables = Collections.unmodifiableMap(map);
-
         this.parsedVariables = new HashMap<String, String>();
         if (script != null) {
             script = script.replaceAll("\\[\\[\\[", "<");
@@ -105,22 +95,17 @@ public class Scriptvalidator {
             script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
             script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
         }
-
         StringBuilder sb = new StringBuilder();
-
         final Document xmlScript = parseXmlString(script, false);
         if (xmlScript == null) {
-
             throw new Exception("Error while parsing the xml string");
         }
         final Node root = xmlScript.getChildNodes().item(0);
         if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
-
             throw new Exception("Error while parsing the xml string. Root Node must be [[[HSRC]]]*[/HSRC]");
         }
         final NodeList steps = root.getChildNodes();
         for (int step = 0; step < steps.getLength(); step++) {
-
             final Node current = steps.item(step);
             if (current.getNodeType() == 3) {
                 continue;
@@ -132,7 +117,6 @@ public class Scriptvalidator {
             final int toDosLength = toDos.getLength();
             for (int toDoStep = 0; toDoStep < toDosLength; toDoStep++) {
                 final Node toDo = toDos.item(toDoStep);
-
                 if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
                     final NamedNodeMap attributes = toDo.getAttributes();
                     for (int attribute = 0; attribute < attributes.getLength(); attribute++) {
@@ -143,18 +127,15 @@ public class Scriptvalidator {
                         if (key.toLowerCase().equals("routername")) {
                             continue;
                         }
-
                         String value = attributes.item(attribute).getNodeValue();
                         if (key.matches("ip\\d+") && !value.contains("%%%")) {
                             throw new RetryWithReplacedScript(rd.getScript(), key, "\"" + value + "\"", "\"%%%routerip%%%\"");
-
                         }
                         final String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%", -1);
                         final String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
                         if (params.length > 0) {
                             final StringBuilder newValue;
                             newValue = new StringBuilder(tmp[0]);
-
                             final int tmpLength = tmp.length;
                             for (int i = 1; i <= tmpLength; i++) {
                                 if (i > params.length) {
@@ -171,7 +152,6 @@ public class Scriptvalidator {
                         append(sb, "Define Variable " + key + "\t=\t" + value);
                         putVariable(key, value);
                     }
-
                 }
                 if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
                     // logger.info("Parse response: \r\n" + br.getRequest());
@@ -184,7 +164,6 @@ public class Scriptvalidator {
                             pattern = pattern.trim();
                             putVariable(varname, URLEncoder.encode("<Variable: " + varname + ">", "ASCII"));
                             append(sb, "\t-> Search in HTML Response:  " + varname + " = Regex:" + pattern);
-
                         }
                     }
                 }
@@ -195,7 +174,6 @@ public class Scriptvalidator {
                     }
                     final NamedNodeMap attributes = toDo.getAttributes();
                     // Browser retbr = null;
-
                     try {
                         this.doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), sb, attributes.getNamedItem("https") != null, attributes.getNamedItem("raw") != null);
                     } catch (final Exception e) {
@@ -205,7 +183,6 @@ public class Scriptvalidator {
                         // retbr = null;
                     }
                     /* DDoS Schutz */
-
                 }
                 if (StringUtils.equalsIgnoreCase(toDo.getNodeName(), "RESPONSE")) {
                     // logger.finer("get Response");
@@ -219,10 +196,8 @@ public class Scriptvalidator {
                         throw new Exception("A RESPONSE Node needs a Keys Attribute: " + toDo);
                     }
                     final String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
-
                     for (String s : keys) {
                         append(sb, "\t-> Search Variable in HTML Response:  " + s);
-
                     }
                     // this.parseVariables(feedback, toDo.getChildNodes().item(0).getNodeValue().trim(), keys, br);
                 }
@@ -236,7 +211,6 @@ public class Scriptvalidator {
                     final int seconds = Formatter.filterInt(item.getNodeValue());
                     if (seconds > 0) {
                         append(sb, "Wait " + TimeFormatter.formatMilliSeconds(seconds * 1000, 0));
-
                     }
                 }
                 if (StringUtils.equalsIgnoreCase(toDo.getNodeName(), "TIMEOUT")) {
@@ -250,7 +224,6 @@ public class Scriptvalidator {
                     if (seconds > 0) {
                         // logger.finer("Timeout set to " + seconds + " seconds");
                         append(sb, "Set HTTP Timeout to " + TimeFormatter.formatMilliSeconds(seconds * 1000, 0));
-
                     }
                 }
             }
@@ -259,7 +232,6 @@ public class Scriptvalidator {
     }
 
     private void doRequest(String request, StringBuilder sb, boolean ishttps, boolean israw) throws Exception, IOException {
-
         final String requestType;
         final String path;
         final StringBuilder post = new StringBuilder();
@@ -306,13 +278,11 @@ public class Scriptvalidator {
         final String[] requestLines = splitLines(request);
         if (requestLines.length == 0) {
             throw new Exception("Parse Fehler:" + request);
-
         }
         // RequestType
         tmp = requestLines[0].split(" ");
         if (tmp.length < 2) {
             throw new Exception("Bad Request Type: " + requestLines[0] + "\r\n" + request);
-
         }
         requestType = tmp[0];
         path = tmp[1];
@@ -338,7 +308,6 @@ public class Scriptvalidator {
                 continue;
             }
             requestProperties.put(p[0].trim(), URLDecoder.decode(requestLines[li].substring(p[0].length() + 1).trim(), "ASCII"));
-
             if (StringUtils.equalsIgnoreCase(p[0].trim(), "Referer") || StringUtils.equalsIgnoreCase(p[0].trim(), "Referrer")) {
                 onHost(new URL(requestProperties.get(p[0].trim())).getHost());
             }
@@ -349,7 +318,6 @@ public class Scriptvalidator {
         if (host == null) {
             throw new Exception("Host not available: " + request);
         } else {
-
             // verifyHost(host);
             if (requestProperties != null) {
                 // sb.getHeaders().putAll(requestProperties);
@@ -360,9 +328,7 @@ public class Scriptvalidator {
             }
             onHost(host);
             if (StringUtils.equalsIgnoreCase(requestType, "GET") || StringUtils.equalsIgnoreCase(requestType, "AUTH")) {
-
                 URL url = new URL(protocoll + host + path);
-
                 append(sb, "HTTP Request " + requestType + " " + protocoll + host + url.getPath());
                 String cookie = requestProperties.get("Cookie");
                 if (StringUtils.isNotEmpty(cookie)) {
@@ -377,7 +343,6 @@ public class Scriptvalidator {
                 int i = 1;
                 try {
                     for (KeyValuePair pa : HttpConnection.parseParameterList(url.getQuery())) {
-
                         append(sb, "\tParameter #" + (i++) + ": \t" + pa.key + "\t=\t" + URLDecoder.decode(pa.value, "ASCII"));
                         onParameter(pa.key, pa.value);
                     }
@@ -385,11 +350,9 @@ public class Scriptvalidator {
                     throw e;
                 }
                 // sb.getPage(protocoll + host + path);
-            } else if (StringUtils.equalsIgnoreCase(requestType, "POST")) {
+            } else if (StringUtils.equalsIgnoreCase(requestType, "POST") || StringUtils.equalsIgnoreCase(requestType, "PUT")) {
                 final String poster = post.toString().trim();
-
                 URL url = new URL(protocoll + host + path);
-
                 append(sb, "HTTP Request " + requestType + " " + protocoll + host + path);
                 String cookie = requestProperties.get("Cookie");
                 if (StringUtils.isNotEmpty(cookie)) {
@@ -419,9 +382,7 @@ public class Scriptvalidator {
                 // logger.severe("Unknown/Unsupported requestType: " + requestType);
                 throw new Exception("Unknown/Unsupported requestType: " + requestType);
             }
-
         }
-
     }
 
     protected void onHost(String host) throws Exception {
@@ -449,7 +410,6 @@ public class Scriptvalidator {
         exceptionsParameterKeys.add("EmWeb_ns:vim:4.ImServices.ipwan0.1:webcontrol".toLowerCase(Locale.ENGLISH));
         exceptionsParameterKeys.add("mbg_webname".toLowerCase(Locale.ENGLISH));
         exceptionsParameterKeys.add("intfName".toLowerCase(Locale.ENGLISH));
-
     }
     protected HashSet<String> defaultPasswords         = new HashSet<String>();
     {
@@ -473,7 +433,6 @@ public class Scriptvalidator {
         defaultUsernames.add("123456");
         defaultUsernames.add("1234");
         defaultUsernames.add("administrator");
-
     }
     protected HashSet<String> whitelistValues          = new HashSet<String>();
     {
@@ -503,7 +462,6 @@ public class Scriptvalidator {
 
     private void onParameter(String key, String value) throws Exception {
         if (key == null || value == null) {
-
             return;
         }
         if (exceptionsParameterKeys.contains(key.toLowerCase(Locale.ENGLISH))) {
@@ -512,36 +470,28 @@ public class Scriptvalidator {
         if (whitelistValues.contains(value.toLowerCase(Locale.ENGLISH))) {
             return;
         }
-
         if (StringUtils.isEmpty(value) || value.length() < 3) {
             return;
         }
         if (value.contains("<Variable:") && value.contains(">")) {
             return;
         }
-
         if (value.contains(URLEncoder.encode("<Variable:", "ASCII")) && value.contains(URLEncoder.encode(">", "ASCII"))) {
             return;
         }
         if (isPasswordParameter(key, value)) {
             System.out.println(key + "=" + value);
-
             replacePasswordParameter(key, value);
-
         }
-
         if (isUsernameParameter(key, value)) {
             replaceUsernameParameter(key, value);
-
         }
-
     }
 
     protected void replaceUsernameParameter(String key, String value) throws RetryWithReplacedScript, Exception {
         System.out.println(key + "=" + value);
         // if (!UIOManager.I().showConfirmDialog(0, T.T.please_check(), T.T.please_check_sensitive_data_before_share(key + "=" + value), new
         // AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.lit_yes(), _GUI.T.lit_no())) {
-
         if (defaultUsernames.contains(value.toLowerCase(Locale.ENGLISH))) {
             replacedDefaultUsernames.add(value);
         }
@@ -554,11 +504,9 @@ public class Scriptvalidator {
             replacedDefaultPasswords.add(value);
         }
         throw new RetryWithReplacedScript(rd.getScript(), key, value, "%%%password%%%");
-
     }
 
     private boolean isUsernameParameter(String key, String value) {
-
         if (key.toLowerCase().contains("usr")) {
             return true;
         }
@@ -591,9 +539,7 @@ public class Scriptvalidator {
     }
 
     private void onAuth(String authorization) throws RetryWithReplacedScript, Exception {
-
         if (!"Basic <Variable:basicauth>".equals(authorization)) {
-
             if (authorization.startsWith("Basic ")) {
                 String dec = new String(Base64.decode(authorization.substring("Basic ".length())));
                 int first = dec.indexOf(":");
@@ -603,7 +549,6 @@ public class Scriptvalidator {
             }
             System.out.println(authorization);
         }
-
     }
 
     protected void replaceAuthHeader(String authorization, String username, String password) throws RetryWithReplacedScript, Exception {
@@ -637,12 +582,9 @@ public class Scriptvalidator {
                 if (value == null) {
                 } else {
                     parsedVariables.put(lowerKey, value);
-
                 }
-
             }
         }
-
     }
 
     private Map<String, String> internalVariables = null;
@@ -656,7 +598,6 @@ public class Scriptvalidator {
             } else if (parsedVariables.containsKey(lowerKey)) {
                 return parsedVariables.get(lowerKey);
             } else {
-
             }
         }
         return null;
@@ -675,9 +616,7 @@ public class Scriptvalidator {
             value = getVariable(key);
             return value == null ? "<Variable:" + key + ">" : value;
         }
-
         while ((index = key.indexOf(":::")) >= 0) {
-
             final String method = key.substring(0, index);
             key = key.substring(index + 3);
             if (StringUtils.equalsIgnoreCase(method, "URLENCODE")) {
@@ -695,16 +634,13 @@ public class Scriptvalidator {
                 // required by a huwai router that uses base64(sha256(pass))
             } else if (StringUtils.equalsIgnoreCase(method, "BASE64_SHA256")) {
                 value = "<Variable: " + "Base64(SHA256(\"" + key + "\"))" + ">";
-
             } else if (StringUtils.equalsIgnoreCase(method, "BASE64")) {
                 value = "<Variable: " + "Base64(\"" + key + "\")" + ">";
             } else {
                 throw new Exception("Unsupported Type: " + method);
-
             }
         }
         return value;
-
     }
 
     protected ArrayList<Exception> changes = new ArrayList<Exception>();
@@ -724,7 +660,6 @@ public class Scriptvalidator {
                     setScript(oldScriptID);
                     // setStatus(rd.getScriptID(), ScriptStatus.VALIDATED);
                     setChanges(rd.getScriptID());
-
                 }
                 if (replacedDefaultPasswords.size() > 0 || replacedDefaultUsernames.size() > 0 || replacedDefaulAuth.size() > 0) {
                     String s = rd.getScript();
@@ -747,7 +682,6 @@ public class Scriptvalidator {
                 return;
             } catch (RetryWithReplacedScript e) {
                 if (rd.getScript().equals(e.getNewScript())) {
-
                     // setStatus(oldScriptID, ScriptStatus.EXCEPTION);
                     return;
                 } else {
@@ -794,9 +728,7 @@ public class Scriptvalidator {
         // e.printStackTrace();
         // }
     }
-
     // protected void setStatus(String oldScriptID, ScriptStatus validated) throws InternalApiException {
     // db.setStatus(oldScriptID, validated);
     // }
-
 }

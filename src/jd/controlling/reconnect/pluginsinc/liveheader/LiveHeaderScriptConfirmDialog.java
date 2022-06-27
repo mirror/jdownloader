@@ -595,7 +595,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
                     append(sb, "\tParameter #" + (i++) + ": \t" + decode(pa.key) + "\t=\t" + decode(pa.value));
                 }
                 // sb.getPage(protocoll + host + path);
-            } else if (StringUtils.equalsIgnoreCase(requestType, "POST")) {
+            } else if (StringUtils.equalsIgnoreCase(requestType, "POST") || StringUtils.equalsIgnoreCase(requestType, "PUT")) {
                 final String poster = post.toString().trim();
                 URL url = new URL(protocoll + host + path);
                 append(sb, "\r\nHTTP Request " + requestType + " " + protocoll + host + path);
