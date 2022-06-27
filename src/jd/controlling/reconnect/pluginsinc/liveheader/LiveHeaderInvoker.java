@@ -30,6 +30,7 @@ import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.RequestHeader;
 import jd.http.requests.PostRequest;
+import jd.http.requests.PutRequest;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -591,7 +592,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     final String requestURL = protocoll + host + path;
                     if (StringUtils.equalsIgnoreCase(requestType, "GET") || StringUtils.equalsIgnoreCase(requestType, "AUTH")) {
                         browserRequest = br.createGetRequest(requestURL);
-                    } else if (StringUtils.equalsIgnoreCase(requestType, "POST")) {
+                    } else if (StringUtils.equalsIgnoreCase(requestType, "POST") || StringUtils.equalsIgnoreCase(requestType, "PUT")) {
                         if (isRawPost) {
                             final byte[] post = HexFormatter.hexToByteArray(postContent.toString());
                             if (br.probeJSonContent(post)) {
@@ -608,6 +609,9 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                                 browserRequest = br.createPostRequest(requestURL, new UrlQuery(), null);
                                 ((PostRequest) browserRequest).setPostDataString(post);
                             }
+                        }
+                        if (StringUtils.equalsIgnoreCase(requestType, "PUT")) {
+                            browserRequest = new PutRequest(browserRequest);
                         }
                     } else {
                         throw new ReconnectException("Unknown/Unsupported requestType: " + requestType);
