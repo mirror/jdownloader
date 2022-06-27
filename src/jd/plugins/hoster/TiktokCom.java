@@ -535,6 +535,7 @@ public class TiktokCom extends PluginForHost {
             downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
         }
         String url = null;
+        final Number data_size = downloadInfo != null ? (Number) downloadInfo.get("data_size") : null;
         if (has_watermark || (Boolean.TRUE.equals(aweme_detail.get("prevent_download")) && downloadInfo == null)) {
             /* Get stream downloadurl because it comes WITHOUT WATERMARK */
             if (has_watermark) {
@@ -545,12 +546,12 @@ public class TiktokCom extends PluginForHost {
             url = (String) JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}");
             if (StringUtils.isNotEmpty(url)) {
                 link.setProperty(PROPERTY_DIRECTURL_API, url);
-                if (downloadInfo != null && downloadInfo.containsKey("data_size")) {
+                if (data_size != null) {
                     /**
                      * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
                      * If a video is watermarked and downloads are prohibited both versions should be identical.
                      */
-                    link.setDownloadSize(((Number) downloadInfo.get("data_size")).longValue());
+                    link.setDownloadSize(data_size.longValue());
                 }
             }
         }
@@ -559,8 +560,8 @@ public class TiktokCom extends PluginForHost {
             final Object directURL = JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}");
             if (directURL != null) {
                 link.setProperty(PROPERTY_DIRECTURL_API, StringUtils.valueOfOrNull(directURL));
-                if (downloadInfo.containsKey("data_size")) {
-                    link.setVerifiedFileSize(((Number) downloadInfo.get("data_size")).longValue());
+                if (data_size != null) {
+                    link.setVerifiedFileSize(data_size.longValue());
                 }
                 link.removeProperty(PROPERTY_HAS_WATERMARK);
             }
@@ -734,7 +735,11 @@ public class TiktokCom extends PluginForHost {
     }
 
     public static boolean isBotProtectionActive(final Browser br) {
-        return br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"");
+        if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String generateDownloadurlOld(final DownloadLink link) throws IOException {

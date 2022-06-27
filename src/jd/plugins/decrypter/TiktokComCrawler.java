@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.TiktokConfig;
@@ -89,14 +90,16 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_REDIRECT      = "https?://vm\\.[^/]+/([A-Za-z0-9]+).*";
-    private final String TYPE_USER_USERNAME = "https?://[^/]+/@([^\\?/]+).*";
-    private final String TYPE_USER_USER_ID  = "https?://[^/]+/share/user/(\\d+).*";
+    private final String TYPE_REDIRECT       = "https?://vm\\.[^/]+/([A-Za-z0-9]+).*";
+    private final String TYPE_USER_USERNAME  = "https?://[^/]+/@([^\\?/]+).*";
+    private final String TYPE_USER_USER_ID   = "https?://[^/]+/share/user/(\\d+).*";
+    private final String TYPE_PLAYLIST_TAG   = "https?://[^/]+/tag/([^/]+)";
+    private final String TYPE_PLAYLIST_MUSIC = "https?://[^/]+/music/([a-z0-9\\-]+)-(\\d+)";
     /**
      * E.g. https://www.tiktok.com/foryou?is_from_webapp=v1&item_id=12345#/@jewellry2022/video/12345 </br>
      * --> URLs to single video from recommendation
      */
-    private final String TYPE_VIDEO         = "https?://[^/]+.*/(@[^/]+/video/\\d+)";
+    private final String TYPE_VIDEO          = "https?://[^/]+.*/(@[^/]+/video/\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
@@ -125,6 +128,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
             return decryptedLinks;
         } else if (param.getCryptedUrl().matches(TYPE_USER_USERNAME) || param.getCryptedUrl().matches(TYPE_USER_USER_ID)) {
             return crawlProfile(param);
+        } else if (param.getCryptedUrl().matches(TYPE_PLAYLIST_TAG)) {
+            return this.crawlPlaylistTag(param);
         } else {
             // unsupported url pattern
             return new ArrayList<DownloadLink>(0);
@@ -148,7 +153,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
      * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
-        TiktokCom.prepBRWebsite(br);
+        prepBRWebsite(br);
         /* Login whenever possible */
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
@@ -174,9 +179,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             br.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
             br.getPage(param.getCryptedUrl());
         }
-        if (TiktokCom.isBotProtectionActive(this.br)) {
-            throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items of user " + usernameSlug, null, null);
-        }
+        this.botProtectionCheck(br);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
         FilePackage fp = null;
@@ -316,7 +319,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        TiktokCom.prepBRAPI(this.br);
+        prepBRAPI(this.br);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final int maxItemsPerPage = 21;
         final UrlQuery query = TiktokCom.getAPIQuery();
@@ -344,16 +347,15 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 }
             }
             for (final Map<String, Object> aweme_detail : videos) {
+                final DownloadLink link = processVideo(aweme_detail);
                 if (fp == null) {
                     /*
                      * Collect author name on first round because it is not always given before e.g. not given if user adds URL of type
                      * TYPE_USER_USER_ID.
                      */
-                    author = JavaScriptEngineFactory.walkJson(aweme_detail, "author/unique_id").toString();
+                    author = link.getStringProperty(TiktokCom.PROPERTY_USERNAME);
                     fp = getFilePackage(author);
                 }
-                final DownloadLink link = this.createDownloadlink(getContentURL(author, aweme_detail.get("aweme_id").toString()));
-                TiktokCom.parseFileInfoAPI(link, aweme_detail);
                 link._setFilePackage(fp);
                 ret.add(link);
                 distribute(link);
@@ -377,6 +379,148 @@ public class TiktokComCrawler extends PluginForDecrypt {
             page++;
         } while (true);
         return ret;
+    }
+
+    public ArrayList<DownloadLink> crawlPlaylistTag(final CryptedLink param) throws Exception {
+        if (PluginJsonConfig.get(TiktokConfig.class).getTagCrawlerMaxItemsLimit() == 0) {
+            logger.info("User has disabled tag crawler --> Returning empty array");
+            return new ArrayList<DownloadLink>();
+        }
+        return crawlPlaylistAPI(param);
+    }
+
+    public ArrayList<DownloadLink> crawlPlaylistAPI(final CryptedLink param) throws Exception {
+        final String tagName = new Regex(param.getCryptedUrl(), TYPE_PLAYLIST_TAG).getMatch(0);
+        if (tagName == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        prepBRWebsite(br);
+        br.getPage(param.getCryptedUrl());
+        botProtectionCheck(br);
+        final String tagID = br.getRegex("snssdk\\d+://challenge/detail/(\\d+)").getMatch(0);
+        if (tagID == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName("tag - " + tagName);
+        return crawlPlaylistAPI("/challenge/aweme", "ch_id", tagID, fp);
+    }
+
+    /** Under development */
+    public ArrayList<DownloadLink> crawlPlaylistMusic(final CryptedLink param) throws Exception {
+        // TODO
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (PluginJsonConfig.get(TiktokConfig.class).getTagCrawlerMaxItemsLimit() == 0) {
+            logger.info("User has disabled tag crawler --> Returning empty array");
+            return new ArrayList<DownloadLink>();
+        }
+        return crawlPlaylistAPI(param);
+    }
+
+    /** Under development */
+    public ArrayList<DownloadLink> crawlPlaylistMusicAPI(final CryptedLink param) throws Exception {
+        // TODO
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_PLAYLIST_MUSIC);
+        final String musicPlaylistTitle = urlinfo.getMatch(0);
+        final String musicID = urlinfo.getMatch(1);
+        if (musicPlaylistTitle == null || musicID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName("music - " + musicPlaylistTitle);
+        return crawlPlaylistAPI("/music/aweme", "music_id", musicID, fp);
+    }
+
+    /** Generic function to crawl playlist-like stuff. */
+    public ArrayList<DownloadLink> crawlPlaylistAPI(final String apiPath, final String playlistKeyName, final String playlistID, final FilePackage fp) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        logger.info("Crawling playlist or playlist-like item with ID: " + playlistID);
+        final int maxItemsPerPage = 20;
+        final UrlQuery query = TiktokCom.getAPIQuery();
+        query.add(playlistKeyName, playlistID);
+        query.add("cursor", "0");
+        query.add("count", Integer.toString(maxItemsPerPage));
+        query.add("type", "5");
+        query.add("device_id", generateDeviceID());
+        prepBRAPI(this.br);
+        final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
+        int page = 1;
+        do {
+            TiktokCom.accessAPI(br, apiPath, query);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("aweme_list");
+            if (videos.isEmpty()) {
+                if (ret.isEmpty()) {
+                    /* There are no videos with this tag available. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            for (final Map<String, Object> aweme_detail : videos) {
+                final DownloadLink link = this.processVideo(aweme_detail);
+                if (fp != null) {
+                    link._setFilePackage(fp);
+                }
+                ret.add(link);
+                distribute(link);
+                if (ret.size() == cfg.getTagCrawlerMaxItemsLimit()) {
+                    logger.info("Stopping because: Reached user defined max items limit: " + cfg.getTagCrawlerMaxItemsLimit());
+                    return ret;
+                }
+            }
+            logger.info("Crawled page " + page + "Number of items on current page " + videos.size() + " | Found items so far: " + ret.size());
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (((Integer) entries.get("has_more")).intValue() != 1) {
+                logger.info("Stopping because: Reached end");
+                break;
+            }
+            final String nextCursor = entries.get("cursor").toString();
+            if (StringUtils.isEmpty(nextCursor)) {
+                /* Additional fail-safe */
+                logger.info("Stopping because: Failed to find cursor --> Reached end?");
+                break;
+            } else {
+                query.addAndReplace("cursor", nextCursor);
+                page++;
+            }
+        } while (true);
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> processVideoList(final List<Map<String, Object>> videos, final FilePackage fp) throws PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        for (final Map<String, Object> aweme_detail : videos) {
+            final DownloadLink link = processVideo(aweme_detail);
+            link._setFilePackage(fp);
+            ret.add(link);
+            distribute(link);
+        }
+        return ret;
+    }
+
+    private DownloadLink processVideo(final Map<String, Object> aweme_detail) throws PluginException {
+        final Map<String, Object> author = (Map<String, Object>) aweme_detail.get("author");
+        final DownloadLink link = this.createDownloadlink(getContentURL(author.get("unique_id").toString(), aweme_detail.get("aweme_id").toString()));
+        TiktokCom.parseFileInfoAPI(link, aweme_detail);
+        return link;
+    }
+
+    /* Throws exception if bot protection is active according to given browser instances' html code. */
+    private void botProtectionCheck(final Browser br) throws DecrypterRetryException {
+        if (TiktokCom.isBotProtectionActive(br)) {
+            throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items", null, null);
+        }
     }
 
     private FilePackage getFilePackage(final String name) {
@@ -421,5 +565,20 @@ public class TiktokComCrawler extends PluginForDecrypt {
             formattedDate = Long.toString(date);
         }
         return formattedDate;
+    }
+
+    /** Wrapper */
+    private Browser prepBRWebsite(final Browser br) {
+        return TiktokCom.prepBRWebsite(br);
+    }
+
+    /** Wrapper */
+    private Browser prepBRWebAPI(final Browser br) {
+        return TiktokCom.prepBRWebAPI(br);
+    }
+
+    /** Wrapper */
+    private Browser prepBRAPI(final Browser br) {
+        return TiktokCom.prepBRAPI(br);
     }
 }
