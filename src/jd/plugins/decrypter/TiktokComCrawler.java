@@ -130,6 +130,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
             return crawlProfile(param);
         } else if (param.getCryptedUrl().matches(TYPE_PLAYLIST_TAG)) {
             return this.crawlPlaylistTag(param);
+        } else if (param.getCryptedUrl().matches(TYPE_PLAYLIST_MUSIC)) {
+            return this.crawlPlaylistMusic(param);
         } else {
             // unsupported url pattern
             return new ArrayList<DownloadLink>(0);
@@ -305,6 +307,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 }
             }
             if (user_id == null) {
+                logger.info("Using fallback method to find userID!");
                 website.getPage(param.getCryptedUrl());
                 user_id = website.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (user_id == null && TiktokCom.isBotProtectionActive(website)) {
@@ -413,11 +416,11 @@ public class TiktokComCrawler extends PluginForDecrypt {
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (PluginJsonConfig.get(TiktokConfig.class).getTagCrawlerMaxItemsLimit() == 0) {
-            logger.info("User has disabled tag crawler --> Returning empty array");
-            return new ArrayList<DownloadLink>();
-        }
-        return crawlPlaylistAPI(param);
+        // if (PluginJsonConfig.get(TiktokConfig.class).getTagCrawlerMaxItemsLimit() == 0) {
+        // logger.info("User has disabled tag crawler --> Returning empty array");
+        // return new ArrayList<DownloadLink>();
+        // }
+        return crawlPlaylistMusicAPI(param);
     }
 
     /** Under development */
