@@ -42,11 +42,13 @@ public class WCOStream extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = br.getRegex("<title>\\s*([^<]+)\\s+\\|\\s+Watch").getMatch(0);
         ArrayList<String> links = new ArrayList<String>();
         // Handle list page
@@ -75,7 +77,10 @@ public class WCOStream extends antiDDoSForDecrypt {
         }
         Collections.addAll(embedPageLinks, br.getRegex("<meta[^>]+itemprop\\s*=\\s*\"embedURL\"[^>]+content=\"\\s*([^\"]+)\\s*\"").getColumn(0));
         if (!embedPageLinks.isEmpty()) {
+            int counter = 0;
             for (String embedPageLink : embedPageLinks) {
+                counter++;
+                logger.info("Crawling mirror " + counter + "/" + embedPageLinks.size());
                 if (StringUtils.isEmpty(embedPageLink)) {
                     continue;
                 }
