@@ -381,11 +381,13 @@ public class FlashfilesCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false); // 2021-11-08: Login required to re-use stored directurls
         if (account.getType() == AccountType.FREE) {
             handleFreeDownloads(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             requestFileInformation(link);
+            if (account != null) {
+                login(account, false);
+            }
             final String directurlproperty = "premium_directlink";
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (!attemptStoredDownloadurlDownload(link, directurlproperty, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS)) {

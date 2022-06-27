@@ -92,7 +92,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.JVMVersion;
@@ -1283,9 +1282,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         } catch (VerifyError e) {
             logger.log(e);
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                Dialog.getInstance().showExceptionDialog("Eclipse Java 1.7 Bug", "This is an eclipse Java 7 bug. See here: http://goo.gl/REs9c\r\nAdd JVM Parameter -XX:-UseSplitVerifier", e);
-            }
             throw e;
         }
     }
@@ -1409,9 +1405,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
