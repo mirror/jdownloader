@@ -644,11 +644,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected String getAPIParam1(final String videoID) {
-        return "0";
+        final String ret = videoID != null ? videoID.replaceFirst("(.{6})$", "000000") : "0";
+        return ret;
     }
 
     protected String getAPICroppedVideoID(final String videoID) {
-        return "0";
+        final String ret = videoID != null ? videoID.replaceFirst("(.{3})$", "000") : "0";
+        return ret;
     }
 
     protected boolean isOfflineWebsite(final Browser br) {
