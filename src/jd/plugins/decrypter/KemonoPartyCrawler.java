@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -188,6 +191,12 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         for (String directURL : directURLs) {
             directURL = br.getURL(directURL).toString();
             final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
+            final UrlQuery query = UrlQuery.parse(directURL);
+            final String betterFilename = query.get("f");
+            if (!StringUtils.isEmpty(betterFilename)) {
+                media.setFinalFileName(betterFilename);
+                media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+            }
             media.setAvailable(true);
             ret.add(media);
         }
