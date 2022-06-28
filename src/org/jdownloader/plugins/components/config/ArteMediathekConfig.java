@@ -23,7 +23,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     final String                                        text_CrawlHTTP480p                  = "Crawl 480p?";
     final String                                        text_CrawlHTTP720p                  = "Crawl 720p?";
     final String                                        text_CrawlHTTP1080p                 = "Crawl 1080p?";
-    final String                                        text_GetFilenameSchemeType          = "Select filename scheme type";
+    final String                                        text_GetFilenameSchemeTypeV2          = "Select filename scheme type";
     final String                                        text_GetFilenameScheme              = "Enter filename scheme";
     final String                                        text_GetPackagenameSchemeType       = "Select package name scheme type";
     final String                                        text_GetPackagenameScheme           = "Enter package name scheme";
@@ -70,8 +70,8 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
             return text_CrawlHTTP1080p;
         }
 
-        public String getFilenameSchemeType_label() {
-            return text_GetFilenameSchemeType;
+        public String getFilenameSchemeTypeV2_label() {
+            return text_GetFilenameSchemeTypeV2;
         }
 
         public String getFilenameScheme_label() {
@@ -209,12 +209,12 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     void setQualitySelectionFallbackMode(QualitySelectionFallbackMode mode);
 
     @AboutConfig
-    @DefaultEnumValue("ORIGINAL")
-    @DescriptionForConfigEntry(text_GetFilenameSchemeType)
+    @DefaultEnumValue("DEFAULT")
+    @DescriptionForConfigEntry(text_GetFilenameSchemeTypeV2)
     @Order(500)
-    FilenameSchemeType getFilenameSchemeType();
+    FilenameSchemeType getFilenameSchemeTypeV2();
 
-    void setFilenameSchemeType(FilenameSchemeType mode);
+    void setFilenameSchemeTypeV2(FilenameSchemeType mode);
 
     public static enum FilenameSchemeType implements LabelInterface {
         DEFAULT {
@@ -254,7 +254,7 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
-    @DescriptionForConfigEntry(text_GetFilenameSchemeType)
+    @DescriptionForConfigEntry(text_GetFilenameSchemeTypeV2)
     @Order(600)
     PackagenameSchemeType getPackagenameSchemeType();
 
