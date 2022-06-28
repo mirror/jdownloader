@@ -143,6 +143,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlVideo(final CryptedLink param, final Map<String, Object> vid) throws IOException, PluginException {
+        final String kindLabel = vid.get("kindLabel").toString();
+        if (kindLabel.equals("LIVE")) {
+            logger.info("Livestreams are not supported");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!kindLabel.equals("PROGRAMM")) {
+            logger.info("Unknown kindLabel: " + kindLabel);
+        }
         final String videoID = vid.get("programId").toString();
         final String title = vid.get("title").toString();
         final String subtitle = (String) vid.get("subtitle");
@@ -158,6 +165,21 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         // br.getPage(API_BASE + "/videoStreams?programId=" + Encoding.urlEncode(programId) +
         // "&reassembly=A&platform=ARTE_NEXT&channel=DE&kind=SHOW&protocol=%24in:HTTPS,HLS&quality=%24in:EQ,HQ,MQ,SQ,XQ&profileAmm=%24in:AMM-PTWEB,AMM-PTHLS,AMM-OPERA,AMM-CONCERT-NEXT,AMM-Tvguide&limit=100");
         br.getPage(videoStreamsAPIURL);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
+        if (videoStreams == null || videoStreams.isEmpty()) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* First put each language + audio version in separate lists. */
+        final Map<String, List<Map<String, Object>>> languagePacks = new HashMap<String, List<Map<String, Object>>>();
+        for (final Map<String, Object> videoStream : videoStreams) {
+            final String audioCode = videoStream.get("audioCode").toString();
+            if (!languagePacks.containsKey(audioCode)) {
+                languagePacks.put(audioCode, new ArrayList<Map<String, Object>>());
+            }
+            languagePacks.get(audioCode).add(videoStream);
+        }
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         /* Build package name */
         final PackagenameSchemeType schemeType = cfg.getPackagenameSchemeType();
@@ -188,25 +210,11 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final QualitySelectionMode mode = cfg.getQualitySelectionMode();
         /* Crawl video streams */
         /* Collect list of user desired/allowed qualities */
+        final List<Integer> knownHTTPQualities = getKnownHTTPQualities();
         final List<Integer> selectedQualitiesHeight = getSelectedHTTPQualities();
         final List<String> selectedLanguages = getSelectedLanguages(null);
         // TODO: Implement pagination?
         final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
-        if (videoStreams == null || videoStreams.isEmpty()) {
-            /* This should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* First put each language + audio version in separate lists. */
-        final Map<String, List<Map<String, Object>>> languagePacks = new HashMap<String, List<Map<String, Object>>>();
-        for (final Map<String, Object> videoStream : videoStreams) {
-            final String audioCode = videoStream.get("audioCode").toString();
-            if (!languagePacks.containsKey(audioCode)) {
-                languagePacks.put(audioCode, new ArrayList<Map<String, Object>>());
-            }
-            languagePacks.get(audioCode).add(videoStream);
-        }
         /*
          * Now filter by language, user selected qualities and so on. User can e.g. select multiple languages and best video quality of each
          * combined with subtitle preferences.
@@ -228,12 +236,11 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                     /* 2022-05-25: Only grab HTTP streams for now, skip all others */
                     continue;
                 }
-                // final int width = ((Number) videoStream.get("width")).intValue();
                 final int height = ((Number) videoStream.get("height")).intValue();
                 final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
                 final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
                 final String audioCode = videoStream.get("audioCode").toString(); // e.g. VF, VF-STA, VA, ...
-                final String audioCodeWithoutSubtitleSpec = new Regex(audioCode, "^([A-Z]{1,2})").getMatch(0);
+                // final String audioCodeWithoutSubtitleSpec = new Regex(audioCode, "^([A-Z]{1,2})").getMatch(0);
                 final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
                 /* Set properties which we later need for custom filenames. */
                 link.setProperty(PROPERTY_VIDEO_ID, videoID);
@@ -283,7 +290,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                     bestAllowedFilesize = link.getView().getBytesTotal();
                 }
                 /* Check if user wants this video resolution. */
-                if (selectedQualitiesHeight.contains(getHeightForQualitySelection(height))) {
+                final int heightForQualitySelection = getHeightForQualitySelection(height);
+                if (selectedQualitiesHeight.contains(heightForQualitySelection) || (!knownHTTPQualities.contains(heightForQualitySelection) && cfg.isCrawlUnknownHTTPVideoQualities())) {
                     userSelected.add(link);
                     if (link.getView().getBytesTotal() > bestOfUserSelectedFilesize || bestOfUserSelected == null) {
                         bestOfUserSelected = link;
@@ -331,14 +339,14 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        logger.info("Adding results " + ret.size() + "/" + allResults.size());
+        logger.info("Adding video results " + ret.size() + "/" + allResults.size());
         if (cfg.isCrawlThumbnail()) {
             final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
             final String imageCaption = (String) mainImage.get("caption");
             final DownloadLink thumbnail = this.createDownloadlink("directhttp://" + mainImage.get("url"));
             final String extension = mainImage.get("extension").toString();
             if (ret.size() == 1) {
-                /* Only one result --> Use same filename as that result */
+                /* Only one video result --> Use same filename as that result for thumbnail. */
                 final String filenameOfTheOnlyAddedVideo = ret.get(0).getFinalFileName();
                 thumbnail.setFinalFileName(filenameOfTheOnlyAddedVideo.substring(0, filenameOfTheOnlyAddedVideo.lastIndexOf(".")) + "." + extension);
             } else {
@@ -357,12 +365,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             ret.add(thumbnail);
             distribute(thumbnail);
         }
-        for (final DownloadLink result : ret) {
-            distribute(result);
-        }
         if (ret.isEmpty()) {
             /* This should never happen! */
             logger.warning("WTF Failed to find any results");
+        } else {
+            for (final DownloadLink result : ret) {
+                distribute(result);
+            }
         }
         return ret;
     }
@@ -408,6 +417,16 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         return filename;
     }
 
+    private List<String> getKnownLanguages() {
+        // TODO: Work in progress
+        final List<String> knownLanguages = new ArrayList<String>();
+        knownLanguages.add("en");
+        knownLanguages.add("fr");
+        knownLanguages.add("de");
+        knownLanguages.add("pl");
+        return knownLanguages;
+    }
+
     private List<String> getSelectedLanguages(final String url) {
         // TODO: Work in progress
         // final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
@@ -417,23 +436,34 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         return selectedLanguages;
     }
 
+    private List<Integer> getKnownHTTPQualities() {
+        final List<Integer> knownQualitiesHeight = new ArrayList<Integer>();
+        knownQualitiesHeight.add(1080);
+        knownQualitiesHeight.add(720);
+        knownQualitiesHeight.add(480);
+        knownQualitiesHeight.add(360);
+        knownQualitiesHeight.add(240);
+        return knownQualitiesHeight;
+    }
+
     private List<Integer> getSelectedHTTPQualities() {
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final List<Integer> knownQualities = getKnownHTTPQualities();
         final List<Integer> selectedQualitiesHeight = new ArrayList<Integer>();
         if (cfg.isCrawlHTTP1080p()) {
-            selectedQualitiesHeight.add(1080);
+            selectedQualitiesHeight.add(knownQualities.get(0));
         }
         if (cfg.isCrawlHTTP720p()) {
-            selectedQualitiesHeight.add(720);
+            selectedQualitiesHeight.add(knownQualities.get(1));
         }
         if (cfg.isCrawlHTTP480p()) {
-            selectedQualitiesHeight.add(480);
+            selectedQualitiesHeight.add(knownQualities.get(2));
         }
         if (cfg.isCrawlHTTP360p()) {
-            selectedQualitiesHeight.add(360);
+            selectedQualitiesHeight.add(knownQualities.get(3));
         }
         if (cfg.isCrawlHTTP240p()) {
-            selectedQualitiesHeight.add(240);
+            selectedQualitiesHeight.add(knownQualities.get(4));
         }
         return selectedQualitiesHeight;
     }
