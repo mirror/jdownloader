@@ -16,12 +16,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -61,24 +63,102 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/user/([^/]+)/post/\\d+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/user/[^/]+(/post/\\d+)?");
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_PROFILE = "https?://[^/]+/([^/]+)/user/(\\d+)$";
-    private final String TYPE_POST    = "https?://[^/]+/([^/]+)/user/([^/]+)/post/(\\d+)$";
+    private final String TYPE_PROFILE = "(?:https?://[^/]+)?/([^/]+)/user/([^/\\?]+)(\\?o=(\\d+))?$";
+    private final String TYPE_POST    = "(?:https?://[^/]+)?/([^/]+)/user/([^/]+)/post/(\\d+)$";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        if (param.getCryptedUrl().matches(TYPE_POST)) {
-            return this.crawlPost(param, progress);
+        if (param.getCryptedUrl().matches(TYPE_PROFILE)) {
+            return this.crawlProfile(param);
+        } else if (param.getCryptedUrl().matches(TYPE_POST)) {
+            return this.crawlPost(param);
         } else {
             /* Unsupported URL --> Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
-    private ArrayList<DownloadLink> crawlPost(final CryptedLink param, ProgressController progress) throws Exception {
+    private ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_PROFILE);
+        if (!urlinfo.matches()) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String portal = urlinfo.getMatch(0);
+        final String username = urlinfo.getMatch(1);
+        br.setFollowRedirects(true);
+        /* Always begin on page 1 no matter which page param is given in users' added URL. */
+        br.getPage("https://" + this.getHost() + "/" + portal + "/user/" + username);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().matches(TYPE_PROFILE)) {
+            /* E.g. redirect to main page */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Find number of last page (for logging purposes) */
+        final String[] pages = br.getRegex("href=\"/" + Regex.escape(portal) + "/user/" + Regex.escape(username) + "\\?o=\\d+\"\\s*>\\s*(\\d+)").getColumn(0);
+        int maxpage = 1;
+        for (final String pageStr : pages) {
+            final int page = Integer.parseInt(pageStr);
+            if (page > maxpage) {
+                maxpage = page;
+            }
+        }
+        int totalNumberofItems = -1;
+        String totalNumberofItemsStr = br.getRegex("Showing \\d+ - \\d+ of (\\d+)").getMatch(0);
+        if (totalNumberofItemsStr != null) {
+            totalNumberofItems = Integer.parseInt(totalNumberofItemsStr);
+        } else {
+            totalNumberofItemsStr = "unknown";
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+        fp.setName(portal + " - " + username);
+        final HashSet<String> dupes = new HashSet<String>();
+        int page = 1;
+        do {
+            final String[] posturls = br.getRegex("(?:https?://[^/]+)?/([^/]+)/user/([^/]+)/post/(\\d+)").getColumn(-1);
+            int numberofAddedItems = 0;
+            for (String posturl : posturls) {
+                posturl = br.getURL(posturl).toString();
+                if (dupes.add(posturl)) {
+                    final DownloadLink result = this.createDownloadlink(posturl);
+                    result._setFilePackage(fp);
+                    ret.add(result);
+                    distribute(result);
+                    numberofAddedItems++;
+                }
+            }
+            logger.info("Crawled page " + page + "/" + maxpage + " | Found items: " + ret.size() + "/" + totalNumberofItemsStr);
+            final String nextpageurl = br.getRegex("(/[^\"]+\\?o=\\d+)\"\\s*>\\s*" + (page + 1)).getMatch(0);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (ret.size() == totalNumberofItems) {
+                logger.info("Stopping because: Found all items");
+                break;
+            } else if (nextpageurl == null) {
+                /* Additional fail-safe */
+                logger.info("Stopping because: Failed to find nextpageurl - last page is: " + br.getURL());
+                break;
+            } else if (numberofAddedItems == 0) {
+                logger.info("Stopping because: Failed to find any [new] items on current page");
+                break;
+            } else {
+                page++;
+                br.getPage(nextpageurl);
+            }
+        } while (true);
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlPost(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_POST);
         if (!urlinfo.matches()) {
