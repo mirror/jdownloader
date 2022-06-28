@@ -342,7 +342,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 final String filenameOfTheOnlyAddedVideo = ret.get(0).getFinalFileName();
                 thumbnail.setFinalFileName(filenameOfTheOnlyAddedVideo.substring(0, filenameOfTheOnlyAddedVideo.lastIndexOf(".")) + "." + extension);
             } else {
-                final FilenameSchemeType filenameSchemeType = cfg.getFilenameSchemeType();
+                final FilenameSchemeType filenameSchemeType = cfg.getFilenameSchemeTypeV2();
                 if (filenameSchemeType == FilenameSchemeType.ORIGINAL) {
                     thumbnail.setFinalFileName(mainImage.get("name").toString());
                 } else {
@@ -370,7 +370,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private String getAndSetFilename(final DownloadLink link) {
         String filename;
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
-        final FilenameSchemeType schemeType = cfg.getFilenameSchemeType();
+        final FilenameSchemeType schemeType = cfg.getFilenameSchemeTypeV2();
         String customFilenameScheme = cfg.getFilenameScheme();
         if (schemeType == FilenameSchemeType.CUSTOM && !StringUtils.isEmpty(customFilenameScheme)) {
             /* User customized filename scheme */
