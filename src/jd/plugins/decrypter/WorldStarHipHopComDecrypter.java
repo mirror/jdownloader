@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -23,20 +24,52 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.WorldStarHipHopCom;
 
-//Finds and decrypts embedded videos from worldstarhiphop.com
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "https?://(?:www\\.)?(?:worldstarhiphop|worldstar)\\.com.*/video(\\d+)?\\.php\\?v=[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
     public WorldStarHipHopComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "worldstarhiphop.com", "worldstar.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video(\\d+)?\\.php\\?v=[a-zA-Z0-9]+|videos/[A-Za-z0-9]+/[a-z0-9\\-]+|embed/\\d+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
+        if (WorldStarHipHopCom.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"\\);").getMatch(0);
         if (externID == null) {
             externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\"").getMatch(0);
@@ -80,11 +113,6 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(https?://(www\\.)?break\\.com/embed/[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
-            return decryptedLinks;
-        }
         if (externID == null) {
             externID = br.getRegex("<iframe[^<>]*?src=\"([^\"]+)\"").getMatch(0);
             if (!externID.contains("worldstarhiphop")) {
@@ -94,7 +122,7 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
             }
         }
         // Probably no external video but a selfhosted one, pass it over to the hoster plugin
-        final DownloadLink dl = createDownloadlink(parameter);
+        final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
         decryptedLinks.add(dl);
         return decryptedLinks;
     }

@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -26,10 +28,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.WorldStarHipHopComDecrypter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "https?://(?:www\\.)?(?:worldstarhiphop|worldstar)\\.com.*/video(\\d+)?.php\\?v=([a-zA-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { WorldStarHipHopComDecrypter.class })
 public class WorldStarHipHopCom extends PluginForHost {
     private String dllink = null;
 
@@ -37,9 +42,34 @@ public class WorldStarHipHopCom extends PluginForHost {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        return WorldStarHipHopComDecrypter.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String getAGBLink() {
-        return "http://www.worldstarhiphop.com/videos/termsofuse.php";
+        return "https://worldstarhiphop.com/videos/terms.php";
     }
 
     @Override
@@ -48,74 +78,42 @@ public class WorldStarHipHopCom extends PluginForHost {
     }
 
     @Override
-    public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
-        if (fid != null) {
-            return this.getHost() + "://" + fid;
-        } else {
-            return super.getLinkID(link);
-        }
-    }
-
-    private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
-        }
-        br.setCookie("http://worldstaruncut.com/", "worldstarAdultOk", "true");
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
-        if (br.getURL().contains("worldstaruncut.com/")) {
-            if (br.getURL().equals("http://www.worldstarhiphop.com/videos/")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            getURLUniversal();
-            filename = br.getRegex("<title>([^<>]*?) \\- World Star Uncut</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<td width=\"607\" class=\"style4\">([^<>\"]*?) \\(\\*Warning\\*").getMatch(0);
-            }
-        } else if (br.getURL().contains("worldstarcandy.com/")) {
-            filename = br.getRegex("color:#023a70; font\\-size:28px;\">([^<>\"]*?)</span>").getMatch(0);
-            getURLUniversal();
-        } else {
-            if (br.containsHTML("<title>Video: No Video </title>") || !this.canHandle(br.getURL())) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {
-                link.setName(new Regex(link.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0));
-                link.getLinkStatus().setStatusText("Video temporarily unavailable");
-                return AvailableStatus.TRUE;
-            }
-            filename = br.getRegex("\"content-heading\">\\s*<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?)( | Video )?</title>").getMatch(0);
-            }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) {
-                filename = Encoding.htmlDecode(filename.trim());
-                link.getLinkStatus().setStatusText("This video is blocked in your country");
-                link.setName(filename + ".mp4");
-                return AvailableStatus.TRUE;
-            }
-            dllink = br.getRegex("v=playFLV\\.php\\?loc=(https?://.*?\\.(mp4|flv))\\&amp;").getMatch(0);
+        if (br.containsHTML("<title>Video: No Video </title>") || !this.canHandle(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {
+            link.setName(new Regex(link.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText("Video temporarily unavailable");
+            return AvailableStatus.TRUE;
+        }
+        filename = br.getRegex("\"content-heading\">\\s*<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)( | Video )?</title>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) {
+            filename = Encoding.htmlDecode(filename.trim());
+            link.getLinkStatus().setStatusText("This video is blocked in your country");
+            link.setName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        }
+        dllink = br.getRegex("v=playFLV\\.php\\?loc=(https?://.*?\\.(mp4|flv))\\&amp;").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(https?://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(https?://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
+                dllink = br.getRegex("v=(https?://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("v=(https?://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
-                    if (dllink == null) {
-                        getURLUniversal();
-                    }
+                    getURLUniversal();
                 }
             }
         }
@@ -151,6 +149,14 @@ public class WorldStarHipHopCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static final boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
