@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -160,7 +161,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {
             return this.crawlSingleTweet(param, account);
         } else {
-            return this.crawlUserViaAPI(param, account);
+            return this.crawlUser(param, account);
         }
     }
 
@@ -438,7 +439,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                         dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
                     } else if (type.equals("photo")) {
-                        final String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
+                        String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
+                        if (StringUtils.isEmpty(photoURL)) {
+                            photoURL = (String) media.get("media_url_https");
+                        }
                         if (StringUtils.isEmpty(photoURL)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
@@ -661,8 +665,18 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
     }
 
+    private ArrayList<DownloadLink> crawlUser(final CryptedLink param, final Account account) throws Exception {
+        final boolean crawlRetweets = false;
+        if (crawlRetweets && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return this.crawlUserViaWebAPI(param, account);
+        } else {
+            return crawlUserViaAPI(param, account);
+        }
+    }
+
+    /** Crawls only tweets that were posted by the profile in given URL, no re-tweets!!! */
     private ArrayList<DownloadLink> crawlUserViaAPI(final CryptedLink param, final Account account) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         logger.info("Crawling user profile via API");
         final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
         if (username == null) {
@@ -674,33 +688,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_LIKED_ITEMS_OF_PROFILE_" + username, "Account is required to crawl liked items of profiles.");
         }
         this.prepareAPI(br, account);
-        final boolean use_old_api_to_get_userid = true;
-        final Map<String, Object> user;
-        if (use_old_api_to_get_userid) {
-            /* https://developer.twitter.com/en/docs/accounts-and-users/follow-search-get-users/api-reference/get-users-show */
-            /* https://developer.twitter.com/en/docs/twitter-api/rate-limits */
-            /* per 15 mins window, 300 per app, 900 per user */
-            br.getPage("https://api.twitter.com/1.1/users/lookup.json?screen_name=" + username);
-            if (br.getHttpConnection().getResponseCode() == 403) {
-                /* {"errors":[{"code":22,"message":"Not authorized to view the specified user."}]} */
-                throw new AccountRequiredException();
-            } else if (br.getHttpConnection().getResponseCode() == 404) {
-                /* {"errors":[{"code":17,"message":"No user matches for specified terms."}]} */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Object responseO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
-            if (!(responseO instanceof List)) {
-                logger.warning("Unknown API error/response");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final List<Map<String, Object>> users = (List<Map<String, Object>>) responseO;
-            user = users.get(0);
-        } else {
-            br.getPage("https://api.twitter.com/graphql/DO_NOT_USE_ATM_2020_02_05/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + username + "%22%2C%22withHighlightedLabel%22%3Afalse%7D");
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
-            // userID = (String) user.get("rest_id");
-        }
+        final Map<String, Object> user = this.getUserInfo(br, account, username);
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final String userID = user.get("id_str").toString();
         /* = number of tweets */
@@ -745,8 +733,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
             content_type = "favorites";
             final int favoritesCount = ((Number) user.get("favourites_count")).intValue();
             if (favoritesCount == 0) {
-                decryptedLinks.add(getDummyErrorProfileContainsNoLikedItems(username));
-                return decryptedLinks;
+                ret.add(getDummyErrorProfileContainsNoLikedItems(username));
+                return ret;
             }
             maxCount = favoritesCount;
             query.append("simple_quoted_tweets", "true", false);
@@ -755,8 +743,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_USER_MEDIA) || force_grab_media) {
             logger.info("Crawling self posted media only from user: " + username);
             if (media_count == 0) {
-                decryptedLinks.add(getDummyErrorProfileContainsNoMediaItems(username));
-                return decryptedLinks;
+                ret.add(getDummyErrorProfileContainsNoMediaItems(username));
+                return ret;
             }
             content_type = "media";
             maxCount = media_count;
@@ -770,8 +758,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
             logger.info("Crawling ALL media of a user e.g. also retweets | user: " + username);
             if (tweet_count == 0) {
                 /* Profile contains zero tweets! */
-                decryptedLinks.add(getDummyErrorProfileContainsNoTweets(username));
-                return decryptedLinks;
+                ret.add(getDummyErrorProfileContainsNoTweets(username));
+                return ret;
             }
             content_type = "profile";
             maxCount = tweet_count;
@@ -810,7 +798,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final HashSet<String> cursorDupes = new HashSet<String>();
         final String apiURL = "https://api.twitter.com/2/timeline/" + content_type + "/" + userID + ".json";
         tweetTimeline: do {
-            logger.info("Crawling page " + page);
             final UrlQuery thisquery = query;
             if (!StringUtils.isEmpty(nextCursor)) {
                 thisquery.append("cursor", nextCursor, true);
@@ -827,7 +814,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
                 final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(tweet.get("user_id_str").toString());
-                decryptedLinks.addAll(crawlTweetMap(tweet, userWhoPostedThisTweet, fp));
+                ret.addAll(crawlTweetMap(tweet, userWhoPostedThisTweet, fp));
                 totalWalkedThroughTweetsCount++;
                 lastCreatedAtDateStr = (String) tweet.get("created_at");
                 final long currentTweetTimestamp = TimeFormatter.getMilliSeconds(lastCreatedAtDateStr, "EEE MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
@@ -880,15 +867,106 @@ public class TwitterComCrawler extends PluginForDecrypt {
             this.sleep(cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds(), param);
         } while (!this.isAbort());
         logger.info("Done after " + page + " pages | last nextCursor = " + nextCursor);
-        if (decryptedLinks.isEmpty()) {
+        if (ret.isEmpty()) {
             logger.info("Found nothing --> Either user has no posts containing media or those can only be viewed by certain users or only when logged in (explicit content)");
             if (account == null) {
                 throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "PROFILE_CONTAINS_ONLY_EXPLICIT_CONTENT_ACCOUNT_REQUIRED_" + username, "Profile " + username + " contains only explicit content which can only be viewed when logged in --> Add a twitter account to JDownloader and try again!");
             } else {
-                decryptedLinks.add(getDummyErrorProfileContainsNoDownloadableContent(username));
+                ret.add(getDummyErrorProfileContainsNoDownloadableContent(username));
             }
         }
-        return decryptedLinks;
+        return ret;
+    }
+
+    /** Crawls tweets AND re-tweets of profile in given URL. */
+    private ArrayList<DownloadLink> crawlUserViaWebAPI(final CryptedLink param, final Account account) throws Exception {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser brc = br.cloneBrowser();
+        /* TODO: Auto-fetch this URL from mainpage as it will change over time. */
+        brc.getPage("https://abs.twimg.com/responsive-web/client-web/main.d7efe778.js");
+        final String queryID = brc.getRegex("queryId\\s*:\\s*\"([^\"]+)\",\\s*operationName\\s*:\\s*\"UserTweets\"").getMatch(0);
+        if (queryID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String userID = this.getUserID(br, account, username);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        int totalWalkedThroughTweetsCount = 0;
+        int page = 1;
+        br.getPage("https://twitter.com/i/api/graphql/" + queryID + "/UserTweets?variables=%7B%22userId%22%3A%22" + userID + "%22%2C%22count%22%3A40%2C%22includePromotedContent%22%3Atrue%2C%22withQuickPromoteEligibilityTweetFields%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22dont_mention_me_view_api_enabled%22%3Atrue%2C%22interactive_text_enabled%22%3Atrue%2C%22responsive_web_uc_gql_enabled%22%3Afalse%2C%22vibe_tweet_context_enabled%22%3Afalse%2C%22responsive_web_edit_tweet_api_enabled%22%3Afalse%2C%22standardized_nudges_misinfo%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        /* TODO */
+        final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
+        for (final Map<String, Object> timelineInstruction : timelineInstructions) {
+            if (!timelineInstruction.get("type").toString().equalsIgnoreCase("TimelineAddEntries")) {
+                continue;
+            }
+            final List<Map<String, Object>> timelineEntries = (List<Map<String, Object>>) timelineInstruction.get("entries");
+            for (final Map<String, Object> timelineEntry : timelineEntries) {
+                final Map<String, Object> result = (Map<String, Object>) JavaScriptEngineFactory.walkJson(timelineEntry, "content/itemContent/tweet_results/result");
+                if (!result.get("__typename").toString().equalsIgnoreCase("Tweet")) {
+                    continue;
+                }
+                // TODO: Check if this is the correct user object
+                final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(result, "core/user_results/result/legacy");
+                final Map<String, Object> tweet = (Map<String, Object>) result.get("legacy");
+                if (tweet == null) {
+                    continue;
+                }
+                ret.addAll(crawlTweetMap(tweet, usr, fp));
+                totalWalkedThroughTweetsCount += 1;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Obtains information about given username via old API. </br>
+     * The response of this will also expose the users' userID which is often needed to perform further API requests.
+     */
+    private Map<String, Object> getUserInfo(final Browser br, final Account account, final String username) throws Exception {
+        this.prepareAPI(br, account);
+        final boolean use_old_api_to_get_userid = true;
+        final Map<String, Object> user;
+        if (use_old_api_to_get_userid) {
+            /* https://developer.twitter.com/en/docs/accounts-and-users/follow-search-get-users/api-reference/get-users-show */
+            /* https://developer.twitter.com/en/docs/twitter-api/rate-limits */
+            /* per 15 mins window, 300 per app, 900 per user */
+            br.getPage("https://api.twitter.com/1.1/users/lookup.json?screen_name=" + username);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                /* {"errors":[{"code":22,"message":"Not authorized to view the specified user."}]} */
+                throw new AccountRequiredException();
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                /* {"errors":[{"code":17,"message":"No user matches for specified terms."}]} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Object responseO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            if (!(responseO instanceof List)) {
+                logger.warning("Unknown API error/response");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final List<Map<String, Object>> users = (List<Map<String, Object>>) responseO;
+            user = users.get(0);
+        } else {
+            br.getPage("https://api.twitter.com/graphql/DO_NOT_USE_ATM_2020_02_05/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + username + "%22%2C%22withHighlightedLabel%22%3Afalse%7D");
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
+            // userID = (String) user.get("rest_id");
+        }
+        return user;
+    }
+
+    private String getUserID(final Browser br, final Account account, final String username) throws Exception {
+        final Map<String, Object> user = getUserInfo(br, account, username);
+        return user.get("id_str").toString();
     }
 
     private final String PROPERTY_RESUME = "twitterResume";
