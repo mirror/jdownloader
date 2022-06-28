@@ -32,9 +32,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:[\\w\\-]+.)?(?:we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:[\\w\\-]+.)?(?:(?:we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
 public class WeTransferComFolder extends PluginForDecrypt {
     public WeTransferComFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,8 +55,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
             br.getPage(parameter);
             final String redirect = br.getRedirectLocation();
             if (redirect == null || (redirect != null && redirect.contains("/error"))) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
@@ -64,15 +65,13 @@ public class WeTransferComFolder extends PluginForDecrypt {
         final String recipient_id = urlregex.getMatch(1);
         final String security_hash = urlregex.getMatch(2);
         if (security_hash == null || id_main == null) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Allow redirects for change to https
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 410 || br.getHttpConnection().getResponseCode() == 503) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String csrfToken = br.getRegex("name\\s*=\\s*\"csrf-token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
         final String domain_user_id = br.getRegex("user\\s*:\\s*\\{\\s*\"key\"\\s*:\\s*\"(.*?)\"").getMatch(0);
@@ -95,10 +94,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
         Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         final String state = (String) map.get("state");
         if (!"downloadable".equals(state)) {
-            final DownloadLink link = this.createOfflinelink(parameter);
-            link.setName(("(") + state + ")" + link.getName());
-            decryptedLinks.add(link);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (shortID == null) {
             /* Fallback */
