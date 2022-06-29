@@ -23,6 +23,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,20 +51,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrg extends PluginForDecrypt {
@@ -70,27 +69,27 @@ public class ArchiveOrg extends PluginForDecrypt {
 
     private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     final Set<String>                     dups           = new HashSet<String>();
-    private PluginForHost                 hostPlugin     = null;
+    private jd.plugins.hoster.ArchiveOrg  hostPlugin     = null;
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        hostPlugin = getNewPluginForHostInstance("archive.org");
-        final String parameter = param.toString().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/");
+        hostPlugin = (jd.plugins.hoster.ArchiveOrg) getNewPluginForHostInstance("archive.org");
+        param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
          */
-        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("archive.org"));
-        if (aa != null) {
-            ((jd.plugins.hoster.ArchiveOrg) hostPlugin).login(aa, false);
+        final Account account = AccountController.getInstance().getValidAccount("archive.org");
+        if (account != null) {
+            hostPlugin.login(account, false);
         }
         URLConnectionAdapter con = null;
-        boolean isArchiveContent = isArchiveURL(parameter);
+        boolean isArchiveContent = isArchiveURL(param.getCryptedUrl());
         if (isArchiveContent) {
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
         } else {
             try {
                 /* Check if we have a direct URL --> Host plugin */
-                con = br.openGetConnection(parameter);
+                con = br.openGetConnection(param.getCryptedUrl());
                 isArchiveContent = isArchiveURL(con.getURL().toString());
                 /*
                  * 2020-03-04: E.g. directurls will redirect to subdomain e.g. ia800503.us.archive.org --> Sometimes the only way to differ
@@ -99,7 +98,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                 final String host = Browser.getHost(con.getURL(), true);
                 if (!isArchiveContent && (this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org"))) {
                     // final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
-                    final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", parameter, true);
+                    final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", param.getCryptedUrl(), true);
                     if (this.looksLikeDownloadableContent(con)) {
                         if (con.getCompleteContentLength() > 0) {
                             dl.setVerifiedFileSize(con.getCompleteContentLength());
@@ -146,28 +145,25 @@ public class ArchiveOrg extends PluginForDecrypt {
         final boolean isOfficiallyDownloadable = br.containsHTML("class=\"download-button\"") && !br.containsHTML("class=\"download-lending-message\"");
         final boolean isBookPreviewAvailable = br.containsHTML("schema\\.org/Book");
         if (isBookPreviewAvailable && !isOfficiallyDownloadable) {
-            return crawlBookPreview(param, parameter);
+            return crawlBook(param, account);
         } else if (isArchiveContent) {
             return crawlArchiveContent();
-        } else if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
-            return crawlDetails(param, parameter);
+        } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/details/")) {
+            return crawlDetails(param);
         } else {
-            return crawlFiles(param, parameter);
+            return crawlFiles(param);
         }
     }
 
-    private ArrayList<DownloadLink> crawlFiles(CryptedLink param, String parameter) throws Exception {
+    private ArrayList<DownloadLink> crawlFiles(final CryptedLink param) throws Exception {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The item is not available")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        if (!br.containsHTML("\"/download/")) {
-            logger.info("Maybe invalid link or nothing there to download: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("\"/download/")) {
+            logger.info("Maybe invalid link or nothing there to download: " + param.getCryptedUrl());
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
-        String subfolderPath = new Regex(parameter, "https?://[^/]+/download/(.*?)/?$").getMatch(0);
+        String subfolderPath = new Regex(param.getCryptedUrl(), "https?://[^/]+/download/(.*?)/?$").getMatch(0);
         subfolderPath = Encoding.urlDecode(subfolderPath, false);
         // final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
         final String fpName = subfolderPath;
@@ -238,10 +234,10 @@ public class ArchiveOrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> crawlDetails(CryptedLink param, String parameter) throws Exception {
+    private ArrayList<DownloadLink> crawlDetails(final CryptedLink param) throws Exception {
         if (br.containsHTML("id=\"gamepadtext\"")) {
             /* 2020-09-29: Rare case: Download browser emulated games */
-            final String subfolderPath = new Regex(parameter, "/details/([^/]+)").getMatch(0);
+            final String subfolderPath = new Regex(param.getCryptedUrl(), "/details/([^/]+)").getMatch(0);
             br.getPage("https://archive.org/download/" + subfolderPath + "/" + subfolderPath + "_files.xml");
             this.crawlXML(this.br, subfolderPath);
             return this.decryptedLinks;
@@ -250,7 +246,7 @@ public class ArchiveOrg extends PluginForDecrypt {
         int page = 2;
         do {
             if (br.containsHTML("This item is only available to logged in Internet Archive users")) {
-                decryptedLinks.add(createDownloadlink(parameter.replace("/details/", "/download/")));
+                decryptedLinks.add(createDownloadlink(param.getCryptedUrl().replace("/details/", "/download/")));
                 break;
             }
             final String showAll = br.getRegex("href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
@@ -302,16 +298,30 @@ public class ArchiveOrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> crawlBookPreview(CryptedLink param, String parameter) throws Exception {
+    private ArrayList<DownloadLink> crawlBook(final CryptedLink param, final Account account) throws Exception {
         /* Crawl all pages of a book */
-        final String bookAjaxURL = br.getRegex("\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
+        final String bookID = new Regex(br.getURL(), "https?://[^/]+/(?:details|download)/([^/]+)").getMatch(0);
+        if (bookID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (account != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* Try to borrow book if account is available */
+            final Browser brc = br.cloneBrowser();
+            this.hostPlugin.borrowBook(brc, account, bookID);
+            /* Refresh page */
+            br.getPage(br.getURL());
+        }
+        String bookAjaxURL = br.getRegex("\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
         if (bookAjaxURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (bookAjaxURL.contains(bookID) && !bookAjaxURL.endsWith(bookID)) {
+            bookAjaxURL = new Regex(bookAjaxURL, "(.+" + Regex.escape(bookID) + ")").getMatch(0);
+        }
         br.getPage(bookAjaxURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Object> data = (Map<String, Object>) root.get("data");
@@ -367,7 +377,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                 /* Assume all are online & downloadable */
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_IS_BOOK_PREVIEW, true);
+                dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_IS_BOOK, true);
                 /* Important! These URLs are not static! Make sure user cannot add the same pages multiple times! */
                 dl.setLinkID(this.getHost() + "://" + bookId + pageNum);
                 decryptedLinks.add(dl);
@@ -462,7 +472,7 @@ public class ArchiveOrg extends PluginForDecrypt {
 
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        return ((jd.plugins.hoster.ArchiveOrg) hostPlugin).looksLikeDownloadableContent(urlConnection);
+        return hostPlugin.looksLikeDownloadableContent(urlConnection);
     }
 
     /* NO OVERRIDE!! */

@@ -35,7 +35,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -528,7 +527,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
 
     private FilePackage getFilePackage(final String name) {
         final FilePackage fp = FilePackage.getInstance();
-        fp.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, false);
+        fp.setCleanupPackageName(false);
         fp.setName(name);
         return fp;
     }

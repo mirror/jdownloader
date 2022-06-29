@@ -41,7 +41,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -151,8 +150,8 @@ public class RedditCom extends PluginForDecrypt {
         query.add("limit", Integer.toString(maxItemsPerCall));
         int page = 1;
         int numberofItemsCrawled = 0;
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-        fp.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, false);
+        fp.setAllowMerge(true);
+        fp.setCleanupPackageName(false);
         do {
             br.getPage(url + "?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {

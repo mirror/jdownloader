@@ -897,10 +897,6 @@ public class DirectHTTP extends antiDDoSForHost {
             if (downloadLink.getFinalFileName() == null) {
                 /* Restore filename from property */
                 String fileName = downloadLink.getStringProperty(FIXNAME, null);
-                if (fileName == null && downloadLink.getBooleanProperty("MOVIE2K", false)) {
-                    final String ext = new Regex(contentType, "(audio|video)/(x\\-)?(.*?)$").getMatch(2);
-                    fileName = downloadLink.getName() + "." + ext;
-                }
                 if (fileName == null) {
                     final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(urlConnection);
                     if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {

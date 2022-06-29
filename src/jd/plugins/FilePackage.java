@@ -21,14 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import jd.config.Property;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.controlling.packagecontroller.PackageControllerComparator;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
@@ -39,6 +31,15 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 
 /**
  * Diese Klasse verwaltet Pakete
@@ -54,99 +55,99 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     static {
         FP = new FilePackage() {
             final private FilePackageView view             = new FilePackageView(this) {
-                @Override
-                public boolean isEnabled() {
-                    return false;
-                }
+                                                               @Override
+                                                               public boolean isEnabled() {
+                                                                   return false;
+                                                               }
 
-                @Override
-                public int size() {
-                    return 0;
-                }
+                                                               @Override
+                                                               public int size() {
+                                                                   return 0;
+                                                               }
 
-                @Override
-                public PluginStateCollection getPluginStates() {
-                    return super.getPluginStates();
-                }
+                                                               @Override
+                                                               public PluginStateCollection getPluginStates() {
+                                                                   return super.getPluginStates();
+                                                               }
 
-                @Override
-                public DomainInfo[] getDomainInfos() {
-                    return new DomainInfo[0];
-                }
+                                                               @Override
+                                                               public DomainInfo[] getDomainInfos() {
+                                                                   return new DomainInfo[0];
+                                                               }
 
-                @Override
-                public long getSize() {
-                    return -1l;
-                }
+                                                               @Override
+                                                               public long getSize() {
+                                                                   return -1l;
+                                                               }
 
-                @Override
-                public long getDone() {
-                    return -1;
-                }
+                                                               @Override
+                                                               public long getDone() {
+                                                                   return -1;
+                                                               }
 
-                @Override
-                public long getETA() {
-                    return -1;
-                }
+                                                               @Override
+                                                               public long getETA() {
+                                                                   return -1;
+                                                               }
 
-                @Override
-                public boolean isFinished() {
-                    return false;
-                }
+                                                               @Override
+                                                               public boolean isFinished() {
+                                                                   return false;
+                                                               }
 
-                @Override
-                public int getDisabledCount() {
-                    return 0;
-                }
+                                                               @Override
+                                                               public int getDisabledCount() {
+                                                                   return 0;
+                                                               }
 
-                @Override
-                public long getFinishedDate() {
-                    return -1l;
-                }
+                                                               @Override
+                                                               public long getFinishedDate() {
+                                                                   return -1l;
+                                                               }
 
-                @Override
-                public FilePackageView aggregate() {
-                    return this;
-                }
+                                                               @Override
+                                                               public FilePackageView aggregate() {
+                                                                   return this;
+                                                               }
 
-                @Override
-                public String getCommonSourceUrl() {
-                    return null;
-                }
+                                                               @Override
+                                                               public String getCommonSourceUrl() {
+                                                                   return null;
+                                                               }
 
-                @Override
-                public int getOfflineCount() {
-                    return 0;
-                }
+                                                               @Override
+                                                               public int getOfflineCount() {
+                                                                   return 0;
+                                                               }
 
-                @Override
-                public int getOnlineCount() {
-                    return 0;
-                }
+                                                               @Override
+                                                               public int getOnlineCount() {
+                                                                   return 0;
+                                                               }
 
-                @Override
-                public void requestUpdate() {
-                }
+                                                               @Override
+                                                               public void requestUpdate() {
+                                                               }
 
-                @Override
-                public boolean updateRequired() {
-                    return false;
-                }
+                                                               @Override
+                                                               public boolean updateRequired() {
+                                                                   return false;
+                                                               }
 
-                @Override
-                public ChildrenAvailablility getAvailability() {
-                    return ChildrenAvailablility.UNKNOWN;
-                }
+                                                               @Override
+                                                               public ChildrenAvailablility getAvailability() {
+                                                                   return ChildrenAvailablility.UNKNOWN;
+                                                               }
 
-                @Override
-                public String getMessage(Object requestor) {
-                    return null;
-                }
+                                                               @Override
+                                                               public String getMessage(Object requestor) {
+                                                                   return null;
+                                                               }
 
-                public PackageController<FilePackage, DownloadLink> getControlledby() {
-                    return null;
-                }
-            };
+                                                               public PackageController<FilePackage, DownloadLink> getControlledby() {
+                                                                   return null;
+                                                               }
+                                                           };
             private static final long     serialVersionUID = 1L;
 
             @Override
@@ -171,7 +172,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             /**
              *
              */
-             private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 1L;
 
             @Override
             public boolean isEmpty() {
@@ -213,7 +214,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      *
      * @return
      */
-     public static FilePackage getDefaultFilePackage() {
+    public static FilePackage getDefaultFilePackage() {
         return FP;
     }
 
@@ -236,7 +237,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     /**
      * @return the uniqueID
      */
-     public UniqueAlltimeID getUniqueID() {
+    public UniqueAlltimeID getUniqueID() {
         if (uniqueID == null) {
             synchronized (this) {
                 if (uniqueID == null) {
@@ -255,8 +256,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      *
      * @see java.lang.Object#hashCode()
      */
-     @Override
-     public int hashCode() {
+    @Override
+    public int hashCode() {
         return getUniqueID().hashCode();
     }
 
@@ -265,8 +266,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      *
      * @see java.lang.Object#equals(java.lang.Object)
      */
-     @Override
-     public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj == null) {
             return false;
         } else if (obj == this) {
@@ -278,420 +279,469 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         } else {
             return false;
         }
-     }
+    }
 
-     /**
-      * return a new FilePackage instance
-      *
-      * @return
-      */
-     public static FilePackage getInstance() {
-         return new FilePackage();
-     }
+    /**
+     * return a new FilePackage instance
+     *
+     * @return
+     */
+    public static FilePackage getInstance() {
+        return new FilePackage();
+    }
 
-     /**
-      * private constructor for FilePackage, sets created timestamp and downloadDirectory
-      */
-     private FilePackage() {
-         downloadDirectory = GENERALSETTINGS.getDefaultDownloadFolder();
-         created = System.currentTimeMillis();
-         modified = created;
-         /* till refactoring is complete */
-         this.downloadLinkList = new ArrayList<DownloadLink>();
-         setName(null);
-         if (GENERALSETTINGS.isAutoSortChildrenEnabled()) {
-             sorter = PackageControllerComparator.SORTER_ASC;
-         }
-     }
+    /**
+     * private constructor for FilePackage, sets created timestamp and downloadDirectory
+     */
+    private FilePackage() {
+        downloadDirectory = GENERALSETTINGS.getDefaultDownloadFolder();
+        created = System.currentTimeMillis();
+        modified = created;
+        /* till refactoring is complete */
+        this.downloadLinkList = new ArrayList<DownloadLink>();
+        setName(null);
+        if (GENERALSETTINGS.isAutoSortChildrenEnabled()) {
+            sorter = PackageControllerComparator.SORTER_ASC;
+        }
+    }
 
-     /**
-      * return this FilePackage created timestamp
-      *
-      * @return
-      */
-     public long getCreated() {
-         return created;
-     }
+    /**
+     * return this FilePackage created timestamp
+     *
+     * @return
+     */
+    public long getCreated() {
+        return created;
+    }
 
-     /**
-      * set this FilePackage created timestamp
-      *
-      * @param created
-      */
-     public void setCreated(long created) {
-         this.created = created;
-     }
+    /**
+     * set this FilePackage created timestamp
+     *
+     * @param created
+     */
+    public void setCreated(long created) {
+        this.created = created;
+    }
 
-     /**
-      * add given DownloadLink to this FilePackage. delegates the call to DownloadControllerInterface if it is set
-      *
-      * @param link
-      */
-     public void add(DownloadLink link) {
-         _add(link);
-     }
+    /**
+     * add given DownloadLink to this FilePackage. delegates the call to DownloadControllerInterface if it is set
+     *
+     * @param link
+     */
+    public void add(DownloadLink link) {
+        _add(link);
+    }
 
-     /**
-      * add the given DownloadLinks to this FilePackage. delegates the call to the DownloadControllerInterface if it is set
-      *
-      * @param links
-      */
-     public void addLinks(ArrayList<DownloadLink> links) {
-         if (links == null || links.size() == 0) {
-             return;
-         }
-         _add(links.toArray(new DownloadLink[links.size()]));
-     }
+    /**
+     * add the given DownloadLinks to this FilePackage. delegates the call to the DownloadControllerInterface if it is set
+     *
+     * @param links
+     */
+    public void addLinks(ArrayList<DownloadLink> links) {
+        if (links == null || links.size() == 0) {
+            return;
+        }
+        _add(links.toArray(new DownloadLink[links.size()]));
+    }
 
-     /**
-      * add the given DownloadLinks to this FilePackage. delegates the call to the DownloadControllerInterface if it is set
-      *
-      * @param links
-      */
-     public void _add(DownloadLink... links) {
-         if (links == null || links.length == 0) {
-             return;
-         }
-         if (this.controlledby == null) {
-             getModifyLock().writeLock();
-             boolean notifyStructureChanges = false;
-             try {
-                 for (DownloadLink link : links) {
-                     if (!this.downloadLinkList.contains(link)) {
-                         notifyStructureChanges = true;
-                         link.setParentNode(this);
-                         this.downloadLinkList.add(link);
-                     }
-                 }
-             } finally {
-                 getModifyLock().writeUnlock();
-                 if (notifyStructureChanges) {
-                     nodeUpdated(this, NOTIFY.STRUCTURE_CHANCE, null);
-                 }
-             }
-         } else {
-             this.controlledby.moveOrAddAt(this, Arrays.asList(links), -1);
-         }
-     }
+    /**
+     * add the given DownloadLinks to this FilePackage. delegates the call to the DownloadControllerInterface if it is set
+     *
+     * @param links
+     */
+    public void _add(DownloadLink... links) {
+        if (links == null || links.length == 0) {
+            return;
+        }
+        if (this.controlledby == null) {
+            getModifyLock().writeLock();
+            boolean notifyStructureChanges = false;
+            try {
+                for (DownloadLink link : links) {
+                    if (!this.downloadLinkList.contains(link)) {
+                        notifyStructureChanges = true;
+                        link.setParentNode(this);
+                        this.downloadLinkList.add(link);
+                    }
+                }
+            } finally {
+                getModifyLock().writeUnlock();
+                if (notifyStructureChanges) {
+                    nodeUpdated(this, NOTIFY.STRUCTURE_CHANCE, null);
+                }
+            }
+        } else {
+            this.controlledby.moveOrAddAt(this, Arrays.asList(links), -1);
+        }
+    }
 
-     @Override
-     public void setCurrentSorter(PackageControllerComparator<AbstractNode> comparator) {
-         sorter = comparator;
-     }
+    @Override
+    public void setCurrentSorter(PackageControllerComparator<AbstractNode> comparator) {
+        sorter = comparator;
+    }
 
-     /**
-      * return the download folder of this FilePackage
-      *
-      * @return
-      */
-     public String getDownloadDirectory() {
-         return downloadDirectory;
-     }
+    /**
+     * return the download folder of this FilePackage
+     *
+     * @return
+     */
+    public String getDownloadDirectory() {
+        return downloadDirectory;
+    }
 
-     /**
-      * return the name of this FilePackage
-      *
-      * @return
-      */
-     public String getName() {
-         return name;
-     }
+    /**
+     * return the name of this FilePackage
+     *
+     * @return
+     */
+    public String getName() {
+        return name;
+    }
 
-     /**
-      * remove the given DownloadLinks from this FilePackage. delegates remove call to DownloadControllerInterface if it is set
-      *
-      * @param link
-      */
-     public void remove(DownloadLink... links) {
-         if (links == null || links.length == 0) {
-             return;
-         }
-         if (this.controlledby == null) {
-             getModifyLock().writeLock();
-             boolean notifyStructureChanges = false;
-             try {
-                 for (DownloadLink link : links) {
-                     if ((this.downloadLinkList.remove(link))) {
-                         notifyStructureChanges = true;
-                         /*
-                          * set FilePackage to null if the link was controlled by this FilePackage
-                          */
-                         if (link.getFilePackage() == this) {
-                             link.setParentNode(null);
-                         }
-                     }
-                 }
-             } finally {
-                 getModifyLock().writeUnlock();
-                 if (notifyStructureChanges) {
-                     nodeUpdated(this, NOTIFY.STRUCTURE_CHANCE, null);
-                 }
-             }
-         } else {
-             this.controlledby.removeChildren(this, Arrays.asList(links), true);
-         }
-     }
+    /**
+     * remove the given DownloadLinks from this FilePackage. delegates remove call to DownloadControllerInterface if it is set
+     *
+     * @param link
+     */
+    public void remove(DownloadLink... links) {
+        if (links == null || links.length == 0) {
+            return;
+        }
+        if (this.controlledby == null) {
+            getModifyLock().writeLock();
+            boolean notifyStructureChanges = false;
+            try {
+                for (DownloadLink link : links) {
+                    if ((this.downloadLinkList.remove(link))) {
+                        notifyStructureChanges = true;
+                        /*
+                         * set FilePackage to null if the link was controlled by this FilePackage
+                         */
+                        if (link.getFilePackage() == this) {
+                            link.setParentNode(null);
+                        }
+                    }
+                }
+            } finally {
+                getModifyLock().writeUnlock();
+                if (notifyStructureChanges) {
+                    nodeUpdated(this, NOTIFY.STRUCTURE_CHANCE, null);
+                }
+            }
+        } else {
+            this.controlledby.removeChildren(this, Arrays.asList(links), true);
+        }
+    }
 
-     public void setComment(String comment) {
-         final boolean changed;
-         if (comment == null || comment.length() == 0) {
-             changed = this.setProperty(PROPERTY_COMMENT, Property.NULL);
-         } else {
-             changed = this.setProperty(PROPERTY_COMMENT, comment);
-         }
-         if (changed && hasNotificationListener()) {
-             nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.COMMENT, getComment()));
-         }
-     }
+    public void setComment(String comment) {
+        final boolean changed;
+        if (comment == null || comment.length() == 0) {
+            changed = this.setProperty(PROPERTY_COMMENT, Property.NULL);
+        } else {
+            changed = this.setProperty(PROPERTY_COMMENT, comment);
+        }
+        if (changed && hasNotificationListener()) {
+            nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.COMMENT, getComment()));
+        }
+    }
 
-     public String getComment() {
-         return this.getStringProperty(PROPERTY_COMMENT, null);
-     }
+    public String getComment() {
+        return this.getStringProperty(PROPERTY_COMMENT, null);
+    }
 
-     /**
-      * set the download folder for this FilePackage
-      *
-      * @param subFolder
-      */
-     public void setDownloadDirectory(String folder) {
-         if (StringUtils.isEmpty(folder)) {
-             folder = GENERALSETTINGS.getDefaultDownloadFolder();
-         } else if (!CrossSystem.isAbsolutePath(folder)) {
-             LoggerFactory.I().getDefaultLogger().severe("FilePackage: setDownloadDirectory only allows absolute paths(" + folder + ")! Using default one!");
-             folder = GENERALSETTINGS.getDefaultDownloadFolder();
-         }
-         final String lFolder = getDownloadDirectory();
-         if (lFolder != null && lFolder.equals(folder)) {
-             return;
-         }
-         downloadDirectory = dedupeString(folder.trim());
-         if (hasNotificationListener()) {
-             nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.FOLDER, getDownloadDirectory()));
-         }
-     }
+    /**
+     * set the download folder for this FilePackage
+     *
+     * @param subFolder
+     */
+    public void setDownloadDirectory(String folder) {
+        if (StringUtils.isEmpty(folder)) {
+            folder = GENERALSETTINGS.getDefaultDownloadFolder();
+        } else if (!CrossSystem.isAbsolutePath(folder)) {
+            LoggerFactory.I().getDefaultLogger().severe("FilePackage: setDownloadDirectory only allows absolute paths(" + folder + ")! Using default one!");
+            folder = GENERALSETTINGS.getDefaultDownloadFolder();
+        }
+        final String lFolder = getDownloadDirectory();
+        if (lFolder != null && lFolder.equals(folder)) {
+            return;
+        }
+        downloadDirectory = dedupeString(folder.trim());
+        if (hasNotificationListener()) {
+            nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.FOLDER, getDownloadDirectory()));
+        }
+    }
 
-     /**
-      * set the name of this FilePackage
-      *
-      * @param name
-      */
-     public void setName(String name) {
-         final String lName = getName();
-         if (StringUtils.isEmpty(name)) {
-             name = _JDT.T.controller_packages_defaultname();
-         }
-         if (lName != null && lName.equals(name)) {
-             return;
-         }
-         this.name = name.trim();
-         if (hasNotificationListener()) {
-             nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.NAME, getName()));
-         }
-     }
+    /**
+     * set the name of this FilePackage
+     *
+     * @param name
+     */
+    public void setName(String name) {
+        final String lName = getName();
+        if (StringUtils.isEmpty(name)) {
+            name = _JDT.T.controller_packages_defaultname();
+        }
+        if (lName != null && lName.equals(name)) {
+            return;
+        }
+        this.name = name.trim();
+        if (hasNotificationListener()) {
+            nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.NAME, getName()));
+        }
+    }
 
-     /**
-      * return number of DownloadLinks in this FilePackage
-      *
-      * @return
-      */
-     public int size() {
-         final boolean readL = getModifyLock().readLock();
-         try {
-             return downloadLinkList.size();
-         } finally {
-             if (readL) {
-                 getModifyLock().readUnlock(readL);
-             }
-         }
-     }
+    public void setAllowMerge(final boolean merge) {
+        this.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, merge);
+    }
 
-     @Override
-     public String toString() {
-         return this.getName();
-     }
+    public boolean isAllowMerge() {
+        return this.getBooleanProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, false);
+    }
 
-     /**
-      * return if this FilePackage is in expanded state
-      *
-      * @return
-      */
-     public boolean isExpanded() {
-         if (isExpanded != null) {
-             return isExpanded.booleanValue();
-         }
-         isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
-         return isExpanded;
-     }
+    /**
+     * If set to true, "child-packages" can inherit this package name. </br>
+     * Useful e.g. if a crawler crawls posts of a profile which then go into a crawler again but should all be placed into one package.
+     */
+    public void setAllowInheritance(final boolean inheritance) {
+        this.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, inheritance);
+    }
 
-     /**
-      * set the expanded state of this FilePackage
-      *
-      * @param b
-      */
-     public void setExpanded(boolean b) {
-         if (this.isExpanded != null && this.isExpanded == b) {
-             return;
-         }
-         this.isExpanded = b;
-         if (b == false) {
-             setProperty(PROPERTY_EXPANDED, Property.NULL);
-         } else {
-             setProperty(PROPERTY_EXPANDED, b);
-         }
-     }
+    public boolean isAllowInheritance() {
+        return this.getBooleanProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, false);
+    }
 
-     public void setPriorityEnum(Priority priority) {
-         if (priority == null) {
-             priority = Priority.DEFAULT;
-         }
-         if (getPriorityEnum() != priority) {
-             if (Priority.DEFAULT.equals(priority)) {
-                 setProperty(PROPERTY_PRIORITY, Property.NULL);
-             } else {
-                 setProperty(PROPERTY_PRIORITY, priority.name());
-             }
-             if (hasNotificationListener()) {
-                 nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.PRIORITY, priority));
-             }
-         }
-     }
+    /**
+     * true = Set package name will be auto-cleaned. </br>
+     * false = Set package name will not be modified. </br>
+     * Default = true
+     */
+    public void setCleanupPackageName(final boolean cleanup) {
+        this.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, cleanup);
+    }
 
-     public Priority getPriorityEnum() {
-         try {
-             final String priority = getStringProperty(PROPERTY_PRIORITY, null);
-             if (priority == null) {
-                 return Priority.DEFAULT;
-             }
-             return Priority.valueOf(priority);
-         } catch (final Throwable e) {
-             return Priority.DEFAULT;
-         }
-     }
+    public boolean isCleanupPackageName() {
+        return this.getBooleanProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, true);
+    }
 
-     public boolean isEnabled() {
-         return this.getView().isEnabled();
-     }
+    public void setIgnoreVarious(final boolean ignorevarious) {
+        this.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, ignorevarious);
+    }
 
-     public List<DownloadLink> getChildren() {
-         return downloadLinkList;
-     }
+    public boolean isIgnoreVarious() {
+        return this.getBooleanProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, false);
+    }
 
-     public PackageController<FilePackage, DownloadLink> getControlledBy() {
-         return controlledby;
-     }
+    public void setPackageKey(final String key) {
+        if (key == null) {
+            this.removeProperty(PROPERTY_PACKAGE_KEY);
+        } else {
+            this.setProperty(PROPERTY_PACKAGE_KEY, key);
+        }
+    }
 
-     public void setControlledBy(PackageController<FilePackage, DownloadLink> controller) {
-         controlledby = controller;
-     }
+    /**
+     * return number of DownloadLinks in this FilePackage
+     *
+     * @return
+     */
+    public int size() {
+        final boolean readL = getModifyLock().readLock();
+        try {
+            return downloadLinkList.size();
+        } finally {
+            if (readL) {
+                getModifyLock().readUnlock(readL);
+            }
+        }
+    }
 
-     public void setEnabled(boolean b) {
-         final boolean readL = getModifyLock().readLock();
-         final ArrayList<DownloadLink> links;
-         try {
-             links = new ArrayList<DownloadLink>(getChildren());
-         } finally {
-             if (readL) {
-                 getModifyLock().readUnlock(readL);
-             }
-         }
-         for (DownloadLink link : links) {
-             link.setEnabled(b);
-         }
-     }
+    @Override
+    public String toString() {
+        return this.getName();
+    }
 
-     public int indexOf(DownloadLink child) {
-         final boolean readL = getModifyLock().readLock();
-         try {
-             return downloadLinkList.indexOf(child);
-         } finally {
-             if (readL) {
-                 getModifyLock().readUnlock(readL);
-             }
-         }
-     }
+    /**
+     * return if this FilePackage is in expanded state
+     *
+     * @return
+     */
+    public boolean isExpanded() {
+        if (isExpanded != null) {
+            return isExpanded.booleanValue();
+        }
+        isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
+        return isExpanded;
+    }
 
-     @Override
-     public FilePackageView getView() {
-         if (fpInfo == null) {
-             synchronized (this) {
-                 if (fpInfo == null) {
-                     final FilePackageView lfpInfo = new FilePackageView(this);
-                     fpInfo = lfpInfo;
-                 }
-             }
-         }
-         return fpInfo;
-     }
+    /**
+     * set the expanded state of this FilePackage
+     *
+     * @param b
+     */
+    public void setExpanded(boolean b) {
+        if (this.isExpanded != null && this.isExpanded == b) {
+            return;
+        }
+        this.isExpanded = b;
+        if (b == false) {
+            setProperty(PROPERTY_EXPANDED, Property.NULL);
+        } else {
+            setProperty(PROPERTY_EXPANDED, b);
+        }
+    }
 
-     public void setModified(long modified) {
-         this.modified = modified;
-     }
+    public void setPriorityEnum(Priority priority) {
+        if (priority == null) {
+            priority = Priority.DEFAULT;
+        }
+        if (getPriorityEnum() != priority) {
+            if (Priority.DEFAULT.equals(priority)) {
+                setProperty(PROPERTY_PRIORITY, Property.NULL);
+            } else {
+                setProperty(PROPERTY_PRIORITY, priority.name());
+            }
+            if (hasNotificationListener()) {
+                nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.PRIORITY, priority));
+            }
+        }
+    }
 
-     public long getModified() {
-         return modified;
-     }
+    public Priority getPriorityEnum() {
+        try {
+            final String priority = getStringProperty(PROPERTY_PRIORITY, null);
+            if (priority == null) {
+                return Priority.DEFAULT;
+            }
+            return Priority.valueOf(priority);
+        } catch (final Throwable e) {
+            return Priority.DEFAULT;
+        }
+    }
 
-     @Override
-     public long getFinishedDate() {
-         return this.getView().getFinishedDate();
-     }
+    public boolean isEnabled() {
+        return this.getView().isEnabled();
+    }
 
-     @Override
-     public PackageControllerComparator<AbstractNode> getCurrentSorter() {
-         return sorter;
-     }
+    public List<DownloadLink> getChildren() {
+        return downloadLinkList;
+    }
 
-     @Override
-     public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
-         if (source == this && NOTIFY.STRUCTURE_CHANCE.equals(notify)) {
-             setModified(System.currentTimeMillis());
-         } else {
-             final PackageController<FilePackage, DownloadLink> n = getControlledBy();
-             if (n == null) {
-                 return;
-             }
-             final AbstractNode lsource;
-             if (source == null) {
-                 lsource = this;
-             } else {
-                 lsource = source;
-             }
-             if (lsource instanceof AbstractPackageChildrenNode) {
-                 final FilePackageView lfpInfo = fpInfo;
-                 if (lfpInfo != null) {
-                     lfpInfo.requestUpdate();
-                 }
-             }
-             n.nodeUpdated(lsource, notify, param);
-         }
-     }
+    public PackageController<FilePackage, DownloadLink> getControlledBy() {
+        return controlledby;
+    }
 
-     @Override
-     public boolean hasNotificationListener() {
-         final PackageController<FilePackage, DownloadLink> n = getControlledBy();
-         return n != null && n.hasNotificationListener();
-     }
+    public void setControlledBy(PackageController<FilePackage, DownloadLink> controller) {
+        controlledby = controller;
+    }
 
-     @Override
-     public ModifyLock getModifyLock() {
-         if (lock == null) {
-             synchronized (this) {
-                 if (lock == null) {
-                     lock = new ModifyLock();
-                 }
-             }
-         }
-         return lock;
-     }
+    public void setEnabled(boolean b) {
+        final boolean readL = getModifyLock().readLock();
+        final ArrayList<DownloadLink> links;
+        try {
+            links = new ArrayList<DownloadLink>(getChildren());
+        } finally {
+            if (readL) {
+                getModifyLock().readUnlock(readL);
+            }
+        }
+        for (DownloadLink link : links) {
+            link.setEnabled(b);
+        }
+    }
 
-     public void copyPropertiesTo(FilePackage dest) {
-         if (dest != null && dest != this) {
-             /* do not copy Property Properties as it currently only contains comment/expanded state */
-             dest.name = name;
-             dest.setComment(getComment());
-             dest.setDownloadDirectory(getView().getDownloadDirectory());
-             dest.setPriorityEnum(getPriorityEnum());
-             return;
-         }
-     }
+    public int indexOf(DownloadLink child) {
+        final boolean readL = getModifyLock().readLock();
+        try {
+            return downloadLinkList.indexOf(child);
+        } finally {
+            if (readL) {
+                getModifyLock().readUnlock(readL);
+            }
+        }
+    }
+
+    @Override
+    public FilePackageView getView() {
+        if (fpInfo == null) {
+            synchronized (this) {
+                if (fpInfo == null) {
+                    final FilePackageView lfpInfo = new FilePackageView(this);
+                    fpInfo = lfpInfo;
+                }
+            }
+        }
+        return fpInfo;
+    }
+
+    public void setModified(long modified) {
+        this.modified = modified;
+    }
+
+    public long getModified() {
+        return modified;
+    }
+
+    @Override
+    public long getFinishedDate() {
+        return this.getView().getFinishedDate();
+    }
+
+    @Override
+    public PackageControllerComparator<AbstractNode> getCurrentSorter() {
+        return sorter;
+    }
+
+    @Override
+    public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
+        if (source == this && NOTIFY.STRUCTURE_CHANCE.equals(notify)) {
+            setModified(System.currentTimeMillis());
+        } else {
+            final PackageController<FilePackage, DownloadLink> n = getControlledBy();
+            if (n == null) {
+                return;
+            }
+            final AbstractNode lsource;
+            if (source == null) {
+                lsource = this;
+            } else {
+                lsource = source;
+            }
+            if (lsource instanceof AbstractPackageChildrenNode) {
+                final FilePackageView lfpInfo = fpInfo;
+                if (lfpInfo != null) {
+                    lfpInfo.requestUpdate();
+                }
+            }
+            n.nodeUpdated(lsource, notify, param);
+        }
+    }
+
+    @Override
+    public boolean hasNotificationListener() {
+        final PackageController<FilePackage, DownloadLink> n = getControlledBy();
+        return n != null && n.hasNotificationListener();
+    }
+
+    @Override
+    public ModifyLock getModifyLock() {
+        if (lock == null) {
+            synchronized (this) {
+                if (lock == null) {
+                    lock = new ModifyLock();
+                }
+            }
+        }
+        return lock;
+    }
+
+    public void copyPropertiesTo(FilePackage dest) {
+        if (dest != null && dest != this) {
+            /* do not copy Property Properties as it currently only contains comment/expanded state */
+            dest.name = name;
+            dest.setComment(getComment());
+            dest.setDownloadDirectory(getView().getDownloadDirectory());
+            dest.setPriorityEnum(getPriorityEnum());
+            return;
+        }
+    }
 }
