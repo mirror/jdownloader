@@ -15,13 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,6 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -172,7 +173,17 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final String userID = urlinfo.getMatch(1);
         final String postID = urlinfo.getMatch(2);
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        br.setAllowedResponseCodes(500);// DDOS-GUARD
+        int retry = 3;
+        while (retry > 0) {
+            br.getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 500 && !isAbort()) {
+                sleep(1000, param);
+                retry--;
+            } else {
+                break;
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().matches(TYPE_POST)) {
@@ -188,19 +199,28 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             fp.setName(portal + " - " + userID + " - " + postID);
         }
         final String[] directURLs = br.getRegex("\"[^\"]*(/data/[^\"]+)").getColumn(0);
+        final HashSet<String> dups = new HashSet<String>();
         for (String directURL : directURLs) {
             directURL = br.getURL(directURL).toString();
-            final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
-            final UrlQuery query = UrlQuery.parse(directURL);
-            final String betterFilename = query.get("f");
-            if (!StringUtils.isEmpty(betterFilename)) {
-                media.setFinalFileName(betterFilename);
-                media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+            if (dups.add(new URL(directURL).getPath())) {
+                final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
+                final UrlQuery query = UrlQuery.parse(directURL);
+                final String betterFilename = Encoding.htmlDecode(query.get("f"));
+                if (!StringUtils.isEmpty(betterFilename)) {
+                    media.setFinalFileName(betterFilename);
+                    media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+                }
+                media.setAvailable(true);
+                ret.add(media);
             }
-            media.setAvailable(true);
-            ret.add(media);
         }
         fp.addLinks(ret);
         return ret;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        // avoid DDOS-GUARD
+        return 1;
     }
 }

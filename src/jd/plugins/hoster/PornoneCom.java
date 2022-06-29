@@ -17,13 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.PornoneComConfig;
-import org.jdownloader.plugins.components.config.PornoneComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Cookies;
@@ -40,6 +33,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.PornoneComConfig;
+import org.jdownloader.plugins.components.config.PornoneComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornone.com" }, urls = { "https?://(?:www\\.)?(?:vporn|pornone)\\.com/.*?/(\\d+)/?" })
 public class PornoneCom extends PluginForHost {
@@ -220,14 +219,14 @@ public class PornoneCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink link) throws Exception {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            if (dl.getConnection().getResponseCode() == 416) {
+                logger.info("Resume failed --> Retrying from zero");
+                link.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dl.getConnection().getResponseCode() == 416) {
-            logger.info("Resume failed --> Retrying from zero");
-            link.setChunksProgress(null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         dl.startDownload();
     }
@@ -244,7 +243,7 @@ public class PornoneCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage("https://pornone.com/login/");
-                Form login = br.getFormbyActionRegex(".*?/login.*?");
+                Form login = br.getFormByRegex("Login\\s*</button");
                 login.put("username", Encoding.urlEncode(account.getUser()));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);

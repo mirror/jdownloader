@@ -274,7 +274,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         protected Boolean run() throws RuntimeException {
                             if (generation.isValid()) {
                                 final CrawledLink existing = linkCollector.findDupe(link);
-                                if (existing == null) {
+                                if (existing == null || existing.getMatchingFilter() != null) {
                                     JobLinkCrawler.super.enqueueFinalCrawledLink(generation, link);
                                     return Boolean.TRUE;
                                 } else {
@@ -1032,10 +1032,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
                         final CrawledLink existingLink = findDupe(link);
                         if (existingLink != null && existingLink != link) {
-                            /* clear references */
-                            clearCrawledLinkReferences(link);
-                            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
-                            return null;
+                            if (existingLink.getMatchingFilter() != null && filteredStuff.remove(existingLink)) {
+                                // remove filtered entry and add new link
+                                clearCrawledLinkReferences(existingLink);
+                                cleanupMaps(Arrays.asList(new CrawledLink[] { existingLink }));
+                                eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, filteredStuff.size() > 0 ? LinkCollectorEvent.TYPE.FILTERED_AVAILABLE : LinkCollectorEvent.TYPE.FILTERED_EMPTY));
+                            } else {
+                                /* clear references */
+                                clearCrawledLinkReferences(link);
+                                eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
+                                return null;
+                            }
                         }
                         if (info == null || !info.isAborted()) {
                             final String linkID = link.getLinkID();
@@ -1405,9 +1412,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1545,7 +1552,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             /* avoid additional linkCheck when linkID already exists */
                             /* update dupeCheck map */
                             final CrawledLink existingLink = findDupe(link);
-                            if (existingLink != null) {
+                            if (existingLink != null && existingLink.getMatchingFilter() == null) {
+                                /* do not stop here if existing link is filtered, as new link is still unfiltered! */
                                 /* clear references */
                                 final String linkID = link.getLinkID();
                                 logger.info("Filtered Dupe: " + linkID);
