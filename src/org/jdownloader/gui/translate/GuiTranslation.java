@@ -6047,13 +6047,22 @@ public interface GuiTranslation extends TranslateInterface {
     String languages_dialog_change_and_restart();
 
     @Default(lngs = { "en" }, values = { "Install Extension: %s1" })
-    String installExtension_remote_title(String toInstall);
+    String installExtension_remote_install_title(String toInstall);
+
+    @Default(lngs = { "en" }, values = { "Remove Extension: %s1" })
+    String installExtension_remote_remove_title(String toInstall);
 
     @Default(lngs = { "en" }, values = { "Do you really want to install this extension module: %s1?" })
-    String installExtension_remote_rly(String toInstall);
+    String installExtension_remote_install_rly(String toInstall);
+
+    @Default(lngs = { "en" }, values = { "Do you really want to remove this extension module: %s1?" })
+    String installExtension_remote_remove_rly(String toInstall);
 
     @Default(lngs = { "en" }, values = { "Please wait. The installation is in progress. Click to continue." })
-    String installExtension_remote_wait();
+    String installExtension_remote_install_wait();
+
+    @Default(lngs = { "en" }, values = { "Please wait. The removal is in progress. Click to continue." })
+    String installExtension_remote_remove_wait();
 
     @Default(lngs = { "en" }, values = { "Restart now" })
     String lit_restart_now();

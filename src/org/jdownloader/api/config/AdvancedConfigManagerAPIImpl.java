@@ -27,6 +27,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -113,6 +114,9 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             try {
                 final String jsonString = JSonStorage.serializeToJson(value);
                 setValue = JSonStorage.restoreFromString(jsonString, TypeRef.BOOLEAN);
+                if (setValue == null) {
+                    return false;
+                }
             } catch (Exception e) {
                 return false;
             }
@@ -126,9 +130,9 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                     }
                 }
             }
-            if (key != null && key.startsWith("InstallExtension") && Boolean.TRUE.equals(setValue)) {
+            if (key != null && key.startsWith("InstallExtension")) {
                 final String toInstall = StringUtils.toLowerCaseOrNull(key.substring("InstallExtension".length()));
-                installExtension(toInstall);
+                installExtension(toInstall, Boolean.TRUE.equals(setValue));
                 return true;
             } else {
                 return false;
@@ -414,124 +418,65 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
         return kh;
     }
 
-    private void installExtension(final String toInstall) {
-        if (StringUtils.isNotEmpty(toInstall)) {
-            new Thread("Install Extension") {
+    private void installExtension(final String toInstall, final boolean installFlag) {
+        final UpdateController controller = UpdateController.getInstance();
+        if (StringUtils.isNotEmpty(toInstall) && controller.isHandlerSet()) {
+            new Thread("Install Extension:" + toInstall + "|" + installFlag) {
                 public void run() {
-                    if (UIOManager.I().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), _GUI.T.installExtension_remote_rly(toInstall))) {
-                        UpdaterListener listener = null;
-                        try {
-                            final AtomicLong last = new AtomicLong(System.currentTimeMillis());
-                            UpdateController.getInstance().getEventSender().addListener(listener = new UpdaterListener() {
-                                @Override
-                                public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
-                                    System.out.println();
-                                }
+                    if (installFlag != controller.isExtensionInstalled(toInstall)) {
+                        if (UIOManager.I().showConfirmDialog(0, _GUI.T.lit_are_you_sure(), installFlag ? _GUI.T.installExtension_remote_install_rly(toInstall) : _GUI.T.installExtension_remote_remove_rly(toInstall))) {
+                            UpdaterListener listener = null;
+                            try {
+                                final AtomicLong last = new AtomicLong(Time.systemIndependentCurrentJVMTimeMillis());
+                                controller.getEventSender().addListener(listener = new UpdaterListener() {
+                                    @Override
+                                    public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
+                                    }
 
-                                @Override
-                                public void onUpdaterStatusUpdate(final String label, Icon icon, final double p) {
-                                    if (System.currentTimeMillis() - last.get() > 5000) {
-                                        UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.installExtension_remote_title(toInstall), _GUI.T.installExtension_remote_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), _GUI.T.lit_continue(), null);
-                                        last.set(System.currentTimeMillis());
+                                    @Override
+                                    public void onUpdaterStatusUpdate(final String label, Icon icon, final double p) {
+                                        if (System.currentTimeMillis() - last.get() > 5000) {
+                                            if (installFlag) {
+                                                UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.installExtension_remote_install_title(toInstall), _GUI.T.installExtension_remote_install_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), _GUI.T.lit_continue(), null);
+                                            } else {
+                                                UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI.T.installExtension_remote_remove_title(toInstall), _GUI.T.installExtension_remote_remove_wait(), new AbstractIcon(IconKey.ICON_WAIT, 32), _GUI.T.lit_continue(), null);
+                                            }
+                                            last.set(Time.systemIndependentCurrentJVMTimeMillis());
+                                        }
+                                    }
+                                });
+                                if (installFlag) {
+                                    controller.runExtensionInstallation(toInstall);
+                                } else {
+                                    controller.runExtensionUnInstallation(toInstall);
+                                }
+                                while (true) {
+                                    Thread.sleep(1000);
+                                    if (!controller.isRunning()) {
+                                        break;
+                                    } else {
+                                        controller.waitForUpdate();
                                     }
                                 }
-                            });
-                            UpdateController.getInstance().runExtensionInstallation(toInstall);
-                            while (true) {
-                                Thread.sleep(1000);
-                                if (!UpdateController.getInstance().isRunning()) {
-                                    break;
+                                final boolean pending = controller.hasPendingUpdates();
+                                boolean restart;
+                                if (installFlag) {
+                                    restart = UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI.T.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later());
+                                } else {
+                                    restart = UIOManager.I().showConfirmDialog(0, "Remove Extension " + toInstall, _GUI.T.InstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later());
                                 }
-                                UpdateController.getInstance().waitForUpdate();
+                                if (restart) {
+                                    RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
+                                }
+                            } catch (Exception e) {
+                                UIOManager.I().showException(_GUI.T.lit_error_occured(), e);
+                            } finally {
+                                controller.getEventSender().removeListener(listener);
                             }
-                            // boolean installed = UpdateController.getInstance().isExtensionInstalled(id);
-                            final boolean pending = UpdateController.getInstance().hasPendingUpdates();
-                            //
-                            if (UIOManager.I().showConfirmDialog(0, "Install Extension " + toInstall, _GUI.T.UninstalledExtension_waiting_for_restart(), new AbstractIcon(IconKey.ICON_RESTART, 32), _GUI.T.lit_restart_now(), _GUI.T.lit_later())) {
-                                RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
-                            }
-                        } catch (Exception e) {
-                            UIOManager.I().showException(_GUI.T.lit_error_occured(), e);
-                        } finally {
-                            UpdateController.getInstance().getEventSender().removeListener(listener);
                         }
                     }
                 };
             }.start();
         }
     }
-    // @Override
-    // public List<ConfigInterfaceAPIStorable> queryConfigInterfaces(APIQuery
-    // query) {
-    // AdvancedConfigManager acm = AdvancedConfigManager.getInstance();
-    // List<ConfigInterfaceAPIStorable> result = new
-    // ArrayList<ConfigInterfaceAPIStorable>();
-    //
-    // for (AdvancedConfigEntry ace : acm.list()) {
-    // if (!result.contains(new ConfigInterfaceAPIStorable(ace))) {
-    // result.add(new ConfigInterfaceAPIStorable(ace));
-    // } else {
-    // ConfigInterfaceAPIStorable cis = result.get(result.indexOf(new
-    // ConfigInterfaceAPIStorable(ace)));
-    // cis.getInfoMap().put("settingsCount", (Integer)
-    // cis.getInfoMap().get("settingsCount") + 1);
-    // }
-    // }
-    // return result;
-    // }
-    //
-    // @SuppressWarnings("rawtypes")
-    // @Override
-    // public List<ConfigEntryAPIStorable> queryConfigSettings(APIQuery query) {
-    // AdvancedConfigManager acm = AdvancedConfigManager.getInstance();
-    // List<ConfigEntryAPIStorable> result = new
-    // ArrayList<ConfigEntryAPIStorable>();
-    //
-    // // retrieve packageUUIDs from queryParams
-    // List<String> interfaceKeys = new ArrayList<String>();
-    // if (!query._getQueryParam("interfaceKeys", List.class, new
-    // ArrayList()).isEmpty()) {
-    // List uuidsFromQuery = query._getQueryParam("interfaceKeys", List.class,
-    // new ArrayList());
-    // for (Object o : uuidsFromQuery) {
-    // try {
-    // interfaceKeys.add((String) o);
-    // } catch (ClassCastException e) {
-    // continue;
-    // }
-    // }
-    // }
-    //
-    // for (AdvancedConfigEntry ace : acm.list()) {
-    // ConfigEntryAPIStorable ces = new ConfigEntryAPIStorable(ace);
-    // // if only certain interfaces selected, skip if interface not included
-    // if (!interfaceKeys.isEmpty()) {
-    // if
-    // (!interfaceKeys.contains(ces.getInterfaceKey().substring(ces.getInterfaceKey().lastIndexOf(".")
-    // + 1,
-    // ces.getInterfaceKey().length()))) {
-    // continue;
-    // }
-    // }
-    // KeyHandler<?> kh = ((AdvancedConfigInterfaceEntry) ace).getKeyHandler();
-    //
-    // org.jdownloader.myjdownloader.client.json.JsonMap infoMap = new org.jdownloader.myjdownloader.client.json.JsonMap();
-    // if (query.fieldRequested("value")) {
-    // infoMap.put("value", kh.getValue());
-    // }
-    // if (query.fieldRequested("defaultValue")) {
-    // infoMap.put("defaultValue", kh.getDefaultValue());
-    // }
-    // if (query.fieldRequested("dataType")) {
-    // infoMap.put("dataType", kh.getRawClass().getName());
-    // }
-    // if (query.fieldRequested("description")) {
-    // infoMap.put("description", ace.getDescription());
-    // }
-    //
-    // ces.setInfoMap(infoMap);
-    // result.add(ces);
-    // }
-    // return result;
-    // }
 }
