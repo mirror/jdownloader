@@ -36,19 +36,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -78,6 +65,19 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
@@ -675,7 +675,7 @@ public class PornHubCom extends PluginForHost {
                                 try {
                                     final Browser brc = br.cloneBrowser();
                                     brc.setFollowRedirects(true);
-                                    final List<Object> mp4Medias = JSonStorage.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
+                                    final List<Object> mp4Medias = plugin.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
                                     medias.addAll(mp4Medias);
                                 } catch (IOException ioe) {
                                     plugin.getLogger().log(ioe);
@@ -687,7 +687,7 @@ public class PornHubCom extends PluginForHost {
                                 try {
                                     final Browser brc = br.cloneBrowser();
                                     brc.setFollowRedirects(true);
-                                    final List<Object> mp4Medias = JSonStorage.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
+                                    final List<Object> mp4Medias = plugin.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
                                     medias.addAll(mp4Medias);
                                 } catch (IOException ioe) {
                                     plugin.getLogger().log(ioe);
@@ -1076,8 +1076,8 @@ public class PornHubCom extends PluginForHost {
                     if (premiumExpired && !isPremiumDomain(br.getHost())) {
                         /**
                          * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url
-                         * which redirects us to the pornhub free mainpage and sets the cookies. </br>
-                         * 2022-06-27: Old code but let's leave it in for now as we can't know if it is still needed.
+                         * which redirects us to the pornhub free mainpage and sets the cookies. </br> 2022-06-27: Old code but let's leave
+                         * it in for now as we can't know if it is still needed.
                          */
                         logger.info("Expired premium --> Free account (?)");
                         final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
@@ -1116,8 +1116,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     /**
-     * Checks login and sets account-type. </br>
-     * Expects browser instance to be logged in already (cookies need to be there).
+     * Checks login and sets account-type. </br> Expects browser instance to be logged in already (cookies need to be there).
      *
      * @throws Exception
      */

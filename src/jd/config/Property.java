@@ -28,6 +28,7 @@ import java.util.WeakHashMap;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.ReflectionUtils;
 
@@ -65,15 +66,15 @@ public class Property implements Serializable {
         }
     }
 
-    private static final long       serialVersionUID  = -6093927038856757256L;
+    private static final long   serialVersionUID  = -6093927038856757256L;
     /**
      * Null value used to remove a key completly.
      */
-    public static final Object      NULL              = new Object();
+    public static final Object  NULL              = new Object();
     /* do not remove to keep stable compatibility */
-    private HashMap<String, Object> properties        = null;
-    private static final Object     NEWIMPLEMENTATION = new Object();
-    private Object[]                propertiesList    = null;
+    private Map<String, Object> properties        = null;
+    private static final Object NEWIMPLEMENTATION = new Object();
+    private Object[]            propertiesList    = null;
 
     private void ensureCapacity(final int capacity) {
         synchronized (NEWIMPLEMENTATION) {
@@ -211,6 +212,10 @@ public class Property implements Serializable {
     }
 
     public Boolean getBooleanProperty(final String key, final boolean def) {
+        return getBooleanProperty(key, (Boolean) def);
+    }
+
+    public Boolean getBooleanProperty(final String key, final Boolean def) {
         try {
             final Object value = getProperty(key, def);
             if (value instanceof Boolean) {
@@ -218,7 +223,9 @@ public class Property implements Serializable {
             } else {
                 final String stringValue = String.valueOf(value);
                 if (stringValue != null) {
-                    if ("false".equalsIgnoreCase(stringValue)) {
+                    if ("true".equalsIgnoreCase(stringValue)) {
+                        return true;
+                    } else if ("false".equalsIgnoreCase(stringValue)) {
                         return false;
                     } else {
                         return stringValue.length() > 0;
@@ -286,7 +293,7 @@ public class Property implements Serializable {
                 return size;
             }
         } else {
-            final HashMap<String, Object> lInternal = properties;
+            final Map<String, Object> lInternal = properties;
             if (lInternal == null || lInternal.size() == 0) {
                 return 0;
             } else {
@@ -306,7 +313,7 @@ public class Property implements Serializable {
         if (NEWIMPLEMENTATION != null) {
             synchronized (NEWIMPLEMENTATION) {
                 final Object[] propertiesList = this.propertiesList;
-                final HashMap<String, Object> ret = new HashMap<String, Object>();
+                final MinimalMemoryMap<String, Object> ret = new MinimalMemoryMap<String, Object>(getPropertiesSize());
                 if (propertiesList != null) {
                     final int length = propertiesList.length;
                     for (int index = 0; index < length; index += 2) {
@@ -318,7 +325,7 @@ public class Property implements Serializable {
                 return ret;
             }
         } else {
-            final HashMap<String, Object> lInternal = properties;
+            final Map<String, Object> lInternal = properties;
             if (lInternal == null || lInternal.size() == 0) {
                 return new HashMap<String, Object>();
             } else {
@@ -342,7 +349,7 @@ public class Property implements Serializable {
             if (NEWIMPLEMENTATION != null) {
                 return getObject(key);
             } else {
-                final HashMap<String, Object> lInternal = properties;
+                final Map<String, Object> lInternal = properties;
                 if (lInternal == null || lInternal.size() == 0) {
                     return null;
                 } else {
@@ -404,7 +411,7 @@ public class Property implements Serializable {
             if (NEWIMPLEMENTATION != null) {
                 return getObjectIndex(key) != -1;
             } else {
-                final HashMap<String, Object> lInternal = properties;
+                final Map<String, Object> lInternal = properties;
                 if (lInternal == null || lInternal.size() == 0) {
                     return false;
                 } else {
@@ -416,9 +423,9 @@ public class Property implements Serializable {
         }
     }
 
-    protected HashMap<String, Object> optimizeMapInstance(final Map<String, Object> map) {
+    protected Map<String, Object> optimizeMapInstance(final Map<String, Object> map) {
         if (map != null && map.size() > 0) {
-            final HashMap<String, Object> ret = new HashMap<String, Object>();
+            final MinimalMemoryMap<String, Object> ret = new MinimalMemoryMap<String, Object>();
             final Iterator<Entry<String, Object>> it = map.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> next = it.next();
@@ -459,7 +466,7 @@ public class Property implements Serializable {
     }
 
     public void setProperties(final Map<String, Object> properties) {
-        final HashMap<String, Object> newProperties = optimizeMapInstance(properties);
+        final Map<String, Object> newProperties = optimizeMapInstance(properties);
         if (newProperties != null && newProperties.size() > 0) {
             if (NEWIMPLEMENTATION != null) {
                 ensureCapacity(newProperties.size());
@@ -487,12 +494,12 @@ public class Property implements Serializable {
         if (NEWIMPLEMENTATION != null) {
             return putObject(key, value);
         } else {
-            final HashMap<String, Object> lInternal = properties;
+            final Map<String, Object> lInternal = properties;
             if (lInternal == null) {
                 if (value == null || value == NULL) {
                     return false;
                 } else {
-                    properties = new HashMap<String, Object>(8);
+                    properties = new MinimalMemoryMap<String, Object>(8);
                     return setProperty(key, value);
                 }
             } else {
