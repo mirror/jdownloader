@@ -27,7 +27,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -38,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics\\.)(?:\\w+\\.)?wikifeetx?\\.com/(?!celebs|feetoftheyear)[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics|thumbs\\.)(?:\\w+\\.)?wikifeetx?\\.com/(?!celebs|dating|feetoftheyear|videos|upload|rules)[^/]+" })
 public class WikifeetCom extends PluginForDecrypt {
     public WikifeetCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,8 +48,21 @@ public class WikifeetCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         this.br.getPage(param.getCryptedUrl());
-        if (isOffline(this.br)) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getRequest().getHtmlCode().length() <= 100) {
+            /* Empty page */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!param.getCryptedUrl().matches(type_wikifeet)) {
+            /* Unsupported URL --> Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String gData = this.br.getRegex("messanger\\['gdata'\\] = (\\[[\\s\\S]*?);").getMatch(0);
+        if (gData == null) {
+            /* Not an image gallery */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final String contentID = br.getRegex("messanger\\.cid = (\\d+);").getMatch(0);
@@ -59,27 +71,22 @@ public class WikifeetCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         modelName = Encoding.htmlDecode(modelName).trim();
-        if (param.getCryptedUrl().matches(type_wikifeet)) {
-            final String gData = this.br.getRegex("messanger\\['gdata'\\] = ([\\s\\S]*?);").getMatch(0);
-            final List<Object> data = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(gData);
-            if (data.size() == 0) {
-                return decryptedLinks;
+        final List<Object> data = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(gData);
+        if (data.size() == 0) {
+            return decryptedLinks;
+        }
+        for (final Object entry : data) {
+            final Map<String, Object> entryMap = (Map<String, Object>) entry;
+            if (entryMap.containsKey("pid")) {
+                final String pid = String.valueOf(entryMap.get("pid"));
+                final String dlurl = "directhttp://https://pics.wikifeet.com/" + modelName + "-Feet-" + pid + ".jpg";
+                final DownloadLink dl = this.createDownloadlink(dlurl);
+                final String finalFilename = modelName + "_" + pid + ".jpg";
+                dl.setFinalFileName(finalFilename);
+                dl.setProperty(DirectHTTP.FIXNAME, finalFilename);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
             }
-            for (final Object entry : data) {
-                final Map<String, Object> entryMap = (Map<String, Object>) entry;
-                if (entryMap.containsKey("pid")) {
-                    final String pid = String.valueOf(entryMap.get("pid"));
-                    final String dlurl = "directhttp://https://pics.wikifeet.com/" + modelName + "-Feet-" + pid + ".jpg";
-                    final DownloadLink dl = this.createDownloadlink(dlurl);
-                    final String finalFilename = modelName + "_" + pid + ".jpg";
-                    dl.setFinalFileName(finalFilename);
-                    dl.setProperty(DirectHTTP.FIXNAME, finalFilename);
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
-                }
-            }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String shoesize = br.getRegex("(?i)Shoe Size\\s*:\\s*<span[^>]*>([^<]+)<a").getMatch(0);
         if (shoesize != null) {
@@ -112,16 +119,6 @@ public class WikifeetCom extends PluginForDecrypt {
         fp.setName(packagename);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
-    }
-
-    public static boolean isOffline(final Browser br) {
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            return true;
-        } else if (!br.containsHTML("id=thepics")) {
-            return false;
-        } else {
-            return false;
-        }
     }
 
     @Override

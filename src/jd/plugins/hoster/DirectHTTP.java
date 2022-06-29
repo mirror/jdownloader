@@ -107,6 +107,11 @@ public class DirectHTTP extends antiDDoSForHost {
     private static final String PROPERTY_OPTION_SET      = "optionSet";
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.GENERIC };
+    }
+
+    @Override
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
         final ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
         if (ret != null && ret.size() == 1) {
@@ -586,11 +591,6 @@ public class DirectHTTP extends antiDDoSForHost {
             }
         }
         return urlConnection;
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.GENERIC };
     }
 
     private boolean preferHeadRequest = true;
@@ -1235,7 +1235,7 @@ public class DirectHTTP extends antiDDoSForHost {
     public String getHost(final DownloadLink link, Account account) {
         if (link != null) {
             /* prefer domain via public suffic list */
-            return Browser.getHost(link.getDownloadURL());
+            return Browser.getHost(link.getPluginPatternMatcher());
         } else if (account != null) {
             return account.getHoster();
         } else {
