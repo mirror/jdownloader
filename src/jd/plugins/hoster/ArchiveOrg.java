@@ -20,8 +20,10 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
@@ -62,7 +64,7 @@ public class ArchiveOrg extends PluginForHost {
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN  = "download_serverside_broken";
-    public static final String  PROPERTY_IS_BOOK                     = "is_book";
+    public static final String  PROPERTY_BOOK_ID                     = "book_id";
     public static final String  PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP = "book_loaned_until_timestamp";
     private boolean             registered_only                      = false;
 
@@ -109,7 +111,10 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     private boolean isBook(final DownloadLink link) {
-        if (link.hasProperty(PROPERTY_IS_BOOK)) {
+        if (link.hasProperty("is_book")) {
+            /* Lagacy */
+            return true;
+        } else if (link.hasProperty(PROPERTY_BOOK_ID)) {
             return true;
         } else {
             return false;
@@ -165,18 +170,24 @@ public class ArchiveOrg extends PluginForHost {
         if (account != null) {
             this.login(account, true);
         }
-        if (this.isBook(link)) {
-            // this.borrowBook(br, account, bookID);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (this.isBook(link) && account != null) {
+                final String bookID = link.getStringProperty(PROPERTY_BOOK_ID);
+                if (bookID == null) {
+                    /* Old/broken items */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                // this.borrowBook(br, account, bookID);
+            }
+            prepDownloadHeaders(br, link);
+            if (this.isBook(link)) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher() + "&rotate=0&scale=0", isResumeable(link, account), getMaxChunks(link, account));
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account), getMaxChunks(link, account));
+            }
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account), getMaxChunks(link, account));
         }
-        prepDownloadHeaders(br, link);
-        // if (this.isBook(link)) {
-        // dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher() + "&rotate=0&scale=0", isResumeable(link,
-        // account), getMaxChunks(link, account));
-        // } else {
-        // dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account),
-        // getMaxChunks(link, account));
-        // }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account), getMaxChunks(link, account));
         connectionErrorhandling(br.getHttpConnection(), link, account);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -226,7 +237,6 @@ public class ArchiveOrg extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
                 /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
                 final Cookies userCookies = account.loadUserCookies();
                 final Cookies borrowCookies = account.loadCookies("borrow");
@@ -244,20 +254,21 @@ public class ArchiveOrg extends PluginForHost {
                          * code.
                          */
                         final String realUsername = br.getRegex("username=\"([^\"]+)\"").getMatch(0);
-                        if (realUsername != null) {
-                            account.setUser(realUsername);
-                        } else {
+                        if (realUsername == null) {
                             logger.warning("Failed to find \"real\" username");
+                        } else if (!StringUtils.equals(realUsername, account.getUser())) {
+                            account.setUser(realUsername);
                         }
                         return;
                     } else {
                         if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException("Login cookies expired");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
-                            throw new AccountInvalidException("Login cookies invalid");
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
                 }
+                final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(account.getHoster(), cookies);
@@ -273,16 +284,12 @@ public class ArchiveOrg extends PluginForHost {
                 }
                 logger.info("Performing full login");
                 if (!account.getUser().matches(".+@.+\\..+")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new AccountInvalidException("Please enter your e-mail address in the username field!");
                 }
                 br.getPage("https://" + this.getHost() + "/account/login");
                 br.postPageRaw(br.getURL(), "remember=true&referer=https%3A%2F%2Farchive.org%2FCREATE%2F&login=true&submit_by_js=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!isLoggedIN(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException ignore) {
