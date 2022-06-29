@@ -112,7 +112,7 @@ public class ArchiveOrg extends PluginForHost {
 
     private boolean isBook(final DownloadLink link) {
         if (link.hasProperty("is_book")) {
-            /* Lagacy */
+            /* Legacy */
             return true;
         } else if (link.hasProperty(PROPERTY_BOOK_ID)) {
             return true;
