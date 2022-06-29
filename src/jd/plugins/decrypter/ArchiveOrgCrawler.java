@@ -51,10 +51,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.ArchiveOrg;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
-public class ArchiveOrg extends PluginForDecrypt {
-    public ArchiveOrg(PluginWrapper wrapper) {
+public class ArchiveOrgCrawler extends PluginForDecrypt {
+    public ArchiveOrgCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -69,11 +70,11 @@ public class ArchiveOrg extends PluginForDecrypt {
 
     private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     final Set<String>                     dups           = new HashSet<String>();
-    private jd.plugins.hoster.ArchiveOrg  hostPlugin     = null;
+    private ArchiveOrg                    hostPlugin     = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        hostPlugin = (jd.plugins.hoster.ArchiveOrg) getNewPluginForHostInstance("archive.org");
+        hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
         param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
@@ -317,6 +318,7 @@ public class ArchiveOrg extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (bookAjaxURL.contains(bookID) && !bookAjaxURL.endsWith(bookID)) {
+            /* Correct URL */
             bookAjaxURL = new Regex(bookAjaxURL, "(.+" + Regex.escape(bookID) + ")").getMatch(0);
         }
         br.getPage(bookAjaxURL);
@@ -343,8 +345,7 @@ public class ArchiveOrg extends PluginForDecrypt {
         fp.setName(title);
         long loanedUntilTimestamp = 0;
         /**
-         * 2021-12-02: Currently all we do is detect currently loaned books but they are not (yet) downloadable via JDownloader. </br>
-         * Borrowing books counts per session so if a user borrows a book via browser it won#t be borrowed in JD even if user has added the
+         * Borrowing books counts per session so if a user borrows a book via browser it won't be borrowed in JD even if user has added the
          * same account to JD.
          */
         boolean userHasBorrowedThisBook = false;
@@ -372,12 +373,12 @@ public class ArchiveOrg extends PluginForDecrypt {
                 dl.setName(pageNum + "_ " + title + ".jpg");
                 if (userHasBorrowedThisBook) {
                     /* User has currently borrowed this book. */
-                    dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP, loanedUntilTimestamp);
+                    dl.setProperty(ArchiveOrg.PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP, loanedUntilTimestamp);
                 }
                 /* Assume all are online & downloadable */
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                dl.setProperty(jd.plugins.hoster.ArchiveOrg.PROPERTY_IS_BOOK, true);
+                dl.setProperty(ArchiveOrg.PROPERTY_BOOK_ID, bookID);
                 /* Important! These URLs are not static! Make sure user cannot add the same pages multiple times! */
                 dl.setLinkID(this.getHost() + "://" + bookId + pageNum);
                 decryptedLinks.add(dl);

@@ -24,12 +24,6 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -40,6 +34,12 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 public class Account extends Property {
     private static final String VALID_UNTIL              = "VALID_UNTIL";
@@ -151,9 +151,8 @@ public class Account extends Property {
         return cookieStorables;
     }
 
+    /** Deletes cookies and related information for given ID. */
     public synchronized void clearCookies(final String ID) {
-        /* TODO: Also remove COOKIES_STORAGE_COOKIES_OBJECT */
-        removeProperty(COOKIE_STORAGE);
         final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
         removeProperty(COOKIE_STORAGE_ID);
         final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIE_STORAGE + ":TS:" + ID;
