@@ -2921,76 +2921,77 @@ public class LinkCrawler {
     }
 
     private PackageInfo convertFilePackageInfos(CrawledLink link) {
-        if (link.getDownloadLink() != null) {
-            final FilePackage fp = link.getDownloadLink().getFilePackage();
-            if (!FilePackage.isDefaultFilePackage(fp)) {
-                fp.remove(link.getDownloadLink());
-                if (link.getDesiredPackageInfo() != null && Boolean.TRUE.equals(link.getDesiredPackageInfo().isAllowInheritance())) {
-                    if (!fp.hasProperty(PACKAGE_ALLOW_INHERITANCE) || fp.getBooleanProperty(PACKAGE_ALLOW_INHERITANCE, false) == false) {
-                        return link.getDesiredPackageInfo();
-                    }
+        if (link.getDownloadLink() == null) {
+            return null;
+        }
+        final FilePackage fp = link.getDownloadLink().getFilePackage();
+        if (!FilePackage.isDefaultFilePackage(fp)) {
+            fp.remove(link.getDownloadLink());
+            if (link.getDesiredPackageInfo() != null && Boolean.TRUE.equals(link.getDesiredPackageInfo().isAllowInheritance())) {
+                if (fp.isAllowInheritance() == null || fp.isAllowInheritance() == Boolean.FALSE) {
+                    return link.getDesiredPackageInfo();
                 }
-                PackageInfo fpi = null;
-                if (StringUtils.isNotEmpty(fp.getDownloadDirectory()) && !fp.getDownloadDirectory().equals(defaultDownloadFolder)) {
-                    // do not set downloadfolder if it is the defaultfolder
-                    if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
-                        fpi = new PackageInfo();
-                    }
-                    fpi.setDestinationFolder(CrossSystem.fixPathSeparators(fp.getDownloadDirectory() + File.separator));
-                }
-                final String name;
-                if (fp.isCleanupPackageName()) {
-                    name = LinknameCleaner.cleanFileName(fp, fp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
-                } else {
-                    name = fp.getName();
-                }
-                if (StringUtils.isNotEmpty(name)) {
-                    if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
-                        fpi = new PackageInfo();
-                    }
-                    fpi.setName(name);
-                }
-                if (fp.hasProperty(PACKAGE_ALLOW_MERGE)) {
-                    if (Boolean.FALSE.equals(fp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
-                        if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
-                            fpi = new PackageInfo();
-                        }
-                        fpi.setUniqueId(fp.getUniqueID());
-                    } else {
-                        if (fpi != null || (fpi = link.getDesiredPackageInfo()) != null) {
-                            fpi.setUniqueId(null);
-                        }
-                    }
-                }
-                if (fp.hasProperty(FilePackage.PROPERTY_PACKAGE_KEY)) {
-                    if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
-                        fpi = new PackageInfo();
-                    }
-                    fpi.setPackageKey(fp.getStringProperty(FilePackage.PROPERTY_PACKAGE_KEY, null));
-                }
-                if (fp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
-                    if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
-                        fpi = new PackageInfo();
-                    }
-                    fpi.setIgnoreVarious(Boolean.TRUE.equals(fp.getBooleanProperty(PACKAGE_IGNORE_VARIOUS, false)));
-                }
-                if (fp.hasProperty(PACKAGE_ALLOW_INHERITANCE)) {
-                    if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
-                        fpi = new PackageInfo();
-                    }
-                    fpi.setAllowInheritance(fp.getBooleanProperty(PACKAGE_ALLOW_INHERITANCE));
-                }
-                if (StringUtils.isNotEmpty(fp.getComment())) {
-                    if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
-                        fpi = new PackageInfo();
-                    }
-                    fpi.setComment(fp.getComment());
-                }
-                if (fpi != null) {
-                    link.setDesiredPackageInfo(fpi);
-                }
-                return fpi;
             }
+            PackageInfo fpi = null;
+            if (StringUtils.isNotEmpty(fp.getDownloadDirectory()) && !fp.getDownloadDirectory().equals(defaultDownloadFolder)) {
+                // do not set downloadfolder if it is the defaultfolder
+                if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
+                    fpi = new PackageInfo();
+                }
+                fpi.setDestinationFolder(CrossSystem.fixPathSeparators(fp.getDownloadDirectory() + File.separator));
+            }
+            final String name;
+            if (fp.isCleanupPackageName()) {
+                name = LinknameCleaner.cleanFileName(fp, fp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
+            } else {
+                name = fp.getName();
+            }
+            if (StringUtils.isNotEmpty(name)) {
+                if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
+                    fpi = new PackageInfo();
+                }
+                fpi.setName(name);
+            }
+            if (fp.isAllowMerge() != null) {
+                if (fp.isAllowMerge() == Boolean.TRUE) {
+                    if (fpi != null || (fpi = link.getDesiredPackageInfo()) != null) {
+                        fpi.setUniqueId(null);
+                    }
+                } else {
+                    if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
+                        fpi = new PackageInfo();
+                    }
+                    fpi.setUniqueId(fp.getUniqueID());
+                }
+            }
+            if (fp.getPackageKey() != null) {
+                if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
+                    fpi = new PackageInfo();
+                }
+                fpi.setPackageKey(fp.getPackageKey());
+            }
+            if (fp.isIgnoreVarious() != null) {
+                if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
+                    fpi = new PackageInfo();
+                }
+                fpi.setIgnoreVarious(fp.isIgnoreVarious());
+            }
+            if (fp.isAllowInheritance() != null) {
+                if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
+                    fpi = new PackageInfo();
+                }
+                fpi.setAllowInheritance(fp.isAllowInheritance());
+            }
+            if (StringUtils.isNotEmpty(fp.getComment())) {
+                if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
+                    fpi = new PackageInfo();
+                }
+                fpi.setComment(fp.getComment());
+            }
+            if (fpi != null) {
+                link.setDesiredPackageInfo(fpi);
+            }
+            return fpi;
         }
         return null;
     }

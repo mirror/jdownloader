@@ -490,24 +490,24 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
     }
 
-    public void setAllowMerge(final boolean merge) {
+    public void setAllowMerge(final Boolean merge) {
         this.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, merge);
     }
 
-    public boolean isAllowMerge() {
-        return this.getBooleanProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, false);
+    public Boolean isAllowMerge() {
+        return (Boolean) this.getProperty(LinkCrawler.PACKAGE_ALLOW_MERGE);
     }
 
     /**
      * If set to true, "child-packages" can inherit this package name. </br>
      * Useful e.g. if a crawler crawls posts of a profile which then go into a crawler again but should all be placed into one package.
      */
-    public void setAllowInheritance(final boolean inheritance) {
+    public void setAllowInheritance(final Boolean inheritance) {
         this.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, inheritance);
     }
 
-    public boolean isAllowInheritance() {
-        return this.getBooleanProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, false);
+    public Boolean isAllowInheritance() {
+        return (Boolean) this.getProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE);
     }
 
     /**
@@ -515,7 +515,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * false = Set package name will not be modified. </br>
      * Default = true
      */
-    public void setCleanupPackageName(final boolean cleanup) {
+    public void setCleanupPackageName(final Boolean cleanup) {
         this.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, cleanup);
     }
 
@@ -523,12 +523,12 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return this.getBooleanProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, true);
     }
 
-    public void setIgnoreVarious(final boolean ignorevarious) {
+    public void setIgnoreVarious(final Boolean ignorevarious) {
         this.setProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, ignorevarious);
     }
 
-    public boolean isIgnoreVarious() {
-        return this.getBooleanProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS, false);
+    public Boolean isIgnoreVarious() {
+        return (Boolean) this.getProperty(LinkCrawler.PACKAGE_IGNORE_VARIOUS);
     }
 
     public void setPackageKey(final String key) {
@@ -537,6 +537,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         } else {
             this.setProperty(PROPERTY_PACKAGE_KEY, key);
         }
+    }
+
+    public String getPackageKey() {
+        return this.getStringProperty(PROPERTY_PACKAGE_KEY);
     }
 
     /**

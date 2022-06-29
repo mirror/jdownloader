@@ -47,7 +47,7 @@ public class WikiFortioCom extends PluginForHost {
         br.setAllowedResponseCodes(410);
         br.getPage(link.getPluginPatternMatcher());
         final int responsecode = this.br.getHttpConnection().getResponseCode();
-        if (responsecode == 404 || responsecode == 410 || br.containsHTML("(doesn\\'t exist or has expired and is no longer available<|>We are sorry but file \\')")) {
+        if (responsecode == 404 || responsecode == 410 || br.containsHTML("(?i)(doesn\\'t exist or has expired and is no longer available<|>We are sorry but file \\')")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"filename\">File name: <strong>([^<>\"]*?)</strong>").getMatch(0);
@@ -55,11 +55,12 @@ public class WikiFortioCom extends PluginForHost {
             filename = br.getRegex("<input type=\"hidden\" name=\"fileName\" value=\"([^<>\"]*?)\"/>").getMatch(0);
         }
         String filesize = br.getRegex("<td>Size:</td>[\t\n\r ]+<td>([^<>\"]*?)\\&nbsp;</td>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
         return AvailableStatus.TRUE;
     }
 
