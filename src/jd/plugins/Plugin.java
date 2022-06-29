@@ -646,11 +646,16 @@ public abstract class Plugin implements ActionListener {
     }
 
     public <T> T restoreFromString(final String json, final TypeRef<T> typeRef) {
-        if (TypeRef.HASHMAP == typeRef || TypeRef.LIST == typeRef) {
+        if (TypeRef.HASHMAP == typeRef || TypeRef.LIST == typeRef || TypeRef.OBJECT == typeRef) {
             final JSonParser factory = new JSonParser(json) {
                 @Override
                 protected Map<String, ? extends Object> createJSonObject() {
                     return new MinimalMemoryMap<String, Object>();
+                }
+
+                @Override
+                protected String dedupeString(String string) {
+                    return JSonStorage.dedupeString(string);
                 }
             };
             try {
