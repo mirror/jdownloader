@@ -32,6 +32,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+import jd.plugins.hoster.DirectHTTP;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
@@ -66,28 +88,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-import jd.plugins.hoster.DirectHTTP;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -2928,7 +2928,8 @@ public class LinkCrawler {
         if (!FilePackage.isDefaultFilePackage(fp)) {
             fp.remove(link.getDownloadLink());
             if (link.getDesiredPackageInfo() != null && Boolean.TRUE.equals(link.getDesiredPackageInfo().isAllowInheritance())) {
-                if (fp.isAllowInheritance() == null || fp.isAllowInheritance() == Boolean.FALSE) {
+                final Boolean allowInheritance = fp.isAllowInheritance();
+                if (allowInheritance == null || allowInheritance == Boolean.FALSE) {
                     return link.getDesiredPackageInfo();
                 }
             }
@@ -2952,8 +2953,9 @@ public class LinkCrawler {
                 }
                 fpi.setName(name);
             }
-            if (fp.isAllowMerge() != null) {
-                if (fp.isAllowMerge() == Boolean.TRUE) {
+            final Boolean allowMerge = fp.isAllowMerge();
+            if (allowMerge != null) {
+                if (allowMerge == Boolean.TRUE) {
                     if (fpi != null || (fpi = link.getDesiredPackageInfo()) != null) {
                         fpi.setUniqueId(null);
                     }
@@ -2964,23 +2966,26 @@ public class LinkCrawler {
                     fpi.setUniqueId(fp.getUniqueID());
                 }
             }
-            if (fp.getPackageKey() != null) {
+            final String packageKey = fp.getPackageKey();
+            if (packageKey != null) {
                 if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
                     fpi = new PackageInfo();
                 }
-                fpi.setPackageKey(fp.getPackageKey());
+                fpi.setPackageKey(packageKey);
             }
-            if (fp.isIgnoreVarious() != null) {
+            final Boolean ignoreVarious = fp.isIgnoreVarious();
+            if (ignoreVarious != null) {
                 if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
                     fpi = new PackageInfo();
                 }
-                fpi.setIgnoreVarious(fp.isIgnoreVarious());
+                fpi.setIgnoreVarious(ignoreVarious);
             }
-            if (fp.isAllowInheritance() != null) {
+            final Boolean allowInheritance = fp.isAllowInheritance();
+            if (allowInheritance != null) {
                 if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
                     fpi = new PackageInfo();
                 }
-                fpi.setAllowInheritance(fp.isAllowInheritance());
+                fpi.setAllowInheritance(allowInheritance);
             }
             if (StringUtils.isNotEmpty(fp.getComment())) {
                 if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
