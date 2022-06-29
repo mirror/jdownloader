@@ -60,7 +60,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         CrawledLink source = getCurrentLink();
         String referer = null;
         String cookiesString = null;
