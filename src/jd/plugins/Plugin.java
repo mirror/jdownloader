@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
@@ -62,6 +63,12 @@ import jd.utils.JDUtilities;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonParser;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
+import org.appwork.storage.simplejson.ParserException;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.DebugMode;
@@ -635,6 +642,24 @@ public abstract class Plugin implements ActionListener {
                     clean.deleteOnExit();
                 }
             }
+        }
+    }
+
+    public <T> T restoreFromString(final String json, final TypeRef<T> typeRef) {
+        if (TypeRef.HASHMAP == typeRef || TypeRef.LIST == typeRef) {
+            final JSonParser factory = new JSonParser(json) {
+                @Override
+                protected Map<String, ? extends Object> createJSonObject() {
+                    return new MinimalMemoryMap<String, Object>();
+                }
+            };
+            try {
+                return (T) factory.parse();
+            } catch (ParserException e) {
+                throw new JSonMapperException(e);
+            }
+        } else {
+            return JSonStorage.restoreFromString(json, typeRef);
         }
     }
 

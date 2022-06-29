@@ -35,6 +35,9 @@ import jd.plugins.components.ThrowingRunnable;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.SimpleTypeRef;
+import org.appwork.storage.simplejson.JSonParser;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
+import org.appwork.storage.simplejson.ParserException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.reflection.Clazz;
@@ -471,9 +474,9 @@ public class JavaScriptEngineFactory {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 * 
+                 *
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 * 
+                 *
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
@@ -977,9 +980,27 @@ public class JavaScriptEngineFactory {
         return new CustomizedScriptEngineManager();
     }
 
+    public static Map<String, Object> jsonToJavaMap(String string) throws Exception {
+        return (Map<String, Object>) jsonToJavaObject(string);
+    }
+
     public static Object jsonToJavaObject(String string) throws Exception {
         try {
-            return org.appwork.storage.JSonStorage.restoreFromString(string, SimpleTypeRef.OBJECT);
+            if (true) {
+                try {
+                    final JSonParser factory = new JSonParser(string) {
+                        @Override
+                        protected Map<String, ? extends Object> createJSonObject() {
+                            return new MinimalMemoryMap<String, Object>();
+                        }
+                    };
+                    return factory.parse();
+                } catch (ParserException e) {
+                    throw new JSonMapperException(e);
+                }
+            } else {
+                return org.appwork.storage.JSonStorage.restoreFromString(string, SimpleTypeRef.OBJECT);
+            }
         } catch (JSonMapperException e) {
             /* supports unquoted keys, example {_test:true} */
             try {
@@ -1168,15 +1189,14 @@ public class JavaScriptEngineFactory {
     public static Object toMap(Object obj) {
         if (obj == null) {
             return null;
-        }
-        if (Clazz.isPrimitiveWrapper(obj.getClass())) {
+        } else if (Clazz.isPrimitiveWrapper(obj.getClass())) {
             return obj;
         } else if (obj instanceof String) {
             return obj;
-        }
-        if (obj instanceof org.mozilla.javascript.NativeObject) {
-            HashMap<String, Object> ret = new HashMap<String, Object>();
-            for (Object s : ((org.mozilla.javascript.NativeObject) obj).getIds()) {
+        } else if (obj instanceof org.mozilla.javascript.NativeObject) {
+            final Object[] entries = ((org.mozilla.javascript.NativeObject) obj).getIds();
+            final MinimalMemoryMap<String, Object> ret = new MinimalMemoryMap<String, Object>(entries.length);
+            for (Object s : entries) {
                 if (s instanceof String) {
                     ret.put((String) s, toMap(((org.mozilla.javascript.NativeObject) obj).get(s)));
                 } else {
@@ -1186,14 +1206,16 @@ public class JavaScriptEngineFactory {
             }
             return ret;
         } else if (obj instanceof org.mozilla.javascript.NativeArray) {
-            ArrayList<Object> ret = new ArrayList<Object>();
+            final ArrayList<Object> ret = new ArrayList<Object>();
             for (int i = 0; i < ((org.mozilla.javascript.NativeArray) obj).getLength(); i++) {
                 ret.add(toMap(((org.mozilla.javascript.NativeArray) obj).get(i)));
             }
+            ret.trimToSize();
             return ret;
         } else if (obj instanceof net.sourceforge.htmlunit.corejs.javascript.NativeObject) {
-            HashMap<String, Object> ret = new HashMap<String, Object>();
-            for (Object s : ((net.sourceforge.htmlunit.corejs.javascript.NativeObject) obj).getIds()) {
+            final Object[] entries = ((net.sourceforge.htmlunit.corejs.javascript.NativeObject) obj).getIds();
+            final MinimalMemoryMap<String, Object> ret = new MinimalMemoryMap<String, Object>(entries.length);
+            for (Object s : entries) {
                 if (s instanceof String) {
                     ret.put((String) s, toMap(((net.sourceforge.htmlunit.corejs.javascript.NativeObject) obj).get(s)));
                 } else {
@@ -1203,17 +1225,14 @@ public class JavaScriptEngineFactory {
             }
             return ret;
         } else if (obj instanceof net.sourceforge.htmlunit.corejs.javascript.NativeArray) {
-            ArrayList<Object> ret = new ArrayList<Object>();
+            final ArrayList<Object> ret = new ArrayList<Object>();
             for (int i = 0; i < ((net.sourceforge.htmlunit.corejs.javascript.NativeArray) obj).getLength(); i++) {
                 ret.add(toMap(((net.sourceforge.htmlunit.corejs.javascript.NativeArray) obj).get(i)));
             }
+            ret.trimToSize();
             return ret;
         }
         return null;
-    }
-
-    public static Map<String, Object> jsonToJavaMap(String string) throws Exception {
-        return (Map<String, Object>) jsonToJavaObject(string);
     }
 
     public static <T extends Exception> void runTrusted(ThrowingRunnable<T> runnable) throws T {
