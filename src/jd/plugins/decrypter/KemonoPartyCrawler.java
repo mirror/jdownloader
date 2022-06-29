@@ -22,7 +22,6 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -121,8 +120,8 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             totalNumberofItemsStr = "unknown";
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+        fp.setAllowMerge(true);
+        fp.setAllowInheritance(true);
         fp.setName(portal + " - " + username);
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;

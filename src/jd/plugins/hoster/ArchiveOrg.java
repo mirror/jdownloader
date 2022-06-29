@@ -16,13 +16,18 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -51,17 +56,13 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean       FREE_RESUME                          = true;
-    private final int           FREE_MAXCHUNKS                       = 0;
     private final int           FREE_MAXDOWNLOADS                    = 20;
-    private final boolean       ACCOUNT_FREE_RESUME                  = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS               = 0;
     private final int           ACCOUNT_FREE_MAXDOWNLOADS            = 20;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN  = "download_serverside_broken";
-    public static final String  PROPERTY_IS_BOOK_PREVIEW             = "is_book_preview";
+    public static final String  PROPERTY_IS_BOOK                     = "is_book";
     public static final String  PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP = "book_loaned_until_timestamp";
     private boolean             registered_only                      = false;
 
@@ -85,6 +86,7 @@ public class ArchiveOrg extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 /* 2021-02-25: Do NOT use head connection here anymore! */
+                prepDownloadHeaders(br, link);
                 con = br.openGetConnection(link.getPluginPatternMatcher());
                 connectionErrorhandling(con, link, account);
                 if (this.looksLikeDownloadableContent(con)) {
@@ -106,8 +108,12 @@ public class ArchiveOrg extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private boolean isBookPreview(final DownloadLink link) {
-        return link.hasProperty(PROPERTY_IS_BOOK_PREVIEW);
+    private boolean isBook(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_IS_BOOK)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException, IOException {
@@ -133,13 +139,13 @@ public class ArchiveOrg extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (con.getResponseCode() == 404) {
-            if (isBookPreview(link) && account != null) {
+            if (isBook(link) && account != null) {
                 /* 2021-11-18 */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Borrowed book downloading is not supported");
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } else if (isBookPreview(link) && con.getURL().toString().contains("preview-unavailable.png")) {
+        } else if (isBook(link) && con.getURL().toString().contains("preview-unavailable.png")) {
             // https://archive.org/bookreader/static/preview-unavailable.png
             /* Page of a book which is only available when book is borrowed by user (paid content). */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Book preview unavailable");
@@ -152,15 +158,25 @@ public class ArchiveOrg extends PluginForHost {
         if (registered_only) {
             throw new AccountRequiredException();
         }
-        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
-            doDownload(null, link, false, 1, "free_directlink");
-        } else {
-            doDownload(null, link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-        }
+        doDownload(null, link);
     }
 
-    private void doDownload(final Account account, final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
+    private void doDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
+        if (account != null) {
+            this.login(account, true);
+        }
+        if (this.isBook(link)) {
+            // this.borrowBook(br, account, bookID);
+        }
+        prepDownloadHeaders(br, link);
+        // if (this.isBook(link)) {
+        // dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher() + "&rotate=0&scale=0", isResumeable(link,
+        // account), getMaxChunks(link, account));
+        // } else {
+        // dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account),
+        // getMaxChunks(link, account));
+        // }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account), getMaxChunks(link, account));
         connectionErrorhandling(br.getHttpConnection(), link, account);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -171,6 +187,33 @@ public class ArchiveOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
+    }
+
+    private void prepDownloadHeaders(final Browser br, final DownloadLink link) {
+        if (this.isBook(link)) {
+            br.getHeaders().put("Referer", "https://archive.org/");
+            br.getHeaders().put("Accept", "image/avif,image/webp,image/apng,image/*,*/*;q=0.8");
+            br.getHeaders().put("Sec-Fetch-Site", "name-site");
+            br.getHeaders().put("Sec-Fetch-Mode", "no-cors");
+            br.getHeaders().put("Sec-Fetch-Dest", "image");
+        }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     @Override
@@ -186,8 +229,16 @@ public class ArchiveOrg extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
                 final Cookies userCookies = account.loadUserCookies();
+                final Cookies borrowCookies = account.loadCookies("borrow");
+                if (borrowCookies != null && !borrowCookies.isEmpty()) {
+                    br.setCookies(borrowCookies);
+                }
                 if (userCookies != null) {
-                    if (this.checkCookies(this.br, account, userCookies)) {
+                    if (!force) {
+                        /* Do not check cookies */
+                        br.setCookies(account.getHoster(), userCookies);
+                        return;
+                    } else if (this.checkCookies(this.br, account, userCookies)) {
                         /*
                          * User can entry anything into username field but we want unique strings --> Try to find "real username" in HTML
                          * code.
@@ -211,12 +262,11 @@ public class ArchiveOrg extends PluginForHost {
                     logger.info("Attempting cookie login");
                     br.setCookies(account.getHoster(), cookies);
                     if (!force) {
-                        /* We trust these cookies --> Do not check them */
-                        logger.info("Trust login cookies without check");
+                        /* Do not check cookies */
                         return;
                     } else {
                         if (this.checkCookies(this.br, account, cookies)) {
-                            account.saveCookies(br.getCookies(account.getHoster()), "");
+                            account.saveCookies(br.getCookies(br.getHost()), "");
                             return;
                         }
                     }
@@ -229,17 +279,66 @@ public class ArchiveOrg extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.getPage("https://" + account.getHoster() + "/account/login");
+                br.getPage("https://" + this.getHost() + "/account/login");
                 br.postPageRaw(br.getURL(), "remember=true&referer=https%3A%2F%2Farchive.org%2FCREATE%2F&login=true&submit_by_js=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException ignore) {
                 if (ignore.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 }
                 throw ignore;
+            }
+        }
+    }
+
+    /** Borrows given bookID which gives us a token we can use to download all pages of that book. */
+    public void borrowBook(final Browser br, final Account account, final String bookID) throws Exception {
+        synchronized (account) {
+            if (bookID == null) {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setAllowedResponseCodes(400);
+            final UrlQuery query = new UrlQuery();
+            query.add("action", "grant_access");
+            query.add("identifier", Encoding.urlEncode(bookID));
+            br.postPage("https://" + this.getHost() + "/services/loans/loan/searchInside.php", query);
+            query.addAndReplace("action", "browse_book");
+            br.postPage("/services/loans/loan/", query);
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            if (br.getHttpConnection().getResponseCode() == 400) {
+                final String error = (String) entries.get("error");
+                if (StringUtils.equalsIgnoreCase(error, "This book is not available to borrow at this time. Please try again later.")) {
+                    logger.info("Borrow not needed");
+                    return;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure");
+                }
+            }
+            query.addAndReplace("action", "create_token");
+            /* This should set a cookie called "br-load-<bookID>" */
+            br.postPage("/services/loans/loan/", query);
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String borrowToken = (String) entries.get("token");
+            if (StringUtils.isEmpty(borrowToken)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure #2");
+            }
+            logger.info("Successfully borrowed book: " + bookID);
+            // account.saveCookies(br.getCookies(br.getHost()), "");
+            final Cookies borrowCookies = new Cookies();
+            for (final Cookie cookie : br.getCookies(br.getHost()).getCookies()) {
+                /* Collect borrow cookies and save them separately */
+                if (cookie.getKey().matches("br-.*")) {
+                    borrowCookies.add(cookie);
+                }
+            }
+            if (borrowCookies.isEmpty()) {
+                logger.warning("WTF book was borrowed but no borrow-cookies are present!");
+            } else {
+                account.saveCookies(borrowCookies, "borrow");
             }
         }
     }
@@ -267,23 +366,17 @@ public class ArchiveOrg extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
-        if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
-            doDownload(account, link, false, 1, "account_free_directlink");
-        } else {
-            doDownload(account, link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-        }
+        doDownload(account, link);
     }
 
     @Override
     public boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        /* Sync this between hoster- and decrypter plugin! */
         final boolean ret = super.looksLikeDownloadableContent(urlConnection);
         if (ret) {
             return true;

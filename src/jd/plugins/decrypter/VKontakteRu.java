@@ -922,7 +922,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String startOffset = albumInfo.get("offset").toString();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(param.getCryptedUrl(), "(-?(\\d+_)?\\d+)$").getMatch(0));
-        fp.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, false);
+        fp.setCleanupPackageName(false);
         final int maxItemsPerPage = 40;
         int page = 1;
         int offset = 0;

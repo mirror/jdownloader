@@ -35,7 +35,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -200,7 +199,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         packageName = packageName.replace("*subtitle*", subtitle != null ? subtitle : "");
         packageName = packageName.replace("*title_and_subtitle*", titleAndSubtitle);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setProperty(LinkCrawler.PACKAGE_CLEANUP_NAME, false);
+        fp.setCleanupPackageName(false);
         fp.setName(packageName);
         if (!StringUtils.isEmpty(fullDescription)) {
             fp.setComment(fullDescription);
