@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "https?://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9\\_]+" })
 public class XbooruCom extends PluginForDecrypt {
-
     public XbooruCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +47,6 @@ public class XbooruCom extends PluginForDecrypt {
         final String fpName = new Regex(parameter, "tags=([A-Za-z0-9\\_]+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-
         final String url_part = parameter;
         int page_counter = 1;
         int offset = 0;
@@ -72,7 +69,7 @@ public class XbooruCom extends PluginForDecrypt {
             entries_per_page_current = links.length;
             for (final String[] link : links) {
                 final String linkID = link[0];
-                final String url = "http://" + this.getHost() + "/index.php?page=post&s=view&id=" + linkID;
+                final String url = "https://" + this.getHost() + "/index.php?page=post&s=view&id=" + linkID;
                 final DownloadLink dl = createDownloadlink(url);
                 dl.setLinkID(getHost() + "://" + linkID);
                 dl.setAvailable(true);
@@ -88,7 +85,6 @@ public class XbooruCom extends PluginForDecrypt {
             }
             page_counter++;
         } while (entries_per_page_current >= max_entries_per_page);
-
         return decryptedLinks;
     }
 
@@ -96,5 +92,4 @@ public class XbooruCom extends PluginForDecrypt {
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Danbooru;
     }
-
 }

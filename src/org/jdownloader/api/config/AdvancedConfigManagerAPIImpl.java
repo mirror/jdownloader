@@ -109,20 +109,24 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     @Override
     public boolean set(final RemoteAPIRequest request, String interfaceName, String storage, String key, Object value) throws InvalidValueException {
         if (EXTENSION.equals(interfaceName)) {
-            final String json = JSonStorage.serializeToJson(value);
+            final Boolean setValue;
+            try {
+                final String jsonString = JSonStorage.serializeToJson(value);
+                setValue = JSonStorage.restoreFromString(jsonString, TypeRef.BOOLEAN);
+            } catch (Exception e) {
+                return false;
+            }
             for (final LazyExtension ext : ExtensionController.getInstance().getExtensions()) {
                 if (createExtensionToggleDummyKey("Enable", ext).equals(key)) {
                     try {
-                        final Object v = JSonStorage.stringToObject(json, TypeRef.BOOLEAN, null);
-                        ext._setEnabled((Boolean) v);
+                        ext._setEnabled(Boolean.TRUE.equals(setValue));
                         return true;
                     } catch (Exception e) {
                         return false;
-                        // throw new InvalidValueException(e);
                     }
                 }
             }
-            if (key != null && key.startsWith("InstallExtension")) {
+            if (key != null && key.startsWith("InstallExtension") && Boolean.TRUE.equals(setValue)) {
                 final String toInstall = StringUtils.toLowerCaseOrNull(key.substring("InstallExtension".length()));
                 installExtension(toInstall);
                 return true;
@@ -311,25 +315,21 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     private List<AdvancedConfigAPIEntry> createExtensionConfigList(final AdvancedConfigQueryStorable query) {
         final ArrayList<AdvancedConfigAPIEntry> ret = new ArrayList<AdvancedConfigAPIEntry>();
         for (final OptionalExtension ext : ExtensionController.getInstance().getOptionalExtensions()) {
-            if (ext.isInstalled()) {
-                continue;
-            } else {
-                final AdvancedConfigAPIEntry entry = new AdvancedConfigAPIEntry();
-                entry.setInterfaceName(EXTENSION);
-                entry.setAbstractType(AbstractType.BOOLEAN);
-                if (query.isDefaultValues()) {
-                    entry.setDefaultValue(false);
-                }
-                if (query.isDescription()) {
-                    entry.setDocs("Install Extension: " + ext.getName());
-                }
-                final String dummyKey = "InstallExtension" + StringUtils.toUpperCaseOrNull(ext.getExtensionID());
-                entry.setKey(dummyKey);
-                if (query.isValues()) {
-                    entry.setValue(false);
-                }
-                ret.add(entry);
+            final AdvancedConfigAPIEntry entry = new AdvancedConfigAPIEntry();
+            entry.setInterfaceName(EXTENSION);
+            entry.setAbstractType(AbstractType.BOOLEAN);
+            if (query.isDefaultValues()) {
+                entry.setDefaultValue(false);
             }
+            if (query.isDescription()) {
+                entry.setDocs("Install Extension: " + ext.getName());
+            }
+            final String dummyKey = "InstallExtension" + StringUtils.toUpperCaseOrNull(ext.getExtensionID());
+            entry.setKey(dummyKey);
+            if (query.isValues()) {
+                entry.setValue(ext.isInstalled());
+            }
+            ret.add(entry);
         }
         for (final LazyExtension ext : ExtensionController.getInstance().getExtensions()) {
             final AdvancedConfigAPIEntry entry = new AdvancedConfigAPIEntry();

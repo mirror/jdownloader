@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,9 +31,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "http://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=view\\&id=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xbooru.com" }, urls = { "https?://(?:www\\.)?xbooru\\.com/index\\.php\\?page=post\\&s=view\\&id=\\d+" })
 public class XbooruCom extends PluginForHost {
-
     public XbooruCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,12 +41,10 @@ public class XbooruCom extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -63,7 +59,7 @@ public class XbooruCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().matches(".*id=\\d+.*")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(link.getDownloadURL(), "id=(\\d+)$").getMatch(0);
@@ -73,7 +69,7 @@ public class XbooruCom extends PluginForHost {
         } else {
             filename = url_filename;
         }
-        dllink = br.getRegex("\"(http[^<>\"]+)\" id=\"image\"").getMatch(0);
+        dllink = br.getRegex("\"(https?[^<>\"]+)\" id=\"image\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://img\\.xbooru\\.com//images/\\d+/[^<>\"]+)\"").getMatch(0);
         }
@@ -99,8 +95,10 @@ public class XbooruCom extends PluginForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -118,18 +116,19 @@ public class XbooruCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection();
+            } catch (final IOException ignore) {
+                logger.log(ignore);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
