@@ -183,7 +183,7 @@ public class FlimmitCom extends PluginForDecrypt {
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
         }
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+        fp.setAllowMerge(true);
         final String baseFilename;
         if (!StringUtils.isEmpty(seriesTitle) && seasonEpisodeInfoFormatted != null) {
             baseFilename = seriesTitle + " " + seasonEpisodeInfoFormatted;

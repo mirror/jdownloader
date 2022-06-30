@@ -53,7 +53,7 @@ public class DegooCom extends PluginForDecrypt {
             path = "";
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setProperty("ALLOW_MERGE", true);
+        fp.setAllowMerge(true);
         if (!StringUtils.isEmpty(path)) {
             fp.setName(path);
         } else {

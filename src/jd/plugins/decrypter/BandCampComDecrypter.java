@@ -263,7 +263,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         final String formattedpackagename = getFormattedPackagename(this, CFG, artist, album, date);
         if (!CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.CLEANPACKAGENAME, false)) {
-            fp.setProperty("CLEANUP_NAME", false);
+            fp.setCleanupPackageName(false);
+        } else {
+            fp.setCleanupPackageName(true);
         }
         fp.setName(formattedpackagename);
         fp.addLinks(decryptedLinks);

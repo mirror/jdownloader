@@ -99,14 +99,14 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
             if (!packageName.equals(title)) {
                 if (myfp == null || !myfp.getName().equals(packageName)) {
                     myfp = FilePackage.getInstance();
-                    myfp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+                    myfp.setAllowMerge(true);
                     myfp.setName(packageName);
                     foundPackages += 1;
                 }
             } else {
                 if (fp == null) {
                     fp = FilePackage.getInstance();
-                    fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+                    fp.setAllowMerge(true);
                     fp.setName(title);
                     myfp = fp;
                 }
@@ -158,7 +158,7 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
                     fp = myfp;
                 } else {
                     fp = FilePackage.getInstance();
-                    fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+                    fp.setAllowMerge(true);
                     fp.setName(title);
                 }
             }

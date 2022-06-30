@@ -184,7 +184,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username + " - Journal");
-        fp.setProperty("ALLOW_MERGE", true);
+        fp.setAllowMerge(true);
         String next = null;
         int previousOffset = 0;
         int currentOffset = 0;
@@ -260,7 +260,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         if (fpName != null) {
             fp = FilePackage.getInstance();
             fp.setName(fpName + " - Journal");
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
         } else {
             fp = null;
         }
@@ -361,7 +361,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         if (fpName != null) {
             fp = FilePackage.getInstance();
             fp.setName(fpName);
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
         }
         final String csrf = PluginJSonUtils.getJsonValue(this.br, "csrf");
         final String requestid = PluginJSonUtils.getJsonValue(this.br, "requestid");

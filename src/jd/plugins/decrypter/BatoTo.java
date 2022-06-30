@@ -30,6 +30,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -45,9 +48,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BatoTo extends PluginForDecrypt {
@@ -95,7 +95,7 @@ public class BatoTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
-        fp.setProperty("CLEANUP_NAME", false);
+        fp.setCleanupPackageName(false);
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         /* Login if possible */
@@ -177,8 +177,8 @@ public class BatoTo extends PluginForDecrypt {
     }
 
     /**
-     * Source: https://stackoverflow.com/questions/41432896/cryptojs-aes-encryption-and-java-aes-decryption </br> Replacement function for
-     * this js call: JSON.parse(CryptoJS.AES.decrypt(server, batojs).toString(CryptoJS.enc.Utf8))
+     * Source: https://stackoverflow.com/questions/41432896/cryptojs-aes-encryption-and-java-aes-decryption </br>
+     * Replacement function for this js call: JSON.parse(CryptoJS.AES.decrypt(server, batojs).toString(CryptoJS.enc.Utf8))
      */
     private String aesDecrypt(final String secret, final String cipherText) {
         try {

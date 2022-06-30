@@ -151,7 +151,7 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
         if (title != null) {
             fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(title).trim());
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.setAllowMerge(true);
         }
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         postPage(br.getURL(), "submit=Decrypt+link&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));

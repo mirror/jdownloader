@@ -216,7 +216,7 @@ public class ImgSrcRu extends PluginForDecrypt {
             }
             String name = Encoding.htmlDecode(username.trim()) + " @ " + Encoding.htmlDecode(fpName.trim());
             FilePackage fp = FilePackage.getInstance();
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
             fp.setName(Encoding.htmlDecode(name.trim()));
             final Set<String> pagesDone = new HashSet<String>();
             final List<String> pagesTodo = new ArrayList<String>();

@@ -72,7 +72,7 @@ public class HentaiReadCom extends PluginForDecrypt {
                 return null;
             } else {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+                fp.setAllowMerge(true);
                 if (fpName != null) {
                     fp.setName(Encoding.htmlDecode(fpName.trim()));
                 }

@@ -337,7 +337,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             subfolderStructure = Encoding.htmlDecode(subfolderStructure);
             fp = FilePackage.getInstance();
             fp.setName(subfolderStructure);
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.setAllowMerge(true);
         }
         int pageCount = 1;
         /** More than one page? Every page goes back into the crawler as a single url! */

@@ -138,7 +138,7 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
             final String fpName = infomap.get("site") + " - " + modelInfo.get(1) + " - " + "Set " + setID;
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.setAllowMerge(true);
             fp.addLinks(decryptedLinks);
         } else {
             // TODO timestamp/signature

@@ -169,7 +169,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
             fp.addLinks(decryptedLinks);
         }
         if (decryptedLinks.isEmpty()) {

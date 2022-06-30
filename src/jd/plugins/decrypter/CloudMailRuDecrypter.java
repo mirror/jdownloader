@@ -110,7 +110,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         if (!StringUtils.isEmpty(subfolder) && !subfolder.equals("/")) {
             fp = FilePackage.getInstance();
             fp.setName(subfolder);
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.setAllowMerge(true);
         }
         for (final Object fileo : ressourcelist) {
             entries = (Map<String, Object>) fileo;
