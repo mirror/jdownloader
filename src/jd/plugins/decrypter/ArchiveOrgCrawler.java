@@ -306,14 +306,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (account != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* Try to borrow book if account is available */
-            final Browser brc = br.cloneBrowser();
-            this.hostPlugin.borrowBook(brc, account, bookID);
-            /* Refresh page */
-            // br.getPage(br.getURL());
-        }
-        String bookAjaxURL = getBookReaderURL(br);
+        // if (account != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        // /* Try to borrow book if account is available */
+        // final Browser brc = br.cloneBrowser();
+        // this.hostPlugin.borrowBook(brc, account, bookID);
+        // /* Refresh page */
+        // // br.getPage(br.getURL());
+        // }
+        final String bookAjaxURL = getBookReaderURL(br);
         if (bookAjaxURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -321,43 +321,59 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         // /* Correct URL */
         // bookAjaxURL = new Regex(bookAjaxURL, "(.+" + Regex.escape(bookID) + ")").getMatch(0);
         // }
-        br.getPage(bookAjaxURL);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final Map<String, Object> data = (Map<String, Object>) root.get("data");
-        final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
-        final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
-        final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
+        Boolean isLendingRequired = null;
+        boolean hasBorrowedBookNow = false;
         long loanedMillisecondsLeft = 0;
-        if (daysLeftOnLoan > 0) {
-            loanedMillisecondsLeft += daysLeftOnLoan * 24 * 60 * 60 * 1000;
-        }
-        if (secondsLeftOnLoan > 0) {
-            loanedMillisecondsLeft += secondsLeftOnLoan * 1000;
-        }
-        final Map<String, Object> brOptions = (Map<String, Object>) data.get("brOptions");
+        Map<String, Object> brOptions = null;
+        do {
+            br.getPage(bookAjaxURL);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> data = (Map<String, Object>) root.get("data");
+            final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
+            final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
+            final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
+            if (daysLeftOnLoan > 0) {
+                loanedMillisecondsLeft += daysLeftOnLoan * 24 * 60 * 60 * 1000;
+            }
+            if (secondsLeftOnLoan > 0) {
+                loanedMillisecondsLeft += secondsLeftOnLoan * 1000;
+            }
+            brOptions = (Map<String, Object>) data.get("brOptions");
+            isLendingRequired = (Boolean) lendingInfo.get("isLendingRequired") == Boolean.TRUE;
+            if (hasBorrowedBookNow) {
+                break;
+            }
+            /* Borrow book if necessary */
+            if (isLendingRequired == Boolean.TRUE && loanedMillisecondsLeft == 0 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                logger.info("Book needs to be borrowed");
+                if (account != null) {
+                    logger.info("Borrowing book --> All pages should be downloadable");
+                    /* Try to borrow book if account is available */
+                    final Browser brc = br.cloneBrowser();
+                    this.hostPlugin.borrowBook(brc, account, bookID);
+                    /* Go through this loop again: Refreshes page so we can download all pages and will not only get the preview images */
+                    hasBorrowedBookNow = true;
+                    continue;
+                } else {
+                    logger.info("Cannot borrow book --> Only available previews can be downloaded");
+                }
+            }
+            break;
+        } while (true);
         final String bookId = brOptions.get("bookId").toString();
         final String title = (String) brOptions.get("bookTitle");
         final List<Object> imagesO = (List<Object>) brOptions.get("data");
-        final Boolean isLendingRequired = (Boolean) lendingInfo.get("isLendingRequired") == Boolean.TRUE;
-        /* TODO: Only borrow books if it's necessary (== if it needs to be borrowed and user hasn't already borrowed it) */
-        if (isLendingRequired == Boolean.TRUE) {
-            logger.info("Book needs to be borrowed");
-        }
         long loanedUntilTimestamp = 0;
-        /**
-         * Borrowing books counts per session so if a user borrows a book via browser it won't be borrowed in JD even if user has added the
-         * same account to JD.
-         */
         boolean userHasBorrowedThisBook = false;
         if (loanedMillisecondsLeft > 0) {
             userHasBorrowedThisBook = true;
             loanedUntilTimestamp = System.currentTimeMillis() + loanedUntilTimestamp;
             logger.info("User has already borrowed book which is currently being crawled: " + title);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         for (final Object imageO : imagesO) {

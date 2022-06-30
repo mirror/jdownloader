@@ -2,7 +2,9 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
@@ -40,12 +42,13 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     boolean isCrawlArchiveView();
 
     void setCrawlArchiveView(boolean b);
-    // @AboutConfig
-    // @SpinnerValidator(min = 0, max = 10, step = 1)
-    // @DefaultIntValue(0)
-    // @DescriptionForConfigEntry(text_BookImageQuality)
-    // @Order(30)
-    // int getBookImageQuality();
-    //
-    // void setBookImageQuality(int scaleFactor);
+
+    @AboutConfig
+    @SpinnerValidator(min = 0, max = 10, step = 1)
+    @DefaultIntValue(0)
+    @DescriptionForConfigEntry(text_BookImageQuality)
+    @Order(30)
+    int getBookImageQuality();
+
+    void setBookImageQuality(int scaleFactor);
 }

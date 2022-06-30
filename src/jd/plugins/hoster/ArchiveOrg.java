@@ -16,16 +16,20 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -88,18 +92,16 @@ public class ArchiveOrg extends PluginForHost {
             try {
                 /* 2021-02-25: Do NOT use head connection here anymore! */
                 prepDownloadHeaders(br, link);
-                con = br.openGetConnection(link.getPluginPatternMatcher());
+                con = br.openGetConnection(getDirectURL(link));
                 connectionErrorhandling(con, link, account);
-                if (this.looksLikeDownloadableContent(con)) {
-                    link.setFinalFileName(getFileNameFromHeader(con));
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return AvailableStatus.TRUE;
-                } else {
-                    /* Most likely file is offline */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String filenameFromHeader = getFileNameFromHeader(con);
+                if (filenameFromHeader != null) {
+                    link.setFinalFileName(filenameFromHeader);
                 }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                return AvailableStatus.TRUE;
             } finally {
                 if (con != null) {
                     con.disconnect();
@@ -134,7 +136,7 @@ public class ArchiveOrg extends PluginForHost {
             /* Check errors for books */
             if (con.getResponseCode() == 403) {
                 if (isBookLendingRequired(link)) {
-                    /* TODO: auto re-lend book */
+                    /* TODO: auto re-lend (borrow) book in this case if account is available. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: Lending of this book has expired");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: You tried to download borrowed a book page without account");
@@ -148,7 +150,7 @@ public class ArchiveOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Book preview unavailable");
             }
         }
-        if (StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
             /* <h1>Item not available</h1> */
             if (br.containsHTML("(?i)>\\s*Item not available<")) {
@@ -193,11 +195,7 @@ public class ArchiveOrg extends PluginForHost {
                 // this.borrowBook(br, account, bookID);
             }
             prepDownloadHeaders(br, link);
-            if (this.isBook(link)) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher() + "&rotate=0&scale=0", isResumeable(link, account), getMaxChunks(link, account));
-            } else {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account), getMaxChunks(link, account));
-            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, getDirectURL(link), isResumeable(link, account), getMaxChunks(link, account));
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account), getMaxChunks(link, account));
         }
@@ -213,6 +211,22 @@ public class ArchiveOrg extends PluginForHost {
         dl.startDownload();
     }
 
+    private String getDirectURL(final DownloadLink link) throws MalformedURLException {
+        if (this.isBook(link)) {
+            final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
+            final URL uri = new URL(link.getPluginPatternMatcher());
+            final UrlQuery query = UrlQuery.parse(uri.getQuery());
+            query.add("rotate", "0");
+            /* This one defines the image quality. This may only work for borrowed books but we'll append it to all book URLs regardless. */
+            query.add("scale", Integer.toString(cfg.getBookImageQuality()));
+            String url = URLHelper.getURL(uri, false, true, true).toString();
+            url += "?" + query.toString();
+            return url;
+        } else {
+            return link.getPluginPatternMatcher();
+        }
+    }
+
     private void prepDownloadHeaders(final Browser br, final DownloadLink link) {
         if (this.isBook(link)) {
             br.getHeaders().put("Referer", "https://archive.org/");
@@ -225,7 +239,9 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
+        if (this.isBook(link)) {
+            return false;
+        } else if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
             return false;
         } else {
             return true;
@@ -233,7 +249,9 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     public int getMaxChunks(final DownloadLink link, final Account account) {
-        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
+        if (this.isBook(link)) {
+            return 1;
+        } else if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
             return 1;
         } else {
             return 0;
