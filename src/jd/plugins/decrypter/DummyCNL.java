@@ -96,7 +96,7 @@ public class DummyCNL extends PluginForDecrypt {
         final FilePackage fp;
         if (packageName != null) {
             fp = FilePackage.getInstance();
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
             fp.setName(packageName);
         } else {
             fp = null;

@@ -83,7 +83,7 @@ public class DncHllWldNt extends antiDDoSForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
         }
         return decryptedLinks;
     }

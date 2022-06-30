@@ -90,7 +90,7 @@ public class ScnlogEu extends antiDDoSForDecrypt {
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
         }

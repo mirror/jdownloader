@@ -54,7 +54,7 @@ public class Ebay extends PluginForDecrypt {
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.setAllowMerge(true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

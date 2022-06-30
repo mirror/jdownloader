@@ -209,7 +209,7 @@ public class ProDjCm extends PluginForDecrypt {
             fpName = fpName.replaceAll("&quot;", "'");
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
             fp.addLinks(ret);
         }
     }

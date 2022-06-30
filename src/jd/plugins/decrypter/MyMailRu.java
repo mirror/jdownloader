@@ -111,8 +111,8 @@ public class MyMailRu extends PluginForDecrypt {
             }
             if (fpName != null && setPackagename) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.setProperty("ALLOW_MERGE", true);
+                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.setAllowMerge(true);
                 fp.addLinks(decryptedLinks);
             }
         } else {
@@ -136,7 +136,7 @@ public class MyMailRu extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
             fp.setName(username);
             fp.addLinks(decryptedLinks);
         }
@@ -181,7 +181,7 @@ public class MyMailRu extends PluginForDecrypt {
     // return null;
     // }
     // final FilePackage fp = FilePackage.getInstance();
-    // fp.setProperty("ALLOW_MERGE", true);
+    // fp.setAllowMerge(true);
     // fp.setName(username);
     // for (final String album : albums) {
     // final DownloadLink dl = createDownloadlink(album);

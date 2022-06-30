@@ -884,7 +884,7 @@ public class TbCmV2 extends PluginForDecrypt {
             if (StringUtils.isNotEmpty(fpName)) {
                 fp.setName(fpName);
                 // let the packagizer merge several packages that have the same name
-                fp.setProperty("ALLOW_MERGE", true);
+                fp.setAllowMerge(true);
                 fp.add(ret);
             }
             long estimatedFileSize = 0;

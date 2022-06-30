@@ -706,7 +706,7 @@ public class FlickrCom extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         // lets allow merge, so if the user imports multiple pages manually they will go into the same favourites package.
-        fp.setProperty("ALLOW_MERGE", true);
+        fp.setAllowMerge(true);
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         final int totalEntries;
         if (picCount != null) {

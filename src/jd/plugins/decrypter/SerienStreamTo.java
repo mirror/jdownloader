@@ -284,7 +284,7 @@ public class SerienStreamTo extends PluginForDecrypt {
             if (title != null) {
                 filePackage = FilePackage.getInstance();
                 filePackage.setName(Encoding.htmlDecode(title).trim());
-                filePackage.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+                filePackage.setAllowMerge(true);
             } else {
                 filePackage = null;
             }

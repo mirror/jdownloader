@@ -91,7 +91,7 @@ public class MirroredTo extends PluginForDecrypt {
             fp = fpName != null ? FilePackage.getInstance() : null;
             if (fp != null) {
                 fp.setName(fpName);
-                fp.setProperty("AllOW_MERGE", true);
+                fp.setAllowMerge(true);
             }
             // more steps y0! 20170602
             {

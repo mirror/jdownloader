@@ -63,7 +63,7 @@ public class OneFiveThreeNews extends PluginForDecrypt {
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
