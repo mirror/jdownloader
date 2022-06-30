@@ -9,7 +9,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -116,7 +115,7 @@ public class Br2RadioDe extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(encodeUnicode(title));
                 fp.addLinks(rest);
-                fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+                fp.setAllowInheritance(true);
             }
             return rest;
         }

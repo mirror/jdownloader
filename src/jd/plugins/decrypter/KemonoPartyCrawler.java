@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,10 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -192,7 +192,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final String postTitle = br.getRegex("class=\"post__title\">\\s*<span>([^<]+)</span>").getMatch(0);
         String published = br.getRegex("\"post__published\"[^>]*>\\s*<time[^>]*class\\s*=\\s*\"timestamp[^>]*datetime\\s*=\\s*\"\\s*([0-9\\-: ]+)").getMatch(0);
         if (published == null) {
-            br.getRegex("<meta name\\s*=\\s*\"published\"\\s*content\\s*=\\s*\"\\s*([0-9\\-: ]+)").getMatch(0);
+            published = br.getRegex("<meta name\\s*=\\s*\"published\"\\s*content\\s*=\\s*\"\\s*([0-9\\-: ]+)").getMatch(0);
         }
         final FilePackage fp = FilePackage.getInstance();
         if (postTitle != null) {
@@ -212,6 +212,9 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(betterFilename)) {
                     media.setFinalFileName(betterFilename);
                     media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+                }
+                if (published != null) {
+                    media.setProperty("date", published);
                 }
                 media.setAvailable(true);
                 ret.add(media);

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://(www\\.)?zaycev\\.net/artist/\\d+(\\?page=\\d+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://(www\\.)?zaycev\\.net/artist/\\d+(\\?page=\\d+)?" })
 public class ZyvNt extends PluginForDecrypt {
-
     public ZyvNt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,7 +55,7 @@ public class ZyvNt extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(artist.trim()));
             fp.addLinks(decryptedLinks);
-            fp.setProperty("ALLOW_MERGE", true);
+            fp.setAllowMerge(true);
         }
         return decryptedLinks;
     }
@@ -66,5 +64,4 @@ public class ZyvNt extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

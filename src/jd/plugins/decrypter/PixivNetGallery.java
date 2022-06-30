@@ -32,7 +32,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -232,7 +231,7 @@ public class PixivNetGallery extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             if (!PluginJsonConfig.get(this.getConfigInterface()).isCrawlUserWorksIndividually()) {
-                fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, Boolean.TRUE);
+                fp.setAllowInheritance(true);
             }
             uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
             if (isOffline(br)) {

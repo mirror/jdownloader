@@ -10,7 +10,6 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -85,8 +84,8 @@ public class GenericWBoardDecrypter extends antiDDoSForDecrypt {
             if (title != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(title.trim()));
-                fp.setProperty("ALLOW_MERGE", true);
-                fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+                fp.setAllowMerge(true);
+                fp.setAllowInheritance(true);
                 fp.addLinks(ret);
             }
         }

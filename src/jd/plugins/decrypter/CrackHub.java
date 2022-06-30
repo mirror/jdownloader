@@ -52,7 +52,7 @@ public class CrackHub extends antiDDoSForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+            fp.setAllowInheritance(true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

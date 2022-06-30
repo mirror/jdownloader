@@ -18,18 +18,17 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "readallcomics.com" }, urls = { "https?://(?:www\\.)?readallcomics\\.com/(?:category/)?[^/]+/?" })
 public class ReadAllComics extends antiDDoSForDecrypt {
@@ -51,9 +50,9 @@ public class ReadAllComics extends antiDDoSForDecrypt {
             String[] chapters = new Regex(linkSection, "href=[\"\']([^\"\']+)[\"\']").getColumn(0);
             if (chapters != null && chapters.length > 0) {
                 if (StringUtils.isNotEmpty(fpName)) {
-                    fp.setName(Encoding.htmlDecode(fpName.trim()));
-                    fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-                    fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+                    fp.setName(Encoding.htmlDecode(fpName).trim());
+                    fp.setAllowMerge(true);
+                    fp.setAllowInheritance(true);
                 }
                 for (String chapter : chapters) {
                     final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(chapter));

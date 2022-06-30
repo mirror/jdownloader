@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -33,10 +37,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+(/likes)?)" })
 public class ArtstationCom extends antiDDoSForDecrypt {
@@ -75,7 +75,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+        fp.setAllowInheritance(true);
         if (parameter.matches(TYPE_ALBUM)) {
             final String project_id = new Regex(parameter, TYPE_ALBUM).getMatch(0);
             if (inValidate(project_id)) {

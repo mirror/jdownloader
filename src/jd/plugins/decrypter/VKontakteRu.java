@@ -44,7 +44,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Request;
@@ -2243,7 +2242,7 @@ public class VKontakteRu extends PluginForDecrypt {
         this.getPage(br, param.getCryptedUrl());
         final FilePackage fp = FilePackage.getInstance();
         /* We want all links from this user/collection to go into the same package */
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+        fp.setAllowInheritance(true);
         fp.setName(clipCollectionName);
         return this.crawlVideos(this.br, fp);
     }
