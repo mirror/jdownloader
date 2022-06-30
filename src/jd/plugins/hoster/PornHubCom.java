@@ -101,15 +101,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+        }
+    });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
@@ -671,7 +671,8 @@ public class PornHubCom extends PluginForHost {
                         if (size == 1) {
                             qualityInfo = ((List) qualityInfo).get(0);
                         } else {
-                            if (StringUtils.equalsIgnoreCase(format, "mp4")) {
+                            if (StringUtils.equalsIgnoreCase(format, "mp4") && size > 0 && false) {
+                                /* 2022-30-06, looks like mp4 is no longer available or just server maintenance */
                                 try {
                                     final Browser brc = br.cloneBrowser();
                                     brc.setFollowRedirects(true);
@@ -683,12 +684,28 @@ public class PornHubCom extends PluginForHost {
                                     plugin.getLogger().log(jme);
                                 }
                                 continue;
-                            } else if (StringUtils.equalsIgnoreCase(format, "hls") || !StringUtils.containsIgnoreCase(dllink_temp, "master.m3u8")) {
+                            } else if (StringUtils.equalsIgnoreCase(format, "hls")) {
                                 try {
-                                    final Browser brc = br.cloneBrowser();
-                                    brc.setFollowRedirects(true);
-                                    final List<Object> mp4Medias = plugin.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
-                                    medias.addAll(mp4Medias);
+                                    for (final Object quality : (List) qualityInfo) {
+                                        final String q = quality + "P";
+                                        final String replacement = new Regex(dllink_temp, "(" + q + "_\\d+K)").getMatch(0);
+                                        if (replacement != null && quality instanceof Number && qualities.get(quality.toString()) == null) {
+                                            final String m3u8 = dllink_temp.replaceFirst("(\\d+/,)(.*?)(,_\\d+\\.mp4)", "$1" + replacement + "$3");
+                                            final Browser brc = br.cloneBrowser();
+                                            brc.setFollowRedirects(true);
+                                            brc.getPage(m3u8);
+                                            final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(brc);
+                                            if (hlsQualities.size() == 1) {
+                                                Map<String, String> formatMap = qualities.get(quality.toString());
+                                                if (formatMap == null) {
+                                                    // prefer single quality m3u8 files, see blow
+                                                    formatMap = new HashMap<String, String>();
+                                                    qualities.put(quality.toString(), formatMap);
+                                                    formatMap.put(format, dllink_temp);
+                                                }
+                                            }
+                                        }
+                                    }
                                 } catch (IOException ioe) {
                                     plugin.getLogger().log(ioe);
                                 } catch (JSonMapperException jme) {
