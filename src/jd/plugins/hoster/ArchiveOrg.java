@@ -253,9 +253,6 @@ public class ArchiveOrg extends PluginForHost {
                 /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
                 final Cookies userCookies = account.loadUserCookies();
                 final Cookies borrowCookies = account.loadCookies("borrow");
-                // if (borrowCookies != null) {
-                // borrowCookies.clear();
-                // }
                 if (borrowCookies != null && !borrowCookies.isEmpty()) {
                     br.setCookies(borrowCookies);
                 }
