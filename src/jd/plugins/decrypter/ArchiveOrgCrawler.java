@@ -306,13 +306,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // if (account != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-        // /* Try to borrow book if account is available */
-        // final Browser brc = br.cloneBrowser();
-        // this.hostPlugin.borrowBook(brc, account, bookID);
-        // /* Refresh page */
-        // // br.getPage(br.getURL());
-        // }
         final String bookAjaxURL = getBookReaderURL(br);
         if (bookAjaxURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -344,6 +337,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             brOptions = (Map<String, Object>) data.get("brOptions");
             isLendingRequired = (Boolean) lendingInfo.get("isLendingRequired") == Boolean.TRUE;
             if (hasBorrowedBookNow) {
+                /* We've borrowed that book in the first run of this loop -> Quit loop */
                 break;
             }
             /* Borrow book if necessary */
