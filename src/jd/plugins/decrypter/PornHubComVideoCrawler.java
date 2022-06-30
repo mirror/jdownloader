@@ -726,9 +726,6 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final boolean crawlThumbnail = cfg.getBooleanProperty(PornHubCom.CRAWL_THUMBNAIL, false);
         if (!crawlHLS && !crawlMP4) {
             crawlHLS = crawlMP4 = true;
-        } else if (!crawlHLS) {
-            /** 2022-30-06, MP4 no longer available?! */
-            crawlHLS = true;
         }
         final boolean prefer_server_filename = cfg.getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false);
         /* Convert embed links to normal links */
@@ -784,6 +781,17 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         } else if (!br.getURL().contains(viewkey)) {
             logger.info("Debug info: unknown: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        boolean hasMP4 = false;
+        for (Entry<String, Map<String, String>> entry : qualities.entrySet()) {
+            if (entry.getValue().containsKey("mp4")) {
+                hasMP4 = true;
+                break;
+            }
+        }
+        if (!hasMP4) {
+            logger.info("Enable HLS because no MP4 found!");
+            crawlHLS = true;
         }
         String categoriesCommaSeparated = "";
         final String categoriesSrc = br.getRegex("<div class=\"categoriesWrapper\">(.*?)</div>\\s+</div>").getMatch(0);

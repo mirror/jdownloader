@@ -71,6 +71,10 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.gui.translate._GUI;
@@ -181,6 +185,8 @@ public class PornHubCom extends PluginForHost {
         this.setConfigElements();
     }
 
+    SSLSocketStreamOptionsModifier modifier = null;
+
     @Override
     public void init() {
         for (String domain : domainsFree) {
@@ -188,6 +194,27 @@ public class PornHubCom extends PluginForHost {
         }
         for (String domain : domainsPremium) {
             Browser.setRequestIntervalLimitGlobal(domain, 333);
+        }
+        final Thread currentThread = Thread.currentThread();
+        modifier = new SSLSocketStreamOptionsModifier() {
+            @Override
+            public SSLSocketStreamOptions modify(SSLSocketStreamOptions sslSocketStreamOptions, HTTPConnection httpConnection) {
+                if (Thread.currentThread() == currentThread) {
+                    sslSocketStreamOptions.getDisabledCipherSuites().clear();
+                }
+                return sslSocketStreamOptions;
+            }
+        };
+        HTTPConnectionImpl.addSSLSocketStreamOptionsModifier(modifier);
+    }
+
+    @Override
+    public void clean() {
+        try {
+            super.clean();
+        } finally {
+            HTTPConnectionImpl.removeSSLSocketStreamOptionsModifier(modifier);
+            modifier = null;
         }
     }
 
@@ -671,12 +698,12 @@ public class PornHubCom extends PluginForHost {
                         if (size == 1) {
                             qualityInfo = ((List) qualityInfo).get(0);
                         } else {
-                            if (StringUtils.equalsIgnoreCase(format, "mp4") && size > 0 && false) {
-                                /* 2022-30-06, looks like mp4 is no longer available or just server maintenance */
+                            if (StringUtils.equalsIgnoreCase(format, "mp4")) {
                                 try {
                                     final Browser brc = br.cloneBrowser();
                                     brc.setFollowRedirects(true);
-                                    final List<Object> mp4Medias = plugin.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
+                                    brc.getPage(dllink_temp);
+                                    final List<Object> mp4Medias = plugin.restoreFromString(brc.toString(), TypeRef.LIST);
                                     medias.addAll(mp4Medias);
                                 } catch (IOException ioe) {
                                     plugin.getLogger().log(ioe);
@@ -1383,6 +1410,12 @@ public class PornHubCom extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
+        for (String domain : domainsFree) {
+            br.setCookie(domain, "age_verified", "1");
+        }
+        for (String domain : domainsPremium) {
+            br.setCookie(domain, "age_verified", "1");
+        }
         br.setLoadLimit(br.getDefaultLoadLimit() * 4);
         // only evaluated via js
         // br.setCookie("pornhub.com", "cookiesBannerSeen", "1");
