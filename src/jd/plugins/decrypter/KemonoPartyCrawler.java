@@ -207,6 +207,9 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             directURL = br.getURL(directURL).toString();
             if (dups.add(new URL(directURL).getPath())) {
                 final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
+                media.setProperty("portal", portal);
+                media.setProperty("userid", userID);
+                media.setProperty("postid", postID);
                 final UrlQuery query = UrlQuery.parse(directURL);
                 final String betterFilename = Encoding.htmlDecode(query.get("f"));
                 if (!StringUtils.isEmpty(betterFilename)) {
