@@ -65,8 +65,8 @@ public class ArchiveOrg extends PluginForHost {
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN  = "download_serverside_broken";
     public static final String  PROPERTY_BOOK_ID                     = "book_id";
+    public static final String  PROPERTY_IS_LENDING_REQUIRED         = "is_lending_required";
     public static final String  PROPERTY_BOOK_LOANED_UNTIL_TIMESTAMP = "book_loaned_until_timestamp";
-    private boolean             registered_only                      = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -75,7 +75,6 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        registered_only = false;
         if (link.getPluginPatternMatcher().endsWith("my_dir")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -121,13 +120,39 @@ public class ArchiveOrg extends PluginForHost {
         }
     }
 
+    private boolean isBookLendingRequired(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_IS_LENDING_REQUIRED)) {
+            /* Legacy */
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException, IOException {
-        if (con.getResponseCode() == 403 || StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
+        if (this.isBook(link)) {
+            /* Check errors for books */
+            if (con.getResponseCode() == 403) {
+                if (isBookLendingRequired(link)) {
+                    /* TODO: auto re-lend book */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: Lending of this book has expired");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: You tried to download borrowed a book page without account");
+                }
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 404: You tried to download borrowed a book page without account");
+            }
+            if (con.getURL().toString().contains("preview-unavailable.png")) {
+                // https://archive.org/bookreader/static/preview-unavailable.png
+                /* This page of a book is only available when book is borrowed by user. */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Book preview unavailable");
+            }
+        }
+        if (StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
             br.followConnection(true);
             /* <h1>Item not available</h1> */
             if (br.containsHTML("(?i)>\\s*Item not available<")) {
                 if (br.containsHTML("(?i)>\\s*The item is not available due to issues")) {
-                    registered_only = true;
                     /* First check for this flag */
                     if (link.getBooleanProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN, false)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The item is not available due to issues with the item's content");
@@ -144,25 +169,13 @@ public class ArchiveOrg extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (con.getResponseCode() == 404) {
-            if (isBook(link) && account != null) {
-                /* 2021-11-18 */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Borrowed book downloading is not supported");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else if (isBook(link) && con.getURL().toString().contains("preview-unavailable.png")) {
-            // https://archive.org/bookreader/static/preview-unavailable.png
-            /* Page of a book which is only available when book is borrowed by user (paid content). */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Book preview unavailable");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
-        if (registered_only) {
-            throw new AccountRequiredException();
-        }
         doDownload(null, link);
     }
 
@@ -240,6 +253,9 @@ public class ArchiveOrg extends PluginForHost {
                 /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
                 final Cookies userCookies = account.loadUserCookies();
                 final Cookies borrowCookies = account.loadCookies("borrow");
+                // if (borrowCookies != null) {
+                // borrowCookies.clear();
+                // }
                 if (borrowCookies != null && !borrowCookies.isEmpty()) {
                     br.setCookies(borrowCookies);
                 }
@@ -338,7 +354,7 @@ public class ArchiveOrg extends PluginForHost {
             final Cookies borrowCookies = new Cookies();
             for (final Cookie cookie : br.getCookies(br.getHost()).getCookies()) {
                 /* Collect borrow cookies and save them separately */
-                if (cookie.getKey().matches("br-.*")) {
+                if (cookie.getKey().matches("(br|loan)-.*")) {
                     borrowCookies.add(cookie);
                 }
             }
