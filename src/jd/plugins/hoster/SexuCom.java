@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -109,7 +108,7 @@ public class SexuCom extends PluginForHost {
     }
 
     /* Official downloadlink is available but it only leads to the worst quality possible e.g. 240p. */
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
@@ -118,8 +117,11 @@ public class SexuCom extends PluginForHost {
         link.setName(lid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("class\\s*=\\s*\"container page404\"|>\\s*This video was deleted\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String playerSettingsString = br.getRegex("var\\s*playerSettings\\s*=\\s*(\\{.*?\\})\\s*;\\s*</script").getMatch(0);
@@ -179,7 +181,7 @@ public class SexuCom extends PluginForHost {
                 con = br.openHeadConnection(dllink);
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
             } finally {
@@ -193,14 +195,14 @@ public class SexuCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
