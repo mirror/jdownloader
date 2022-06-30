@@ -642,7 +642,11 @@ public class NitroFlareCom extends antiDDoSForHost {
     private synchronized void controlFree(final int num) {
         final int totalMaxSimultanFreeDownload = PluginJsonConfig.get(NitroflareConfig.class).isAllowMultipleFreeDownloads() ? 20 : 1;
         logger.info("maxFree was = " + maxFree.get() + " total is = " + totalMaxSimultanFreeDownload + " change " + num);
-        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload));
+        if (totalMaxSimultanFreeDownload == -1) {
+            maxFree.set(maxFree.addAndGet(num));
+        } else {
+            maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload));
+        }
         logger.info("maxFree now = " + maxFree.get());
     }
 

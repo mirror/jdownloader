@@ -616,7 +616,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
-    private static interface VersionInfo {
+    public static interface VersionInfo {
         VersionType getVersionType();
 
         VideoLanguage getVideoLanguage();
@@ -628,7 +628,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         boolean hasSubtitle();
     }
 
-    private VersionInfo parseVersionInfo(final String apiosCode) {
+    public static VersionInfo parseVersionInfo(final String apiosCode) {
         final SubtitleType subtitleType = SubtitleType.parse(apiosCode);
         final VideoLanguage videoLanguage = VideoLanguage.parse(apiosCode);
         final SubtitleLanguage subtitleLanguage = SubtitleLanguage.parse(apiosCode);

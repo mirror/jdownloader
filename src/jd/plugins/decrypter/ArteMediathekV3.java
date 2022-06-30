@@ -44,6 +44,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.decrypter.ArteMediathekDecrypter.VersionInfo;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
@@ -257,6 +258,10 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setProperty(PROPERTY_AUDIO_LABEL, videoStream.get("audioLabel"));
                 link.setProperty(PROPERTY_PLATFORM, platform);
                 link.setProperty(PROPERTY_ORIGINAL_FILENAME, videoStream.get("filename"));
+                final VersionInfo versionInfo = ArteMediathekDecrypter.parseVersionInfo(audioCode);
+                /* Do not modify those linkIDs to try to keep backward compatibility! */
+                final String linkID = getHost() + "://" + videoID + "/" + versionInfo.toString() + "/" + "http_" + bitrate;
+                link.setLinkID(linkID);
                 /* Get filename according to users' settings. */
                 final String filename = this.getAndSetFilename(link);
                 /* Make sure that our directHTTP plugin will never change this filename. */
