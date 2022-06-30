@@ -47,7 +47,6 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -385,8 +384,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contentURL = createTwitterPostURL(username, tweetID);
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
-        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+        fp.setAllowInheritance(true);
+        fp.setAllowMerge(true);
         final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
         String lastFoundOriginalFilename = null;

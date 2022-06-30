@@ -35,7 +35,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -105,7 +104,7 @@ public class BiqleRu extends PluginForDecrypt {
             if (title != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(title);
-                fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+                fp.setAllowInheritance(true);
             }
             final String oid_and_id = oid + "_" + id;
             final String daxabPlayerJS = br.getRegex("DaxabPlayer\\.init\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*\\}\\s*</script").getMatch(0);

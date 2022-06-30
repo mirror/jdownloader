@@ -26,7 +26,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -140,9 +139,9 @@ public class WCOStream extends antiDDoSForDecrypt {
         }
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.setAllowMerge(true);
+            fp.setAllowInheritance(true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

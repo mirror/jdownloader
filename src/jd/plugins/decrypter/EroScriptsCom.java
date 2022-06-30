@@ -11,6 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.utils.Files;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -25,13 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
-import org.appwork.utils.Files;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/t/([\\w\\-/]+)" })
 public class EroScriptsCom extends antiDDoSForDecrypt {
@@ -356,8 +356,8 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
         } else {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
-            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
+            fp.setAllowMerge(true);
+            fp.setAllowInheritance(true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
