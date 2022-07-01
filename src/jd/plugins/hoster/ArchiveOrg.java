@@ -65,11 +65,7 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final int           FREE_MAXDOWNLOADS                   = 20;
-    private final int           ACCOUNT_FREE_MAXDOWNLOADS           = 20;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final int           MAXDOWNLOADS                        = -1;
     private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
     public static final String  PROPERTY_BOOK_ID                    = "book_id";
     public static final String  PROPERTY_IS_LENDING_REQUIRED        = "is_lending_required";
@@ -266,7 +262,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return MAXDOWNLOADS;
     }
 
     public void login(final Account account, final String bookID, final boolean force) throws Exception {
@@ -282,7 +278,7 @@ public class ArchiveOrg extends PluginForHost {
                         br.setCookies(borrowCookies);
                     }
                 }
-                this.cleanupOldBorrowCookies(account);
+                this.cleanupBorrowCookies(account);
                 if (userCookies != null) {
                     if (!force) {
                         /* Do not check cookies */
@@ -402,10 +398,10 @@ public class ArchiveOrg extends PluginForHost {
         if (borrowCookies != null && !borrowCookies.isEmpty()) {
             account.saveCookies(borrowCookies, getBorrowCookieKey(bookID));
         }
-        cleanupOldBorrowCookies(account);
+        cleanupBorrowCookies(account);
     }
 
-    public void cleanupOldBorrowCookies(final Account account) {
+    public void cleanupBorrowCookies(final Account account) {
         /*
          * Cleanup: Delete old book cookies because user can add an unlimited amount of books resulting in a lot of stored properties on our
          * account.
@@ -448,7 +444,6 @@ public class ArchiveOrg extends PluginForHost {
         login(account, null, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         return ai;
     }
 
@@ -478,7 +473,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
+        return MAXDOWNLOADS;
     }
 
     @Override
