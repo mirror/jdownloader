@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,7 +27,6 @@ import java.util.Map.Entry;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
@@ -65,10 +66,11 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final int           MAXDOWNLOADS                        = -1;
-    private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
-    public static final String  PROPERTY_BOOK_ID                    = "book_id";
-    public static final String  PROPERTY_IS_LENDING_REQUIRED        = "is_lending_required";
+    private final int                      MAXDOWNLOADS                        = -1;
+    private static final String            PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
+    public static final String             PROPERTY_BOOK_ID                    = "book_id";
+    public static final String             PROPERTY_IS_LENDING_REQUIRED        = "is_lending_required";
+    private static HashMap<String, Object> bookBorrowSessions                  = new HashMap<String, Object>();
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -82,7 +84,7 @@ public class ArchiveOrg extends PluginForHost {
         }
         this.setBrowserExclusive();
         if (account != null) {
-            login(account, getBookID(link), false);
+            login(account, false);
         }
         br.setFollowRedirects(true);
         if (!isDownload) {
@@ -141,7 +143,7 @@ public class ArchiveOrg extends PluginForHost {
                     /* TODO: auto re-lend (borrow) book in this case if account is available. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: Lending of this book has expired");
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: You tried to download borrowed a book page without account");
+                    throw new AccountRequiredException("Error 403: Cannot download borrowed book page without account");
                 }
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 404: You tried to download a borrowed book page without account");
@@ -185,17 +187,45 @@ public class ArchiveOrg extends PluginForHost {
 
     private void doDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
         if (account != null) {
-            this.login(account, this.getBookID(link), false);
+            this.login(account, false);
+            if (this.isBook(link) && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                if (this.isBookLendingRequired(link)) {
+                    final String bookID = getBookID(link);
+                    if (bookID == null) {
+                        /* Old/broken items */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (bookBorrowSessions.containsKey(bookID)) {
+                        final Map<String, Object> bookBorrowSession = (Map<String, Object>) bookBorrowSessions.get(bookID);
+                        br.setCookies((Cookies) bookBorrowSession.get("cookies"));
+                    } else {
+                        /**
+                         * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br>
+                         * User could e.g. have added account via cookie login so borrow session for some books may be available regardless.
+                         */
+                        logger.info("Borrow required but no borrow session available -> We will most likely run into errorhandling soon");
+                    }
+                }
+            }
+        }
+        /* Cleanup borrow session map */
+        synchronized (bookBorrowSessions) {
+            final Iterator<Entry<String, Object>> iterator = bookBorrowSessions.entrySet().iterator();
+            final ArrayList<String> keysToDelete = new ArrayList<String>();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                final Map<String, Object> borrowInfo = (Map<String, Object>) entry.getValue();
+                final long timestamp = ((Long) borrowInfo.get("timestamp")).longValue();
+                final long timePassed = System.currentTimeMillis() - timestamp;
+                if (timePassed > 60 * 60 * 1000l) {
+                    keysToDelete.add(entry.getKey());
+                }
+            }
+            for (final String keyToDelete : keysToDelete) {
+                bookBorrowSessions.remove(keyToDelete);
+            }
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            if (this.isBook(link) && account != null) {
-                final String bookID = link.getStringProperty(PROPERTY_BOOK_ID);
-                if (bookID == null) {
-                    /* Old/broken items */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                // this.borrowBook(br, account, bookID);
-            }
             prepDownloadHeaders(br, link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, getDirectURL(link), isResumeable(link, account), getMaxChunks(link, account));
         } else {
@@ -265,20 +295,13 @@ public class ArchiveOrg extends PluginForHost {
         return MAXDOWNLOADS;
     }
 
-    public void login(final Account account, final String bookID, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
                 final Cookies userCookies = account.loadUserCookies();
-                if (bookID != null) {
-                    final Cookies borrowCookies = account.loadCookies(getBorrowCookieKey(bookID));
-                    if (borrowCookies != null && !borrowCookies.isEmpty()) {
-                        br.setCookies(borrowCookies);
-                    }
-                }
-                this.cleanupBorrowCookies(account);
                 if (userCookies != null) {
                     if (!force) {
                         /* Do not check cookies */
@@ -337,13 +360,16 @@ public class ArchiveOrg extends PluginForHost {
         }
     }
 
-    /** Borrows given bookID which gives us a token we can use to download all pages of that book. */
+    /**
+     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br>
+     * It is typically valid for one hour.
+     */
     public void borrowBook(final Browser br, final Account account, final String bookID, final boolean skipAllExceptLastStep) throws Exception {
         if (account == null) {
             /* Account is required to borrow books. */
             throw new AccountRequiredException();
         }
-        synchronized (account) {
+        synchronized (bookBorrowSessions) {
             if (bookID == null) {
                 /* Developer mistake */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -392,41 +418,12 @@ public class ArchiveOrg extends PluginForHost {
             }
             if (borrowCookies.isEmpty()) {
                 logger.warning("WTF book was borrowed but no borrow-cookies are present!");
-            } else {
-                saveBorrowCookiesAndCleanupBorrowCookieData(account, borrowCookies, bookID);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-    }
-
-    private static String getBorrowCookieKey(final String bookID) {
-        return "borrow_" + bookID;
-    }
-
-    public void saveBorrowCookiesAndCleanupBorrowCookieData(final Account account, final Cookies borrowCookies, final String bookID) {
-        if (borrowCookies != null && !borrowCookies.isEmpty()) {
-            account.saveCookies(borrowCookies, getBorrowCookieKey(bookID));
-        }
-        cleanupBorrowCookies(account);
-    }
-
-    public void cleanupBorrowCookies(final Account account) {
-        /*
-         * Cleanup: Delete old book cookies because user can add an unlimited amount of books resulting in a lot of stored properties on our
-         * account.
-         */
-        final Iterator<Entry<String, Object>> iterator = account.getProperties().entrySet().iterator();
-        final long maxSaveMillis = 60 * 60 * 1000;
-        while (iterator.hasNext()) {
-            final Entry<String, Object> entry = iterator.next();
-            final String borrowCookieKey = new Regex(entry.getKey(), ".*(borrow_.+)").getMatch(0);
-            if (borrowCookieKey != null) {
-                // final Cookies cookies = (Cookies) entry.getValue();
-                final long timestamp = account.getCookiesTimeStamp(borrowCookieKey);
-                final long timePassed = System.currentTimeMillis() - timestamp;
-                if (timePassed >= maxSaveMillis) {
-                    account.clearCookies(borrowCookieKey);
-                }
-            }
+            final HashMap<String, Object> borrowMap = new HashMap<String, Object>();
+            borrowMap.put("cookies", borrowCookies);
+            borrowMap.put("timestamp", System.currentTimeMillis());
+            bookBorrowSessions.put(bookID, borrowMap);
         }
     }
 
@@ -449,7 +446,7 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, null, true);
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         return ai;
