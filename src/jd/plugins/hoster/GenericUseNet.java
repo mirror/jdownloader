@@ -28,7 +28,6 @@ import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -200,14 +199,14 @@ public class GenericUseNet extends UseNet {
     }
 
     @Override
-    public String getHost(final DownloadLink link, Account account) {
+    public String getHost(final DownloadLink link, Account account, boolean includeSubdomain) {
         if (account != null) {
             final GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
             final String host = cfg.getHost();
             if (host != null) {
-                return Browser.getHost(host, true);
+                return Browser.getHost(host, includeSubdomain);
             }
         }
-        return super.getHost(link, account);
+        return super.getHost(link, account, includeSubdomain);
     }
 }

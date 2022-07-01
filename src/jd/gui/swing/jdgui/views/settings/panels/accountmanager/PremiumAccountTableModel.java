@@ -701,7 +701,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                 final PluginForHost plugin = value.getAccount().getPlugin();
                 final DomainInfo domainInfo;
                 if (plugin != null) {
-                    domainInfo = DomainInfo.getInstance(plugin.getHost(null, value.getAccount()));
+                    domainInfo = DomainInfo.getInstance(plugin.getHost(null, value.getAccount(), false));
                 } else {
                     domainInfo = DomainInfo.getInstance(value.getAccount().getHoster());
                 }

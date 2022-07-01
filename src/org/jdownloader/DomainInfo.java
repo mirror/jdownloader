@@ -177,6 +177,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         return null;
     }
 
+    @Deprecated
     public PluginForHost findPlugin() {
         return JDUtilities.getPluginForHost(getTld());
     }

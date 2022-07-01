@@ -359,7 +359,7 @@ public class Account extends Property {
     public String getHosterByPlugin() {
         final PluginForHost plugin = this.getPlugin();
         if (plugin != null && isMultiPlugin()) {
-            final String ret = plugin.getHost(null, this);
+            final String ret = plugin.getHost(null, this, false);
             if (ret != null) {
                 return ret;
             }

@@ -44,9 +44,9 @@ public class LinkCrawlerRetry extends PluginForHost {
     }
 
     @Override
-    public String getHost(DownloadLink link, Account account) {
+    public String getHost(DownloadLink link, Account account, boolean includeSubdomain) {
         if (link != null) {
-            return Browser.getHost(link.getPluginPatternMatcher());
+            return Browser.getHost(link.getPluginPatternMatcher(), includeSubdomain);
         } else {
             return getHost();
         }

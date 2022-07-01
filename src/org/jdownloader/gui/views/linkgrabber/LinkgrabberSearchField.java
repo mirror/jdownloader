@@ -3,8 +3,8 @@ package org.jdownloader.gui.views.linkgrabber;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
+import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -12,6 +12,7 @@ import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -88,8 +89,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     final String name = e.getName();
                     if (isMatching(pattern, name)) {
                         return false;
+                    } else {
+                        return true;
                     }
-                    return true;
                 }
 
                 @Override
@@ -114,8 +116,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     final String name = v.getName();
                     if (isMatching(pattern, name)) {
                         return false;
+                    } else {
+                        return true;
                     }
-                    return true;
                 }
 
                 @Override
@@ -145,8 +148,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     final File directory = LinkTreeUtils.getDownloadDirectory(v);
                     if (directory != null && isMatching(pattern, new File(directory, v.getName()).toString())) {
                         return false;
+                    } else {
+                        return true;
                     }
-                    return true;
                 }
 
                 @Override
@@ -179,8 +183,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     }
                     if (isMatching(pattern, comment)) {
                         return false;
+                    } else {
+                        return true;
                     }
-                    return true;
                 }
 
                 @Override
@@ -218,8 +223,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     }
                     if (isMatching(pattern, comment)) {
                         return false;
+                    } else {
+                        return true;
                     }
-                    return true;
                 }
 
                 @Override
@@ -229,7 +235,7 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
             };
         case HOSTER:
             return new PackageControllerTableModelFilter<CrawledPackage, CrawledLink>() {
-                private HashMap<String, Boolean> fastCheck = new HashMap<String, Boolean>();
+                private final WeakHashMap<DomainInfo, Boolean> fastCheck = new WeakHashMap<DomainInfo, Boolean>();
 
                 @Override
                 public boolean isFilteringPackageNodes() {
@@ -243,17 +249,18 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
 
                 @Override
                 public synchronized boolean isFiltered(CrawledLink v) {
-                    final String host = v.getDomainInfo().getTld();
-                    Boolean ret = fastCheck.get(host);
+                    final DomainInfo domainInfo = v.getDomainInfo();
+                    final String host = domainInfo.getDomain();
+                    final Boolean ret = fastCheck.get(host);
                     if (ret != null) {
                         return ret.booleanValue();
-                    }
-                    if (isMatching(pattern, host)) {
-                        fastCheck.put(host, Boolean.FALSE);
+                    } else if (isMatching(pattern, host)) {
+                        fastCheck.put(domainInfo, Boolean.FALSE);
                         return false;
+                    } else {
+                        fastCheck.put(domainInfo, Boolean.TRUE);
+                        return true;
                     }
-                    fastCheck.put(host, Boolean.TRUE);
-                    return true;
                 }
 
                 @Override
