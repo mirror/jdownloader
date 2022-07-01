@@ -2121,12 +2121,16 @@ public class VKontakteRu extends PluginForDecrypt {
         /* URLs may contain multiple list_id-like strings! It is important to use the source URL as an orientation. */
         final Regex photoTag = new Regex(param.getCryptedUrl(), "https?://[^/]+/photo-?\\d+_\\d+\\?tag=(\\d+)");
         final Regex photoZ = new Regex(param.getCryptedUrl(), PATTERN_PHOTO_SINGLE_Z);
+        String contentURL = null;
         if (photoTag.matches()) {
             module = "photos";
             listID = "tag" + new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
         } else if (photoZ.matches()) {
             module = photoZ.getMatch(0); // e.g. wall, album, feed
             listID = photoZ.getMatch(2);
+            /* Encoding in that url is really important! */
+            final URL url = new URL(param.getCryptedUrl());
+            contentURL = URLHelper.getURL(url, false, true, true).toString() + "?z=" + Encoding.urlEncode(UrlQuery.parse(url.getQuery()).get("z"));
         }
         final String ownerID = new Regex(param.getCryptedUrl(), "photo(-?\\d+)_\\d+").getMatch(0);
         final String contentID = new Regex(param.getCryptedUrl(), "photo-?\\d+_(\\d+)").getMatch(0);
@@ -2134,7 +2138,11 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final DownloadLink dl = getSinglePhotoDownloadLink(ownerID + "_" + contentID, null);
-        dl.setContentUrl(param.getCryptedUrl());
+        if (contentURL != null) {
+            dl.setContentUrl(contentURL);
+        } else {
+            dl.setContentUrl(param.getCryptedUrl());
+        }
         dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         if (module != null) {
             dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, module);

@@ -50,6 +50,7 @@ public class YumpuCom extends PluginForDecrypt {
         final String jsonURL = br.getRegex("var jsonUrl = \"([^\"]+)\"").getMatch(0);
         final String fid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String url_name = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
+        final String[] possibleQualityIdentifiersSorted = new String[] { "big", "large", "medium", "small" };
         if (jsonURL != null) {
             /* New way */
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -75,17 +76,6 @@ public class YumpuCom extends PluginForDecrypt {
             final String base_path = (String) document.get("base_path");
             final Map<String, Object> images = (Map<String, Object>) document.get("images");
             final String basetitle = (String) images.get("title");
-            final Map<String, Object> dimensions = (Map<String, Object>) images.get("dimensions");
-            // String bestResolution = null;
-            String bestResolutionIdentifier = null;
-            final String[] possibleQualityIdentifiersSorted = new String[] { "big", "large", "medium", "small" };
-            for (final String possibleQualityIdentifierSorted : possibleQualityIdentifiersSorted) {
-                if (dimensions.containsKey(possibleQualityIdentifierSorted)) {
-                    // bestResolution = (String) dimensions.get(possibleQualityIdentifierSorted);
-                    bestResolutionIdentifier = possibleQualityIdentifierSorted;
-                    break;
-                }
-            }
             if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(basetitle) || ressourcelist == null || ressourcelist.size() == 0) {
                 return null;
             }
@@ -95,8 +85,16 @@ public class YumpuCom extends PluginForDecrypt {
                 final Map<String, Object> page = ressourcelist.get(i);
                 final Map<String, Object> imagesInfo1 = (Map<String, Object>) page.get("images");
                 final Map<String, Object> imagesInfo2 = (Map<String, Object>) page.get("qss");
-                final String bestResolutionBaseURL = (String) imagesInfo2.get(bestResolutionIdentifier);
-                final String directurl = base_path + imagesInfo1.get(bestResolutionIdentifier) + "?" + bestResolutionBaseURL;
+                String urlPath = null, query = null;
+                for (final String possibleQualityIdentifierSorted : possibleQualityIdentifiersSorted) {
+                    if (imagesInfo1.containsKey(possibleQualityIdentifierSorted) && imagesInfo2.containsKey(possibleQualityIdentifierSorted)) {
+                        // bestResolution = (String) dimensions.get(possibleQualityIdentifierSorted);
+                        urlPath = imagesInfo1.get(possibleQualityIdentifierSorted).toString();
+                        query = imagesInfo2.get(possibleQualityIdentifierSorted).toString();
+                        break;
+                    }
+                }
+                final String directurl = base_path + urlPath + "?" + query;
                 final String filename = i + "_" + basetitle;
                 final DownloadLink dl = createDownloadlink(directurl + "");
                 dl.setFinalFileName(filename);
@@ -138,7 +136,6 @@ public class YumpuCom extends PluginForDecrypt {
             final Map<String, Object> dimensions = (Map<String, Object>) images.get("dimensions");
             String bestResolution = null;
             String bestResolutionIdentifier = null;
-            final String[] possibleQualityIdentifiersSorted = new String[] { "big", "large", "medium", "small" };
             for (final String possibleQualityIdentifierSorted : possibleQualityIdentifiersSorted) {
                 if (dimensions.containsKey(possibleQualityIdentifierSorted)) {
                     bestResolution = (String) dimensions.get(possibleQualityIdentifierSorted);
