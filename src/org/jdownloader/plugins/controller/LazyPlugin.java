@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
@@ -216,11 +217,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         if (class1 != null) {
             pluginClass = new WeakReference<Class<T>>(class1);
         }
-        if (Application.getJavaVersion() >= Application.JAVA17) {
-            this.displayName = displayName.toLowerCase(Locale.ENGLISH).intern();
-        } else {
-            this.displayName = displayName.toLowerCase(Locale.ENGLISH);
-        }
+        this.displayName = Property.dedupeString(displayName.toLowerCase(Locale.ENGLISH));
         if (classLoader != null) {
             this.classLoader = new WeakReference<PluginClassLoaderChild>(classLoader);
         }
