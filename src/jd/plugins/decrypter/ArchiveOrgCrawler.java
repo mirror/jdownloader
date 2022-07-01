@@ -320,7 +320,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         // bookAjaxURL = new Regex(bookAjaxURL, "(.+" + Regex.escape(bookID) + ")").getMatch(0);
         // }
         Boolean isLendingRequired = null;
-        boolean hasBorrowedBookNow = false;
+        boolean crawlerBorrowedBookInThisRun = false;
         long loanedSecondsLeft = 0;
         Map<String, Object> brOptions = null;
         do {
@@ -341,20 +341,24 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             brOptions = (Map<String, Object>) data.get("brOptions");
             isLendingRequired = (Boolean) lendingInfo.get("isLendingRequired") == Boolean.TRUE;
-            if (hasBorrowedBookNow) {
+            if (crawlerBorrowedBookInThisRun) {
                 /* We've borrowed that book in the first run of this loop -> Quit loop */
                 break;
             }
             /* Borrow book if necessary */
-            if (isLendingRequired == Boolean.TRUE && loanedSecondsLeft == 0 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (loanedSecondsLeft > 0 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /*
+                 * Book has already been borrowed by user e.g. via browser or user has added --> One request is needed to get borrow cookies
+                 */
+                this.hostPlugin.borrowBook(br.cloneBrowser(), account, bookID, true);
+            } else if (isLendingRequired == Boolean.TRUE && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 logger.info("Book needs to be borrowed");
                 if (account != null) {
                     logger.info("Borrowing book --> All pages should be downloadable");
                     /* Try to borrow book if account is available */
-                    final Browser brc = br.cloneBrowser();
-                    this.hostPlugin.borrowBook(brc, account, bookID);
+                    this.hostPlugin.borrowBook(br.cloneBrowser(), account, bookID, false);
                     /* Go through this loop again: Refreshes page so we can download all pages and will not only get the preview images */
-                    hasBorrowedBookNow = true;
+                    crawlerBorrowedBookInThisRun = true;
                     continue;
                 } else {
                     logger.info("Cannot borrow book --> Only available previews can be downloaded");
@@ -402,6 +406,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 }
                 ret.add(dl);
             }
+        }
+        if (account != null) {
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
         final FilePackage fp = FilePackage.getInstance();
         if (account == null && isLendingRequired == Boolean.TRUE) {
