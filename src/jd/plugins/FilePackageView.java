@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -156,9 +155,11 @@ public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
             }
             writeTempToFields(tmp);
             updatesDone = lupdatesRequired;
-            if (domains.length != tmp.domains.size() || !tmp.domains.containsAll(Arrays.asList(domains))) {
-                final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
-                Collections.sort(lst, DOMAININFOCOMPARATOR);
+            if (domains.length != tmp.domains.size() || !tmp.domains.values().containsAll(Arrays.asList(domains))) {
+                final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains.values());
+                if (lst.size() > 1) {
+                    Collections.sort(lst, DOMAININFOCOMPARATOR);
+                }
                 domains = lst.toArray(new DomainInfo[tmp.domains.size()]);
             }
         }
@@ -174,7 +175,7 @@ public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
         private int                                newEnabledCount     = 0;
         private int                                count               = 0;
         private final HashMap<String, LinkInfo>    linkInfos           = new HashMap<String, LinkInfo>();
-        private final HashSet<DomainInfo>          domains             = new HashSet<DomainInfo>();
+        private final HashMap<String, DomainInfo>  domains             = new HashMap<String, DomainInfo>();
         private boolean                            allFinished         = true;
         private String                             sameSource          = null;
         private boolean                            sameSourceFullUrl   = true;
@@ -212,11 +213,11 @@ public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
     private final static AbstractIcon          EXTRACTICONSTART     = new AbstractIcon(IconKey.ICON_EXTRACT_RUN, 16);
     private final static AbstractIcon          FALSEICON            = new AbstractIcon(IconKey.ICON_FALSE, 16);
     public final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
-        @Override
-        public int compare(DomainInfo o1, DomainInfo o2) {
-            return o1.getTld().compareTo(o2.getTld());
-        }
-    };
+                                                                        @Override
+                                                                        public int compare(DomainInfo o1, DomainInfo o2) {
+                                                                            return o1.getTld().compareTo(o2.getTld());
+                                                                        }
+                                                                    };
 
     protected void writeTempToFields(final Temp tmp) {
         long size = -1;
@@ -339,7 +340,8 @@ public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
 
     protected void addLinkToTemp(Temp tmp, final DownloadLink link) {
         tmp.count++;
-        tmp.domains.add(link.getDomainInfo());
+        final DomainInfo domainInfo = link.getDomainInfo();
+        tmp.domains.put(domainInfo.getTld(), domainInfo);
         final DownloadLinkView view = link.getView();
         String sourceUrl = view.getDisplayUrl();
         if (sourceUrl != null) {
@@ -356,7 +358,6 @@ public class FilePackageView extends ChildrenView<FilePackage, DownloadLink> {
         String id = null;
         PluginState ps = null;
         //
-        final DomainInfo domainInfo = link.getDomainInfo();
         final PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
             if (!(prog instanceof ExtractionProgress)) {
