@@ -51,6 +51,10 @@ public class Main {
         if (System.getProperty("org.appwork.LoggerFactory") == null) {
             System.setProperty("org.appwork.LoggerFactory", LogSourceRedirector.class.getName());
         }
+        if (System.getProperty("java.net.preferIPv6Addresses") == null) {
+            // https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/doc-files/net-properties.html
+            System.setProperty("java.net.preferIPv6Addresses", "system");
+        }
         org.appwork.utils.Application.setApplication(".jd_home");
         final String root = org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
         LogV3.info("Application Root: " + root);// DO NOT REMOVE! this is important to have LogSystem initialized first!
@@ -178,32 +182,32 @@ public class Main {
         MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
             // set MyJDownloaderCLient JsonHandler
             final SimpleMapper mapper = new SimpleMapper() {
-                                          @Override
-                                          protected JSonFactory newJsonFactory(String jsonString) {
-                                              return new JSonFactory(jsonString) {
-                                                  @Override
-                                                  protected String dedupeString(String string) {
-                                                      return string;
-                                                  }
-                                              };
-                                          }
+                @Override
+                protected JSonFactory newJsonFactory(String jsonString) {
+                    return new JSonFactory(jsonString) {
+                        @Override
+                        protected String dedupeString(String string) {
+                            return string;
+                        }
+                    };
+                }
 
-                                          @Override
-                                          protected void initMapper() {
-                                              super.initMapper();
-                                              putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
-                                                  @Override
-                                                  public String toJSonString(Object object, Object mapper) {
-                                                      return ((JsonFactoryInterface) object).toJsonString();
-                                                  }
-                                              });
-                                          }
+                @Override
+                protected void initMapper() {
+                    super.initMapper();
+                    putSerializer(JsonFactoryInterface.class, new JsonSerializer() {
+                        @Override
+                        public String toJSonString(Object object, Object mapper) {
+                            return ((JsonFactoryInterface) object).toJsonString();
+                        }
+                    });
+                }
 
-                                          @Override
-                                          public boolean isPrettyPrintEnabled() {
-                                              return false;
-                                          }
-                                      };
+                @Override
+                public boolean isPrettyPrintEnabled() {
+                    return false;
+                }
+            };
 
             @Override
             public String objectToJSon(Object payload) {
