@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.List;
@@ -32,21 +31,19 @@ import jd.plugins.PluginForHost;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.plugins.components.hds.HDSContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "f4m" }, urls = { "f4ms?://.+?(\\.f4m?(\\?.+)?|$)" })
 public class GenericF4M extends PluginForHost {
-
     public GenericF4M(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public String getHost(DownloadLink link, Account account) {
+    public String getHost(DownloadLink link, Account account, boolean includeSubdomain) {
         if (link != null) {
-            return Browser.getHost(link.getDownloadURL());
+            return Browser.getHost(link.getDownloadURL(), includeSubdomain);
         }
-        return super.getHost(link, account);
+        return super.getHost(link, account, includeSubdomain);
     }
 
     @Override

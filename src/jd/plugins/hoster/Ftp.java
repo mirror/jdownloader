@@ -53,7 +53,6 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 // DEV NOTES:
 // - ftp filenames can contain & characters!
@@ -66,10 +65,10 @@ public class Ftp extends PluginForHost {
     }
 
     @Override
-    public String getHost(final DownloadLink link, Account account) {
+    public String getHost(final DownloadLink link, Account account, boolean includeSubdomain) {
         if (link != null) {
             // prefer domain via public suffic list
-            return Browser.getHost(link.getDownloadURL());
+            return Browser.getHost(link.getDownloadURL(), includeSubdomain);
         } else if (account != null) {
             return account.getHoster();
         } else {

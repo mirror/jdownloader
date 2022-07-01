@@ -513,7 +513,7 @@ public class DownloadLinkSandBox {
 
     public String getDownloadHost() {
         if (downloadLink != null) {
-            return downloadLink.getServiceHost();
+            return downloadLink.getServiceHost(true);
         } else {
             return null;
         }

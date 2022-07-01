@@ -11,7 +11,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 /**
  * This plugin only serves as a FallBack in case another plugin could not be initiated
@@ -30,14 +29,14 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
         return null;
     }
 
-    public String getHost(DownloadLink link, Account account) {
+    public String getHost(DownloadLink link, Account account, boolean includeSubdomain) {
         if (link != null) {
             return link.getHost();
-        }
-        if (account != null) {
+        } else if (account != null) {
             return account.getHoster();
+        } else {
+            return null;
         }
-        return null;
     };
 
     @Override

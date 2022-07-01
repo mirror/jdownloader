@@ -3,8 +3,8 @@ package org.jdownloader.gui.views.downloads.bottombar;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
+import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -13,6 +13,7 @@ import jd.plugins.PluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
@@ -222,7 +223,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
             };
         case HOSTER:
             return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
-                private HashMap<String, Boolean> fastCheck = new HashMap<String, Boolean>();
+                private final WeakHashMap<DomainInfo, Boolean> fastCheck = new WeakHashMap<DomainInfo, Boolean>();
 
                 @Override
                 public boolean isFilteringPackageNodes() {
@@ -236,17 +237,18 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
                 @Override
                 public synchronized boolean isFiltered(DownloadLink v) {
-                    final String host = v.getDomainInfo().getTld();
-                    Boolean ret = fastCheck.get(host);
+                    final DomainInfo domainInfo = v.getDomainInfo();
+                    final String host = domainInfo.getDomain();
+                    final Boolean ret = fastCheck.get(host);
                     if (ret != null) {
                         return ret.booleanValue();
-                    }
-                    if (isMatching(pattern, host)) {
-                        fastCheck.put(host, Boolean.FALSE);
-                        return false;
-                    }
-                    fastCheck.put(host, Boolean.TRUE);
-                    return true;
+                    } else if (isMatching(pattern, host)) {
+                            fastCheck.put(domainInfo, Boolean.FALSE);
+                            return false;
+                        } else {
+                            fastCheck.put(domainInfo, Boolean.TRUE);
+                            return true;
+                        }
                 }
 
                 @Override

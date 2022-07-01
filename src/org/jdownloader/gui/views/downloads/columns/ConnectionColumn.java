@@ -230,7 +230,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 labelIndex++;
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     final PluginForHost plugin = sdc.getAccount().getPlugin();
-                    final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(dlLink, sdc.getAccount()));
+                    final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(dlLink, sdc.getAccount(), false));
                     if (domainInfo != null) {
                         final Icon icon = domainInfo.getFavIcon();
                         labels[labelIndex].setIcon(icon);
@@ -239,7 +239,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     }
                 } else {
                     final PluginForHost plugin = sdc.getProcessingPlugin();
-                    final DomainInfo domainInfo = plugin != null ? DomainInfo.getInstance(sdc.getProcessingPlugin().getHost(dlLink, sdc.getAccount())) : null;
+                    final DomainInfo domainInfo = plugin != null ? DomainInfo.getInstance(sdc.getProcessingPlugin().getHost(dlLink, sdc.getAccount(), false)) : null;
                     final Icon icon;
                     if (domainInfo != null) {
                         icon = domainInfo.getFavIcon();
@@ -380,7 +380,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     /* account in use? */
                     final PluginForHost plugin = sdc.getAccount().getPlugin();
-                    final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(link, sdc.getAccount()));
+                    final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost(link, sdc.getAccount(), false));
                     if (domainInfo != null) {
                         final Icon icon = domainInfo.getFavIcon();
                         add(new JLabel(_GUI.T.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
@@ -389,7 +389,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             }
             if (dli != null) {
                 final PluginForHost plugin = sdc.getProcessingPlugin();
-                final DomainInfo domainInfo = plugin != null ? DomainInfo.getInstance(sdc.getProcessingPlugin().getHost(link, sdc.getAccount())) : null;
+                final DomainInfo domainInfo = plugin != null ? DomainInfo.getInstance(sdc.getProcessingPlugin().getHost(link, sdc.getAccount(), false)) : null;
                 final Icon icon;
                 if (domainInfo != null) {
                     icon = domainInfo.getFavIcon();

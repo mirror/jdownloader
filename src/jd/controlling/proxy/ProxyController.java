@@ -434,7 +434,7 @@ public class ProxyController implements ProxySelectorInterface {
             final CachedAccount cachedAccount = downloadLinkCandidate.getCachedAccount();
             final Account acc = cachedAccount.getAccount();
             final PluginForHost pluginForHost = cachedAccount.getPlugin();
-            final String pluginHost = pluginForHost.getHost(downloadLinkCandidate.getLink(), acc);
+            final String pluginHost = pluginForHost.getHost(downloadLinkCandidate.getLink(), acc, false);
             int maxResults;
             if (pluginForHost.isProxyRotationEnabled(cachedAccount.getAccount() != null)) {
                 maxResults = Integer.MAX_VALUE;

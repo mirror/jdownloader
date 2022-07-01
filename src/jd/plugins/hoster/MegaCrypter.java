@@ -62,11 +62,11 @@ public class MegaCrypter extends antiDDoSForHost {
     }
 
     @Override
-    public String getHost(DownloadLink link, Account account) {
+    public String getHost(DownloadLink link, Account account, boolean includeSubdomain) {
         if (link != null) {
-            return Browser.getHost(link.getDownloadURL());
+            return Browser.getHost(link.getDownloadURL(), includeSubdomain);
         }
-        return super.getHost(link, account);
+        return super.getHost(link, account, includeSubdomain);
     }
 
     private void setUrl(final DownloadLink downloadLink) {

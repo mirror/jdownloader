@@ -89,7 +89,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
@@ -2098,16 +2097,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             ZipInputStream zis = null;
             final SimpleMapper mapper = new SimpleMapper() {
                 @Override
-                protected JSonFactory newJsonFactory(String jsonString) {
-                    return new JSonFactory(jsonString) {
-                        @Override
-                        protected String dedupeString(String string) {
-                            return string;
-                        }
-                    };
-                }
-
-                @Override
                 protected void initMapper() {
                 }
             };
@@ -2330,16 +2319,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 }
                 final SimpleMapper mapper = new SimpleMapper() {
-                    @Override
-                    protected JSonFactory newJsonFactory(String jsonString) {
-                        return new JSonFactory(jsonString) {
-                            @Override
-                            protected String dedupeString(String string) {
-                                return string;
-                            }
-                        };
-                    }
-
                     @Override
                     protected void initMapper() {
                     }

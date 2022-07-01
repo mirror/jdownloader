@@ -189,7 +189,7 @@ public class CrawledLinkSandbox {
     public String getDownloadHost() {
         if (link != null) {
             final DownloadLink downloadLink = link.getDownloadLink();
-            return downloadLink != null ? downloadLink.getServiceHost() : link.getHost();
+            return downloadLink != null ? downloadLink.getServiceHost(true) : link.getHost();
         } else {
             return null;
         }

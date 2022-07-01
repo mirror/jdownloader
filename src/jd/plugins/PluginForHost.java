@@ -1039,9 +1039,10 @@ public abstract class PluginForHost extends Plugin {
      *
      * @param link
      * @param account
+     * @param includeSubdomain TODO
      * @return
      */
-    public String getHost(DownloadLink link, Account account) {
+    public String getHost(DownloadLink link, Account account, boolean includeSubdomain) {
         return getHost();
     }
 

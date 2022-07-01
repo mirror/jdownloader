@@ -433,7 +433,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     public String getHost() {
         switch (type) {
         case HOSTER:
-            return ((PluginForHost) plugin).getHost(((PluginForHost) plugin).getDownloadLink(), null);
+            return ((PluginForHost) plugin).getHost(((PluginForHost) plugin).getDownloadLink(), null, false);
         case CRAWLER:
             return ((PluginForDecrypt) plugin).getHost();
         }

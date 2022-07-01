@@ -225,7 +225,7 @@ public class ServusCom extends PluginForHost {
                     /*
                      * 2020-10-21: WTF this almost always contains multiple items but with the same dates --> Let's just grab the first one
                      */
-                    final ArrayList<Object> dateList = JSonStorage.restoreFromString(source_list_schedule_data, TypeRef.LIST);
+                    final List<Object> dateList = JSonStorage.restoreFromString(source_list_schedule_data, TypeRef.LIST);
                     if (dateList.isEmpty()) {
                         logger.info("source_list_schedule_data is empty");
                     } else {

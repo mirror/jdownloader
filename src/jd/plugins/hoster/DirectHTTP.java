@@ -26,22 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -76,6 +61,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -656,9 +657,12 @@ public class DirectHTTP extends antiDDoSForHost {
     private String preSetFIXNAME   = null;
 
     private Set<String> getOptionSet(final DownloadLink downloadLink) {
-        HashSet<String> optionSet = downloadLink.getObjectProperty(PROPERTY_OPTION_SET, TypeRef.STRING_HASHSET);
-        if (optionSet == null) {
-            optionSet = new HashSet<String>();
+        Set<String> optionSet = downloadLink.getObjectProperty(PROPERTY_OPTION_SET, TypeRef.STRING_SET);
+        if (optionSet != null && !(optionSet instanceof CopyOnWriteArraySet)) {
+            optionSet = new CopyOnWriteArraySet<String>(optionSet);
+            downloadLink.setProperty(PROPERTY_OPTION_SET, optionSet);
+        } else if (optionSet == null) {
+            optionSet = new CopyOnWriteArraySet<String>();
             downloadLink.setProperty(PROPERTY_OPTION_SET, optionSet);
         }
         return optionSet;
@@ -1232,10 +1236,10 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     @Override
-    public String getHost(final DownloadLink link, Account account) {
+    public String getHost(final DownloadLink link, Account account, boolean includeSubdomain) {
         if (link != null) {
             /* prefer domain via public suffic list */
-            return Browser.getHost(link.getPluginPatternMatcher());
+            return Browser.getHost(link.getPluginPatternMatcher(), includeSubdomain);
         } else if (account != null) {
             return account.getHoster();
         } else {
