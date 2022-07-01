@@ -185,7 +185,7 @@ public class ArchiveOrg extends PluginForHost {
 
     private void doDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
         if (account != null) {
-            this.login(account, this.getBookID(link), true);
+            this.login(account, this.getBookID(link), false);
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             if (this.isBook(link) && account != null) {
@@ -338,7 +338,7 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /** Borrows given bookID which gives us a token we can use to download all pages of that book. */
-    public void borrowBook(final Browser br, final Account account, final String bookID) throws Exception {
+    public void borrowBook(final Browser br, final Account account, final String bookID, final boolean skipAllExceptLastStep) throws Exception {
         if (account == null) {
             /* Account is required to borrow books. */
             throw new AccountRequiredException();
@@ -348,32 +348,40 @@ public class ArchiveOrg extends PluginForHost {
                 /* Developer mistake */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.setAllowedResponseCodes(400);
             final UrlQuery query = new UrlQuery();
-            query.add("action", "grant_access");
             query.add("identifier", Encoding.urlEncode(bookID));
-            br.postPage("https://" + this.getHost() + "/services/loans/loan/searchInside.php", query);
-            query.addAndReplace("action", "browse_book");
-            br.postPage("/services/loans/loan/", query);
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            if (br.getHttpConnection().getResponseCode() == 400) {
-                final String error = (String) entries.get("error");
-                if (StringUtils.equalsIgnoreCase(error, "This book is not available to borrow at this time. Please try again later.")) {
-                    logger.info("Borrow not needed");
-                    return;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure");
+            Map<String, Object> entries = null;
+            final String urlBase = "https://" + this.getHost();
+            br.setAllowedResponseCodes(400);
+            if (!skipAllExceptLastStep) {
+                query.add("action", "grant_access");
+                br.postPage(urlBase + "/services/loans/loan/searchInside.php", query);
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                query.addAndReplace("action", "browse_book");
+                br.postPage("/services/loans/loan/", query);
+                if (br.getHttpConnection().getResponseCode() == 400) {
+                    final String error = (String) entries.get("error");
+                    if (StringUtils.equalsIgnoreCase(error, "This book is not available to borrow at this time. Please try again later.")) {
+                        logger.info("Borrow not needed");
+                        return;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure");
+                    }
                 }
             }
-            query.addAndReplace("action", "create_token");
             /* This should set a cookie called "br-load-<bookID>" */
-            br.postPage("/services/loans/loan/", query);
+            query.addAndReplace("action", "create_token");
+            br.postPage(urlBase + "/services/loans/loan/", query);
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String borrowToken = (String) entries.get("token");
             if (StringUtils.isEmpty(borrowToken)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure #2");
             }
-            logger.info("Successfully borrowed book: " + bookID);
+            if (skipAllExceptLastStep) {
+                logger.info("Successfully checked borrow status of book: " + bookID);
+            } else {
+                logger.info("Successfully borrowed book: " + bookID);
+            }
             // account.saveCookies(br.getCookies(br.getHost()), "");
             final Cookies borrowCookies = new Cookies();
             for (final Cookie cookie : br.getCookies(br.getHost()).getCookies()) {
