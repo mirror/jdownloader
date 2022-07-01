@@ -7,12 +7,13 @@ import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import jd.config.Property;
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.faviconcontroller.FavIcons;
+import jd.http.Browser;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.gui.IconKey;
@@ -35,12 +36,14 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     }
     private static final int                     WIDTH             = 16;
     private static final int                     HEIGHT            = 16;
+    private final String                         domain;
 
-    private DomainInfo(String tld) {
-        if (Application.getJavaVersion() >= Application.JAVA17) {
-            this.tld = tld.intern();
+    private DomainInfo(String tld, String domain) {
+        this.tld = Property.dedupeString(tld);
+        if (domain == null || domain.equals(tld)) {
+            this.domain = tld;
         } else {
-            this.tld = tld;
+            this.domain = Property.dedupeString(domain);
         }
     }
 
@@ -49,6 +52,10 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     }
 
     private final String tld;
+
+    public String getDomain() {
+        return domain;
+    }
 
     public String getTld() {
         return tld;
@@ -106,9 +113,9 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
 
     private static final HashMap<String, WeakReference<DomainInfo>> CACHE = new HashMap<String, WeakReference<DomainInfo>>();
 
-    public static DomainInfo getInstance(String tld) {
-        if (tld != null) {
-            String lcaseTld = tld.toLowerCase(Locale.ENGLISH);
+    public static DomainInfo getInstance(String domain) {
+        if (domain != null) {
+            String lcaseTld = domain.toLowerCase(Locale.ENGLISH);
             int index = lcaseTld.indexOf(" ");
             if (index > 0) {
                 // for examle recaptcha.com (google)
@@ -123,7 +130,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
                 DomainInfo ret = null;
                 WeakReference<DomainInfo> domainInfo = CACHE.get(lcaseTld);
                 if (domainInfo == null || (ret = domainInfo.get()) == null) {
-                    ret = new DomainInfo(lcaseTld);
+                    ret = new DomainInfo(Browser.getHost(lcaseTld), lcaseTld);
                     CACHE.put(lcaseTld, new WeakReference<DomainInfo>(ret));
                 }
                 return ret;
