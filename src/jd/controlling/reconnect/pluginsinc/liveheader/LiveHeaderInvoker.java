@@ -1,7 +1,6 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -161,7 +160,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             map.put("routerip", getRouter());
         } else {
             try {
-                final String ip = InetAddress.getByName(getRouter()).getHostAddress();
+                final String ip = HTTPConnectionUtils.resolvHostIP(getRouter(), IPVERSION.IPV4_IPV6)[0].getHostAddress();
                 map.put("ip", ip);
                 map.put("routerip", ip);
             } catch (UnknownHostException e) {
