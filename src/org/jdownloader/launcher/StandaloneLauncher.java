@@ -42,6 +42,10 @@ public class StandaloneLauncher {
         if (System.getProperty("org.appwork.LoggerFactory") == null) {
             System.setProperty("org.appwork.LoggerFactory", LogSourceRedirector.class.getName());
         }
+        if (System.getProperty("java.net.preferIPv6Addresses") == null) {
+            // https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/net/doc-files/net-properties.html
+            System.setProperty("java.net.preferIPv6Addresses", "system");
+        }
         org.appwork.utils.Application.setApplication(".jd_home");
         final String root = org.appwork.utils.Application.getRoot(StandaloneLauncher.class);
         LogV3.info("Application Root: " + root);// DO NOT REMOVE! this is important to have LogSystem initialized first!
