@@ -40,70 +40,137 @@ public class YumpuCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        br.getPage("https://www." + this.getHost() + "/en/document/json/" + fid);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final Object errorO = entries.get("error");
-        if (errorO != null) {
-            /* E.g. {"error":{"reason":"deleted","message":"Document deleted"}} */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> document = (Map<String, Object>) entries.get("document");
-        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) document.get("pages");
-        final String description = (String) document.get("description");
-        String fpName = (String) document.get("title");
-        if (StringUtils.isEmpty(fpName)) {
-            /* Fallback */
-            fpName = url_name;
-        }
-        final String base_path = (String) document.get("base_path");
-        final Map<String, Object> images = (Map<String, Object>) document.get("images");
-        final String basetitle = (String) images.get("title");
-        final Map<String, Object> dimensions = (Map<String, Object>) images.get("dimensions");
-        String bestResolution = null;
-        String bestResolutionIdentifier = null;
-        final String[] possibleQualityIdentifiersSorted = new String[] { "big", "large", "medium", "small" };
-        for (final String possibleQualityIdentifierSorted : possibleQualityIdentifiersSorted) {
-            if (dimensions.containsKey(possibleQualityIdentifierSorted)) {
-                bestResolution = (String) dimensions.get(possibleQualityIdentifierSorted);
-                bestResolutionIdentifier = possibleQualityIdentifierSorted;
-                break;
+        final String jsonURL = br.getRegex("var jsonUrl = \"([^\"]+)\"").getMatch(0);
+        final String fid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String url_name = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
+        if (jsonURL != null) {
+            /* New way */
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            // br.getPage("https://www." + this.getHost() + "/en/document/json2/" + fid);
+            br.getPage(jsonURL);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Object errorO = entries.get("error");
+            if (errorO != null) {
+                /* E.g. {"error":{"reason":"deleted","message":"Document deleted"}} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> document = (Map<String, Object>) entries.get("document");
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) document.get("pages");
+            final String description = (String) document.get("description");
+            String fpName = (String) document.get("title");
+            if (StringUtils.isEmpty(fpName)) {
+                /* Fallback */
+                fpName = url_name;
+            }
+            final String base_path = (String) document.get("base_path");
+            final Map<String, Object> images = (Map<String, Object>) document.get("images");
+            final String basetitle = (String) images.get("title");
+            final Map<String, Object> dimensions = (Map<String, Object>) images.get("dimensions");
+            // String bestResolution = null;
+            String bestResolutionIdentifier = null;
+            final String[] possibleQualityIdentifiersSorted = new String[] { "big", "large", "medium", "small" };
+            for (final String possibleQualityIdentifierSorted : possibleQualityIdentifiersSorted) {
+                if (dimensions.containsKey(possibleQualityIdentifierSorted)) {
+                    // bestResolution = (String) dimensions.get(possibleQualityIdentifierSorted);
+                    bestResolutionIdentifier = possibleQualityIdentifierSorted;
+                    break;
+                }
+            }
+            if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(basetitle) || ressourcelist == null || ressourcelist.size() == 0) {
+                return null;
+            }
+            final boolean setComment = !StringUtils.isEmpty(description) && !description.equalsIgnoreCase(fpName);
+            for (int i = 0; i <= ressourcelist.size() - 1; i++) {
+                /* 2019-05-21: 'quality' = percentage of quality */
+                final Map<String, Object> page = ressourcelist.get(i);
+                final Map<String, Object> imagesInfo1 = (Map<String, Object>) page.get("images");
+                final Map<String, Object> imagesInfo2 = (Map<String, Object>) page.get("qss");
+                final String bestResolutionBaseURL = (String) imagesInfo2.get(bestResolutionIdentifier);
+                final String directurl = base_path + imagesInfo1.get(bestResolutionIdentifier) + "?" + bestResolutionBaseURL;
+                final String filename = i + "_" + basetitle;
+                final DownloadLink dl = createDownloadlink(directurl + "");
+                dl.setFinalFileName(filename);
+                dl.setAvailable(true);
+                if (setComment) {
+                    dl.setComment(description);
+                }
+                ret.add(dl);
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.addLinks(ret);
+            }
+        } else {
+            /* Old way */
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("https://www." + this.getHost() + "/en/document/json/" + fid);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Object errorO = entries.get("error");
+            if (errorO != null) {
+                /* E.g. {"error":{"reason":"deleted","message":"Document deleted"}} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> document = (Map<String, Object>) entries.get("document");
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) document.get("pages");
+            final String description = (String) document.get("description");
+            String fpName = (String) document.get("title");
+            if (StringUtils.isEmpty(fpName)) {
+                /* Fallback */
+                fpName = url_name;
+            }
+            final String base_path = (String) document.get("base_path");
+            final Map<String, Object> images = (Map<String, Object>) document.get("images");
+            final String basetitle = (String) images.get("title");
+            final Map<String, Object> dimensions = (Map<String, Object>) images.get("dimensions");
+            String bestResolution = null;
+            String bestResolutionIdentifier = null;
+            final String[] possibleQualityIdentifiersSorted = new String[] { "big", "large", "medium", "small" };
+            for (final String possibleQualityIdentifierSorted : possibleQualityIdentifiersSorted) {
+                if (dimensions.containsKey(possibleQualityIdentifierSorted)) {
+                    bestResolution = (String) dimensions.get(possibleQualityIdentifierSorted);
+                    bestResolutionIdentifier = possibleQualityIdentifierSorted;
+                    break;
+                }
+            }
+            if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(basetitle) || StringUtils.isEmpty(bestResolution) || ressourcelist == null || ressourcelist.size() == 0) {
+                return null;
+            }
+            final boolean setComment = !StringUtils.isEmpty(description) && !description.equalsIgnoreCase(fpName);
+            for (int i = 0; i <= ressourcelist.size() - 1; i++) {
+                /* 2019-05-21: 'quality' = percentage of quality */
+                final Map<String, Object> page = ressourcelist.get(i);
+                final Map<String, Object> imagesInfo = (Map<String, Object>) page.get("images");
+                final String bestResolutionBaseURL = (String) imagesInfo.get(bestResolutionIdentifier);
+                final String directurl = base_path + bestResolutionBaseURL;
+                final String filename = i + "_" + basetitle;
+                final DownloadLink dl = createDownloadlink(directurl + "");
+                dl.setFinalFileName(filename);
+                dl.setAvailable(true);
+                if (setComment) {
+                    dl.setComment(description);
+                }
+                ret.add(dl);
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.addLinks(ret);
             }
         }
-        if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(basetitle) || StringUtils.isEmpty(bestResolution) || ressourcelist == null || ressourcelist.size() == 0) {
-            return null;
-        }
-        final boolean setComment = !StringUtils.isEmpty(description) && !description.equalsIgnoreCase(fpName);
-        for (int i = 0; i <= ressourcelist.size() - 1; i++) {
-            /* 2019-05-21: 'quality' = percentage of quality */
-            // final String directurl = String.format("directhttp://%s/%d/%s/%s?quality=100", base_path, i, bestResolution, base_title);
-            final Map<String, Object> page = ressourcelist.get(i);
-            final Map<String, Object> imagesInfo = (Map<String, Object>) page.get("images");
-            final String bestResolutionBaseURL = (String) imagesInfo.get(bestResolutionIdentifier);
-            /* 2022-07-01: TODO: URL needs to be signed in order to work! RE ticket https://svn.jdownloader.org/issues/90163 */
-            final String directurl = base_path + bestResolutionBaseURL;
-            final String filename = i + "_" + basetitle;
-            final DownloadLink dl = createDownloadlink(directurl);
-            dl.setFinalFileName(filename);
-            dl.setAvailable(true);
-            if (setComment) {
-                dl.setComment(description);
-            }
-            decryptedLinks.add(dl);
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
+        return ret;
     }
 }
