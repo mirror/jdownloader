@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -68,9 +67,11 @@ public class CrawledPackageView extends ChildrenView<CrawledPackage, CrawledLink
             }
             writeTempToFields(tmp);
             updatesDone = lupdatesRequired;
-            if (domains.length != tmp.domains.size() || !tmp.domains.containsAll(Arrays.asList(domains))) {
-                final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
-                Collections.sort(lst, FilePackageView.DOMAININFOCOMPARATOR);
+            if (domains.length != tmp.domains.size() || !tmp.domains.values().containsAll(Arrays.asList(domains))) {
+                final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains.values());
+                if (lst.size() > 1) {
+                    Collections.sort(lst, FilePackageView.DOMAININFOCOMPARATOR);
+                }
                 domains = lst.toArray(new DomainInfo[tmp.domains.size()]);
             }
         }
@@ -78,15 +79,15 @@ public class CrawledPackageView extends ChildrenView<CrawledPackage, CrawledLink
     }
 
     private class Temp {
-        final HashMap<String, LinkInfo> linkInfos         = new HashMap<String, LinkInfo>();
-        final HashSet<DomainInfo>       domains           = new HashSet<DomainInfo>();
-        int                             count             = 0;
-        int                             newOnline         = 0;
-        boolean                         newEnabled        = false;
-        int                             newOffline        = 0;
-        String                          sameSource        = null;
-        boolean                         sameSourceFullUrl = true;
-        long                            lupdatesRequired  = updatesRequired.get();
+        final HashMap<String, LinkInfo>   linkInfos         = new HashMap<String, LinkInfo>();
+        final HashMap<String, DomainInfo> domains           = new HashMap<String, DomainInfo>();
+        int                               count             = 0;
+        int                               newOnline         = 0;
+        boolean                           newEnabled        = false;
+        int                               newOffline        = 0;
+        String                            sameSource        = null;
+        boolean                           sameSourceFullUrl = true;
+        long                              lupdatesRequired  = updatesRequired.get();
     }
 
     protected void writeTempToFields(Temp tmp) {
@@ -115,7 +116,8 @@ public class CrawledPackageView extends ChildrenView<CrawledPackage, CrawledLink
 
     protected void addLinkToTemp(Temp tmp, CrawledLink link) {
         tmp.count++;
-        tmp.domains.add(link.getDomainInfo());
+        final DomainInfo domainInfo = link.getDomainInfo();
+        tmp.domains.put(domainInfo.getTld(), domainInfo);
         final DownloadLink dlLink = link.getDownloadLink();
         if (dlLink != null) {
             final String sourceUrl = dlLink.getView().getDisplayUrl();
