@@ -346,22 +346,25 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 break;
             }
             /* Borrow book if necessary */
-            if (loanedSecondsLeft > 0 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /*
-                 * Book has already been borrowed by user e.g. via browser or user has added --> One request is needed to get borrow cookies
-                 */
-                this.hostPlugin.borrowBook(br.cloneBrowser(), account, bookID, true);
-            } else if (isLendingRequired == Boolean.TRUE && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (isLendingRequired == Boolean.TRUE && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 logger.info("Book needs to be borrowed");
                 if (account != null) {
-                    logger.info("Borrowing book --> All pages should be downloadable");
-                    /* Try to borrow book if account is available */
-                    this.hostPlugin.borrowBook(br.cloneBrowser(), account, bookID, false);
-                    /* Go through this loop again: Refreshes page so we can download all pages and will not only get the preview images */
-                    crawlerBorrowedBookInThisRun = true;
-                    continue;
+                    if (loanedSecondsLeft > 0) {
+                        logger.info("User has already borrowed this book with current account --> Obtaining borrow-cookies");
+                        this.hostPlugin.borrowBook(br.cloneBrowser(), account, bookID, true);
+                        break;
+                    } else {
+                        logger.info("Borrowing book --> All pages should be downloadable");
+                        /* Try to borrow book if account is available */
+                        this.hostPlugin.borrowBook(br.cloneBrowser(), account, bookID, false);
+                        /*
+                         * Go through this loop again: Refreshes page so we can download all pages and will not only get the preview images
+                         */
+                        crawlerBorrowedBookInThisRun = true;
+                        continue;
+                    }
                 } else {
-                    logger.info("Cannot borrow book --> Only available previews can be downloaded");
+                    logger.info("Cannot borrow book --> Only preview pages can be downloaded");
                 }
             }
             break;
