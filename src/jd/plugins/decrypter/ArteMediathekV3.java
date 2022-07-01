@@ -21,18 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.FilenameSchemeType;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.PackagenameSchemeType;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -46,6 +34,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.decrypter.ArteMediathekDecrypter.VersionInfo;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.FilenameSchemeType;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.PackagenameSchemeType;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 public class ArteMediathekV3 extends PluginForDecrypt {
@@ -259,8 +259,10 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setProperty(PROPERTY_PLATFORM, platform);
                 link.setProperty(PROPERTY_ORIGINAL_FILENAME, videoStream.get("filename"));
                 final VersionInfo versionInfo = ArteMediathekDecrypter.parseVersionInfo(audioCode);
-                /* Do not modify those linkIDs to try to keep backward compatibility! */
-                final String linkID = getHost() + "://" + videoID + "/" + versionInfo.toString() + "/" + "http_" + bitrate;
+                /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[ADF] to be same as old vpi */
+                final String linkID = getHost() + "://" + new Regex(videoID, "(\\d+-\\d+)").getMatch(0) + "/" + versionInfo.toString() + "/" + "http_" + bitrate;
+                link.setContentUrl(param.getCryptedUrl());
+                link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
                 link.setLinkID(linkID);
                 /* Get filename according to users' settings. */
                 final String filename = this.getAndSetFilename(link);
@@ -348,6 +350,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
             final String imageCaption = (String) mainImage.get("caption");
             final DownloadLink thumbnail = this.createDownloadlink("directhttp://" + mainImage.get("url"));
+            thumbnail.setContentUrl(param.getCryptedUrl());
+            thumbnail.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
             final String extension = mainImage.get("extension").toString();
             if (ret.size() == 1) {
                 /* Only one video result --> Use same filename as that result for thumbnail. */
@@ -389,7 +393,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             /* User customized filename scheme */
             /* Legacy compatibility for old arte config/crawler version 46182 */
             customFilenameScheme = customFilenameScheme.replace("*vpi*__*language*", "*vpi*_*language*"); // fix old mistake: one
-                                                                                                          // underscore too much
+            // underscore too much
             customFilenameScheme = customFilenameScheme.replace("*vpi*", "*video_id*"); // update changed tag name
             customFilenameScheme = customFilenameScheme.replace("*title*", "*title_and_subtitle*"); // update changed tag name
             filename = customFilenameScheme;

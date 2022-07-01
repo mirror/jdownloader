@@ -10,9 +10,20 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
@@ -23,15 +34,6 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.UrlDisplayType;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class UrlColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -161,8 +163,21 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
                     }
                 }
             }
-            if (!Application.isJared(null)) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                popup.add(new JSeparator());
                 add(popup, null, dlLink.getPluginPatternMatcher());
+                final String linkID = dlLink.getLinkID();
+                popup.add(new AppAction() {
+                    {
+                        setName(_GUI.T.UrlColumn_onDoubleClick_object_copy("LINKID: " + linkID));
+                        setIconKey(IconKey.ICON_COPY);
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        ClipboardMonitoring.getINSTANCE().setCurrentContent(linkID);
+                    }
+                });
             }
             final Rectangle bounds = getModel().getTable().getCellRect(row, getIndex(), true);
             final Dimension pref = popup.getPreferredSize();
