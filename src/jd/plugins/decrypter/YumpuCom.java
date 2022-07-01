@@ -140,9 +140,7 @@ public class YumpuCom extends PluginForDecrypt {
             }
             final boolean setComment = !StringUtils.isEmpty(description) && !description.equalsIgnoreCase(fpName);
             for (int i = 1; i <= ressourcelist.size(); i++) {
-                /* 2019-05-21: 'quality' = percentage of quality */
-                // final String directurl = String.format("directhttp://%s/%d/%s/%s?quality=100", base_path, i, best_resolution,
-                // base_title);
+                /* 2019-05-21: 'quality' parameter = percentage of quality */
                 final String directurl = base_path + i + "/" + best_resolution + "/" + base_title + "?quality=100";
                 final String filename = i + "_" + base_title;
                 final DownloadLink dl = createDownloadlink(directurl);
