@@ -116,45 +116,36 @@ public class YumpuCom extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Object errorO = entries.get("error");
             if (errorO != null) {
                 /* E.g. {"error":{"reason":"deleted","message":"Document deleted"}} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> document = (Map<String, Object>) entries.get("document");
-            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) document.get("pages");
-            final String description = (String) document.get("description");
-            String fpName = (String) document.get("title");
+            entries = (Map<String, Object>) entries.get("document");
+            final List<Object> ressourcelist = (List<Object>) entries.get("pages");
+            final String description = (String) entries.get("description");
+            String fpName = (String) entries.get("title");
             if (StringUtils.isEmpty(fpName)) {
                 /* Fallback */
                 fpName = url_name;
             }
-            final String base_path = (String) document.get("base_path");
-            final Map<String, Object> images = (Map<String, Object>) document.get("images");
-            final String basetitle = (String) images.get("title");
-            final Map<String, Object> dimensions = (Map<String, Object>) images.get("dimensions");
-            String bestResolution = null;
-            String bestResolutionIdentifier = null;
-            for (final String possibleQualityIdentifierSorted : possibleQualityIdentifiersSorted) {
-                if (dimensions.containsKey(possibleQualityIdentifierSorted)) {
-                    bestResolution = (String) dimensions.get(possibleQualityIdentifierSorted);
-                    bestResolutionIdentifier = possibleQualityIdentifierSorted;
-                    break;
-                }
-            }
-            if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(basetitle) || StringUtils.isEmpty(bestResolution) || ressourcelist == null || ressourcelist.size() == 0) {
+            final String base_path = (String) entries.get("base_path");
+            entries = (Map<String, Object>) entries.get("images");
+            final String base_title = (String) entries.get("title");
+            final Map<String, Object> dimensions = (Map<String, Object>) entries.get("dimensions");
+            final String best_resolution = (String) dimensions.get("big");
+            if (StringUtils.isEmpty(base_path) || StringUtils.isEmpty(base_title) || StringUtils.isEmpty(best_resolution) || ressourcelist == null || ressourcelist.size() == 0) {
                 return null;
             }
             final boolean setComment = !StringUtils.isEmpty(description) && !description.equalsIgnoreCase(fpName);
-            for (int i = 0; i <= ressourcelist.size() - 1; i++) {
+            for (int i = 1; i <= ressourcelist.size(); i++) {
                 /* 2019-05-21: 'quality' = percentage of quality */
-                final Map<String, Object> page = ressourcelist.get(i);
-                final Map<String, Object> imagesInfo = (Map<String, Object>) page.get("images");
-                final String bestResolutionBaseURL = (String) imagesInfo.get(bestResolutionIdentifier);
-                final String directurl = base_path + bestResolutionBaseURL;
-                final String filename = i + "_" + basetitle;
-                final DownloadLink dl = createDownloadlink(directurl + "");
+                // final String directurl = String.format("directhttp://%s/%d/%s/%s?quality=100", base_path, i, best_resolution,
+                // base_title);
+                final String directurl = base_path + i + "/" + best_resolution + "/" + base_title + "?quality=100";
+                final String filename = i + "_" + base_title;
+                final DownloadLink dl = createDownloadlink(directurl);
                 dl.setFinalFileName(filename);
                 dl.setAvailable(true);
                 if (setComment) {
@@ -164,7 +155,7 @@ public class YumpuCom extends PluginForDecrypt {
             }
             if (fpName != null) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
                 fp.addLinks(ret);
             }
         }
