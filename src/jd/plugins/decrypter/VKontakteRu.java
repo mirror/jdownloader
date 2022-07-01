@@ -2121,16 +2121,12 @@ public class VKontakteRu extends PluginForDecrypt {
         /* URLs may contain multiple list_id-like strings! It is important to use the source URL as an orientation. */
         final Regex photoTag = new Regex(param.getCryptedUrl(), "https?://[^/]+/photo-?\\d+_\\d+\\?tag=(\\d+)");
         final Regex photoZ = new Regex(param.getCryptedUrl(), PATTERN_PHOTO_SINGLE_Z);
-        String contentURL = null;
         if (photoTag.matches()) {
             module = "photos";
             listID = "tag" + new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
         } else if (photoZ.matches()) {
             module = photoZ.getMatch(0); // e.g. wall, album, feed
             listID = photoZ.getMatch(2);
-            /* Encoding in that url is really important! */
-            final URL url = new URL(param.getCryptedUrl());
-            contentURL = URLHelper.getURL(url, false, true, true).toString() + "?z=" + Encoding.urlEncode(UrlQuery.parse(url.getQuery()).get("z"));
         }
         final String ownerID = new Regex(param.getCryptedUrl(), "photo(-?\\d+)_\\d+").getMatch(0);
         final String contentID = new Regex(param.getCryptedUrl(), "photo-?\\d+_(\\d+)").getMatch(0);
@@ -2138,11 +2134,7 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final DownloadLink dl = getSinglePhotoDownloadLink(ownerID + "_" + contentID, null);
-        if (contentURL != null) {
-            dl.setContentUrl(contentURL);
-        } else {
-            dl.setContentUrl(param.getCryptedUrl());
-        }
+        dl.setContentUrl(param.getCryptedUrl());
         dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         if (module != null) {
             dl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, module);
@@ -2748,8 +2740,7 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     private void prepCryptedLink(final CryptedLink param) throws IOException {
         /* Correct encoding, domain and protocol. */
-        final String originalURL = param.getCryptedUrl();
-        String url = Encoding.htmlDecode(originalURL).replaceAll("(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/", "vk.com/");
+        String url = param.getCryptedUrl().replaceAll("(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/", "vk.com/");
         /* We cannot simply remove all parameters which we usually don't need because...we do sometimes need them! */
         if (url.contains("?") && !isKnownType(url)) {
             url = removeParamsFromURL(url);
@@ -2787,9 +2778,9 @@ public class VKontakteRu extends PluginForDecrypt {
             /* We either have a public community or profile --> Do not change URL */
         }
         /* Replace section end */
-        if (!url.equals(originalURL)) {
+        if (!url.equals(param.getCryptedUrl())) {
             logger.info("Added link was changed!\r\nOld:");
-            logger.info(originalURL);
+            logger.info(param.getCryptedUrl());
             logger.info("New:");
             logger.info(url);
             param.setCryptedUrl(url);
