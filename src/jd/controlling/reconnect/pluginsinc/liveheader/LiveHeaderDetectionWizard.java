@@ -49,6 +49,8 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -698,7 +700,7 @@ public class LiveHeaderDetectionWizard {
             routerName = impl.getRouterName();
             firmware = impl.getFirmware();
             try {
-                gatewayAdress = InetAddress.getByName(impl.getHostName());
+                gatewayAdress = HTTPConnectionUtils.resolvHostIP(impl.getHostName(), IPVERSION.IPV4_IPV6)[0];
                 gatewayAdressIP = gatewayAdress.getHostAddress();
                 gatewayAdressHost = gatewayAdress.getHostName();
                 break;
@@ -728,7 +730,7 @@ public class LiveHeaderDetectionWizard {
         }
         mac = null;
         manufactor = null;
-        gatewayAdress = InetAddress.getByName(gatewayIP);
+        gatewayAdress = HTTPConnectionUtils.resolvHostIP(gatewayIP, IPVERSION.IPV4_IPV6)[0];
         gatewayAdressHost = gatewayAdress.getHostName();
         gatewayAdressIP = gatewayAdress.getHostAddress();
         try {
@@ -828,7 +830,7 @@ public class LiveHeaderDetectionWizard {
                             routerName = impl.getRouterName();
                             firmware = impl.getFirmware();
                             try {
-                                gatewayAdress = InetAddress.getByName(impl.getHostName());
+                                gatewayAdress = HTTPConnectionUtils.resolvHostIP(impl.getHostName(), IPVERSION.IPV4_IPV6)[0];
                                 gatewayAdressIP = gatewayAdress.getHostAddress();
                                 gatewayAdressHost = gatewayAdress.getHostName();
                                 break;
