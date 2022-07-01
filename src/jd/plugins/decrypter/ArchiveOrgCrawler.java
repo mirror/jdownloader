@@ -77,10 +77,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
          */
-        final String contentID = new Regex(br.getURL(), "https?://[^/]+/(?:details|download)/([^/]+)").getMatch(0);
         final Account account = AccountController.getInstance().getValidAccount("archive.org");
         if (account != null) {
-            hostPlugin.login(account, contentID, false);
+            hostPlugin.login(account, false);
         }
         URLConnectionAdapter con = null;
         boolean isArchiveContent = isArchiveURL(param.getCryptedUrl());
