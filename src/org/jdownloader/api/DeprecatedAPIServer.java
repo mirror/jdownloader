@@ -27,6 +27,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.appwork.storage.JSonStorage;
@@ -38,6 +40,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.HttpConnection.HttpConnectionType;
+import org.appwork.utils.net.httpserver.HttpConnectionRunnable;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.net.httpserver.HttpServer;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
@@ -459,8 +462,8 @@ public class DeprecatedAPIServer extends HttpServer {
     }
 
     @Override
-    protected Runnable createConnectionHandler(final Socket clientSocket) throws IOException {
-        return new Runnable() {
+    protected HttpConnectionRunnable createConnectionHandler(final ThreadPoolExecutor threadPool, final Socket clientSocket) throws IOException {
+        return new HttpConnectionRunnable() {
             @Override
             public void run() {
                 try {
@@ -471,11 +474,25 @@ public class DeprecatedAPIServer extends HttpServer {
                         }
                     });
                     if (httpConnection != null) {
-                        httpConnection.run();
+                        if (threadPool != null) {
+                            try {
+                                threadPool.execute(httpConnection);
+                            } catch (RejectedExecutionException e) {
+                                clientSocket.close();
+                                throw e;
+                            }
+                        } else {
+                            httpConnection.run();
+                        }
                     }
                 } catch (Throwable e) {
                     LogController.CL(DeprecatedAPIServer.class).log(e);
                 }
+            }
+
+            @Override
+            public Socket getClientSocket() {
+                return clientSocket;
             }
         };
     }
