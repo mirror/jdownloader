@@ -19,11 +19,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.resources.AWUTheme;
@@ -50,6 +45,11 @@ import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
+
 public abstract class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
         LIB,
@@ -64,6 +64,7 @@ public abstract class AbstractFFmpegBinary {
         WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
         DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
         HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
+
         private final Pattern  pattern;
         private final FLAGTYPE type;
 
@@ -576,7 +577,7 @@ public abstract class AbstractFFmpegBinary {
                                     if (sb.length() > 0) {
                                         sb.append("\n");
                                     }
-                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index);
+                                    sb.append("http://" + finalServer.getServerAddress() + "/download?id=" + processID + "&ts_index=" + index);
                                 }
                                 lastSegmentDuration = -1;
                             } else {
@@ -785,7 +786,7 @@ public abstract class AbstractFFmpegBinary {
     private boolean isLocalhost(List<String> commandLine) {
         if (commandLine != null) {
             for (final String cmd : commandLine) {
-                if (StringUtils.containsIgnoreCase(cmd, "127.0.0.1")) {
+                if (StringUtils.containsIgnoreCase(cmd, "127.0.0.1") || StringUtils.contains(cmd, "[::1]") || StringUtils.contains(cmd, "[0:0:0:0:0:0:0:1]")) {
                     return true;
                 } else if (StringUtils.containsIgnoreCase(cmd, "localhost")) {
                     return true;

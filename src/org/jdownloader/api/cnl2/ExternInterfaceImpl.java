@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -500,11 +501,15 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         final HTTPHeader referer = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_REFERER);
         String check = null;
         if (referer != null && (check = referer.getValue()) != null) {
-            if (check.equalsIgnoreCase("http://localhost:9666/flashgot") || check.equalsIgnoreCase("http://127.0.0.1:9666/flashgot")) {
-                /*
-                 * security check for flashgot referer, skip asking if we find valid flashgot referer
-                 */
-                return;
+            try {
+                final URL url = new URL(check);
+                if (StringUtils.startsWithCaseInsensitive(url.getPath(), "/flashgot") && InetAddress.getByName(url.getHost()).isLoopbackAddress()) {
+                    /*
+                     * security check for flashgot referer, skip asking if we find valid flashgot referer
+                     */
+                    return;
+                }
+            } catch (MalformedURLException ignore) {
             }
         }
         String app = "unknown application";

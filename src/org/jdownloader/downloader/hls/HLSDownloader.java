@@ -31,24 +31,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -100,6 +82,24 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
@@ -335,7 +335,7 @@ public class HLSDownloader extends DownloadInterface {
             } else {
                 this.processID = new UniqueAlltimeID().getID();
                 initPipe(ffprobe);
-                return ffprobe.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+                return ffprobe.getStreamInfo("http://" + server.getServerAddress() + "/m3u8?id=" + processID);
             }
         } finally {
             if (stopHttpServer()) {
@@ -809,13 +809,13 @@ public class HLSDownloader extends DownloadInterface {
                 }
             }
             l.add("-i");
-            l.add("http://127.0.0.1:" + server.getPort() + "/concat?id=" + processID);
+            l.add("http://" + server.getServerAddress() + "/concat?id=" + processID);
         }
         if (isMapMetaDataEnabled()) {
             final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData();
             if (ffMpegMetaData != null && !ffMpegMetaData.isEmpty()) {
                 l.add("-i");
-                l.add("http://127.0.0.1:" + server.getPort() + "/meta?id=" + processID);
+                l.add("http://" + server.getServerAddress() + "/meta?id=" + processID);
                 l.add("-map_metadata");
                 l.add("1");
             }
@@ -840,12 +840,12 @@ public class HLSDownloader extends DownloadInterface {
         l.add("-analyzeduration");// required for low bandwidth streams!
         l.add("15000000");// 15 secs
         l.add("-i");
-        l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+        l.add("http://" + server.getServerAddress() + "/m3u8?id=" + processID);
         if (isMapMetaDataEnabled()) {
             final FFmpegMetaData ffMpegMetaData = getFFmpegMetaData();
             if (ffMpegMetaData != null && !ffMpegMetaData.isEmpty()) {
                 l.add("-i");
-                l.add("http://127.0.0.1:" + server.getPort() + "/meta?id=" + processID);
+                l.add("http://" + server.getServerAddress() + "/meta?id=" + processID);
                 l.add("-map_metadata");
                 l.add("1");
             }
@@ -1084,7 +1084,7 @@ public class HLSDownloader extends DownloadInterface {
                                 if (fileID == null) {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 } else {
-                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/file?fileID=" + fileID + "&id=" + processID);
+                                    sb.append("http://" + finalServer.getServerAddress() + "/file?fileID=" + fileID + "&id=" + processID);
                                 }
                                 break;
                             }
@@ -1138,7 +1138,7 @@ public class HLSDownloader extends DownloadInterface {
                             for (int index = 0; index < m3u8.size(); index++) {
                                 final M3U8Segment segment = m3u8.getSegment(index);
                                 sb.append("#EXTINF:" + M3U8Segment.toExtInfDuration(segment.getDuration()));
-                                sb.append("\r\nhttp://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&ts_index=" + index + "\r\n");
+                                sb.append("\r\nhttp://" + finalServer.getServerAddress() + "/download?id=" + processID + "&ts_index=" + index + "\r\n");
                             }
                             sb.append("#EXT-X-ENDLIST\r\n");
                             response.setResponseCode(ResponseCode.get(200));

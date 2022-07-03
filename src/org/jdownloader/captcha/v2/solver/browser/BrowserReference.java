@@ -8,11 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.captcha.SkipRequest;
-import jd.parser.Regex;
-import jd.plugins.Plugin;
-
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -45,6 +40,11 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+
+import jd.controlling.TaskQueue;
+import jd.controlling.captcha.SkipRequest;
+import jd.parser.Regex;
+import jd.plugins.Plugin;
 
 public abstract class BrowserReference implements ExtendedHttpRequestHandler, HttpRequestHandler, ConnectionHook {
     private final AbstractBrowserChallenge challenge;
@@ -143,8 +143,15 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
         return logger;
     }
 
-    public String getBaseHost() {
-        return "127.0.0.1";
+    public String getServerAddress() {
+        final HttpHandlerInfo handler = handlerInfo.get();
+        if (handler != null) {
+            final String ret = handler.getHttpServer().getServerAddress();
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return "127.0.0.1" + getBasePort();
     }
 
     public int getBasePort() {
@@ -157,7 +164,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     public String getBase() {
-        return "http://127.0.0.1:" + getBasePort() + "/" + challenge.getHttpPath() + "/";
+        return "http://" + getServerAddress() + "/" + challenge.getHttpPath() + "/";
     }
 
     protected void openURL(final String url) {
@@ -225,7 +232,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     @Override
     public void onBeforeSendHeaders(HttpResponse response) {
         HttpRequest request = response.getConnection().getRequest();
-        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "http://" + getBaseHost() + ":" + getBasePort()));
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "http://" + getServerAddress()));
         // ContentSecurityHeader csp = new ContentSecurityHeader();
         // csp.addDefaultSrc("'self'");
         // csp.addDefaultSrc("'unsafe-inline'");
