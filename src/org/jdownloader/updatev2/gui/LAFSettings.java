@@ -392,7 +392,7 @@ public interface LAFSettings extends SyntheticaSettings {
     void setTableAlternateRowHighlightEnabled(boolean b);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Icon Set ID. Make sure that ./themes/<ID>/ exists")
+    @DescriptionForConfigEntry("Icon Set ID. Make sure that ./themes/<ID>/ exists. To use own your own themes, please use 'my-' prefix!")
     String getIconSetID();
 
     void setIconSetID(String themeID);
