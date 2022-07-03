@@ -3,9 +3,6 @@ package org.jdownloader.controlling.ffmpeg;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -15,6 +12,9 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 
 public abstract class FFprobe extends AbstractFFmpegBinary {
     public FFprobe(Browser br) {
@@ -66,9 +66,9 @@ public abstract class FFprobe extends AbstractFFmpegBinary {
                 final HttpServer server = this.server;
                 if (server != null && server.isRunning()) {
                     if (StringUtils.endsWithCaseInsensitive(url, ".m3u8")) {
-                        commandLine.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID);
+                        commandLine.add("http://" + server.getServerAddress() + "/m3u8?id=" + processID);
                     } else {
-                        commandLine.add("http://127.0.0.1:" + server.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(url));
+                        commandLine.add("http://" + server.getServerAddress() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(url));
                     }
                 } else {
                     commandLine.add(url);

@@ -4,16 +4,12 @@ import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -44,6 +40,11 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
+import jd.plugins.Plugin;
 
 public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
@@ -628,7 +629,11 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         js = js.replace("%%%session%%%", String.valueOf(browserReference.getId().getID()));
         js = js.replace("%%%siteDomain%%%", getSiteDomain());
         js = js.replace("%%%baseUrl%%%", browserReference.getBase());
-        js = js.replace("%%%baseHost%%%", browserReference.getBaseHost());
+        try {
+            js = js.replace("%%%baseHost%%%", new URL(browserReference.getBase()).getHost());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
         js = js.replace("%%%basePort%%%", browserReference.getBasePort() + "");
         return js;
     }
