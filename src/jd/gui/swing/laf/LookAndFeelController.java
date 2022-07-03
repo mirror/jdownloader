@@ -24,8 +24,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -53,6 +51,8 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 import org.jdownloader.updatev2.gui.LookAndFeelType;
+
+import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     private static final LookAndFeelController INSTANCE = new LookAndFeelController();
@@ -270,7 +270,7 @@ public class LookAndFeelController implements LAFManagerInterface {
             try {
                 final String theme = LAFOptions.getInstance().getCfg().getIconSetID();
                 org.jdownloader.images.NewTheme.getInstance().setTheme(theme);
-                if (!StringUtils.equals("standard", theme) && StringUtils.isNotEmpty(theme)) {
+                if (!StringUtils.equals("standard", theme) && StringUtils.isNotEmpty(theme) && !StringUtils.startsWithCaseInsensitive(theme, "my-")) {
                     SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
                         @Override
                         public void run() {
