@@ -28,6 +28,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.translate._GUI;
@@ -66,11 +67,11 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final int                      MAXDOWNLOADS                        = -1;
-    private static final String            PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
-    public static final String             PROPERTY_BOOK_ID                    = "book_id";
-    public static final String             PROPERTY_IS_LENDING_REQUIRED        = "is_lending_required";
-    private static HashMap<String, Object> bookBorrowSessions                  = new HashMap<String, Object>();
+    private final int                                   MAXDOWNLOADS                        = -1;
+    private static final String                         PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
+    public static final String                          PROPERTY_BOOK_ID                    = "book_id";
+    public static final String                          PROPERTY_IS_LENDING_REQUIRED        = "is_lending_required";
+    private static HashMap<String, Map<String, Object>> bookBorrowSessions                  = new HashMap<String, Map<String, Object>>();
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -195,28 +196,31 @@ public class ArchiveOrg extends PluginForHost {
                         /* Old/broken items */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    if (bookBorrowSessions.containsKey(bookID)) {
-                        final Map<String, Object> bookBorrowSession = (Map<String, Object>) bookBorrowSessions.get(bookID);
-                        br.setCookies((Cookies) bookBorrowSession.get("cookies"));
-                    } else {
-                        /**
-                         * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br>
-                         * User could e.g. have added account via cookie login so borrow session for some books may be available regardless.
-                         */
-                        logger.info("Borrow required but no borrow session available -> We will most likely run into errorhandling soon");
+                    synchronized (bookBorrowSessions) {
+                        final Map<String, Object> bookBorrowSession;
+                        if (bookBorrowSessions.containsKey(bookID) && (bookBorrowSession = bookBorrowSessions.get(bookID)) != null) {
+                            br.setCookies((Cookies) bookBorrowSession.get("cookies"));
+                        } else {
+                            /**
+                             * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br>
+                             * User could e.g. have added account via cookie login so borrow session for some books may be available
+                             * regardless.
+                             */
+                            logger.info("Borrow required but no borrow session available -> We will most likely run into errorhandling soon");
+                        }
                     }
                 }
             }
         }
         /* Cleanup borrow session map */
         synchronized (bookBorrowSessions) {
-            final Iterator<Entry<String, Object>> iterator = bookBorrowSessions.entrySet().iterator();
+            final Iterator<Entry<String, Map<String, Object>>> iterator = bookBorrowSessions.entrySet().iterator();
             final ArrayList<String> keysToDelete = new ArrayList<String>();
             while (iterator.hasNext()) {
-                final Entry<String, Object> entry = iterator.next();
-                final Map<String, Object> borrowInfo = (Map<String, Object>) entry.getValue();
+                final Entry<String, Map<String, Object>> entry = iterator.next();
+                final Map<String, Object> borrowInfo = entry.getValue();
                 final long timestamp = ((Long) borrowInfo.get("timestamp")).longValue();
-                final long timePassed = System.currentTimeMillis() - timestamp;
+                final long timePassed = Time.systemIndependentCurrentJVMTimeMillis() - timestamp;
                 if (timePassed > 60 * 60 * 1000l) {
                     keysToDelete.add(entry.getKey());
                 }
@@ -368,12 +372,11 @@ public class ArchiveOrg extends PluginForHost {
         if (account == null) {
             /* Account is required to borrow books. */
             throw new AccountRequiredException();
+        } else if (bookID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         synchronized (bookBorrowSessions) {
-            if (bookID == null) {
-                /* Developer mistake */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             final UrlQuery query = new UrlQuery();
             query.add("identifier", Encoding.urlEncode(bookID));
             Map<String, Object> entries = null;
@@ -422,7 +425,7 @@ public class ArchiveOrg extends PluginForHost {
             }
             final HashMap<String, Object> borrowMap = new HashMap<String, Object>();
             borrowMap.put("cookies", borrowCookies);
-            borrowMap.put("timestamp", System.currentTimeMillis());
+            borrowMap.put("timestamp", Time.systemIndependentCurrentJVMTimeMillis());
             bookBorrowSessions.put(bookID, borrowMap);
         }
     }
