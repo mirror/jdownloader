@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -467,26 +466,27 @@ public class DeprecatedAPIServer extends HttpServer {
             @Override
             public void run() {
                 try {
-                    final HttpConnection httpConnection = autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
+                    final HttpConnection run = autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
                         @Override
                         public HttpConnection create(Socket clientSocket, InputStream is, OutputStream os) throws IOException {
                             return new CustomHttpConnection(DeprecatedAPIServer.this, clientSocket, is, os);
                         }
                     });
-                    if (httpConnection != null) {
-                        if (threadPool != null) {
-                            try {
-                                threadPool.execute(httpConnection);
-                            } catch (RejectedExecutionException e) {
-                                clientSocket.close();
-                                throw e;
-                            }
-                        } else {
-                            httpConnection.run();
-                        }
+                    if (run == null) {
+                        throw new NullPointerException();
+                    } else if (threadPool != null) {
+                        threadPool.execute(run);
+                    } else {
+                        run.run();
                     }
-                } catch (Throwable e) {
-                    LogController.CL(DeprecatedAPIServer.class).log(e);
+                } catch (final Throwable e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                    try {
+                        clientSocket.close();
+                    } catch (final IOException e1) {
+                    }
                 }
             }
 

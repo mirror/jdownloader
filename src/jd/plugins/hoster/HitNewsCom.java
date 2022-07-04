@@ -12,6 +12,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -59,20 +60,24 @@ public class HitNewsCom extends UseNet {
             }
             if (br.getCookie(getHost(), "PHPSESSID") == null) {
                 account.clearCookies("");
-                br.getPage("https://member.hitnews.com/member.php");
-                login = br.getFormbyActionRegex("/member\\.php");
+                br.getPage("https://member.hitnews.com/login");
+                final String pleaseWait = br.getRegex("Please wait\\s*(\\d+)\\s*seconds before next login attempt").getMatch(0);
+                if (pleaseWait != null) {
+                    throw new AccountUnavailableException("Please wait before next login attempt", Integer.parseInt(pleaseWait) * 1000l);
+                }
+                login = br.getFormbyKey("login_attempt_id");
                 login.put("amember_login", Encoding.urlEncode(account.getUser()));
                 login.put("amember_pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
-                login = br.getFormbyActionRegex("/member\\.php");
+                login = br.getFormbyKey("login_attempt_id");
                 if (login != null && login.containsHTML("amember_login") && login.containsHTML("amember_pass")) {
-                    final String errmsg = br.getRegex("table class=\"errmsg\">.*?<li>(.*?)</li>").getMatch(0);
+                    final String errmsg = br.getRegex("class\\s*=\\s*\"am-errors\">\\s*<li>\\s*(.*?)\\s*</li>").getMatch(0);
                     if (errmsg != null) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, errmsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (br.getCookie(getHost(), "PHPSESSID") == null) {
+                } else if (br.getCookie(getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
