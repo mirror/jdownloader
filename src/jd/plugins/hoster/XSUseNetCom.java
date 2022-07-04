@@ -97,8 +97,8 @@ public class XSUseNetCom extends UseNet {
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for xsusenet.com website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                getPage("https://my.xsusenet.com/login");
-                final Form login = br.getFormbyKey("password");
+                getPage("https://my.xsusenet.com/index.php?/clientarea/");
+                final Form login = br.getFormByInputFieldKeyValue("action", "login");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -109,7 +109,9 @@ public class XSUseNetCom extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            this.getPage("/index.php?/clientarea/");
+            if (br.getRequest() == null || StringUtils.endsWithCaseInsensitive(br.getURL(), "/index.php?/clientarea/")) {
+                this.getPage("https://my.xsusenet.com/index.php?/clientarea/");
+            }
             account.saveCookies(br.getCookies(getHost()), "");
             /* Detect account type. Very important because different Usenet servers are used for free/premium accounts! */
             final boolean isFree;
