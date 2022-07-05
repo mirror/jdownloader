@@ -1,26 +1,31 @@
 package org.jdownloader.gui.views.components.packagetable.dragdrop;
 
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.exceptions.WTFException;
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public abstract class PackageControllerTableTransferHandler<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends TransferHandler {
     /**
@@ -81,9 +86,41 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         super.exportToClipboard(comp, clip, TransferHandler.MOVE);
     }
 
+    protected final WeakHashMap<Transferable, Map<Object, Object>> transferableCache        = new WeakHashMap<Transferable, Map<Object, Object>>();
+    protected final DelayedRunnable                                transferableCacheCleanup = new DelayedRunnable(10000) {
+        @Override
+        public void delayedrun() {
+            synchronized (transferableCache) {
+                transferableCache.size();
+            }
+        }
+    };
+
+    protected boolean isDataFlavorSupported(TransferSupport support, DataFlavor flavor) {
+        try {
+            synchronized (transferableCache) {
+                final Transferable transferable = support.getTransferable();
+                Map<Object, Object> cache = transferableCache.get(transferable);
+                if (cache == null) {
+                    cache = new HashMap<Object, Object>();
+                    transferableCache.put(transferable, cache);
+                }
+                if (cache.containsKey(flavor)) {
+                    return Boolean.TRUE.equals(cache.get(flavor));
+                } else {
+                    final boolean ret = support.isDataFlavorSupported(flavor);
+                    cache.put(flavor, ret);
+                    return ret;
+                }
+            }
+        } finally {
+            transferableCacheCleanup.resetAndStart();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     protected SelectionInfo<PackageType, ChildrenType> getSelectionInfo(TransferSupport support) {
-        if (!support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
+        if (!isDataFlavorSupported(support, PackageControllerTableTransferable.FLAVOR)) {
             return null;
         }
         try {
@@ -229,8 +266,28 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
     @Override
     public boolean canImport(TransferSupport support) {
         boolean ret = canImportPackageControllerTransferable(support);
-        if (ret == false && !support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
-            ret = canImportTransferable(support);
+        if (ret == false && !isDataFlavorSupported(support, PackageControllerTableTransferable.FLAVOR)) {
+            try {
+                synchronized (transferableCache) {
+                    final Transferable transferable = support.getTransferable();
+                    final Map<Object, Object> cache = transferableCache.get(transferable);
+                    if (cache != null && cache.containsKey(this)) {
+                        return Boolean.TRUE.equals(cache.get(this));
+                    }
+                }
+                ret = canImportTransferable(support);
+                synchronized (transferableCache) {
+                    final Transferable transferable = support.getTransferable();
+                    Map<Object, Object> cache = transferableCache.get(transferable);
+                    if (cache == null) {
+                        cache = new HashMap<Object, Object>();
+                        transferableCache.put(transferable, cache);
+                    }
+                    cache.put(this, ret);
+                }
+            } finally {
+                transferableCacheCleanup.resetAndStart();
+            }
         }
         return ret;
     }

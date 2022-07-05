@@ -21,19 +21,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -61,6 +48,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -419,8 +419,8 @@ public abstract class K2SApi extends PluginForHost {
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
-                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
+                                 * fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -1733,6 +1733,8 @@ public abstract class K2SApi extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many request in short succession");
+        } else if (dl.getConnection().getResponseCode() == 500 || br.containsHTML("An error occurred")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error occurred", 15 * 60 * 1000l);
         }
     }
 
