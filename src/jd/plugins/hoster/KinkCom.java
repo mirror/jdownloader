@@ -20,13 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -50,6 +43,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kink.com" }, urls = { "https?://(?:www\\.)?kink.com/shoot/(\\d+)" })
 public class KinkCom extends PluginForHost {
@@ -140,8 +140,8 @@ public class KinkCom extends PluginForHost {
         }
         if (account != null) {
             /* Look for "official" downloadlinks --> Find highest quality */
-            int qualityMax = 0;
-            final String[][] dlinfos = br.getRegex("download\\s*=\\s*\"(https?://[^\"]+)\">\\s*(\\d+)\\s*<span").getMatches();
+            int qualityMax = -1;
+            final String[][] dlinfos = br.getRegex("download\\s*=\\s*\"(https?://[^\"]+)\"[^/]*>\\s*(\\d+)\\s*<span").getMatches();
             for (final String[] dlinfo : dlinfos) {
                 final int qualityTmp = Integer.parseInt(dlinfo[1]);
                 if (qualityTmp > qualityMax) {
@@ -153,10 +153,15 @@ public class KinkCom extends PluginForHost {
                     this.dllink = url;
                 }
             }
-            logger.info("Chosen premium download quality: " + qualityMax);
+            logger.info("Chosen premium download quality: " + qualityMax + " -> " + dllink);
         } else {
             /* Download trailer */
-            dllink = br.getRegex("data\\-type\\s*=\\s*\"trailer\\-src\" data\\-url\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
+            String url = br.getRegex("data\\-type\\s*=\\s*\"trailer\\-src\" data\\-url\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
+            if (Encoding.isHtmlEntityCoded(url)) {
+                url = Encoding.htmlDecode(url);
+            }
+            dllink = url;
+            logger.info("Chosen trailer: " + dllink);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -228,7 +233,9 @@ public class KinkCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             } else if (StringUtils.isEmpty(dllink)) {
                 /* Display premiumonly message in this case */
-                logger.info("Failed to download trailer");
+                if (account == null || Account.AccountType.FREE.equals(account.getType())) {
+                    logger.info("Failed to download trailer");
+                }
                 throw new AccountRequiredException();
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
