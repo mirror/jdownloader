@@ -20,19 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -53,6 +40,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DropboxCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|s|sc)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
 public class DropBoxCom extends PluginForDecrypt {
@@ -364,7 +364,6 @@ public class DropBoxCom extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlViaWebsite(final CryptedLink param) throws Exception {
-        br.setFollowRedirects(false);
         jd.plugins.hoster.DropboxCom.prepBrWebsite(br);
         /* Website may return hige amounts of json/html */
         br.setLoadLimit(br.getLoadLimit() * 4);
@@ -427,7 +426,9 @@ public class DropBoxCom extends PluginForDecrypt {
             decryptedLinks.add(createSingleFileDownloadLink(param.getCryptedUrl()));
             return decryptedLinks;
         }
+        br.setFollowRedirects(false);
         br.getPage(param.getCryptedUrl());
+        br.setFollowRedirects(true);
         if (br.getHttpConnection().getResponseCode() == 429) {
             logger.info("URL's downloads are disabled due to it generating too much traffic");
             final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("dropbox.com/", "dropboxdecrypted.com/"));
@@ -441,8 +442,7 @@ public class DropBoxCom extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("dropbox.com/", "dropboxdecrypted.com/"));
             decryptedLinks.add(dl);
             return decryptedLinks;
-        }
-        if (br.getRedirectLocation() != null && (param.getCryptedUrl().matches(TYPE_REDIRECT) || param.getCryptedUrl().matches(TYPE_SHORT))) {
+        } else if (br.getRedirectLocation() != null && (param.getCryptedUrl().matches(TYPE_REDIRECT) || param.getCryptedUrl().matches(TYPE_SHORT))) {
             final String redirect = br.getRedirectLocation();
             if (!redirect.matches(TYPES_NORMAL)) {
                 logger.warning("Crawler broken or unsupported redirect-url: " + redirect);
@@ -450,15 +450,17 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             param.setCryptedUrl(redirect);
         }
-        br.setFollowRedirects(true);
-        br.followConnection();
+        br.followRedirect(true);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("sharing/error_shmodel|class=\"not-found\">")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String passCode = param.getDecrypterPassword();
         String password_cookie = null;
         if (DropboxCom.isPasswordProtectedWebsite(br)) {
-            final String content_id = new Regex(br.getURL(), "content_id=([^\\&]+)").getMatch(0);
+            String content_id = new Regex(br.getURL(), "content_id=([^\\&;]+)").getMatch(0);
+            if (content_id == null) {
+                content_id = new Regex(br.getRedirectLocation(), "content_id=([^\\&;]+)").getMatch(0);
+            }
             if (content_id == null) {
                 logger.warning("Failed to find content_id");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

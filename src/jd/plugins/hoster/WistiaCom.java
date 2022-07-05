@@ -32,7 +32,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wistia.com" }, urls = { "https?://(?:www\\.)?ksmedia\\-gmbh\\.wistia\\.com/medias/[A-Za-z0-9]+|https?://fast\\.wistia\\.net/embed/iframe/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wistia.com" }, urls = { "https?://(?:www\\.)?ksmedia\\-gmbh\\.wistia\\.com/medias/[A-Za-z0-9]+|https?://fast\\.wistia\\.net/embed/iframe/[a-z0-9]+|https:?//fast\\.wistia\\.com/embed/medias/[A-Za-z0-9]+.jsonp?" })
 public class WistiaCom extends PluginForHost {
     public WistiaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,7 +67,7 @@ public class WistiaCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "(?:iframe|medias)/([A-Za-z0-9]+)").getMatch(0);
     }
 
     @SuppressWarnings({ "unchecked" })

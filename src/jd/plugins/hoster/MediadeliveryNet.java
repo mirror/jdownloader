@@ -15,22 +15,25 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MediadeliveryNet extends antiDDoSForHost {
@@ -71,7 +74,7 @@ public class MediadeliveryNet extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://iframe\\." + buildHostsPatternPart(domains) + "/embed/(\\d+/[a-f0-9\\-]+)");
+            ret.add("https?://iframe\\." + buildHostsPatternPart(domains) + "/embed/(\\d+/[a-f0-9\\-]+)(#.*)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -103,9 +106,31 @@ public class MediadeliveryNet extends antiDDoSForHost {
             link.setFinalFileName(this.getFID(link) + ".mp4");
         }
         this.setBrowserExclusive();
+        String forced_referer = new Regex(link.getPluginPatternMatcher(), "((\\&|\\?|#)forced_referer=.+)").getMatch(0);
+        if (forced_referer != null) {
+            forced_referer = new Regex(forced_referer, "forced_referer=([A-Za-z0-9=]+)").getMatch(0);
+            if (forced_referer != null) {
+                String ref = null;
+                if (forced_referer.matches("^[a-fA-F0-9]+$") && forced_referer.length() % 2 == 0) {
+                    final byte[] bytes = HexFormatter.hexToByteArray(forced_referer);
+                    ref = bytes != null ? new String(bytes) : null;
+                }
+                if (ref == null) {
+                    ref = Encoding.Base64Decode(forced_referer);
+                }
+                if (ref != null) {
+                    try {
+                        br.getPage(ref);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                }
+            }
+        }
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h1>\\s*403\\s*</h1>")) {
+            // 403 , wrong referer
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
