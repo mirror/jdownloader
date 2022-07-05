@@ -147,18 +147,20 @@ public class DownloadLinkCandidateSelector {
                 if (resultCounterEntry.getValue() != null && resultCounterEntry.getValue().get() > 5) {
                     final DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.FILE_UNAVAILABLE, null, candidate.getCachedAccount().getHost(), false);
                     ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime());
+                    // must be part of history for the cleanup handling to work
                     history.attach(candidate);
-                    history.dettach(candidate, ret);
-                    return ret;
+                            history.dettach(candidate, ret);
+                            return ret;
                 }
             }
         }
         final int maxNumberOfDownloadLinkCandidates = -1;// disabled for now
         if (maxNumberOfDownloadLinkCandidates > 0 && history.size() > maxNumberOfDownloadLinkCandidates) {
             final DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(SkipReason.TOO_MANY_RETRIES, null, candidate.getCachedAccount().getHost(), false);
+            // must be part of history for the cleanup handling to work
             history.attach(candidate);
-            history.dettach(candidate, ret);
-            return ret;
+                    history.dettach(candidate, ret);
+                    return ret;
         }
         return null;
     }
@@ -443,20 +445,21 @@ public class DownloadLinkCandidateSelector {
         if (result == null) {
             throw new IllegalArgumentException("result == null");
         }
-        LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult> map = roundResults.get(candidate.getLink());
+        final DownloadLink link = candidate.getLink();
+        if (result.getSkipReason() != null) {
+            final DownloadLinkCandidateHistory history = getSession().buildHistory(link);
+            history.attach(candidate);
+            history.dettach(candidate, result);
+        }
+        LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult> map = roundResults.get(link);
         if (map == null) {
             map = new LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>();
-            roundResults.put(candidate.getLink(), map);
+            roundResults.put(link, map);
         }
         map.put(candidate, result);
-        if (candidate.getLink() == getSession().getStopMark()) {
-            switch (result.getResult()) {
-            case PLUGIN_DEFECT:
-            case ACCOUNT_REQUIRED:
-            case FATAL_ERROR:
-            case SKIPPED:
+        if (link == getSession().getStopMark()) {
+            if (getSession().isStopMarkReached(link, false)) {
                 isStopMarkReached = true;
-                break;
             }
         }
     }

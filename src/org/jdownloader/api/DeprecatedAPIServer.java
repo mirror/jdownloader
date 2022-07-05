@@ -474,7 +474,7 @@ public class DeprecatedAPIServer extends HttpServer {
                     });
                     if (run == null) {
                         throw new NullPointerException();
-                    } else if (threadPool != null) {
+                    } else if (threadPool != null && false) {
                         threadPool.execute(run);
                     } else {
                         run.run();

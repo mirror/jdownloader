@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -56,8 +57,8 @@ public class PbsOrg extends PluginForHost {
     /* Decrypter */
     @SuppressWarnings("deprecation")
     @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+    public ArrayList<DownloadLink> getDownloadLinks(CrawledLink source, String data, FilePackage fp) {
+        ArrayList<DownloadLink> ret = super.getDownloadLinks(source, data, fp);
         prepBR(this.br);
         try {
             if (ret != null && ret.size() > 0) {

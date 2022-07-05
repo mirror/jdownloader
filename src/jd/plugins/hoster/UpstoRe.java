@@ -230,7 +230,6 @@ public class UpstoRe extends antiDDoSForHost {
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 captchaForm.put("antispam", "spam");
                 captchaForm.put("kpw", "spam");
-                submitForm(captchaForm);
             } else if (containsHCaptcha(this.br)) {
                 /* 2021-06-25 */
                 if (firstWaitThenCaptcha) {
@@ -249,10 +248,12 @@ public class UpstoRe extends antiDDoSForHost {
                 captchaForm.put("antispam", "spam");
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(captchaResponse));
                 captchaForm.put("h-captcha-response", Encoding.urlEncode(captchaResponse));
-                sleep(2000, link);
-                submitForm(captchaForm);
             } else {
                 logger.warning("No captchaForm present at all");
+            }
+            if (captchaForm != null) {
+                sleep(70000, link);
+                submitForm(captchaForm);
             }
             if (br.containsHTML("limit for today|several files recently")) {
                 setDownloadStarted(link, 0);

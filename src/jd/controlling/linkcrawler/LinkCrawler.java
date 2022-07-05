@@ -2684,7 +2684,7 @@ public class LinkCrawler {
                         final List<CrawledLink> crawledLinks = new ArrayList<CrawledLink>();
                         try {
                             wplg.setCurrentLink(possibleCryptedLink);
-                            final List<DownloadLink> hosterLinks = wplg.getDownloadLinks(url, sourcePackage);
+                            final List<DownloadLink> hosterLinks = wplg.getDownloadLinks(possibleCryptedLink, url, sourcePackage);
                             if (hosterLinks != null) {
                                 final UrlProtection protection = wplg.getUrlProtection(hosterLinks);
                                 if (protection != null && protection != UrlProtection.UNSET) {
