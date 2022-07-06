@@ -2188,7 +2188,7 @@ public abstract class PluginForHost extends Plugin {
                 private static final long serialVersionUID = 5968961149921441923L;
                 private final BadgeIcon   icon;
                 {
-                    icon = new BadgeIcon(downloadLink.getDomainInfo().getFavIcon(), new AbstractIcon(IconKey.ICON_URL, 16), 4, 4);
+                    icon = new BadgeIcon(downloadLink.getDomainInfo(), new AbstractIcon(IconKey.ICON_URL, 16), 4, 4);
                     setName(_GUI.T.lit_change_url());
                     setSmallIcon(icon);
                 }
@@ -2265,7 +2265,7 @@ public abstract class PluginForHost extends Plugin {
             setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
             setVariants.setEnabled(false);
             final JMenu addVariants = new JMenu("Add converted variant...");
-            addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
+            addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
             addVariants.setEnabled(false);
             // setVariants.setVisible(false);
             // addVariants.setVisible(false);

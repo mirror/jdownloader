@@ -14,7 +14,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
 public class AccountServiceCollection extends ServiceCollection<Account> {
-
     /**
      *
      */
@@ -22,7 +21,6 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
     private DomainInfo        domainInfo;
     private boolean           enabled;
     private HashSet<Account>  hashSet;
-
     private Boolean           multi              = null;
     private long              lastValidTimeStamp = -1;
     private int               invalid;
@@ -43,7 +41,6 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
         inuse = false;
         invalid = 0;
         hashSet = new HashSet<Account>();
-
     }
 
     public JComponent createIconComponent(ServicePanel servicePanel) {
@@ -91,9 +88,9 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
     public Icon getIcon() {
         if (icon == null) {
             if (!inuse && invalid > 0) {
-                icon = new ExtMergedIcon(domainInfo.getFavIcon(), 0, 0).add(new AbstractIcon(IconKey.ICON_ERROR, 12), 6, 6);
+                icon = new ExtMergedIcon(domainInfo, 0, 0).add(new AbstractIcon(IconKey.ICON_ERROR, 12), 6, 6);
             } else if (invalid > 0) {
-                icon = new ExtMergedIcon(domainInfo.getFavIcon(), 0, 0).add(new AbstractIcon(IconKey.ICON_WARNING, 12), 6, 6);
+                icon = new ExtMergedIcon(domainInfo, 0, 0).add(new AbstractIcon(IconKey.ICON_WARNING, 12), 6, 6);
             } else {
                 icon = domainInfo.getFavIcon();
             }
@@ -114,11 +111,9 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
     @Override
     public ExtTooltip createTooltip(ServicePanel owner) {
         return new AccountTooltip(owner, this);
-
     }
 
     public int getInvalidCount() {
         return invalid;
     }
-
 }

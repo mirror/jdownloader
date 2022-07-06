@@ -222,10 +222,16 @@ public class HTTPChunk extends Thread {
                                 if (contentRange[0] != chunkRange.getFrom()) {
                                     setError(ERROR.RANGE, new IOException("RangeError(From):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
                                     return null;
-                                } else if (chunkRange.getTo() != null && chunkRange.getTo() >= 0 && contentRange[1] < chunkRange.getTo()) {
-                                    setError(ERROR.RANGE, new IOException("RangeError(To)"));
-                                    return null;
-                                } else if (dl.getVerifiedFileSize() >= 0 && contentRange[2] != dl.getVerifiedFileSize()) {
+                                }
+                                if (chunkRange.getTo() != null && chunkRange.getTo() >= 0 && contentRange[1] < chunkRange.getTo()) {
+                                    if (true) {
+                                        logger.info("Allow smaller response range:" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize());
+                                    } else {
+                                        setError(ERROR.RANGE, new IOException("RangeError(To)"));
+                                        return null;
+                                    }
+                                }
+                                if (dl.getVerifiedFileSize() >= 0 && contentRange[2] != dl.getVerifiedFileSize()) {
                                     if (contentRange[2] == -1) {
                                         logger.info("RangeWarning(Size):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize());
                                     } else {
