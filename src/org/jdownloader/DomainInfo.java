@@ -1,5 +1,7 @@
 package org.jdownloader;
 
+import java.awt.Component;
+import java.awt.Graphics;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Locale;
@@ -14,13 +16,15 @@ import jd.http.Browser;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.swing.components.IDIcon;
+import org.appwork.swing.components.IconIdentifier;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
-public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
+public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Icon, IDIcon {
     private static final HashMap<String, String> HARDCODEDFAVICONS = new HashMap<String, String>();
     static {
         HARDCODEDFAVICONS.put("http", IconKey.ICON_URL);// 'http links' results in 'http'
@@ -37,6 +41,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     private static final int                     WIDTH             = 16;
     private static final int                     HEIGHT            = 16;
     private final String                         domain;
+    private final IconIdentifier                 iconIdentifier;
 
     private DomainInfo(String tld, String domain) {
         this.tld = Property.dedupeString(tld);
@@ -45,6 +50,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         } else {
             this.domain = Property.dedupeString(domain);
         }
+        this.iconIdentifier = new IconIdentifier("DomainInfo", tld);
     }
 
     public String toString() {
@@ -184,5 +190,25 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
 
     public int compareTo(DomainInfo o) {
         return getTld().compareTo(o.getTld());
+    }
+
+    @Override
+    public void paintIcon(Component c, Graphics g, int x, int y) {
+        getFavIcon().paintIcon(c, g, x, y);
+    }
+
+    @Override
+    public int getIconWidth() {
+        return WIDTH;
+    }
+
+    @Override
+    public int getIconHeight() {
+        return HEIGHT;
+    }
+
+    @Override
+    public IconIdentifier getIdentifier() {
+        return iconIdentifier;
     }
 }

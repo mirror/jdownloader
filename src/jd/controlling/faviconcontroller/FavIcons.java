@@ -443,6 +443,27 @@ public class FavIcons {
         return null;
     }
 
+    private static boolean isSameDomain(Browser br, String host) {
+        final URL url = br != null ? br._getURL() : null;
+        if (url == null) {
+            return false;
+        } else if (!StringUtils.containsIgnoreCase(url.getHost(), host)) {
+            final String domain = br.getHost();
+            if (!StringUtils.containsIgnoreCase(domain, host)) {
+                // different domain, check for different ld
+                final String domainTld = PublicSuffixList.getInstance().getTopLevelDomain(domain);
+                final String hostTld = PublicSuffixList.getInstance().getTopLevelDomain(host);
+                final String compareDomain = domain.replaceAll("\\." + domainTld + "$", "");
+                final String compareHost = host.replaceAll("\\." + hostTld + "$", "");
+                if (StringUtils.equalsIgnoreCase(compareDomain, compareHost)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
     public static BufferedImage download_FavIconTag(String host, LogInterface logger) throws IOException {
         final Browser favBr = new Browser();
         favBr.setLogger(logger);
@@ -452,7 +473,7 @@ public class FavIcons {
             favBr.getPage("https://" + host);
             if (favBr.getRedirectLocation() != null) {
                 favBr.followRedirect(true);
-                if (!StringUtils.containsIgnoreCase(favBr._getURL().getHost(), host)) {
+                if (!isSameDomain(favBr, host)) {
                     throw new IOException("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
                 }
             }
@@ -461,7 +482,7 @@ public class FavIcons {
             favBr.getPage("http://" + host);
             if (favBr.getRedirectLocation() != null) {
                 favBr.followRedirect(true);
-                if (!StringUtils.containsIgnoreCase(favBr._getURL().getHost(), host)) {
+                if (!isSameDomain(favBr, host)) {
                     logger.info("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
                 }
             }

@@ -50,7 +50,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
     private final String                                      usedByWebInterface     = IconKey.ICON_FOLDER_OPEN + IconKey.ICON_DOWNLOADPASSWORD + IconKey.ICON_ADDCONTAINER;
     private final File                                        descriptorMapCacheFile = Application.getResource("tmp/iconIDMapCache");
     private final static TypeRef<Map<String, IconDescriptor>> TYPE_REF               = new TypeRef<Map<String, IconDescriptor>>() {
-                                                                                     };
+    };
     private final HashMap<String, IconDescriptor>             descriptorMap          = new HashMap<String, IconDescriptor>();
 
     public ContentAPIImplV2() {
@@ -270,6 +270,8 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             }
             ret.crop(size, size);
             return ret;
+        } else if ("DomainInfo".equals(desc.getCls())) {
+            return DomainInfo.getInstance(desc.getKey());
         } else if ("Favit".equals(desc.getCls())) {
             return new FavitIcon(createIcon(desc.getRsc().get(1), size), DomainInfo.getInstance(desc.getRsc().get(0).getKey()));
         } else {

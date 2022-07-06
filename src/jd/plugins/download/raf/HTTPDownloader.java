@@ -242,7 +242,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
 
     protected boolean tryRangeRequest() {
         final Boolean isRangeRequestSupported = rafHints.isRangeRequestSupported();
-        if (Boolean.FALSE.equals(isRangeRequestSupported)) {
+        if (isRangeRequestSupported != null) {
             return isRangeRequestSupported;
         } else {
             return tryRangeRequest || downloadable.isServerComaptibleForByteRangeRequest();
@@ -663,6 +663,9 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                     logger.info("It seems RangeRequest is not supported because it failed: " + responseAcceptRanges);
                     setRangeRequestSupported(false);
                 }
+            }
+            if (connection.getResponseCode() == 206) {
+                setRangeRequestSupported(true);
             }
             /*
              * unsupported range-request handling for content-encoded responses, because either we get new encoded response(not resumable)

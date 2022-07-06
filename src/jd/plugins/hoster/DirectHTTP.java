@@ -408,7 +408,7 @@ public class DirectHTTP extends antiDDoSForHost {
             followURLConnection(br, dl.getConnection());
             downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (this.dl.getConnection().getResponseCode() == 503) {
+        } else if (dl.getConnection().getResponseCode() >= 500) {
             followURLConnection(br, dl.getConnection());
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         } else if ((dl.getConnection().getResponseCode() == 200 || dl.getConnection().getResponseCode() == 206) && dl.getConnection().getCompleteContentLength() == -1 && downloadLink.getVerifiedFileSize() > 0) {
@@ -417,6 +417,9 @@ public class DirectHTTP extends antiDDoSForHost {
             downloadLink.setVerifiedFileSize(-1);
             downloadLink.setProperty(DirectHTTP.FORCE_NOVERIFIEDFILESIZE, Boolean.TRUE);
             throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206) {
+            followURLConnection(br, dl.getConnection());
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         }
         try {
             if (!this.dl.startDownload()) {
@@ -803,7 +806,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     }
                 }
             }
-            final long length = urlConnection.getLongContentLength();
+            final long length = urlConnection.getCompleteContentLength();
             if (length == 0 && RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                 preferHeadRequest = false;
                 followURLConnection(br, urlConnection);
@@ -824,6 +827,12 @@ public class DirectHTTP extends antiDDoSForHost {
                     streamMod = header.getKey();
                 } else if (StringUtils.startsWithCaseInsensitive(header.getKey(), "x-swarmify")) {
                     streamMod = header.getKey();
+                }
+            }
+            if (urlConnection.getResponseCode() == 206) {
+                final long[] responseRange = urlConnection.getRange();
+                if (responseRange[1] < responseRange[2] - 1) {
+                    streamMod = "limitedRangeLength";
                 }
             }
             if (streamMod != null && downloadLink.getProperty("streamMod") == null) {

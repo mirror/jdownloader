@@ -1673,7 +1673,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             final int download2max = 2;
             for (int download2counter = download2start; download2counter <= download2max; download2counter++) {
                 logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
-                download2.remove(null);
                 final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
                 handlePassword(download2, link);
                 handleCaptcha(link, br, download2);
