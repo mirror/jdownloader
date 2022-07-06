@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
 
-import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.linkcrawler.CrawledLink;
 
 import org.jdownloader.DomainInfo;
@@ -103,36 +102,44 @@ public class QuickFilterHosterTable extends FilterTable {
     private Filter getFilter(CrawledLink link, AtomicBoolean newDisabledFilters) {
         final DomainInfo info = link.getDomainInfo();
         final String ID;
-        final String HOST;
         final Icon favIcon;
         if (link.isDirectHTTP()) {
-            HOST = info.getTld();// Browser.getHost(link.getURL());
+            final String HOST = info.getTld();// Browser.getHost(link.getURL());
             if (HOST == null) {
                 ID = "http_unknown";
                 favIcon = NewTheme.I().getIcon(IconKey.ICON_BROWSE, 16);
             } else {
                 ID = "http_".concat(HOST);
-                favIcon = info.getFavIcon();
+                favIcon = null;
             }
         } else if (link.isFTP()) {
-            HOST = info.getTld();// Browser.getHost(link.getURL());
+            final String HOST = info.getTld();// Browser.getHost(link.getURL());
             if (HOST == null) {
                 ID = "ftp_unknown";
                 favIcon = NewTheme.I().getIcon(IconKey.ICON_BROWSE, 16);
             } else {
                 ID = "ftp_".concat(HOST);
-                favIcon = info.getFavIcon();
+                favIcon = null;
             }
         } else {
-            HOST = info.getTld();
-            favIcon = info.getFavIcon();
-            ID = HOST;
+            ID = info.getTld();
+            favIcon = null;
         }
         Filter ret = filterMapping.get(ID);
         if (ret == null) {
             ret = new Filter(ID, null) {
                 protected String getID() {
                     return "Hoster_" + ID;
+                }
+
+                @Override
+                public Icon getIcon() {
+                    final Icon icon = super.getIcon();
+                    if (icon == null) {
+                        return info;
+                    } else {
+                        return icon;
+                    }
                 }
 
                 @Override
@@ -148,8 +155,6 @@ public class QuickFilterHosterTable extends FilterTable {
             };
             if (favIcon != null) {
                 ret.setIcon(favIcon);
-            } else if (HOST != null) {
-                ret.setIcon(FavIcons.getFavIcon(HOST, ret));
             }
             filterMapping.put(ID, ret);
             if (!ret.isEnabled()) {
