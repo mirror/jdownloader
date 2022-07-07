@@ -118,7 +118,7 @@ public class CnubisCom extends YetiShareCore {
     @Override
     protected Browser prepBrowserWebsite(final Browser br) {
         /* 2022-07-07: They're blocking our default/old Firefox UA */
-        br.setAllowedResponseCodes(new int[] { 416, 429 });
+        super.prepBrowserWebsite(br);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
         return br;
     }
