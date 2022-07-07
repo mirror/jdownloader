@@ -23,6 +23,7 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MotherlessComConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -603,5 +604,10 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends MotherlessComConfig> getConfigInterface() {
+        return MotherlessComConfig.class;
     }
 }

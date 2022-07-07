@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.MotherlessComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -68,7 +70,9 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/";
-            regex += "(g/[^/]+/[A-F0-9]+";
+            regex += "(g/[a-z0-9\\-_]+/[A-F0-9]+";
+            regex += "|g/[a-z0-9\\-_]+";
+            regex += "|g(i|v)/[a-z0-9\\-_]+";
             regex += "|G[A-F0-9]+/[A-F0-9]+";
             regex += "|G[A-F0-9]+";
             regex += "|GI[A-F0-9]+";
@@ -88,15 +92,17 @@ public class MotherLessComCrawler extends PluginForDecrypt {
 
     // DEV NOTES:
     //
-    // - don't support: groups(/g[a-z]{1}/), images or videos they can have over 1000 pages
     // - supports spanning pages and galleries with submenu (MORE links).
     // - set same User-Agent from hoster plugin, making it harder to distinguish.
     // - Server issues can return many 503's in high load situations.
     // - Server also punishes user who downloads with too many connections. This is a linkchecking issue also, as grabs info from headers.
     private final String TYPE_USER                               = "https?://[^/]+/u/.*";
     private final String TYPE_GALLERY_IMAGE_AND_VIDEO            = "https?://[^/]+/(G([A-F0-9]+))";
-    private final String TYPE_GALLERY_IMAGE                      = "https?://[^/]+/GI[A-F0-9]+";
-    private final String TYPE_GALLERY_VIDEO                      = "https?://[^/]+/GV[A-F0-9]+";
+    private final String TYPE_GALLERY_IMAGE                      = "https?://[^/]+/GI[A-F0-9]+$";
+    private final String TYPE_GALLERY_VIDEO                      = "https?://[^/]+/GV[A-F0-9]+$";
+    private final String TYPE_GROUP_CATEGORIES_OVERVIEW          = "https?://[^/]+/g/([a-z0-9\\-_]+)$";
+    private final String TYPE_GROUP_CATEGORY_IMAGE               = "https?://[^/]+/gi/([a-z0-9\\-_]+)$";
+    private final String TYPE_GROUP_CATEGORY_VIDEO               = "https?://[^/]+/gv/([a-z0-9\\-_]+)$";
     private final String TYPE_SINGLE_ITEM_IN_CONTEXT_OF_GALLERY1 = "https?://[^/]+/g/([^/]+)/([A-F0-9]+)";
     private final String TYPE_SINGLE_ITEM_IN_CONTEXT_OF_GALLERY2 = "https?://[^/]+/(G[A-F0-9]+)/([A-F0-9]+)$";
     private final String TYPE_FAVOURITES_ALL                     = "https?://[^/]+/f/([^/]+)/(images|galleries|videos)";
@@ -119,10 +125,6 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 5);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 503 });
-        br.getPage(param.getCryptedUrl());
-        if (MotherLessCom.isOffline(br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         if (param.getCryptedUrl().matches(TYPE_FAVOURITES_ALL)) {
             return crawlGallery(param);
         } else if (param.getCryptedUrl().matches(TYPE_USER)) {
@@ -131,6 +133,10 @@ public class MotherLessComCrawler extends PluginForDecrypt {
             return crawlSubGalleries(param);
         } else if (param.getCryptedUrl().matches(TYPE_GALLERY_IMAGE) || param.getCryptedUrl().matches(TYPE_GALLERY_VIDEO)) {
             return crawlGallery(param);
+        } else if (param.getCryptedUrl().matches(TYPE_GROUP_CATEGORIES_OVERVIEW)) {
+            return this.crawlGroupCategoriesOverview(param);
+        } else if (param.getCryptedUrl().matches(TYPE_GROUP_CATEGORY_IMAGE) || param.getCryptedUrl().matches(TYPE_GROUP_CATEGORY_VIDEO)) {
+            return this.crawlGroupImagesAndVideos(param);
         } else {
             /* Unsupported URL --> Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -147,6 +153,10 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         if (subgalID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(param.getCryptedUrl());
+        if (MotherLessCom.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] subGalURLs = br.getRegex("(/G(I|V)" + subgalID + ")").getColumn(0);
         /* Remove duplicates */
@@ -181,13 +191,20 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         return singlelink;
     }
 
+    private ArrayList<DownloadLink> crawlGallery(final CryptedLink param) throws IOException, PluginException {
+        return crawlGallery(param, -1);
+    }
+
     /**
-     * Supports all kinds of multiple page urls that motherless.com has. </br>
-     * Access initial page with current Browser instance before calling this!
+     * Supports all kinds of multiple page urls that motherless.com has including pagination.
      *
      * @throws PluginException
      */
-    private ArrayList<DownloadLink> crawlGallery(final CryptedLink param) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlGallery(final CryptedLink param, final int maxItemsLimit) throws IOException, PluginException {
+        br.getPage(param.getCryptedUrl());
+        if (MotherLessCom.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String relative_path = null;
         final HashSet<String> dupes = new HashSet<String>();
@@ -200,28 +217,18 @@ public class MotherLessComCrawler extends PluginForDecrypt {
             fpName = "Favorites of " + username + " - " + media_type;
             relative_path = username + "/" + media_type;
         } else {
-            if (fpName == null) {
-                fpName = br.getRegex("<title>MOTHERLESS\\.COM - Go Ahead She Isn't Looking!\\s*:(.*?)</title>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("<div class=\"member-bio-username\">.*?'s Gallery &bull; (.*?)</div>").getMatch(0);
-                    if (fpName == null) {
-                        fpName = br.getRegex("<title>([^<>\"]*?) -\\s*MOTHERLESS\\.COM</title>").getMatch(0);
-                    }
-                }
-            }
-            if (fpName == null) {
-                /* Try to fallback to ID */
-                fpName = new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0);
-            }
+            /* Try to fallback to url */
+            fpName = br._getURL().getPath();
         }
         if (fpName != null) {
             fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName).trim());
         }
-        String GM = br.getRegex("<a href=\"(/GM\\w+)\"").getMatch(0); // Gallery Mixed
-        if (GM != null) {
-            br.getPage(GM);
-        }
+        /* TODO: 2022-07-07: Check if this is still needed */
+        // String GM = br.getRegex("<a href=\"(/GM\\w+)\"").getMatch(0); // Gallery Mixed
+        // if (GM != null) {
+        // br.getPage(GM);
+        // }
         /**
          * Find number of pages to walk through. Website displays max 6 pages so for galleries containing more than 6 pages this value will
          * be updated after each loop! </br>
@@ -233,80 +240,75 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         int page = 1;
         while (true) {
             int numberofResultsThisPage = 0;
-            if (param.getCryptedUrl().endsWith("/galleries")) {
-                /* Find all galleries of [user | user favorites, and so on] */
-                /* E.g. /f/username/galleries */
-                fp = null;
-                final String[] galleries = br.getRegex("data-gallery-codename=\"([A-Z0-9]+)").getColumn(0);
-                if (galleries.length == 0) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            /* Find all galleries of [user | user favorites, and so on] */
+            /* E.g. /f/username/galleries */
+            final String[] galleries = br.getRegex("data-gallery-codename=\"([A-Z0-9]+)").getColumn(0);
+            if (galleries.length > 0) {
                 for (final String galleryID : galleries) {
                     ret.add(this.createDownloadlink("https://" + this.getHost() + "/G" + galleryID));
                 }
                 numberofResultsThisPage += galleries.length;
-            } else {
-                final String[] videolinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(/[^\"]+)\" class=\"img-container\" target=\"_self\">\\s*<span class=\"currently-playing-icon\"").getColumn(0);
-                if (videolinks.length != 0) {
-                    for (String singlelink : videolinks) {
-                        final String contentID = new Regex(singlelink, "/([A-Z0-9]+$)").getMatch(0);
-                        if (!dupes.add(contentID)) {
-                            continue;
-                        } else if (contentID != null) {
-                            singlelink = "https://" + this.getHost() + "/" + contentID;
-                        }
-                        singlelink = formLink(singlelink);
-                        final DownloadLink dl = createDownloadlink(singlelink);
-                        dl.setContentUrl(singlelink);
-                        dl.setProperty(MotherLessCom.PROPERTY_TYPE, "video");
-                        dl.setAvailable(true);
-                        if (relative_path != null) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
-                        }
-                        final String title = regexMediaTitle(br, contentID);
-                        if (title != null) {
-                            dl.setProperty(MotherLessCom.PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
-                        }
-                        MotherLessCom.setFilename(dl);
-                        if (fp != null) {
-                            dl._setFilePackage(fp);
-                        }
-                        distribute(dl);
-                        ret.add(dl);
-                    }
-                    numberofResultsThisPage += videolinks.length;
-                }
-                final String[] picturelinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(?:/g/[^/]+)?(/[a-zA-Z0-9]+){1,2}\"[^>]*class=\"img-container\"").getColumn(0);
-                if (picturelinks.length != 0) {
-                    for (String singlelink : picturelinks) {
-                        final String contentID = new Regex(singlelink, "/([A-Z0-9]+$)").getMatch(0);
-                        if (!dupes.add(contentID)) {
-                            /* Already added as video content --> Skip */
-                            continue;
-                        }
-                        singlelink = formLink(singlelink);
-                        final DownloadLink dl = createDownloadlink(singlelink);
-                        dl.setContentUrl(singlelink);
-                        dl.setProperty(MotherLessCom.PROPERTY_TYPE, "image");
-                        dl.setAvailable(true);
-                        if (relative_path != null) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
-                        }
-                        final String title = regexMediaTitle(br, contentID);
-                        if (title != null) {
-                            dl.setProperty(MotherLessCom.PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
-                        }
-                        MotherLessCom.setFilename(dl);
-                        if (fp != null) {
-                            dl._setFilePackage(fp);
-                        }
-                        distribute(dl);
-                        ret.add(dl);
-                    }
-                    numberofResultsThisPage += picturelinks.length;
-                }
             }
-            logger.info("Crawled page " + page + "/" + maxPage + " | Results on this page: " + numberofResultsThisPage + " | Results so far: " + ret.size());
+            final String[] videolinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(/[^\"]+)\" class=\"img-container\" target=\"_self\">\\s*<span class=\"currently-playing-icon\"").getColumn(0);
+            if (videolinks.length != 0) {
+                for (String singlelink : videolinks) {
+                    final String contentID = new Regex(singlelink, "/([A-Z0-9]+$)").getMatch(0);
+                    if (!dupes.add(contentID)) {
+                        continue;
+                    } else if (contentID != null) {
+                        singlelink = "https://" + this.getHost() + "/" + contentID;
+                    }
+                    singlelink = formLink(singlelink);
+                    final DownloadLink dl = createDownloadlink(singlelink);
+                    dl.setContentUrl(singlelink);
+                    dl.setProperty(MotherLessCom.PROPERTY_TYPE, "video");
+                    dl.setAvailable(true);
+                    if (relative_path != null) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
+                    }
+                    final String title = regexMediaTitle(br, contentID);
+                    if (title != null) {
+                        dl.setProperty(MotherLessCom.PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
+                    }
+                    MotherLessCom.setFilename(dl);
+                    if (fp != null) {
+                        dl._setFilePackage(fp);
+                    }
+                    distribute(dl);
+                    ret.add(dl);
+                }
+                numberofResultsThisPage += videolinks.length;
+            }
+            final String[] picturelinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(?:/g/[^/]+)?(/[a-zA-Z0-9]+){1,2}\"[^>]*class=\"img-container\"").getColumn(0);
+            if (picturelinks.length != 0) {
+                for (String singlelink : picturelinks) {
+                    final String contentID = new Regex(singlelink, "/([A-Z0-9]+$)").getMatch(0);
+                    if (!dupes.add(contentID)) {
+                        /* Already added as video content --> Skip */
+                        continue;
+                    }
+                    singlelink = formLink(singlelink);
+                    final DownloadLink dl = createDownloadlink(singlelink);
+                    dl.setContentUrl(singlelink);
+                    dl.setProperty(MotherLessCom.PROPERTY_TYPE, "image");
+                    dl.setAvailable(true);
+                    if (relative_path != null) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
+                    }
+                    final String title = regexMediaTitle(br, contentID);
+                    if (title != null) {
+                        dl.setProperty(MotherLessCom.PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
+                    }
+                    MotherLessCom.setFilename(dl);
+                    if (fp != null) {
+                        dl._setFilePackage(fp);
+                    }
+                    distribute(dl);
+                    ret.add(dl);
+                }
+                numberofResultsThisPage += picturelinks.length;
+            }
+            logger.info("Crawled page " + page + "/" + maxPage + " | Results on this page: " + numberofResultsThisPage + " | Results so far: " + ret.size() + " | Limit: " + maxItemsLimit);
             String nextPageURL = br.getRegex("(?i)<a href=\"(/[^<>\"]+\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             if (nextPageURL == null) {
                 nextPageURL = br.getRegex("<a href=\"(/[^<>\"]+\\?page=\\d+)\"[^>]+rel\\s*=\\s*\"next\"").getMatch(0);
@@ -331,6 +333,9 @@ public class MotherLessComCrawler extends PluginForDecrypt {
             } else if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
+            } else if (maxItemsLimit != -1 && ret.size() >= maxItemsLimit) {
+                logger.info("Stopping because: Reached max items limit");
+                break;
             } else {
                 /* Double-check that we're accessing the expected page */
                 final UrlQuery nextPageQuery = UrlQuery.parse(nextPageURL);
@@ -350,6 +355,40 @@ public class MotherLessComCrawler extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    /** Crawls category-URLs of a group e.g. user adds /g/bla and this returns /gv/bla and /gi/bla */
+    private ArrayList<DownloadLink> crawlGroupCategoriesOverview(final CryptedLink param) throws IOException, PluginException {
+        final String groupSlug = new Regex(param.getCryptedUrl(), TYPE_GROUP_CATEGORIES_OVERVIEW).getMatch(0);
+        if (groupSlug == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final int groupCrawlerMaxLimit = PluginJsonConfig.get(MotherlessComConfig.class).getGroupCrawlerLimit();
+        if (groupCrawlerMaxLimit == 0) {
+            logger.info("Returning empty array because user set limit of group crawler to 0 and thus disabled it");
+            return new ArrayList<DownloadLink>();
+        }
+        br.getPage(param.getCryptedUrl());
+        if (MotherLessCom.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String[] urls = br.getRegex("(/g(i|v)/" + groupSlug + ")").getColumn(0);
+        for (String url : urls) {
+            url = br.getURL(url).toString();
+            ret.add(this.createDownloadlink(url));
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlGroupImagesAndVideos(final CryptedLink param) throws IOException, PluginException {
+        final int groupCrawlerMaxLimit = PluginJsonConfig.get(MotherlessComConfig.class).getGroupCrawlerLimit();
+        if (groupCrawlerMaxLimit == 0) {
+            logger.info("Returning empty array because user set limit of group crawler to 0 and thus disabled it");
+            return new ArrayList<DownloadLink>();
+        }
+        return this.crawlGallery(param, groupCrawlerMaxLimit);
     }
 
     /**
