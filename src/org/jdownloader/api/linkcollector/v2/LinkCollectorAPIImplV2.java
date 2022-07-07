@@ -1,7 +1,9 @@
 package org.jdownloader.api.linkcollector.v2;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.CharBuffer;
@@ -11,6 +13,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.swing.Icon;
 
@@ -33,9 +37,12 @@ import jd.controlling.linkcrawler.modifier.PackageNameModifier;
 import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -316,6 +323,88 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         return add(query);
     }
 
+    private static File probeZipFile(File zipFile) throws IOException {
+        final FileInputStream fis = new FileInputStream(zipFile);
+        try {
+            boolean downloadList = false;
+            boolean linkcollectorList = false;
+            final ZipInputStream zis = new ZipInputStream(fis);
+            probe: while (true) {
+                final ZipEntry entry = zis.getNextEntry();
+                if (entry == null) {
+                    break;
+                } else if (entry.getName().matches("^\\d+$")) {
+                    final Map<String, Object> map = JSonStorage.restoreFromInputStream(new FilterInputStream(zis) {
+                        @Override
+                        public void close() throws IOException {
+                        }
+                    }, TypeRef.MAP);
+                    if (map != null) {
+                        Object probe = map.get("type");
+                        if (probe != null && probe instanceof String) {
+                            try {
+                                CrawledPackage.TYPE.valueOf(probe.toString());
+                                linkcollectorList = true;
+                                break probe;
+                            } catch (IllegalArgumentException ignore) {
+                            }
+                        }
+                        probe = map.get("priority");
+                        if (probe != null && probe instanceof String) {
+                            try {
+                                Priority.valueOf(probe.toString());
+                                linkcollectorList = true;
+                                break probe;
+                            } catch (IllegalArgumentException ignore) {
+                            }
+                        }
+                        downloadList = true;
+                        break probe;
+                    }
+                }
+            }
+            zis.close();
+            final File importFile;
+            if (downloadList) {
+                importFile = new File(zipFile.getParent(), "downloadList" + Time.getNanoSeconds() + ".zip");
+            } else if (linkcollectorList) {
+                importFile = new File(zipFile.getParent(), "linkcollector" + Time.getNanoSeconds() + ".zip");
+            } else {
+                importFile = null;
+            }
+            if (importFile != null) {
+                if (zipFile.renameTo(importFile)) {
+                    return importFile;
+                } else {
+                    throw new IOException("could not rename " + zipFile + " to " + importFile);
+                }
+            }
+        } finally {
+            fis.close();
+        }
+        throw new IOException("Unsupported zip file:" + zipFile);
+    }
+
+    private static File probeDataURLFile(File file, final String extension) throws IOException {
+        if ("crawljob".equalsIgnoreCase(extension)) {
+            // Crawljob/Folderwatch extension file
+            return file;
+        } else if ("nzb".equalsIgnoreCase(extension)) {
+            // Usenet NZB container file
+            return file;
+        } else if ("ccf".equalsIgnoreCase(extension) || "dlc".equalsIgnoreCase(extension) || "rsdf".equalsIgnoreCase(extension) || "sft".equalsIgnoreCase(extension)) {
+            // encrypted container files
+            return file;
+        } else if ("metalink".equalsIgnoreCase(extension) || "meta4".equalsIgnoreCase(extension)) {
+            // Metalink container files
+            return file;
+        } else if ("zip".equalsIgnoreCase(extension) || "backup".equalsIgnoreCase(extension)) {
+            return probeZipFile(file);
+        } else {
+            throw new IOException("Unsupported file extension:" + extension);
+        }
+    }
+
     private static List<File> processDataURLs(final AddLinksQueryStorable query) {
         final List<File> ret = new ArrayList<File>();
         final String[] dataURLs = query.getDataURLs();
@@ -323,10 +412,12 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             for (final String dataURL : dataURLs) {
                 final String extension = new Regex(dataURL, "data:application/([a-z0-9A-Z]{1,4})").getMatch(0);
                 if (extension != null) {
-                    final File tmp = Application.getTempResource("linkcollectorAPI" + System.nanoTime() + "." + extension);
+                    final File tmp = Application.getTempResource("uploads/linkcollectorAPI" + System.nanoTime() + "." + extension);
                     try {
                         if (tmp.exists() && !tmp.delete()) {
                             throw new IOException("Failed to delete tmp file:" + tmp);
+                        } else if (!tmp.getParentFile().exists() && !tmp.getParentFile().mkdirs()) {
+                            throw new IOException("Failed to create tmp folder:" + tmp.getParentFile());
                         }
                         final InputStream is = getInputStreamFromBase64DataURL(dataURL);
                         final FileOutputStream fos = new FileOutputStream(tmp);
@@ -339,7 +430,12 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                         } finally {
                             fos.close();
                         }
-                        ret.add(tmp);
+                        final File dataURLFile = probeDataURLFile(tmp, extension);
+                        if (dataURLFile != null) {
+                            ret.add(dataURLFile);
+                        } else {
+                            tmp.delete();
+                        }
                     } catch (final IOException e) {
                         tmp.delete();
                         LogController.getInstance().getLogger(LinkCollectorAPIImplV2.class.getName()).log(e);
@@ -647,23 +743,13 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     public static LinkCollectingJobAPIStorable loadContainer(String type, String content) {
-        final String fileName;
-        if ("DLC".equalsIgnoreCase(type)) {
-            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".dlc";
-        } else if ("RSDF".equalsIgnoreCase(type)) {
-            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".rsdf";
-        } else if ("CCF".equalsIgnoreCase(type)) {
-            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
-        } else if ("CRAWLJOB".equalsIgnoreCase(type)) {
-            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".crawljob";
-        } else {
-            fileName = null;
-        }
-        if (fileName != null) {
-            final File tmp = Application.getTempResource(fileName);
+        if (type != null) {
+            File tmp = Application.getTempResource("uploads/linkcollectorAPI" + System.nanoTime() + "." + type);
             try {
                 if (tmp.exists() && !tmp.delete()) {
                     throw new IOException("Failed to delete tmp file:" + tmp);
+                } else if (!tmp.getParentFile().exists() && !tmp.getParentFile().mkdirs()) {
+                    throw new IOException("Failed to create tmp folder:" + tmp.getParentFile());
                 }
                 final InputStream is = getInputStreamFromBase64DataURL(content);
                 final FileOutputStream fos = new FileOutputStream(tmp);
@@ -676,9 +762,15 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 } finally {
                     fos.close();
                 }
-                LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.MYJD.getLinkOriginDetails(), tmp.toURI().toString());
-                LinkCollector.getInstance().getAddLinksThread(job, null).start();
-                return new LinkCollectingJobAPIStorable(job);
+                File dataURLFile = probeDataURLFile(tmp, type);
+                if (dataURLFile != null) {
+                    tmp = dataURLFile;
+                    LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.MYJD.getLinkOriginDetails(), dataURLFile.toURI().toString());
+                    LinkCollector.getInstance().getAddLinksThread(job, null).start();
+                    return new LinkCollectingJobAPIStorable(job);
+                } else {
+                    tmp.delete();
+                }
             } catch (IOException e) {
                 tmp.delete();
                 LogController.getInstance().getLogger(LinkCollectorAPIImplV2.class.getName()).log(e);
