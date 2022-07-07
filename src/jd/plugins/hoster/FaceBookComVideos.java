@@ -25,18 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.FacebookConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -58,6 +46,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.FacebookConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
     @Override
@@ -67,7 +67,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/(?:photo\\.php|photo/)\\?fbid=(\\d+)";
     private static final String TYPE_GROUP_PERMALINK                   = "(?i)https://[^/]+/groups/[^/]+/permalink/\\d+";
-    private static final String TYPE_POSTS                             = "(?i)https://[^/]+/([^/]+)/posts/(\\d+).*";
+    private static final String TYPE_POSTS                             = "(?i)https://[^/]+/([^/]+)/posts/[^/]+.*";
     private static final String TYPE_PHOTO_PART_OF_ALBUM               = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
     /* Allow parameter 'v' to be anywhere in that URL. */
     private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
@@ -80,7 +80,11 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String PROPERTY_UPLOADER                      = "uploader";
     /* Uploader name inside URL (slug, shortened variant of uploaders' name.) */
     private static final String PROPERTY_UPLOADER_URL                  = "uploader_url";
-    private static final String PROPERTY_DIRECTURL                     = "directurl";
+    @Deprecated
+    private static final String PROPERTY_DIRECTURL_OLD                 = "directurl";
+    private static final String PROPERTY_DIRECTURL_LAST                = "directurl_last";
+    private static final String PROPERTY_DIRECTURL_LOW                 = "directurl_low";
+    private static final String PROPERTY_DIRECTURL_HD                  = "directurl_hd";
     private static final String PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED = "is_checkable_via_plugin_embed";
     private static final String PROPERTY_ACCOUNT_REQUIRED              = "account_required";
     private static final String PROPERTY_RUNTIME_MILLISECONDS          = "runtime_milliseconds";
@@ -112,7 +116,7 @@ public class FaceBookComVideos extends PluginForHost {
             regex += ".*?video\\.php\\?v=\\d+|";
             regex += "video/embed\\?video_id=\\d+|";
             regex += ".*?/videos/(?:[^/]+/)?\\d+|";
-            regex += ".*?/posts/(?:[^/]+/)?\\d+|";
+            regex += ".*?/posts/[^/]+|";
             regex += "groups/[^/]+/permalink/\\d+|";
             regex += "watch/\\?.*v=\\d+|";
             regex += "watch/live/\\?.*v=\\d+";
@@ -175,24 +179,35 @@ public class FaceBookComVideos extends PluginForHost {
         return br;
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        prepBR(this.br);
-        String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (dllink != null) {
-            logger.info("Attempting linkcheck via directurl...");
-            if (this.checkDirecturlAndSetFilesize(link, dllink)) {
-                logger.info("Availablecheck only via directurl done");
-                return AvailableStatus.TRUE;
-            } else {
-                logger.info("Availablecheck via saved directurl failed -> Doing full availablecheck");
+    private String getDownloadURL(final DownloadLink link) throws Exception {
+        String ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_LAST);
+        if (ret == null && PluginJsonConfig.get(this.getConfigInterface()).isPreferHD()) {
+            ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_HD);
+        }
+        if (ret == null) {
+            ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_LOW);
+            if (ret == null) {
+                ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_OLD);
             }
         }
+        return ret;
+    }
+
+    private String downloadURL = null;
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        prepBR(this.br);
+        downloadURL = getDownloadURL(link);
+        if (downloadURL != null) {
+            logger.info("Availablecheck only via directurl done:" + downloadURL);
+            return AvailableStatus.TRUE;
+        }
+        boolean loggedIn = false;
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
         final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
         if (link.getPluginPatternMatcher().matches(TYPE_GROUP_PERMALINK) || link.getPluginPatternMatcher().matches(TYPE_POSTS)) {
             br.getPage(link.getPluginPatternMatcher());
             String video = null;
-            boolean loggedIn = false;
             boolean search = true;
             while (search) {
                 search = false;
@@ -206,12 +221,15 @@ public class FaceBookComVideos extends PluginForHost {
                     video = br.getRegex("href\\s*=\\s*(?:\"|')(https://www.facebook.com/[^/]+/videos/(?:[^/]+/)?\\d+)").getMatch(0);
                     if (video == null) {
                         video = br.getRegex("\"url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/(?:[^/]+/)?\\d+)").getMatch(0);
+                        if (video == null) {
+                            video = br.getRegex("url\"\\s*:\\s*\"(https?:\\\\/\\\\/www.facebook.com\\\\/[^/]+\\\\/videos\\\\/(?:[^/]+/)?\\d+)").getMatch(0);
+                        }
                         if (video != null) {
                             video = JSonStorage.restoreFromString("\"" + video + "\"", TypeRef.STRING);
                         }
                     }
                 }
-                if (video == null && (br.containsHTML("When this happens, it('|&#039;)s usually because the owner only shared it") || br.containsHTML("\"Private group\""))) {
+                if (video == null && (br.containsHTML("(?i)When this happens, it('|&#039;)s usually because the owner only shared it") || br.containsHTML("\"Private group\"") || br.containsHTML("(?i)>\\s*You must log in to continue.\\s*<"))) {
                     if (loggedIn || account == null) {
                         /* Account needed or given account is lacking permissions to view that content. */
                         throw new AccountRequiredException();
@@ -237,7 +255,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (!link.isNameSet()) {
                 link.setName(this.getFID(link) + ".mp4");
             }
-            if (account != null) {
+            if (account != null && !loggedIn) {
                 login(account, this.br, false);
             }
             /* Embed only = no nice filenames given */
@@ -270,9 +288,9 @@ public class FaceBookComVideos extends PluginForHost {
                 }
             }
             this.setFilename(link);
-            dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-            if (dllink != null && dllink.startsWith("http") && findAndCheckDownloadurl) {
-                if (!this.checkDirecturlAndSetFilesize(link, dllink)) {
+            if (findAndCheckDownloadurl) {
+                downloadURL = getDownloadURL(link);
+                if (downloadURL == null) {
                     /* E.g. final downloadurl doesn't lead to video-file. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
                 }
@@ -318,9 +336,8 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Check video via https://m.facebook.com/watch/?v=<fid> </br>
-     * In some cases, this may also work for videos for which an account is required otherwise. </br>
-     * Not all videos can be accessed via this way!
+     * Check video via https://m.facebook.com/watch/?v=<fid> </br> In some cases, this may also work for videos for which an account is
+     * required otherwise. </br> Not all videos can be accessed via this way!
      */
     @Deprecated
     private AvailableStatus requestFileInformationMobile(final DownloadLink link, final boolean isDownload) throws PluginException, IOException {
@@ -464,19 +481,15 @@ public class FaceBookComVideos extends PluginForHost {
             link.setProperty(PROPERTY_DATE_FORMATTED, dateFormatted);
         }
         if (fallback_downloadurl != null) {
-            link.setProperty(PROPERTY_DIRECTURL, fallback_downloadurl);
+            link.setProperty(PROPERTY_DIRECTURL_LOW, fallback_downloadurl);
         }
         return AvailableStatus.TRUE;
     }
 
     /**
-     * 2021-03-18: "plugin embed" method. </br>
-     * Not all videos are embeddable via this method thus make sure to have a fallback and do NOT trust offline status if this fails with
-     * exception! </br>
-     * This sometimes enables us to: </br>
-     * 1. Check content that is otherwise only available when logedIN. </br>
-     * 2. Get higher video quality. </br>
-     * 3. Do superfast linkcheck as it's much faster than the FB website.
+     * 2021-03-18: "plugin embed" method. </br> Not all videos are embeddable via this method thus make sure to have a fallback and do NOT
+     * trust offline status if this fails with exception! </br> This sometimes enables us to: </br> 1. Check content that is otherwise only
+     * available when logedIN. </br> 2. Get higher video quality. </br> 3. Do superfast linkcheck as it's much faster than the FB website.
      */
     @Deprecated
     private AvailableStatus requestFileInformationPluginEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -486,9 +499,9 @@ public class FaceBookComVideos extends PluginForHost {
         /* TODO: Improve offline detection */
         if (videoO == null) {
             /**
-             * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br>
-             * They do return an errormessage for non-embeddable videos but it's language-dependant and thus not easy to parse so we don't
-             * try to catch it here!
+             * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br> They do
+             * return an errormessage for non-embeddable videos but it's language-dependant and thus not easy to parse so we don't try to
+             * catch it here!
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -550,8 +563,11 @@ public class FaceBookComVideos extends PluginForHost {
             final String dllink = (String) entries.get(videosrc);
             if (!StringUtils.isEmpty(dllink)) {
                 logger.info("Found directurl using videosource: " + videosrc);
-                link.setProperty(PROPERTY_DIRECTURL, dllink);
-                break;
+                if (StringUtils.contains(videosrc, "hd_")) {
+                    link.setProperty(PROPERTY_DIRECTURL_HD, dllink);
+                } else {
+                    link.setProperty(PROPERTY_DIRECTURL_LOW, dllink);
+                }
             }
         }
         /* Try to get name of the uploader */
@@ -568,8 +584,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Normal linkcheck via website. </br>
-     * Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
+     * Normal linkcheck via website. </br> Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
      * For other URL-types, website can be quite different depending on the video the user wants to download - it can redirect to random
      * other URLs!
      *
@@ -578,7 +593,6 @@ public class FaceBookComVideos extends PluginForHost {
     private AvailableStatus requestFileInformationVideoWebsite(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         br.getPage(link.getPluginPatternMatcher());
         this.checkErrors(link);
-        String dllink = null;
         Object jsonO1 = null, jsonO2 = null, jsonO3 = null;
         Object errorO = null;
         /* Different sources to parse their json. */
@@ -614,10 +628,9 @@ public class FaceBookComVideos extends PluginForHost {
             }
         }
         /**
-         * Try to find extra data for nicer filenames. </br>
-         * Do not trust this source 100% so only set properties which haven't been set before! </br>
-         * This source (video schema object) is not always given!! </br>
-         * Example: https://www.facebook.com/socialchefs/videos/326580738743639
+         * Try to find extra data for nicer filenames. </br> Do not trust this source 100% so only set properties which haven't been set
+         * before! </br> This source (video schema object) is not always given!! </br> Example:
+         * https://www.facebook.com/socialchefs/videos/326580738743639
          */
         try {
             logger.info("Set filename info via findSchemaJsonVideoObject");
@@ -719,21 +732,17 @@ public class FaceBookComVideos extends PluginForHost {
             }
             final String urlLow = (String) entries.get("playable_url");
             final String urlHigh = (String) entries.get("playable_url_quality_hd");
-            if (PluginJsonConfig.get(this.getConfigInterface()).isPreferHD() && !StringUtils.isEmpty(urlHigh)) {
-                logger.info("User quality: playable_url_quality_hd");
-                dllink = urlHigh;
-            } else {
-                logger.info("User quality: playable_url");
-                dllink = urlLow;
+            if (!StringUtils.isEmpty(urlHigh)) {
+                link.setProperty(PROPERTY_DIRECTURL_HD, urlHigh);
+            }
+            if (!StringUtils.isEmpty(urlLow)) {
+                link.setProperty(PROPERTY_DIRECTURL_LOW, urlLow);
             }
             if (!StringUtils.isEmpty(title)) {
                 link.setProperty(PROPERTY_TITLE, title);
             }
             if (!StringUtils.isEmpty(uploader)) {
                 link.setProperty(PROPERTY_UPLOADER, uploader);
-            }
-            if (!StringUtils.isEmpty(dllink)) {
-                link.setProperty(PROPERTY_DIRECTURL, dllink);
             }
             return AvailableStatus.TRUE;
         } else if (errorO != null) {
@@ -900,8 +909,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Linkcheck via embed URL. </br>
-     * Not all videos are embeddable!
+     * Linkcheck via embed URL. </br> Not all videos are embeddable!
      */
     public AvailableStatus requestFileInformationEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
         br.getPage("https://www." + this.getHost() + "/video/embed?video_id=" + this.getFID(link));
@@ -917,15 +925,25 @@ public class FaceBookComVideos extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean checkDirecturlAndSetFilesize(final DownloadLink link, final String directurl) throws IOException, PluginException {
+    private String checkDirecturlAndSetFilesize(final DownloadLink link, final String propertyName) throws IOException, PluginException {
+        final String url = link.getStringProperty(propertyName);
+        if (StringUtils.isEmpty(url)) {
+            return null;
+        }
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(directurl);
+            con = br.openHeadConnection(url);
             if (this.looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                return true;
+                return url;
+            } else {
+                try {
+                    br.followConnection(true);
+                } catch (IOException ignore) {
+                    logger.log(ignore);
+                }
             }
         } finally {
             try {
@@ -933,7 +951,8 @@ public class FaceBookComVideos extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        return false;
+        link.removeProperty(propertyName);
+        return null;
     }
 
     private Object pluginEmbedFindHTMLInJson(final Object o, final String videoid) {
@@ -1001,7 +1020,7 @@ public class FaceBookComVideos extends PluginForHost {
             }
             maxChunks = 1;
             this.checkDirecturlAndSetFilesize(link, dllink);
-            link.setProperty(PROPERTY_DIRECTURL, dllink);
+            link.setProperty(PROPERTY_DIRECTURL_OLD, dllink);
         }
         return AvailableStatus.TRUE;
     }
@@ -1105,8 +1124,7 @@ public class FaceBookComVideos extends PluginForHost {
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (!attemptStoredDownloadurlDownload(link)) {
             requestFileInformation(link, account, true);
-            final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-            if (dllink == null) {
+            if (downloadURL == null) {
                 if (isAccountRequired(link)) {
                     /*
                      * If this happens while an account is active this means that the user is either missing the rights to access that item
@@ -1117,7 +1135,7 @@ public class FaceBookComVideos extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -1125,6 +1143,8 @@ public class FaceBookComVideos extends PluginForHost {
                     logger.log(e);
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
+            } else {
+                link.setProperty(PROPERTY_DIRECTURL_LAST, downloadURL);
             }
         }
         dl.startDownload();
@@ -1139,7 +1159,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL_LAST);
         if (StringUtils.isEmpty(url)) {
             return false;
         }
@@ -1150,7 +1170,7 @@ public class FaceBookComVideos extends PluginForHost {
                 return true;
             } else {
                 /* Remove that so we don't waste time checking this again. */
-                link.removeProperty(PROPERTY_DIRECTURL);
+                link.removeProperty(PROPERTY_DIRECTURL_LAST);
                 brc.followConnection(true);
                 throw new IOException();
             }
@@ -1437,7 +1457,10 @@ public class FaceBookComVideos extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            link.removeProperty(PROPERTY_DIRECTURL);
+            link.removeProperty(PROPERTY_DIRECTURL_LAST);
+            link.removeProperty(PROPERTY_DIRECTURL_OLD);
+            link.removeProperty(PROPERTY_DIRECTURL_HD);
+            link.removeProperty(PROPERTY_DIRECTURL_LOW);
             link.removeProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED);
             link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
             link.removeProperty(PROPERTY_TITLE);
