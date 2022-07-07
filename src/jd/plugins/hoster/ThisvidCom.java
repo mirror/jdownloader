@@ -101,7 +101,11 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember_me", "1");
-                if (containsRecaptchaV2Class(loginform)) {
+                final String captchaURL = br.getRegex("(/captcha/logon/[^\"]+)\"").getMatch(0);
+                if (captchaURL != null) {
+                    final String code = this.getCaptchaCode(captchaURL, this.getDownloadLink());
+                    loginform.put("code", Encoding.urlEncode(code));
+                } else if (containsRecaptchaV2Class(loginform)) {
                     final String rcKey = br.getRegex("data-recaptcha-key=\"([^\"]+)\"").getMatch(0);
                     final String token;
                     if (rcKey != null) {

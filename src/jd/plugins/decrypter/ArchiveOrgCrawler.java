@@ -235,7 +235,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                             fina.setVerifiedFileSize(Long.parseLong(size));
                         }
                     }
-                    fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                    fina.setRelativeDownloadFolderPath(subfolderPath);
                     ret.add(fina);
                 }
             }
@@ -535,14 +535,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 downloadURL.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 downloadURL.setAvailable(true);
                 downloadURL.setFinalFileName(filename);
-                // final String subfolderPathInName = new Regex(pathWithFilename, "(.+)/[^/]+$").getMatch(0);
                 final String thisPath;
                 if (pathWithoutFilename != null) {
                     thisPath = root + "/" + pathWithoutFilename;
                 } else {
                     thisPath = root;
                 }
-                downloadURL.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
+                downloadURL.setRelativeDownloadFolderPath(thisPath);
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(thisPath);
                 downloadURL._setFilePackage(fp);
