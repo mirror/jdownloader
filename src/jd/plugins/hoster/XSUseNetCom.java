@@ -109,7 +109,7 @@ public class XSUseNetCom extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            if (br.getRequest() == null || StringUtils.endsWithCaseInsensitive(br.getURL(), "/index.php?/clientarea/")) {
+            if (br.getRequest() == null || !StringUtils.endsWithCaseInsensitive(br.getURL(), "/index.php?/clientarea/")) {
                 this.getPage("https://my.xsusenet.com/index.php?/clientarea/");
             }
             account.saveCookies(br.getCookies(getHost()), "");
@@ -134,7 +134,7 @@ public class XSUseNetCom extends UseNet {
                 }
                 final String nextDueDate = new Regex(subscriptionHTML, "Next Due Date</small><br />\\s*<span>(\\d{2}/\\d{2}/\\d{4})</span>").getMatch(0);
                 if (nextDueDate != null) {
-                    final long subscriptionExpireTimestamp = TimeFormatter.getMilliSeconds(nextDueDate, "MM/dd/yyyy", Locale.ENGLISH);
+                    final long subscriptionExpireTimestamp = TimeFormatter.getMilliSeconds(nextDueDate, "dd/MM/yyyy", Locale.ENGLISH);
                     if (subscriptionExpireTimestamp > highestExpireTimestamp) {
                         highestExpireTimestamp = subscriptionExpireTimestamp;
                         subscriptionName = new Regex(subscriptionHTML, "class=\"text-dark font-weight-bold\">([^<]+)</span>").getMatch(0);
@@ -165,6 +165,7 @@ public class XSUseNetCom extends UseNet {
             if (isFree) {
                 account.setType(Account.AccountType.FREE);
                 account.setMaxSimultanDownloads(5);
+                ai.setStatus(subscriptionName);
             } else {
                 account.setType(Account.AccountType.PREMIUM);
                 ai.setStatus(subscriptionName);
@@ -213,8 +214,8 @@ public class XSUseNetCom extends UseNet {
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-        ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", false, 80, 119));
-        ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", true, 563, 443));
+        ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", false, 119, 443, 23, 80, 81, 8080, 2323, 8181));
+        ret.addAll(UsenetServer.createServerList("reader.xsusenet.com", true, 443, 563, 564, 600, 663, 664));
         ret.addAll(UsenetServer.createServerList("free.xsusenet.com", false, 119, 443, 23, 80, 81, 8080, 2323, 8181));
         return ret;
     }
