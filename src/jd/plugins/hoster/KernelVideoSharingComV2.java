@@ -568,6 +568,10 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
+    protected boolean isHTTPsSupported() {
+        return true;
+    }
+
     protected AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         this.prepBR(br);
         if (account != null) {
@@ -580,7 +584,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             link.setName(weakFilename);
         }
         final String lifetime = "86400";
-        br.getPage("https://" + this.getHost() + "/api/json/video/" + lifetime + "/" + getAPIParam1(videoID) + "/" + this.getAPICroppedVideoID(videoID) + "/" + videoID + ".json");
+        br.getPage((isHTTPsSupported() ? "https://" : "http://") + this.getHost() + "/api/json/video/" + lifetime + "/" + getAPIParam1(videoID) + "/" + this.getAPICroppedVideoID(videoID) + "/" + videoID + ".json");
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -894,7 +898,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                         logger.info("Trust cookies without check");
                         return;
                     }
-                    getPage("https://www." + this.getHost() + "/");
+                    getPage((isHTTPsSupported() ? "https://" : "http://") + "www." + this.getHost() + "/");
                     if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -906,7 +910,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
                 /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
                 logger.info("Performing full login");
-                getPage("https://www." + this.getHost() + "/login/");
+                getPage((isHTTPsSupported() ? "https://" : "http://") + "www." + this.getHost() + "/login/");
                 /*
                  * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
                  * premium accounts available at all.
@@ -941,7 +945,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         *
+         * 
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
