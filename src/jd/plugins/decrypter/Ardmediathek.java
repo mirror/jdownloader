@@ -206,8 +206,10 @@ public class Ardmediathek extends PluginForDecrypt {
         final String host = this.getHost();
         if (param.getCryptedUrl().matches(type_embedded)) {
             return this.crawlWdrMediathekEmbedded(param, param.getCryptedUrl());
-        } else if (host.equalsIgnoreCase("wdr.de") || host.equalsIgnoreCase("wdrmaus.de") || host.equalsIgnoreCase("sportschau.de")) {
+        } else if (host.equalsIgnoreCase("wdr.de") || host.equalsIgnoreCase("wdrmaus.de")) {
             return this.crawlWdrMediathek(param);
+        } else if (host.equalsIgnoreCase("sportschau.de")) {
+            return this.crawlSportschauDe(param);
         } else if (host.equalsIgnoreCase("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
             return this.crawlNdrMediathek(param);
         } else if (host.equalsIgnoreCase("sandmann.de")) {
@@ -453,6 +455,57 @@ public class Ardmediathek extends PluginForDecrypt {
         brc.getPage(url_json);
         final Map<String, Object> ndrJsonObject = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         return this.crawlNdrJson(param, br, ndrJsonObject);
+    }
+
+    private ArrayList<DownloadLink> crawlSportschauDe(final CryptedLink param) throws Exception {
+        br.getPage(param.getCryptedUrl());
+        if (isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String description = br.getRegex("name=\"twitter:description\" content=\"([^\"]+)").getMatch(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String[] jsons = br.getRegex("class=\"mediaplayer v-instance mediaplayer--1x1\"\\s*data-v=\"([^\"]+)").getColumn(0);
+        String title = br.getRegex("name=\"twitter:title\" content=\"([^\"]+)\"").getMatch(0);
+        if (title == null) {
+            /* Fallback */
+            title = br._getURL().getPath();
+        }
+        final ArdMetadata metadata = new ArdMetadata(title);
+        // metadata.setSubtitle(_info.get("seriesTitle").toString());
+        final String date = br.getRegex("\"datePublished\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+        if (date != null) {
+            metadata.setDateTimestamp(getDateMilliseconds(date));
+        }
+        metadata.setChannel("sportschau_de");
+        if (!StringUtils.isEmpty(description)) {
+            metadata.setDescription(description);
+        }
+        /* Fallback as they do not provide contentIDs... */
+        metadata.setContentID(br.getURL());
+        for (String json : jsons) {
+            final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
+            json = Encoding.htmlDecode(json);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final List<Map<String, Object>> qualities = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "mc/streams/{0}/media");
+            if (qualities == null) {
+                continue;
+            }
+            for (final Map<String, Object> quality : qualities) {
+                final String mimeType = quality.get("mimeType").toString();
+                if (!mimeType.equalsIgnoreCase("video/mp4")) {
+                    /* Skip all except http streams */
+                    continue;
+                }
+                final VideoResolution res = VideoResolution.getByWidth(((Number) quality.get("maxHResolutionPx")).intValue());
+                if (res != null) {
+                    this.addQualityHTTP(param, metadata, foundQualitiesMap, quality.get("url").toString(), null, res, false);
+                }
+            }
+            ret.addAll(this.handleUserQualitySelection(metadata, foundQualitiesMap));
+            /* 2022-07-07: So far only one video is supported because we'd set the same metadata on all which would be wrong! */
+            break;
+        }
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlWdrMediathek(final CryptedLink param) throws Exception {
