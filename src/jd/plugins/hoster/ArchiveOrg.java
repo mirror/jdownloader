@@ -18,22 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -52,6 +40,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:[\\w\\.]+)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -235,8 +234,8 @@ public class ArchiveOrg extends PluginForHost {
                         br.setCookies(lendingInfo.getCookies());
                     } else {
                         /**
-                         * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br>
-                         * User could e.g. have added account via cookie login so borrow session for some books may be available regardless.
+                         * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br> User
+                         * could e.g. have added account via cookie login so borrow session for some books may be available regardless.
                          */
                         logger.info("Borrow required but no borrow session available -> We will most likely run into errorhandling soon");
                     }
@@ -266,16 +265,12 @@ public class ArchiveOrg extends PluginForHost {
     private void cleanupBorrowSessionMap() {
         synchronized (bookBorrowSessions) {
             final Iterator<Entry<String, ArchiveOrgLendingInfo>> iterator = bookBorrowSessions.entrySet().iterator();
-            final ArrayList<String> keysToDelete = new ArrayList<String>();
             while (iterator.hasNext()) {
                 final Entry<String, ArchiveOrgLendingInfo> entry = iterator.next();
                 final ArchiveOrgLendingInfo lendingInfo = entry.getValue();
                 if (!lendingInfo.isValid()) {
-                    keysToDelete.add(entry.getKey());
+                    iterator.remove();
                 }
-            }
-            for (final String keyToDelete : keysToDelete) {
-                bookBorrowSessions.remove(keyToDelete);
             }
         }
     }
@@ -398,8 +393,7 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /**
-     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br>
-     * It is typically valid for one hour.
+     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br> It is typically valid for one hour.
      */
     public void borrowBook(final Browser br, final Account account, final String bookID, final boolean skipAllExceptLastStep) throws Exception {
         if (account == null) {
@@ -463,10 +457,9 @@ public class ArchiveOrg extends PluginForHost {
     /** Returns LendingInfo/session for given bookID + acccount. */
     private ArchiveOrgLendingInfo getLendingInfo(final String bookID, final Account account) {
         final String key = getLendingInfoKey(bookID, account);
-        if (bookBorrowSessions.containsKey(key)) {
-            return bookBorrowSessions.get(key);
-        } else {
-            return null;
+        synchronized (bookBorrowSessions) {
+            final ArchiveOrgLendingInfo ret = bookBorrowSessions.get(key);
+            return ret;
         }
     }
 
