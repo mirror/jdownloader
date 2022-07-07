@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -345,8 +344,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 break;
             }
             /* Borrow book if necessary */
-            if (isLendingRequired == Boolean.TRUE && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                logger.info("Book needs to be borrowed");
+            if (isLendingRequired == Boolean.TRUE) {
                 if (account != null) {
                     if (loanedSecondsLeft > 0) {
                         logger.info("User has already borrowed this book with current account --> Obtaining borrow-cookies");
@@ -368,12 +366,41 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             break;
         } while (true);
+        String contentURLFormat = "https://" + this.getHost() + "/details/" + bookID;
         final String bookId = brOptions.get("bookId").toString();
-        final String title = (String) brOptions.get("bookTitle");
-        final List<Object> imagesO = (List<Object>) brOptions.get("data");
-        if (loanedSecondsLeft > 0) {
-            logger.info("User has borrowed book which is currently being crawled | Borrowed for seconds: " + loanedSecondsLeft);
+        String title = (String) brOptions.get("bookTitle");
+        final String subPrefix = (String) brOptions.get("subPrefix");
+        final String idForLinkID;
+        final boolean isMultiVolumeBook;
+        if (subPrefix != null && !subPrefix.equals(bookId)) {
+            /**
+             * Books can have multiple volumes. In this case lending the main book will basically lend all volumes alltogether. </br>
+             * Problem: Title is the same for all items --> Append this subPrefix to the title to fix that.
+             */
+            title += " - " + subPrefix;
+            idForLinkID = bookId + "_" + subPrefix;
+            contentURLFormat += "/" + subPrefix;
+            isMultiVolumeBook = true;
+        } else {
+            idForLinkID = bookId;
+            isMultiVolumeBook = false;
         }
+        final String pageFormat;
+        if (bookAjaxURL.matches(".*/page/n\\d+.*")) {
+            pageFormat = "/page/n%d";
+        } else {
+            pageFormat = "/page/%d";
+        }
+        contentURLFormat += "%s";
+        /*
+         * Defines how book pages will be arranged on the archive.org website. User can open single pages faster in browser if we get this
+         * right.
+         */
+        final String bookDisplayMode = new Regex(bookAjaxURL, "/mode/([^/]+)").getMatch(0);
+        if (bookDisplayMode != null) {
+            contentURLFormat += "/mode/" + bookDisplayMode;
+        }
+        final List<Object> imagesO = (List<Object>) brOptions.get("data");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final Object imageO : imagesO) {
             /*
@@ -386,8 +413,17 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 final int pageNum = ((Number) bookpage.get("leafNum")).intValue();
                 final String url = bookpage.get("uri").toString();
                 final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", url, true);
+                if (pageNum == 1) {
+                    /* Special for first page -> URL does not contain path to page for first page. */
+                    dl.setContentUrl(String.format(contentURLFormat, ""));
+                } else {
+                    dl.setContentUrl(String.format(contentURLFormat, String.format(pageFormat, pageNum - 1)));
+                }
                 dl.setFinalFileName(pageNum + "_ " + title + ".jpg");
                 dl.setProperty(ArchiveOrg.PROPERTY_BOOK_ID, bookID);
+                if (isMultiVolumeBook) {
+                    dl.setProperty(ArchiveOrg.PROPERTY_BOOK_SUB_PREFIX, subPrefix);
+                }
                 if (isLendingRequired == Boolean.TRUE) {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_LENDING_REQUIRED, true);
                 }
@@ -400,11 +436,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setAvailable(true);
                 } else {
                     dl.setAvailable(false);
+                    dl.setProperty(ArchiveOrg.PROPERTY_IS_UN_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
                 }
                 if (account == null && isLendingRequired == Boolean.TRUE) {
-                    dl.setLinkID(this.getHost() + "://" + bookId + "_preview_" + pageNum);
+                    dl.setLinkID(this.getHost() + "://" + idForLinkID + "_preview_" + pageNum);
                 } else {
-                    dl.setLinkID(this.getHost() + "://" + bookId + "_" + pageNum);
+                    dl.setLinkID(this.getHost() + "://" + idForLinkID + "_" + pageNum);
                 }
                 ret.add(dl);
             }
@@ -517,7 +554,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return hostPlugin.looksLikeDownloadableContent(urlConnection);
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

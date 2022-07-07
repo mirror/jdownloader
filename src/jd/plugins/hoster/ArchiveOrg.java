@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.net.URLHelper;
@@ -67,11 +66,13 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final int                                   MAXDOWNLOADS                        = -1;
-    private static final String                         PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
-    public static final String                          PROPERTY_BOOK_ID                    = "book_id";
-    public static final String                          PROPERTY_IS_LENDING_REQUIRED        = "is_lending_required";
-    private static HashMap<String, Map<String, Object>> bookBorrowSessions                  = new HashMap<String, Map<String, Object>>();
+    private final int                           MAXDOWNLOADS                                  = -1;
+    private static final String                 PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN           = "download_serverside_broken";
+    public static final String                  PROPERTY_BOOK_ID                              = "book_id";
+    public static final String                  PROPERTY_BOOK_SUB_PREFIX                      = "book_sub_prefix";
+    public static final String                  PROPERTY_IS_LENDING_REQUIRED                  = "is_lending_required";
+    public static final String                  PROPERTY_IS_UN_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_un_downloadable_book_preview_page";
+    private static HashMap<String, LendingInfo> bookBorrowSessions                            = new HashMap<String, LendingInfo>();
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -82,6 +83,8 @@ public class ArchiveOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (link.getPluginPatternMatcher().endsWith("my_dir")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (isUnDownloadableBookPreviewPage(link)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         if (account != null) {
@@ -91,7 +94,7 @@ public class ArchiveOrg extends PluginForHost {
         if (!isDownload) {
             URLConnectionAdapter con = null;
             try {
-                /* 2021-02-25: Do NOT use head connection here anymore! */
+                /* 2021-02-25: Do not use HEAD request anymore! */
                 prepDownloadHeaders(br, link);
                 con = br.openGetConnection(getDirectURL(link));
                 connectionErrorhandling(con, link, account);
@@ -110,6 +113,14 @@ public class ArchiveOrg extends PluginForHost {
             }
         }
         return AvailableStatus.UNCHECKABLE;
+    }
+
+    private boolean isUnDownloadableBookPreviewPage(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_IS_UN_DOWNLOADABLE_BOOK_PREVIEW_PAGE)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean isBook(final DownloadLink link) {
@@ -136,20 +147,27 @@ public class ArchiveOrg extends PluginForHost {
         return link.getStringProperty(PROPERTY_BOOK_ID);
     }
 
-    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException, IOException {
+    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws Exception {
         if (this.isBook(link)) {
             /* Check errors for books */
-            if (con.getResponseCode() == 403) {
-                if (isBookLendingRequired(link)) {
-                    /* TODO: auto re-lend (borrow) book in this case if account is available. */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: Lending of this book has expired");
+            if (!this.looksLikeDownloadableContent(con)) {
+                final int responsecode = con.getResponseCode();
+                if (account != null && isBookLendingRequired(link) && (responsecode == 403 || responsecode == 404)) {
+                    synchronized (bookBorrowSessions) {
+                        final LendingInfo lendingInfo = getLendingInfo(this.getBookID(link), account);
+                        final Long timeUntilNextLoanAllowed = lendingInfo != null ? lendingInfo.getTimeUntilNextLoanAllowed() : null;
+                        if (timeUntilNextLoanAllowed != null) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait until this book can be auto re-loaned", timeUntilNextLoanAllowed.longValue());
+                        } else {
+                            this.borrowBook(br, account, this.getBookID(link), false);
+                            throw new PluginException(LinkStatus.ERROR_RETRY, "Retry after auto re-loan");
+                        }
+                    }
                 } else {
-                    throw new AccountRequiredException("Error 403: Cannot download borrowed book page without account");
+                    /* Unknown reason of failure */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 3 * 60 * 1000l);
                 }
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 404: You tried to download a borrowed book page without account");
-            }
-            if (con.getURL().toString().contains("preview-unavailable.png")) {
+            } else if (con.getURL().toString().contains("preview-unavailable.png")) {
                 // https://archive.org/bookreader/static/preview-unavailable.png
                 /* This page of a book is only available when book is borrowed by user. */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Book preview unavailable");
@@ -182,59 +200,40 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, null, true);
-        doDownload(null, link);
+        handleDownload(null, link);
     }
 
-    private void doDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
+    private void handleDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, account, true);
         if (account != null) {
             this.login(account, false);
-            if (this.isBook(link) && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (this.isBook(link)) {
                 if (this.isBookLendingRequired(link)) {
                     final String bookID = getBookID(link);
                     if (bookID == null) {
                         /* Old/broken items */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    synchronized (bookBorrowSessions) {
-                        final Map<String, Object> bookBorrowSession;
-                        if (bookBorrowSessions.containsKey(bookID) && (bookBorrowSession = bookBorrowSessions.get(bookID)) != null) {
-                            br.setCookies((Cookies) bookBorrowSession.get("cookies"));
-                        } else {
-                            /**
-                             * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br>
-                             * User could e.g. have added account via cookie login so borrow session for some books may be available
-                             * regardless.
-                             */
-                            logger.info("Borrow required but no borrow session available -> We will most likely run into errorhandling soon");
-                        }
+                    final LendingInfo lendingInfo = this.getLendingInfo(this.getBookID(link), account);
+                    if (lendingInfo != null) {
+                        br.setCookies(lendingInfo.getCookies());
+                    } else {
+                        /**
+                         * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br>
+                         * User could e.g. have added account via cookie login so borrow session for some books may be available regardless.
+                         */
+                        logger.info("Borrow required but no borrow session available -> We will most likely run into errorhandling soon");
                     }
                 }
             }
-        }
-        /* Cleanup borrow session map */
-        synchronized (bookBorrowSessions) {
-            final Iterator<Entry<String, Map<String, Object>>> iterator = bookBorrowSessions.entrySet().iterator();
-            final ArrayList<String> keysToDelete = new ArrayList<String>();
-            while (iterator.hasNext()) {
-                final Entry<String, Map<String, Object>> entry = iterator.next();
-                final Map<String, Object> borrowInfo = entry.getValue();
-                final long timestamp = ((Long) borrowInfo.get("timestamp")).longValue();
-                final long timePassed = Time.systemIndependentCurrentJVMTimeMillis() - timestamp;
-                if (timePassed > 60 * 60 * 1000l) {
-                    keysToDelete.add(entry.getKey());
-                }
-            }
-            for (final String keyToDelete : keysToDelete) {
-                bookBorrowSessions.remove(keyToDelete);
-            }
-        }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            prepDownloadHeaders(br, link);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, getDirectURL(link), isResumeable(link, account), getMaxChunks(link, account));
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), isResumeable(link, account), getMaxChunks(link, account));
+            if (this.isBookLendingRequired(link)) {
+                throw new AccountRequiredException();
+            }
         }
+        cleanupBorrowSessionMap();
+        prepDownloadHeaders(br, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, getDirectURL(link), isResumeable(link, account), getMaxChunks(link, account));
         connectionErrorhandling(br.getHttpConnection(), link, account);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -245,6 +244,24 @@ public class ArchiveOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
+    }
+
+    /** Removes expired entries from bookBorrowSessions. */
+    private void cleanupBorrowSessionMap() {
+        synchronized (bookBorrowSessions) {
+            final Iterator<Entry<String, LendingInfo>> iterator = bookBorrowSessions.entrySet().iterator();
+            final ArrayList<String> keysToDelete = new ArrayList<String>();
+            while (iterator.hasNext()) {
+                final Entry<String, LendingInfo> entry = iterator.next();
+                final LendingInfo lendingInfo = entry.getValue();
+                if (!lendingInfo.isValid()) {
+                    keysToDelete.add(entry.getKey());
+                }
+            }
+            for (final String keyToDelete : keysToDelete) {
+                bookBorrowSessions.remove(keyToDelete);
+            }
+        }
     }
 
     private String getDirectURL(final DownloadLink link) throws MalformedURLException {
@@ -423,11 +440,22 @@ public class ArchiveOrg extends PluginForHost {
                 logger.warning("WTF book was borrowed but no borrow-cookies are present!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final HashMap<String, Object> borrowMap = new HashMap<String, Object>();
-            borrowMap.put("cookies", borrowCookies);
-            borrowMap.put("timestamp", Time.systemIndependentCurrentJVMTimeMillis());
-            bookBorrowSessions.put(bookID, borrowMap);
+            bookBorrowSessions.put(getLendingInfoKey(bookID, account), new LendingInfo(borrowCookies));
         }
+    }
+
+    /** Returns LendingInfo/session for given bookID + acccount. */
+    private LendingInfo getLendingInfo(final String bookID, final Account account) {
+        final String key = getLendingInfoKey(bookID, account);
+        if (bookBorrowSessions.containsKey(key)) {
+            return bookBorrowSessions.get(key);
+        } else {
+            return null;
+        }
+    }
+
+    private static String getLendingInfoKey(final String bookID, final Account account) {
+        return account.getUser() + "_" + bookID;
     }
 
     private boolean checkCookies(final Browser br, final Account account, final Cookies cookies) throws IOException {
@@ -452,13 +480,13 @@ public class ArchiveOrg extends PluginForHost {
         login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
+        cleanupBorrowSessionMap();
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account, true);
-        doDownload(account, link);
+        handleDownload(account, link);
     }
 
     @Override
@@ -500,5 +528,54 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return ArchiveOrgConfig.class;
+    }
+
+    private static class LendingInfo {
+        private Cookies cookies   = null;
+        private Long    timestamp = null;
+
+        public LendingInfo(final Cookies cookies) {
+            this.cookies = cookies;
+            this.timestamp = Time.systemIndependentCurrentJVMTimeMillis();
+        }
+
+        public Cookies getCookies() {
+            return this.cookies;
+        }
+
+        /** Returns whether or not this session is considered valid. */
+        public boolean isValid() {
+            if (this.timestamp == null) {
+                return false;
+            } else if (Time.systemIndependentCurrentJVMTimeMillis() - this.timestamp.longValue() < 60 * 60 * 1000) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        /** If this returns null, loan is allowed immediately. */
+        public Long getTimeUntilNextLoanAllowed() {
+            if (this.timestamp == null) {
+                return null;
+            } else {
+                final long timePassedSinceLastLoan = Time.systemIndependentCurrentJVMTimeMillis() - this.timestamp.longValue();
+                if (timePassedSinceLastLoan < 5 * 60 * 1000) {
+                    /* Book has been loaned within the last 5 minutes -> Wait at least 5 minutes between loaning. */
+                    return timePassedSinceLastLoan;
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        /** Returns true if this session has been newly added within the last X minutes. */
+        public boolean hasJustBeenLoaned() {
+            if (getTimeUntilNextLoanAllowed() == null) {
+                return false;
+            } else {
+                return true;
+            }
+        }
     }
 }
