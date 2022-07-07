@@ -30,7 +30,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -144,9 +145,18 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean isOfficiallyDownloadable = br.containsHTML("class=\"download-button\"") && !br.containsHTML("class=\"download-lending-message\"");
         final boolean isBookPreviewAvailable = getBookReaderURL(br) != null;
         if (isBookPreviewAvailable) {
-            /* TODO: Add user settings for this so user can download single pages + official downloadable content if both is available */
+            final BookCrawlMode mode = PluginJsonConfig.get(ArchiveOrgConfig.class).getBookCrawlMode();
             if (isOfficiallyDownloadable) {
-                return crawlDetails(param);
+                if (mode == BookCrawlMode.AUTO) {
+                    return crawlDetails(param);
+                } else if (mode == BookCrawlMode.ORIGINAL_AND_LOSE_PAGES) {
+                    final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                    ret.addAll(crawlDetails(param));
+                    ret.addAll(crawlBook(param, account));
+                    return ret;
+                } else {
+                    return crawlBook(param, account);
+                }
             } else {
                 return crawlBook(param, account);
             }

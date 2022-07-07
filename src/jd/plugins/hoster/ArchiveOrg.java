@@ -27,11 +27,11 @@ import java.util.Map.Entry;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -66,13 +66,13 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final int                           MAXDOWNLOADS                                  = -1;
-    private static final String                 PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN           = "download_serverside_broken";
-    public static final String                  PROPERTY_BOOK_ID                              = "book_id";
-    public static final String                  PROPERTY_BOOK_SUB_PREFIX                      = "book_sub_prefix";
-    public static final String                  PROPERTY_IS_LENDING_REQUIRED                  = "is_lending_required";
-    public static final String                  PROPERTY_IS_UN_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_un_downloadable_book_preview_page";
-    private static HashMap<String, LendingInfo> bookBorrowSessions                            = new HashMap<String, LendingInfo>();
+    private final int                                     MAXDOWNLOADS                                  = -1;
+    private static final String                           PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN           = "download_serverside_broken";
+    public static final String                            PROPERTY_BOOK_ID                              = "book_id";
+    public static final String                            PROPERTY_BOOK_SUB_PREFIX                      = "book_sub_prefix";
+    public static final String                            PROPERTY_IS_LENDING_REQUIRED                  = "is_lending_required";
+    public static final String                            PROPERTY_IS_UN_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_un_downloadable_book_preview_page";
+    private static HashMap<String, ArchiveOrgLendingInfo> bookBorrowSessions                            = new HashMap<String, ArchiveOrgLendingInfo>();
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -92,12 +92,15 @@ public class ArchiveOrg extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (!isDownload) {
+            if (account == null && this.requiresAccount(link)) {
+                return AvailableStatus.UNCHECKABLE;
+            }
             URLConnectionAdapter con = null;
             try {
                 /* 2021-02-25: Do not use HEAD request anymore! */
                 prepDownloadHeaders(br, link);
                 con = br.openGetConnection(getDirectURL(link));
-                connectionErrorhandling(con, link, account);
+                connectionErrorhandling(con, link, account, null);
                 final String filenameFromHeader = getFileNameFromHeader(con);
                 if (filenameFromHeader != null) {
                     link.setFinalFileName(filenameFromHeader);
@@ -143,24 +146,36 @@ public class ArchiveOrg extends PluginForHost {
         }
     }
 
+    private boolean requiresAccount(final DownloadLink link) {
+        if (this.isBookLendingRequired(link)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private String getBookID(final DownloadLink link) {
         return link.getStringProperty(PROPERTY_BOOK_ID);
     }
 
-    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws Exception {
+    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account, final ArchiveOrgLendingInfo oldLendingInfo) throws Exception {
         if (this.isBook(link)) {
             /* Check errors for books */
             if (!this.looksLikeDownloadableContent(con)) {
                 final int responsecode = con.getResponseCode();
                 if (account != null && isBookLendingRequired(link) && (responsecode == 403 || responsecode == 404)) {
                     synchronized (bookBorrowSessions) {
-                        final LendingInfo lendingInfo = getLendingInfo(this.getBookID(link), account);
+                        final ArchiveOrgLendingInfo lendingInfo = getLendingInfo(this.getBookID(link), account);
+                        if (oldLendingInfo != lendingInfo) {
+                            /* Info has been modified in the meanwhile --> Retry */
+                            throw new PluginException(LinkStatus.ERROR_RETRY, "Retry after auto re-loan of other download candidate");
+                        }
                         final Long timeUntilNextLoanAllowed = lendingInfo != null ? lendingInfo.getTimeUntilNextLoanAllowed() : null;
                         if (timeUntilNextLoanAllowed != null) {
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait until this book can be auto re-loaned", timeUntilNextLoanAllowed.longValue());
                         } else {
                             this.borrowBook(br, account, this.getBookID(link), false);
-                            throw new PluginException(LinkStatus.ERROR_RETRY, "Retry after auto re-loan");
+                            throw new PluginException(LinkStatus.ERROR_RETRY, "Retry after auto re-loan of current download candidate");
                         }
                     }
                 } else {
@@ -205,6 +220,7 @@ public class ArchiveOrg extends PluginForHost {
 
     private void handleDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, account, true);
+        ArchiveOrgLendingInfo lendingInfo = null;
         if (account != null) {
             this.login(account, false);
             if (this.isBook(link)) {
@@ -214,7 +230,7 @@ public class ArchiveOrg extends PluginForHost {
                         /* Old/broken items */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final LendingInfo lendingInfo = this.getLendingInfo(this.getBookID(link), account);
+                    lendingInfo = this.getLendingInfo(this.getBookID(link), account);
                     if (lendingInfo != null) {
                         br.setCookies(lendingInfo.getCookies());
                     } else {
@@ -227,14 +243,14 @@ public class ArchiveOrg extends PluginForHost {
                 }
             }
         } else {
-            if (this.isBookLendingRequired(link)) {
+            if (this.requiresAccount(link)) {
                 throw new AccountRequiredException();
             }
         }
         cleanupBorrowSessionMap();
         prepDownloadHeaders(br, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, getDirectURL(link), isResumeable(link, account), getMaxChunks(link, account));
-        connectionErrorhandling(br.getHttpConnection(), link, account);
+        connectionErrorhandling(br.getHttpConnection(), link, account, lendingInfo);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -249,11 +265,11 @@ public class ArchiveOrg extends PluginForHost {
     /** Removes expired entries from bookBorrowSessions. */
     private void cleanupBorrowSessionMap() {
         synchronized (bookBorrowSessions) {
-            final Iterator<Entry<String, LendingInfo>> iterator = bookBorrowSessions.entrySet().iterator();
+            final Iterator<Entry<String, ArchiveOrgLendingInfo>> iterator = bookBorrowSessions.entrySet().iterator();
             final ArrayList<String> keysToDelete = new ArrayList<String>();
             while (iterator.hasNext()) {
-                final Entry<String, LendingInfo> entry = iterator.next();
-                final LendingInfo lendingInfo = entry.getValue();
+                final Entry<String, ArchiveOrgLendingInfo> entry = iterator.next();
+                final ArchiveOrgLendingInfo lendingInfo = entry.getValue();
                 if (!lendingInfo.isValid()) {
                     keysToDelete.add(entry.getKey());
                 }
@@ -440,12 +456,12 @@ public class ArchiveOrg extends PluginForHost {
                 logger.warning("WTF book was borrowed but no borrow-cookies are present!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            bookBorrowSessions.put(getLendingInfoKey(bookID, account), new LendingInfo(borrowCookies));
+            bookBorrowSessions.put(getLendingInfoKey(bookID, account), new ArchiveOrgLendingInfo(borrowCookies));
         }
     }
 
     /** Returns LendingInfo/session for given bookID + acccount. */
-    private LendingInfo getLendingInfo(final String bookID, final Account account) {
+    private ArchiveOrgLendingInfo getLendingInfo(final String bookID, final Account account) {
         final String key = getLendingInfoKey(bookID, account);
         if (bookBorrowSessions.containsKey(key)) {
             return bookBorrowSessions.get(key);
@@ -528,54 +544,5 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return ArchiveOrgConfig.class;
-    }
-
-    private static class LendingInfo {
-        private Cookies cookies   = null;
-        private Long    timestamp = null;
-
-        public LendingInfo(final Cookies cookies) {
-            this.cookies = cookies;
-            this.timestamp = Time.systemIndependentCurrentJVMTimeMillis();
-        }
-
-        public Cookies getCookies() {
-            return this.cookies;
-        }
-
-        /** Returns whether or not this session is considered valid. */
-        public boolean isValid() {
-            if (this.timestamp == null) {
-                return false;
-            } else if (Time.systemIndependentCurrentJVMTimeMillis() - this.timestamp.longValue() < 60 * 60 * 1000) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        /** If this returns null, loan is allowed immediately. */
-        public Long getTimeUntilNextLoanAllowed() {
-            if (this.timestamp == null) {
-                return null;
-            } else {
-                final long timePassedSinceLastLoan = Time.systemIndependentCurrentJVMTimeMillis() - this.timestamp.longValue();
-                if (timePassedSinceLastLoan < 5 * 60 * 1000) {
-                    /* Book has been loaned within the last 5 minutes -> Wait at least 5 minutes between loaning. */
-                    return timePassedSinceLastLoan;
-                } else {
-                    return null;
-                }
-            }
-        }
-
-        /** Returns true if this session has been newly added within the last X minutes. */
-        public boolean hasJustBeenLoaned() {
-            if (getTimeUntilNextLoanAllowed() == null) {
-                return false;
-            } else {
-                return true;
-            }
-        }
     }
 }
