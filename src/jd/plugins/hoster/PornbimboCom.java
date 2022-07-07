@@ -25,6 +25,7 @@ import jd.plugins.HostPlugin;
 public class PornbimboCom extends KernelVideoSharingComV2 {
     public PornbimboCom(final PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium("http://pornbimbo.com");
     }
 
     /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
@@ -40,15 +41,16 @@ public class PornbimboCom extends KernelVideoSharingComV2 {
     }
 
     @Override
+    protected boolean isHTTPsSupported() {
+        return false;
+    }
+
+    @Override
     public String[] siteSupportedNames() {
         return buildSupportedNames(getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/\\d+/[a-z0-9\\-]+");
-        }
-        return ret.toArray(new String[0]);
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
     }
 }
