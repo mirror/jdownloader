@@ -75,6 +75,22 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     /** Use this to correct URL added by user if necessary. */
     protected void correctURL(final CryptedLink param) {
+        final ArrayList<String> deadDomains = this.getDeadDomains();
+        if (deadDomains != null) {
+            /* Change domain in added URL if we know that the domain inside added URL is dead. */
+            final String domain = Browser.getHost(param.getCryptedUrl(), true);
+            if (deadDomains.contains(domain)) {
+                param.setCryptedUrl(param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domain) + "/", this.getHost() + "/"));
+            }
+        }
+    }
+
+    /**
+     * Override this and add dead domains so upper handling can auto update added URLs and change domain if it contains a dead domain. This
+     * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
+     */
+    protected ArrayList<String> getDeadDomains() {
+        return null;
     }
 
     protected boolean supportsHost(final String host) {

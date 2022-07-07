@@ -148,6 +148,7 @@ public class ZaycevNet extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(PROPERTY_DIRECTURL);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();

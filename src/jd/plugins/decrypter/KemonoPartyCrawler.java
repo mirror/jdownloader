@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -202,26 +201,33 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             fp.setName(portal + " - " + userID + " - " + postID);
         }
         final String[] directURLs = br.getRegex("\"[^\"]*(/data/[^\"]+)").getColumn(0);
-        final HashSet<String> dups = new HashSet<String>();
+        /* Remove duplicates from results so our index will be correct down below. */
+        final ArrayList<String> urlsWithoutDupes = new ArrayList<String>();
         for (String directURL : directURLs) {
             directURL = br.getURL(directURL).toString();
-            if (dups.add(new URL(directURL).getPath())) {
-                final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
-                media.setProperty("portal", portal);
-                media.setProperty("userid", userID);
-                media.setProperty("postid", postID);
-                final UrlQuery query = UrlQuery.parse(directURL);
-                final String betterFilename = Encoding.htmlDecode(query.get("f"));
-                if (!StringUtils.isEmpty(betterFilename)) {
-                    media.setFinalFileName(betterFilename);
-                    media.setProperty(DirectHTTP.FIXNAME, betterFilename);
-                }
-                if (published != null) {
-                    media.setProperty("date", published);
-                }
-                media.setAvailable(true);
-                ret.add(media);
+            if (!urlsWithoutDupes.contains(directURL)) {
+                urlsWithoutDupes.add(directURL);
             }
+        }
+        int index = 0;
+        for (String directURL : urlsWithoutDupes) {
+            final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
+            media.setProperty("portal", portal);
+            media.setProperty("userid", userID);
+            media.setProperty("postid", postID);
+            media.setProperty("postContentIndex", index);
+            final UrlQuery query = UrlQuery.parse(directURL);
+            final String betterFilename = Encoding.htmlDecode(query.get("f"));
+            if (!StringUtils.isEmpty(betterFilename)) {
+                media.setFinalFileName(betterFilename);
+                media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+            }
+            if (published != null) {
+                media.setProperty("date", published);
+            }
+            media.setAvailable(true);
+            ret.add(media);
+            index++;
         }
         fp.addLinks(ret);
         return ret;
