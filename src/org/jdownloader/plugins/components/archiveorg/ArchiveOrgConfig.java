@@ -1,9 +1,11 @@
-package org.jdownloader.plugins.components.config;
+package org.jdownloader.plugins.components.archiveorg;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -15,6 +17,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     final String                    text_PreferOriginal   = "Prefer original?";
     final String                    text_CrawlArchiveView = "Also crawl archive view?";
     final String                    text_BookImageQuality = "Set book image quality (0 = highest, 10 = lowest)";
+    final String                    text_BookCrawlMode    = "Set book crawl mode";
     public static final TRANSLATION TRANSLATION           = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -51,4 +54,33 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     int getBookImageQuality();
 
     void setBookImageQuality(int scaleFactor);
+
+    public static enum BookCrawlMode implements LabelInterface {
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Original files if possible else lose book pages";
+            }
+        },
+        ORIGINAL_AND_LOSE_PAGES {
+            @Override
+            public String getLabel() {
+                return "Original files if possible and lose book pages";
+            }
+        },
+        LOSE_PAGES {
+            @Override
+            public String getLabel() {
+                return "Only lose book pages";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("AUTO")
+    @Order(40)
+    @DescriptionForConfigEntry(text_BookCrawlMode)
+    BookCrawlMode getBookCrawlMode();
+
+    void setBookCrawlMode(final BookCrawlMode bookCrawlerMode);
 }
