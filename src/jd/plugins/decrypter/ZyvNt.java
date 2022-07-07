@@ -24,44 +24,43 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://(www\\.)?zaycev\\.net/artist/\\d+(\\?page=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "https?://(?:www\\.)?zaycev\\.net/artist/\\d+(\\?page=\\d+)?" })
 public class ZyvNt extends PluginForDecrypt {
     public ZyvNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        final String artist = br.getRegex("class=\"artist-page__name\">([^<>\"]*?)</span>").getMatch(0);
-        String[] fileInfo = br.getRegex("href=\"(/pages/\\d+/\\d+\\.shtml)\" class='musicset-track__link'").getColumn(0);
-        if (fileInfo == null || fileInfo.length == 0) {
+        br.getPage(param.getCryptedUrl());
+        final String artist = br.getRegex("schema.org/MusicGroup\"[^>]+><meta content=\"([^\"]+)\"").getMatch(0);
+        final String[] urls = br.getRegex("href=\"(/pages/\\d+/\\d+\\.shtml)\"[^>]*track-link").getColumn(0);
+        if (urls == null || urls.length == 0) {
             if (br.containsHTML(">Нет информации<|>Композиций не найдено<")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
         }
-        for (String link : fileInfo) {
-            final DownloadLink dl = createDownloadlink("http://zaycev.net" + link);
+        for (String link : urls) {
+            final DownloadLink dl = createDownloadlink("https://" + this.getHost() + link);
             decryptedLinks.add(dl);
         }
         if (artist != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(artist.trim()));
+            fp.setName(Encoding.htmlDecode(artist).trim());
             fp.addLinks(decryptedLinks);
             fp.setAllowMerge(true);
         }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }

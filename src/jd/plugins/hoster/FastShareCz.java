@@ -16,7 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,19 +39,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "https?://(?:www\\.)?(?:fastshare|netshare)\\.cz/(\\d+)/[^<>\"#]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FastShareCz extends antiDDoSForHost {
     public FastShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://fastshare.cz/cenik_cs");
     }
 
-    /* Tags: 2019-08-29: dinoshare.cz */
     @Override
     protected boolean useRUA() {
         return true;
@@ -53,6 +54,33 @@ public class FastShareCz extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return "https://www.fastshare.cz/podminky";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "fastshare.cz", "fastshare.pl", "netshare.cz", "dinoshare.cz" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+)/[^<>\"#]+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -69,23 +97,20 @@ public class FastShareCz extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private static final String MAINPAGE = "https://www.fastshare.cz";
-
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = new Browser();
         correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(MAINPAGE, "lang", "cs");
+        br.setCookie(this.getHost(), "lang", "cs");
         br.setCustomCharset("utf-8");
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -116,7 +141,7 @@ public class FastShareCz extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        if (br.containsHTML("(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
+        if (br.containsHTML("(?i)(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
         }
         br.setFollowRedirects(false);
@@ -126,7 +151,7 @@ public class FastShareCz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (captchaLink != null) {
-            final String captcha = getCaptchaCode(MAINPAGE + captchaLink, link);
+            final String captcha = getCaptchaCode(captchaLink, link);
             postPage(action, "code=" + Encoding.urlEncode(captcha));
         } else {
             postPage(action, "");
@@ -199,7 +224,7 @@ public class FastShareCz extends antiDDoSForHost {
                     }
                     logger.info("Attempting cookie login...");
                     getPage("https://" + this.getHost() + "/user");
-                    if (this.isLoggedIN()) {
+                    if (this.isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getURL()), "");
                         return;
@@ -210,7 +235,7 @@ public class FastShareCz extends antiDDoSForHost {
                 logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 postPage("https://" + this.getHost() + "/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedIN()) {
+                if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
@@ -223,8 +248,12 @@ public class FastShareCz extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedIN() {
-        return br.containsHTML("/logout\\.php");
+    private boolean isLoggedIN(final Browser br) {
+        if (br.containsHTML("/logout\\.php")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -323,7 +352,7 @@ public class FastShareCz extends antiDDoSForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */

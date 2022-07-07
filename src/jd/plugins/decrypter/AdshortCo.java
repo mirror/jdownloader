@@ -60,6 +60,14 @@ public class AdshortCo extends MightyScriptAdLinkFly {
     }
 
     @Override
+    protected ArrayList<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("adshort.im"); // 2022-07-07
+        deadDomains.add("adshort.me"); // 2022-07-07
+        return deadDomains;
+    }
+
+    @Override
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
