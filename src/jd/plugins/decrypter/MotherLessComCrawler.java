@@ -133,10 +133,8 @@ public class MotherLessComCrawler extends PluginForDecrypt {
             return crawlSubGalleries(param);
         } else if (param.getCryptedUrl().matches(TYPE_GALLERY_IMAGE) || param.getCryptedUrl().matches(TYPE_GALLERY_VIDEO)) {
             return crawlGallery(param);
-        } else if (param.getCryptedUrl().matches(TYPE_GROUP_CATEGORIES_OVERVIEW)) {
-            return this.crawlGroupCategoriesOverview(param);
-        } else if (param.getCryptedUrl().matches(TYPE_GROUP_CATEGORY_IMAGE) || param.getCryptedUrl().matches(TYPE_GROUP_CATEGORY_VIDEO)) {
-            return this.crawlGroupImagesAndVideos(param);
+        } else if (param.getCryptedUrl().matches(TYPE_GROUP_CATEGORIES_OVERVIEW) || param.getCryptedUrl().matches(TYPE_GROUP_CATEGORY_IMAGE) || param.getCryptedUrl().matches(TYPE_GROUP_CATEGORY_VIDEO)) {
+            return this.crawlGroups(param);
         } else {
             /* Unsupported URL --> Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -357,17 +355,25 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         return ret;
     }
 
+    private ArrayList<DownloadLink> crawlGroups(final CryptedLink param) throws IOException, PluginException {
+        final int groupCrawlerMaxLimit = PluginJsonConfig.get(MotherlessComConfig.class).getGroupCrawlerLimit();
+        if (groupCrawlerMaxLimit == 0) {
+            logger.info("Returning empty array because user set limit of group crawler to 0 and thus disabled it");
+            return new ArrayList<DownloadLink>();
+        }
+        if (param.getCryptedUrl().matches(TYPE_GROUP_CATEGORIES_OVERVIEW)) {
+            return crawlGroupCategoriesOverview(param);
+        } else {
+            return crawlGroupImagesAndVideos(param);
+        }
+    }
+
     /** Crawls category-URLs of a group e.g. user adds /g/bla and this returns /gv/bla and /gi/bla */
     private ArrayList<DownloadLink> crawlGroupCategoriesOverview(final CryptedLink param) throws IOException, PluginException {
         final String groupSlug = new Regex(param.getCryptedUrl(), TYPE_GROUP_CATEGORIES_OVERVIEW).getMatch(0);
         if (groupSlug == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final int groupCrawlerMaxLimit = PluginJsonConfig.get(MotherlessComConfig.class).getGroupCrawlerLimit();
-        if (groupCrawlerMaxLimit == 0) {
-            logger.info("Returning empty array because user set limit of group crawler to 0 and thus disabled it");
-            return new ArrayList<DownloadLink>();
         }
         br.getPage(param.getCryptedUrl());
         if (MotherLessCom.isOffline(br)) {
@@ -383,12 +389,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlGroupImagesAndVideos(final CryptedLink param) throws IOException, PluginException {
-        final int groupCrawlerMaxLimit = PluginJsonConfig.get(MotherlessComConfig.class).getGroupCrawlerLimit();
-        if (groupCrawlerMaxLimit == 0) {
-            logger.info("Returning empty array because user set limit of group crawler to 0 and thus disabled it");
-            return new ArrayList<DownloadLink>();
-        }
-        return this.crawlGallery(param, groupCrawlerMaxLimit);
+        return this.crawlGallery(param, PluginJsonConfig.get(MotherlessComConfig.class).getGroupCrawlerLimit());
     }
 
     /**
