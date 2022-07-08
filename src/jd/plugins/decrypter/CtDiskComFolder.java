@@ -207,7 +207,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 if (passCode != null) {
                     folder.setDownloadPassword(passCode);
                 }
-                folder.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderpath + "/" + subfolderName);
+                folder.setRelativeDownloadFolderPath(subfolderpath + "/" + subfolderName);
                 ret.add(folder);
             } else {
                 final Regex fileinfo = new Regex(info1, "href=\"(/f/tempdir-[A-Za-z0-9_\\-]+)\">([^<>\"]+)<");
@@ -224,7 +224,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 if (passCode != null) {
                     file.setDownloadPassword(passCode);
                 }
-                file.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderpath);
+                file.setRelativeDownloadFolderPath(subfolderpath);
                 file.setProperty(PROPERTY_PARENT_DIR, param.getCryptedUrl());
                 file._setFilePackage(fp);
                 ret.add(file);

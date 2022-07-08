@@ -597,7 +597,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 dl = createDownloadlink(generateFolderURL(id, resourceKey));
             }
             if (folderPath != null) {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderPath);
+                dl.setRelativeDownloadFolderPath(folderPath);
             }
             if (isShortcutFolder) {
                 dl.setProperty(PROPERTY_SPECIAL_SHORTCUT_FOLDER, true);
@@ -683,7 +683,7 @@ public class GoogleDrive extends PluginForDecrypt {
                     if (root_dir_name != null) {
                         dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
                     }
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderPath);
+                    dl.setRelativeDownloadFolderPath(folderPath);
                     if (fp != null) {
                         dl._setFilePackage(fp);
                     }
@@ -696,7 +696,7 @@ public class GoogleDrive extends PluginForDecrypt {
                     folderPath = "/" + title;
                 }
                 dl = createDownloadlink(generateFolderURL(id, resourceKey));
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderPath);
+                dl.setRelativeDownloadFolderPath(folderPath);
                 if (isShortcutFolder) {
                     dl.setProperty(PROPERTY_SPECIAL_SHORTCUT_FOLDER, true);
                 }

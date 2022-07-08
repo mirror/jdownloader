@@ -112,7 +112,7 @@ public class OdriveCom extends PluginForDecrypt {
                     linkUri += "?" + querypw.toString();
                 }
                 final DownloadLink dl = this.createDownloadlink("https://odrive.com/folder" + linkUri);
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder + "/" + title);
+                dl.setRelativeDownloadFolderPath(subFolder + "/" + title);
                 decryptedLinks.add(dl);
             } else {
                 /* Single file */
@@ -131,7 +131,7 @@ public class OdriveCom extends PluginForDecrypt {
                 dl.setProperty("folderid", folderID);
                 dl.setProperty("directfilename", title);
                 if (StringUtils.isNotEmpty(subFolder)) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                    dl.setRelativeDownloadFolderPath(subFolder);
                 }
                 if (!StringUtils.isEmpty(passCode)) {
                     dl.setDownloadPassword(passCode);

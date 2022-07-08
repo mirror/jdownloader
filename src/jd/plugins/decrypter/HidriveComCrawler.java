@@ -115,14 +115,14 @@ public class HidriveComCrawler extends PluginForDecrypt {
                 if (passCode != null) {
                     file.setDownloadPassword(passCode);
                 }
-                file.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                file.setRelativeDownloadFolderPath(subfolderPath);
                 file._setFilePackage(fp);
                 decryptedLinks.add(file);
             } else if (ressource.get("type").toString().equals("dir")) {
                 /* Subfolder */
                 final String relativeFolderPath = (String) ressource.get("path");
                 final DownloadLink folder = this.createDownloadlink("https://my.hidrive.com/share/" + baseFolderID + "#$" + relativeFolderPath);
-                folder.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + relativeFolderPath);
+                folder.setRelativeDownloadFolderPath(subfolderPath + relativeFolderPath);
                 decryptedLinks.add(folder);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

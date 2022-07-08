@@ -102,7 +102,7 @@ public class RPNetBiz extends PluginForDecrypt {
                 }
                 link.setAvailable(true);
                 if (addPath) {
-                    link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, CrossSystem.alleviatePathParts(currentPath));
+                    link.setRelativeDownloadFolderPath(CrossSystem.alleviatePathParts(currentPath));
                 }
                 ret.add(link);
             }

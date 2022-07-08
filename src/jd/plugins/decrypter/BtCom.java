@@ -144,7 +144,7 @@ public class BtCom extends PluginForDecrypt {
             }
             dl.setAvailable(true);
             if (!StringUtils.isEmpty(parentPath)) {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, parentPath);
+                dl.setRelativeDownloadFolderPath(parentPath);
             }
             dl.setLinkID(this.getHost() + "://" + uri);
             decryptedLinks.add(dl);

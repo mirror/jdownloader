@@ -93,7 +93,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
                             final DownloadLink dl = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                             dl.setDownloadSize(filesize);
                             dl.setFinalFileName(filename);
-                            dl.setProperty("LINKDUPEID", "adrivecom://" + fid);
+                            dl.setLinkID("adrivecom://" + fid);
                             dl.setProperty("mainlink", parameter);
                             dl.setProperty("directlink", br.getURL());
                             dl.setAvailable(true);
@@ -123,7 +123,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         } else if (br.containsHTML("id=\"startdownload\"")) {
             /* Special case: Single file, direct download */
             final DownloadLink dl = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            dl.setProperty("LINKDUPEID", "adrivecom://" + fid);
+            dl.setLinkID("adrivecom://" + fid);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("directlink", br.getURL());
             dl.setProperty("directdl", true);
@@ -147,7 +147,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
                 try {
                     final String filename = getFileNameFromURL(new URL(iframe));
                     dl.setFinalFileName(filename);
-                    dl.setProperty("LINKDUPEID", "adrivecom://" + fid + "/" + filename);
+                    dl.setLinkID("adrivecom://" + fid + "/" + filename);
                 } catch (final Throwable e) {
                 }
                 decryptedLinks.add(dl);
@@ -186,12 +186,12 @@ public class AdriveComDecrypter extends PluginForDecrypt {
                 }
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setFinalFileName(filename);
-                dl.setProperty("LINKDUPEID", "adrivecom://" + fid + "/" + filename);
+                dl.setLinkID("adrivecom://" + fid + "/" + filename);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("directlink", directlink);
                 dl.setAvailable(true);
                 if (!StringUtils.isEmpty(subfolderPath)) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, Encoding.htmlDecode(subfolderPath));
+                    dl.setRelativeDownloadFolderPath(Encoding.htmlDecode(subfolderPath));
                 }
                 decryptedLinks.add(dl);
             }

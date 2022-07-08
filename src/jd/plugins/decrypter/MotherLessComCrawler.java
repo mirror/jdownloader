@@ -262,7 +262,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                     dl.setProperty(MotherLessCom.PROPERTY_TYPE, "video");
                     dl.setAvailable(true);
                     if (relative_path != null) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
+                        dl.setRelativeDownloadFolderPath(relative_path);
                     }
                     final String title = regexMediaTitle(br, contentID);
                     if (title != null) {
@@ -291,7 +291,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                     dl.setProperty(MotherLessCom.PROPERTY_TYPE, "image");
                     dl.setAvailable(true);
                     if (relative_path != null) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relative_path);
+                        dl.setRelativeDownloadFolderPath(relative_path);
                     }
                     final String title = regexMediaTitle(br, contentID);
                     if (title != null) {

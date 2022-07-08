@@ -188,7 +188,7 @@ public class FexNet extends PluginForDecrypt {
                     if (is_dir) {
                         /* Subfolder -> Goes back into crawler */
                         final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/s/" + folderID + "#" + id);
-                        link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + name);
+                        link.setRelativeDownloadFolderPath(subfolderPath + "/" + name);
                         if (passCode != null) {
                             link.setDownloadPassword(passCode);
                         }
@@ -214,7 +214,7 @@ public class FexNet extends PluginForDecrypt {
                         link.setAvailable(true);
                         link.setProperty(jd.plugins.hoster.FexNet.PROPERTY_directurl, download_url);
                         if (fp != null) {
-                            link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                            link.setRelativeDownloadFolderPath(subfolderPath);
                             link._setFilePackage(fp);
                         }
                         link.setProperty(jd.plugins.hoster.FexNet.PROPERTY_token, cachedToken);

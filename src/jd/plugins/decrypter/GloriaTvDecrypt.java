@@ -188,7 +188,7 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
             }
             dl.setProperty("decryptedfilesize", fsize);
             dl.setProperty("decryptedfilename", filename);
-            dl.setProperty("LINKDUPEID", "gloriatv_" + fid + "_" + filename);
+            dl.setLinkID("gloriatv_" + fid + "_" + filename);
             dl.setContentUrl(parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);

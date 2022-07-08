@@ -280,7 +280,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 if (type.endsWith(".folder")) {
                     dl = this.createDownloadlink(url);
                     final String thisfolder = subFolder + "/" + name;
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisfolder);
+                    dl.setRelativeDownloadFolderPath(thisfolder);
                     /* Save this so we need less requests for the next subfolder levels... */
                     if (useOldPOSTRequest) {
                         dl.setProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST, true);
@@ -293,7 +293,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                         dl.setVerifiedFileSize(filesize);
                     }
                     if (StringUtils.isNotEmpty(subFolder)) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                        dl.setRelativeDownloadFolderPath(subFolder);
                     }
                     dl.setLinkID(getLinkidFromURL(dl.getPluginPatternMatcher()));
                 }

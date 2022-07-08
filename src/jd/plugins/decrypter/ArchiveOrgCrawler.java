@@ -176,7 +176,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             logger.info("Maybe invalid link or nothing there to download: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
+        final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isFileCrawlerCrawlOnlyOriginalVersions();
         String subfolderPath = new Regex(param.getCryptedUrl(), "https?://[^/]+/download/(.*?)/?$").getMatch(0);
         subfolderPath = Encoding.urlDecode(subfolderPath, false);
         // final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
@@ -475,8 +475,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlXML(final Browser br, final String root) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
-        final boolean crawlArchiveView = PluginJsonConfig.get(ArchiveOrgConfig.class).isCrawlArchiveView();
+        final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isFileCrawlerCrawlOnlyOriginalVersions();
+        final boolean crawlArchiveView = PluginJsonConfig.get(ArchiveOrgConfig.class).isFileCrawlerCrawlArchiveView();
         final String[] items = new Regex(br.toString(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
         /*
          * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of subfolders via only

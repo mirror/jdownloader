@@ -14,37 +14,37 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "archive.org", type = Type.CRAWLER)
 public interface ArchiveOrgConfig extends PluginConfigInterface {
-    final String                    text_PreferOriginal   = "Prefer original?";
-    final String                    text_CrawlArchiveView = "Also crawl archive view?";
-    final String                    text_BookImageQuality = "Set book image quality (0 = highest, 10 = lowest)";
-    final String                    text_BookCrawlMode    = "Set book crawl mode";
-    public static final TRANSLATION TRANSLATION           = new TRANSLATION();
+    final String                    text_FileCrawlerCrawlOnlyOriginalVersions = "File crawler: Download only original versions of files?";
+    final String                    text_FileCrawlerCrawlArchiveView          = "File crawler: Also crawl archive view?";
+    final String                    text_BookImageQuality                     = "Set book image quality (0 = highest, 10 = lowest)";
+    final String                    text_BookCrawlMode                        = "Set book crawl mode";
+    public static final TRANSLATION TRANSLATION                               = new TRANSLATION();
 
     public static class TRANSLATION {
-        public String getPreferOriginal_label() {
-            return text_PreferOriginal;
+        public String getFileCrawlerCrawlOnlyOriginalVersions_label() {
+            return text_FileCrawlerCrawlOnlyOriginalVersions;
         }
 
-        public String getCrawlArchiveView_label() {
-            return text_CrawlArchiveView;
+        public String getFileCrawlerCrawlArchiveView_label() {
+            return text_FileCrawlerCrawlArchiveView;
         }
     }
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_PreferOriginal)
+    @DescriptionForConfigEntry(text_FileCrawlerCrawlOnlyOriginalVersions)
     @Order(10)
-    boolean isPreferOriginal();
+    boolean isFileCrawlerCrawlOnlyOriginalVersions();
 
-    void setPreferOriginal(boolean b);
+    void setFileCrawlerCrawlOnlyOriginalVersions(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_CrawlArchiveView)
+    @DescriptionForConfigEntry(text_FileCrawlerCrawlArchiveView)
     @Order(20)
-    boolean isCrawlArchiveView();
+    boolean isFileCrawlerCrawlArchiveView();
 
-    void setCrawlArchiveView(boolean b);
+    void setFileCrawlerCrawlArchiveView(boolean b);
 
     @AboutConfig
     @SpinnerValidator(min = 0, max = 10, step = 1)

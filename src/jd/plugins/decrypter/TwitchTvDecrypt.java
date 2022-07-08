@@ -327,7 +327,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     if (channelName != null) {
                         dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                     }
-                    dlink.setProperty("LINKDUPEID", "twitch:" + vid + ":" + counter);
+                    dlink.setLinkID("twitch:" + vid + ":" + counter);
                     final String formattedFilename = jd.plugins.hoster.TwitchTv.getFormattedFilename(dlink);
                     dlink.setName(formattedFilename);
                     if (cfg.getBooleanProperty(FASTLINKCHECK, false)) {

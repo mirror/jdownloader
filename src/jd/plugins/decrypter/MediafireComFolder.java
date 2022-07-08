@@ -344,7 +344,7 @@ public class MediafireComFolder extends PluginForDecrypt {
         }
         final DownloadLink link = createDownloadlink(LINKPART_SINGLE + id);
         if (StringUtils.isNotEmpty(subFolder)) {
-            link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+            link.setRelativeDownloadFolderPath(subFolder);
         }
         return link;
     }
@@ -356,7 +356,7 @@ public class MediafireComFolder extends PluginForDecrypt {
         }
         final DownloadLink ret = super.createDownloadlink(link);
         if (StringUtils.isNotEmpty(subFolder)) {
-            ret.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+            ret.setRelativeDownloadFolderPath(subFolder);
         }
         return ret;
     }

@@ -234,7 +234,7 @@ public class UlozToFolder extends PluginForDecrypt {
                     }
                 }
                 dl._setFilePackage(fp);
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                dl.setRelativeDownloadFolderPath(subfolderPath);
                 distribute(dl);
                 decryptedLinks.add(dl);
                 offset += 1;
@@ -264,7 +264,7 @@ public class UlozToFolder extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final DownloadLink dl = this.createDownloadlink("https://ulozto.net/folder/" + folderIDsURL + "/" + thisfolderID);
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + thisfolderName);
+                dl.setRelativeDownloadFolderPath(subfolderPath + "/" + thisfolderName);
                 if (passCode != null) {
                     /* Important e.g. if main folder is password protected, subfolders will usually be password protected too! */
                     dl.setDownloadPassword(passCode);

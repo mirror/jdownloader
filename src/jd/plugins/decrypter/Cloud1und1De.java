@@ -127,7 +127,7 @@ public class Cloud1und1De extends PluginForDecrypt {
                     link.setProperty("userName", userName);
                     link.setLinkID("cloud.1und1.de://" + shareID + "/" + resourceID);
                     if (!StringUtils.isEmpty(path)) {
-                        link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                        link.setRelativeDownloadFolderPath(path);
                     }
                     ret.add(link);
                 }
