@@ -555,13 +555,11 @@ public class GoogleDrive extends PluginForHost {
         /** More errorhandling / offline check */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getURL().contains("accounts.google.com/") || !br.getURL().contains(this.getFID(link))) {
+        } else if (isAccountRequired(br)) {
             link.getLinkStatus().setStatusText("You are missing the rights to download this file");
             throw new AccountRequiredException();
-        } else if (this.requiresSpecialCaptcha(br)) {
-            logger.info("Captcha required during availablecheck");
-            return AvailableStatus.UNCHECKABLE;
         }
+        this.handleSpecialCaptcha(br, link, account);
         if (br.containsHTML("video\\.google\\.com/get_player\\?docid=" + Encoding.urlEncode(this.getFID(link)))) {
             link.setProperty(PROPERTY_CAN_STREAM, true);
         } else {
@@ -1047,7 +1045,7 @@ public class GoogleDrive extends PluginForHost {
                 errorDownloadQuotaReachedWebsite(link, account);
             } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                 errorDownloadQuotaReachedWebsite(link, account);
-            } else if (br.getURL().contains("accounts.google.com/")) {
+            } else if (isAccountRequired(br)) {
                 if (link == null) {
                     /* Looks like failed login -> Should never happen */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failure", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1070,6 +1068,14 @@ public class GoogleDrive extends PluginForHost {
                     errorDownloadQuotaReachedWebsite(link, account);
                 }
             }
+        }
+    }
+
+    private boolean isAccountRequired(final Browser br) {
+        if (br.getHost(true).equals("accounts.google.com")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
