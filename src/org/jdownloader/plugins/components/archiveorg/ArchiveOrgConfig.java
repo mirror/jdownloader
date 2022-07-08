@@ -56,7 +56,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     void setBookImageQuality(int scaleFactor);
 
     public static enum BookCrawlMode implements LabelInterface {
-        AUTO {
+        PREFER_ORIGINAL {
             @Override
             public String getLabel() {
                 return "Original files if possible else lose book pages";
@@ -77,7 +77,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("AUTO")
+    @DefaultEnumValue("PREFER_ORIGINAL")
     @Order(40)
     @DescriptionForConfigEntry(text_BookCrawlMode)
     BookCrawlMode getBookCrawlMode();
