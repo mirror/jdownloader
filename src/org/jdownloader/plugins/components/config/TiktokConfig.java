@@ -90,6 +90,12 @@ public interface TiktokConfig extends PluginConfigInterface {
             public String getLabel() {
                 return "API [Usually without watermark, only public videos]";
             }
+        },
+        API_HD {
+            @Override
+            public String getLabel() {
+                return "API HD [Usually without watermark, only public videos]";
+            }
         };
     }
 
