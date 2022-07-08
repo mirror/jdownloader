@@ -27,6 +27,7 @@ import javax.script.ScriptEngineManager;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -39,6 +40,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInvalidException;
@@ -534,6 +536,77 @@ public class DoodstreamCom extends XFileSharingProBasic {
             dllink += "?token=" + token + "&expiry=" + System.currentTimeMillis();
         }
         handleDownload(link, account, dllink, null);
+    }
+
+    @Override
+    protected String regexAPIKey(final String src) {
+        final String apikey = new Regex(src, "value=\"([^\"]+)\" readonly class=\"form-control\">\\s*<button class=\"btn btn-primary btn-block regenerate-key\"").getMatch(0);
+        if (apikey != null) {
+            return apikey;
+        } else {
+            return super.regexAPIKey(src);
+        }
+    }
+
+    @Override
+    protected String regexGenerateAPIKeyURL(final Browser br) {
+        final String generateAPIKeyURL = br.getRegex("(/genrate-api/[^\"]+)").getMatch(0);
+        if (generateAPIKeyURL != null) {
+            return generateAPIKeyURL;
+        } else {
+            return super.regexGenerateAPIKeyURL(br);
+        }
+    }
+
+    @Override
+    protected String getDllinkViaOfficialVideoDownload(final Browser brc, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        if (returnFilesize) {
+            logger.info("[FilesizeMode] Trying to find official video downloads");
+        } else {
+            logger.info("[DownloadMode] Trying to find official video downloads");
+        }
+        final String continueURL = br.getRegex("\"(/download/[a-z0-9]+/[a-z]/[^\"]+)\"").getMatch(0);
+        if (continueURL == null) {
+            /* No official download possible */
+            return null;
+        }
+        if (returnFilesize) {
+            /* E.g. in availablecheck */
+            return null;
+        }
+        /* 2022-07-08: 5 seconds of pre-download-wait is skippable */
+        final boolean skipWaittime = true;
+        if (!skipWaittime) {
+            this.waitTime(link, Time.systemIndependentCurrentJVMTimeMillis());
+            logger.info("Waiting extra wait seconds: " + getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds());
+            this.sleep(getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds() * 1000l, link);
+        }
+        getPage(brc, continueURL);
+        /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
+        final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
+        if (download1 != null) {
+            this.submitForm(brc, download1);
+            this.checkErrors(brc, brc.toString(), link, account, false);
+        }
+        String dllink = brc.getRegex("(https?://[^/]+/[A-Za-z0-9]+/[^/]+\\?token=[^<>\"\\']+)").getMatch(0);
+        if (dllink == null) {
+            dllink = brc.getRegex("onclick=\"window\\.open\\('(https?://[^<>\"\\']+)'").getMatch(0);
+        }
+        if (dllink == null) {
+            /*
+             * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
+             */
+            dllink = brc.getRegex("<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = this.getDllink(link, account, brc, brc.toString());
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find dllink via official video download");
+        } else {
+            logger.info("Successfully found dllink via official video download");
+        }
+        return dllink;
     }
 
     /* *************************** PUT API RELATED METHODS HERE *************************** */
