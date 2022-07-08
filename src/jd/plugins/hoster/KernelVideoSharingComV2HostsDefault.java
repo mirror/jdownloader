@@ -18,10 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2 {
@@ -69,8 +69,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "xxxymovies.com" });
         ret.add(new String[] { "needgayporn.com" });
         /**
-         * Formerly sexwebvideo.com --> sexwebvideo.net </br>
-         * 2021-09-01: videowebcam.tv --> camsexvideo.net
+         * Formerly sexwebvideo.com --> sexwebvideo.net </br> 2021-09-01: videowebcam.tv --> camsexvideo.net
          */
         ret.add(new String[] { "camsexvideo.net", "videowebcam.tv" });
         ret.add(new String[] { "hdzog.com" });
@@ -134,6 +133,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "whoreshub.com" });
         /* 2022-06-05 */
         ret.add(new String[] { "fapcat.com" });
+        /* 2022-07-08 */
+        ret.add(new String[] { "txxxporn.tube" });
         return ret;
     }
 

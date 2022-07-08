@@ -15,13 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,6 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -202,32 +203,30 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         }
         final String[] directURLs = br.getRegex("\"[^\"]*(/data/[^\"]+)").getColumn(0);
         /* Remove duplicates from results so our index will be correct down below. */
-        final ArrayList<String> urlsWithoutDupes = new ArrayList<String>();
-        for (String directURL : directURLs) {
-            directURL = br.getURL(directURL).toString();
-            if (!urlsWithoutDupes.contains(directURL)) {
-                urlsWithoutDupes.add(directURL);
-            }
-        }
+        final HashSet<String> dups = new HashSet<String>();
         int index = 0;
-        for (String directURL : urlsWithoutDupes) {
-            final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
-            media.setProperty("portal", portal);
-            media.setProperty("userid", userID);
-            media.setProperty("postid", postID);
-            media.setProperty("postContentIndex", index);
-            final UrlQuery query = UrlQuery.parse(directURL);
-            final String betterFilename = Encoding.htmlDecode(query.get("f"));
-            if (!StringUtils.isEmpty(betterFilename)) {
-                media.setFinalFileName(betterFilename);
-                media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+        for (String directURL : directURLs) {
+            final URL url = br.getURL(directURL);
+            if (dups.add(url.getPath())) {
+                directURL = url.toString();
+                final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
+                media.setProperty("portal", portal);
+                media.setProperty("userid", userID);
+                media.setProperty("postid", postID);
+                media.setProperty("postContentIndex", index);
+                final UrlQuery query = UrlQuery.parse(directURL);
+                final String betterFilename = Encoding.htmlDecode(query.get("f"));
+                if (!StringUtils.isEmpty(betterFilename)) {
+                    media.setFinalFileName(betterFilename);
+                    media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+                }
+                if (published != null) {
+                    media.setProperty("date", published);
+                }
+                media.setAvailable(true);
+                ret.add(media);
+                index++;
             }
-            if (published != null) {
-                media.setProperty("date", published);
-            }
-            media.setAvailable(true);
-            ret.add(media);
-            index++;
         }
         fp.addLinks(ret);
         return ret;
