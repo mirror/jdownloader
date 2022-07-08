@@ -147,7 +147,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (isBookPreviewAvailable) {
             final BookCrawlMode mode = PluginJsonConfig.get(ArchiveOrgConfig.class).getBookCrawlMode();
             if (isOfficiallyDownloadable) {
-                if (mode == BookCrawlMode.AUTO) {
+                if (mode == BookCrawlMode.PREFER_ORIGINAL) {
                     return crawlDetails(param);
                 } else if (mode == BookCrawlMode.ORIGINAL_AND_LOSE_PAGES) {
                     final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
