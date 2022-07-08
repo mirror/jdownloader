@@ -23,7 +23,19 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -40,17 +52,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:[\\w\\.]+)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -75,8 +76,8 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        // final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return requestFileInformation(link, null, false);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -234,8 +235,8 @@ public class ArchiveOrg extends PluginForHost {
                         br.setCookies(lendingInfo.getCookies());
                     } else {
                         /**
-                         * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br> User
-                         * could e.g. have added account via cookie login so borrow session for some books may be available regardless.
+                         * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br>
+                         * User could e.g. have added account via cookie login so borrow session for some books may be available regardless.
                          */
                         logger.info("Borrow required but no borrow session available -> We will most likely run into errorhandling soon");
                     }
@@ -283,7 +284,9 @@ public class ArchiveOrg extends PluginForHost {
             query.add("rotate", "0");
             /* This one defines the image quality. This may only work for borrowed books but we'll append it to all book URLs regardless. */
             query.add("scale", Integer.toString(cfg.getBookImageQuality()));
+            /* Get url without query */
             String url = URLHelper.getURL(uri, false, true, true).toString();
+            /* Append our new query */
             url += "?" + query.toString();
             return url;
         } else {
@@ -393,7 +396,8 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /**
-     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br> It is typically valid for one hour.
+     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br>
+     * It is typically valid for one hour.
      */
     public void borrowBook(final Browser br, final Account account, final String bookID, final boolean skipAllExceptLastStep) throws Exception {
         if (account == null) {
@@ -488,6 +492,7 @@ public class ArchiveOrg extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
+        /* This host does not provide any kind of paid accounts. */
         account.setType(AccountType.FREE);
         cleanupBorrowSessionMap();
         return ai;
