@@ -82,58 +82,56 @@ public class HitNewsCom extends UseNet {
                 }
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String paymentHistory = br.getRegex(">\\s*Your payment history\\s*<.*<table.*?>(.*?)</table>").getMatch(0);
-            final String packageInfos[][] = new Regex(paymentHistory, "<tr[^>]*>\\s*<td>\\s*(.*?)\\s*</td>\\s*<td[^>]*>\\s*(\\d+/\\d+/\\d+)\\s*</td>\\s*<td[^>]*>\\s*(\\d+/\\d+/\\d+)\\s*</td>").getMatches();
+            final String packageInfos[];
+            if (false) {
+                // does not contain expire date but billing date
+                if (br.getRequest() == null || !StringUtils.endsWithCaseInsensitive(br.getURL(), "/member/payment-history")) {
+                    br.getPage("/member/payment-history");
+                }
+                final String paymentHistory = br.getRegex("(?i)>\\s*(?:Your)?\\s*Payments? history\\s*<.*<table.*?>(.*?)</table>").getMatch(0);
+                packageInfos = new Regex(paymentHistory, "<tr[^>]*>(.*?)</tr>").getColumn(0);
+            } else {
+                if (br.getRequest() == null || !StringUtils.endsWithCaseInsensitive(br.getURL(), "/member")) {
+                    br.getPage("/member");
+                }
+                final String paymentHistory = br.getRegex("(?i)<ul[^>]*id\\s*=\\s*\"member-subscriptions\"[^>]*>(.*?)</ul>").getMatch(0);
+                packageInfos = new Regex(paymentHistory, "<li[^>]*>(.*?)</li>").getColumn(0);
+            }
             if (packageInfos == null || packageInfos.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            for (String packageInfo[] : packageInfos) {
-                final String product = packageInfo[0];
-                ai.setStatus(product);
-                final String expireDate = packageInfo[2];
-                if (StringUtils.containsIgnoreCase(product, "free")) {
-                    account.setMaxSimultanDownloads(30);
-                    account.setType(AccountType.FREE);
-                    ai.setStatus("Premium: " + product);
+            boolean subscriptionFound = false;
+            for (String packageInfo : packageInfos) {
+                String product = new Regex(packageInfo, "history-items\"[^>]*>\\s*(.*?)\\s*</td>").getMatch(0);
+                if (product == null) {
+                    product = new Regex(packageInfo, "subscriptions-title\"[^>]*>\\s*<strong>\\s*(.*?)\\s*</strong>").getMatch(0);
+                }
+                if (product == null || !product.matches("(?i).*(day|power|family)\\s*plan.*")) {
+                    continue;
                 } else {
-                    account.setType(AccountType.PREMIUM);
-                    if (StringUtils.contains(product, "1000 mbit")) {
-                        account.setMaxSimultanDownloads(30);
-                    } else if (StringUtils.contains(product, "120 mbit")) {
-                        account.setMaxSimultanDownloads(20);
-                    } else if (StringUtils.contains(product, "10 mbit")) {
-                        account.setMaxSimultanDownloads(8);
-                    } else if (StringUtils.contains(product, "500")) {
-                        account.setMaxSimultanDownloads(30);
-                    } else if (StringUtils.contains(product, "200")) {
-                        account.setMaxSimultanDownloads(30);
-                    } else if (StringUtils.contains(product, "120")) {
-                        account.setMaxSimultanDownloads(30);
-                    } else if (StringUtils.contains(product, "80")) {
-                        account.setMaxSimultanDownloads(30);
-                    } else if (StringUtils.contains(product, "50")) {
-                        account.setMaxSimultanDownloads(20);
-                    } else if (StringUtils.contains(product, "25")) {
-                        account.setMaxSimultanDownloads(8);
-                    } else if (StringUtils.contains(product, "10")) {
-                        account.setMaxSimultanDownloads(8);
-                    } else if (StringUtils.contains(product, "2,5")) {
-                        account.setMaxSimultanDownloads(2);
-                    } else if (StringUtils.contains(product, "5")) {
-                        account.setMaxSimultanDownloads(4);
-                    } else if (StringUtils.containsIgnoreCase(product, "night")) {
-                        account.setMaxSimultanDownloads(30);
-                    } else if (StringUtils.containsIgnoreCase(product, "high")) {
-                        account.setMaxSimultanDownloads(30);
+                    ai.setStatus(product);
+                    long validUntil = -1;
+                    String expireDate = new Regex(packageInfo, "date\"[^>]*>\\s*(\\d{2}/\\d{2}/\\d{4})\\s*<").getMatch(0);
+                    if (expireDate != null) {
+                        validUntil = TimeFormatter.getMilliSeconds(expireDate, "dd'/'MM'/'yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l);
                     } else {
-                        // unknown
-                        account.setMaxSimultanDownloads(2);
+                        expireDate = new Regex(packageInfo, "expires_date\"[^>]*data-date\\s*=\\s*\"(\\d{4}-\\d{2}-\\d{2})\"").getMatch(0);
+                        validUntil = TimeFormatter.getMilliSeconds(expireDate, "yyyy'-'MM'-'dd", Locale.ENGLISH) + (24 * 60 * 60 * 1000l);
+                    }
+                    if (validUntil != -1) {
+                        account.setType(AccountType.PREMIUM);
+                        account.setMaxSimultanDownloads(100);
+                        ai.setStatus(product);
+                        ai.setValidUntil(validUntil);
+                        if (!ai.isExpired()) {
+                            subscriptionFound = true;
+                            break;
+                        }
                     }
                 }
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd'/'MM'/'yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
-                if (!ai.isExpired()) {
-                    break;
-                }
+            }
+            if (!subscriptionFound) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No active usenet subscription found!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
