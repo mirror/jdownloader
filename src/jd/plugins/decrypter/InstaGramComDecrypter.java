@@ -1230,7 +1230,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink("directhttp://" + finallink);
             dl.setFinalFileName(filename);
             dl.setAvailable(true);
-            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderpath);
+            dl.setRelativeDownloadFolderPath(subfolderpath);
             dl._setFilePackage(fp);
             decryptedLinks.add(dl);
             distribute(dl);

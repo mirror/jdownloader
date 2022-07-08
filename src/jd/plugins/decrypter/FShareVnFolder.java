@@ -102,7 +102,7 @@ public class FShareVnFolder extends PluginForDecrypt {
                         dl._setFilePackage(fp);
                     }
                     if (!StringUtils.isEmpty(currentFolderPath)) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentFolderPath);
+                        dl.setRelativeDownloadFolderPath(currentFolderPath);
                     }
                     decryptedLinks.add(dl);
                     distribute(dl);

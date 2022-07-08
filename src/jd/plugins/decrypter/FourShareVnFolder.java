@@ -17,9 +17,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,9 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" })
 public class FourShareVnFolder extends PluginForDecrypt {
@@ -52,14 +51,7 @@ public class FourShareVnFolder extends PluginForDecrypt {
         }
         final String fpName = br.getRegex("<b>Thư mục:\\s*(.*?)\\s*</b>").getMatch(0);
         final String[] filter = br.getRegex("<tr>\\s*<td>.*?</td></tr>").getColumn(-1);
-        final CrawledLink source = getCurrentLink().getSourceLink();
-        final String subfolder;
-        if (source != null && source.getDownloadLink() != null && canHandle(source.getURL())) {
-            final DownloadLink downloadLink = source.getDownloadLink();
-            subfolder = downloadLink.getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
-        } else {
-            subfolder = null;
-        }
+        final String subfolder = this.getAdoptedCloudFolderStructure();
         if (filter != null && filter.length > 0) {
             for (final String f : filter) {
                 String folder_path = null;
@@ -103,7 +95,7 @@ public class FourShareVnFolder extends PluginForDecrypt {
                     }
                 }
                 if (folder_path != null) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
+                    dl.setRelativeDownloadFolderPath(folder_path);
                 }
                 decryptedLinks.add(dl);
             }

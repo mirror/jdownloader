@@ -105,7 +105,7 @@ public class GoFileIo extends PluginForDecrypt {
                     file.setDownloadPassword(passCode);
                 }
                 if (path != null) {
-                    file.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                    file.setRelativeDownloadFolderPath(path);
                 }
                 ret.add(file);
             } else if (type.equals("folder")) {
@@ -116,7 +116,7 @@ public class GoFileIo extends PluginForDecrypt {
                     folder.setDownloadPassword(passCode);
                 }
                 if (path != null) {
-                    folder.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path + "/" + folderName);
+                    folder.setRelativeDownloadFolderPath(path + "/" + folderName);
                 }
                 ret.add(folder);
             } else {

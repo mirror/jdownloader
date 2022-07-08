@@ -508,7 +508,7 @@ public class MegaConz extends PluginForDecrypt {
                 link.setContentUrl("https://mega.co.nz/#F!" + folderID + "!" + masterKey + "?" + nodeID);
                 link.setContainerUrl(containerURL);
                 link.setFinalFileName(nodeName);
-                link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                link.setRelativeDownloadFolderPath(path);
                 if (path != null) {
                     /*
                      * Packagizer property so user can e.g. merge all files of a folder and subfolders in a package named after the name of

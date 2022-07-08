@@ -133,7 +133,7 @@ public class NexusmodsCom extends PluginForDecrypt {
             link.setProperty(jd.plugins.hoster.NexusmodsCom.PROPERTY_game_domain_name, game_domain_name);
             link.setProperty(jd.plugins.hoster.NexusmodsCom.PROPERTY_mod_id, mod_id);
             /* Every category goes into a subfolder */
-            link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, game_domain_name + "/" + mod_name + "/" + category_name);
+            link.setRelativeDownloadFolderPath(game_domain_name + "/" + mod_name + "/" + category_name);
             link.setAvailable(true);
             if (!StringUtils.isEmpty(description)) {
                 link.setComment(description);
@@ -215,13 +215,13 @@ public class NexusmodsCom extends PluginForDecrypt {
                 }
                 link.setAvailable(true);
                 link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
-                link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, currentPath);
+                link.setRelativeDownloadFolderPath(currentPath);
                 link._setFilePackage(fp);
                 /* Important! These properties are especially required for all API requests! */
                 link.setProperty("game_domain_name", game_domain_name);
                 link.setProperty("mod_id", mod_id);
                 /* Every category goes into a subfolder */
-                link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, game_domain_name + "/" + category_name);
+                link.setRelativeDownloadFolderPath(game_domain_name + "/" + category_name);
                 decryptedLinks.add(link);
             }
         }

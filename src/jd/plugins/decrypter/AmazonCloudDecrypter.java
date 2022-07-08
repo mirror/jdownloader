@@ -155,7 +155,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
                 dl.setProperty("subfolder_id", subfolder_id);
             }
             dl.setProperty("plain_domain", plain_domain);
-            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path_decrypted);
+            dl.setRelativeDownloadFolderPath(path_decrypted);
             dl.setAvailable(true);
             dl.setContentUrl(parameter);
             dl.setContainerUrl("https://www." + plain_domain + "/clouddrive/share/" + plain_folder_id);

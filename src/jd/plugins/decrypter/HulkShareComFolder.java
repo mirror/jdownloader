@@ -174,7 +174,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
                         fina.setAvailable(true);
                     }
                     fina._setFilePackage(fp);
-                    fina.setProperty("LINKDUPEID", "hulksharecom_" + fcode);
+                    fina.setLinkID("hulksharecom_" + fcode);
                     distribute(fina);
                     decryptedLinks.add(fina);
                     added_links_count++;

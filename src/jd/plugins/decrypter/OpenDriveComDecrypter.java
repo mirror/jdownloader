@@ -98,7 +98,7 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = this.createDownloadlink(url);
-            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+            dl.setRelativeDownloadFolderPath(path);
             dl.setName(filename);
             dl.setDownloadSize(filesize);
             if (!StringUtils.isEmpty(directurl)) {

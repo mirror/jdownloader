@@ -143,7 +143,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
                 filename = absolutePath;
                 /* Path == root */
             }
-            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
+            dl.setRelativeDownloadFolderPath(thisPath);
             dl.setFinalFileName(filename);
             dl.setVerifiedFileSize(filesize);
             dl.setContentUrl(parameter);

@@ -222,7 +222,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     /* Subfolders go back into our decrypter! Path contains "<hash_long_decoded>:/path" */
                     final String folderlink = this.generateContentURL(path);
                     final DownloadLink dl = createDownloadlink(folderlink);
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath + "/" + name);
+                    dl.setRelativeDownloadFolderPath(relativeDownloadPath + "/" + name);
                     decryptedLinks.add(dl);
                     distribute(dl);
                 } else {
@@ -262,7 +262,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     dl.setProperty(DiskYandexNet.PROPERTY_INTERNAL_FUID, resource_id);
                     if (ressources.size() > 1) {
                         if (StringUtils.isNotEmpty(relativeDownloadPath)) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
+                            dl.setRelativeDownloadFolderPath(relativeDownloadPath);
                         }
                         dl._setFilePackage(fp);
                     }
@@ -374,7 +374,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 /* We only have a single file --> Add to downloadliste / host plugin */
                 final DownloadLink dl = parseSingleFileAPI(entries);
                 if (StringUtils.isNotEmpty(relativeDownloadPath)) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
+                    dl.setRelativeDownloadFolderPath(relativeDownloadPath);
                 }
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
@@ -414,12 +414,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     /* Subfolders go back into our decrypter! */
                     final String folderlink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hash + ":" + path);
                     final DownloadLink dl = createDownloadlink(folderlink);
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath + "/" + name);
+                    dl.setRelativeDownloadFolderPath(relativeDownloadPath + "/" + name);
                     decryptedLinks.add(dl);
                 } else {
                     final DownloadLink dl = parseSingleFileAPI(entries);
                     if (StringUtils.isNotEmpty(relativeDownloadPath)) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
+                        dl.setRelativeDownloadFolderPath(relativeDownloadPath);
                     }
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);

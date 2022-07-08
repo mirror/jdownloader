@@ -148,7 +148,7 @@ public class StackstorageCom extends antiDDoSForDecrypt {
                     if (passCode != null) {
                         dl.setDownloadPassword(passCode);
                     }
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path_without_filename);
+                    dl.setRelativeDownloadFolderPath(path_without_filename);
                     if (isSingleFile) {
                         dl.setProperty("download_path", "/");
                     } else {

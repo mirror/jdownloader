@@ -116,7 +116,7 @@ public class AlldebridComFolder extends PluginForDecrypt {
             dl.setDownloadSize(filesize);
             final boolean isSpecialRar = filename.matches("^" + torrentNameEscaped + "(\\.rar|\\.part\\d+\\.rar)$");
             if (isSpecialRar) {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot);
+                dl.setRelativeDownloadFolderPath(folderRoot);
                 dl._setFilePackage(fpRoot);
             } else {
                 /* Check whether or not this file goes into a deeper subfolder level. */
@@ -125,13 +125,13 @@ public class AlldebridComFolder extends PluginForDecrypt {
                 filePath = filePath.replaceAll("/" + org.appwork.utils.Regex.escape(filename) + "$", "");
                 if (!StringUtils.isEmpty(filePath)) {
                     /* File that goes into (nested) subfolder. */
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot + filePath);
+                    dl.setRelativeDownloadFolderPath(folderRoot + filePath);
                     final FilePackage nestedFilePackage = FilePackage.getInstance();
                     nestedFilePackage.setName(folderRoot + filePath);
                     dl._setFilePackage(nestedFilePackage);
                 } else {
                     /* File that is in the root of the torrent main folder (named after torrent name). */
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot);
+                    dl.setRelativeDownloadFolderPath(folderRoot);
                     dl._setFilePackage(fpRoot);
                 }
             }

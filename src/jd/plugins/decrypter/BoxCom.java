@@ -239,7 +239,7 @@ public class BoxCom extends antiDDoSForDecrypt {
                     }
                     dl.setAvailable(true);
                     if (StringUtils.isNotEmpty(subFolder)) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                        dl.setRelativeDownloadFolderPath(subFolder);
                     }
                     decryptedLinks.add(dl);
                     if (fp != null) {
@@ -264,7 +264,7 @@ public class BoxCom extends antiDDoSForDecrypt {
                         dl.setDownloadPassword(passCode);
                     }
                     final String thisSubfolder = subFolder + "/" + item_name;
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisSubfolder);
+                    dl.setRelativeDownloadFolderPath(thisSubfolder);
                     decryptedLinks.add(dl);
                     if (fp != null) {
                         fp.add(dl);

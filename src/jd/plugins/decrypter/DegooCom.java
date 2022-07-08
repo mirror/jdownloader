@@ -121,7 +121,7 @@ public class DegooCom extends PluginForDecrypt {
                         dl.setDownloadSize(filesize);
                     }
                     if (!StringUtils.isEmpty(path)) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                        dl.setRelativeDownloadFolderPath(path);
                     }
                     if (fp != null) {
                         dl._setFilePackage(fp);
@@ -134,9 +134,9 @@ public class DegooCom extends PluginForDecrypt {
                     final DownloadLink dl = this.createDownloadlink(contentURL);
                     if (!StringUtils.isEmpty(title)) {
                         if (StringUtils.isEmpty(path)) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, title);
+                            dl.setRelativeDownloadFolderPath(title);
                         } else {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path + "/" + title);
+                            dl.setRelativeDownloadFolderPath(path + "/" + title);
                         }
                     }
                     decryptedLinks.add(dl);

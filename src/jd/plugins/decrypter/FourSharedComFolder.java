@@ -318,7 +318,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
                 dl.setDownloadSize(filesize);
             }
             if (!StringUtils.isEmpty(subFolderPath)) {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderPath);
+                dl.setRelativeDownloadFolderPath(subFolderPath);
             }
             if (fp != null) {
                 dl._setFilePackage(fp);
@@ -334,7 +334,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(contentURL);
             if (!StringUtils.isEmpty(foldername)) {
                 foldername = Encoding.htmlDecode(foldername);
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderPath + "/" + foldername);
+                dl.setRelativeDownloadFolderPath(subFolderPath + "/" + foldername);
             }
             decryptedLinks.add(dl);
         }

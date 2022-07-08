@@ -99,7 +99,7 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
                 dl.setProperty("mainlink", parameter);
                 dl.setContentUrl(contenturl);
                 dl.setLinkID(fid + relPath);
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relPath);
+                dl.setRelativeDownloadFolderPath(relPath);
             }
             decryptedLinks.add(dl);
         }

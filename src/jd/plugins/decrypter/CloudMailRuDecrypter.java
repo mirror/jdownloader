@@ -133,7 +133,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 }
                 weblink = "https://cloud.mail.ru/public/" + encoded_weblink;
                 final DownloadLink folderLink = createDownloadlink(weblink);
-                folderLink.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder + "/" + itemTitle);
+                folderLink.setRelativeDownloadFolderPath(subfolder + "/" + itemTitle);
                 decryptedLinks.add(folderLink);
             } else {
                 if ("illegal".equals(entries.get("uflr"))) {
@@ -166,10 +166,10 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 // incompletePathWithoutRootFolder = incompletePathWithoutRootFolder.replace(itemTitle, "");
                 // }
                 // if (!StringUtils.isEmpty(incompletePathWithoutRootFolder)) {
-                // dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, incompletePathWithoutRootFolder);
+                // dl.setRelativeDownloadFolderPath(incompletePathWithoutRootFolder);
                 // }
                 if (!StringUtils.isEmpty(subfolder)) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
+                    dl.setRelativeDownloadFolderPath(subfolder);
                 }
                 if (fp != null) {
                     dl._setFilePackage(fp);
@@ -191,7 +191,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             main.setProperty(CloudMailRu.PROPERTY_WEBLINK, id);
             main.setDownloadSize(completeFolderSize);
             if (!StringUtils.isEmpty(subfolder)) {
-                main.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
+                main.setRelativeDownloadFolderPath(subfolder);
             }
             if (fp != null) {
                 main._setFilePackage(fp);

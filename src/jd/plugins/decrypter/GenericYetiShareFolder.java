@@ -292,7 +292,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                     /* We know for sure that this file is online! */
                     dl.setAvailable(true);
                     if (subfolderPath.length() > 0) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                        dl.setRelativeDownloadFolderPath(subfolderPath);
                     }
                     if (passCode != null) {
                         dl.setDownloadPassword(passCode);

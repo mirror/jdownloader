@@ -186,9 +186,9 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             final String courseTitleSanitized = courseTitle.replace("/", "_");
             final String chapterTitleSanitized = chapterTitle.replace("/", "_");
             if (asset_type.equalsIgnoreCase("video")) {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, courseTitleSanitized + "/" + chapterTitleSanitized);
+                dl.setRelativeDownloadFolderPath(courseTitleSanitized + "/" + chapterTitleSanitized);
             } else {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, courseTitleSanitized + "/" + chapterTitleSanitized + "/ressources");
+                dl.setRelativeDownloadFolderPath(courseTitleSanitized + "/" + chapterTitleSanitized + "/ressources");
             }
         }
         dl._setFilePackage(fp);

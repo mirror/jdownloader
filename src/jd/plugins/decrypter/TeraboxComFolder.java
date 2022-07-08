@@ -324,7 +324,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     /* This can be useful to refresh directurls a lot quicker. */
                     dl.setProperty(TeraboxCom.PROPERTY_PAGINATION_PAGE, page);
                     if (realpath.length() > 1) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, realpath);
+                        dl.setRelativeDownloadFolderPath(realpath);
                         final FilePackage fp = FilePackage.getInstance();
                         fp.setName(realpath);
                         dl._setFilePackage(fp);
