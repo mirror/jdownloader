@@ -7,10 +7,6 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.plugins.Account;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -25,13 +21,16 @@ import org.jdownloader.gui.views.downloads.columns.CandidateAccountColumn;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.plugins.Account;
+
 public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
     public static interface MaxWidthProvider {
         public int getMaxPreferredWitdh();
     }
 
     public static final class GatewayColumn extends ExtTextColumn<HistoryEntry> implements MaxWidthProvider {
-
         private int maxWidth;
 
         @Override
@@ -58,7 +57,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
             rendererField = new JLabel();
             rendererIcon = new JLabel();
             return new RendererMigPanel("ins 0", "[]0[grow,fill]", "[grow,fill]");
-
         }
 
         @Override
@@ -71,11 +69,8 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
                 // opaque.
                 str = "";
             }
-
             this.rendererField.setText(str);
-
             maxWidth = Math.max(renderer.getPreferredSize().width, maxWidth);
-
         }
 
         @Override
@@ -90,7 +85,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
     }
 
     public static final class ResultColumn extends ExtTextColumn<HistoryEntry> implements MaxWidthProvider {
-
         private int maxWidth;
 
         @Override
@@ -117,7 +111,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
             rendererField = new JLabel();
             rendererIcon = new JLabel();
             return new RendererMigPanel("ins 0", "[]0[grow,fill]", "[grow,fill]");
-
         }
 
         @Override
@@ -130,11 +123,8 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
                 // opaque.
                 str = "";
             }
-
             this.rendererField.setText(str);
-
             maxWidth = Math.max(renderer.getPreferredSize().width, maxWidth);
-
         }
 
         @Override
@@ -153,7 +143,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
         private int                    maxWidth;
         {
             delegate = new CandidateAccountColumn();
-
         }
 
         @Override
@@ -180,7 +169,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
             rendererField = new JLabel();
             rendererIcon = new JLabel();
             return new RendererMigPanel("ins 0", "[]0[grow,fill]", "[grow,fill]");
-
         }
 
         @Override
@@ -193,7 +181,7 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
                 if (icon == null) {
                     icon = DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon();
                 } else {
-                    icon = new BadgeIcon(DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
+                    icon = new BadgeIcon(DomainInfo.getInstance(account.getHosterByPlugin()), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
                 }
                 String accountType = null;
                 switch (history.getAccountType()) {
@@ -206,7 +194,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
                     accountType = _GUI.T.CandidateAccountColumn_account_original(account.getType().getLabel());
                     break;
                 }
-
                 if (!StringUtils.isEmpty(accountType)) {
                     str = _GUI.T.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHosterByPlugin(), accountType);
                 } else {
@@ -216,20 +203,17 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
                 if (icon == null) {
                     icon = history.getLink().getDomainInfo().getFavIcon();
                 } else {
-                    icon = new BadgeIcon(history.getLink().getDomainInfo().getFavIcon(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
+                    icon = new BadgeIcon(history.getLink().getDomainInfo(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
                 }
-
             }
             if (str == null) {
                 // under substance, setting setText(null) somehow sets the label
                 // opaque.
                 str = "";
             }
-
             this.rendererField.setText(str);
             rendererIcon.setIcon(icon);
             maxWidth = Math.max(renderer.getPreferredSize().width, maxWidth);
-
         }
 
         @Override
@@ -285,7 +269,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
             rendererField = new JLabel();
             rendererIcon = new JLabel();
             return new RendererMigPanel("ins 0", "[]0[grow,fill]", "[grow,fill]");
-
         }
 
         @Override
@@ -298,11 +281,8 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
                 // opaque.
                 str = "";
             }
-
             this.rendererField.setText(str);
-
             maxWidth = Math.max(renderer.getPreferredSize().width, maxWidth);
-
         }
 
         @Override
@@ -322,20 +302,9 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
     protected void initColumns() {
         ExtDateColumn<HistoryEntry> sorton;
         addColumn(sorton = new DateColumn(_GUI.T.CandidateTooltipTableModel_time()));
-
-        this.addColumn(new AccountColumn(_GUI.T.CandidateTooltipTableModel_account())
-
-        );
-
-        this.addColumn(new GatewayColumn(_GUI.T.CandidateTooltipTableModel_gateway())
-
-        );
-
-        this.addColumn(new ResultColumn(_GUI.T.CandidateTooltipTableModel_result())
-
-        );
-
+        this.addColumn(new AccountColumn(_GUI.T.CandidateTooltipTableModel_account()));
+        this.addColumn(new GatewayColumn(_GUI.T.CandidateTooltipTableModel_gateway()));
+        this.addColumn(new ResultColumn(_GUI.T.CandidateTooltipTableModel_result()));
         this.sortColumn = sorton;
     }
-
 }

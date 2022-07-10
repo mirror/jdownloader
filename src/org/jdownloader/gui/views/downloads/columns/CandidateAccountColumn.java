@@ -7,12 +7,6 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -25,8 +19,13 @@ import org.jdownloader.gui.views.downloads.columns.candidatetooltip.CandidateToo
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 
-public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
 
+public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
     private final Icon iconDownload = NewTheme.I().getIcon(IconKey.ICON_DOWNLOAD, 20);
 
     public CandidateAccountColumn() {
@@ -55,29 +54,21 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-
         SwingUtilities.invokeLater(new Runnable() {
-
             public void run() {
-
                 if (obj instanceof DownloadLink) {
                     List<HistoryEntry> his = ((DownloadLink) obj).getHistory();
                     if (his != null) {
                         ToolTipController.getInstance().show(CandidateTooltip.create(e.getPoint(), obj));
                     }
-
                 }
-
             }
-
         });
-
         return true;
     }
 
     @Override
     public void configureRendererComponent(final AbstractNode value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
             HistoryEntry history = dl.getLatestHistoryEntry();
@@ -87,9 +78,9 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                 Account account = history.getAccount();
                 if (account != null) {
                     if (icon == null) {
-                        icon = DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon();
+                        icon = DomainInfo.getInstance(account.getHosterByPlugin());
                     } else {
-                        icon = new BadgeIcon(DomainInfo.getInstance(account.getHosterByPlugin()).getFavIcon(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
+                        icon = new BadgeIcon(DomainInfo.getInstance(account.getHosterByPlugin()), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
                     }
                     String accountType = null;
                     switch (history.getAccountType()) {
@@ -102,7 +93,6 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                         accountType = _GUI.T.CandidateAccountColumn_account_original(account.getType().getLabel());
                         break;
                     }
-
                     if (!StringUtils.isEmpty(accountType)) {
                         str = _GUI.T.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHosterByPlugin(), accountType);
                     } else {
@@ -112,11 +102,9 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                     if (icon == null) {
                         icon = dl.getDomainInfo().getFavIcon();
                     } else {
-                        icon = new BadgeIcon(dl.getDomainInfo().getFavIcon(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
+                        icon = new BadgeIcon(dl.getDomainInfo(), IconIO.getScaledInstance(icon, 12, 12), 4, 2);
                     }
-
                 }
-
                 if (str == null) {
                     // under substance, setting setText(null) somehow sets the label
                     // opaque.
@@ -136,7 +124,6 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                 }
                 return;
             }
-
         }
         super.configureRendererComponent(value, isSelected, hasFocus, row, column);
     }
