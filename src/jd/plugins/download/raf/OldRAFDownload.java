@@ -56,6 +56,7 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.BrowserAdapter;
+import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -220,8 +221,8 @@ public class OldRAFDownload extends DownloadInterface {
                 if (connection.getRange()[2] > 0) {
                     this.downloadable.setDownloadTotalBytes(connection.getRange()[2]);
                 }
-            } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK() && trustFileSize) {
-                this.downloadable.setDownloadTotalBytes(connection.getLongContentLength());
+            } else if (resumed == false && connection.getCompleteContentLength() > 0 && connection.isOK() && trustFileSize) {
+                this.downloadable.setDownloadTotalBytes(connection.getCompleteContentLength());
             }
         }
         if (connection.getResponseCode() == 416 && resumed == true && downloadable.getChunksProgress() != null && downloadable.getChunksProgress().length == 1 && downloadable.getVerifiedFileSize() == downloadable.getChunksProgress()[0] + 1) {
@@ -313,12 +314,13 @@ public class OldRAFDownload extends DownloadInterface {
         boolean verifiedSize = downloadable.getVerifiedFileSize() > 0;
         boolean openRangeRequested = false;
         boolean rangeRequested = false;
-        final boolean preferOpenRangeFirst;
+        final DownloadLink downloadLink;
         if (downloadable instanceof DownloadLinkDownloadable) {
-            preferOpenRangeFirst = ((DownloadLinkDownloadable) downloadable).getDownloadLink().getBooleanProperty("oldraf_preferOpenRangeFirst", Boolean.TRUE);
+            downloadLink = ((DownloadLinkDownloadable) downloadable).getDownloadLink();
         } else {
-            preferOpenRangeFirst = true;
+            downloadLink = null;
         }
+        final boolean preferOpenRangeFirst = downloadLink == null || downloadLink.getBooleanProperty("oldraf_preferOpenRangeFirst", Boolean.TRUE);
         if (preferOpenRangeFirst || verifiedSize == false || this.getChunkNum() == 1) {
             /* we only request a single range */
             openRangeRequested = true;
@@ -355,7 +357,10 @@ public class OldRAFDownload extends DownloadInterface {
                 throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
             } else if (verifiedSize && range[1] < (part - 1)) {
                 /* response range != requested range */
-                throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+                if (downloadLink == null || !StringUtils.equals(downloadLink.getStringProperty("streamMod"), "limitedRangeLength")) {
+                    throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+                }
+                // smaller response ranges are allowed due to special limitedRangeLength handling
             } else if (!openRangeRequested && range[1] == range[2] - 1 && getChunkNum() > 1) {
                 logger.warning(" Chunkload Protection.. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
                 setChunkNum(1);
@@ -533,8 +538,8 @@ public class OldRAFDownload extends DownloadInterface {
                     if (connection.getRange()[2] >= 0) {
                         downloadable.setVerifiedFileSize(connection.getRange()[2]);
                     }
-                } else if (connection.getRequestProperty("Range") == null && connection.getLongContentLength() >= 0 && connection.isOK()) {
-                    downloadable.setVerifiedFileSize(connection.getLongContentLength());
+                } else if (connection.getRequestProperty("Range") == null && connection.getCompleteContentLength() >= 0 && connection.isOK()) {
+                    downloadable.setVerifiedFileSize(connection.getCompleteContentLength());
                 }
             }
             try {
@@ -633,9 +638,9 @@ public class OldRAFDownload extends DownloadInterface {
                     return connection.getRange()[2];
                 }
             }
-            if (connection.getRequestProperty("Range") == null && connection.getLongContentLength() > 0 && connection.isOK()) {
+            if (connection.getRequestProperty("Range") == null && connection.getCompleteContentLength() > 0 && connection.isOK()) {
                 /* we have no range request and connection is okay, so we can use the content-length */
-                return connection.getLongContentLength();
+                return connection.getCompleteContentLength();
             }
         }
         if (downloadable.getDownloadTotalBytes() > 0) {

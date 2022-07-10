@@ -28,6 +28,22 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,22 +77,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -377,107 +377,125 @@ public class DirectHTTP extends antiDDoSForHost {
         } else {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", Property.NULL);
         }
-        final long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
+        long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
         if (downloadLink.getProperty(BYPASS_CLOUDFLARE_BGJ) != null) {
             logger.info("Apply Cloudflare BGJ bypass");
             resume = false;
             chunks = 1;
         }
         logger.info("ServerComaptibleForByteRangeRequest:" + downloadLink.getProperty("ServerComaptibleForByteRangeRequest"));
-        try {
-            if (downloadLink.getStringProperty("post", null) != null) {
-                this.dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
-            } else {
-                this.dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
-            }
-        } catch (final IllegalStateException e) {
+        boolean instantRetryFlag = true;
+        instantRetry: while (instantRetryFlag) {
+            instantRetryFlag = false;
             try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable ignore) {
-            }
-            logger.log(e);
-            if (StringUtils.containsIgnoreCase(e.getMessage(), "Range Error. Requested bytes=0- Got range: bytes 0-")) {
-                logger.info("Workaround for Cloudflare-Cache transparent image compression!");
-                downloadLink.setVerifiedFileSize(-1);
-                throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
-            } else {
-                throw e;
-            }
-        }
-        if (this.dl.getConnection().getResponseCode() == 403 && dl.getConnection().getRequestProperty("Range") != null) {
-            followURLConnection(br, dl.getConnection());
-            downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (dl.getConnection().getResponseCode() >= 500) {
-            followURLConnection(br, dl.getConnection());
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
-        } else if ((dl.getConnection().getResponseCode() == 200 || dl.getConnection().getResponseCode() == 206) && dl.getConnection().getCompleteContentLength() == -1 && downloadLink.getVerifiedFileSize() > 0) {
-            logger.info("Workaround for missing Content-Length!");
-            dl.getConnection().disconnect();
-            downloadLink.setVerifiedFileSize(-1);
-            downloadLink.setProperty(DirectHTTP.FORCE_NOVERIFIEDFILESIZE, Boolean.TRUE);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        try {
-            if (!this.dl.startDownload()) {
-                if (this.dl.externalDownloadStop()) {
-                    return;
+                if (downloadLink.getStringProperty("post", null) != null) {
+                    this.dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
+                } else {
+                    this.dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
                 }
-            }
-        } catch (Exception e) {
-            if (e instanceof PluginException) {
-                if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_ALREADYEXISTS) {
-                    throw e;
+            } catch (final IllegalStateException e) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable ignore) {
                 }
-                if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) {
-                    throw e;
-                }
-            } else if (e instanceof SkipReasonException) {
-                throw e;
-            } else if (e instanceof InterruptedException) {
-                throw e;
-            }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || this.dl.getConnection().getResponseCode() == 400 && this.br.getRequest().getHttpConnection().getHeaderField("server").matches("HFS.+")) {
-                if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
-                    /* clear chunkProgress and disable resume(ranges) and retry */
-                    downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
+                logger.log(e);
+                if (StringUtils.containsIgnoreCase(e.getMessage(), "Range Error. Requested bytes=0- Got range: bytes 0-")) {
+                    logger.info("Workaround for Cloudflare-Cache transparent image compression!");
+                    downloadLink.setVerifiedFileSize(-1);
                     throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
+                } else {
+                    throw e;
                 }
-            } else {
-                if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
-                    if (downloadLink.getDownloadCurrent() > downloadCurrentRaw + (128 * 1024l)) {
-                        throw e;
-                    } else {
-                        /* disable multiple chunks => use only 1 chunk and retry */
-                        downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.TRUE);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
+            }
+            if (this.dl.getConnection().getResponseCode() == 403 && dl.getConnection().getRequestProperty("Range") != null) {
+                followURLConnection(br, dl.getConnection());
+                downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (dl.getConnection().getResponseCode() >= 500) {
+                followURLConnection(br, dl.getConnection());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
+            } else if ((dl.getConnection().getResponseCode() == 200 || dl.getConnection().getResponseCode() == 206) && dl.getConnection().getCompleteContentLength() == -1 && downloadLink.getVerifiedFileSize() > 0) {
+                logger.info("Workaround for missing Content-Length!");
+                dl.getConnection().disconnect();
+                downloadLink.setVerifiedFileSize(-1);
+                downloadLink.setProperty(DirectHTTP.FORCE_NOVERIFIEDFILESIZE, Boolean.TRUE);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            try {
+                if (!this.dl.startDownload()) {
+                    if (this.dl.externalDownloadStop()) {
+                        return;
                     }
-                } else if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
-                    boolean disableRanges = false;
-                    final long[] progress = downloadLink.getChunksProgress();
-                    if (progress != null) {
-                        if (progress.length > 1) {
-                            /* reset chunkProgress to first chunk and retry */
-                            downloadLink.setChunksProgress(new long[] { progress[0] });
-                            throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
-                        } else {
-                            if (downloadLink.getDownloadCurrent() == downloadCurrentRaw) {
-                                disableRanges = true;
+                }
+            } catch (Exception e) {
+                if (e instanceof PluginException) {
+                    final PluginException pE = (PluginException) e;
+                    switch (pE.getLinkStatus()) {
+                    case LinkStatus.ERROR_ALREADYEXISTS:
+                    case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+                        throw e;
+                    case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
+                        if (StringUtils.equals(streamMod, "limitedRangeLength")) {
+                            final long nowCurrentRaw = downloadLink.getDownloadCurrent();
+                            if (nowCurrentRaw > downloadCurrentRaw) {
+                                logger.info("InstantRetry for limitedRangeLength:" + nowCurrentRaw + ">" + downloadCurrentRaw);
+                                downloadCurrentRaw = nowCurrentRaw;
+                                instantRetryFlag = true;
+                                dl.close();
+                                continue instantRetry;
                             }
                         }
-                    } else {
-                        disableRanges = true;
+                        break;
+                    default:
+                        break;
                     }
-                    if (disableRanges) {
+                } else if (e instanceof SkipReasonException) {
+                    throw e;
+                } else if (e instanceof InterruptedException) {
+                    throw e;
+                }
+                if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || this.dl.getConnection().getResponseCode() == 400 && this.br.getRequest().getHttpConnection().getHeaderField("server").matches("HFS.+")) {
+                    if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
                         /* clear chunkProgress and disable resume(ranges) and retry */
                         downloadLink.setChunksProgress(null);
-                        downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                        downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
                         throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
                     }
+                } else {
+                    if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
+                        if (downloadLink.getDownloadCurrent() > downloadCurrentRaw + (128 * 1024l)) {
+                            throw e;
+                        } else {
+                            /* disable multiple chunks => use only 1 chunk and retry */
+                            downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.TRUE);
+                            throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
+                        }
+                    } else if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
+                        boolean disableRanges = false;
+                        final long[] progress = downloadLink.getChunksProgress();
+                        if (progress != null) {
+                            if (progress.length > 1) {
+                                /* reset chunkProgress to first chunk and retry */
+                                downloadLink.setChunksProgress(new long[] { progress[0] });
+                                throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
+                            } else {
+                                if (downloadLink.getDownloadCurrent() == downloadCurrentRaw) {
+                                    disableRanges = true;
+                                }
+                            }
+                        } else {
+                            disableRanges = true;
+                        }
+                        if (disableRanges) {
+                            /* clear chunkProgress and disable resume(ranges) and retry */
+                            downloadLink.setChunksProgress(null);
+                            downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                            throw new PluginException(LinkStatus.ERROR_RETRY, null, -1, e);
+                        }
+                    }
                 }
+                throw e;
             }
-            throw e;
         }
     }
 
