@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -183,15 +184,25 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String fpName = subfolderPath;
         String html = br.toString().replaceAll("(\\(\\s*<a.*?</a>\\s*\\))", "");
         final String[] htmls = new Regex(html, "<tr >(.*?)</tr>").getColumn(0);
-        final String xmlURLs[] = br.getRegex("<a href\\s*=\\s*\"([^<>\"]+_files\\.xml)\"").getColumn(0);
+        Browser xmlRoot = br;
+        String xmlURLs[] = xmlRoot.getRegex("<a href\\s*=\\s*\"([^<>\"]+_files\\.xml)\"").getColumn(0);
+        while (xmlURLs.length == 0) {
+            final String path = new Regex(xmlRoot.getURL(), "https?://[^/]+/download/(.*?)/?$").getMatch(0);
+            if (path != null && path.contains("/")) {
+                xmlRoot.getPage("../");
+                xmlURLs = xmlRoot.getRegex("<a href\\s*=\\s*\"([^<>\"]+_files\\.xml)\"").getColumn(0);
+            } else {
+                break;
+            }
+        }
         String xmlSource = null;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (xmlURLs != null && xmlURLs.length > 0) {
             for (String xmlURL : xmlURLs) {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                xmlSource = brc.getPage(brc.getURL() + "/" + xmlURL);
-                ret.addAll(crawlXML(brc, subfolderPath));
+                final Browser xml = xmlRoot.cloneBrowser();
+                xml.setFollowRedirects(true);
+                xmlSource = xml.getPage(xml.getURL() + "/" + xmlURL);
+                ret.addAll(crawlXML(xmlRoot, xml, subfolderPath));
             }
             return ret;
         } else {
@@ -253,8 +264,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (br.containsHTML("id=\"gamepadtext\"")) {
             /* 2020-09-29: Rare case: Download browser emulated games */
             final String subfolderPath = new Regex(param.getCryptedUrl(), "/details/([^/]+)").getMatch(0);
-            br.getPage("https://archive.org/download/" + subfolderPath + "/" + subfolderPath + "_files.xml");
-            return this.crawlXML(this.br, subfolderPath);
+            final Browser xml = br.cloneBrowser();
+            xml.setFollowRedirects(true);
+            xml.getPage("https://archive.org/download/" + subfolderPath + "/" + subfolderPath + "_files.xml");
+            final Browser root = br.cloneBrowser();
+            root.setFollowRedirects(true);
+            root.getPage("https://archive.org/download/" + subfolderPath + "/");
+            return this.crawlXML(root, xml, subfolderPath);
         }
         /** TODO: 2020-09-29: Consider taking the shortcut here to always use that XML straight away (?!) */
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -473,11 +489,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return br.getRegex("(?i)\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
     }
 
-    private ArrayList<DownloadLink> crawlXML(final Browser br, final String root) {
+    private ArrayList<DownloadLink> crawlXML(final Browser br, final Browser xml, final String root) throws IOException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isFileCrawlerCrawlOnlyOriginalVersions();
         final boolean crawlArchiveView = PluginJsonConfig.get(ArchiveOrgConfig.class).isFileCrawlerCrawlArchiveView();
-        final String[] items = new Regex(br.toString(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
+        final String[] items = new Regex(xml.toString(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
         /*
          * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of subfolders via only
          * one request!
@@ -505,13 +521,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 pathWithFilename = Encoding.htmlOnlyDecode(pathWithFilename);
             }
             String pathEncoded;
-            String pathWithoutFilename = null;
             String filename = null;
             /* Search filename and properly encode content-URL. */
             if (pathWithFilename.contains("/")) {
                 final String[] urlParts = pathWithFilename.split("/");
                 pathEncoded = "";
-                pathWithoutFilename = "";
                 int index = 0;
                 for (final String urlPart : urlParts) {
                     final boolean isLastSegment = index >= urlParts.length - 1;
@@ -519,8 +533,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     if (isLastSegment) {
                         filename = urlPart;
                     } else {
-                        pathWithoutFilename += urlPart;
-                        pathWithoutFilename += "/";
                         pathEncoded += "/";
                     }
                     index++;
@@ -529,18 +541,22 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 pathEncoded = URLEncode.encodeURIComponent(pathWithFilename);
                 filename = pathWithFilename;
             }
-            final String url = "https://archive.org/download/" + root + "/" + pathEncoded;
+            final String url;
+            if (br.getURL().endsWith("/")) {
+                url = br.getURL(pathEncoded).toString();
+            } else {
+                url = br.getURL(br.getURL() + "/" + pathEncoded).toString();
+            }
+            if (!StringUtils.containsIgnoreCase(url, "download/" + root)) {
+                logger.info("ignore:" + url + "|root:" + root);
+                continue;
+            }
             if (dups.add(url)) {
                 final DownloadLink downloadURL = createDownloadlink(url);
                 downloadURL.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 downloadURL.setAvailable(true);
                 downloadURL.setFinalFileName(filename);
-                final String thisPath;
-                if (pathWithoutFilename != null) {
-                    thisPath = root + "/" + pathWithoutFilename;
-                } else {
-                    thisPath = root;
-                }
+                final String thisPath = new Regex(url, "download/(.+)/[^/]+").getMatch(0);
                 downloadURL.setRelativeDownloadFolderPath(thisPath);
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(thisPath);
