@@ -539,12 +539,12 @@ public class DoodstreamCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String regexAPIKey(final String src) {
-        final String apikey = new Regex(src, "value=\"([^\"]+)\" readonly class=\"form-control\">\\s*<button class=\"btn btn-primary btn-block regenerate-key\"").getMatch(0);
+    protected String regexAPIKey(final Browser br) {
+        final String apikey = br.getRegex("value=\"([^\"]+)\" readonly class=\"form-control\">\\s*<button class=\"btn btn-primary btn-block regenerate-key\"").getMatch(0);
         if (apikey != null) {
             return apikey;
         } else {
-            return super.regexAPIKey(src);
+            return super.regexAPIKey(br);
         }
     }
 
