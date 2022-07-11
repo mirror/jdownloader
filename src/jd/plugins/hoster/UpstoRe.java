@@ -53,7 +53,6 @@ import jd.plugins.PluginException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
@@ -167,7 +166,7 @@ public class UpstoRe extends antiDDoSForHost {
                 final Form f = br.getFormBySubmitvalue("Slow+download");
                 if (f != null) {
                     final Browser br2 = br.cloneBrowser();
-                    sleep(2000, link);
+                    sleep(6000, link);
                     br2.getPage("/main/acceptterms/?s=" + f.getInputField("s").getValue() + "&ajax=1");
                     final String t = br2.getRegex("name=t\\]'\\)\\.val\\('(\\d+)").getMatch(0);
                     if (t == null) {
@@ -183,7 +182,7 @@ public class UpstoRe extends antiDDoSForHost {
                         final String oldHValue = oldH.getValue();
                         f.put("h", oldHValue.substring(0, Math.min(10, oldHValue.length())) + h);
                     }
-                    sleep(2000, link);
+                    sleep(6000, link);
                     submitForm(f);
                 }
             }
@@ -211,38 +210,13 @@ public class UpstoRe extends antiDDoSForHost {
             final int waitFull = Integer.parseInt(waittimeStr);
             int wait = waitFull;
             logger.info("Detected total waittime: " + wait);
-            final boolean firstWaitThenCaptcha = true;
-            if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
-                if (firstWaitThenCaptcha) {
-                    sleep(wait * 1000l, link);
-                }
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                if (!firstWaitThenCaptcha) {
-                    final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-                    wait -= passedTime;
-                    if (wait > 0) {
-                        sleep(wait * 1000l, link);
-                    }
-                }
-                // final String kpw = br.getRegex("\\(\\{'type':'hidden','name':'(\\w+)'\\}\\).val\\(window\\.antispam").getMatch(0);
-                // some javascript crapola
-                // final String antispam = Encoding.urlEncode(getSoup());
-                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                captchaForm.put("antispam", "spam");
-                captchaForm.put("kpw", "spam");
-            } else if (containsHCaptcha(this.br)) {
-                /* 2021-06-25 */
-                if (firstWaitThenCaptcha) {
-                    sleep(wait * 1000l, link);
-                }
+            if (containsHCaptcha(this.br)) {
                 final CaptchaHelperHostPluginHCaptcha hCaptcha = new CaptchaHelperHostPluginHCaptcha(this, br);
                 final String captchaResponse = hCaptcha.getToken();
-                if (!firstWaitThenCaptcha) {
-                    final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-                    wait -= passedTime;
-                    if (wait > 0) {
-                        sleep(wait * 1000l, link);
-                    }
+                final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+                wait -= passedTime - 11;
+                if (wait > 0) {
+                    sleep(wait * 1000l, link);
                 }
                 captchaForm.put("kpw", "spam");
                 captchaForm.put("antispam", "spam");
@@ -252,7 +226,6 @@ public class UpstoRe extends antiDDoSForHost {
                 logger.warning("No captchaForm present at all");
             }
             if (captchaForm != null) {
-                sleep(70000, link);
                 submitForm(captchaForm);
             }
             if (br.containsHTML("limit for today|several files recently")) {
