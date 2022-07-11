@@ -258,7 +258,7 @@ public class ImxTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* More connections will lead to http error response 503 */
+        /* 2022-07-11: More connections will lead to http error response 503 */
         return 1;
     }
 
