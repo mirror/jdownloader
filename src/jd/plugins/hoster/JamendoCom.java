@@ -15,13 +15,21 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
+import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,14 +38,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "https?://(?:[\\w\\-]*\\.)?jamendo\\.com(?:/[a-z]{2})?/(?:track/|download/album/|download/a|download/track/)\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class JamendoCom extends PluginForHost {
-    private String             PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
-    public static final String PREFER_WHOLEALBUM  = "PREFER_WHOLEALBUM_2021_02_17";
+    public static final String API_BASE = "https://www.jamendo.com/api";
 
     public JamendoCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     @Override
@@ -45,107 +51,176 @@ public class JamendoCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "jamendo.com", "jamen.do" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]{2}/)?(?:track|t)/\\d+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String getAGBLink() {
-        return "http://www.jamendo.com/en/cgu_user";
+        return "https://help-music.jamendo.com/hc/en-us";
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
-    /** TODO: Consider implementing their API in the future: https://developer.jamendo.com/v3.0 */
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.br = prepBR(this.br);
-        String trackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
-        if (trackDownloadID != null) {
-            br.setFollowRedirects(true);
-            br.getPage("https://www." + this.getHost() + "/en/track/" + trackDownloadID);
-            String Track = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
-            String Artist = br.getRegex("og:description\" content=\"Track by (.*?) - \\d").getMatch(0);
-            if (Track == null || Artist == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            parameter.setName(Artist + " - " + Track + ".mp3");
-            parameter.setProperty("linktype", "downloadTrack");
-            return AvailableStatus.TRUE;
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
         }
-        String trackID = new Regex(parameter.getDownloadURL(), "/track/(\\d+)").getMatch(0);
-        if (trackID != null) {
-            br.setFollowRedirects(true);
-            br.getPage("https://www.jamendo.com/en/track/" + trackID + "/");
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String fullname = br.getRegex("<title>([^<>\"]+) \\| Jamendo Music \\| Free music downloads</title>").getMatch(0);
-            if (fullname == null) {
-                final String track = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-                final String artist = br.getRegex("itemprop=\"author\">([^<>\"]*?)</a>").getMatch(0);
-                if (track == null || artist == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                fullname = Encoding.htmlDecode(artist).trim() + Encoding.htmlDecode(track).trim();
-            }
-            parameter.setName(fullname + ".mp3");
-            if (getPluginConfig().getBooleanProperty(PREFER_HIGHQUALITY, true)) {
-                parameter.setProperty("linktype", "downloadTrack");
-            } else {
-                parameter.setProperty("linktype", "webtrack");
-            }
-            return AvailableStatus.TRUE;
-        }
-        String albumDownloadID = new Regex(parameter.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
-        if (albumDownloadID == null) {
-            albumDownloadID = new Regex(parameter.getDownloadURL(), "/download/a(\\d+)").getMatch(0);
-        }
-        if (albumDownloadID != null) {
-            br.setFollowRedirects(true);
-            br.getPage("https://www.jamendo.com/en/list/a" + albumDownloadID);
-            String album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
-            String artist = br.getRegex("og:description\" content=\"Album by (.*?)\"").getMatch(0);
-            if (album == null || artist == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String packageName = "";
-            if (album != null) {
-                packageName = packageName + album;
-            }
-            if (artist != null) {
-                if (packageName.length() > 0) {
-                    packageName = " - " + packageName;
-                }
-                packageName = artist + packageName;
-            }
-            parameter.setName(packageName + ".zip");
-            parameter.setProperty("linktype", "downloadAlbum");
-            return AvailableStatus.TRUE;
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return getFID(link.getPluginPatternMatcher());
+    }
+
+    public static String getFID(final String url) {
+        return new Regex(url, "(\\d+)$").getMatch(0);
+    }
+
+    public static String PROPERTY_POSITION      = "position";
+    private final String PROPERTY_DIRECTURL_MP3 = "directurl_mp3";
+    // private final String PROPERTY_DIRECTURL_OGG = "directurl_ogg";
+
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            prepBR(this.br);
+            br.setCookiesExclusive(true);
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* 2022-07-11: Check max 50 items in one go. */
+                    if (index == urls.length || links.size() == 50) {
+                        break;
+                    } else {
+                        links.add(urls[index]);
+                        index++;
+                    }
+                }
+                final UrlQuery query = new UrlQuery();
+                for (final DownloadLink link : links) {
+                    query.add("id%5B%5D", this.getFID(link));
+                }
+                queryAPI(br, "/tracks?" + query.toString());
+                final List<Map<String, Object>> tracks = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+                for (final DownloadLink link : links) {
+                    Map<String, Object> info = null;
+                    final String trackID = this.getFID(link);
+                    for (final Map<String, Object> track : tracks) {
+                        if (track.get("id").toString().equals(trackID)) {
+                            info = track;
+                            break;
+                        }
+                    }
+                    if (info == null) {
+                        /* E.g. invalid trackID. */
+                        link.setAvailable(false);
+                        continue;
+                    }
+                    final String title = (String) info.get("name");
+                    String position = null;
+                    if (link.hasProperty(PROPERTY_POSITION)) {
+                        position = link.getProperty(PROPERTY_POSITION).toString();
+                    }
+                    if (position != null) {
+                        link.setFinalFileName(position + ". " + title + ".mp3");
+                    } else {
+                        link.setFinalFileName(title + ".mp3");
+                    }
+                    if (link.getComment() == null) {
+                        final String description = (String) info.get("description");
+                        final String credits = (String) info.get("credits");
+                        if (!StringUtils.isEmpty(description)) {
+                            link.setComment(description);
+                        } else if (!StringUtils.isEmpty(credits)) {
+                            link.setComment(credits);
+                        }
+                    }
+                    final Map<String, Object> status = (Map<String, Object>) info.get("status");
+                    if (status.get("nonAvailabilityReason") != null) {
+                        link.setAvailable(false);
+                    } else {
+                        link.setAvailable(true);
+                    }
+                    final Map<String, Object> download = (Map<String, Object>) info.get("download");
+                    link.setProperty(PROPERTY_DIRECTURL_MP3, download.get("mp3"));
+                    // link.setProperty(PROPERTY_DIRECTURL_OGG, download.get("ogg"));
+                    if (((Number) info.get("isDownloadable")).intValue() != 1) {
+                        logger.info("Dev: Found un-downloadable track");
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            logger.log(e);
+            return false;
+        }
+        return true;
+    }
+
+    public static void queryAPI(final Browser br, final String relativePath) throws IOException {
+        final String url = API_BASE + relativePath;
+        final String path = new URL(url).getPath();
+        final long number = System.currentTimeMillis();
+        br.getHeaders().put("X-Jam-Call", "$" + JDHash.getSHA1(path + number) + "*" + number + "~");
+        br.getPage(url);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String dlurl = null;
-        if (link.getStringProperty("linktype", "webtrack").equalsIgnoreCase("webtrack")) {
-            dlurl = br.getRegex("og:audio:url\" content=\"(http.*?)\"").getMatch(0);
-        } else if (link.getStringProperty("linktype", "webtrack").equalsIgnoreCase("downloadTrack")) {
-            String trackID = new Regex(link.getDownloadURL(), "track/(\\d+)").getMatch(0);
-            /* Alternative: "https://storage.jamendo.com/download/track/" + trackID + "/mp32/" */
-            dlurl = "http://storage-new.newjamendo.com/download/track/" + trackID + "/";
-        } else if (link.getStringProperty("linktype", "webtrack").equalsIgnoreCase("downloadAlbum")) {
-            String albumID = new Regex(link.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
-            if (albumID == null) {
-                albumID = new Regex(link.getDownloadURL(), "/download/a(\\d+)").getMatch(0);
-            }
-            dlurl = "http://storage-new.newjamendo.com/download/a" + albumID + "/";
-        }
-        if (dlurl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dlurl = link.getStringProperty(PROPERTY_DIRECTURL_MP3);
+        if (StringUtils.isEmpty(dlurl)) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This track is not downloadable");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -155,8 +230,14 @@ public class JamendoCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private Browser prepBR(final Browser br) {
-        br.setCookie(this.getHost(), "jammusiclang", "en");
+    public static Browser prepBR(final Browser br) {
+        final String host = getPluginDomains().get(0)[0];
+        br.setCookie(host, "jamAcceptCookie", "en");
+        br.setCookie(host, "jammusiclang", "en");
+        br.setCookie(host, "jamapplication", "true");
+        br.getHeaders().put("x-jam-version", "2udos4");
+        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -166,12 +247,5 @@ public class JamendoCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HIGHQUALITY, "Prefer High Quality Download").setDefaultValue(true));
-        /* 2021-02-18: Not supported anymore */
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_WHOLEALBUM, "Prefer whole Album as
-        // Zip").setDefaultValue(false));
     }
 }
