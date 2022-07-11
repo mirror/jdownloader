@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,8 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imx.to" }, urls = { "https?://(?:\\w+\\.)?imx\\.to/((?:u/)?(?:i|t)/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+|(?:i/|img\\-)[a-z0-9]+)" })
 public class ImxTo extends PluginForHost {
@@ -102,7 +102,7 @@ public class ImxTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link));
+            link.setName(this.getFID(link) + ".jpg");
         }
         this.setBrowserExclusive();
         if (this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
@@ -112,7 +112,7 @@ public class ImxTo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("https://" + this.getHost() + "/i/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link))) {
-            String imageLink = link.getStringProperty("imageLink", null);
+            String imageLink = link.getStringProperty("imageLink");
             if (imageLink != null) {
                 imageLink = imageLink.replaceFirst("/t/", "/i/");
                 imageLink = imageLink.replaceFirst("https?://x", "https://i");
@@ -170,9 +170,11 @@ public class ImxTo extends PluginForHost {
                     logger.log(e);
                 }
                 if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 1 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 1 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 1 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -256,7 +258,8 @@ public class ImxTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        /* More connections will lead to http error response 503 */
+        return 1;
     }
 
     @Override
