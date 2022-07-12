@@ -226,7 +226,6 @@ public class RapidbIt extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.setAllowedResponseCodes(400);
                 final Map<String, Object> postdata = new HashMap<String, Object>();
                 postdata.put("email", account.getUser());
                 postdata.put("password", account.getPass());
