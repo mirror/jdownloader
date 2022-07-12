@@ -29,14 +29,18 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -49,11 +53,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -150,18 +149,22 @@ public class UpstoRe extends antiDDoSForHost {
     @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        handleErrorsHTML();
-        currentIP.set(this.getIP());
-        synchronized (CTRLLOCK) {
-            /* Load list of saved IPs + timestamp of last download */
-            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
-                blockedIPsMap = (Map<String, Long>) lastdownloadmap;
+        final String directurlproperty = "freelink";
+        final boolean resume = false;
+        final int maxchunks = 1;
+        if (this.attemptStoredDownloadurlDownload(link, directurlproperty, resume, maxchunks)) {
+            logger.info("Re-using stored directurl");
+        } else {
+            requestFileInformation(link);
+            handleErrorsHTML();
+            currentIP.set(this.getIP());
+            synchronized (CTRLLOCK) {
+                /* Load list of saved IPs + timestamp of last download */
+                final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+                if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                    blockedIPsMap = (Map<String, Long>) lastdownloadmap;
+                }
             }
-        }
-        String dllink = checkDirectLink(link, "freelink");
-        if (dllink == null) {
             {
                 final Form f = br.getFormBySubmitvalue("Slow+download");
                 if (f != null) {
@@ -213,7 +216,7 @@ public class UpstoRe extends antiDDoSForHost {
             if (containsHCaptcha(this.br)) {
                 final CaptchaHelperHostPluginHCaptcha hCaptcha = new CaptchaHelperHostPluginHCaptcha(this, br);
                 final String captchaResponse = hCaptcha.getToken();
-                final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+                final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000);
                 wait -= passedTime - 11;
                 if (wait > 0) {
                     sleep(wait * 1000l, link);
@@ -232,7 +235,7 @@ public class UpstoRe extends antiDDoSForHost {
                 setDownloadStarted(link, 0);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             }
-            dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            String dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://d\\d+\\.upstore\\.net/[^<>\"]*?)\"").getMatch(0);
             }
@@ -256,24 +259,55 @@ public class UpstoRe extends antiDDoSForHost {
                 handleErrorsJson();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else {
-            sleep(3000l, link);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
-        setDownloadStarted(link, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+            /*
+             * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
+             */
+            setDownloadStarted(link, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                handleErrorsHTML();
+                handleServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            handleErrorsHTML();
-            handleServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setProperty(directurlproperty, dllink);
         }
-        link.setProperty("freelink", dllink);
         dl.startDownload();
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directurlproperty, final boolean resume, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(directurlproperty);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        boolean valid = false;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
+                return true;
+            } else {
+                link.removeProperty(directurlproperty);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return false;
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
+                }
+                this.dl = null;
+            }
+        }
     }
 
     private void handleServerErrors() throws PluginException {
@@ -575,35 +609,6 @@ public class UpstoRe extends antiDDoSForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    private String checkDirectLink(DownloadLink downloadLink, String property) {
-        final String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                Browser br2 = prepBrowser(br.cloneBrowser(), Browser.getHost(dllink));
-                final URLConnectionAdapter con = br2.openGetConnection(dllink);
-                try {
-                    if (!looksLikeDownloadableContent(con)) {
-                        try {
-                            br2.followConnection(true);
-                        } catch (IOException ignore) {
-                            logger.log(ignore);
-                        }
-                        throw new IOException();
-                    } else {
-                        return dllink;
-                    }
-                } finally {
-                    con.disconnect();
-                }
-            } catch (Exception e) {
-                logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                return null;
-            }
-        }
-        return null;
     }
 
     @SuppressWarnings("deprecation")
