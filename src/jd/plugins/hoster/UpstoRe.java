@@ -21,10 +21,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -46,6 +46,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -54,48 +55,65 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpstoRe extends antiDDoSForHost {
     public UpstoRe(PluginWrapper wrapper) {
         super(wrapper);
         if ("upstore.net".equals(getHost())) {
-            this.enablePremium("http://upstore.net/premium/");
+            this.enablePremium("https://upstore.net/premium/");
         }
         this.setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://upstore.net/terms/";
+        return "https://upstore.net/terms/";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "upstore.net", "upsto.re" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if ("upsto.re".equals(getHost())) {
-            if (host == null || "upsto.re".equals(host)) {
-                return "upstore.net";
-            }
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z0-9]{2,}");
         }
-        return super.rewriteHost(host);
+        return ret.toArray(new String[0]);
     }
 
     /* Constants (limits) */
-    private static final long              FREE_RECONNECTWAIT            = 1 * 60 * 60 * 1000L;
-    private static final long              FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
-    private final String                   MAINPAGE                      = "http://upstore.net";
-    private final String                   INVALIDLINKS                  = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
-    private static String[]                IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private final String                   EXPERIMENTALHANDLING          = "EXPERIMENTALHANDLING";
-    private Pattern                        IPREGEX                       = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                        = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP                     = new AtomicReference<String>();
-    private static Map<String, Long>       blockedIPsMap                 = new HashMap<String, Long>();
-    private static Object                  CTRLLOCK                      = new Object();
-    private String                         PROPERTY_LASTIP               = "UPSTORE_PROPERTY_LASTIP";
-    private static final String            PROPERTY_LASTDOWNLOAD         = "UPSTORE_lastdownload_timestamp";
+    private static final long              FREE_RECONNECTWAIT                    = 1 * 60 * 60 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_ADDITIONAL         = 60 * 1000l;
+    private final String                   INVALIDLINKS                          = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
+    private static String[]                IPCHECK                               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private final String                   SETTING_EXPERIMENTALHANDLING          = "EXPERIMENTALHANDLING";
+    private final String                   SETTING_ALLOW_MULTIPLE_FREE_DOWNLOADS = "allow_multiple_free_downloads";
+    private Pattern                        IPREGEX                               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                                = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                             = new AtomicReference<String>();
+    private static Map<String, Long>       blockedIPsMap                         = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK                              = new Object();
+    private String                         PROPERTY_LASTIP                       = "UPSTORE_PROPERTY_LASTIP";
+    private static final String            PROPERTY_LASTDOWNLOAD                 = "UPSTORE_lastdownload_timestamp";
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/").replace("http://", "https://"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("upsto.re/", "upstore.net/").replace("http://", "https://"));
     }
 
     /**
@@ -193,7 +211,7 @@ public class UpstoRe extends antiDDoSForHost {
             /**
              * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
              */
-            if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+            if (this.getPluginConfig().getBooleanProperty(SETTING_EXPERIMENTALHANDLING, default_experimentalhandling)) {
                 /*
                  * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if
                  * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
@@ -353,16 +371,6 @@ public class UpstoRe extends antiDDoSForHost {
         }
     }
 
-    private String getSoup() {
-        final Random r = new Random();
-        final String soup = "()_+-=:;?.,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        String v = "";
-        for (int i = 0; i < 20; i++) {
-            v = v + soup.charAt(r.nextInt(soup.length()));
-        }
-        return v;
-    }
-
     private void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
@@ -370,14 +378,14 @@ public class UpstoRe extends antiDDoSForHost {
                 br.setCookie(getHost(), "lang", "en");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br.setCookies(MAINPAGE, cookies);
+                    br.setCookies(this.getHost(), cookies);
                     getPage("https://" + this.getHost());
                     if (!this.isLoggedinHTML(br)) {
                         logger.info("Cookie login failed");
-                        br.clearCookies(MAINPAGE);
+                        br.clearCookies(this.getHost());
                     } else {
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(MAINPAGE), "");
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }
                 }
@@ -401,8 +409,7 @@ public class UpstoRe extends antiDDoSForHost {
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 if (login.containsHTML(regexLoginCaptcha)) {
                     final String cap = br.getRegex(regexLoginCaptcha).getMatch(-1);
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), MAINPAGE, true);
-                    final String code = getCaptchaCode(cap, dummyLink);
+                    final String code = getCaptchaCode(cap, this.getDownloadLink());
                     if (code == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     } else {
@@ -419,7 +426,7 @@ public class UpstoRe extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
-                account.saveCookies(br.getCookies(MAINPAGE), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -427,24 +434,6 @@ public class UpstoRe extends antiDDoSForHost {
                 throw e;
             }
         }
-    }
-
-    /**
-     * saves cookies to HashMap from provided browser
-     *
-     * @author raztoki
-     * @param br
-     * @return
-     */
-    private HashMap<String, String> getBrowsersLoginCookies(Browser br) {
-        final HashMap<String, String> cookies = new HashMap<String, String>();
-        final Cookies add = br.getCookies(MAINPAGE);
-        for (final Cookie c : add.getCookies()) {
-            if (cookieContainsLoginKey(c)) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-        }
-        return cookies;
     }
 
     /**
@@ -508,10 +497,13 @@ public class UpstoRe extends antiDDoSForHost {
         br.setFollowRedirects(true);
         this.login(account, true);
         // Make sure that the language is correct
-        getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/?lang=en");
-        getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/stat/download/?lang=en");
+        getPage((br.getHttpConnection() == null ? "https://" + this.getHost() : "") + "/?lang=en");
+        getPage((br.getHttpConnection() == null ? "https://" + this.getHost() : "") + "/stat/download/?lang=en");
         // Check for never-ending premium accounts
-        if (!br.containsHTML(lifetimeAccount)) {
+        if (br.containsHTML("eternal premium")) {
+            account.setType(AccountType.LIFETIME);
+        } else {
+            account.setType(AccountType.PREMIUM);
             final long validUntil = getPremiumTill(br);
             if (validUntil == -1) {
                 if (br.containsHTML("(?i)unlimited premium")) {
@@ -533,12 +525,8 @@ public class UpstoRe extends antiDDoSForHost {
         final long trafficLeft = trafficDaily - SizeFormatter.getSize(traffic[0] + "GiB");
         ai.setTrafficLeft(trafficLeft);
         ai.setTrafficMax(trafficDaily);
-        ai.setStatus("Premium Account");
         return ai;
     }
-
-    // lifetime account
-    private String lifetimeAccount = "eternal premium";
 
     private boolean isLoggedinHTML(final Browser br) {
         if (br.containsHTML("account/logout/?\"")) {
@@ -730,10 +718,12 @@ public class UpstoRe extends antiDDoSForHost {
         return currentIP;
     }
 
-    private final boolean default_eh = false;
+    private final boolean default_experimentalhandling       = false;
+    private final boolean default_allowmultiplefreedownloads = false;
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.").setDefaultValue(default_eh));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_EXPERIMENTALHANDLING, "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.").setDefaultValue(default_experimentalhandling));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ALLOW_MULTIPLE_FREE_DOWNLOADS, "Allow up to two free downloads instead of only one?").setDefaultValue(default_allowmultiplefreedownloads));
     }
 
     @Override
@@ -742,20 +732,23 @@ public class UpstoRe extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        if (this.getPluginConfig().getBooleanProperty(SETTING_ALLOW_MULTIPLE_FREE_DOWNLOADS, default_allowmultiplefreedownloads)) {
+            return 2;
+        } else {
+            return 1;
+        }
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
-            /* no account, yes we can expect captcha */
+            /* No account, yes we can expect captcha */
             return true;
-        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
+        } else if (acc.getType() == AccountType.FREE) {
+            /* Free accounts also have captchas */
             return true;
         } else {
             return false;
