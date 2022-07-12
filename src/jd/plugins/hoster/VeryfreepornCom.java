@@ -21,21 +21,18 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class JapanWhoresCom extends KernelVideoSharingComV2 {
-    public JapanWhoresCom(final PluginWrapper wrapper) {
+public class VeryfreepornCom extends KernelVideoSharingComV2 {
+    public VeryfreepornCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "japan-whores.com" });
+        ret.add(new String[] { "veryfreeporn.com" });
         return ret;
     }
 
@@ -56,28 +53,32 @@ public class JapanWhoresCom extends KernelVideoSharingComV2 {
     protected String generateContentURL(final String fuid, final String urlTitle) {
         if (StringUtils.isEmpty(fuid) || StringUtils.isEmpty(urlTitle)) {
             return null;
-        }
-        return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
-    }
-
-    @Override
-    protected String regexNormalTitleWebsite(final Browser br) {
-        String title = br.getRegex("(?i)name=\"DC\\.title\" content=\"([^\"]*?)(?: at Japanese Whores)?\"").getMatch(0);
-        if (title != null) {
-            return title;
         } else {
-            return super.regexNormalTitleWebsite(br);
+            return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
         }
     }
+    // @Override
+    // protected String regexNormalTitleWebsite(final Browser br) {
+    // final String title = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
+    // if (title != null) {
+    // return title;
+    // } else {
+    // return super.regexNormalTitleWebsite(br);
+    // }
+    // }
+    //
+    // @Override
+    // protected String getFileTitle(final DownloadLink link) {
+    // final String titleWebsite = regexNormalTitleWebsite(br);
+    // if (titleWebsite != null) {
+    // return titleWebsite;
+    // } else {
+    // return getTitleURL(br, link);
+    // }
+    // }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        final String title = regexNormalTitleWebsite(br);
-        /* Prefer regexed title over fuid/title from inside URL. */
-        if (title != null) {
-            return title;
-        } else {
-            return this.getFUID(link);
-        }
+    protected boolean preferTitleHTML() {
+        return true;
     }
 }
