@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,7 +41,12 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class JamendoCom extends PluginForHost {
-    public static final String API_BASE = "https://www.jamendo.com/api";
+    public static final String                                API_BASE          = "https://www.jamendo.com/api";
+    private static LinkedHashMap<String, Map<String, Object>> ARTIST_INFO_CACHE = new LinkedHashMap<String, Map<String, Object>>() {
+                                                                                    protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
+                                                                                        return size() > 100;
+                                                                                    };
+                                                                                };
 
     public JamendoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -106,9 +112,13 @@ public class JamendoCom extends PluginForHost {
         return new Regex(url, "(\\d+)$").getMatch(0);
     }
 
-    public static String PROPERTY_POSITION      = "position";
-    private final String PROPERTY_DIRECTURL_MP3 = "directurl_mp3";
+    public static String  PROPERTY_ARTIST            = "artist";           // e.g. artist who created and uploaded a song/album
+    public static String  PROPERTY_USER              = "user";             // e.g. user who created a playlist
+    public static String  PROPERTY_POSITION_ALBUM    = "position_album";
+    public static String  PROPERTY_POSITION_PLAYLIST = "position_playlist";
+    private final String  PROPERTY_DIRECTURL_MP3     = "directurl_mp3";
     // private final String PROPERTY_DIRECTURL_OGG = "directurl_ogg";
+    private final boolean crawlArtistInfo            = false;
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -138,23 +148,29 @@ public class JamendoCom extends PluginForHost {
                 queryAPI(br, "/tracks?" + query.toString());
                 final List<Map<String, Object>> tracks = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
                 for (final DownloadLink link : links) {
-                    Map<String, Object> info = null;
+                    Map<String, Object> trackInfo = null;
                     final String trackID = this.getFID(link);
                     for (final Map<String, Object> track : tracks) {
                         if (track.get("id").toString().equals(trackID)) {
-                            info = track;
+                            trackInfo = track;
                             break;
                         }
                     }
-                    if (info == null) {
+                    if (trackInfo == null) {
                         /* E.g. invalid trackID. */
                         link.setAvailable(false);
                         continue;
                     }
-                    final String title = (String) info.get("name");
+                    if (!link.hasProperty(PROPERTY_ARTIST) && crawlArtistInfo) {
+                        final Map<String, Object> artist = this.getArtistInfo(trackInfo.get("artistId").toString());
+                        link.setProperty(PROPERTY_ARTIST, artist.get("name"));
+                    }
+                    final String title = (String) trackInfo.get("name");
                     String position = null;
-                    if (link.hasProperty(PROPERTY_POSITION)) {
-                        position = link.getProperty(PROPERTY_POSITION).toString();
+                    if (link.hasProperty(PROPERTY_POSITION_ALBUM)) {
+                        position = link.getProperty(PROPERTY_POSITION_ALBUM).toString();
+                    } else if (link.hasProperty(PROPERTY_POSITION_PLAYLIST)) {
+                        position = link.getProperty(PROPERTY_POSITION_PLAYLIST).toString();
                     }
                     if (position != null) {
                         link.setFinalFileName(position + ". " + title + ".mp3");
@@ -162,24 +178,19 @@ public class JamendoCom extends PluginForHost {
                         link.setFinalFileName(title + ".mp3");
                     }
                     if (link.getComment() == null) {
-                        final String description = (String) info.get("description");
-                        final String credits = (String) info.get("credits");
+                        final String description = (String) trackInfo.get("description");
+                        final String credits = (String) trackInfo.get("credits");
                         if (!StringUtils.isEmpty(description)) {
                             link.setComment(description);
                         } else if (!StringUtils.isEmpty(credits)) {
                             link.setComment(credits);
                         }
                     }
-                    final Map<String, Object> status = (Map<String, Object>) info.get("status");
-                    if (status.get("nonAvailabilityReason") != null) {
-                        link.setAvailable(false);
-                    } else {
-                        link.setAvailable(true);
-                    }
-                    final Map<String, Object> download = (Map<String, Object>) info.get("download");
+                    link.setAvailable(isAvailable(trackInfo));
+                    final Map<String, Object> download = (Map<String, Object>) trackInfo.get("download");
                     link.setProperty(PROPERTY_DIRECTURL_MP3, download.get("mp3"));
                     // link.setProperty(PROPERTY_DIRECTURL_OGG, download.get("ogg"));
-                    if (((Number) info.get("isDownloadable")).intValue() != 1) {
+                    if (((Number) trackInfo.get("isDownloadable")).intValue() != 1) {
                         logger.info("Dev: Found un-downloadable track");
                     }
                 }
@@ -192,6 +203,15 @@ public class JamendoCom extends PluginForHost {
             return false;
         }
         return true;
+    }
+
+    public static final boolean isAvailable(final Map<String, Object> jamendoMap) {
+        final Map<String, Object> status = (Map<String, Object>) jamendoMap.get("status");
+        if (status.get("nonAvailabilityReason") != null) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public static void queryAPI(final Browser br, final String relativePath) throws IOException {
@@ -228,6 +248,26 @@ public class JamendoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public Map<String, Object> getArtistInfo(final String artistID) throws IOException, PluginException {
+        if (artistID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (ARTIST_INFO_CACHE.containsKey(artistID)) {
+            return ARTIST_INFO_CACHE.get(artistID);
+        } else {
+            queryAPI(br, "/artists?id%5B%5D=" + artistID);
+            final List<Object> artists = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+            if (artists.isEmpty()) {
+                /* Artist not found */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> artist = (Map<String, Object>) artists.get(0);
+            ARTIST_INFO_CACHE.put(artistID, artist);
+            return artist;
+        }
     }
 
     public static Browser prepBR(final Browser br) {
