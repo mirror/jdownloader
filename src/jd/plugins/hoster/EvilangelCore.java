@@ -271,8 +271,11 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                     }
                     if (!StringUtils.isEmpty(dllink)) {
-                        if (foundSelectedquality) {
-                            logger.info("Found user selected quality " + preferredQualityStr);
+                        if (foundSelectedquality && preferredQualityStr == null) {
+                            logger.info("Found user selected quality: best");
+                            link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
+                        } else if (foundSelectedquality) {
+                            logger.info("Found user selected quality: " + preferredQualityStr);
                             link.setProperty(PROPERTY_QUALITY, preferredQualityStr);
                         } else {
                             logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
