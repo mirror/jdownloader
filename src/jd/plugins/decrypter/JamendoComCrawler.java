@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -73,20 +74,21 @@ public class JamendoComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]{2}/)?(album/\\d+(?:/[a-z0-9\\-]+)?|artist/\\d+(?:/[a-z0-9\\-]+)?|list/a\\d+|playlist/\\d+(?:/[a-z0-9\\-]+)?|user/\\d+(?:/[a-z0-9\\-]+)?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]{2}/)?(album/\\d+(?:/[a-z0-9\\-]+)?|artist/\\d+(?:/[a-z0-9\\-]+)?|list/a\\d+|playlist/\\d+(?:/[a-z0-9\\-]+)?|user/\\d+(?:/[a-z0-9\\-]+(?:/favorites)?)?)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static LinkedHashMap<String, Map<String, Object>> USER_INFO_CACHE = new LinkedHashMap<String, Map<String, Object>>() {
-                                                                                  protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
-                                                                                      return size() > 100;
+    private static LinkedHashMap<String, Map<String, Object>> USER_INFO_CACHE     = new LinkedHashMap<String, Map<String, Object>>() {
+                                                                                      protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
+                                                                                          return size() > 100;
+                                                                                      };
                                                                                   };
-                                                                              };
-    private static final String                               TYPE_ALBUM      = "https?://[^/]+/(?:[a-z]{2}/)?(?:album/|list/a)(\\d+).*?";
-    private static final String                               TYPE_ARTIST     = "https?://[^/]+/(?:[a-z]{2}/)?artist/(\\d+).*?";
-    private static final String                               TYPE_PLAYLIST   = "https?://[^/]+/(?:[a-z]{2}/)?playlist/(\\d+).*?";
-    private static final String                               TYPE_USER       = "https?://[^/]+/(?:[a-z]{2}/)?user/(\\d+).*?";
+    private static final String                               TYPE_ALBUM          = "https?://[^/]+/(?:[a-z]{2}/)?(?:album/|list/a)(\\d+).*?";
+    private static final String                               TYPE_ARTIST         = "https?://[^/]+/(?:[a-z]{2}/)?artist/(\\d+).*?";
+    private static final String                               TYPE_PLAYLIST       = "https?://[^/]+/(?:[a-z]{2}/)?playlist/(\\d+).*?";
+    private static final String                               TYPE_USER           = "https?://[^/]+/(?:[a-z]{2}/)?user/(\\d+).*?";
+    private static final String                               TYPE_USER_FAVORITES = "https?://[^/]+/(?:[a-z]{2}/)?user/(\\d+)/[a-z0-9\\-]+/favorites";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -96,8 +98,10 @@ public class JamendoComCrawler extends PluginForDecrypt {
             return crawlAlbum(param);
         } else if (param.getCryptedUrl().matches(TYPE_PLAYLIST)) {
             return this.crawlUserPlaylist(param);
+        } else if (param.getCryptedUrl().matches(TYPE_USER_FAVORITES)) {
+            return this.crawlUserFavorites(param);
         } else if (param.getCryptedUrl().matches(TYPE_USER)) {
-            return this.crawlUserProfile(param);
+            return this.crawlUser(param);
         } else if (param.getCryptedUrl().matches(TYPE_ARTIST)) {
             return this.crawlArtist(param);
         } else {
@@ -153,18 +157,21 @@ public class JamendoComCrawler extends PluginForDecrypt {
         }
         final Map<String, Object> playlist = (Map<String, Object>) ressourcelist.get(0);
         final Map<String, Object> user = getUserInfo(playlist.get("userId").toString());
-        return crawlProcessUserPlaylist(param, user, playlist);
+        return crawlProcessUserPlaylist(user, playlist);
     }
 
-    public ArrayList<DownloadLink> crawlProcessUserPlaylist(final CryptedLink param, final Map<String, Object> user, final Map<String, Object> playlist) throws Exception {
+    public ArrayList<DownloadLink> crawlProcessUserPlaylist(final Map<String, Object> user, final Map<String, Object> playlist) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<Map<String, Object>> tracks = (List<Map<String, Object>>) playlist.get("tracks");
         if (tracks.isEmpty()) {
             logger.info("Empty playlist");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String playlistname = playlist.get("name").toString();
+        final String playlistSlug = playlistname.toLowerCase(Locale.ENGLISH).replaceAll("[^a-z0-9]", "-").replaceAll("-{2,}", "-");
+        final String playlistURL = "https://www." + this.getHost() + "/playlist/" + playlist.get("id") + "/" + playlistSlug;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(user.get("dispname") + " - " + playlist.get("name").toString());
+        fp.setName(user.get("dispname") + " - " + playlistname);
         fp.setComment((String) playlist.get("description"));
         boolean positionStartsAtZero = false;
         for (final Map<String, Object> track : tracks) {
@@ -180,15 +187,62 @@ public class JamendoComCrawler extends PluginForDecrypt {
             } else {
                 link.setProperty(JamendoCom.PROPERTY_POSITION_PLAYLIST, position);
             }
-            link.setContainerUrl(param.getCryptedUrl());
+            link.setContainerUrl(playlistURL);
             link._setFilePackage(fp);
             ret.add(link);
         }
         return ret;
     }
 
+    /** Crawls all favorite tracks of a user */
+    public ArrayList<DownloadLink> crawlUserFavorites(final CryptedLink param) throws Exception {
+        final String userID = new Regex(param.getCryptedUrl(), TYPE_USER_FAVORITES).getMatch(0);
+        if (userID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Map<String, Object> user = this.getUserInfo(userID);
+        final int maxItemsPerPage = 20;
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        int page = 1;
+        int offset = maxItemsPerPage;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(user.get("dispname").toString());
+        do {
+            final UrlQuery query = new UrlQuery();
+            query.add("type", "track");
+            query.add("userId", userID);
+            query.add("limit", Integer.toString(maxItemsPerPage));
+            query.add("order", "dateFavorite_desc");
+            if (page > 1) {
+                query.add("offset", Integer.toString(offset));
+            }
+            queryAPI(br, "/favorites/track?" + query.toString());
+            final List<Map<String, Object>> tracks = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            for (final Map<String, Object> track : tracks) {
+                final DownloadLink link = createSongDownloadlink(track.get("id").toString());
+                link._setFilePackage(fp);
+                ret.add(link);
+                distribute(link);
+            }
+            logger.info("Crawled page " + page + " | Found results so far: " + ret.size());
+            if (tracks.size() < maxItemsPerPage) {
+                logger.info("Stopping because: Current page contains less items than " + maxItemsPerPage);
+                break;
+            } else if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else {
+                page++;
+                offset += maxItemsPerPage;
+                continue;
+            }
+        } while (true);
+        return ret;
+    }
+
     /** Crawls user profile --> All playlists of user */
-    public ArrayList<DownloadLink> crawlUserProfile(final CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> crawlUser(final CryptedLink param) throws Exception {
         final String userID = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
         if (userID == null) {
             /* Developer mistake */
@@ -198,28 +252,36 @@ public class JamendoComCrawler extends PluginForDecrypt {
         final int maxItemsPerPage = 16;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int page = 1;
+        int offset = maxItemsPerPage;
         do {
             final UrlQuery query = new UrlQuery();
             query.add("userId", userID);
-            query.add("order", "");
+            query.add("order", "dateCreated_desc");
             query.add("limit", Integer.toString(maxItemsPerPage));
+            if (page > 1) {
+                query.add("offset", Integer.toString(offset));
+            }
             queryAPI(br, "/playlists?" + query.toString());
             final List<Map<String, Object>> playlists = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
             for (final Map<String, Object> playlist : playlists) {
-                /* TODO: Update method to be able to set correct containerURL (URL to respective playlist!). */
-                ret.addAll(crawlProcessUserPlaylist(param, user, playlist));
+                final ArrayList<DownloadLink> playlistResults = crawlProcessUserPlaylist(user, playlist);
+                for (final DownloadLink link : playlistResults) {
+                    ret.add(link);
+                    distribute(link);
+                }
             }
             logger.info("Crawled page " + page + " | Found results so far: " + ret.size());
             if (playlists.size() < maxItemsPerPage) {
-                logger.info("Stopping because:");
+                logger.info("Stopping because: Current page contains less items than " + maxItemsPerPage);
                 break;
             } else if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
+            } else {
+                page++;
+                offset += maxItemsPerPage;
+                continue;
             }
-            /* TODO: Add full pagination support and errorhandling */
-            page++;
-            break;
         } while (true);
         return ret;
     }
