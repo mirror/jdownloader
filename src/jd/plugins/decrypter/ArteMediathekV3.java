@@ -17,9 +17,23 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.FilenameSchemeType;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.LanguageSelectionMode;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.PackagenameSchemeType;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,18 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.decrypter.ArteMediathekDecrypter.VersionInfo;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.FilenameSchemeType;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.PackagenameSchemeType;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 public class ArteMediathekV3 extends PluginForDecrypt {
@@ -210,9 +212,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final QualitySelectionMode mode = cfg.getQualitySelectionMode();
         /* Crawl video streams */
         /* Collect list of user desired/allowed qualities */
-        final List<Integer> knownHTTPQualities = getKnownHTTPQualities();
         final List<Integer> selectedQualitiesHeight = getSelectedHTTPQualities();
-        final List<String> selectedLanguages = getSelectedLanguages(null);
+        final List<String> selectedLanguages = getSelectedLanguages(param.getCryptedUrl());
         // TODO: Implement pagination?
         final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
         /*
@@ -240,7 +241,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
                 final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
                 final String audioCode = videoStream.get("audioCode").toString(); // e.g. VF, VF-STA, VA, ...
-                // final String audioCodeWithoutSubtitleSpec = new Regex(audioCode, "^([A-Z]{1,2})").getMatch(0);
+                final String audioChar = new Regex(audioCode, "^VO?([A-Z])").getMatch(0);
                 final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
                 /* Set properties which we later need for custom filenames. */
                 link.setProperty(PROPERTY_VIDEO_ID, videoID);
@@ -287,17 +288,26 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 if (!subtitles.isEmpty() && !cfg.isCrawlSubtitledBurnedInVersions()) {
                     continue;
                 }
-                // if (!selectedLanguages.contains(audioCodeWithoutSubtitleSpec)) {
-                // /* Skip unwanted languages */
-                // continue;
-                // }
+                /* No go through all other skip conditions except video resolution */
+                if (this.knownLanguages.contains(audioChar)) {
+                    if (!selectedLanguages.contains(audioChar)) {
+                        /* Skip unwanted languages */
+                        continue;
+                    }
+                } else {
+                    if (!cfg.isCrawlLanguageUnknown()) {
+                        /* Skip this unknown language */
+                        continue;
+                    }
+                    logger.info("Adding unknown language allowed candidate: " + audioChar);
+                }
                 if (link.getView().getBytesTotal() > bestAllowedFilesize || bestAllowed == null) {
                     bestAllowed = link;
                     bestAllowedFilesize = link.getView().getBytesTotal();
                 }
                 /* Check if user wants this video resolution. */
                 final int heightForQualitySelection = getHeightForQualitySelection(height);
-                if (selectedQualitiesHeight.contains(heightForQualitySelection) || (!knownHTTPQualities.contains(heightForQualitySelection) && cfg.isCrawlUnknownHTTPVideoQualities())) {
+                if (selectedQualitiesHeight.contains(heightForQualitySelection) || (!knownQualitiesHeight.contains(heightForQualitySelection) && cfg.isCrawlUnknownHTTPVideoQualities())) {
                     userSelected.add(link);
                     if (link.getView().getBytesTotal() > bestOfUserSelectedFilesize || bestOfUserSelected == null) {
                         bestOfUserSelected = link;
@@ -425,53 +435,60 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         return filename;
     }
 
-    private List<String> getKnownLanguages() {
-        // TODO: Work in progress
-        final List<String> knownLanguages = new ArrayList<String>();
-        knownLanguages.add("en");
-        knownLanguages.add("fr");
-        knownLanguages.add("de");
-        knownLanguages.add("pl");
-        return knownLanguages;
-    }
+    private final List<Integer> knownQualitiesHeight = Arrays.asList(new Integer[] { 1080, 720, 480, 360, 240 });
+    private final List<String>  knownLanguages       = Arrays.asList(new String[] { "english_todo", "F", "A", "italian_todo" });
 
-    private List<String> getSelectedLanguages(final String url) {
-        // TODO: Work in progress
-        // final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
-        // final String langURL = "";
+    private List<String> getSelectedLanguages(final String url) throws PluginException {
+        final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final List<String> selectedLanguages = new ArrayList<String>();
-        selectedLanguages.add("VA");
+        if (cfg.getLanguageSelectionMode() == LanguageSelectionMode.ALL_SELECTED) {
+            if (cfg.isCrawlLanguageEnglish()) {
+                // TODO
+                selectedLanguages.add("english_todo");
+            }
+            if (cfg.isCrawlLanguageFrench()) {
+                selectedLanguages.add("F");
+            }
+            if (cfg.isCrawlLanguageGerman()) {
+                selectedLanguages.add("A");
+            }
+            if (cfg.isCrawlLanguageItalian()) {
+                // TODO
+                selectedLanguages.add("italian_todo");
+            }
+            if (cfg.isCrawlLanguagePolish()) {
+                // TODO
+                selectedLanguages.add("polish_todo");
+            }
+        } else {
+            /* Language by URL */
+            final String langFromURL = new Regex(url, "https?://[^/]+/([a-z]{2})").getMatch(0);
+            if (langFromURL == null) {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            selectedLanguages.add(iso6391CodeToArteAudioChar(langFromURL));
+        }
         return selectedLanguages;
-    }
-
-    private List<Integer> getKnownHTTPQualities() {
-        final List<Integer> knownQualitiesHeight = new ArrayList<Integer>();
-        knownQualitiesHeight.add(1080);
-        knownQualitiesHeight.add(720);
-        knownQualitiesHeight.add(480);
-        knownQualitiesHeight.add(360);
-        knownQualitiesHeight.add(240);
-        return knownQualitiesHeight;
     }
 
     private List<Integer> getSelectedHTTPQualities() {
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
-        final List<Integer> knownQualities = getKnownHTTPQualities();
         final List<Integer> selectedQualitiesHeight = new ArrayList<Integer>();
         if (cfg.isCrawlHTTP1080p()) {
-            selectedQualitiesHeight.add(knownQualities.get(0));
+            selectedQualitiesHeight.add(knownQualitiesHeight.get(0));
         }
         if (cfg.isCrawlHTTP720p()) {
-            selectedQualitiesHeight.add(knownQualities.get(1));
+            selectedQualitiesHeight.add(knownQualitiesHeight.get(1));
         }
         if (cfg.isCrawlHTTP480p()) {
-            selectedQualitiesHeight.add(knownQualities.get(2));
+            selectedQualitiesHeight.add(knownQualitiesHeight.get(2));
         }
         if (cfg.isCrawlHTTP360p()) {
-            selectedQualitiesHeight.add(knownQualities.get(3));
+            selectedQualitiesHeight.add(knownQualitiesHeight.get(3));
         }
         if (cfg.isCrawlHTTP240p()) {
-            selectedQualitiesHeight.add(knownQualities.get(4));
+            selectedQualitiesHeight.add(knownQualitiesHeight.get(4));
         }
         return selectedQualitiesHeight;
     }
@@ -494,6 +511,24 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         } else {
             /* No fitting pre given height --> Return input */
             return height;
+        }
+    }
+
+    /** E.g. "de" --> "A" */
+    private static String iso6391CodeToArteAudioChar(final String iso6391Code) {
+        if (iso6391Code.equalsIgnoreCase("en")) {
+            return "english_todo";
+        } else if (iso6391Code.equalsIgnoreCase("fr")) {
+            return "F";
+        } else if (iso6391Code.equalsIgnoreCase("de")) {
+            return "A";
+        } else if (iso6391Code.equalsIgnoreCase("it")) {
+            return "italian_todo";
+        } else if (iso6391Code.equalsIgnoreCase("pl")) {
+            return "polish_todo";
+        } else {
+            /* Unknown/unsupported code */
+            return null;
         }
     }
 
