@@ -6,11 +6,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.http.Browser;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment.X_KEY_METHOD;
+
+import jd.http.Browser;
 
 public class M3U8Playlist {
     public static class M3U8Segment {
@@ -23,6 +23,7 @@ public class M3U8Playlist {
             // SAMPLE-AES means that the Media Segments contain media samples, such as audio or video, that are encrypted
             // https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/HLS_Sample_Encryption/Encryption/Encryption.html
             SAMPLE_AES("SAMPLE-AES");
+
             private final String method;
 
             public String getMethod() {
@@ -208,7 +209,7 @@ public class M3U8Playlist {
         return "M3U8:Encrypted:" + getEncryptionMethod() + "|Segments:" + size() + "|Duration:" + getEstimatedDuration() + "ms|Estimated Size:" + getEstimatedSize();
     }
 
-    private final static boolean X_BYTERANGE_SUPPORT = false;
+    private static final boolean X_BYTERANGE_SUPPORT = false;
 
     public static List<M3U8Playlist> loadM3U8(final String m3u8, final Browser br) throws IOException {
         return loadM3U8(m3u8, br, X_BYTERANGE_SUPPORT);
@@ -223,6 +224,10 @@ public class M3U8Playlist {
         if (br.getHttpConnection().getResponseCode() != 200 && br.getHttpConnection().getResponseCode() != 206) {
             throw new IOException("ResponseCode must be 200 or 206!");
         }
+        return parseM3U8(br, X_BYTERANGE_SUPPORT);
+    }
+
+    public static List<M3U8Playlist> parseM3U8(final Browser br) throws IOException {
         return parseM3U8(br, X_BYTERANGE_SUPPORT);
     }
 
