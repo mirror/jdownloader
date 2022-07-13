@@ -909,8 +909,8 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     protected List<M3U8Playlist> getM3U8Playlists() throws Exception {
-        // work around for longggggg m3u pages
         final Browser br = this.getRequestBrowser();
+        // work around for longggggg m3u pages
         final int was = br.getLoadLimit();
         // lets set the connection limit to our required request
         br.setLoadLimit(Integer.MAX_VALUE);
