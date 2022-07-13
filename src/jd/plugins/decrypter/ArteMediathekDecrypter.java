@@ -25,6 +25,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -37,13 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ArteTv;
-
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/(guide/[a-z]{2}/|[a-z]{2}/videos/)\\d+-\\d+-[ADF]+/[^/]+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
@@ -507,23 +507,37 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private static enum VideoLanguage {
+    private static enum AudioLanguage {
+        ENGLISH,
         FRANCAIS,
         GERMAN,
+        ITALIAN,
         OTHER;
-        private static VideoLanguage parse(final String apiosCode) {
-            final String originalVersion = new Regex(apiosCode, "^VO(F|A)($|-)").getMatch(0);
-            if (originalVersion != null) {
-                // original version
-                if ("F".equals(originalVersion)) {
-                    return FRANCAIS;
-                } else if ("A".equals(originalVersion)) {
-                    return GERMAN;
-                } else {
-                    return OTHER;
-                }
-            }
-            final String nonOriginalVersion = new Regex(apiosCode, "^V(F|A)($|-)").getMatch(0);
+
+        private static AudioLanguage parse(final String apiosCode) {
+            // final String originalVersion = new Regex(apiosCode, "^VO(F|A)($|-)").getMatch(0);
+            // if (originalVersion != null) {
+            // // original version
+            // if ("F".equals(originalVersion)) {
+            // return FRANCAIS;
+            // } else if ("A".equals(originalVersion)) {
+            // return GERMAN;
+            // } else {
+            // return OTHER;
+            // }
+            // }
+            // final String nonOriginalVersion = new Regex(apiosCode, "^V(F|A)($|-)").getMatch(0);
+            // if (nonOriginalVersion != null) {
+            // // non-original version
+            // if ("F".equals(nonOriginalVersion)) {
+            // return FRANCAIS;
+            // } else if ("A".equals(nonOriginalVersion)) {
+            // return GERMAN;
+            // } else {
+            // return OTHER;
+            // }
+            // }
+            final String nonOriginalVersion = new Regex(apiosCode, "^VO?(F|A)($|-)").getMatch(0);
             if (nonOriginalVersion != null) {
                 // non-original version
                 if ("F".equals(nonOriginalVersion)) {
@@ -539,13 +553,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     private static enum SubtitleLanguage {
+        ENGLISH,
         FRANCAIS,
         GERMAN,
+        ITALIAN,
         SPANISH,
         POLISH,
-        ITALIAN,
-        ENGLISH,
         OTHER;
+
         private static SubtitleLanguage parse(final String apiosCode) {
             final String subtitleLanguage = new Regex(apiosCode, "-STM?(A|F)").getMatch(0);
             if (subtitleLanguage != null) {
@@ -575,12 +590,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
+
         private static SubtitleType parse(final String apiosCode) {
-            if (StringUtils.equalsIgnoreCase(apiosCode, "VF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VA-STA") || StringUtils.equalsIgnoreCase(apiosCode, "VOF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VOA-STA")) {
+            if (apiosCode.endsWith("-STA") || apiosCode.endsWith("-STF")) {
                 return PARTIAL;
-            } else if (StringUtils.containsIgnoreCase(apiosCode, "-STM")) {
+            } else if (apiosCode.endsWith("-STM")) {
                 return HEARING_IMPAIRED;
-            } else if (StringUtils.containsIgnoreCase(apiosCode, "-ST")) {
+            } else if (apiosCode.endsWith("-ST")) {
                 return FULL;
             } else {
                 return NONE;
@@ -595,6 +611,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         NON_ORIGINAL_FRANCAIS,
         NON_ORIGINAL_GERMAN,
         FOREIGN;
+
         private static VersionType parse(final String apiosCode) {
             if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
                 return ORIGINAL_FRANCAIS;
@@ -615,7 +632,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     public static interface VersionInfo {
         VersionType getVersionType();
 
-        VideoLanguage getVideoLanguage();
+        AudioLanguage getVideoLanguage();
 
         SubtitleLanguage getSubtitleLanguage();
 
@@ -626,7 +643,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     public static VersionInfo parseVersionInfo(final String apiosCode) {
         final SubtitleType subtitleType = SubtitleType.parse(apiosCode);
-        final VideoLanguage videoLanguage = VideoLanguage.parse(apiosCode);
+        final AudioLanguage videoLanguage = AudioLanguage.parse(apiosCode);
         final SubtitleLanguage subtitleLanguage = SubtitleLanguage.parse(apiosCode);
         final VersionType versionType = VersionType.parse(apiosCode);
         return new VersionInfo() {
@@ -641,7 +658,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
 
             @Override
-            public VideoLanguage getVideoLanguage() {
+            public AudioLanguage getVideoLanguage() {
                 return videoLanguage;
             }
 
