@@ -146,6 +146,10 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "fapnado.xxx" });
         /* 2022-07-12 */
         ret.add(new String[] { "maturetubehere.com" });
+        /* 2022-08-12 */
+        ret.add(new String[] { "homemade.xxx" });
+        /* 2022-08-12 */
+        ret.add(new String[] { "xhand.com" });
         return ret;
     }
 
