@@ -1517,6 +1517,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 2 * 60 * 1000l);
             } else if (responsecode == 429) {
                 exception429TooManyConnections();
+            } else if (responsecode == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 1 * 60 * 1000l);
             }
         }
     }
