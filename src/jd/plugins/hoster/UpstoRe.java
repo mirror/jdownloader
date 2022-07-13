@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -59,9 +60,7 @@ import jd.plugins.PluginException;
 public class UpstoRe extends antiDDoSForHost {
     public UpstoRe(PluginWrapper wrapper) {
         super(wrapper);
-        if ("upstore.net".equals(getHost())) {
-            this.enablePremium("https://upstore.net/premium/");
-        }
+        this.enablePremium("https://upstore.net/premium/");
         this.setConfigElements();
     }
 
@@ -92,7 +91,7 @@ public class UpstoRe extends antiDDoSForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z0-9]{2,}");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]{2,})");
         }
         return ret.toArray(new String[0]);
     }
@@ -111,9 +110,25 @@ public class UpstoRe extends antiDDoSForHost {
     private static Object                  CTRLLOCK                              = new Object();
     private String                         PROPERTY_LASTIP                       = "UPSTORE_PROPERTY_LASTIP";
     private static final String            PROPERTY_LASTDOWNLOAD                 = "UPSTORE_lastdownload_timestamp";
+    /* Don't touch the following! */
+    private static final AtomicInteger     freeRunning                           = new AtomicInteger(0);
 
     public void correctDownloadLink(DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("upsto.re/", "upstore.net/").replace("http://", "https://"));
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     /**
@@ -223,9 +238,7 @@ public class UpstoRe extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                 }
             }
-            // captcha form
             final Form captchaForm = br.getFormBySubmitvalue("Get+download+link");
-            // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();
             final String waittimeStr = br.getRegex("var sec = (\\d+)").getMatch(0);
             final int waitFull = Integer.parseInt(waittimeStr);
@@ -236,6 +249,7 @@ public class UpstoRe extends antiDDoSForHost {
                 final String captchaResponse = hCaptcha.getToken();
                 final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000);
                 wait -= passedTime - 11;
+                // wait += 1;
                 if (wait > 0) {
                     sleep(wait * 1000l, link);
                 }
@@ -294,7 +308,26 @@ public class UpstoRe extends antiDDoSForHost {
             }
             link.setProperty(directurlproperty, dllink);
         }
-        dl.startDownload();
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(null, link, +1);
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(null, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directurlproperty, final boolean resume, final int maxchunks) throws Exception {
@@ -564,7 +597,7 @@ public class UpstoRe extends antiDDoSForHost {
         String dllink = br.getRedirectLocation();
         // No directdownload? Let's "click" on download
         if (dllink == null) {
-            postPage("//upstore.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            postPage("//upstore.net/load/premium/", "js=1&hash=" + this.getFID(link));
             if (br.containsHTML(premDlLimit)) {
                 trafficLeft(account);
             }
@@ -578,8 +611,8 @@ public class UpstoRe extends antiDDoSForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replace("\\", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink).replace("\\", ""), true, 0);
+        dllink = Encoding.htmlDecode(dllink).replace("\\", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             try {
@@ -732,11 +765,13 @@ public class UpstoRe extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        final int maxFree;
         if (this.getPluginConfig().getBooleanProperty(SETTING_ALLOW_MULTIPLE_FREE_DOWNLOADS, default_allowmultiplefreedownloads)) {
-            return 2;
+            maxFree = 2;
         } else {
-            return 1;
+            maxFree = 1;
         }
+        return Math.min(maxFree, freeRunning.get() + 1);
     }
 
     @Override
