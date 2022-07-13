@@ -24,7 +24,15 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.DecimalFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,16 +47,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "mediathek.daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "ardmediathek\\.dedecrypted://.+", "(?:mediathek\\.)?daserste\\.dedecrypted://.+", "sandmann\\.dedecrypted://.+", "wdr.dedecrypted://.+", "sportschau\\.dedecrypted://.+", "wdrmaus\\.dedecrypted://.+", "kika\\.dedecrypted://.+", "eurovision\\.dedecrypted://.+", "sputnik\\.dedecrypted://.+", "mdr\\.dedecrypted://.+", "ndr\\.dedecrypted://.+", "tagesschau\\.dedecrypted://.+" })
 public class ARDMediathek extends PluginForHost {
     private String             dllink                           = null;
-    private boolean            server_issues                    = false;
     public static final String PROPERTY_CRAWLER_FORCED_FILENAME = "crawler_forced_filename";
     public static final String PROPERTY_ITEM_ID                 = "itemId";
 
@@ -113,7 +114,7 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        dllink = link.getDownloadURL();
+        dllink = link.getPluginPatternMatcher();
         /* Keep filenames defined by crawler plugin even after user resets this link. */
         if (link.hasProperty(PROPERTY_CRAWLER_FORCED_FILENAME)) {
             link.setFinalFileName(link.getStringProperty(PROPERTY_CRAWLER_FORCED_FILENAME));
@@ -124,11 +125,14 @@ public class ARDMediathek extends PluginForHost {
         br.setFollowRedirects(true);
         if (dllink.contains(".m3u8")) {
             checkFFProbe(link, "Download a HLS Stream");
-            final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
+            br.getPage(this.dllink);
+            /* Check for offline and GEO-blocked */
+            this.connectionErrorhandling(br.getHttpConnection());
+            final List<M3U8Playlist> list = M3U8Playlist.parseM3U8(br);
+            final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), list);
             final StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                server_issues = true;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 final long estimatedSize = downloader.getEstimatedSize();
                 if (estimatedSize > 0) {
@@ -142,6 +146,7 @@ public class ARDMediathek extends PluginForHost {
                 brc.getHeaders().put("Accept-Encoding", "identity");
                 con = brc.openHeadConnection(dllink);
                 if (!looksLikeDownloadableContent(con, link)) {
+                    connectionErrorhandling(con);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } finally {
@@ -157,6 +162,7 @@ public class ARDMediathek extends PluginForHost {
                 con = brc.openHeadConnection(dllink);
                 if (!looksLikeDownloadableContent(con, link)) {
                     /* Content should definitely be offline in this case! */
+                    connectionErrorhandling(con);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (con.getCompleteContentLength() > 0) {
@@ -190,10 +196,16 @@ public class ARDMediathek extends PluginForHost {
         download(link);
     }
 
+    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403: GEO-blocked");
+        } else if (con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
     private void download(final DownloadLink link) throws Exception {
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains(".m3u8")) {
@@ -219,13 +231,8 @@ public class ARDMediathek extends PluginForHost {
                 } catch (IOException e) {
                     logger.log(e);
                 }
-                if (br.getHttpConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-                }
+                this.connectionErrorhandling(dl.getConnection());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             if (this.dl.startDownload()) {
                 this.postprocess(link);

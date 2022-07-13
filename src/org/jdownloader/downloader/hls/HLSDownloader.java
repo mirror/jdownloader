@@ -158,6 +158,10 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     private final void init(final DownloadLink link, Browser br, String m3uUrl, final String persistantParameters) throws Exception {
+        init(link, br, m3uUrl, persistantParameters, null);
+    }
+
+    private final void init(final DownloadLink link, Browser br, String m3uUrl, final String persistantParameters, final List<M3U8Playlist> list) throws Exception {
         setPersistentParameters(persistantParameters);
         this.m3uUrl = Request.getLocation(m3uUrl, br.getRequest());
         this.sourceBrowser = br.cloneBrowser();
@@ -190,7 +194,11 @@ public class HLSDownloader extends DownloadInterface {
                 super.setResumeable(value);
             }
         };
-        m3u8Playlists = getM3U8Playlists();
+        if (list != null) {
+            this.m3u8Playlists = list;
+        } else {
+            this.m3u8Playlists = getM3U8Playlists();
+        }
         if (m3u8Playlists.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -202,6 +210,10 @@ public class HLSDownloader extends DownloadInterface {
 
     public HLSDownloader(final DownloadLink link, final Browser br, final String m3uUrl) throws Exception {
         init(link, br, m3uUrl, null);
+    }
+
+    public HLSDownloader(final DownloadLink link, final Browser br, final String m3uUrl, final List<M3U8Playlist> list) throws Exception {
+        init(link, br, m3uUrl, null, list);
     }
 
     protected void setPersistentParameters(final String persistentParameters) {
@@ -305,11 +317,10 @@ public class HLSDownloader extends DownloadInterface {
 
     public StreamInfo getProbe(int index) throws Exception {
         try {
-            if (index < getM3U8Playlists().size()) {
-                currentPlayListIndex.set(index);
-            } else {
+            if (index > getM3U8Playlists().size() - 1) {
                 throw new IllegalArgumentException("Index " + index + " > m3u8 playlist size " + getM3U8Playlists().size());
             }
+            currentPlayListIndex.set(index);
             final FFprobe ffprobe = new FFprobe() {
                 @Override
                 public LogInterface getLogger() {
@@ -898,8 +909,8 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     protected List<M3U8Playlist> getM3U8Playlists() throws Exception {
-        final Browser br = getRequestBrowser();
         // work around for longggggg m3u pages
+        final Browser br = this.getRequestBrowser();
         final int was = br.getLoadLimit();
         // lets set the connection limit to our required request
         br.setLoadLimit(Integer.MAX_VALUE);
