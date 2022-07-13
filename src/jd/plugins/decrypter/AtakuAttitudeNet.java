@@ -76,7 +76,8 @@ public class AtakuAttitudeNet extends PluginForDecrypt {
         }
         final String contentID = br.getRegex("class=\"fiche_id\"[^>]*>(\\d+)</span>").getMatch(0);
         if (contentID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("Failed to find any downloadable content");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<h1 itemprop=\"name\">([^<]+)<a").getMatch(0);
         if (fpName == null) {
