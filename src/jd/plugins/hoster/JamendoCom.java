@@ -276,7 +276,7 @@ public class JamendoCom extends PluginForHost {
         br.setCookie(host, "jammusiclang", "en");
         br.setCookie(host, "jamapplication", "true");
         br.getHeaders().put("x-jam-version", "2udos4");
-        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setFollowRedirects(true);
         return br;
     }
