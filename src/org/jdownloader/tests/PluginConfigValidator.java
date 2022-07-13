@@ -7,11 +7,11 @@ import java.util.List;
 import org.appwork.storage.simplejson.mapper.ClassCache;
 import org.appwork.storage.simplejson.mapper.ClassCache.Rules;
 import org.appwork.storage.tests.ClassPathScanner;
-import org.appwork.storage.tests.StorableValidator;
+import org.appwork.storage.tests.StorableValidatorTest;
 import org.appwork.testframework.IgnoreInAWTest;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
-public class PluginConfigValidator extends StorableValidator {
+public class PluginConfigValidator extends StorableValidatorTest {
     public static void main(String[] args) {
         run();
     }
