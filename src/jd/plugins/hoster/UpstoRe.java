@@ -249,7 +249,8 @@ public class UpstoRe extends antiDDoSForHost {
                 final String captchaResponse = hCaptcha.getToken();
                 final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000);
                 wait -= passedTime;
-                // wait += 1;
+                /* Make sure we wait long enough */
+                wait += 1;
                 if (wait > 0) {
                     sleep(wait * 1000l, link);
                 }
