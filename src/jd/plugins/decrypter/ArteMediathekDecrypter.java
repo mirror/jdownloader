@@ -705,7 +705,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         case format_intern_unknown:
             return "no_subtitle";
         default:
-            /* Obviously this should never happen */
+            /* Developer mistake */
             return "WTF_PLUGIN_FAILED";
         }
     }
