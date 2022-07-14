@@ -41,7 +41,7 @@ public class CaptchaIndicator extends IconedProcessIndicator implements Challeng
         this.job = job;
         this.statusBar = statusBar;
         setTitle(_GUI.T.StatusBarImpl_initGUI_captcha());
-        final Icon icon = new ExtMergedIcon(getDomainInfo().getFavIcon()).add(ocr, 6, 6);
+        final Icon icon = new ExtMergedIcon(getDomainInfo()).add(ocr, 6, 6);
         updatePainter(icon, Color.WHITE, Color.GRAY, Color.WHITE, Color.GREEN, Color.LIGHT_GRAY, Color.GREEN);
         setDescription(_GUI.T.gui_captchaWindow_waitForInput(job.getChallenge().getHost()));
         setEnabled(true);

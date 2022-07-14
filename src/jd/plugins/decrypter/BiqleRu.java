@@ -21,18 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.BiqleRuConfig;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -47,7 +35,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daftsex.com", "artsporn.com", "18.ukdevilz.com", "adult.noodlemagazine.com", "novids.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daftsex\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?artsporn\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?18\\.ukdevilz\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?adult\\.noodlemagazine\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?novids\\.com/video/(?:-)?\\d+_\\d+" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.BiqleRuConfig;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daftsex.com", "artsporn.com", "18.ukdevilz.com", "adult.noodlemagazine.com", "novids.com", "noodlemagazine.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daftsex\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?artsporn\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?18\\.ukdevilz\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?adult\\.noodlemagazine\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?novids\\.com/video/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?noodlemagazine\\.com/watch/(?:-)?\\d+_\\d+" })
 public class BiqleRu extends PluginForDecrypt {
     public BiqleRu(PluginWrapper wrapper) {
         super(wrapper);

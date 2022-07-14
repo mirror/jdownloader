@@ -19,13 +19,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,6 +35,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -101,7 +101,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return br.getRegex("var (app_vars.*?)</script>").getMatch(0);
     }
 
-    protected Form getContinueForm(CryptedLink param, final Browser br) {
+    protected Form getContinueForm(CryptedLink param, Form form, final Browser br) {
         /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
         Form f2 = br.getFormbyKey("_Token[fields]");
         if (f2 == null) {
@@ -162,6 +162,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         String recaptchaV2Response = null;
         /* 2018-07-18: Not all sites require a captcha to be solved */
         CaptchaType captchaType = getCaptchaType();
+        Form lastSubmitForm = null;
         if (evalulateCaptcha(captchaType, param.getCryptedUrl())) {
             logger.info("Captcha required");
             boolean requiresCaptchaWhichCanFail = false;
@@ -210,9 +211,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         /**
                          * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                         * </br>
-                         * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
-                         * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
+                         * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another
+                         * website as the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from
+                         * happening.
                          */
                         final String reCaptchaSiteURL;
                         if (this.getSpecialReferer() != null) {
@@ -259,11 +260,15 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         logger.info("no captcha?!");
                     }
                 }
+                lastSubmitForm = form;
                 submitForm(form);
                 // refresh appVars!
                 appVars = regexAppVars(this.br);
                 captchaType = getCaptchaType();
                 if (getLinksGoForm(param, br) != null) {
+                    captchaFailed = false;
+                    break;
+                } else if (captchaType == null) {
                     captchaFailed = false;
                     break;
                 } else if (requiresCaptchaWhichCanFail && this.br.containsHTML("(?i)The CAPTCHA was incorrect")) {
@@ -286,10 +291,10 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
              */
             // this.submitForm(form);
         }
-        hookAfterCaptcha(this.br);
+        hookAfterCaptcha(this.br, lastSubmitForm);
         final boolean skipWait = waittimeIsSkippable(sourceHost);
         /** TODO: Fix waittime-detection for tmearn.com */
-        Form f2 = getContinueForm(param, br);
+        Form f2 = getContinueForm(param, lastSubmitForm, br);
         if (f2 != null) {
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -371,8 +376,13 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return ret;
     }
 
-    /** Override to do something after the captcha (also gets called when no captcha was needed). */
-    protected void hookAfterCaptcha(final Browser br) throws Exception {
+    /**
+     * Override to do something after the captcha (also gets called when no captcha was needed).
+     *
+     * @param form
+     *            TODO
+     */
+    protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
     }
 
     /** Accesses input URL and handles "Pre-AdLinkFly" redirects. */
@@ -431,10 +441,10 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         }
         if (firstRedirect != null) {
             /**
-             * Check if this is redirect redirect or if it really is the one we expect. </br>
-             * Some websites redirect e.g. to a fake blog and only redirect back to the usual handling if you re-access the main URL with
-             * that fake blog as referer header e.g.: adshort.co, ez4short.com </br>
-             * In some cases this special referer is pre-given via getSpecialReferer in which we do not have to re-check.
+             * Check if this is redirect redirect or if it really is the one we expect. </br> Some websites redirect e.g. to a fake blog and
+             * only redirect back to the usual handling if you re-access the main URL with that fake blog as referer header e.g.:
+             * adshort.co, ez4short.com </br> In some cases this special referer is pre-given via getSpecialReferer in which we do not have
+             * to re-check.
              */
             if (getSpecialReferer() != null) {
                 /* Assume that redirect redirects to external website and use it as our final result. */
@@ -477,7 +487,16 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 return form;
             }
         }
-        return br.getForm(0);
+        if (forms.length > 0) {
+            final Form maybe = forms[0];
+            if (maybe.getInputFields().size() < 2) {
+                return null;
+            } else {
+                return maybe;
+            }
+        } else {
+            return null;
+        }
     }
 
     /**
