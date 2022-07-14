@@ -515,34 +515,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         OTHER;
 
         private static AudioLanguage parse(final String apiosCode) {
-            // final String originalVersion = new Regex(apiosCode, "^VO(F|A)($|-)").getMatch(0);
-            // if (originalVersion != null) {
-            // // original version
-            // if ("F".equals(originalVersion)) {
-            // return FRANCAIS;
-            // } else if ("A".equals(originalVersion)) {
-            // return GERMAN;
-            // } else {
-            // return OTHER;
-            // }
-            // }
-            // final String nonOriginalVersion = new Regex(apiosCode, "^V(F|A)($|-)").getMatch(0);
-            // if (nonOriginalVersion != null) {
-            // // non-original version
-            // if ("F".equals(nonOriginalVersion)) {
-            // return FRANCAIS;
-            // } else if ("A".equals(nonOriginalVersion)) {
-            // return GERMAN;
-            // } else {
-            // return OTHER;
-            // }
-            // }
-            final String nonOriginalVersion = new Regex(apiosCode, "^VO?(F|A)($|-)").getMatch(0);
-            if (nonOriginalVersion != null) {
-                // non-original version
-                if ("F".equals(nonOriginalVersion)) {
+            final String languageChar = ArteMediathekV3.regexAudioLanguageChar(apiosCode);
+            if (languageChar != null) {
+                /* TODO: Add support for more languages */
+                if ("F".equals(languageChar)) {
                     return FRANCAIS;
-                } else if ("A".equals(nonOriginalVersion)) {
+                } else if ("A".equals(languageChar)) {
                     return GERMAN;
                 } else {
                     return OTHER;
@@ -572,16 +550,17 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     return OTHER;
                 }
             }
-            if (apiosCode.endsWith("[ESP]")) {
-                return SPANISH;
+            if (apiosCode.endsWith("[ANG]")) {
+                return ENGLISH;
             } else if (apiosCode.endsWith("[ITA]")) {
                 return ITALIAN;
             } else if (apiosCode.endsWith("[POL]")) {
                 return POLISH;
-            } else if (apiosCode.endsWith("[ANG]")) {
-                return ENGLISH;
+            } else if (apiosCode.endsWith("[ESP]")) {
+                return SPANISH;
+            } else {
+                return OTHER;
             }
-            return OTHER;
         }
     }
 
@@ -592,13 +571,17 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         HEARING_IMPAIRED;
 
         private static SubtitleType parse(final String apiosCode) {
-            if (apiosCode.endsWith("-STA") || apiosCode.endsWith("-STF")) {
+            if (apiosCode.matches("[A-Z]+-ST(A|F)")) {
+                /* Forced subtitles e.g. parts of original film got foreign language -> Those parts are subtitled */
                 return PARTIAL;
-            } else if (apiosCode.endsWith("-STM")) {
+            } else if (apiosCode.matches("[A-Z]+-STMA?.*?")) {
+                /* Subtitle for hearing impaired ppl */
                 return HEARING_IMPAIRED;
-            } else if (apiosCode.endsWith("-ST")) {
+            } else if (apiosCode.matches("[A-Z]+-STE?.*?")) {
+                /* Normal subtitles */
                 return FULL;
             } else {
+                /* No subtitles */
                 return NONE;
             }
         }
@@ -632,18 +615,24 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     public static interface VersionInfo {
         VersionType getVersionType();
 
-        AudioLanguage getVideoLanguage();
+        AudioLanguage getAudioLanguage();
 
         SubtitleLanguage getSubtitleLanguage();
 
         SubtitleType getSubtitleType();
 
-        boolean hasSubtitle();
+        boolean hasAnySubtitle();
+
+        boolean hasSubtitleFull();
+
+        boolean hasSubtitlePartial();
+
+        boolean hasSubtitleForHearingImpaired();
     }
 
     public static VersionInfo parseVersionInfo(final String apiosCode) {
         final SubtitleType subtitleType = SubtitleType.parse(apiosCode);
-        final AudioLanguage videoLanguage = AudioLanguage.parse(apiosCode);
+        final AudioLanguage audioLanguage = AudioLanguage.parse(apiosCode);
         final SubtitleLanguage subtitleLanguage = SubtitleLanguage.parse(apiosCode);
         final VersionType versionType = VersionType.parse(apiosCode);
         return new VersionInfo() {
@@ -658,8 +647,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
 
             @Override
-            public AudioLanguage getVideoLanguage() {
-                return videoLanguage;
+            public AudioLanguage getAudioLanguage() {
+                return audioLanguage;
             }
 
             @Override
@@ -672,8 +661,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final StringBuilder sb = new StringBuilder();
                 sb.append(getVersionType());
                 sb.append("_");
-                sb.append(getVideoLanguage());
-                if (hasSubtitle()) {
+                sb.append(getAudioLanguage());
+                if (hasAnySubtitle()) {
                     sb.append("_");
                     sb.append(getSubtitleType());
                     sb.append("_");
@@ -683,8 +672,39 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
 
             @Override
-            public boolean hasSubtitle() {
-                return !SubtitleType.NONE.equals(getSubtitleType());
+            public boolean hasAnySubtitle() {
+                if (SubtitleType.NONE.equals(getSubtitleType())) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            @Override
+            public boolean hasSubtitleFull() {
+                if (SubtitleType.FULL.equals(getSubtitleType())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public boolean hasSubtitlePartial() {
+                if (SubtitleType.PARTIAL.equals(getSubtitleType())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public boolean hasSubtitleForHearingImpaired() {
+                if (SubtitleType.HEARING_IMPAIRED.equals(getSubtitleType())) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
         };
     }
