@@ -25,9 +25,9 @@ import org.jdownloader.downloader.hls.M3U8Playlist;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -118,11 +118,12 @@ public class BbcCom extends PluginForHost {
         }
         if (link.getPluginPatternMatcher().matches(TYPE_OLD)) {
             /* Legacy handling TODO: Remove in 05/2023 */
+            logger.info("Going through legacy handling...");
             final BbcComiPlayerCrawler crawlerPlugin = (BbcComiPlayerCrawler) this.getNewPluginForDecryptInstance(BbcComiPlayerCrawler.getPluginDomains().get(numberofFoundMedia)[0]);
-            final ArrayList<DownloadLink> results = crawlerPlugin.decryptIt(new CrawledLink(BbcComDecrypter.generateInternalVideoURL(this.getFID(link))));
+            final ArrayList<DownloadLink> results = crawlerPlugin.decryptIt(new CryptedLink(BbcComDecrypter.generateInternalVideoURL(this.getFID(link))), null);
             DownloadLink result = null;
             for (final DownloadLink resultTmp : results) {
-                if (resultTmp.getFinalFileName().endsWith(".mp4")) {
+                if (isVideo(resultTmp)) {
                     result = resultTmp;
                     break;
                 }
@@ -131,7 +132,6 @@ public class BbcCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link.setPluginPatternMatcher(result.getPluginPatternMatcher());
-            link.setProperties(result.getProperties());
         }
         if (!isDownload) {
             final String directurl = link.getPluginPatternMatcher();
