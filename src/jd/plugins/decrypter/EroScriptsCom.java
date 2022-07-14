@@ -112,6 +112,7 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
                 }
             }
             myfp.add(l);
+            matched.add(l);
         }
 
         List<Entry<DownloadLink[], Integer>> sortedMatches() {
@@ -136,21 +137,55 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
         void matchMaking() {
             matched = new ArrayList<DownloadLink>();
             if (scripts.size() == 1 && videos.size() == 1) {
-                matched.add(scripts.get(0));
-                matched.add(videos.get(0));
                 renameBase(scripts.get(0), title, title);
                 renameBase(videos.get(0), title, title);
             } else {
                 List<Entry<DownloadLink[], Integer>> matchScores = sortedMatches();
+                Map<DownloadLink, List<DownloadLink>> videoScripts = new HashMap<DownloadLink, List<DownloadLink>>();
                 for (Entry<DownloadLink[], Integer> e : matchScores) {
-                    if (matched.contains(e.getKey()[0]) || matched.contains(e.getKey()[1]) || e.getValue() <= 0) {
+                    DownloadLink v = e.getKey()[0];
+                    DownloadLink s = e.getKey()[1];
+                    if (e.getValue() <= 2 || matched.contains(s)) {
                         continue;
                     }
-                    String scriptBase = e.getKey()[1].getName().split("\\.", 2)[0];
-                    renameBase(e.getKey()[0], scriptBase, scriptBase);
-                    renameBase(e.getKey()[1], scriptBase, scriptBase);
-                    matched.add(e.getKey()[0]);
-                    matched.add(e.getKey()[1]);
+                    if (!videoScripts.containsKey(v)) {
+                        videoScripts.put(v, new ArrayList<DownloadLink>());
+                    }
+                    if (videoScripts.get(v).size() == 0 || videos.size() == 1) {
+                        videoScripts.get(v).add(s);
+                        matched.add(s);
+                    }
+                }
+                for (Entry<DownloadLink, List<DownloadLink>> v : videoScripts.entrySet()) {
+                    if (v.getValue().size() == 1) {
+                        String scriptBase = v.getValue().get(0).getName().split("\\.", 2)[0];
+                        renameBase(v.getKey(), scriptBase, scriptBase);
+                        renameBase(v.getValue().get(0), scriptBase, scriptBase);
+                    } else {
+                        String scriptBase = "";
+                        int charIndex = 0;
+                        boolean nextChar = true;
+                        do {
+                            char c = v.getValue().get(0).getName().charAt(charIndex);
+                            for (DownloadLink s : v.getValue()) {
+                                if (s.getName().charAt(charIndex) != c) {
+                                    nextChar = false;
+                                    break;
+                                }
+                            }
+                            if (nextChar) {
+                                scriptBase += c;
+                                charIndex++;
+                            }
+                        } while (nextChar);
+                        if (charIndex > 1) {
+                            renameBase(v.getKey(), scriptBase, scriptBase);
+                            for (DownloadLink s : v.getValue()) {
+                                String myScriptBase = s.getName().split("\\.", 2)[0];
+                                renameBase(s, scriptBase, myScriptBase + scriptBase.substring(scriptBase.length()));
+                            }
+                        }
+                    }
                 }
             }
             if (fp == null) {
