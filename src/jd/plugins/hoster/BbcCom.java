@@ -131,12 +131,13 @@ public class BbcCom extends PluginForHost {
             if (result == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* Update pluginPatternMatcher so next time legacy handling is not used anymore. */
             link.setPluginPatternMatcher(result.getPluginPatternMatcher());
         }
         if (!isDownload) {
             final String directurl = link.getPluginPatternMatcher();
             if (isVideo(link)) {
-                checkFFProbe(link, "Download a HLS Stream");
+                checkFFProbe(link, "Check a HLS Stream");
                 br.getPage(directurl);
                 /* Check for offline and GEO-blocked */
                 this.connectionErrorhandling(br.getHttpConnection());
@@ -146,9 +147,9 @@ public class BbcCom extends PluginForHost {
                 if (streamInfo == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    final long estimatedSize = downloader.getEstimatedSize();
-                    if (estimatedSize > 0) {
-                        link.setDownloadSize(estimatedSize);
+                    final long estimatedFilesize = downloader.getEstimatedSize();
+                    if (estimatedFilesize > 0) {
+                        link.setDownloadSize(estimatedFilesize);
                     }
                 }
             } else {
