@@ -14,41 +14,48 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "arte.tv", type = Type.CRAWLER)
 public interface ArteMediathekConfig extends PluginConfigInterface {
-    final String                                        text_CrawlThumbnail                 = "Crawl thumbnail?";
-    final String                                        text_QualitySelectionMode           = "Define how this plugin should pick your desired qualities";
-    final String                                        text_CrawlSubtitledBurnedInVersions = "Crawl subtitled burned in versions?";
-    final String                                        text_CrawlHTTP240p                  = "Crawl 240p?";
-    final String                                        text_CrawlHTTP360p                  = "Crawl 360p?";
-    final String                                        text_CrawlHTTP480p                  = "Crawl 480p?";
-    final String                                        text_CrawlHTTP720p                  = "Crawl 720p?";
-    final String                                        text_CrawlHTTP1080p                 = "Crawl 1080p?";
-    final String                                        text_CrawlUnknownHTTPVideoQualities = "Crawl unknown http video qualities?";
-    final String                                        text_LanguageSelectionMode          = "Language selection mode";
-    final String                                        text_CrawlLanguageEnglish           = "Crawl language english?";
-    final String                                        text_CrawlLanguageFrench            = "Crawl language french?";
-    final String                                        text_CrawlLanguageGerman            = "Crawl language german?";
-    final String                                        text_CrawlLanguageItalian           = "Crawl language italian?";
-    final String                                        text_CrawlLanguagePolish            = "Crawl language polish?";
-    final String                                        text_CrawlLanguageUnknown           = "Crawl unknown languages?";
-    final String                                        text_QualitySelectionFallbackMode   = "Define what to add if based on your selection no results are found";
-    final String                                        text_GetFilenameSchemeTypeV2        = "Select filename scheme type";
-    final String                                        text_GetFilenameScheme              = "Enter filename scheme";
-    final String                                        text_GetPackagenameSchemeType       = "Select package name scheme type";
-    final String                                        text_GetPackagenameScheme           = "Enter package name scheme";
-    // final String text_CrawlSubtitledBurnedInVersionsHearingImpaired = "Crawl subtitled burned in versions for hearing impaired?";
-    public static final ArteMediathekConfig.TRANSLATION TRANSLATION                         = new TRANSLATION();
+    final String                                        text_CrawlThumbnail                                = "Crawl thumbnail?";
+    final String                                        text_QualitySelectionMode                          = "Define how this plugin should pick your desired qualities";
+    final String                                        text_CrawlSubtitledBurnedInVersionsFull            = "Crawl subtitled burned in versions (full)?";
+    final String                                        text_CrawlSubtitledBurnedInVersionsPartial         = "Crawl subtitled burned in versions (partial/forced)?";
+    final String                                        text_CrawlSubtitledBurnedInVersionsHearingImpaired = "Crawl subtitled burned in versions (hearing impaired)?";
+    final String                                        text_CrawlHTTP240p                                 = "Crawl 240p?";
+    final String                                        text_CrawlHTTP360p                                 = "Crawl 360p?";
+    final String                                        text_CrawlHTTP480p                                 = "Crawl 480p?";
+    final String                                        text_CrawlHTTP720p                                 = "Crawl 720p?";
+    final String                                        text_CrawlHTTP1080p                                = "Crawl 1080p?";
+    final String                                        text_CrawlUnknownHTTPVideoQualities                = "Crawl unknown http video qualities?";
+    final String                                        text_LanguageSelectionMode                         = "Language selection mode";
+    final String                                        text_CrawlLanguageEnglish                          = "Crawl language english?";
+    final String                                        text_CrawlLanguageFrench                           = "Crawl language french?";
+    final String                                        text_CrawlLanguageGerman                           = "Crawl language german?";
+    final String                                        text_CrawlLanguageItalian                          = "Crawl language italian?";
+    final String                                        text_CrawlLanguagePolish                           = "Crawl language polish?";
+    final String                                        text_CrawlLanguageSpanish                          = "Crawl language spanish?";
+    final String                                        text_CrawlLanguageUnknown                          = "Crawl unknown languages?";
+    final String                                        text_QualitySelectionFallbackMode                  = "Define what to add if based on your selection no results are found";
+    final String                                        text_GetFilenameSchemeTypeV2                       = "Select filename scheme type";
+    final String                                        text_GetFilenameScheme                             = "Enter filename scheme";
+    final String                                        text_GetPackagenameSchemeType                      = "Select package name scheme type";
+    final String                                        text_GetPackagenameScheme                          = "Enter package name scheme";
+    public static final ArteMediathekConfig.TRANSLATION TRANSLATION                                        = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getCrawlThumbnail_label() {
             return text_CrawlThumbnail;
         }
 
-        public String getCrawlSubtitledBurnedInVersions_label() {
-            return text_CrawlSubtitledBurnedInVersions;
+        public String getCrawlSubtitledBurnedInVersionsFull_label() {
+            return text_CrawlSubtitledBurnedInVersionsFull;
         }
-        // public String getCrawlSubtitledBurnedInVersionsHearingImpaired_label() {
-        // return text_CrawlSubtitledBurnedInVersionsHearingImpaired;
-        // }
+
+        public String getCrawlSubtitledBurnedInVersionsPartial_label() {
+            return text_CrawlSubtitledBurnedInVersionsPartial;
+        }
+
+        public String getCrawlSubtitledBurnedInVersionsHearingImpaired_label() {
+            return text_CrawlSubtitledBurnedInVersionsHearingImpaired;
+        }
 
         public String getQualitySelectionMode_label() {
             return text_QualitySelectionMode;
@@ -102,6 +109,10 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
             return text_CrawlLanguagePolish;
         }
 
+        public String getCrawlLanguageSpanish_label() {
+            return text_CrawlLanguageSpanish;
+        }
+
         public String getCrawlLanguageUnknown_label() {
             return text_CrawlLanguageUnknown;
         }
@@ -137,11 +148,27 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersions)
+    @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersionsFull)
     @Order(60)
-    boolean isCrawlSubtitledBurnedInVersions();
+    boolean isCrawlSubtitledBurnedInVersionsFull();
 
-    void setCrawlSubtitledBurnedInVersions(boolean b);
+    void setCrawlSubtitledBurnedInVersionsFull(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersionsPartial)
+    @Order(61)
+    boolean isCrawlSubtitledBurnedInVersionsPartial();
+
+    void setCrawlSubtitledBurnedInVersionsPartial(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersionsHearingImpaired)
+    @Order(62)
+    boolean isCrawlSubtitledBurnedInVersionsHearingImpaired();
+
+    void setCrawlSubtitledBurnedInVersionsHearingImpaired(boolean b);
 
     public static enum QualitySelectionMode implements LabelInterface {
         BEST {
@@ -219,13 +246,6 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     boolean isCrawlUnknownHTTPVideoQualities();
 
     void setCrawlUnknownHTTPVideoQualities(boolean b);
-    // @AboutConfig
-    // @DefaultBooleanValue(true)
-    // @DescriptionForConfigEntry(text_CrawlSubtitledBurnedInVersionsHearingImpaired)
-    // @Order(200)
-    // boolean isCrawlSubtitledBurnedInVersionsHearingImpaired();
-    //
-    // void setCrawlSubtitledBurnedInVersionsHearingImpaired(boolean b);
 
     public static enum LanguageSelectionMode implements LabelInterface {
         BY_URL {
@@ -289,6 +309,14 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     boolean isCrawlLanguagePolish();
 
     void setCrawlLanguagePolish(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_CrawlLanguageSpanish)
+    @Order(305)
+    boolean isCrawlLanguageSpanish();
+
+    void setCrawlLanguageSpanish(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)

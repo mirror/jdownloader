@@ -241,7 +241,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
                 final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
                 final String audioCode = videoStream.get("audioCode").toString(); // e.g. VF, VF-STA, VA, ...
-                final String audioChar = new Regex(audioCode, "^VO?([A-Z])").getMatch(0);
+                final String audioChar = regexAudioLanguageChar(audioCode);
                 final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
                 /* Set properties which we later need for custom filenames. */
                 link.setProperty(PROPERTY_VIDEO_ID, videoID);
@@ -284,10 +284,20 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                  * Skip subtitled versions if not wished by user. This needs to happen before BEST selection otherwise subtitled versions
                  * would still be incorperated in BEST selection which would be wrong.
                  */
-                final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) videoStream.get("subtitles");
-                if (!subtitles.isEmpty() && !cfg.isCrawlSubtitledBurnedInVersions()) {
-                    continue;
+                if (versionInfo.hasAnySubtitle()) {
+                    if (versionInfo.hasSubtitleFull() && !cfg.isCrawlSubtitledBurnedInVersionsFull()) {
+                        continue;
+                    } else if (versionInfo.hasSubtitleForHearingImpaired() && !cfg.isCrawlSubtitledBurnedInVersionsPartial()) {
+                        continue;
+                    }
+                    if (versionInfo.hasSubtitleForHearingImpaired() && !cfg.isCrawlSubtitledBurnedInVersionsHearingImpaired()) {
+                        continue;
+                    }
                 }
+                // final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) videoStream.get("subtitles");
+                // if (!subtitles.isEmpty() && !cfg.isCrawlSubtitledBurnedInVersions()) {
+                // continue;
+                // }
                 /* No go through all other skip conditions except video resolution */
                 if (this.knownLanguages.contains(audioChar)) {
                     if (!selectedLanguages.contains(audioChar)) {
@@ -394,6 +404,10 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         return ret;
     }
 
+    public static String regexAudioLanguageChar(final String audioCode) {
+        return new Regex(audioCode, "^VO?([A-Z])").getMatch(0);
+    }
+
     private String getAndSetFilename(final DownloadLink link) {
         String filename;
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
@@ -436,7 +450,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     }
 
     private final List<Integer> knownQualitiesHeight = Arrays.asList(new Integer[] { 1080, 720, 480, 360, 240 });
-    private final List<String>  knownLanguages       = Arrays.asList(new String[] { "english_todo", "F", "A", "italian_todo" });
+    private final List<String>  knownLanguages       = Arrays.asList(new String[] { "english_todo", "F", "A", "italian_todo", "polish_todo", "spanish_todo" });
 
     private List<String> getSelectedLanguages(final String url) throws PluginException {
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
@@ -526,6 +540,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             return "italian_todo";
         } else if (iso6391Code.equalsIgnoreCase("pl")) {
             return "polish_todo";
+        } else if (iso6391Code.equalsIgnoreCase("es")) {
+            return "spanish_todo";
         } else {
             /* Unknown/unsupported code */
             return null;
