@@ -75,7 +75,7 @@ public class FilestoreTo extends PluginForHost {
         if (!StringUtils.endsWithCaseInsensitive(br.getURL(), "/konto")) {
             br.getPage("/konto");
         }
-        final String validUntilString = br.getRegex("Premium-Status\\s*</small>\\s*<div class=\"value text-success\">\\s*(.*?)\\s*Uhr").getMatch(0);
+        final String validUntilString = br.getRegex("(?i)Premium-Status\\s*</small>\\s*<div class=\"value text-success\">\\s*(.*?)\\s*Uhr").getMatch(0);
         if (validUntilString != null) {
             final long until = TimeFormatter.getMilliSeconds(validUntilString, "dd'.'MM'.'yyyy' - 'HH':'mm", Locale.ENGLISH);
             ai.setValidUntil(until);
@@ -296,10 +296,14 @@ public class FilestoreTo extends PluginForHost {
             }
             br.submitForm(dlform);
         }
-        final String dllink = getDllink(br);
+        String dllink = getDllink(br);
         if (StringUtils.isEmpty(dllink)) {
             checkErrors(link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if ((account == null || account.getType() == AccountType.PREMIUM) && PluginJsonConfig.get(FilestoreToConfig.class).isModifyFinalDownloadurls()) {
+            /* See: https://board.jdownloader.org/showthread.php?t=91192 */
+            dllink = dllink.replaceFirst("/free/", "/premium/");
         }
         if (!resume) {
             maxChunks = 1;

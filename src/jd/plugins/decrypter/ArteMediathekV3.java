@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig;
@@ -124,11 +125,9 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // TODO: Add pagination
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Object errorsO = entries.get("errors");
         if (errorsO != null) {
-            /* TODO: Maybe display more detailed errormessage to user. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final List<Map<String, Object>> programs = (List<Map<String, Object>>) entries.get("programs");
@@ -139,7 +138,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlProgram(final CryptedLink param, final Map<String, Object> program) throws IOException, PluginException {
-        // TODO: Add support for multiple videos(?), implement plugin settings
         final Map<String, Object> vid = (Map<String, Object>) program.get("mainVideo");
         return crawlVideo(param, vid);
     }
@@ -156,7 +154,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final String title = vid.get("title").toString();
         final String subtitle = (String) vid.get("subtitle");
         final String dateFormatted = new Regex(vid.get("firstBroadcastDate").toString(), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-        final String fullDescription = (String) vid.get("fullDescription");
+        final String fullDescription = (String) vid.get("shortDescription");
         final String platform = vid.get("platform").toString();
         final String videoStreamsAPIURL = JavaScriptEngineFactory.walkJson(vid, "links/videoStreams/web/href").toString();
         String titleAndSubtitle = title;
@@ -214,7 +212,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         /* Collect list of user desired/allowed qualities */
         final List<Integer> selectedQualitiesHeight = getSelectedHTTPQualities();
         final List<String> selectedLanguages = getSelectedLanguages(param.getCryptedUrl());
-        // TODO: Implement pagination?
         final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
         /*
          * Now filter by language, user selected qualities and so on. User can e.g. select multiple languages and best video quality of each
@@ -273,13 +270,16 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 /* Calculate filesize in a very simple way */
                 link.setDownloadSize(bitrate / 8 * 1024 * durationSeconds);
                 link._setFilePackage(fp);
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    link.setComment(vid.get("id").toString());
+                }
                 allResults.add(link);
                 /* Try to find the best version regardless of user settings. */
                 if (link.getView().getBytesTotal() > bestFilesize || best == null) {
                     best = link;
                     bestFilesize = link.getView().getBytesTotal();
                 }
-                /* Now check for skip conditions based on user settings */
+                /* Now go through all other skip conditions based on user settings except video resolution */
                 /*
                  * Skip subtitled versions if not wished by user. This needs to happen before BEST selection otherwise subtitled versions
                  * would still be incorperated in BEST selection which would be wrong.
@@ -294,11 +294,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                         continue;
                     }
                 }
-                // final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) videoStream.get("subtitles");
-                // if (!subtitles.isEmpty() && !cfg.isCrawlSubtitledBurnedInVersions()) {
-                // continue;
-                // }
-                /* No go through all other skip conditions except video resolution */
                 if (this.knownLanguages.contains(audioChar)) {
                     if (!selectedLanguages.contains(audioChar)) {
                         /* Skip unwanted languages */

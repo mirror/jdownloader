@@ -14,7 +14,9 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "filestore.to", type = Type.HOSTER)
 public interface FilestoreToConfig extends PluginConfigInterface {
-    public static TRANSLATION TRANSLATION = new TRANSLATION();
+    final String              TEXT_USER_AGENT                = "Enter User-Agent which will be used for all website http requests:";
+    final String              TEXT_MODIFY_FINAL_DOWNLOADURLS = "Modify final downloadurls in free mode: Replace '/free' with '/premium'?";
+    public static TRANSLATION TRANSLATION                    = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getGlobalNoFreeSlotsBlockModeEnabled_label() {
@@ -34,7 +36,11 @@ public interface FilestoreToConfig extends PluginConfigInterface {
         }
 
         public String getUserAgent_label() {
-            return "Enter User-Agent which will be used for all website http requests:";
+            return TEXT_USER_AGENT;
+        }
+
+        public String getModifyFinalDownloadurls_label() {
+            return TEXT_MODIFY_FINAL_DOWNLOADURLS;
         }
     }
 
@@ -75,9 +81,17 @@ public interface FilestoreToConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultStringValue("JDDEFAULT")
-    @DescriptionForConfigEntry("Enter User-Agent which will be used for all website http requests:")
+    @DescriptionForConfigEntry(TEXT_USER_AGENT)
     @Order(30)
     String getUserAgent();
 
     public void setUserAgent(final String userAgent);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @Order(35)
+    @DescriptionForConfigEntry(TEXT_MODIFY_FINAL_DOWNLOADURLS)
+    public boolean isModifyFinalDownloadurls();
+
+    public void setModifyFinalDownloadurls(boolean b);
 }
