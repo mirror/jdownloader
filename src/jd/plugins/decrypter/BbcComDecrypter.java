@@ -26,7 +26,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -285,7 +284,6 @@ public class BbcComDecrypter extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(description)) {
                         dl.setComment(description);
                     }
-                    dl.setAvailable(true);
                     dl.setName(BbcCom.getFilename(dl));
                     decryptedLinks.add(dl);
                 }
@@ -315,7 +313,6 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 }
                 dl.setProperty(BbcCom.PROPERTY_DATE, dateFormatted);
                 dl.setProperty(BbcCom.PROPERTY_TITLE, title);
-                dl.setAvailable(true);
                 dl.setName(BbcCom.getFilename(dl));
                 decryptedLinks.add(dl);
             }
@@ -460,17 +457,19 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 video.setProperty(BbcCom.PROPERTY_TITLE, Encoding.htmlDecode(title).trim());
             }
             video.setName(BbcCom.getFilename(video));
-            video.setAvailable(true);
             ret.add(video);
         }
         return ret;
     }
 
     private DownloadLink generateDownloadlink(final String videoid) {
-        final DownloadLink dl = createDownloadlink("http://bbcdecrypted/" + videoid);
-        dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        dl.setLinkID(videoid);
+        final DownloadLink dl = createDownloadlink(generateInternalVideoURL(videoid));
+        dl.setName(videoid + ".mp4");
         return dl;
+    }
+
+    public static String generateInternalVideoURL(final String videoid) {
+        return "https://" + BbcComiPlayerCrawler.getPluginDomains().get(0)[0] + "/video/" + videoid;
     }
 
     public static String formatDate(final String input) {
