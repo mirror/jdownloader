@@ -38,7 +38,7 @@ public class ShortEs extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected void hookAfterCaptcha(final Browser br) throws Exception {
+    protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
         /* 2021-12-10: Major workaround */
         final Form captchaForm = this.getCaptchaForm(br);
         final String sitekey = br.getRegex("(?i)'sitekey'\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
