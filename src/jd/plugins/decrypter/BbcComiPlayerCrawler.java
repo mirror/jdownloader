@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BbcCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 0, names = {}, urls = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BbcComiPlayerCrawler extends PluginForDecrypt {
     public BbcComiPlayerCrawler(PluginWrapper wrapper) {
         super(wrapper);
