@@ -260,7 +260,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     /**
-     * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the ARD Closed Captions subtitles to SRT subtitles. It is supposed to run after the completed download.
      *
      * @return The success of the conversion.
      */
