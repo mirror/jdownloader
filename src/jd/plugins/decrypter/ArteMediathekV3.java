@@ -47,7 +47,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.decrypter.ArteMediathekDecrypter.VersionInfo;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
@@ -211,7 +210,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         /* Crawl video streams */
         /* Collect list of user desired/allowed qualities */
         final List<Integer> selectedQualitiesHeight = getSelectedHTTPQualities();
-        final List<String> selectedLanguages = getSelectedLanguages(param.getCryptedUrl());
+        final List<Language> selectedLanguages = getSelectedLanguages(param.getCryptedUrl());
         final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
         /*
          * Now filter by language, user selected qualities and so on. User can e.g. select multiple languages and best video quality of each
@@ -256,7 +255,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setProperty(PROPERTY_AUDIO_LABEL, videoStream.get("audioLabel"));
                 link.setProperty(PROPERTY_PLATFORM, platform);
                 link.setProperty(PROPERTY_ORIGINAL_FILENAME, videoStream.get("filename"));
-                final VersionInfo versionInfo = ArteMediathekDecrypter.parseVersionInfo(audioCode);
+                final VersionInfo versionInfo = parseVersionInfo(audioCode);
                 /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[ADF] to be same as old vpi */
                 final String linkID = getHost() + "://" + new Regex(videoID, "(\\d+-\\d+)").getMatch(0) + "/" + versionInfo.toString() + "/" + "http_" + bitrate;
                 link.setContentUrl(param.getCryptedUrl());
@@ -294,17 +293,9 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                         continue;
                     }
                 }
-                if (this.knownLanguages.contains(audioChar)) {
-                    if (!selectedLanguages.contains(audioChar)) {
-                        /* Skip unwanted languages */
-                        continue;
-                    }
-                } else {
-                    if (!cfg.isCrawlLanguageUnknown()) {
-                        /* Skip this unknown language */
-                        continue;
-                    }
-                    logger.info("Adding unknown language allowed candidate: " + audioChar);
+                if (!selectedLanguages.contains(versionInfo.getAudioLanguage())) {
+                    /* Skip unwanted languages */
+                    continue;
                 }
                 if (link.getView().getBytesTotal() > bestAllowedFilesize || bestAllowed == null) {
                     bestAllowed = link;
@@ -445,29 +436,28 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     }
 
     private final List<Integer> knownQualitiesHeight = Arrays.asList(new Integer[] { 1080, 720, 480, 360, 240 });
-    private final List<String>  knownLanguages       = Arrays.asList(new String[] { "english_todo", "F", "A", "italian_todo", "polish_todo", "spanish_todo" });
 
-    private List<String> getSelectedLanguages(final String url) throws PluginException {
+    private List<Language> getSelectedLanguages(final String url) throws PluginException {
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
-        final List<String> selectedLanguages = new ArrayList<String>();
+        final List<Language> selectedLanguages = new ArrayList<Language>();
         if (cfg.getLanguageSelectionMode() == LanguageSelectionMode.ALL_SELECTED) {
             if (cfg.isCrawlLanguageEnglish()) {
-                // TODO
-                selectedLanguages.add("english_todo");
+                selectedLanguages.add(Language.ENGLISH);
             }
             if (cfg.isCrawlLanguageFrench()) {
-                selectedLanguages.add("F");
+                selectedLanguages.add(Language.FRENCH);
             }
             if (cfg.isCrawlLanguageGerman()) {
-                selectedLanguages.add("A");
+                selectedLanguages.add(Language.GERMAN);
             }
             if (cfg.isCrawlLanguageItalian()) {
-                // TODO
-                selectedLanguages.add("italian_todo");
+                selectedLanguages.add(Language.ITALIAN);
             }
             if (cfg.isCrawlLanguagePolish()) {
-                // TODO
-                selectedLanguages.add("polish_todo");
+                selectedLanguages.add(Language.POLISH);
+            }
+            if (cfg.isCrawlLanguageUnknown()) {
+                selectedLanguages.add(Language.OTHER);
             }
         } else {
             /* Language by URL */
@@ -476,7 +466,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 /* Developer mistake */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            selectedLanguages.add(iso6391CodeToArteAudioChar(langFromURL));
+            selectedLanguages.add(iso6391CodeToLanguageEnum(langFromURL));
         }
         return selectedLanguages;
     }
@@ -523,24 +513,217 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         }
     }
 
-    /** E.g. "de" --> "A" */
-    private static String iso6391CodeToArteAudioChar(final String iso6391Code) {
+    private static Language iso6391CodeToLanguageEnum(final String iso6391Code) {
         if (iso6391Code.equalsIgnoreCase("en")) {
-            return "english_todo";
+            return Language.ENGLISH;
         } else if (iso6391Code.equalsIgnoreCase("fr")) {
-            return "F";
+            return Language.FRENCH;
         } else if (iso6391Code.equalsIgnoreCase("de")) {
-            return "A";
+            return Language.GERMAN;
         } else if (iso6391Code.equalsIgnoreCase("it")) {
-            return "italian_todo";
+            return Language.ITALIAN;
         } else if (iso6391Code.equalsIgnoreCase("pl")) {
-            return "polish_todo";
+            return Language.POLISH;
         } else if (iso6391Code.equalsIgnoreCase("es")) {
-            return "spanish_todo";
+            return Language.SPANISH;
         } else {
             /* Unknown/unsupported code */
-            return null;
+            return Language.OTHER;
         }
+    }
+
+    private static enum Language {
+        ENGLISH,
+        FRENCH,
+        GERMAN,
+        ITALIAN,
+        SPANISH,
+        POLISH,
+        OTHER;
+    }
+
+    private static Language parseAudioLanguage(final String apiosCode) {
+        final String languageChar = ArteMediathekV3.regexAudioLanguageChar(apiosCode);
+        if (languageChar != null) {
+            /* TODO: Add support for more languages */
+            if ("F".equals(languageChar)) {
+                return Language.FRENCH;
+            } else if ("A".equals(languageChar)) {
+                return Language.GERMAN;
+            } else {
+                return Language.OTHER;
+            }
+        }
+        return Language.OTHER;
+    }
+
+    private static Language parseSubtitleLanguage(final String apiosCode) {
+        final String subtitleLanguage = new Regex(apiosCode, "-STM?(A|F)").getMatch(0);
+        if (subtitleLanguage != null) {
+            if ("F".equals(subtitleLanguage)) {
+                return Language.FRENCH;
+            } else if ("A".equals(subtitleLanguage)) {
+                return Language.GERMAN;
+            } else {
+                return Language.OTHER;
+            }
+        }
+        if (apiosCode.endsWith("[ANG]")) {
+            return Language.ENGLISH;
+        } else if (apiosCode.endsWith("[ITA]")) {
+            return Language.ITALIAN;
+        } else if (apiosCode.endsWith("[POL]")) {
+            return Language.POLISH;
+        } else if (apiosCode.endsWith("[ESP]")) {
+            return Language.SPANISH;
+        } else {
+            return Language.OTHER;
+        }
+    }
+
+    private static enum SubtitleType {
+        NONE,
+        FULL,
+        PARTIAL,
+        HEARING_IMPAIRED;
+
+        private static SubtitleType parse(final String apiosCode) {
+            if (apiosCode.matches("[A-Z]+-ST(A|F)")) {
+                /* Forced subtitles e.g. parts of original film got foreign language -> Those parts are subtitled */
+                return PARTIAL;
+            } else if (apiosCode.matches("[A-Z]+-STMA?.*?")) {
+                /* Subtitle for hearing impaired ppl */
+                return HEARING_IMPAIRED;
+            } else if (apiosCode.matches("[A-Z]+-STE?.*?")) {
+                /* Normal subtitles */
+                return FULL;
+            } else {
+                /* No subtitles */
+                return NONE;
+            }
+        }
+    }
+
+    private static enum VersionType {
+        ORIGINAL,
+        ORIGINAL_FRANCAIS,
+        ORIGINAL_GERMAN,
+        NON_ORIGINAL_FRANCAIS,
+        NON_ORIGINAL_GERMAN,
+        FOREIGN;
+
+        private static VersionType parse(final String apiosCode) {
+            if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
+                return ORIGINAL_FRANCAIS;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOA")) {
+                return ORIGINAL_GERMAN;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VA-") || StringUtils.equalsIgnoreCase(apiosCode, "VA")) {
+                return NON_ORIGINAL_GERMAN;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VF-") || StringUtils.equalsIgnoreCase(apiosCode, "VF")) {
+                return NON_ORIGINAL_FRANCAIS;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VO-") || StringUtils.equalsIgnoreCase(apiosCode, "VO")) {
+                return ORIGINAL;
+            } else {
+                return FOREIGN;
+            }
+        }
+    }
+
+    public static interface VersionInfo {
+        VersionType getVersionType();
+
+        Language getAudioLanguage();
+
+        Language getSubtitleLanguage();
+
+        SubtitleType getSubtitleType();
+
+        boolean hasAnySubtitle();
+
+        boolean hasSubtitleFull();
+
+        boolean hasSubtitlePartial();
+
+        boolean hasSubtitleForHearingImpaired();
+    }
+
+    public static VersionInfo parseVersionInfo(final String apiosCode) {
+        final SubtitleType subtitleType = SubtitleType.parse(apiosCode);
+        final Language audioLanguage = parseAudioLanguage(apiosCode);
+        final Language subtitleLanguage = parseSubtitleLanguage(apiosCode);
+        final VersionType versionType = VersionType.parse(apiosCode);
+        return new VersionInfo() {
+            @Override
+            public SubtitleType getSubtitleType() {
+                return subtitleType;
+            }
+
+            @Override
+            public Language getSubtitleLanguage() {
+                return subtitleLanguage;
+            }
+
+            @Override
+            public Language getAudioLanguage() {
+                return audioLanguage;
+            }
+
+            @Override
+            public VersionType getVersionType() {
+                return versionType;
+            }
+
+            @Override
+            public String toString() {
+                final StringBuilder sb = new StringBuilder();
+                sb.append(getVersionType());
+                sb.append("_");
+                sb.append(getAudioLanguage());
+                if (hasAnySubtitle()) {
+                    sb.append("_");
+                    sb.append(getSubtitleType());
+                    sb.append("_");
+                    sb.append(getSubtitleLanguage());
+                }
+                return sb.toString();
+            }
+
+            @Override
+            public boolean hasAnySubtitle() {
+                if (SubtitleType.NONE.equals(getSubtitleType())) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            @Override
+            public boolean hasSubtitleFull() {
+                if (SubtitleType.FULL.equals(getSubtitleType())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public boolean hasSubtitlePartial() {
+                if (SubtitleType.PARTIAL.equals(getSubtitleType())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public boolean hasSubtitleForHearingImpaired() {
+                if (SubtitleType.HEARING_IMPAIRED.equals(getSubtitleType())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
     }
 
     public boolean hasCaptcha(final CryptedLink link, final Account acc) {
