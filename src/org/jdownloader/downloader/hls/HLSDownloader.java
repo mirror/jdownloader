@@ -31,6 +31,24 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -82,24 +100,6 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
-
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.FileBytesMap;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
@@ -157,11 +157,7 @@ public class HLSDownloader extends DownloadInterface {
         return m3u8Playlists;
     }
 
-    private final void init(final DownloadLink link, Browser br, String m3uUrl, final String persistantParameters) throws Exception {
-        init(link, br, m3uUrl, persistantParameters, null);
-    }
-
-    private final void init(final DownloadLink link, Browser br, String m3uUrl, final String persistantParameters, final List<M3U8Playlist> list) throws Exception {
+    protected void init(final DownloadLink link, Browser br, String m3uUrl, final String persistantParameters, final List<M3U8Playlist> list) throws Exception {
         setPersistentParameters(persistantParameters);
         this.m3uUrl = Request.getLocation(m3uUrl, br.getRequest());
         this.sourceBrowser = br.cloneBrowser();
@@ -199,17 +195,17 @@ public class HLSDownloader extends DownloadInterface {
         } else {
             this.m3u8Playlists = getM3U8Playlists();
         }
-        if (m3u8Playlists.size() == 0) {
+        if (m3u8Playlists == null || m3u8Playlists.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
     public HLSDownloader(final DownloadLink link, Browser br, String m3uUrl, final String persistentParameters) throws Exception {
-        init(link, br, m3uUrl, persistentParameters);
+        init(link, br, m3uUrl, persistentParameters, null);
     }
 
     public HLSDownloader(final DownloadLink link, final Browser br, final String m3uUrl) throws Exception {
-        init(link, br, m3uUrl, null);
+        init(link, br, m3uUrl, null, null);
     }
 
     public HLSDownloader(final DownloadLink link, final Browser br, final String m3uUrl, final List<M3U8Playlist> list) throws Exception {
@@ -909,15 +905,21 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     protected List<M3U8Playlist> getM3U8Playlists() throws Exception {
-        final Browser br = this.getRequestBrowser();
-        // work around for longggggg m3u pages
-        final int was = br.getLoadLimit();
-        // lets set the connection limit to our required request
-        br.setLoadLimit(Integer.MAX_VALUE);
-        try {
-            return M3U8Playlist.loadM3U8(buildDownloadUrl(m3uUrl), br);
-        } finally {
-            br.setLoadLimit(was);
+        List<M3U8Playlist> ret = this.m3u8Playlists;
+        if (ret != null) {
+            return ret;
+        } else {
+            final Browser br = this.getRequestBrowser();
+            // work around for longggggg m3u pages
+            final int was = br.getLoadLimit();
+            // lets set the connection limit to our required request
+            br.setLoadLimit(Integer.MAX_VALUE);
+            try {
+                ret = M3U8Playlist.loadM3U8(buildDownloadUrl(m3uUrl), br);
+                return ret;
+            } finally {
+                br.setLoadLimit(was);
+            }
         }
     }
 

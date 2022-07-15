@@ -22,13 +22,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -46,6 +41,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BandCampCom extends PluginForHost {
@@ -143,7 +144,7 @@ public class BandCampCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2020-09-23: Decode html encoded json strings */
-        br.getRequest().setHtmlCode(Encoding.htmlDecode(br.toString()));
+        br.getRequest().setHtmlCode(Encoding.htmlOnlyDecode(br.toString()));
         final String file = br.getRegex("\"file\"\\s*:\\s*(null|\".*?\"|\\{.*?\\})").getMatch(0);
         if (file == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -320,10 +321,10 @@ public class BandCampCom extends PluginForHost {
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
         if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMELOWERCASE, defaultFILENAMELOWERCASE)) {
-            formattedFilename = formattedFilename.toLowerCase();
+            formattedFilename = formattedFilename.toLowerCase(Locale.ENGLISH);
         }
         if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMESPACE, defaultFILENAMESPACE)) {
-            formattedFilename = formattedFilename.replace(" ", "_");
+            formattedFilename = formattedFilename.replaceAll("\\s+", "_");
         }
         return formattedFilename;
     }
@@ -337,12 +338,12 @@ public class BandCampCom extends PluginForHost {
     public static final boolean defaultGRABTHUMB            = false;
     public static final String  defaultCUSTOM_DATE          = "dd.MM.yyyy_HH-mm-ss";
     private static final String defaultCustomFilename       = "*tracknumber*.*artist* - *songtitle**ext*";
-    public static final boolean defaultFILENAMELOWERCASE    = true;
-    public static final boolean defaultFILENAMESPACE        = true;
+    public static final boolean defaultFILENAMELOWERCASE    = false;
+    public static final boolean defaultFILENAMESPACE        = false;
     public static final String  defaultCustomPackagename    = "*artist* - *album*";
-    public static final boolean defaultPACKAGENAMELOWERCASE = true;
-    public static final boolean defaultPACKAGENAMESPACE     = true;
-    public static final boolean defaultCLEANPACKAGENAME     = true;
+    public static final boolean defaultPACKAGENAMELOWERCASE = false;
+    public static final boolean defaultPACKAGENAMESPACE     = false;
+    public static final boolean defaultCLEANPACKAGENAME     = false;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Activate fast linkcheck (filesize won't be shown in linkgrabber)?").setDefaultValue(defaultFASTLINKCHECK));

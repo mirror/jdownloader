@@ -22,6 +22,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -35,19 +48,6 @@ import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySele
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 public class ArteMediathekV3 extends PluginForDecrypt {
@@ -567,8 +567,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             } else {
                 return Language.OTHER;
             }
-        }
-        if (apiosCode.endsWith("[ANG]")) {
+        } else if (apiosCode.endsWith("[ANG]")) {
             return Language.ENGLISH;
         } else if (apiosCode.endsWith("[ITA]")) {
             return Language.ITALIAN;
@@ -586,7 +585,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
-
         private static SubtitleType parse(final String apiosCode) {
             if (apiosCode.matches("[A-Z]+-ST(A|F)")) {
                 /* Forced subtitles e.g. parts of original film got foreign language -> Those parts are subtitled */
@@ -606,10 +604,21 @@ public class ArteMediathekV3 extends PluginForDecrypt {
 
     private static enum VersionType {
         ORIGINAL,
+        ORIGINAL_FRANCAIS,
+        ORIGINAL_GERMAN,
+        NON_ORIGINAL_FRANCAIS,
+        NON_ORIGINAL_GERMAN,
         FOREIGN;
-
         private static VersionType parse(final String apiosCode) {
-            if (StringUtils.startsWithCaseInsensitive(apiosCode, "VO")) {
+            if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
+                return ORIGINAL_FRANCAIS;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOA")) {
+                return ORIGINAL_GERMAN;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VA-") || StringUtils.equalsIgnoreCase(apiosCode, "VA")) {
+                return NON_ORIGINAL_GERMAN;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VF-") || StringUtils.equalsIgnoreCase(apiosCode, "VF")) {
+                return NON_ORIGINAL_FRANCAIS;
+            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VO-") || StringUtils.equalsIgnoreCase(apiosCode, "VO")) {
                 return ORIGINAL;
             } else {
                 return FOREIGN;

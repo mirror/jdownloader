@@ -1066,7 +1066,7 @@ public class PornHubCom extends PluginForHost {
                     final String authyIdHashed = (String) entries.get("authyIdHashed");
                     final String token2 = (String) entries.get("autoLoginParameter");
                     final String phoneNumber = (String) entries.get("phoneNumber");
-                    if (StringUtils.isEmpty(authyId) || StringUtils.isEmpty(authyIdHashed) || StringUtils.isEmpty(token2) || StringUtils.isEmpty(phoneNumber)) {
+                    if (StringUtils.isEmpty(authyId) || StringUtils.isEmpty(token2) || StringUtils.isEmpty(phoneNumber)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     logger.info("2FA code required");
@@ -1089,7 +1089,7 @@ public class PornHubCom extends PluginForHost {
                     loginform2.put("token2", Encoding.urlEncode(token2));
                     loginform2.put("verification_modal", "1");
                     loginform2.put("authyId", authyId);
-                    loginform2.put("authyIdHashed", authyIdHashed);
+                    loginform2.put("authyIdHashed", StringUtils.valueOrEmpty(authyIdHashed));
                     if (token1 != null) {
                         loginform2.put("token", Encoding.urlEncode(token1));
                     }

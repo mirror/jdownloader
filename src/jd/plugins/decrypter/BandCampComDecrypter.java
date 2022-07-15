@@ -16,22 +16,15 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -39,16 +32,23 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BandCampCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { BandCampCom.class })
@@ -78,7 +78,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             final String domainspart = buildHostsPatternPart(domains);
-            ret.add("https?://(([a-z0-9\\-]+\\.)?" + domainspart + "/(?:album|track)/[a-z0-9\\-_]+|(?!www\\.)?[a-z0-9\\-]+\\." + domainspart + "/?$)|https?://(?:www\\.)?" + domainspart + "/EmbeddedPlayer\\.html.*?/album=\\d+.*");
+            ret.add("https?://(([a-z0-9\\-]+\\.)?" + domainspart + "/(?:album|track)/[a-z0-9\\-_]+|(?!www\\.)?[a-z0-9\\-]+\\." + domainspart + "/?$)|https?://(?:www\\.)?" + domainspart + "/EmbeddedPlayer(?:\\.html)?[^\\?#]*/(?:album|track)=\\d+");
         }
         return ret.toArray(new String[0]);
     }
@@ -94,7 +94,8 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         return 1;
     }
 
-    private final String TYPE_EMBED = "https?://(?:www\\.)?bandcamp\\.com/EmbeddedPlayer\\.html.*?/album=\\d+.*";
+    private final String                   TYPE_EMBED         = "https?://(?:www\\.)?bandcamp\\.com/EmbeddedPlayer(?:\\.html)?.*?/(?:album|track)=\\d+.*";
+    private static AtomicReference<String> videoSupportBroken = new AtomicReference<String>();
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -102,7 +103,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         if (param.getCryptedUrl().matches(TYPE_EMBED)) {
             br.getPage(param.getCryptedUrl());
-            final String originalURL = br.getRegex("\\&quot;linkback\\&quot;:\\&quot;(https?://[^/]+/album/[a-z0-9\\-]+)").getMatch(0);
+            final String originalURL = br.getRegex("\\&quot;linkback\\&quot;:\\&quot;(https?://[^/]+/(?:album|track)/[a-z0-9\\-_]+)").getMatch(0);
             if (originalURL == null) {
                 /* Assume that this content is offline or url is invalid */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -209,6 +210,65 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 dl.setAvailable(true);
             }
             ret.add(dl);
+            final String videoSourceID = (String) audio.get("video_source_id");
+            if (StringUtils.isNotEmpty(videoSourceID)) {
+                synchronized (videoSupportBroken) {
+                    if (videoSupportBroken.get() == null || !getPluginVersionHash().equals(videoSupportBroken.get())) {
+                        try {
+                            String token = new Regex(StringUtils.valueOfOrNull(audio.get("video_poster_url")), "\\d+/\\d+/([^/]+)").getMatch(0);
+                            if (token == null) {
+                                token = new Regex(StringUtils.valueOfOrNull(audio.get("video_mobile_url")), "\\d+/\\d+/([^/]+)").getMatch(0);
+                            }
+                            if (token != null) {
+                                final String playerID = "9891472";
+                                final Browser brc = br.cloneBrowser();
+                                brc.setCookie("bandcamp.23video.com", "uuid", UUID.randomUUID().toString());
+                                brc.setCookie("bandcamp.23video.com", "_visual_swf_referer", "https%3A//bandcamp.com/");
+                                brc.setCurrentURL("https://bandcamp.23video.com/" + playerID + ".ihtml/player.html?token=" + token + "&source=embed&photo_id=" + videoSourceID);
+                                brc.getPage("https://bandcamp.23video.com/api/concatenate?callback=visualplatformconcat_0&format=json&playersettings_0=%2Fapi%2Fplayer%2Fsettings%3Fplayer_id%3D" + playerID + "%26parameters%3Dtoken%253D" + token + "%2526source%253Dembed%2526photo_id%253D" + videoSourceID + "&livelist_1=%2Fapi%2Flive%2Flist%3Ftoken%3D" + token + "%26source%3Dembed%26photo_id%3D" + videoSourceID + "%26upcoming_p%3D1%26ordering%3Dstreaming%26player_id%3D" + playerID + "&photolist_2=%2Fapi%2Fphoto%2Flist%3Fsize%3D10%26include_actions_p%3D1%26token%3D" + token + "%26source%3Dembed%26photo_id%3D" + videoSourceID + "%26upcoming_p%3D1%26ordering%3Dstreaming%26player_id%3D" + playerID);
+                                final String visualplatformconcat_0 = brc.getRegex("visualplatformconcat_0\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*$").getMatch(0);
+                                final Map<String, Object> visualplatformconcat = restoreFromString(visualplatformconcat_0, TypeRef.MAP);
+                                final Map<String, Object> photo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(visualplatformconcat, "photolist_2/photo");
+                                for (final String format : new String[] { "1080p", "hd"/* 720 */, "medium", "mobile_high" }) {
+                                    final String videoURL = StringUtils.valueOfOrNull(photo.get("video_" + format + "_download"));
+                                    if (StringUtils.isNotEmpty(videoURL)) {
+                                        final DownloadLink videoEntry = createDownloadlink(brc.getURL(videoURL).toString());
+                                        final long fileSize = JavaScriptEngineFactory.toLong(photo.get("video_" + format + "_size"), -1l);
+                                        if (fileSize > 0) {
+                                            dl.setDownloadSize(fileSize);
+                                        }
+                                        if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
+                                            dl.setAvailable(true);
+                                            ret.add(videoEntry);
+                                        } else {
+                                            final Browser br2 = brc.cloneBrowser();
+                                            br2.setFollowRedirects(true);
+                                            URLConnectionAdapter con = null;
+                                            try {
+                                                con = br2.openHeadConnection(videoEntry.getPluginPatternMatcher());
+                                                if (looksLikeDownloadableContent(con)) {
+                                                    dl.setAvailable(true);
+                                                    dl.setVerifiedFileSize(con.getLongContentLength());
+                                                    ret.add(videoEntry);
+                                                }
+                                            } catch (IOException e) {
+                                                logger.log(e);
+                                            } finally {
+                                                if (con != null) {
+                                                    con.disconnect();
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                            videoSupportBroken.set(getPluginVersionHash());
+                        }
+                    }
+                }
+            }
             trackPosition++;
         }
         final boolean decryptThumb = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
@@ -222,54 +282,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 final String formattedFilename = BandCampCom.getFormattedFilename(this, thumb);
                 thumb.setFinalFileName(formattedFilename);
                 ret.add(thumb);
-            }
-        }
-        final String videos[][] = br.getRegex("<a class=\"has-video\"\\s*href=\"(/video/t/\\d+)\"\\s*data-href-mobile=\"(/.*?)\"").getMatches();
-        if (videos != null) {
-            final HashSet<String> dups = new HashSet<String>();
-            for (final String video[] : videos) {
-                final String original = URLHelper.parseLocation(new URL("http://bandcamp.23video.com"), video[1]);
-                String nameResult = null;
-                final String names[][] = br.getRegex("<div class=\"title\">.*?<span itemprop=\"name\">(.*?)</span>(.*?)</div>").getMatches();
-                if (names != null) {
-                    for (String name[] : names) {
-                        if (name[1].contains(video[0])) {
-                            nameResult = name[0];
-                            break;
-                        }
-                    }
-                }
-                for (final String format : new String[] { "video_mobile_high", "video_hd", "video_1080p", }) {
-                    final String url = original.replace("video_mobile_high", format);
-                    if (dups.add(url)) {
-                        final DownloadLink dl = createDownloadlink(url.toString());
-                        if (nameResult != null) {
-                            dl.setFinalFileName(nameResult + "_" + format + Plugin.getFileNameExtensionFromURL(url));
-                        }
-                        if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
-                            dl.setAvailable(true);
-                            ret.add(dl);
-                        } else {
-                            Browser br2 = br.cloneBrowser();
-                            br2.setFollowRedirects(true);
-                            URLConnectionAdapter con = null;
-                            try {
-                                con = br2.openHeadConnection(url);
-                                if (looksLikeDownloadableContent(con)) {
-                                    dl.setAvailable(true);
-                                    dl.setVerifiedFileSize(con.getLongContentLength());
-                                    ret.add(dl);
-                                }
-                            } catch (IOException e) {
-                                logger.log(e);
-                            } finally {
-                                if (con != null) {
-                                    con.disconnect();
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -334,10 +346,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         // Insert albumname at the end to prevent errors with tags
         formattedpackagename = formattedpackagename.replace("*album*", album);
         if (cfg.getBooleanProperty(BandCampCom.PACKAGENAMELOWERCASE, BandCampCom.defaultPACKAGENAMELOWERCASE)) {
-            formattedpackagename = formattedpackagename.toLowerCase();
+            formattedpackagename = formattedpackagename.toLowerCase(Locale.ENGLISH);
         }
         if (cfg.getBooleanProperty(BandCampCom.PACKAGENAMESPACE, BandCampCom.defaultPACKAGENAMESPACE)) {
-            formattedpackagename = formattedpackagename.replace(" ", "_");
+            formattedpackagename = formattedpackagename.replaceAll("\\s+", "_");
         }
         return formattedpackagename;
     }
