@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,12 +23,8 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -74,12 +71,6 @@ public class FtmboxTop extends antiDDoSForHost {
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 1;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -96,6 +87,12 @@ public class FtmboxTop extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* 2020-04-27: Special: Always rely on filename inside URL. */
+        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        if (filename != null) {
+            filename = Encoding.deepHtmlDecode(filename).trim();
+            link.setName(filename);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
@@ -104,32 +101,22 @@ public class FtmboxTop extends antiDDoSForHost {
         } else if (br.containsHTML("который отсутствует на сервере")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2020-04-27: Special: Always rely on filename inside URL. */
-        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setName(filename);
-        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        hanleDownload(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            /*
-             * 2020-04-27: Download won't work because of them using the parameter in a wrong way --> "?action=download will not work."
-             */
-            dllink = br.getURL() + "&action=download";
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+    private void hanleDownload(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        /*
+         * 2020-04-27: Download won't work because of them using the parameter in a wrong way --> "?action=download will not work."
+         */
+        final String dllink = br.getURL() + "&action=download";
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find final downloadurl");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("sec-fetch-dest", "document");
         br.getHeaders().put("sec-fetch-mode", "navigate");
@@ -137,55 +124,24 @@ public class FtmboxTop extends antiDDoSForHost {
         br.getHeaders().put("sec-fetch-user", "?1");
         br.getHeaders().put("upgrade-insecure-requests", "1");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                link.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return dllink;
-    }
-
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 

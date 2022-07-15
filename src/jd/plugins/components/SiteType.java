@@ -68,7 +68,7 @@ public class SiteType {
          */
         KernelVideoSharing,
         /**
-         * Script used by some image hosting sites e.g.: <a href="http:/damimage.com/">damimage.com</a>. <br />
+         * Script used by some image hosting sites e.g.: <a href="https:/imgdrive.net/">imgdrive.net</a>. <br />
          * Can be bought e.g. from here:
          * <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257" >http://codecanyon.net/item/imgshot-image-hosting-
          * script/2558257</a>.<br />
