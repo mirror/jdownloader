@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -44,17 +46,40 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?bandcamp\\.com/track/([a-z0-9\\-_]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BandCampCom extends PluginForHost {
-    private String DLLINK    = null;
-    private String userAgent = null;
-
     public BandCampCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "bandcamp.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/track/([a-z0-9\\-_]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -72,10 +97,11 @@ public class BandCampCom extends PluginForHost {
     public static final String FILENAMESPACE        = "FILENAMESPACE";
     public static final String PACKAGENAMESPACE     = "PACKAGENAMESPACE";
     public static final String CLEANPACKAGENAME     = "CLEANPACKAGENAME";
+    private String             dllink               = null;
 
     @Override
     public String getAGBLink() {
-        return "http://bandcamp.com/terms_of_use";
+        return "https://bandcamp.com/terms_of_use";
     }
 
     @Override
@@ -84,36 +110,15 @@ public class BandCampCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, ParseException {
         br = new Browser();
         this.setBrowserExclusive();
-        if (userAgent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            userAgent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        br.getHeaders().put("User-Agent", userAgent);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getDownloadURL());
+            con = br.openGetConnection(link.getPluginPatternMatcher());
             if (looksLikeDownloadableContent(con)) {
-                DLLINK = link.getDownloadURL();
+                dllink = link.getPluginPatternMatcher();
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
@@ -145,12 +150,12 @@ public class BandCampCom extends PluginForHost {
         } else if ("null".equals(file)) {
             throw new AccountRequiredException();
         }
-        DLLINK = new Regex(file, "((https?:)?//[^\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
+        dllink = new Regex(file, "((https?:)?//[^\"]*?)\"").getMatch(0);
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            logger.info("DLLINK = " + DLLINK);
-            DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
+            logger.info("dllink = " + dllink);
+            dllink = Encoding.htmlDecode(dllink).replace("\\", "");
         }
         if (!link.getBooleanProperty("fromdecrypter", false)) {
             String tracknumber = br.getRegex("\"track_number\"\\s*:\\s*(\\d+)").getMatch(0);
@@ -202,7 +207,7 @@ public class BandCampCom extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             /* Server does NOT like HEAD requests! */
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -228,12 +233,27 @@ public class BandCampCom extends PluginForHost {
         }
     }
 
-    public static String getFormattedFilename(Plugin plugin, final DownloadLink downloadLink) throws ParseException {
-        final String songTitle = downloadLink.getStringProperty("directname", null);
-        final String tracknumber = downloadLink.getStringProperty("directtracknumber", null);
-        final String artist = downloadLink.getStringProperty("directartist", null);
-        final String album = downloadLink.getStringProperty("directalbum", null);
-        final String dateString = downloadLink.getStringProperty("directdate", null);
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    public static String getFormattedFilename(final Plugin plugin, final DownloadLink link) throws ParseException {
+        final String songTitle = link.getStringProperty("directname", null);
+        final String tracknumber = link.getStringProperty("directtracknumber", null);
+        final String artist = link.getStringProperty("directartist", null);
+        final String album = link.getStringProperty("directalbum", null);
+        final String dateString = link.getStringProperty("directdate", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("bandcamp.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
@@ -242,7 +262,7 @@ public class BandCampCom extends PluginForHost {
         if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) {
             formattedFilename = defaultCustomFilename;
         }
-        String ext = downloadLink.getStringProperty("type", null);
+        String ext = link.getStringProperty("type", null);
         if (ext != null) {
             ext = "." + ext;
         } else {
@@ -299,10 +319,10 @@ public class BandCampCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*ext*", ext);
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
-        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMELOWERCASE, false)) {
+        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMELOWERCASE, defaultFILENAMELOWERCASE)) {
             formattedFilename = formattedFilename.toLowerCase();
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMESPACE, false)) {
+        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMESPACE, defaultFILENAMESPACE)) {
             formattedFilename = formattedFilename.replace(" ", "_");
         }
         return formattedFilename;
@@ -313,21 +333,29 @@ public class BandCampCom extends PluginForHost {
         return "JDownloader's bandcamp.com plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
     }
 
-    private final static String defaultCustomFilename    = "*tracknumber*.*artist* - *songtitle**ext*";
-    private final static String defaultCustomPackagename = "*artist* - *album*";
+    public static final boolean defaultFASTLINKCHECK        = true;
+    public static final boolean defaultGRABTHUMB            = false;
+    public static final String  defaultCUSTOM_DATE          = "dd.MM.yyyy_HH-mm-ss";
+    private static final String defaultCustomFilename       = "*tracknumber*.*artist* - *songtitle**ext*";
+    public static final boolean defaultFILENAMELOWERCASE    = true;
+    public static final boolean defaultFILENAMESPACE        = true;
+    public static final String  defaultCustomPackagename    = "*artist* - *album*";
+    public static final boolean defaultPACKAGENAMELOWERCASE = true;
+    public static final boolean defaultPACKAGENAMESPACE     = true;
+    public static final boolean defaultCLEANPACKAGENAME     = true;
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.bandcampcom.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Activate fast linkcheck (filesize won't be shown in linkgrabber)?").setDefaultValue(defaultFASTLINKCHECK));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABTHUMB, JDL.L("plugins.hoster.bandcampcom.grabthumb", "Grab thumbnail (.jpg)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABTHUMB, "Grab thumbnail (.jpg)?").setDefaultValue(defaultGRABTHUMB));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.bandcampcom.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize filename properties:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, "Define how the date should look:").setDefaultValue(defaultCUSTOM_DATE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*artist*_*date*_*songtitle**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.bandcampcom.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, "Define how the filenames should look:").setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*artist* = artist of the album\r\n");
@@ -337,20 +365,20 @@ public class BandCampCom extends PluginForHost {
         sb.append("*ext* = the extension of the file, in this case usually '.mp3'\r\n");
         sb.append("*date* = date when the album was released - appears in the user-defined format above");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FILENAMELOWERCASE, "Filename to lower case?").setDefaultValue(defaultFILENAMELOWERCASE));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FILENAMESPACE, "Filename replace space with underscore?").setDefaultValue(defaultFILENAMESPACE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the packagename for playlists and '[a-z0-9\\-]+.bandcamp.com/album/' links! Example: '*artist* - *album*':"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, JDL.L("plugins.hoster.bandcampcom.custompackagename", "Define how the packagenames should look:")).setDefaultValue(defaultCustomPackagename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, "Define how the packagenames should look:").setDefaultValue(defaultCustomPackagename));
         final StringBuilder sbpack = new StringBuilder();
         sbpack.append("Explanation of the available tags:\r\n");
         sbpack.append("*artist* = artist of the album\r\n");
         sbpack.append("*album* = artist of the album\r\n");
         sbpack.append("*date* = date when the album was released - appears in the user-defined format above");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbpack.toString()));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FILENAMELOWERCASE, JDL.L("plugins.hoster.bandcamp.filenamelowercase", "filename to lower case")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMELOWERCASE, JDL.L("plugins.hoster.bandcamp.packagenamelowercase", "packagename to lower case")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FILENAMESPACE, JDL.L("plugins.hoster.bandcamp.filenamespace", "filename space striper")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMESPACE, JDL.L("plugins.hoster.bandcamp.packagenamespace", "packagename space striper")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEANPACKAGENAME, JDL.L("plugins.hoster.bandcamp.cleanpackagename", "when unchecked JD Core packagename cleanup routine is disabled!")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMELOWERCASE, "Packagename to lower case?").setDefaultValue(defaultPACKAGENAMELOWERCASE));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMESPACE, "Packagename replace space with underscore?").setDefaultValue(defaultPACKAGENAMESPACE));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEANPACKAGENAME, "Cleanup packagenames?").setDefaultValue(defaultCLEANPACKAGENAME));
     }
 
     @Override
