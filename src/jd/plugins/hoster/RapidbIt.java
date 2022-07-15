@@ -32,6 +32,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
@@ -109,8 +110,9 @@ public class RapidbIt extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link)) {
             final Map<String, Object> postdata = new HashMap<String, Object>();
             postdata.put("url", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-            postdata.put("group_id", 0);
-            postdata.put("notif_db", true);
+            /* This timestamp is later used to notify the user that everything requested within a specified timespan has been downloaded. */
+            postdata.put("group_id", System.currentTimeMillis());
+            postdata.put("notif_db", false);
             postdata.put("notif_email", false);
             br.postPageRaw(API_BASE + "/services/downloadfile", JSonStorage.serializeToJson(postdata));
             this.checkErrors(account, link);
@@ -171,29 +173,34 @@ public class RapidbIt extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        ai.setCreateTime(((Number) user.get("created")).longValue());
-        // final String accountType = (String) user.get("account_type");
-        // if (accountType.equalsIgnoreCase("free")) {
-        // account.setType(AccountType.FREE);
-        // ai.setExpired(true);
-        // } else {
-        // /* There are also accounts without expire-date! */
-        // final Object expireDateO = user.get("expire");
-        // if (expireDateO != null) {
-        // final String expireDate = (String) expireDateO;
-        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH), this.br);
-        // }
-        // account.setType(AccountType.PREMIUM);
-        // ai.setUnlimitedTraffic();
-        // }
         br.getPage(API_BASE + "/system/config");
+        final Map<String, Object> apiconfig = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        ai.setCreateTime(((Number) user.get("created")).longValue());
+        final int level_id = ((Number) user.get("level_id")).intValue();
+        final List<Map<String, Object>> levels = (List<Map<String, Object>>) apiconfig.get("levels");
+        /* Information about users' current package. */
+        final Map<String, Object> level = levels.get(level_id - 1);
+        if (level_id == 0) {
+            /* Free */
+            account.setType(AccountType.FREE);
+        } else {
+            /* Bronze, Silver, Gold, Platinum */
+            account.setType(AccountType.PREMIUM);
+        }
+        ai.setStatus(level.get("name").toString());
+        account.setMaxSimultanDownloads(((Number) level.get("max_sim_downloads")).intValue());
+        /* Traffic the user bought in this package */
+        final long trafficMax = ((Number) user.get("points")).longValue();
+        /* Bought traffic + (daily_free_traffic_mb - daily_used_traffic_bytes) */
+        ai.setTrafficLeft(trafficMax + (((Number) level.get("points_free_mb")).longValue() * 1000 * 1000) + ((Number) user.get("points_free_used")).longValue());
+        ai.setTrafficMax(trafficMax);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final List<Map<String, Object>> filehostings = (List<Map<String, Object>>) entries.get("filehostings");
+        final List<Map<String, Object>> filehostings = (List<Map<String, Object>>) apiconfig.get("filehostings");
         for (final Map<String, Object> filehosting : filehostings) {
+            final List<String> domains = (List<String>) filehosting.get("domains");
             final String name = filehosting.get("name").toString();
             if (((Number) filehosting.get("status")).intValue() == 1) {
-                supportedHosts.add(name);
+                supportedHosts.addAll(domains);
             } else {
                 logger.info("Skipping currently unsupported/offline host: " + name);
             }
@@ -207,9 +214,9 @@ public class RapidbIt extends PluginForHost {
         synchronized (account) {
             try {
                 prepBR(this.br);
-                if (account.getStringProperty(PROPERTY_ACCOUNT_TOKEN) != null) {
+                if (account.hasProperty(PROPERTY_ACCOUNT_TOKEN)) {
                     logger.info("Trying to login via token");
-                    br.getHeaders().put("Authorization", "Bearer " + account.getStringProperty(PROPERTY_ACCOUNT_TOKEN));
+                    br.getHeaders().put("Auth", account.getStringProperty(PROPERTY_ACCOUNT_TOKEN));
                     if (!validateLogins) {
                         /* Do not verify logins */
                         return;
@@ -229,7 +236,7 @@ public class RapidbIt extends PluginForHost {
                 final Map<String, Object> postdata = new HashMap<String, Object>();
                 postdata.put("email", account.getUser());
                 postdata.put("password", account.getPass());
-                // postdata.put("googleauth", null);
+                postdata.put("googleauth", null);
                 postdata.put("never_expires", true);
                 br.postPageRaw(API_BASE + "/users/login", JSonStorage.serializeToJson(postdata));
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -237,12 +244,11 @@ public class RapidbIt extends PluginForHost {
                 if (StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.getHeaders().put("Authorization", "Bearer " + token);
+                br.getHeaders().put("Auth", token);
                 account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
-                    account.clearCookies("");
                 }
                 throw e;
             }
@@ -266,7 +272,12 @@ public class RapidbIt extends PluginForHost {
     }
 
     private void handleErrorMap(final Account account, final DownloadLink link, final Map<String, Object> entries) throws PluginException, InterruptedException {
-        final int errorcode = ((Number) entries.get("error")).intValue();
+        final Object errorO = entries.get("error");
+        if (errorO == null) {
+            /* No error */
+            return;
+        }
+        final int errorcode = ((Number) errorO).intValue();
         if (errorcode == 0) {
             /* No error */
             return;
