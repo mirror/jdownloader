@@ -378,7 +378,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (account != null) {
             this.login(account, false);
         }
-        if (link.getPluginPatternMatcher().matches(type_embedded) && this.useEmbedWorkaround()) {
+        if (isEmbedURL(link.getPluginPatternMatcher()) && this.useEmbedWorkaround()) {
             /* Embed URL --> Build fake real URL and just go for it */
             final String fakeContentURL = this.generateContentURL(this.getFUID(link), "xyz");
             br.getPage(fakeContentURL);
@@ -386,7 +386,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.info("Embed workaround result: Presumed real ContentURL: " + br.getURL());
-        } else if (link.getPluginPatternMatcher().matches(type_embedded)) {
+        } else if (isEmbedURL(link.getPluginPatternMatcher())) {
             /* Embed URL */
             getPage(link.getPluginPatternMatcher());
             /* in case there is http<->https or url format redirect */
@@ -597,6 +597,14 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (url == null) {
             return false;
         } else if (StringUtils.containsIgnoreCase(url, ".m3u8")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    protected boolean isEmbedURL(final String url) {
+        if (url.matches(type_embedded)) {
             return true;
         } else {
             return false;
@@ -1639,11 +1647,11 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
      */
     protected String getFUID(final DownloadLink link) {
         /* Prefer stored unique ID over ID inside URL because sometimes none is given inside URL. */
-        String fuid = link.getStringProperty(PROPERTY_FUID, null);
-        if (fuid == null) {
-            fuid = this.getFUIDFromURL(link.getPluginPatternMatcher());
+        if (link.hasProperty(PROPERTY_FUID)) {
+            return link.getStringProperty(PROPERTY_FUID);
+        } else {
+            return this.getFUIDFromURL(link.getPluginPatternMatcher());
         }
-        return fuid;
     }
 
     /**
