@@ -106,6 +106,9 @@ public class RapidbIt extends PluginForHost {
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* TODO: This plugin is still under development */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            /* Only for debugging */
+            br.setAllowedResponseCodes(500);
         }
         if (!attemptStoredDownloadurlDownload(link)) {
             final Map<String, Object> postdata = new HashMap<String, Object>();
@@ -118,7 +121,13 @@ public class RapidbIt extends PluginForHost {
             this.checkErrors(account, link);
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             handleErrorMap(account, link, entries);
-            final String dllink = (String) (entries != null ? entries.get("link") : null);
+            final Map<String, Object> postdata2 = new HashMap<String, Object>();
+            postdata2.put("file_id", entries.get("file_id"));
+            br.postPageRaw(API_BASE + "/files", JSonStorage.serializeToJson(postdata));
+            final Map<String, Object> dlresponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final List<Map<String, Object>> files = (List<Map<String, Object>>) dlresponse.get("result");
+            final Map<String, Object> file = files.get(0);
+            final String dllink = (String) file.get("download_url");
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
