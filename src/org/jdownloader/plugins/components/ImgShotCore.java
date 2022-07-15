@@ -109,7 +109,7 @@ public class ImgShotCore extends antiDDoSForHost {
      * A lot of hosts have it enabled although they do not display a download button on their website! </br>
      * default = true </br>
      * Example official download supported but broken serverside: imagedecode.com, imageteam.org </br>
-     * Example official download working fine: imgwallet.com, damimage.com, imgadult.com, imgtornado.com, acidimg.com
+     * Example official download working fine: imgwallet.com, imgadult.com, imgtornado.com, acidimg.com
      */
     protected boolean enforceOfficialDownloadURL() {
         return true;
@@ -135,12 +135,10 @@ public class ImgShotCore extends antiDDoSForHost {
     protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             /* Set fallback filename -> We know all content is image content. */
-            link.setName(this.getFID(link) + ".jpg");
+            link.setName(this.getFID(link) + getDefaultFileExtension());
         }
         br.setFollowRedirects(true);
         this.setBrowserExclusive();
-        /* TODO: Check whether or not we need a random User-Agent */
-        // br.getHeaders().put("User-Agent", jd.plugins.components.UserAgents.stringUserAgent());
         getPage(link.getPluginPatternMatcher());
         if (this.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

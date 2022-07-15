@@ -18,10 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.ImgShotCore;
+
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.ImgShotCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GenericImgShot extends ImgShotCore {
@@ -39,8 +39,6 @@ public class GenericImgShot extends ImgShotCore {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "imgdrive.net" });
-        ret.add(new String[] { "imagedecode.com", "dimtus.com" });
-        ret.add(new String[] { "damimage.com" });
         ret.add(new String[] { "imgadult.com" });
         ret.add(new String[] { "imgtornado.com" });
         ret.add(new String[] { "imgwallet.com" });
