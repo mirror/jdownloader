@@ -606,22 +606,10 @@ public class ArteMediathekV3 extends PluginForDecrypt {
 
     private static enum VersionType {
         ORIGINAL,
-        ORIGINAL_FRANCAIS,
-        ORIGINAL_GERMAN,
-        NON_ORIGINAL_FRANCAIS,
-        NON_ORIGINAL_GERMAN,
         FOREIGN;
 
         private static VersionType parse(final String apiosCode) {
-            if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
-                return ORIGINAL_FRANCAIS;
-            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOA")) {
-                return ORIGINAL_GERMAN;
-            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VA-") || StringUtils.equalsIgnoreCase(apiosCode, "VA")) {
-                return NON_ORIGINAL_GERMAN;
-            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VF-") || StringUtils.equalsIgnoreCase(apiosCode, "VF")) {
-                return NON_ORIGINAL_FRANCAIS;
-            } else if (StringUtils.startsWithCaseInsensitive(apiosCode, "VO-") || StringUtils.equalsIgnoreCase(apiosCode, "VO")) {
+            if (StringUtils.startsWithCaseInsensitive(apiosCode, "VO")) {
                 return ORIGINAL;
             } else {
                 return FOREIGN;
