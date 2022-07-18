@@ -22,19 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DirectHTTP;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -48,6 +35,20 @@ import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySele
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.ArteTv;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 public class ArteMediathekV3 extends PluginForDecrypt {
@@ -78,7 +79,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2})/videos/(\\d+-\\d+-[ADF]+)(/([a-z0-9\\-]+)/?)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2}/videos/\\d+-\\d+-[ADF]+(/([a-z0-9\\-]+)/?)?|embeds/[a-z]{2}/\\d+-\\d+-[ADF]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -90,13 +91,25 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private final String        PROPERTY_TITLE_AND_SUBTITLE = "title_and_subtitle";
     private final String        PROPERTY_DATE               = "date";
     private final String        PROPERTY_ORIGINAL_FILENAME  = "original_filename";
-    private final String        PROPERTY_AUDIO_CODE         = "audio_code";                    // ex versionCode e.g. VF, VF-STA, VA
-    private final String        PROPERTY_AUDIO_SHORT_LABEL  = "audioShortLabel";               // e.g. DE, FR
-    private final String        PROPERTY_AUDIO_LABEL        = "audioLabel";                    // e.g. Deutsch, Französisch
+    private final String        PROPERTY_AUDIO_CODE         = "audio_code";                                                             // ex
+                                                                                                                                        // versionCode
+                                                                                                                                        // e.g.
+                                                                                                                                        // VF,
+                                                                                                                                        // VF-STA,
+                                                                                                                                        // VA
+    private final String        PROPERTY_AUDIO_SHORT_LABEL  = "audioShortLabel";                                                        // e.g.
+                                                                                                                                        // DE,
+                                                                                                                                        // FR
+    private final String        PROPERTY_AUDIO_LABEL        = "audioLabel";                                                             // e.g.
+                                                                                                                                        // Deutsch,
+                                                                                                                                        // Französisch
     private final String        PROPERTY_WIDTH              = "width";
     private final String        PROPERTY_HEIGHT             = "height";
     private final String        PROPERTY_BITRATE            = "bitrate";
     private final String        PROPERTY_PLATFORM           = "platform";
+    private final String        PROPERTY_TYPE               = "type";
+    private final String        TYPE_NORMAL                 = "https?://[^/]+/([a-z]{2})/videos/(\\d+-\\d+-[ADF]+)(/([a-z0-9\\-]+)/?)?";
+    private final String        TYPE_EMBED                  = "https?://[^/]+/embeds/([a-z]{2})/(\\d+-\\d+-[ADF]+)";
 
     private static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("Authorization", "Bearer Nzc1Yjc1ZjJkYjk1NWFhN2I2MWEwMmRlMzAzNjI5NmU3NWU3ODg4ODJjOWMxNTMxYzEzZGRjYjg2ZGE4MmIwOA");
@@ -115,9 +128,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             logger.info("User has deselected all qualities and set QualitySelectionFallbackMode to QualitySelectionFallbackMode.NONE --> Doing nothing");
             return ret;
         }
-        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        final String urlLanguage = urlinfo.getMatch(0); // de or fr
-        final String contentID = urlinfo.getMatch(1);
+        final String urlLanguage = gerUrlLanguage(param.getCryptedUrl());
+        final String contentID = gerUrlContentID(param.getCryptedUrl());
         prepBRAPI(br);
         /* API will return all results in german or french depending on 'urlLanguage'! */
         br.getPage(API_BASE + "/programs/" + urlLanguage + "/" + contentID);
@@ -136,6 +148,22 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         return ret;
     }
 
+    private String gerUrlLanguage(final String url) {
+        if (url.matches(TYPE_NORMAL)) {
+            return new Regex(url, TYPE_NORMAL).getMatch(0);
+        } else {
+            return new Regex(url, TYPE_EMBED).getMatch(0);
+        }
+    }
+
+    private String gerUrlContentID(final String url) {
+        if (url.matches(TYPE_NORMAL)) {
+            return new Regex(url, TYPE_NORMAL).getMatch(1);
+        } else {
+            return new Regex(url, TYPE_EMBED).getMatch(1);
+        }
+    }
+
     private ArrayList<DownloadLink> crawlProgram(final CryptedLink param, final Map<String, Object> program) throws IOException, PluginException {
         final Map<String, Object> vid = (Map<String, Object>) program.get("mainVideo");
         return crawlVideo(param, vid);
@@ -149,11 +177,12 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         } else if (!kindLabel.equals("PROGRAMM")) {
             logger.info("Unknown kindLabel: " + kindLabel);
         }
+        final ArteTv hosterplugin = (ArteTv) this.getNewPluginForHostInstance(this.getHost());
         final String videoID = vid.get("programId").toString();
         final String title = vid.get("title").toString();
         final String subtitle = (String) vid.get("subtitle");
         final String dateFormatted = new Regex(vid.get("firstBroadcastDate").toString(), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-        final String fullDescription = (String) vid.get("shortDescription");
+        final String shortDescription = (String) vid.get("shortDescription");
         final String platform = vid.get("platform").toString();
         final String videoStreamsAPIURL = JavaScriptEngineFactory.walkJson(vid, "links/videoStreams/web/href").toString();
         String titleAndSubtitle = title;
@@ -161,8 +190,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             titleAndSubtitle += " - " + subtitle;
         }
         prepBRAPI(br);
-        // br.getPage(API_BASE + "/videoStreams?programId=" + Encoding.urlEncode(programId) +
-        // "&reassembly=A&platform=ARTE_NEXT&channel=DE&kind=SHOW&protocol=%24in:HTTPS,HLS&quality=%24in:EQ,HQ,MQ,SQ,XQ&profileAmm=%24in:AMM-PTWEB,AMM-PTHLS,AMM-OPERA,AMM-CONCERT-NEXT,AMM-Tvguide&limit=100");
         br.getPage(videoStreamsAPIURL);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
@@ -201,8 +228,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
         fp.setName(packageName);
-        if (!StringUtils.isEmpty(fullDescription)) {
-            fp.setComment(fullDescription);
+        if (!StringUtils.isEmpty(shortDescription)) {
+            fp.setComment(shortDescription);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Crawl thumbnail if wished by user */
@@ -237,8 +264,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
                 final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
                 final String audioCode = videoStream.get("audioCode").toString(); // e.g. VF, VF-STA, VA, ...
-                final String audioChar = regexAudioLanguageChar(audioCode);
-                final DownloadLink link = this.createDownloadlink(videoStream.get("url").toString());
+                final DownloadLink link = new DownloadLink(hosterplugin, hosterplugin.getHost(), videoStream.get("url").toString(), true);
+                link.setProperty(PROPERTY_TYPE, "video");
                 /* Set properties which we later need for custom filenames. */
                 link.setProperty(PROPERTY_VIDEO_ID, videoID);
                 link.setProperty(PROPERTY_TITLE, title);
@@ -297,6 +324,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                     /* Skip unwanted languages */
                     continue;
                 }
+                /* Collect best quality (regardless of user preferred video resolution config) */
                 if (link.getView().getBytesTotal() > bestAllowedFilesize || bestAllowed == null) {
                     bestAllowed = link;
                     bestAllowedFilesize = link.getView().getBytesTotal();
@@ -313,13 +341,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             }
             /* Collect current best result as we might need this for fallback later. */
             allBestResults.add(best);
-            /* Decide what to do based on users' settings. */
+            /* Decide what to add based on users' settings. */
             final ArrayList<DownloadLink> finalSelection = new ArrayList<DownloadLink>();
             if (mode == QualitySelectionMode.BEST) {
                 if (bestAllowed != null) {
                     finalSelection.add(best);
                 } else {
-                    logger.warning("Failed to find bestAllowed -> User must have bad plugin settings");
+                    logger.info("Failed to find bestAllowed -> User must have bad plugin settings");
                 }
             } else if (mode == QualitySelectionMode.BEST_OF_SELECTED) {
                 /*
@@ -329,7 +357,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 if (bestOfUserSelected != null) {
                     finalSelection.add(bestOfUserSelected);
                 } else {
-                    logger.warning("Failed to find bestOfUserSelected -> User must have bad plugin settings");
+                    logger.info("Failed to find bestOfUserSelected -> User must have bad plugin settings");
                 }
             } else {
                 // ALL_SELECTED
@@ -355,7 +383,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         if (cfg.isCrawlThumbnail()) {
             final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
             final String imageCaption = (String) mainImage.get("caption");
-            final DownloadLink thumbnail = this.createDownloadlink("directhttp://" + mainImage.get("url"));
+            final DownloadLink thumbnail = new DownloadLink(hosterplugin, hosterplugin.getHost(), mainImage.get("url").toString(), true);
+            thumbnail.setProperty(PROPERTY_TYPE, "thumbnail");
             thumbnail.setContentUrl(param.getCryptedUrl());
             thumbnail.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
             final String extension = mainImage.get("extension").toString();
@@ -370,7 +399,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 } else {
                     thumbnail.setFinalFileName(packageName + "." + extension);
                 }
-                if (imageCaption != null) {
+                if (!StringUtils.isEmpty(imageCaption)) {
                     thumbnail.setComment(imageCaption);
                 }
             }
@@ -381,17 +410,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         }
         if (ret.isEmpty()) {
             /* This should never happen! */
-            logger.warning("WTF Failed to find any results");
+            logger.warning("Failed to find any results");
         } else {
             for (final DownloadLink result : ret) {
                 distribute(result);
             }
         }
         return ret;
-    }
-
-    public static String regexAudioLanguageChar(final String audioCode) {
-        return new Regex(audioCode, "^VO?([A-Z])").getMatch(0);
     }
 
     private String getAndSetFilename(final DownloadLink link) {
@@ -461,7 +486,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             }
         } else {
             /* Language by URL */
-            final String langFromURL = new Regex(url, "https?://[^/]+/([a-z]{2})").getMatch(0);
+            final String langFromURL = gerUrlLanguage(url);
             if (langFromURL == null) {
                 /* Developer mistake */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -543,14 +568,17 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     }
 
     private static Language parseAudioLanguage(final String apiosCode) {
-        final String languageChar = ArteMediathekV3.regexAudioLanguageChar(apiosCode);
+        final String languageChar = new Regex(apiosCode, "^VO?([A-Z])").getMatch(0);
         if (languageChar != null) {
-            /* TODO: Add support for more languages */
             if ("F".equals(languageChar)) {
                 return Language.FRENCH;
             } else if ("A".equals(languageChar)) {
                 return Language.GERMAN;
             } else {
+                /**
+                 * .g. VOEU -> Original version which usually comes with foreign subtitle -> It's okay to return Language.OTHER for such
+                 * items!
+                 */
                 return Language.OTHER;
             }
         }
@@ -585,6 +613,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
+
         private static SubtitleType parse(final String apiosCode) {
             if (apiosCode.matches("[A-Z]+-ST(A|F)")) {
                 /* Forced subtitles e.g. parts of original film got foreign language -> Those parts are subtitled */
@@ -609,6 +638,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         NON_ORIGINAL_FRANCAIS,
         NON_ORIGINAL_GERMAN,
         FOREIGN;
+
         private static VersionType parse(final String apiosCode) {
             if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
                 return ORIGINAL_FRANCAIS;
