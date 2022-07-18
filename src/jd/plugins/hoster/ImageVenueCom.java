@@ -20,6 +20,9 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImageVenueCom extends PluginForHost {
@@ -164,9 +164,13 @@ public class ImageVenueCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
+            final String etag = con.getRequest().getResponseHeader("etag");
             if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.getCompleteContentLength() == 14396) {
+            } else if (StringUtils.equalsIgnoreCase(etag, "\"182f722b7-171e-479ab58eae440\"")) {
+                /* 2022-07-18: Special "Image removed copyright violation" dummy image. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (StringUtils.equalsIgnoreCase(etag, "\"19fdf2cd6-383c-5a4cd5b6710ed\"")) {
                 /* 2021-08-27: Special "404 not image unavailable" dummy picture. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
@@ -199,7 +203,7 @@ public class ImageVenueCom extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
     }

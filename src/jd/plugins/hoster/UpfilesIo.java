@@ -16,11 +16,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -31,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfiles.io" }, urls = { "https?://(?:www\\.)?upfiles\\.(?:io|com)/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UpfilesIo extends PluginForHost {
     public UpfilesIo(final PluginWrapper wrapper) {
         super(wrapper);
@@ -39,7 +44,7 @@ public class UpfilesIo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://upfiles.io/";
+        return "https://upfiles.com/page/terms";
     }
 
     @Override
@@ -47,10 +52,73 @@ public class UpfilesIo extends PluginForHost {
         return -1;
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "upfiles.app", "upfiles.io", "upfiles.com" });
+        return ret;
+    }
+
+    private final List<String> getDeadDomains() {
+        return Arrays.asList(new String[] { "upfiles.io" });
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-07-18: Main domain changed from upfiles.io to upfiles.com (upfiles.app) */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        final String domain;
+        final String domainFromURL = Browser.getHost(link.getPluginPatternMatcher());
+        if (getDeadDomains().contains(domainFromURL)) {
+            domain = this.getHost();
+        } else {
+            domain = domainFromURL;
+        }
+        return "https://" + domain + "/" + this.getFID(link);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         // requestFileInformation(link);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(getContentURL(link));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -59,9 +127,11 @@ public class UpfilesIo extends PluginForHost {
         try {
             br.setFollowRedirects(true);
             con = br.openGetConnection(downloadUrl);
-            if (!con.getContentType().contains("html")) {
+            if (this.looksLikeDownloadableContent(con)) {
                 logger.info("This url is a directurl");
-                link.setDownloadSize(con.getLongContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
             } else {
                 br.followConnection();
@@ -90,29 +160,33 @@ public class UpfilesIo extends PluginForHost {
     }
 
     String getDownloadFileUrl(final DownloadLink link, MethodName type) throws Exception {
-        String csrfToken = br.getRegex("csrf-token\" content=\"([^\"]+)\"").getMatch(0);
+        final String csrfToken = br.getRegex("csrf-token\" content=\"([^\"]+)\"").getMatch(0);
         UrlQuery query = new UrlQuery();
         query.add("_token", csrfToken);
         query.add("ccp", "1");
         query.add("action", "continue");
-        br.postPage(link.getPluginPatternMatcher(), query);
-        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LcsK9kaAAAAABe3I5PTS2zqmeKl3XueBrKNk3-Z").getToken();
+        br.postPage(br.getURL(), query);
+        final String hcaptchaSiteKey = br.getRegex("\"hcaptcha_checkbox_site_key\":\"([^\"]+)\"").getMatch(0);
         String view_form_data = br.getRegex("view_form_data\" value=\"([^\"]+)\"").getMatch(0);
         UrlQuery query2 = new UrlQuery();
         query2.add("_token", csrfToken);
         query2.add("view_form_data", view_form_data);
         query2.add("action", "captcha");
-        query2.add("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        br.postPage(link.getPluginPatternMatcher(), query2);
+        final String hcaptchaToken = new CaptchaHelperHostPluginHCaptcha(this, br, hcaptchaSiteKey).getToken();
+        query2.add("g-recaptcha-response", Encoding.urlEncode(hcaptchaToken));
+        query2.add("h-captcha-response", Encoding.urlEncode(hcaptchaToken));
+        br.postPage(br.getURL(), query2);
         UrlQuery query3 = new UrlQuery();
         query3.add("_token", csrfToken);
         query3.add("view_form_data", view_form_data);
+        final String waitSecondsStr = br.getRegex("class=\"timer\">\\s*(\\d+)\\s*</span>").getMatch(0);
+        final int waitSeconds = Integer.parseInt(waitSecondsStr);
         if (type == MethodName.handleFree) {
-            sleep(10 * 1000l, link);
+            sleep(waitSeconds * 1000l, link);
         } else {
-            Thread.sleep(10000);
+            Thread.sleep(waitSeconds + 100);
         }
-        br.postPage("https://upfiles.io/file/go", query3);
+        br.postPage("/file/go", query3);
         return PluginJSonUtils.getJsonValue(br, "url");
     }
 
@@ -123,11 +197,11 @@ public class UpfilesIo extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String downloadUrl = getDownloadFileUrl(link, MethodName.requestFileInformation);
+        final String directurl = getDownloadFileUrl(link, MethodName.requestFileInformation);
         URLConnectionAdapter con = null;
         try {
             br.setFollowRedirects(true);
-            con = br.openGetConnection(downloadUrl);
+            con = br.openGetConnection(directurl);
             if (this.looksLikeDownloadableContent(con)) {
                 logger.info("This url is a directurl");
                 if (con.getCompleteContentLength() > 0) {

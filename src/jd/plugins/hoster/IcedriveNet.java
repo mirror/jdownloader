@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -31,13 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IcedriveNet extends PluginForHost {
@@ -248,7 +248,6 @@ public class IcedriveNet extends PluginForHost {
                 valid = true;
                 return true;
             } else {
-                link.removeProperty(directurlproperty);
                 brc.followConnection(true);
                 throw new IOException();
             }
@@ -257,6 +256,7 @@ public class IcedriveNet extends PluginForHost {
             return false;
         } finally {
             if (!valid) {
+                link.removeProperty(directurlproperty);
                 try {
                     dl.getConnection().disconnect();
                 } catch (Throwable ignore) {
