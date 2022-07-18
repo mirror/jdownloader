@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "http://(?:www\\.)?126(?:disk|xy|xiazai)\\.com/(?:file|rf)view_(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "126disk.com" }, urls = { "https?://(?:www\\.)?126(?:disk|xy|xiazai)\\.com/(?:file|rf)view_(\\d+)\\.html" })
 public class HundredTwentySixDiskCom extends PluginForHost {
     public HundredTwentySixDiskCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,7 +41,7 @@ public class HundredTwentySixDiskCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("rfview_", "fileview_"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("rfview_", "fileview_"));
     }
 
     @Override
@@ -81,9 +81,9 @@ public class HundredTwentySixDiskCom extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         }
-        String md5 = br.getRegex(">M D 5值 ：</b>([a-z0-9]{32})</li>").getMatch(0);
+        String md5 = br.getRegex("(?i)>M D 5值 ：</b>([a-z0-9]{32})</li>").getMatch(0);
         if (md5 == null) {
-            md5 = br.getRegex("<td>文件MD5：([a-f0-9]{32})</td>").getMatch(0);
+            md5 = br.getRegex("(?i)<td>文件MD5：([a-f0-9]{32})</td>").getMatch(0);
         }
         if (md5 != null) {
             link.setMD5Hash(md5);
@@ -92,9 +92,9 @@ public class HundredTwentySixDiskCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage("/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=0&type=wt&t=" + System.currentTimeMillis());
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        br.getPage("/download.php?id=" + new Regex(link.getPluginPatternMatcher(), "(\\d+)\\.html$").getMatch(0) + "&share=0&type=wt&t=" + System.currentTimeMillis());
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* 2020-04-16: I was not able to find a single downloadable file, 404 also happens in browser */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
@@ -103,13 +103,18 @@ public class HundredTwentySixDiskCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("<title>Error</title>|<TITLE>无法找到该页</TITLE>")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
