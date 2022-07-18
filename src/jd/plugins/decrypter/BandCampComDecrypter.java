@@ -26,6 +26,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -42,13 +49,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BandCampCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { BandCampCom.class })
@@ -248,7 +248,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                                                 con = br2.openHeadConnection(videoEntry.getPluginPatternMatcher());
                                                 if (looksLikeDownloadableContent(con)) {
                                                     dl.setAvailable(true);
-                                                    dl.setVerifiedFileSize(con.getLongContentLength());
+                                                    dl.setVerifiedFileSize(con.getCompleteContentLength());
                                                     ret.add(videoEntry);
                                                 }
                                             } catch (IOException e) {

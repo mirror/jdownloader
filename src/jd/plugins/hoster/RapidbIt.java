@@ -114,7 +114,7 @@ public class RapidbIt extends PluginForHost {
             final Map<String, Object> postdata = new HashMap<String, Object>();
             postdata.put("url", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             /* This timestamp is later used to notify the user that everything requested within a specified timespan has been downloaded. */
-            postdata.put("group_id", System.currentTimeMillis());
+            postdata.put("group_id", System.currentTimeMillis() / 1000);
             postdata.put("notif_db", false);
             postdata.put("notif_email", false);
             br.postPageRaw(API_BASE + "/services/downloadfile", JSonStorage.serializeToJson(postdata));
@@ -122,9 +122,16 @@ public class RapidbIt extends PluginForHost {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             handleErrorMap(account, link, entries);
             final Map<String, Object> postdata2 = new HashMap<String, Object>();
-            postdata2.put("file_id", entries.get("file_id"));
-            br.postPageRaw(API_BASE + "/files", JSonStorage.serializeToJson(postdata));
+            postdata2.put("id", entries.get("file_id"));
+            postdata2.put("filehosting_id", entries.get("filehosting_id"));
+            // postdata2.put("filename", entries.get("filename"));
+            postdata2.put("sort", "id");
+            postdata2.put("order", "asc");
+            postdata2.put("offset", 0);
+            postdata2.put("limit", 1);
+            br.postPageRaw(API_BASE + "/files", JSonStorage.serializeToJson(postdata2));
             final Map<String, Object> dlresponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            handleErrorMap(account, link, dlresponse);
             final List<Map<String, Object>> files = (List<Map<String, Object>>) dlresponse.get("result");
             final Map<String, Object> file = files.get(0);
             final String dllink = (String) file.get("download_url");
