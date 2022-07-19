@@ -17,8 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.WeakHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,13 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ufile.io" }, urls = { "https?://(?:\\w+\\.)?(?:uploadfiles|ufile)\\.io/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UfileIo extends antiDDoSForHost {
     public UfileIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,13 +68,37 @@ public class UfileIo extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "ufile.io", "uploadfiles.io" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
-    public String rewriteHost(String host) {
-        if (host == null || host.equalsIgnoreCase("uploadfiles.io")) {
-            return this.getHost();
-        } else {
-            return super.rewriteHost(host);
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]{2,})");
         }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     /* Connection stuff */
@@ -194,13 +219,13 @@ public class UfileIo extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            if (br.containsHTML(">Premium Access Only")) {
+            if (br.containsHTML("(?i)>\\s*Premium Access Only")) {
                 throw new AccountRequiredException();
             }
             final String fileID = this.getFID(link);
@@ -244,8 +269,8 @@ public class UfileIo extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -253,13 +278,13 @@ public class UfileIo extends antiDDoSForHost {
                 br2.setFollowRedirects(true);
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
                 if (!looksLikeDownloadableContent(con)) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(property, Property.NULL);
                 } else {
                     return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
             } finally {
                 try {
                     con.disconnect();
@@ -392,10 +417,10 @@ public class UfileIo extends antiDDoSForHost {
         login(account, false);
         getPage(link.getPluginPatternMatcher());
         if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             /* 2020-06-15: WTF premium users will have to enter captchas too */
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "premium_directlink");
+            handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "premium_directlink");
         }
     }
 
