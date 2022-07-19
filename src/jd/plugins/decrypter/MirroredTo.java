@@ -16,14 +16,17 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.AbortException;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -35,7 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrored.to" }, urls = { "https?://(?:www\\.)?((mirrorcreator\\.com|mirrored\\.to)/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}|https?://(?:www\\.)?mirrored\\.to/multilinks/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MirroredTo extends PluginForDecrypt {
     private String                  userAgent      = null;
     private ArrayList<DownloadLink> decryptedLinks = null;
@@ -47,7 +50,39 @@ public class MirroredTo extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mirrored.to", "mirrorcreator.com", "mir.cr" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(";
+            regex += "multilinks/[a-z0-9]+";
+            regex += "|(files/|download\\.php\\?uid=)?[0-9A-Z]{8}";
+            regex += ")";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         try {
             this.param = param;
             br = new Browser();
@@ -58,10 +93,11 @@ public class MirroredTo extends PluginForDecrypt {
             }
             br.getHeaders().put("User-Agent", userAgent);
             if (param.toString().contains("/multilinks/")) {
+                br.setFollowRedirects(true);
                 br.getPage(param.toString());
                 final String[] urls = br.getRegex("(https?://[^<>\"]+/files/[^<>\"]+|https?://mir\\.cr/[A-Za-z0-9]+)").getColumn(0);
                 if (urls == null || urls.length == 0) {
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 for (final String url : urls) {
                     decryptedLinks.add(this.createDownloadlink(url));
@@ -74,23 +110,22 @@ public class MirroredTo extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(parameter);
             br.setFollowRedirects(false);
-            // set packagename
-            // because mirror creator is single file uploader. we want a single packagename for all these uploads vs one for each part!
-            String fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*\\-\\s*Mirrored\\.to").getMatch(0);
-            final String filesize = br.getRegex(">\\s*File\\s+size\\s*:\\s*<span>\\s*([^<>\"]+)\\s*<").getMatch(0);
-            if (fpName != null) {
+            String filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*\\-\\s*Mirrored\\.to").getMatch(0);
+            final String filesize = br.getRegex("<span>(\\d+(\\.\\d{1,2})? [MBTGK]+)</span><br>").getMatch(0);
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename).trim();
                 // here we will strip extensions!
                 String ext;
                 do {
-                    ext = getFileNameExtensionFromString(fpName);
+                    ext = getFileNameExtensionFromString(filename);
                     if (ext != null) {
-                        fpName = fpName.replaceFirst(Pattern.quote(ext) + "$", "");
+                        filename = filename.replaceFirst(Pattern.quote(ext) + "$", "");
                     }
                 } while (ext != null);
             }
-            fp = fpName != null ? FilePackage.getInstance() : null;
+            fp = filename != null ? FilePackage.getInstance() : null;
             if (fp != null) {
-                fp.setName(fpName);
+                fp.setName(filename);
                 fp.setAllowMerge(true);
             }
             // more steps y0! 20170602
@@ -115,13 +150,10 @@ public class MirroredTo extends PluginForDecrypt {
             }
             /* Error handling */
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable|>Sorry, an error occured)")) {
-                logger.info("The following link should be offline: " + param.toString());
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML(">\\s*Sorry, no download links available")) {
                 /* 2020-07-15 */
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // lots of forms
             Form[] forms = br.getFormsByActionRegex("/downlink\\.php\\?uid=" + uid);
@@ -218,6 +250,7 @@ public class MirroredTo extends PluginForDecrypt {
                 if (filesize != null) {
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
+                setSpecialProperties(dl);
                 distribute(dl);
                 decryptedLinks.add(dl);
                 return;
@@ -246,18 +279,30 @@ public class MirroredTo extends PluginForDecrypt {
                 // Handling for already regexed final-links
                 dllink = singlelink;
             }
-            if (dllink == null || dllink.equals("")) {
+            if (StringUtils.isEmpty(dllink)) {
                 // Continue away, randomised pages can cause failures.
                 logger.warning("Possible plugin error: " + param.toString());
                 logger.warning("Continuing...");
                 continue;
             }
-            final DownloadLink fina = createDownloadlink(dllink);
+            final DownloadLink dl = createDownloadlink(dllink);
             if (fp != null) {
-                fp.add(fina);
+                fp.add(dl);
             }
-            distribute(fina);
-            decryptedLinks.add(fina);
+            setSpecialProperties(dl);
+            distribute(dl);
+            decryptedLinks.add(dl);
+        }
+    }
+
+    private void setSpecialProperties(final DownloadLink link) {
+        if (fp != null) {
+            /*
+             * Special: This service creates multiple mirror of files but filehost may change the original filename. Store the original name
+             * as property so if users or other plugins want to, they can make use of that.
+             */
+            link.setProperty(this.getHost() + "_filename", fp.getName());
+            link.setName(fp.getName());
         }
     }
 
