@@ -800,6 +800,21 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
+     *
+     * Can we expect a captcha if we try to load link with/without account?
+     *
+     *
+     * Use within plugin only.
+     *
+     * @param link
+     * @param acc
+     * @return
+     */
+    public boolean hasCaptcha(CryptedLink link, Account acc) {
+        return false;
+    }
+
+    /**
      * DO not use in Plugins for old 09581 Stable or try/catch
      *
      * @return

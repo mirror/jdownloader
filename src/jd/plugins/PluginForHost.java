@@ -1749,7 +1749,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      *
-     * Can we expect a captcha if we try to load link with acc?
+     * Can we expect a captcha if we try to load link with/without account?
      *
      *
      * Use within plugin only.

@@ -129,9 +129,12 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) throws PluginException {
-        setConstants(link);
+    @Override
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        try {
+            setConstants(link);
+        } catch (final Throwable e) {
+        }
         return hasCaptcha;
     }
 

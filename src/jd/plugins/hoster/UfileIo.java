@@ -190,6 +190,9 @@ public class UfileIo extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
@@ -197,11 +200,8 @@ public class UfileIo extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"file-name\">([^<>\"]+)<").getMatch(0);
-        String filesize = br.getRegex("File Size\\s*:([^<>\"]+)").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            link.setName(this.getFID(link));
-        } else {
+        final String filesize = br.getRegex("File Size\\s*:([^<>\"]+)").getMatch(0);
+        if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
             /* 2020-07-27: Set final filename here as contentDisposition filenames are sometimes crippled. */
             link.setFinalFileName(filename);
@@ -239,7 +239,7 @@ public class UfileIo extends antiDDoSForHost {
             /* 2020-01-27: They've added reCaptchaV2 (invisible) */
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             String postData = "csrf_test_name=" + csrftest + "&slug=" + fileID + "&token=" + Encoding.urlEncode(recaptchaV2Response);
-            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             postPage("/ajax/generate_download/", postData);
             if (!br.toString().startsWith("\"http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
