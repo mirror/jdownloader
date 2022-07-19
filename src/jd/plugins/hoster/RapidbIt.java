@@ -24,7 +24,6 @@ import java.util.Map;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -47,11 +46,17 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidb.it" }, urls = { "" })
 public class RapidbIt extends PluginForHost {
-    private static final String          API_BASE               = "https://rapidb.it/api";
+    private final String                 API_BASE               = "https://rapidb.it/api";
     private static MultiHosterManagement mhm                    = new MultiHosterManagement("rapidb.it");
-    private static final boolean         resume                 = true;
-    private static final int             maxchunks              = 0;
-    private static final String          PROPERTY_ACCOUNT_TOKEN = "login_token";
+    private final boolean                resume                 = true;
+    private final int                    maxchunks              = 0;
+    private final String                 PROPERTY_ACCOUNT_TOKEN = "login_token";
+    /**
+     * 2022-07-19: While their API docs state all possible errormessages, their API does not return any errormessage - only error-codes.
+     * </br>
+     * This is where this static mapping comes into play.
+     */
+    private final Map<Integer, String>   errorCodeMapping       = Map.of(101, "Unknown PHP error", 102, "The selected controller does not exist", 103, "The selected controller exists but its source file was not found", 104, "Requested path/method does not exist", 105, "Your IP was banned due too high number of failed login attempts", 106, "You are logged off (access token is not valid or expired)", 107, "Owned permissions (scope) does not allow access to the controller/action", 108, "Input data contains invalid characters (only UTF-8)");
 
     @SuppressWarnings("deprecation")
     public RapidbIt(PluginWrapper wrapper) {
@@ -100,37 +105,54 @@ public class RapidbIt extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
+    private String getPropertyKey(final String property) {
+        return this.getHost() + "_" + property;
+    }
+
+    private String getMultihosterFileID(final DownloadLink link) {
+        return link.getStringProperty(getPropertyKey("file_id"));
+    }
+
+    private void setMultihosterFileID(final DownloadLink link, final String file_id) {
+        link.setProperty(getPropertyKey("file_id"), file_id);
+    }
+
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         this.login(account, false);
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* TODO: This plugin is still under development */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            /* Only for debugging */
-            br.setAllowedResponseCodes(500);
-        }
         if (!attemptStoredDownloadurlDownload(link)) {
-            final Map<String, Object> postdata = new HashMap<String, Object>();
-            postdata.put("url", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-            /* This timestamp is later used to notify the user that everything requested within a specified timespan has been downloaded. */
-            postdata.put("group_id", System.currentTimeMillis() / 1000);
-            postdata.put("notif_db", false);
-            postdata.put("notif_email", false);
-            br.postPageRaw(API_BASE + "/services/downloadfile", JSonStorage.serializeToJson(postdata));
-            this.checkErrors(account, link);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            handleErrorMap(account, link, entries);
+            String file_id = getMultihosterFileID(link);
+            if (file_id == null) {
+                logger.info("Creating internal file_id");
+                final Map<String, Object> postdata = new HashMap<String, Object>();
+                postdata.put("url", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+                /*
+                 * This timestamp is later used to notify the user that everything requested within a specified timespan has been
+                 * downloaded.
+                 */
+                postdata.put("group_id", System.currentTimeMillis() / 1000);
+                postdata.put("notif_db", false);
+                postdata.put("notif_email", false);
+                br.postPageRaw(API_BASE + "/services/downloadfile", JSonStorage.serializeToJson(postdata));
+                this.checkErrors(account, link);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                handleErrorMap(account, link, entries);
+                file_id = entries.get("file_id").toString();
+                /* Save this ID to re-use on next try. */
+                this.setMultihosterFileID(link, file_id);
+            }
+            logger.info("Trying to init download for internal file_id: " + file_id);
             final UrlQuery query = new UrlQuery();
-            query.add("id", entries.get("file_id").toString());
-            // query.add("id", "6272");
-            query.add("filehosting_id", entries.get("filehosting_id").toString());
-            // query.add("filename", entries.get("filename"));
+            query.add("id", file_id);
             query.add("sort", "id");
             query.add("order", "asc");
             query.add("offset", "0");
             query.add("limit", "1");
+            /*
+             * This will return a list of files based on our criteria --> This list should only contain one result which is the file we
+             * want.
+             */
             br.getPage(API_BASE + "/files?" + query.toString());
             final Map<String, Object> dlresponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             handleErrorMap(account, link, dlresponse);
@@ -138,9 +160,9 @@ public class RapidbIt extends PluginForHost {
             final Map<String, Object> file = files.get(0);
             final String dllink = (String) file.get("download_url");
             if (StringUtils.isEmpty(dllink)) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverside download in progress " + file.get("download_percent") + "%", 10 * 1000l);
             }
-            link.setProperty(this.getHost() + "directlink", dllink);
+            link.setProperty(this.getPropertyKey("directlink"), dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
@@ -155,7 +177,7 @@ public class RapidbIt extends PluginForHost {
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String directurlproperty = this.getHost() + "directlink";
+        final String directurlproperty = this.getPropertyKey("directlink");
         final String url = link.getStringProperty(directurlproperty);
         if (StringUtils.isEmpty(url)) {
             return false;
@@ -300,10 +322,27 @@ public class RapidbIt extends PluginForHost {
             /* No error */
             return;
         }
-        if (link != null) {
-            mhm.handleErrorGeneric(account, this.getDownloadLink(), "Error " + errorcode, 50, 1 * 60 * 1000l);
+        if (errorCodeMapping.containsKey(errorcode)) {
+            /* Known errorcode */
+            final String errorMsg = errorCodeMapping.get(errorcode);
+            if (errorcode == 105) {
+                /* IP is temporarily banned */
+                throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);
+            } else if (errorcode == 106) {
+                /* Invalid logins */
+                throw new AccountInvalidException(errorMsg);
+            } else if (link != null) {
+                mhm.handleErrorGeneric(account, link, "Error " + errorcode, 50, 1 * 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException(errorMsg, 3 * 60 * 1000l);
+            }
         } else {
-            throw new AccountInvalidException("Error " + errorcode);
+            /* Unknown errorcode */
+            if (link != null) {
+                mhm.handleErrorGeneric(account, link, "Error " + errorcode, 50, 1 * 60 * 1000l);
+            } else {
+                throw new AccountInvalidException("Error " + errorcode);
+            }
         }
     }
 
@@ -313,5 +352,9 @@ public class RapidbIt extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        if (link != null) {
+            /* This will allow our plugin to start a new serverside "job" on next try. */
+            this.setMultihosterFileID(link, null);
+        }
     }
 }

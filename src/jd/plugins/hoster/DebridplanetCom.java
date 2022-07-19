@@ -29,7 +29,6 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -112,14 +111,14 @@ public class DebridplanetCom extends PluginForHost {
             urllist.add(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             postdata.put("listurl", urllist);
             br.postPageRaw(API_BASE + "/gen_link.php", JSonStorage.serializeToJson(postdata));
-            this.checkErrors(account);
+            this.checkErrors(account, link);
             final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
             /* 2021-03-24: Sometimes they just return "[]" -> wtf */
             if (ressourcelist.size() == 0) {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "API returned empty array", 50, 5 * 60 * 1000l);
             }
             Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
-            handleErrorMap(account, entries);
+            handleErrorMap(account, link, entries);
             entries = (Map<String, Object>) entries.get("data");
             final String dllink = (String) (entries != null ? entries.get("link") : null);
             if (StringUtils.isEmpty(dllink)) {
@@ -224,7 +223,7 @@ public class DebridplanetCom extends PluginForHost {
                         logger.info("Validating login token...");
                         br.postPage(API_BASE + "/user-info.php", "");
                         try {
-                            checkErrors(account);
+                            checkErrors(account, null);
                             logger.info("Token login successful");
                             return;
                         } catch (final PluginException e) {
@@ -254,13 +253,13 @@ public class DebridplanetCom extends PluginForHost {
         }
     }
 
-    private void checkErrors(final Account account) throws PluginException, InterruptedException {
+    private void checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         try {
             final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
             if (jsonO == null || !(jsonO instanceof Map)) {
                 return;
             }
-            handleErrorMap(account, (Map<String, Object>) jsonO);
+            handleErrorMap(account, link, (Map<String, Object>) jsonO);
         } catch (final JSonMapperException jme) {
             if (this.getDownloadLink() != null) {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "Bad API answer", 50, 5 * 60 * 1000l);
@@ -270,7 +269,7 @@ public class DebridplanetCom extends PluginForHost {
         }
     }
 
-    private void handleErrorMap(final Account account, final Map<String, Object> entries) throws PluginException, InterruptedException {
+    private void handleErrorMap(final Account account, final DownloadLink link, final Map<String, Object> entries) throws PluginException, InterruptedException {
         final int success = ((Number) entries.get("success")).intValue();
         if (success == 1) {
             /* No error */
@@ -296,15 +295,15 @@ public class DebridplanetCom extends PluginForHost {
                 throw new AccountInvalidException();
             } else {
                 /* Unknown error */
-                if (this.getDownloadLink() != null) {
-                    mhm.handleErrorGeneric(account, this.getDownloadLink(), message, 50, 5 * 60 * 1000l);
+                if (link != null) {
+                    mhm.handleErrorGeneric(account, link, message, 50, 5 * 60 * 1000l);
                 } else {
                     throw new AccountUnavailableException("Unknown error happened: " + message, 5 * 60 * 1000l);
                 }
             }
         } else {
             if (this.getDownloadLink() != null) {
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), message, 50, 1 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, message, 50, 1 * 60 * 1000l);
             } else {
                 throw new AccountUnavailableException("Unknown error happened: " + message, 5 * 60 * 1000l);
             }
