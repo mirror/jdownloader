@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -30,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "https?://(?:www\\.|en\\.)?workupload\\.com/(file|start)/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "https?://(?:www\\.|en\\.)?workupload\\.com/(?:file|start)/([A-Za-z0-9]+)" })
 public class WorkuploadCom extends PluginForHost {
     public WorkuploadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,18 +47,28 @@ public class WorkuploadCom extends PluginForHost {
     private static final int     FREE_MAXCHUNKS         = 1;
     private static final int     FREE_MAXDOWNLOADS      = 20;
     private static final String  html_passwordprotected = "id=\"passwordprotected_file_password\"";
-    private String               fid                    = null;
     private boolean              passwordprotected      = false;
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 410 });
-        fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        link.setLinkID(fid);
-        br.getPage("https://workupload.com/file/" + fid);
+        br.getPage("https://" + this.getHost() + "/file/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -91,7 +102,7 @@ public class WorkuploadCom extends PluginForHost {
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setName(Encoding.htmlDecode(filename).trim());
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
@@ -115,7 +126,7 @@ public class WorkuploadCom extends PluginForHost {
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);
                 }
-                this.br.postPage(this.br.getURL(), "passwordprotected_file%5Bpassword%5D=" + Encoding.urlEncode(passCode) + "&passwordprotected_file%5Bsubmit%5D=&passwordprotected_file%5Bkey%5D=" + fid);
+                this.br.postPage(this.br.getURL(), "passwordprotected_file%5Bpassword%5D=" + Encoding.urlEncode(passCode) + "&passwordprotected_file%5Bsubmit%5D=&passwordprotected_file%5Bkey%5D=" + this.getFID(link));
                 if (this.br.containsHTML(html_passwordprotected)) {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
@@ -123,12 +134,12 @@ public class WorkuploadCom extends PluginForHost {
                     link.setDownloadPassword(passCode);
                 }
             }
-            this.br.getPage("/start/" + fid);
+            this.br.getPage("/start/" + this.getFID(link));
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            this.br.getPage("/api/file/getDownloadServer/" + fid);
+            this.br.getPage("/api/file/getDownloadServer/" + this.getFID(link));
             dllink = PluginJSonUtils.getJsonValue(this.br, "url");
-            if (dllink == null) {
+            if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
         }

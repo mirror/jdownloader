@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -37,23 +36,20 @@ public class PubizaCom extends antiDDoSForDecrypt {
     public PubizaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+    // private Browser ajax = null;
+    // private void ajaxPostPage(final String url, final LinkedHashMap<String, String> param) throws Exception {
+    // ajax = br.cloneBrowser();
+    // ajax.getHeaders().put("Accept", "*/*");
+    // ajax.getHeaders().put("Connection-Type", "application/x-www-form-urlencoded");
+    // ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+    // postPage(ajax, url, param);
+    // }
 
-    private Browser ajax = null;
-
-    private void ajaxPostPage(final String url, final LinkedHashMap<String, String> param) throws Exception {
-        ajax = br.cloneBrowser();
-        ajax.getHeaders().put("Accept", "*/*");
-        ajax.getHeaders().put("Connection-Type", "application/x-www-form-urlencoded");
-        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        postPage(ajax, url, param);
-    }
-
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(false);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
         if (redirect == null) {
@@ -64,12 +60,12 @@ public class PubizaCom extends antiDDoSForDecrypt {
                 decryptedLinks.add(createDownloadlink(redirect));
                 return decryptedLinks;
             } else {
+                br.setFollowRedirects(true);
                 br.followRedirect(true);
             }
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
         final Form form1 = br.getFormbyProperty("id", "display_go_form");
@@ -87,6 +83,7 @@ public class PubizaCom extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
