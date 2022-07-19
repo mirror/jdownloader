@@ -102,12 +102,12 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final int      FREE_MAXDOWNLOADS                             = 20;
+    private static final int      FREE_MAXDOWNLOADS                             = -1;
+    private static final int      ACCOUNT_FREE_MAXDOWNLOADS                     = -1;
+    private static final int      ACCOUNT_PREMIUM_MAXDOWNLOADS                  = -1;
     /* Docs: https://pixeldrain.com/api */
     public static final String    API_BASE                                      = "https://pixeldrain.com/api";
     protected static final String PIXELDRAIN_JD_API_HELP_PAGE                   = "https://pixeldrain.com/user/connect_app?app=jdownloader";
-    private static final int      ACCOUNT_FREE_MAXDOWNLOADS                     = 20;
-    private static final int      ACCOUNT_PREMIUM_MAXDOWNLOADS                  = 20;
     private static final String   PROPERTY_CAPTCHA_REQUIRED                     = "captcha_required";
     private static final String   PROPERTY_DOWNLOAD_SPEED_LIMIT                 = "download_speed_limit";
     private static final String   PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG = "has_shown_apikey_help_dialog";
@@ -631,7 +631,7 @@ public class PixeldrainCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_FREE_MAXDOWNLOADS;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
