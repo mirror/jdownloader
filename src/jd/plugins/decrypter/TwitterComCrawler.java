@@ -863,13 +863,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         return ret;
     }
-    // private Number getMaxItemsToCrawl(final String url) {
-    // try {
-    // return Integer.parseInt(UrlQuery.parse(url).get("maxitems"));
-    // } catch (final Throwable e) {
-    // return null;
-    // }
-    // }
 
     /** Crawls tweets AND re-tweets of profile in given URL. */
     private ArrayList<DownloadLink> crawlUserViaWebAPI(final CryptedLink param, final Account account) throws Exception {
@@ -934,7 +927,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         if (!result.get("__typename").toString().equalsIgnoreCase("Tweet")) {
                             continue;
                         }
-                        // TODO: Check if this is the correct user object
                         final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(result, "core/user_results/result/legacy");
                         final Map<String, Object> tweet = (Map<String, Object>) result.get("legacy");
                         if (tweet == null) {

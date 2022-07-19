@@ -151,7 +151,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         return ret;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         setInitConstants(param);
         br = prepBrowser(br, false);
         try {
