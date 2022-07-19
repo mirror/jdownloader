@@ -13,7 +13,12 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "twitter.com", type = Type.HOSTER)
 public interface TwitterConfigInterface extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                      = new TRANSLATION();
+    final String                    text_UseOriginalFilenames        = "Use original filename instead of plugin filenames?";
     final String                    text_MarkTweetRepliesViaFilename = "Append '_reply' to filenames of tweets that are replies to other tweets?";
+    final String                    text_AddTweetTextAsTextfile      = "Add tweet text as textfile?";
+    final String                    text_CrawlURLsInsideTweetText    = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
+    final String                    text_CrawlRetweets               = "[BETA] Crawl retweets?";
+    final String                    text_PreferHLSVideoDownload      = "Videos: Prefer HLS over http download?";
 
     public static class TRANSLATION {
         /* 2022-03-18: Not needed anymore for now. */
@@ -22,7 +27,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         // add URLs without '/media'!)";
         // }
         public String getUseOriginalFilenames_label() {
-            return "Use original filename instead of plugin filenames?";
+            return text_UseOriginalFilenames;
         }
 
         public String getMarkTweetRepliesViaFilename_label() {
@@ -30,15 +35,19 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         }
 
         public String getAddTweetTextAsTextfile_label() {
-            return "Add tweet text as textfile?";
+            return text_AddTweetTextAsTextfile;
         }
 
         public String getCrawlURLsInsideTweetText_label() {
-            return "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
+            return text_CrawlURLsInsideTweetText;
+        }
+
+        public String getCrawlRetweets_label() {
+            return text_CrawlRetweets;
         }
 
         public String getPreferHLSVideoDownload_label() {
-            return "Videos: Prefer HLS over http download?";
+            return text_PreferHLSVideoDownload;
         }
 
         public String getGlobalRequestIntervalLimitApiTwitterComMilliseconds_label() {
@@ -65,7 +74,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @DescriptionForConfigEntry("Use original filename instead of plugin filenames?")
+    @DescriptionForConfigEntry(text_UseOriginalFilenames)
     @Order(20)
     boolean isUseOriginalFilenames();
 
@@ -81,15 +90,23 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @DescriptionForConfigEntry("Add tweet text as textfile?")
+    @DescriptionForConfigEntry(text_AddTweetTextAsTextfile)
     @Order(30)
     boolean isAddTweetTextAsTextfile();
 
     void setAddTweetTextAsTextfile(boolean b);
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @DescriptionForConfigEntry(text_CrawlRetweets)
+    @Order(35)
+    boolean isCrawlRetweets();
+
+    void setCrawlRetweets(boolean b);
+
     @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry("Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!")
+    @DescriptionForConfigEntry(text_CrawlURLsInsideTweetText)
     @Order(40)
     boolean isCrawlURLsInsideTweetText();
 
@@ -97,7 +114,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry("Videos: Prefer HLS over http download?")
+    @DescriptionForConfigEntry(text_PreferHLSVideoDownload)
     @Order(50)
     boolean isPreferHLSVideoDownload();
 
