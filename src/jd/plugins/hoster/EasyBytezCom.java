@@ -160,6 +160,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
              * that limit and the account will have full traffic again (2 GB/day[?])
              */
             ai.setSpecialTraffic(true);
+            account.setAllowReconnectToResetLimits(true);
         }
         return ai;
     }

@@ -33,17 +33,44 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PixeldrainCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixeldrain.com" }, urls = { "https?://(?:www\\.)?pixeldrain\\.com/l/([A-Za-z0-9]+)((?:\\?embed)?#item=(\\d+))?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { PixeldrainCom.class })
 public class PixeldrainComFolder extends PluginForDecrypt {
     public PixeldrainComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public static List<String[]> getPluginDomains() {
+        return PixeldrainCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/l/([A-Za-z0-9]+)((?:\\?embed)?#item=(\\d+))?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String folderID = urlinfo.getMatch(0);
@@ -74,7 +101,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             PixeldrainCom.setDownloadLinkInfo(this, dl, file);
             if (targetIndex != null && index == targetIndex.intValue()) {
                 /* User wants only one item within that folder */
-                logger.info("Found target-file at position: " + index + " | " + dl.getFinalFileName());
+                logger.info("Found target-file at index: " + index + " | " + dl.getFinalFileName());
                 decryptedLinks.clear();
                 decryptedLinks.add(dl);
                 break;
