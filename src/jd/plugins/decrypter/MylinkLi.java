@@ -17,6 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Time;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -25,10 +29,8 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.Time;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mylink.vc" }, urls = { "https?://(?:www\\.)?(?:mylink\\.(?:li|how|cx|vc)|myl\\.li)/[A-Za-z0-9]+" })
 public class MylinkLi extends antiDDoSForDecrypt {
@@ -94,8 +96,10 @@ public class MylinkLi extends antiDDoSForDecrypt {
         /* A lot of Forms may appear here - all to force the user to share the link, bookmark their page, click on ads and so on ... */
         br.setFollowRedirects(false);
         Form goForm = null;
-        for (int i = 0; i <= 10; i++) {
-            logger.info("Loop: " + i);
+        int numberof404Responses = 0;
+        final int maxLoops = 10;
+        for (int i = 0; i <= maxLoops; i++) {
+            logger.info("Loop: " + i + "/" + maxLoops);
             goForm = br.getFormbyKey("hash");
             if (goForm == null) {
                 break;
@@ -106,14 +110,19 @@ public class MylinkLi extends antiDDoSForDecrypt {
                 /* 2021-07-08: Attempt to avoid strange error/adblock detection stuff hmm unsure about that... but it works! */
                 if (br.containsHTML("<title>404</title>")) {
                     /* This should only happen once */
-                    logger.info("Trying 404 avoidance...");
+                    numberof404Responses++;
+                    logger.info("Trying 404 avoidance | Attempt: " + numberof404Responses);
                     submitForm(goForm);
                 }
             }
         }
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            return null;
+            if (numberof404Responses > 1) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
