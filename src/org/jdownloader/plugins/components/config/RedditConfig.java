@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
@@ -12,31 +13,42 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "reddit.com", type = Type.HOSTER)
 public interface RedditConfig extends PluginConfigInterface {
-    public static final RedditConfig.TRANSLATION TRANSLATION = new TRANSLATION();
+    public static final RedditConfig.TRANSLATION TRANSLATION                             = new TRANSLATION();
+    final String                                 text_PreferredCommentsPackagenameScheme = "Select preferred package name scheme for single comments";
+    final String                                 text_CustomCommentsPackagenameScheme    = "Define custom packagename scheme";
+    final String                                 text_PreferredFilenameScheme            = "Select preferred filename scheme";
+    final String                                 text_CrawlerTextDownloadMode            = "Crawler: Select text download mode";
+    final String                                 text_CrawlUrlsInsidePostText            = "Crawl URLs inside post-text?";
+    final String                                 text_CrawlCompleteUserProfiles          = "Crawl complete user profiles?\r\nThis can lead to very time consuming crawl processes!";
+    final String                                 text_CrawlCompleteSubreddits            = "Crawl complete subreddits?\r\nThis can cause very time consuming crawl processes!";
 
     public static class TRANSLATION {
         public String getPreferredCommentsPackagenameScheme_label() {
-            return "Select preferred package name scheme for comments";
+            return text_PreferredCommentsPackagenameScheme;
         }
 
         public String getPreferredFilenameScheme_label() {
-            return "Select preferred filename scheme";
+            return text_PreferredFilenameScheme;
+        }
+
+        public String getCustomCommentsPackagenameScheme_label() {
+            return text_CustomCommentsPackagenameScheme;
         }
 
         public String getCrawlerTextDownloadMode_label() {
-            return "Crawler: Select text download mode";
+            return text_CrawlerTextDownloadMode;
         }
 
         public String getCrawlUrlsInsidePostText_label() {
-            return "Crawl URLs inside post-text?";
+            return text_CrawlUrlsInsidePostText;
         }
 
         public String getCrawlCompleteUserProfiles_label() {
-            return "Crawl complete user profiles?\r\nThis can cause very time consuming crawl processes!";
+            return text_CrawlCompleteUserProfiles;
         }
 
         public String getCrawlCompleteSubreddits_label() {
-            return "Crawl complete subreddits?\r\nThis can cause very time consuming crawl processes!";
+            return text_CrawlCompleteSubreddits;
         }
     }
 
@@ -44,25 +56,31 @@ public interface RedditConfig extends PluginConfigInterface {
         DATE_SUBREDDIT_POSTID_SERVER_FILENAME {
             @Override
             public String getLabel() {
-                return "Date_Subreddit_Post-ID_server internal filename";
+                return "*date*_*subreddit_title*_*post_id*_*original_filename_without_ext**ext*";
             }
         },
         DATE_SUBREDDIT_POSTID_TITLE {
             @Override
             public String getLabel() {
-                return "Date_Subreddit_Post-ID - Title.File-extension";
+                return "*date*_*subreddit_title*_*post_id*_*post_title**ext*";
             }
         },
         DATE_SUBREDDIT_POSTID_SLUG {
             @Override
             public String getLabel() {
-                return "Date_Subreddit_Post-ID_slug.File-extension";
+                return "Default: *date*_*subreddit_title*_*post_id*_*post_slug**ext*";
             }
         },
         SERVER_FILENAME {
             @Override
             public String getLabel() {
-                return "Server internal filename";
+                return "*original_filename_without_ext**ext*";
+            }
+        },
+        CUSTOM {
+            @Override
+            public String getLabel() {
+                return "Custom";
             }
         };
     }
@@ -71,19 +89,25 @@ public interface RedditConfig extends PluginConfigInterface {
         DATE_SUBREDDIT_POSTID_SLUG {
             @Override
             public String getLabel() {
-                return "Date_Subreddit_Post-ID_slug";
+                return "Default: *date*_*subreddit_title*_*post_id*_*post_slug*";
             }
         },
         DATE_SUBREDDIT_POSTID_TITLE {
             @Override
             public String getLabel() {
-                return "Date_Subreddit_Post-ID_Post title";
+                return "*date*_*subreddit_title*_*post_id*_*post_title*";
             }
         },
         TITLE {
             @Override
             public String getLabel() {
-                return "Post title";
+                return "*post_title*";
+            }
+        },
+        CUSTOM {
+            @Override
+            public String getLabel() {
+                return "Custom";
             }
         };
     }
@@ -91,18 +115,34 @@ public interface RedditConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DATE_SUBREDDIT_POSTID_SLUG")
     @Order(10)
-    @DescriptionForConfigEntry("Select preferred package name scheme for comments")
+    @DescriptionForConfigEntry(text_PreferredCommentsPackagenameScheme)
     CommentsPackagenameScheme getPreferredCommentsPackagenameScheme();
 
     void setPreferredCommentsPackagenameScheme(final CommentsPackagenameScheme quality);
 
     @AboutConfig
+    @DefaultStringValue("*date*_*subreddit_title*_*username*_*post_id*_*post_title*")
+    @DescriptionForConfigEntry(text_CustomCommentsPackagenameScheme)
+    @Order(11)
+    String getCustomCommentsPackagenameScheme();
+
+    public void setCustomCommentsPackagenameScheme(final String str);
+
+    @AboutConfig
     @DefaultEnumValue("DATE_SUBREDDIT_POSTID_SLUG")
     @Order(15)
-    @DescriptionForConfigEntry("Select preferred filename scheme")
+    @DescriptionForConfigEntry(text_PreferredFilenameScheme)
     FilenameScheme getPreferredFilenameScheme();
 
     void setPreferredFilenameScheme(final FilenameScheme quality);
+
+    @AboutConfig
+    @DefaultStringValue("*date*_*subreddit_title*_*username*_*post_id*_*post_title**original_filename_without_ext*_*index**ext*")
+    @DescriptionForConfigEntry(text_CustomCommentsPackagenameScheme)
+    @Order(16)
+    String getCustomFilenameScheme();
+
+    public void setCustomFilenameScheme(final String str);
 
     public static enum TextCrawlerMode implements LabelInterface {
         ALWAYS {
@@ -128,14 +168,14 @@ public interface RedditConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("ALWAYS")
     @Order(17)
-    @DescriptionForConfigEntry("Crawler: Select text download mode")
+    @DescriptionForConfigEntry(text_CrawlerTextDownloadMode)
     TextCrawlerMode getCrawlerTextDownloadMode();
 
     void setCrawlerTextDownloadMode(final TextCrawlerMode mode);
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Crawl URLs inside post-text?")
+    @DescriptionForConfigEntry(text_CrawlUrlsInsidePostText)
     @Order(20)
     boolean isCrawlUrlsInsidePostText();
 
@@ -143,7 +183,7 @@ public interface RedditConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Crawl complete user profiles?\r\nThis can cause very time consuming crawl processes!")
+    @DescriptionForConfigEntry(text_CrawlCompleteUserProfiles)
     @Order(30)
     boolean isCrawlCompleteUserProfiles();
 
@@ -151,7 +191,7 @@ public interface RedditConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Crawl complete subreddits?\r\nThis can cause very time consuming crawl processes!")
+    @DescriptionForConfigEntry(text_CrawlCompleteSubreddits)
     @Order(40)
     boolean isCrawlCompleteSubreddits();
 

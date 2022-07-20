@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -151,6 +150,7 @@ public class RedditCom extends PluginForDecrypt {
         int page = 1;
         int numberofItemsCrawled = 0;
         fp.setAllowMerge(true);
+        fp.setAllowInheritance(true);
         fp.setCleanupPackageName(false);
         do {
             br.getPage(url + "?" + query.toString());
@@ -198,6 +198,7 @@ public class RedditCom extends PluginForDecrypt {
         final ArrayList<String> lastItemDupes = new ArrayList<String>();
         /* Prepare crawl process */
         final FilePackage fp = FilePackage.getInstance();
+        fp.setAllowInheritance(true);
         fp.setName("saved items of user" + acc.getUser());
         final int maxItemsPerCall = 100;
         final UrlQuery query = new UrlQuery();
@@ -297,29 +298,49 @@ public class RedditCom extends PluginForDecrypt {
                 if (fp == null) {
                     /* No packagename given? Set FilePackage with name of comment/post. */
                     fp = FilePackage.getInstance();
-                    final CommentsPackagenameScheme packagenameScheme = PluginJsonConfig.get(RedditConfig.class).getPreferredCommentsPackagenameScheme();
-                    if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_POSTID_SLUG && urlSlug != null) {
-                        fp.setName(dateFormatted + "_" + subredditTitle + "_" + postID + "_" + urlSlug);
+                    String packagename;
+                    final CommentsPackagenameScheme packagenameScheme = cfg.getPreferredCommentsPackagenameScheme();
+                    final String customPackagenameScheme = cfg.getCustomCommentsPackagenameScheme();
+                    if (packagenameScheme == CommentsPackagenameScheme.CUSTOM && !StringUtils.isEmpty(customPackagenameScheme)) {
+                        packagename = customPackagenameScheme;
+                    } else if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_POSTID_SLUG && urlSlug != null) {
+                        packagename = "*date*_*subreddit_title*_*post_id*_*post_slug*";
                     } else if (packagenameScheme == CommentsPackagenameScheme.DATE_SUBREDDIT_POSTID_TITLE) {
-                        fp.setName(dateFormatted + "_" + subredditTitle + "_" + postID + "_" + title);
+                        packagename = "*date*_*subreddit_title*_*post_id*_*post_title*";
                     } else {
-                        fp.setName(title);
+                        packagename = "*post_title*";
                     }
+                    packagename = packagename.replace("*date*", dateFormatted);
+                    packagename = packagename.replace("*subreddit_title*", subredditTitle);
+                    packagename = packagename.replace("*username*", author);
+                    packagename = packagename.replace("*post_id*", postID);
+                    packagename = packagename.replace("*post_slug*", urlSlug);
+                    packagename = packagename.replace("*post_title*", title);
+                    fp.setName(packagename);
                 }
                 final FilenameScheme scheme = cfg.getPreferredFilenameScheme();
-                String filenameBase = null;
-                String filenameBeginning = null;
-                if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_SERVER_FILENAME) {
-                    filenameBase = null;
-                    filenameBeginning = dateFormatted + "_" + subredditTitle + "_" + postID + "_";
+                final String customFilenameScheme = cfg.getCustomFilenameScheme();
+                final String chosenFilenameScheme;
+                if (scheme == FilenameScheme.CUSTOM && !StringUtils.isEmpty(customFilenameScheme)) {
+                    chosenFilenameScheme = customFilenameScheme;
+                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_SERVER_FILENAME) {
+                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*original_filename_without_ext**ext*";
                 } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_TITLE) {
-                    filenameBase = dateFormatted + "_" + subredditTitle + "_" + postID + " - " + title;
-                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_SLUG && urlSlug != null) {
-                    filenameBase = dateFormatted + "_" + subredditTitle + "_" + postID + "_" + urlSlug;
-                } else if (scheme != null) {
-                    logger.warning("Developer mistake! Unsupported FilenameScheme: " + scheme.name());
+                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_title**ext*";
+                } else if (scheme == FilenameScheme.SERVER_FILENAME) {
+                    chosenFilenameScheme = "*original_filename_without_ext**ext*";
+                } else {
+                    /* FilenameScheme.DATE_SUBREDDIT_POSTID_SLUG and fallback */
+                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_slug**ext*";
                 }
-                /* 2020-07-23: TODO: This field might indicate selfhosted content: is_reddit_media_domain */
+                String filenameBaseForMultiItems = chosenFilenameScheme.replace("*date*", dateFormatted);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*subreddit_title*", subredditTitle);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*username*", author);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_id*", postID);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_slug*", urlSlug);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_title*", title);
+                /* For items without index */
+                final String filenameBaseForSingleItems = filenameBaseForMultiItems.replace("*index*", "");
                 /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
                 boolean addedRedditSelfhostedVideo = false;
                 String externalURL = (String) data.get("url");
@@ -329,30 +350,22 @@ public class RedditCom extends PluginForDecrypt {
                         externalURL = Encoding.htmlDecode(externalURL);
                     }
                     logger.info("Found external URL: " + externalURL);
-                    String serverFilename = Plugin.getFileNameFromURL(new URL(externalURL));
+                    final String serverFilename = Plugin.getFileNameFromURL(new URL(externalURL));
+                    final String serverFilenameWithoutExt;
+                    if (serverFilename.contains(".")) {
+                        serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
+                    } else {
+                        serverFilenameWithoutExt = serverFilename;
+                    }
                     final DownloadLink dl = this.createDownloadlink(externalURL);
                     if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
                         addedRedditSelfhostedVideo = true;
-                        serverFilename = applyFilenameExtension(serverFilename, ".mp4");
-                        if (filenameBase != null) {
-                            dl.setFinalFileName(filenameBase + ".mp4");
-                        } else if (serverFilename != null && filenameBeginning != null) {
-                            dl.setName(filenameBeginning + serverFilename);
-                        } else if (serverFilename != null) {
-                            dl.setName(serverFilename);
-                        }
+                        dl.setFinalFileName(filenameBaseForSingleItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", ".mp4"));
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
                         lastAddedMediaItem = dl;
                     } else if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
-                        serverFilename = applyFilenameExtension(serverFilename, ".jpg");
-                        if (filenameBase != null) {
-                            dl.setFinalFileName(filenameBase + ".jpg");
-                        } else if (serverFilename != null && filenameBeginning != null) {
-                            dl.setName(filenameBeginning + serverFilename);
-                        } else if (serverFilename != null) {
-                            dl.setName(serverFilename);
-                        }
+                        dl.setFinalFileName(filenameBaseForSingleItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", ".jpg"));
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
                         lastAddedMediaItem = dl;
@@ -382,22 +395,15 @@ public class RedditCom extends PluginForDecrypt {
                         if (extension == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String serverFilename = mediaID + "." + extension;
-                        final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + serverFilename);
-                        if (filenameBase != null) {
-                            if (galleryItems.size() == 1) {
-                                image.setFinalFileName(filenameBase + "." + extension);
-                            } else {
-                                image.setFinalFileName(filenameBase + "_" + String.format(Locale.US, "%0" + padLength + "d", imageNumber) + "." + extension);
-                            }
-                        } else if (serverFilename != null && filenameBeginning != null) {
-                            if (galleryItems.size() == 1) {
-                                image.setName(filenameBeginning + "_" + serverFilename);
-                            } else {
-                                image.setName(filenameBeginning + String.format(Locale.US, "%0" + padLength + "d", imageNumber) + "_" + serverFilename);
-                            }
-                        } else if (serverFilename != null) {
-                            image.setName(serverFilename);
+                        final String extensionWithDot = "." + extension;
+                        final String serverFilenameWithoutExt = mediaID;
+                        final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + serverFilenameWithoutExt + "." + extension);
+                        final String indexStr = StringUtils.formatByPadLength(padLength, imageNumber);
+                        if (galleryItems.size() == 1 || chosenFilenameScheme.contains("*index*")) {
+                            image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*index*", indexStr).replace("*ext*", extensionWithDot));
+                        } else {
+                            /* Special: Add number of image as part of filename extension. */
+                            image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", "_" + indexStr + extensionWithDot));
                         }
                         image.setAvailable(true);
                         image.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_INDEX, imageNumber);
@@ -470,21 +476,20 @@ public class RedditCom extends PluginForDecrypt {
                             /* Fix encoding */
                             bestImageURL = bestImageURL.replace("&amp;", "&");
                             final String serverFilename = Plugin.getFileNameFromURL(new URL(bestImageURL));
+                            final String serverFilenameWithoutExt;
+                            if (serverFilename.contains(".")) {
+                                serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
+                            } else {
+                                serverFilenameWithoutExt = serverFilename;
+                            }
+                            final String extensionWithDot = Plugin.getFileNameExtensionFromString(serverFilename);
                             final DownloadLink image = this.createDownloadlink("directhttp://" + bestImageURL);
-                            if (filenameBase != null) {
-                                if (images.size() == 1) {
-                                    image.setFinalFileName(filenameBase + Plugin.getFileNameExtensionFromString(serverFilename));
-                                } else {
-                                    image.setFinalFileName(filenameBase + "_" + String.format(Locale.US, "%0" + padLength + "d", imageNumber) + Plugin.getFileNameExtensionFromString(serverFilename));
-                                }
-                            } else if (serverFilename != null && filenameBeginning != null) {
-                                if (images.size() == 1) {
-                                    image.setName(filenameBeginning + "_" + serverFilename);
-                                } else {
-                                    image.setName(filenameBeginning + String.format(Locale.US, "%0" + padLength + "d", imageNumber) + "_" + serverFilename);
-                                }
-                            } else if (serverFilename != null) {
-                                image.setName(serverFilename);
+                            final String indexStr = StringUtils.formatByPadLength(padLength, imageNumber);
+                            if (images.size() == 1 || chosenFilenameScheme.contains("*index*")) {
+                                image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*index*", indexStr).replace("*ext*", extensionWithDot));
+                            } else {
+                                /* Special: Add number of image as part of filename extension. */
+                                image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", "_" + indexStr + extensionWithDot));
                             }
                             image.setAvailable(true);
                             thisCrawledLinks.add(image);
@@ -522,10 +527,8 @@ public class RedditCom extends PluginForDecrypt {
                         if (lastAddedMediaItem != null) {
                             /* Use filename that matches other found media item. */
                             filename = lastAddedMediaItem.getName().substring(0, lastAddedMediaItem.getName().lastIndexOf(".")) + ".txt";
-                        } else if (filenameBeginning != null) {
-                            filename = filenameBeginning + ".txt";
                         } else {
-                            filename = fp.getName();
+                            filename = fp.getName() + ".txt";
                         }
                         text.setFinalFileName(filename);
                         try {
