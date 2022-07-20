@@ -61,6 +61,8 @@ public class InboxLv extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getURL().matches(".*/login$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*File has been deleted or is no longer shared")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<title>([^<>\"]+) - Inbox\\.lv Files</title>").getMatch(0);
         final String filesize = br.getRegex(">\\s*(\\d+(\\.\\d{1,2})? (G|K|M|T))\\s*<").getMatch(0);
