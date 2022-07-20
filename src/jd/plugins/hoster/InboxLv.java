@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -28,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inbox.lv" }, urls = { "http://(www\\.)?files\\.inbox\\.lv/ticket/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inbox.lv" }, urls = { "https?://(?:www\\.)?files\\.inbox\\.lv/(?:ticket|shared/file)/([a-f0-9]+)" })
 public class InboxLv extends PluginForHost {
     public InboxLv(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,7 +37,21 @@ public class InboxLv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://help.inbox.lv/?keyword=files_disclaimer";
+        return "https://help.inbox.lv/?keyword=files_disclaimer";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -44,28 +59,28 @@ public class InboxLv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getURL().matches("https?://files\\.inbox\\.lv/login")) {
+        if (br.getURL().matches(".*/login$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<h2 class=\"hidden\">([^<>\"]*?)</h2>").getMatch(0);
-        final String filesize = br.getRegex("class=\"file\\-size right70\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String filename = br.getRegex("<title>([^<>\"]+) - Inbox\\.lv Files</title>").getMatch(0);
+        final String filesize = br.getRegex(">\\s*(\\d+(\\.\\d{1,2})? (G|K|M|T))\\s*<").getMatch(0);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.trim() + "b"));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.trim() + "b"));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        String dllink = br.getRegex("\"(/ticket/download/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"([^\"]*/download/[^\"]+)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "http://files.inbox.lv" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -73,7 +88,7 @@ public class InboxLv extends PluginForHost {
                 logger.log(e);
             }
             // Usually this shouldn't happen
-            if (br.containsHTML(">Parallel download limit reached")) {
+            if (br.containsHTML("(?i)>\\s*Parallel download limit reached")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
