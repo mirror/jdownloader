@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Cookies;
@@ -32,27 +35,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lnk.snahp.eu", "protect-link.org", "link.movieswbb.net", "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?(lnk\\.snahp\\.eu|links\\.snahp\\.it)/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?protect\\-link\\.org/.+", "https?://(?:www\\.)?link\\.movieswbb\\.(net|com)/\\d+", "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
 public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
     public DaddyScriptsDaddysLinkProtector(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Tags: Daddy's Link Protector */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        if ("lnk.snahp.eu".equals(getHost()) && StringUtils.containsIgnoreCase(parameter, "links.snahp.it")) {
-            parameter = parameter.replaceFirst("(?i)(links\\.snahp\\.it)", getHost());
-        }
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"error\"")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean captchaFail = false;
         boolean passwordFail = false;
@@ -116,11 +111,10 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
             /* Store valid password for next attempt */
             this.getPluginConfig().setProperty("LAST_WORKING_PASSWORD", passCode);
         }
-        String fpName = new Regex(parameter, "/([^/]+)$").getMatch(0);
+        String fpName = new Regex(param.getCryptedUrl(), "/([^/]+)$").getMatch(0);
         final String[] links = br.getRegex("<p><a href=\"(http[^<>\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             if (singleLink.contains(this.getHost())) {
