@@ -230,10 +230,10 @@ public class RapidbIt extends PluginForHost {
         ai.setStatus(level.get("name").toString());
         account.setMaxSimultanDownloads(((Number) level.get("max_sim_downloads")).intValue());
         /* Traffic the user bought in this package */
-        final long trafficMax = ((Number) user.get("points")).longValue();
+        final long pointsBytes = ((Number) user.get("points")).longValue();
         /* Bought traffic + (daily_free_traffic_mb - daily_used_traffic_bytes) */
-        ai.setTrafficLeft(trafficMax + (((Number) level.get("points_free_mb")).longValue() * 1000 * 1000) + ((Number) user.get("points_free_used")).longValue());
-        ai.setTrafficMax(trafficMax);
+        ai.setTrafficLeft(pointsBytes + (((Number) level.get("points_free_mb")).longValue() * 1000 * 1000) - ((Number) user.get("points_free_used")).longValue());
+        ai.setTrafficMax(pointsBytes);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final List<Map<String, Object>> filehostings = (List<Map<String, Object>>) apiconfig.get("filehostings");
         for (final Map<String, Object> filehosting : filehostings) {

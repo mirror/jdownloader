@@ -35,6 +35,7 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -44,9 +45,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ImgSrcRu extends PluginForDecrypt {
     // dev notes
     // &pwd= is a md5 hash id once you've provided password for that album.
@@ -59,24 +59,44 @@ public class ImgSrcRu extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
-    private enum Reason {
-        OFFLINE,
-        PASSWORD,
-        LOGIN;
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "imgsrc.ru", "imgsrc.su", "imgsrc.ro" });
+        return ret;
     }
 
-    private String                  password       = null;
-    private String                  parameter      = null;
-    private String                  username       = null;
-    private String                  uid            = null;
-    private String                  id             = null;
-    private String                  aid            = null;
-    private String                  pwd            = null;
-    private Reason                  reason         = null;
-    private PluginForHost           plugin         = null;
-    private ArrayList<DownloadLink> decryptedLinks = null;
-    private List<String>            passwords      = null;
-    private long                    startTime;
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(main/user\\.php\\?user=[^\\&]+|main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private String        password  = null;
+    private String        username  = null;
+    private String        uid       = null;
+    private String        id        = null;
+    private String        aid       = null;
+    private String        pwd       = null;
+    private PluginForHost plugin    = null;
+    private List<String>  passwords = null;
+    private long          startTime;
+    private final String  TYPE_USER = "https?://[^/]+/main/user\\.php\\?user=([^\\&]+)";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -88,23 +108,18 @@ public class ImgSrcRu extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
-    private Browser prepBrowser(Browser prepBr, Boolean neu) {
+    private Browser prepBrowser(final Browser prepBr, final Boolean neu) throws PluginException {
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("imgsrc.ru");
+            plugin = this.getNewPluginForHostInstance(this.getHost());
             if (plugin == null) {
                 throw new IllegalStateException("imgsrc.ru hoster plugin not found!");
             }
-            // set cross browser support
-            ((jd.plugins.hoster.ImgSrcRu) plugin).setBrowser(br);
         }
         return ((jd.plugins.hoster.ImgSrcRu) plugin).prepBrowser(prepBr, neu);
     }
 
     private void setInitConstants(final CryptedLink param) {
         this.startTime = System.currentTimeMillis();
-        this.decryptedLinks = new ArrayList<DownloadLink>();
-        this.reason = null;
-        parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "https://imgsrc.ru/");
         final List<String> passwords = getPreSetPasswords();
         if (param.getDecrypterPassword() != null && !passwords.contains(param.getDecrypterPassword())) {
             passwords.add(param.getDecrypterPassword());
@@ -153,20 +168,47 @@ public class ImgSrcRu extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         setInitConstants(param);
-        br = prepBrowser(br, false);
+        prepBrowser(br, false);
+        if (param.getCryptedUrl().matches(TYPE_USER)) {
+            return crawlProfile(param);
+        } else {
+            return crawlGallery(param);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
+        final String username = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String[] urls = br.getRegex("href=.(/" + username + "/[^<>\"\\']+\\.html)").getColumn(0);
+        for (final String relativeURL : urls) {
+            ret.add(this.createDownloadlink(br.getURL(relativeURL).toString()));
+        }
+        if (urls == null || urls.length == 0) {
+            if (br.containsHTML("(?i)this site does not exist")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlGallery(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         try {
             // best to get the original parameter, as the page could contain blocks due to forward or password
-            if (!getPage(parameter, param)) {
-                if (reason != null) {
-                    decryptedLinks.add(createOfflinelink(parameter));
-                    return decryptedLinks;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            if (!getPage(param.getCryptedUrl(), param)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (br._getURL().getPath().equalsIgnoreCase("/main/search.php")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             username = br.getRegex(">\\s*more\\s*photos\\s*from\\s*(.*?)\\s*<").getMatch(0);
             if (username == null) {
@@ -177,20 +219,19 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
             }
             if (username == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String fpName = getGalleryName(br);
             if (fpName == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            aid = new Regex(parameter, "ad=(\\d+)").getMatch(0);
+            aid = new Regex(param.getCryptedUrl(), "ad=(\\d+)").getMatch(0);
             if (aid == null) {
-                aid = new Regex(parameter, "/a(\\d+)\\.html").getMatch(0);
+                aid = new Regex(param.getCryptedUrl(), "/a(\\d+)\\.html").getMatch(0);
             }
-            uid = new Regex(parameter, "id=(\\d+)").getMatch(0);
+            uid = new Regex(param.getCryptedUrl(), "id=(\\d+)").getMatch(0);
             if (uid == null) {
-                uid = new Regex(parameter, "/(\\d+)\\.html").getMatch(0);
+                uid = new Regex(param.getCryptedUrl(), "/(\\d+)\\.html").getMatch(0);
             }
             if (uid == null && aid == null) {
                 logger.warning("We could not find the UID, Please report this issue to JDownloader Development Team.");
@@ -203,15 +244,11 @@ public class ImgSrcRu extends PluginForDecrypt {
             } else {
                 id = uid;
             }
-            parameter = "https://imgsrc.ru/" + username + "/" + id + ".html";
-            param.setCryptedUrl(parameter);
-            if (!br.getURL().matches(Pattern.quote(parameter) + ".*?")) {
-                if (!getPage(parameter, param)) {
-                    if (reason != null) {
-                        return decryptedLinks;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+            final String galleryURL = "https://imgsrc.ru/" + username + "/" + id + ".html";
+            param.setCryptedUrl(galleryURL);
+            if (!br.getURL().matches(Pattern.quote(galleryURL) + ".*?")) {
+                if (!getPage(galleryURL, param)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             String name = Encoding.htmlDecode(username.trim()) + " @ " + Encoding.htmlDecode(fpName.trim());
@@ -221,9 +258,9 @@ public class ImgSrcRu extends PluginForDecrypt {
             final Set<String> pagesDone = new HashSet<String>();
             final List<String> pagesTodo = new ArrayList<String>();
             do {
-                parsePage(param);
+                ret.addAll(this.crawlImages(param));
             } while (parseNextPage(param, pagesDone, pagesTodo));
-            for (DownloadLink link : decryptedLinks) {
+            for (DownloadLink link : ret) {
                 if (username != null) {
                     link.setProperty("username", username.trim());
                 }
@@ -231,26 +268,21 @@ public class ImgSrcRu extends PluginForDecrypt {
                     link.setProperty("gallery", fpName.trim());
                 }
             }
-            fp.addLinks(decryptedLinks);
-            if (decryptedLinks.size() == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
+            fp.addLinks(ret);
+            if (ret.size() == 0) {
+                logger.warning("Decrypter broken for link: " + galleryURL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (PluginException e) {
             throw e;
-        } catch (Exception e) {
-            if (reason != null && reason != Reason.OFFLINE) {
-                throw e;
-            } else {
-                logger.info("Link offline: " + parameter);
-            }
         } finally {
-            logger.info("Time to decrypt : " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds. Returning " + decryptedLinks.size() + " DownloadLinks for " + parameter);
+            logger.info("Time to crawl : " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds. Returning " + ret.size() + " DownloadLinks for " + param.getCryptedUrl());
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    private void parsePage(CryptedLink param) {
+    private ArrayList<DownloadLink> crawlImages(final CryptedLink param) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<String> imgs = new ArrayList<String>();
         // first link = album uid (uaid), these uid's are not transferable to picture ids (upid). But once you are past album page
         // br.getURL() is the correct upid.
@@ -267,14 +299,14 @@ public class ImgSrcRu extends PluginForDecrypt {
                 imgs.add(currentID);
             } else {
                 logger.warning("ERROR parsePage");
-                return;
+                return ret;
             }
         } else {
             imgs.add(br.getURL().replaceFirst("https?://imgsrc\\.ru", ""));
         }
         final String[] links = br.getRegex("<a href='(/" + Pattern.quote(username) + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)[^']*'\\s*(?:>|target)").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + parameter + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
+            logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + param.getCryptedUrl() + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
         }
         if (links != null && links.length != 0) {
             imgs.addAll(Arrays.asList(links));
@@ -291,9 +323,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                 if (password != null) {
                     img.setProperty("pass", password);
                 }
-                decryptedLinks.add(img);
+                ret.add(img);
             }
         }
+        return ret;
     }
 
     private boolean parseNextPage(CryptedLink param, Set<String> pagesDone, List<String> pagesTodo) throws Exception {
@@ -345,8 +378,8 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     // TODO: reduce duplicated code with hoster
-    private boolean getPage(String url, CryptedLink param) throws Exception {
-        if (url == null || parameter == null) {
+    private boolean getPage(String url, final CryptedLink param) throws Exception {
+        if (url == null) {
             return false;
         }
         if (pwd != null && !url.matches(".+?pwd=[a-z0-9]{32}")) {
@@ -386,8 +419,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 // login required
                 if (br._getURL().getPath().equalsIgnoreCase("/main/login.php")) {
                     logger.warning("You need to login! Currently not supported, ask for support to be added");
-                    reason = Reason.LOGIN;
-                    return false;
+                    throw new AccountRequiredException();
                 }
                 // needs to be before password
                 if (br.containsHTML("Continue to album(?: >>)?")) {
@@ -407,8 +439,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                                 password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
                                 if (password == null || password.equals("")) {
                                     logger.info("User aborted/entered blank password");
-                                    reason = Reason.PASSWORD;
-                                    return false;
+                                    throw new DecrypterException(DecrypterException.PASSWORD);
                                 }
                             }
                             continueForm.put("pwd", Encoding.urlEncode(password));
@@ -419,9 +450,8 @@ public class ImgSrcRu extends PluginForDecrypt {
                             failed = true;
                             if (i == repeat) {
                                 // using 'i' is probably not a good idea, as we could have had connection errors!
-                                logger.warning("Exausted Password try : " + parameter);
-                                reason = Reason.PASSWORD;
-                                return false;
+                                logger.warning("Exausted Password try");
+                                throw new DecrypterException(DecrypterException.PASSWORD);
                             } else {
                                 continue;
                             }
@@ -438,7 +468,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                                 newLink = br.getRegex("href=(/[^<>\"]+\\?pwd=[^<>\"/]*?)><br><br>Continue to album >></a>").getMatch(0);
                             }
                             if (newLink == null) {
-                                logger.warning("Couldn't process Album forward: " + parameter);
+                                logger.warning("Couldn't process Album forward: " + br.getURL());
                                 return false;
                             }
                             getPage(br, newLink);
@@ -449,7 +479,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     tryDefaultPassword(param, br);
                     Form pwForm = br.getFormbyProperty("name", "passchk");
                     if (pwForm == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("Decrypter broken for link: " + br.getURL());
                         return false;
                     }
                     if (passwords.size() > 0) {
@@ -458,8 +488,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                         password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
                         if (password == null || password.equals("")) {
                             logger.info("User aborted/entered blank password");
-                            reason = Reason.PASSWORD;
-                            return false;
+                            throw new DecrypterException(DecrypterException.PASSWORD);
                         }
                     }
                     pwForm.put("pwd", Encoding.urlEncode(password));
@@ -471,9 +500,8 @@ public class ImgSrcRu extends PluginForDecrypt {
                         failed = true;
                         if (i == repeat) {
                             // using 'i' is probably not a good idea, as we could have had connection errors!
-                            logger.warning("Exausted Password try : " + parameter);
-                            reason = Reason.PASSWORD;
-                            return false;
+                            logger.warning("Exausted Password try");
+                            throw new DecrypterException(DecrypterException.PASSWORD);
                         } else {
                             continue;
                         }
@@ -482,8 +510,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     pwd = br.getRegex("\\?pwd=([a-z0-9]{32})").getMatch(0);
                 }
                 if (br.getURL().equals("http://imgsrc.ru/") || br.getURL().equals("https://imgsrc.ru/")) {
-                    reason = Reason.OFFLINE;
-                    return false;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (br.getURL().contains(url) || !failed) {
                     // because one page grab could have multiple steps, you can not break after each if statement
@@ -491,8 +518,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
             } catch (final BrowserException e) {
                 if (br.getHttpConnection().getResponseCode() == 410) {
-                    reason = Reason.OFFLINE;
-                    return false;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 failed = true;
                 continue;
