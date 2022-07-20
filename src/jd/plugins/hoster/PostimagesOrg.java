@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
@@ -32,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "postimages.org" }, urls = { "https?://(?:www\\.)?(?:postimg\\.cc|postimages\\.org)/(?!gallery)([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PostimagesOrg extends PluginForHost {
     public PostimagesOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,6 +43,34 @@ public class PostimagesOrg extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://postimages.org/terms";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "postimages.org", "postimg.cc" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!gallery)([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -75,7 +105,8 @@ public class PostimagesOrg extends PluginForHost {
             if (fileExtension != null) {
                 filename = applyFilenameExtension(filename, "." + fileExtension.toLowerCase(Locale.ENGLISH));
             }
-            link.setName(filename);
+            /* Set final filename here because server sends slightly different name via header on download. */
+            link.setFinalFileName(filename);
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
