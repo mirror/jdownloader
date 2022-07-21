@@ -22,18 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -46,6 +34,18 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SrfCh extends PluginForHost {
@@ -270,7 +270,6 @@ public class SrfCh extends PluginForHost {
         }
         String url_http_download = null;
         String url_hls_master = null;
-        String url_rtmp = null;
         if (preferredQualityHeight == null && link.hasProperty(OFFICIAL_DOWNLOADURL)) {
             /* User prefers BEST quality && official downloadurl is available --> Use that */
             url_http_download = link.getStringProperty(OFFICIAL_DOWNLOADURL);
@@ -368,7 +367,7 @@ public class SrfCh extends PluginForHost {
                 }
             }
         }
-        if (url_http_download == null && url_hls_master == null && url_rtmp == null) {
+        if (url_http_download == null && url_hls_master == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (url_http_download != null) {
@@ -388,8 +387,8 @@ public class SrfCh extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
             this.dl.startDownload();
-        } else if (url_hls_master != null) {
-            /* Prefer hls over rtmp but sometimes only one of both is available. */
+        } else {
+            /* HLS download */
             /* 2019-08-09: These headers are not necessarily needed */
             logger.info("Downloading hls");
             br.getHeaders().put("Accept", "*/*");
@@ -433,9 +432,6 @@ public class SrfCh extends PluginForHost {
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, url_hls);
             dl.startDownload();
-        } else {
-            /* RTMP */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         }
     }
 
