@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -32,7 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sfile.mobi" }, urls = { "https?://(?:www\\.)?sfile\\.mobi/(?!loads)([A-Za-z0-9]+)" })
 public class SfileMobi extends PluginForHost {
@@ -77,9 +75,14 @@ public class SfileMobi extends PluginForHost {
         } else if (!br.containsHTML("class=\"fa fa-cloud-download\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("class=\"img\" alt=\"([^<>\"]+)\"/></center></span>").getMatch(0);
+        String filename = br.getRegex("title\\s*:\\s*'Download ([^<>\"\\']+)'").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        }
         String filesize = br.getRegex(">Download File\\s*?\\(([^<>\"]+)\\)<").getMatch(0);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
+        }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -99,14 +102,10 @@ public class SfileMobi extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             requestFileInformation(link);
-            dllink = br.getRegex("var db\\s*?=\\s*?\"(https[^<>\"]+)\"").getMatch(0);
+            br.getPage("/download/" + this.getFID(link));
+            dllink = br.getRegex("(/get/[^<>\"\\']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = PluginJSonUtils.unescape(dllink);
-            if (!dllink.contains("&k=")) {
-                /* 2021-11-16: Important! Also their params are wrong as "?" is never present in their URLs! */
-                dllink += "&k=" + new Random().nextInt(100);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
@@ -144,6 +143,7 @@ public class SfileMobi extends PluginForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {

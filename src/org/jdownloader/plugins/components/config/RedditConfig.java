@@ -121,7 +121,7 @@ public interface RedditConfig extends PluginConfigInterface {
     void setPreferredCommentsPackagenameScheme(final CommentsPackagenameScheme quality);
 
     @AboutConfig
-    @DefaultStringValue("*date*_*subreddit_title*_*username*_*post_id*_*post_title*")
+    @DefaultStringValue("*date*_*date_timestamp*_*date_timedelta_formatted*_*subreddit_title*_*username*_*post_id*_*post_title*")
     @DescriptionForConfigEntry(text_CustomCommentsPackagenameScheme)
     @Order(11)
     String getCustomCommentsPackagenameScheme();
@@ -137,7 +137,7 @@ public interface RedditConfig extends PluginConfigInterface {
     void setPreferredFilenameScheme(final FilenameScheme quality);
 
     @AboutConfig
-    @DefaultStringValue("*date*_*subreddit_title*_*username*_*post_id*_*post_title**original_filename_without_ext*_*index**ext*")
+    @DefaultStringValue("*date*_*date_timestamp*_*date_timedelta_formatted*_*subreddit_title*_*username*_*post_id*_*post_title**original_filename_without_ext*_*index**ext*")
     @DescriptionForConfigEntry(text_CustomCommentsPackagenameScheme)
     @Order(16)
     String getCustomFilenameScheme();
