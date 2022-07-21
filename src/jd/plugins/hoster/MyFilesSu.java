@@ -94,8 +94,10 @@ public class MyFilesSu extends PluginForHost {
             link.setName(this.getFID(link));
         }
         if (filesize != null) {
+            /* RU --> EN */
             filesize = filesize.replace("Мбайт", "MB");
             filesize = filesize.replace("Кбайт", "KB");
+            filesize = filesize.replace("Гбайт", "GB");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         if (md5 != null) {
@@ -147,6 +149,7 @@ public class MyFilesSu extends PluginForHost {
 
     private String checkDirectLink(final DownloadLink link, final String property) {
         String dllink = link.getStringProperty(property);
+        boolean isValid = false;
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -154,12 +157,16 @@ public class MyFilesSu extends PluginForHost {
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
+                    isValid = true;
                     return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
                 return null;
             } finally {
+                if (!isValid) {
+                    link.removeProperty(property);
+                }
                 if (con != null) {
                     con.disconnect();
                 }
