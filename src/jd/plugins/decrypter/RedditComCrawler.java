@@ -28,6 +28,7 @@ import java.util.Set;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.RedditConfig;
 import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
@@ -54,10 +55,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.RedditCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
-public class RedditCom extends PluginForDecrypt {
-    public RedditCom(PluginWrapper wrapper) {
+public class RedditComCrawler extends PluginForDecrypt {
+    public RedditComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -79,7 +81,7 @@ public class RedditCom extends PluginForDecrypt {
     private static final String TYPE_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/user/([^/]+)/saved";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        jd.plugins.hoster.RedditCom.prepBRAPI(this.br);
+        RedditCom.prepBRAPI(this.br);
         if (param.getCryptedUrl().matches(TYPE_USER_SAVED_OBJECTS)) {
             return crawlUserSavedObjects(param);
         } else if (param.getCryptedUrl().matches(TYPE_USER)) {
@@ -276,8 +278,10 @@ public class RedditCom extends PluginForDecrypt {
             final Map<String, Object> data = (Map<String, Object>) post.get("data");
             final String postID = (String) data.get("id");
             final String author = (String) data.get("author");
-            final Date theDate = new Date(JavaScriptEngineFactory.toLong(data.get("created"), 0) * 1000);
-            final String dateFormatted = new SimpleDateFormat("yyy-MM-dd").format(theDate);
+            final long createdDateTimestampMillis = ((Number) data.get("created")).longValue() * 1000;
+            final long createdTimedeltaSeconds = (System.currentTimeMillis() - createdDateTimestampMillis) / 1000;
+            final String createdTimedeltaString = TimeFormatter.formatSeconds(createdTimedeltaSeconds, 0);
+            final String dateFormatted = new SimpleDateFormat("yyy-MM-dd").format(new Date(createdDateTimestampMillis));
             final String title = (String) data.get("title");
             final String subredditTitle = (String) data.get("subreddit");
             final String permalink = (String) data.get("permalink");
@@ -311,6 +315,8 @@ public class RedditCom extends PluginForDecrypt {
                         packagename = "*post_title*";
                     }
                     packagename = packagename.replace("*date*", dateFormatted);
+                    packagename = packagename.replace("*date_timestamp*", Long.toString(createdDateTimestampMillis));
+                    packagename = packagename.replace("*date_timedelta_formatted*", createdTimedeltaString);
                     packagename = packagename.replace("*subreddit_title*", subredditTitle);
                     packagename = packagename.replace("*username*", author);
                     packagename = packagename.replace("*post_id*", postID);
@@ -334,6 +340,8 @@ public class RedditCom extends PluginForDecrypt {
                     chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_slug**ext*";
                 }
                 String filenameBaseForMultiItems = chosenFilenameScheme.replace("*date*", dateFormatted);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*date_timestamp*", Long.toString(createdDateTimestampMillis));
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*date_timedelta_formatted*", createdTimedeltaString);
                 filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*subreddit_title*", subredditTitle);
                 filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*username*", author);
                 filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_id*", postID);
@@ -406,7 +414,7 @@ public class RedditCom extends PluginForDecrypt {
                             image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", "_" + indexStr + extensionWithDot));
                         }
                         image.setAvailable(true);
-                        image.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_INDEX, imageNumber);
+                        image.setProperty(RedditCom.PROPERTY_INDEX, imageNumber);
                         if (!StringUtils.isEmpty(caption)) {
                             image.setComment(caption);
                         }
@@ -536,7 +544,7 @@ public class RedditCom extends PluginForDecrypt {
                         } catch (final UnsupportedEncodingException ignore) {
                             ignore.printStackTrace();
                         }
-                        text.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
+                        text.setProperty(RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
                         text.setAvailable(true);
                         thisCrawledLinks.add(text);
                     }
@@ -554,16 +562,18 @@ public class RedditCom extends PluginForDecrypt {
                 for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
                     thisCrawledLink._setFilePackage(fp);
                     /* Set properties for Packagizer usage */
-                    thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_TITLE, title);
-                    thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_USERNAME, author);
-                    thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_DATE, dateFormatted);
-                    thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_SUBREDDIT, subredditTitle);
-                    thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_POST_ID, postID);
+                    thisCrawledLink.setProperty(RedditCom.PROPERTY_TITLE, title);
+                    thisCrawledLink.setProperty(RedditCom.PROPERTY_USERNAME, author);
+                    thisCrawledLink.setProperty(RedditCom.PROPERTY_DATE, dateFormatted);
+                    thisCrawledLink.setProperty(RedditCom.PROPERTY_DATE_TIMESTAMP, createdDateTimestampMillis);
+                    thisCrawledLink.setProperty(RedditCom.PROPERTY_DATE_TIMEDELTA_FORMATTED, createdTimedeltaString);
+                    thisCrawledLink.setProperty(RedditCom.PROPERTY_SUBREDDIT, subredditTitle);
+                    thisCrawledLink.setProperty(RedditCom.PROPERTY_POST_ID, postID);
                     if (urlSlug != null) {
-                        thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_SLUG, urlSlug);
+                        thisCrawledLink.setProperty(RedditCom.PROPERTY_SLUG, urlSlug);
                     }
                     if (!StringUtils.isEmpty(postText)) {
-                        thisCrawledLink.setProperty(jd.plugins.hoster.RedditCom.PROPERTY_POST_TEXT, postText);
+                        thisCrawledLink.setProperty(RedditCom.PROPERTY_POST_TEXT, postText);
                     }
                     /* Not (yet) required */
                     // this.distribute(thisCrawledLink);
@@ -578,6 +588,6 @@ public class RedditCom extends PluginForDecrypt {
     }
 
     public static final String getApiBaseOauth() {
-        return jd.plugins.hoster.RedditCom.getApiBaseOauth();
+        return RedditCom.getApiBaseOauth();
     }
 }
