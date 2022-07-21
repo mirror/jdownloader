@@ -141,6 +141,8 @@ public class UpstoRe extends antiDDoSForHost {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
             prepBr.setCookie("http://upstore.net/", "lang", "en");
+            /* Must be relatively recent, shouldn't have the "Ubuntu; " part of Firefox or downloads only 15KB/s instead of 75Kb/s */
+            prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:102.0) Gecko/20100101 Firefox/102.0");
         }
         return prepBr;
     }
