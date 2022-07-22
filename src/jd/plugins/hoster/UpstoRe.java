@@ -35,10 +35,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpstoReConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -61,7 +61,6 @@ public class UpstoRe extends antiDDoSForHost {
     public UpstoRe(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://upstore.net/premium/");
-        this.setConfigElements();
     }
 
     @Override
@@ -97,21 +96,19 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     /* Constants (limits) */
-    private static final long              FREE_RECONNECTWAIT                    = 1 * 60 * 60 * 1000L;
-    private static final long              FREE_RECONNECTWAIT_ADDITIONAL         = 60 * 1000l;
-    private final String                   INVALIDLINKS                          = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
-    private static String[]                IPCHECK                               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private final String                   SETTING_EXPERIMENTALHANDLING          = "EXPERIMENTALHANDLING";
-    private final String                   SETTING_ALLOW_MULTIPLE_FREE_DOWNLOADS = "allow_multiple_free_downloads";
-    private Pattern                        IPREGEX                               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                                = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP                             = new AtomicReference<String>();
-    private static Map<String, Long>       blockedIPsMap                         = new HashMap<String, Long>();
-    private static Object                  CTRLLOCK                              = new Object();
-    private String                         PROPERTY_LASTIP                       = "UPSTORE_PROPERTY_LASTIP";
-    private static final String            PROPERTY_LASTDOWNLOAD                 = "UPSTORE_lastdownload_timestamp";
+    private static final long              FREE_RECONNECTWAIT            = 1 * 60 * 60 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
+    private final String                   INVALIDLINKS                  = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
+    private static String[]                IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private Pattern                        IPREGEX                       = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                        = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                     = new AtomicReference<String>();
+    private static Map<String, Long>       blockedIPsMap                 = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK                      = new Object();
+    private String                         PROPERTY_LASTIP               = "UPSTORE_PROPERTY_LASTIP";
+    private static final String            PROPERTY_LASTDOWNLOAD         = "UPSTORE_lastdownload_timestamp";
     /* Don't touch the following! */
-    private static final AtomicInteger     freeRunning                           = new AtomicInteger(0);
+    private static final AtomicInteger     freeRunning                   = new AtomicInteger(0);
 
     public void correctDownloadLink(DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("upsto.re/", "upstore.net/").replace("http://", "https://"));
@@ -132,7 +129,7 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     /**
-     * defines custom browser requirements
+     * Defines custom browser requirements
      *
      * @author raztoki
      */
@@ -140,11 +137,21 @@ public class UpstoRe extends antiDDoSForHost {
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
-            prepBr.setCookie("http://upstore.net/", "lang", "en");
-            /* Must be relatively recent, shouldn't have the "Ubuntu; " part of Firefox or downloads only 15KB/s instead of 75Kb/s */
-            prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:102.0) Gecko/20100101 Firefox/102.0");
+            setDefaultCookies(prepBr);
+            final String userDefinedUserAgent = PluginJsonConfig.get(UpstoReConfig.class).getCustomUserAgentHeader();
+            if (!StringUtils.isEmpty(userDefinedUserAgent)) {
+                /*
+                 * Must be relatively recent, shouldn't have the "Ubuntu; " part [of Firefox] or free downloads only 15KiB/s instead of
+                 * 75KiB/. RE: https://board.jdownloader.org/showthread.php?t=89506&page=6
+                 */
+                prepBr.getHeaders().put("User-Agent", userDefinedUserAgent);
+            }
         }
         return prepBr;
+    }
+
+    private void setDefaultCookies(final Browser br) {
+        br.setCookie(this.getHost(), "lang", "en");
     }
 
     @Override
@@ -162,12 +169,12 @@ public class UpstoRe extends antiDDoSForHost {
             /* Probably not a file url. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>[\t\n\r ]+<div class=\"comment\">([^<>\"]*?)</div>");
+        final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>\\s*<div class=\"comment\">([^<>\"]*?)</div>");
         String filename = fileInfo.getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on").getMatch(0);
+            filename = br.getRegex("(?i)<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on").getMatch(0);
         }
-        String filesize = fileInfo.getMatch(1);
+        final String filesize = fileInfo.getMatch(1);
         if (filename != null) {
             link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
@@ -191,7 +198,7 @@ public class UpstoRe extends antiDDoSForHost {
             logger.info("Re-using stored directurl");
         } else {
             requestFileInformation(link);
-            handleErrorsHTML();
+            handleErrorsHTML(this.br);
             currentIP.set(this.getIP());
             synchronized (CTRLLOCK) {
                 /* Load list of saved IPs + timestamp of last download */
@@ -224,11 +231,11 @@ public class UpstoRe extends antiDDoSForHost {
                     submitForm(f);
                 }
             }
-            handleErrorsHTML();
+            handleErrorsHTML(this.br);
             /**
              * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
              */
-            if (this.getPluginConfig().getBooleanProperty(SETTING_EXPERIMENTALHANDLING, default_experimentalhandling)) {
+            if (PluginJsonConfig.get(UpstoReConfig.class).isActivateReconnectWorkaround()) {
                 /*
                  * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if
                  * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
@@ -266,13 +273,13 @@ public class UpstoRe extends antiDDoSForHost {
             if (captchaForm != null) {
                 submitForm(captchaForm);
             }
-            if (br.containsHTML("limit for today|several files recently")) {
+            if (br.containsHTML("(?i)limit for today|several files recently")) {
                 setDownloadStarted(link, 0);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             }
             String dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(https?://d\\d+\\.upstore\\.net/[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"(https?://d\\d+\\.[^/]+/l/[^<>\"]*?)\"").getMatch(0);
             }
             if (dllink == null) {
                 final String reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file").getMatch(0);
@@ -305,8 +312,8 @@ public class UpstoRe extends antiDDoSForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                handleErrorsHTML();
-                handleServerErrors();
+                handleErrorsHTML(this.br);
+                handleServerErrors(this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directurlproperty, dllink);
@@ -364,7 +371,8 @@ public class UpstoRe extends antiDDoSForHost {
         }
     }
 
-    private void handleServerErrors() throws PluginException {
+    /** Handles errors which are returned after accessing final downloadurl. */
+    private void handleServerErrors(final Browser br) throws PluginException {
         if (br.containsHTML("(?i)not found")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'not found'", 30 * 60 * 1000l);
         }
@@ -380,7 +388,7 @@ public class UpstoRe extends antiDDoSForHost {
         }
     }
 
-    private void handleErrorsHTML() throws PluginException {
+    private void handleErrorsHTML(final Browser br) throws PluginException {
         /* Example: "<span class="error">File size is larger than 2 GB. Unfortunately, it can be downloaded only with premium</span>" */
         if (isOffline1()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -411,30 +419,29 @@ public class UpstoRe extends antiDDoSForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                br.setCookie(getHost(), "lang", "en");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
                     getPage("https://" + this.getHost());
                     if (!this.isLoggedinHTML(br)) {
                         logger.info("Cookie login failed");
-                        br.clearCookies(this.getHost());
+                        br.clearCookies(br.getHost());
+                        setDefaultCookies(br);
                     } else {
                         logger.info("Cookie login successful");
+                        /* Save new cookie timestamp */
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }
                 }
                 logger.info("Full login required");
-                // dump previous set user-agent
-                synchronized (agent) {
-                    agent.remove(getHost());
-                }
                 if (!isMail(account.getUser())) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your mailadress in the 'username' field!\r\nBitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Bitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail address in the 'username' field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                // goto first page
-                br.setCookie(getHost(), "lang", "en");
                 getPage("https://" + this.getHost());
                 getPage("https://" + this.getHost() + "/account/login/");
                 final Form login = br.getFormbyActionRegex(".+/login.*");
@@ -456,12 +463,11 @@ public class UpstoRe extends antiDDoSForHost {
                 if (br.containsHTML("(?i)>\\s*Wrong email or password\\.\\s*<")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if (br.containsHTML(regexLoginCaptcha)) {
-                    // incorrect captcha, or form values changed
+                    // incorrect login-captcha, or form values changed
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else if (!this.isLoggedinHTML(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // Save cookies
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -507,7 +513,7 @@ public class UpstoRe extends antiDDoSForHost {
     // effectively 4 times a day!
     private final String regexLoginCaptcha = "/captcha/\\?\\d+";
 
-    private long getPremiumTill(Browser br) {
+    private long getPremiumTill(final Browser br) {
         long result = -1;
         String expire = br.getRegex("(?i)premium till\\s*(\\d{1,2}/\\d{1,2}/\\d{2})").getMatch(0);
         if (expire != null) {
@@ -536,7 +542,7 @@ public class UpstoRe extends antiDDoSForHost {
         getPage((br.getHttpConnection() == null ? "https://" + this.getHost() : "") + "/?lang=en");
         getPage((br.getHttpConnection() == null ? "https://" + this.getHost() : "") + "/stat/download/?lang=en");
         // Check for never-ending premium accounts
-        if (br.containsHTML("eternal premium")) {
+        if (br.containsHTML("(?i)eternal premium")) {
             account.setType(AccountType.LIFETIME);
         } else {
             account.setType(AccountType.PREMIUM);
@@ -546,7 +552,11 @@ public class UpstoRe extends antiDDoSForHost {
                     ai.setValidUntil(-1);
                     ai.setStatus("Unlimited Premium Account");
                 } else {
-                    throw new AccountUnavailableException("\r\nFree Accounts are not supported for this host!\r\nKostenlose Accounts dieses Hosters werden nicht unterstützt!", 5 * 60 * 1000l);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new AccountUnavailableException("Kostenlose Accounts dieses Anbieters werden nicht unterstützt!", 5 * 60 * 1000l);
+                    } else {
+                        throw new AccountUnavailableException("Free Accounts of this host are not supported!", 5 * 60 * 1000l);
+                    }
                 }
             } else {
                 ai.setValidUntil(validUntil);
@@ -600,7 +610,7 @@ public class UpstoRe extends antiDDoSForHost {
         String dllink = br.getRedirectLocation();
         // No directdownload? Let's "click" on download
         if (dllink == null) {
-            postPage("//upstore.net/load/premium/", "js=1&hash=" + this.getFID(link));
+            postPage("/load/premium/", "js=1&hash=" + this.getFID(link));
             if (br.containsHTML(premDlLimit)) {
                 trafficLeft(account);
             }
@@ -623,8 +633,8 @@ public class UpstoRe extends antiDDoSForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            handleErrorsHTML();
-            this.handleServerErrors();
+            handleErrorsHTML(this.br);
+            this.handleServerErrors(this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -754,14 +764,6 @@ public class UpstoRe extends antiDDoSForHost {
         return currentIP;
     }
 
-    private final boolean default_experimentalhandling       = false;
-    private final boolean default_allowmultiplefreedownloads = false;
-
-    public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_EXPERIMENTALHANDLING, "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.").setDefaultValue(default_experimentalhandling));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ALLOW_MULTIPLE_FREE_DOWNLOADS, "Allow up to two free downloads instead of only one?").setDefaultValue(default_allowmultiplefreedownloads));
-    }
-
     @Override
     public void reset() {
     }
@@ -769,7 +771,7 @@ public class UpstoRe extends antiDDoSForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         final int maxFree;
-        if (this.getPluginConfig().getBooleanProperty(SETTING_ALLOW_MULTIPLE_FREE_DOWNLOADS, default_allowmultiplefreedownloads)) {
+        if (PluginJsonConfig.get(UpstoReConfig.class).isAllowMultipleFreeDownloads()) {
             maxFree = 2;
         } else {
             maxFree = 1;
@@ -778,7 +780,7 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
@@ -791,5 +793,10 @@ public class UpstoRe extends antiDDoSForHost {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public Class<? extends UpstoReConfig> getConfigInterface() {
+        return UpstoReConfig.class;
     }
 }
