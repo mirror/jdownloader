@@ -15,13 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,6 +31,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -136,39 +137,47 @@ public class OuoIo extends antiDDoSForDecrypt {
             final String recaptchaV2Response = helper.getToken();
             captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         }
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.submitForm(captchaForm);
-        final String finallink = getFinalLink();
-        if (StringUtils.isEmpty(finallink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            getPage(finallink);
+        String finalLink = handleRedirect(br);
+        if (finalLink != null) {
+            decryptedLinks.add(createDownloadlink(finalLink));
+        }
+        finalLink = getFinalLink(br);
+        if (!StringUtils.isEmpty(finalLink)) {
+            getPage(finalLink);
             // auto handle simple redirects
-            if (br.getRedirectLocation() != null) {
-                br.followRedirect(true);
-                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(https?://.*)\"").getMatch(0);
-                if (redirect != null) {
-                    decryptedLinks.add(createDownloadlink(redirect));
-                } else {
-                    decryptedLinks.add(createDownloadlink(br.getURL()));
-                }
-            } else {
-                final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(https?://.*)\"").getMatch(0);
-                if (redirect != null) {
-                    decryptedLinks.add(createDownloadlink(redirect));
-                } else {
-                    decryptedLinks.add(createDownloadlink(finallink));
-                }
+            finalLink = handleRedirect(br);
+            if (finalLink != null) {
+                decryptedLinks.add(createDownloadlink(finalLink));
             }
+        }
+        if (decryptedLinks.size() > 0) {
             return decryptedLinks;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
-    private String getFinalLink() throws Exception {
+    private String handleRedirect(Browser br) throws IOException {
+        while (true) {
+            String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(https?://[^\"]*)").getMatch(0);
+            if (redirect == null) {
+                redirect = br.getRedirectLocation();
+            }
+            if (!canHandle(redirect)) {
+                return redirect;
+            } else {
+                br.followRedirect(false);
+            }
+        }
+    }
+
+    private String getFinalLink(Browser br) throws Exception {
         final String finallink;
         // can be another form after captcha - 20170326
         final Form f = br.getForm(0);
-        if (f != null && f.containsHTML(">\\s*Get Link<")) {
+        if (f != null && f.containsHTML(">\\s*Get Link\\s*<")) {
             br.setFollowRedirects(false);
             submitForm(f);
             finallink = br.getRedirectLocation();

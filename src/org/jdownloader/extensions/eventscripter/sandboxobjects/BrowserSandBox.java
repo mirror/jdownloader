@@ -146,7 +146,8 @@ public class BrowserSandBox {
 
     public String getPage(final String url) throws EnvironmentException {
         try {
-            return br.getPage(url);
+            final String ret = br.getPage(url);
+            return ret;
         } catch (IOException e) {
             throw new EnvironmentException(e);
         }
@@ -177,7 +178,8 @@ public class BrowserSandBox {
 
     public String postPage(final String url, final String postData) throws EnvironmentException {
         try {
-            return br.postPage(url, postData);
+            final String ret = br.postPage(url, postData);
+            return ret;
         } catch (IOException e) {
             throw new EnvironmentException(e);
         }
