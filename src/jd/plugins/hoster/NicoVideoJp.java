@@ -21,6 +21,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(?:sm|so|nm)?(\\d+)" })
 public class NicoVideoJp extends PluginForHost {
@@ -158,7 +159,7 @@ public class NicoVideoJp extends PluginForHost {
             link.setName(fallback_filename);
             return AvailableStatus.TRUE;
         }
-        String jsonapi = br.getRegex("data-api-data=\"(.*?)\" hidden>").getMatch(0);
+        String jsonapi = br.getRegex("data-api-data=\"([^\"]+)").getMatch(0);
         jsonapi = Encoding.htmlDecode(jsonapi);
         entries = JavaScriptEngineFactory.jsonToJavaMap(jsonapi);
         entries = (Map<String, Object>) entries.get("video");
@@ -251,7 +252,7 @@ public class NicoVideoJp extends PluginForHost {
             dllink = (String) entries.get("url");
         } else {
             /* TODO: Fix- and enable API handling */
-            if (true) {
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Map<String, Object> dmcInfo = (Map<String, Object>) entries.get("dmcInfo");
@@ -268,9 +269,9 @@ public class NicoVideoJp extends PluginForHost {
             final List<Object> audios = (List<Object>) token.get("audios");
             final List<Object> protocols = (List<Object>) token.get("protocols");
             final Map<String, Object> auth_types = (Map<String, Object>) session_api.get("auth_types");
-            final String postData = String
-                    .format("{\"session\":{\"recipe_id\":\"%s\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_1080p\",\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"yes\",\"use_ssl\":\"yes\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"{\\\"service_id\\\":\\\"nicovideo\\\",\\\"player_id\\\":\\\"%s\\\",\\\"recipe_id\\\":\\\"%s\\\",\\\"service_user_id\\\":\\\"%s\\\",\\\"protocols\\\":[{\\\"name\\\":\\\"http\\\",\\\"auth_type\\\":\\\"ht2\\\"},{\\\"name\\\":\\\"hls\\\",\\\"auth_type\\\":\\\"ht2\\\"}],\\\"videos\\\":[\\\"archive_h264_1080p\\\",\\\"archive_h264_360p\\\",\\\"archive_h264_360p_low\\\",\\\"archive_h264_480p\\\",\\\"archive_h264_720p\\\"],\\\"audios\\\":[\\\"archive_aac_128kbps\\\",\\\"archive_aac_64kbps\\\"],\\\"movies\\\":[],\\\"created_time\\\":%d,\\\"expire_time\\\":%d,\\\"content_ids\\\":[\\\"out1\\\"],\\\"heartbeat_lifetime\\\":120000,\\\"content_key_timeout\\\":600000,\\\"priority\\\":0,\\\"transfer_presets\\\":[]}\",\"signature\":\"%s\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"%s\"},\"client_info\":{\"player_id\":\"%s\"},\"priority\":0}}",
-                            recipe_id, player_id, recipe_id, service_user_id, created_time, expire_time, signature, service_user_id, player_id);
+            final String postData = String.format(
+                    "{\"session\":{\"recipe_id\":\"%s\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_1080p\",\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"yes\",\"use_ssl\":\"yes\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"{\\\"service_id\\\":\\\"nicovideo\\\",\\\"player_id\\\":\\\"%s\\\",\\\"recipe_id\\\":\\\"%s\\\",\\\"service_user_id\\\":\\\"%s\\\",\\\"protocols\\\":[{\\\"name\\\":\\\"http\\\",\\\"auth_type\\\":\\\"ht2\\\"},{\\\"name\\\":\\\"hls\\\",\\\"auth_type\\\":\\\"ht2\\\"}],\\\"videos\\\":[\\\"archive_h264_1080p\\\",\\\"archive_h264_360p\\\",\\\"archive_h264_360p_low\\\",\\\"archive_h264_480p\\\",\\\"archive_h264_720p\\\"],\\\"audios\\\":[\\\"archive_aac_128kbps\\\",\\\"archive_aac_64kbps\\\"],\\\"movies\\\":[],\\\"created_time\\\":%d,\\\"expire_time\\\":%d,\\\"content_ids\\\":[\\\"out1\\\"],\\\"heartbeat_lifetime\\\":120000,\\\"content_key_timeout\\\":600000,\\\"priority\\\":0,\\\"transfer_presets\\\":[]}\",\"signature\":\"%s\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"%s\"},\"client_info\":{\"player_id\":\"%s\"},\"priority\":0}}",
+                    recipe_id, player_id, recipe_id, service_user_id, created_time, expire_time, signature, service_user_id, player_id);
             br.getHeaders().put("Accept", "application/json");
             br.getHeaders().put("Content-Type", "application/json");
             br.getHeaders().put("Origin", "https://www.nicovideo.jp");
