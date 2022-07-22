@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -133,7 +132,6 @@ public class SrfChCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // TODO
         final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final List<Map<String, Object>> chapterList = (List<Map<String, Object>>) root.get("chapterList");
         if (chapterList.isEmpty()) {
@@ -142,10 +140,8 @@ public class SrfChCrawler extends PluginForDecrypt {
         int numberofGeoBlockedItems = 0;
         String lastBlockReason = null;
         for (final Map<String, Object> chapter : chapterList) {
-            final String title = (String) chapter.get("title");
-            if (title == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            final ArrayList<DownloadLink> retChapter = new ArrayList<DownloadLink>();
+            final String title = chapter.get("title").toString();
             final String dateFormatted = new Regex(chapter.get("date"), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             final String ext;
             final String mediaType = (String) chapter.get("mediaType");
@@ -156,70 +152,62 @@ public class SrfChCrawler extends PluginForDecrypt {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported mediaType:" + mediaType);
             }
+            final String titleBase = dateFormatted + "_" + chapter.get("vendor") + "_" + title;
             final DownloadLink link = this.createDownloadlink("TODO");
-            link.setFinalFileName(dateFormatted + "_" + chapter.get("vendor") + "_" + title + ext);
+            link.setFinalFileName(titleBase + ext);
             String description = (String) chapter.get("description");
-            if (description == null) {
+            if (StringUtils.isEmpty(description)) {
                 description = (String) JavaScriptEngineFactory.walkJson(root, "show/description");
             }
             if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
                 link.setComment(description);
             }
-            String url_http_download = (String) chapter.get("podcastHdUrl");
-            String url_hls_master = null;
-            final Map<String, String> hlsMap = new HashMap<String, String>();
-            final Map<String, String> httpDownloadsMap = new HashMap<String, String>();
+            boolean foundHDHTTP;
+            String bestHTTP = (String) chapter.get("podcastHdUrl");
+            if (!StringUtils.isEmpty(bestHTTP)) {
+                foundHDHTTP = true;
+            } else {
+                bestHTTP = (String) chapter.get("podcastSdUrl");
+                foundHDHTTP = false;
+            }
+            String bestHLSMaster = null;
             lastBlockReason = (String) chapter.get("blockReason");
             if (!StringUtils.isEmpty(lastBlockReason)) {
                 numberofGeoBlockedItems++;
                 continue;
             }
             // final String id = (String) entries.get("id");
-            final List<Object> ressourcelist = (List<Object>) chapter.get("resourceList");
-            for (final Object ressourceO : ressourcelist) {
-                final Map<String, Object> resourceInfo = (Map<String, Object>) ressourceO;
-                final String protocol = (String) resourceInfo.get("protocol");
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) chapter.get("resourceList");
+            boolean foundHD = false;
+            for (final Map<String, Object> resource : ressourcelist) {
+                /* Every resource is usually available in "SD" and "HD" */
+                final String quality = resource.get("quality").toString();
+                final String url = resource.get("url").toString();
+                final String protocol = resource.get("protocol").toString();
+                if (quality.equalsIgnoreCase("HD")) {
+                    foundHD = true;
+                }
                 if (protocol.equals("HTTP") || protocol.equals("HTTPS")) {
-                    final String url = (String) resourceInfo.get("url");
-                    final String quality = (String) resourceInfo.get("quality");
-                    if (StringUtils.isNotEmpty(url)) {
-                        httpDownloadsMap.put(quality, url);
+                    if (!foundHDHTTP) {
+                        bestHTTP = url;
+                    }
+                    if (foundHD) {
+                        foundHDHTTP = true;
                     }
                 } else if (protocol.equals("HLS")) {
-                    final String url = (String) resourceInfo.get("url");
-                    final String quality = (String) resourceInfo.get("quality");
-                    if (StringUtils.isNotEmpty(url)) {
-                        hlsMap.put(quality, url);
-                    }
+                    bestHLSMaster = url;
                 } else {
                     /* Skip unsupported protocol */
-                    logger.info("Skipping protocol: " + resourceInfo);
+                    logger.info("Skipping protocol: " + protocol);
                     continue;
                 }
-            }
-            if (hlsMap.size() > 0) {
-                if (hlsMap.containsKey("HD")) {
-                    url_hls_master = hlsMap.get("HD");
-                } else if (hlsMap.containsKey("SD")) {
-                    url_hls_master = hlsMap.get("SD");
-                } else {
-                    logger.info("unknown qualities(hls):" + hlsMap);
-                    url_hls_master = hlsMap.entrySet().iterator().next().getValue();
+                if (foundHD) {
+                    break;
                 }
             }
-            if (httpDownloadsMap.size() > 0 && StringUtils.isEmpty(url_http_download)) {
-                if (httpDownloadsMap.containsKey("HD")) {
-                    url_http_download = httpDownloadsMap.get("HD");
-                } else if (hlsMap.containsKey("SD")) {
-                    url_http_download = httpDownloadsMap.get("SD");
-                } else {
-                    logger.info("unknown qualities(mp4):" + httpDownloadsMap);
-                    url_http_download = httpDownloadsMap.entrySet().iterator().next().getValue();
-                }
-            }
-            if (!StringUtils.isEmpty(url_hls_master)) {
+            if (!StringUtils.isEmpty(bestHLSMaster)) {
                 /* Sign URL */
-                String acl = new Regex(url_hls_master, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
+                String acl = new Regex(bestHLSMaster, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
                 if (acl == null) {
                     logger.warning("Failed to find acl");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -236,15 +224,21 @@ public class SrfChCrawler extends PluginForDecrypt {
                 authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
                 authparams = URLEncode.encodeURIComponent(authparams);
                 authparams = authparams.replace("*", "%2A");
-                url_hls_master += "&hdnts=" + authparams;
-                final String param_caption = new Regex(url_hls_master, "caption=([^\\&]+)").getMatch(0);
+                bestHLSMaster += "&hdnts=" + authparams;
+                final String param_caption = new Regex(bestHLSMaster, "caption=([^\\&]+)").getMatch(0);
                 if (param_caption != null) {
                     String param_caption_new = param_caption;
                     param_caption_new = Encoding.htmlDecode(param_caption_new);
                     param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
                     param_caption_new = param_caption_new.replace("%3D", "=");
-                    url_hls_master = url_hls_master.replace(param_caption, param_caption_new);
+                    bestHLSMaster = bestHLSMaster.replace(param_caption, param_caption_new);
                 }
+            }
+            retChapter.add(link);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(titleBase);
+            for (final DownloadLink result : retChapter) {
+                result._setFilePackage(fp);
             }
         }
         if (ret.isEmpty() && numberofGeoBlockedItems > 0) {
