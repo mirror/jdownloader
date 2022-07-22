@@ -73,6 +73,7 @@ public class NtvDe extends PluginForHost {
         if (title == null) {
             title = this.getLinkID(link);
         }
+        title = Encoding.unicodeDecode(title);
         title = title.replace("\\", "");
         title = Encoding.htmlDecode(title).trim();
         title = encodeUnicode(title);
@@ -88,7 +89,7 @@ public class NtvDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String progressive = br.getRegex("progressive\\s*?:\\s*?\"(https[^\"]+)\"").getMatch(0);
+        final String progressive = br.getRegex("progressive\\s*?:\\s*?\"(https?[^\"]+)\"").getMatch(0);
         if (progressive != null) {
             /* 2019-01-30: New */
             final String filter = new Regex(progressive, "(\\?filter=.+)").getMatch(0);
@@ -99,13 +100,19 @@ public class NtvDe extends PluginForHost {
                 url = progressive;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException ignore) {
+                    logger.log(ignore);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Geo blocked!");
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             dl.startDownload();
         } else {
