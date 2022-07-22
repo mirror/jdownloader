@@ -40,31 +40,6 @@ public class ArteTv extends PluginForHost {
     public String getAGBLink() {
         return "https://www.arte.tv/sites/corporate/de/allgemeine-nutzungsbedingungen/";
     }
-    // public static GetRequest requestAPIURL(final Browser br, final String apiurl) throws PluginException, IOException {
-    // if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "API v1 no longer available!?");
-    // }
-    // GetRequest apiRequest = new GetRequest(br.getURL(apiurl)) {
-    // @Override
-    // protected boolean isKeepAlivePermitted(URLConnectionAdapter con) {
-    // return con != null && con.getResponseCode() != 500;
-    // }
-    // };
-    // // this server responds with 500 internal server error
-    // // apiRequest.setCustomInetAddress(InetAddress.getByName("104.121.133.101"));
-    // br.getPage(apiRequest);
-    // if (br.getHttpConnection().getResponseCode() == 500) {
-    // apiRequest.resetConnection();
-    // // disable keep-alive to allow customInetAddress
-    // // apiRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_CONNECTION, "close");
-    // apiRequest.setCustomInetAddress(InetAddress.getByName("23.54.96.216"));// alternative 23.203.94.140
-    // br.getPage(apiRequest);
-    // if (br.getHttpConnection().getResponseCode() == 500) {
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // }
-    // return apiRequest;
-    // }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
