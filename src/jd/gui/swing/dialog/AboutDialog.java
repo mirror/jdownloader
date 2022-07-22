@@ -27,6 +27,7 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryUsage;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -61,6 +62,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
+import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.Docker;
 import org.appwork.utils.os.Snap;
@@ -70,6 +74,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
@@ -126,6 +131,9 @@ public class AboutDialog extends AbstractDialog<Integer> {
         Application.setApplication(".jd_home");
         showNonBlocking().join();
     }
+
+    private static String JNA_VERSION_STRING = null;
+    private static Double BC_VERSION         = null;
 
     @Override
     public JComponent layoutDialogContent() {
@@ -342,14 +350,38 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(createLink("Copyright \u00A9 2009-2022 JDownloader Community"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
         stats.add(createLink("Copyright \u00A9 2009-2022 JDownloader Community"));
-        stats.add(new JLabel("Java Native Access:"), "");
-        stats.add(createLink("JNA 5.11.0", "https://github.com/java-native-access/jna"));
+        try {
+            if (JNA_VERSION_STRING == null) {
+                final Class<?> clazz = Class.forName("com.sun.jna.Native");
+                final Field version = ReflectionUtils.getField("com.sun.jna.Version", "VERSION", clazz, String.class);
+                final Field versionNative = ReflectionUtils.getField("com.sun.jna.Version", "VERSION_NATIVE", clazz, String.class);
+                final String jnaVersion = (String) version.get(clazz);
+                final String jnaNativeVersion = (String) versionNative.get(clazz);
+                JNA_VERSION_STRING = jnaVersion + "/" + jnaNativeVersion;
+            }
+            stats.add(new JLabel("Java Native Access:"), "");
+            stats.add(createLink("JNA " + JNA_VERSION_STRING, "https://github.com/java-native-access/jna"));
+        } catch (Throwable e) {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+        }
+        try {
+            final SSLSocketStreamFactory ssl = HTTPConnectionImpl.getDefaultSSLSocketStreamFactory();
+            if (!(ssl instanceof JavaSSLSocketStreamFactory)) {
+                if (BC_VERSION == null) {
+                    BC_VERSION = new BouncyCastleProvider().getVersion();
+                }
+                stats.add(new JLabel("TLS:"), "");
+                stats.add(createLink("BouncyCastle " + BC_VERSION, "https://www.bouncycastle.org/latest_releases.html"));
+            }
+        } catch (Throwable e) {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+        }
         stats.add(new JLabel("UPNP:"), "");
         stats.add(createLink("Cling", "https://github.com/4thline/cling"));
         stats.add(new JLabel("Extraction:"));
         final JPanel extraction = new JPanel(new MigLayout("ins 0,wrap 2"));
         extraction.add(createLink("7ZipJBindings (" + get7ZipJBindingDetails() + ")", "https://github.com/borisbrodski/sevenzipjbinding"));
-        extraction.add(createLink("Zip4J", "https://github.com/srikanth-lingala/zip4j"));
+        extraction.add(createLink("Zip4J 1.3.3", "https://github.com/srikanth-lingala/zip4j"));
         stats.add(extraction);
         final LookAndFeel laf = UIManager.getLookAndFeel();
         if (laf != null) {
