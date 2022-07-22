@@ -21,14 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -44,6 +36,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidb.it" }, urls = { "" })
 public class RapidbIt extends PluginForHost {
     private final String                 API_BASE               = "https://rapidb.it/api";
@@ -51,12 +51,23 @@ public class RapidbIt extends PluginForHost {
     private final boolean                resume                 = true;
     private final int                    maxchunks              = 0;
     private final String                 PROPERTY_ACCOUNT_TOKEN = "login_token";
+
     /**
      * 2022-07-19: While their API docs state all possible errormessages, their API does not return any errormessage - only error-codes.
-     * </br>
-     * This is where this static mapping comes into play.
+     * </br> This is where this static mapping comes into play.
      */
-    private final Map<Integer, String>   errorCodeMapping       = Map.of(101, "Unknown PHP error", 102, "The selected controller does not exist", 103, "The selected controller exists but its source file was not found", 104, "Requested path/method does not exist", 105, "Your IP was banned due too high number of failed login attempts", 106, "You are logged off (access token is not valid or expired)", 107, "Owned permissions (scope) does not allow access to the controller/action", 108, "Input data contains invalid characters (only UTF-8)");
+    private Map<Integer, String> getErrorCodeMap() {
+        final Map<Integer, String> ret = new HashMap<Integer, String>();
+        ret.put(101, "Unknown PHP error");
+        ret.put(102, "The selected controller does not exist");
+        ret.put(103, "The selected controller exists but its source file was not found");
+        ret.put(104, "Requested path/method does not exist");
+        ret.put(105, "Your IP was banned due too high number of failed login attempts");
+        ret.put(106, "You are logged off (access token is not valid or expired)");
+        ret.put(107, "Owned permissions (scope) does not allow access to the controller/action");
+        ret.put(108, "Input data contains invalid characters (only UTF-8)");
+        return ret;
+    }
 
     @SuppressWarnings("deprecation")
     public RapidbIt(PluginWrapper wrapper) {
@@ -322,6 +333,7 @@ public class RapidbIt extends PluginForHost {
             /* No error */
             return;
         }
+        final Map<Integer, String> errorCodeMapping = getErrorCodeMap();
         if (errorCodeMapping.containsKey(errorcode)) {
             /* Known errorcode */
             final String errorMsg = errorCodeMapping.get(errorcode);
