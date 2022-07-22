@@ -1,5 +1,5 @@
 jna
-version 5.11.0
+version 5.12.1
 lgpl
 https://github.com/java-native-access/jna
-https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/5.11.0/jna-platform-5.11.0.jar
+https://search.maven.org/artifact/net.java.dev.jna/jna-platform/5.12.1/jar
