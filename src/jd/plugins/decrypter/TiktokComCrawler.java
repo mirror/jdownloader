@@ -22,16 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -51,6 +41,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TiktokCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TiktokCom.class })
@@ -90,20 +90,21 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     private final String TYPE_REDIRECT       = "https?://vm\\.[^/]+/([A-Za-z0-9]+).*";
+    private final String TYPE_APP            = "https?://[^/]+/t/([A-Za-z0-9]+).*";
     private final String TYPE_USER_USERNAME  = "https?://[^/]+/@([^\\?/]+).*";
     private final String TYPE_USER_USER_ID   = "https?://[^/]+/share/user/(\\d+).*";
     private final String TYPE_PLAYLIST_TAG   = "https?://[^/]+/tag/([^/]+)";
     private final String TYPE_PLAYLIST_MUSIC = "https?://[^/]+/music/([a-z0-9\\-]+)-(\\d+)";
     /**
-     * E.g. https://www.tiktok.com/foryou?is_from_webapp=v1&item_id=12345#/@jewellry2022/video/12345 </br>
-     * --> URLs to single video from recommendation
+     * E.g. https://www.tiktok.com/foryou?is_from_webapp=v1&item_id=12345#/@jewellry2022/video/12345 </br> --> URLs to single video from
+     * recommendation
      */
     private final String TYPE_VIDEO          = "https?://[^/]+.*/(@[^/]+/video/\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
+        if (param.getCryptedUrl().matches(TYPE_REDIRECT) || param.getCryptedUrl().matches(TYPE_APP)) {
             /* Single redirect URLs */
             br.setFollowRedirects(false);
             br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));
@@ -150,8 +151,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use website to crawl all videos of a user. </br>
-     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
+     * Use website to crawl all videos of a user. </br> Pagination hasn't been implemented so this will only find the first batch of items -
+     * usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
         prepBRWebsite(br);

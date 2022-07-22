@@ -26,19 +26,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,9 +46,23 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -304,7 +305,7 @@ public class XHamsterCom extends PluginForHost {
                 link.setName(getFallbackFileTitle(link.getPluginPatternMatcher()) + ".mp4");
             }
             br.setFollowRedirects(true);
-            prepBr();
+            prepBr(this, br);
             /* quick fix to force old player */
             String filename = null;
             String filesizeStr = null;
@@ -894,7 +895,7 @@ public class XHamsterCom extends PluginForHost {
             final boolean frd = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
-                prepBr();
+                prepBr(this, br);
                 br.setFollowRedirects(true);
                 /*
                  * 2020-01-31: They got their free page xhamster.com and paid faphouse.com. This plugin will always try to login into both.
@@ -1200,11 +1201,14 @@ public class XHamsterCom extends PluginForHost {
         doFree(link);
     }
 
-    protected void prepBr() {
+    public static void prepBr(Plugin plugin, Browser br) {
         for (String host : new String[] { "xhamster.com", "xhamster.xxx", "xhamster.desi", "xhamster.one", "xhamster1.desi", "xhamster2.desi" }) {
             br.setCookie(host, "lang", "en");
             br.setCookie(host, "playerVer", "old");
         }
+        final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
+        br.setAcceptLanguage(acceptLanguage);
+        br.getHeaders().put("Accept-Language", acceptLanguage);
         br.setAllowedResponseCodes(new int[] { 400, 410, 423, 452 });
     }
 

@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -35,6 +30,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TakefileLink extends XFileSharingProBasic {
@@ -153,7 +153,7 @@ public class TakefileLink extends XFileSharingProBasic {
     public static List<String[]> getVirtualPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // virtual file hosting
-        for (final String virtualPluginDomain : new String[] { "vip", "erofullsets", "musiclibrary", "mega-rip", "webcam", "pwc", "scat", "rare", "files", "3dmodel", "4kuhd", "copro", "eros", "fetish", "goldenrain", "hentai", "hmu", "momroleplay", "monster", "pissing", "spy", "test", "voyeur", "gaybb" }) {
+        for (final String virtualPluginDomain : new String[] { "vip", "erofullsets", "musiclibrary", "mega-rip", "webcam", "pwc", "scat", "rare", "files", "3dmodel", "4kuhd", "copro", "eros", "fetish", "goldenrain", "hentai", "hmu", "momroleplay", "monster", "pissing", "spy", "test", "voyeur", "gaybb", "hdmusic" }) {
             if (virtualPluginDomain.contains(".")) {
                 ret.add(new String[] { virtualPluginDomain });
             } else {
