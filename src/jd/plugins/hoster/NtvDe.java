@@ -20,6 +20,8 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,9 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(www\\.)?n\\-tv\\.de/mediathek/(videos|sendungen)/([^/]+/[^/]+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(?:www\\.)?n\\-tv\\.de/mediathek/(?:videos|sendungen)/([^/]+/[^/]+)\\.html" })
 public class NtvDe extends PluginForHost {
     public NtvDe(PluginWrapper wrapper) {
         super(wrapper);
