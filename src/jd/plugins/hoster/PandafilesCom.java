@@ -105,12 +105,17 @@ public class PandafilesCom extends XFileSharingProBasic {
                 return URL_TYPE.SHORT;
             } else if (fileID != null && !fileID.matches("[a-z0-9]{12}")) {
                 /* E.g. https://pandafiles.com/1Gh7 */
-                return URL_TYPE.SHORT;
+                return URL_TYPE.NORMAL;
             } else {
                 /* Resign to upper handling -> We should have a known URL-Type. */
                 return super.getURLType(url);
             }
         }
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        return false;
     }
 
     @Override

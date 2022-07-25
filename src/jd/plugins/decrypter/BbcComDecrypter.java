@@ -69,7 +69,10 @@ public class BbcComDecrypter extends PluginForDecrypt {
         if (decryptedLinks.size() == 0 && param.getCryptedUrl().matches(".+/video/[^/]+/.+")) {
             url_name = new Regex(param.getCryptedUrl(), "/video/[^/]+/(.+)").getMatch(0);
         }
-        String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String pageTitle = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
+        if (pageTitle == null) {
+            pageTitle = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        }
         String[] jsons = this.br.getRegex("data\\-playable=\"(.*?)\">").getColumn(0);
         if (jsons != null && jsons.length != 0) {
             jsons[0] = Encoding.htmlDecode(jsons[0]);
@@ -264,7 +267,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
         if (jsonMorphSingle != null) {
             final Map<String, Object> root = JSonStorage.restoreFromString(jsonMorphSingle, TypeRef.HASHMAP);
             final Map<String, Object> body = (Map<String, Object>) root.get("body");
-            fpName = (String) body.get("pageTitle");
+            pageTitle = (String) body.get("pageTitle");
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) body.get("videos");
             for (final Map<String, Object> video : videos) {
                 final String vpid = (String) video.get("versionPid");
@@ -338,9 +341,9 @@ public class BbcComDecrypter extends PluginForDecrypt {
             logger.info("Failed to find any playable content --> Probably only irrelevant photo content or no content at all --> Adding offline url");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (fpName != null) {
+        if (pageTitle != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(pageTitle.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

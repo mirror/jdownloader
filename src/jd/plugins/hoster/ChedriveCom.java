@@ -43,13 +43,14 @@ public class ChedriveCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "chedrive.net", "chedrive.com" });
+        ret.add(new String[] { "chedrives.com", "chedrive.net", "chedrive.com" });
         return ret;
     }
 
     @Override
     public String rewriteHost(final String host) {
         /* 2022-05-20: Main domain has been changed from chedrive.com to chedrive.net */
+        /* 2022-07-25: Main domain has been changed from chedrive.net to chedrives.com */
         return this.rewriteHost(getPluginDomains(), host);
     }
 
@@ -94,6 +95,11 @@ public class ChedriveCom extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 0;
         }
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        return false;
     }
 
     @Override
