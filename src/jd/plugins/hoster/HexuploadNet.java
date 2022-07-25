@@ -105,12 +105,12 @@ public class HexuploadNet extends XFileSharingProBasic {
         /* 2022-04-07: Special */
         handleSecurityVerification(br);
         Form form = super.findFormDownload2Premium(downloadLink, account, br);
-        // if (form == null) {
-        // form = br.getFormbyProperty("name", "FDL");
-        // }
-        // if (form == null) {
-        // form = br.getFormByInputFieldPropertyKeyValue("op", "download2");
-        // }
+        if (form == null) {
+            form = br.getFormbyProperty("name", "FDL");
+        }
+        if (form == null) {
+            form = br.getFormByInputFieldPropertyKeyValue("op", "download2");
+        }
         return form;
     }
 
