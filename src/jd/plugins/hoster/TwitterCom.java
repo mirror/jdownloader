@@ -21,6 +21,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -41,20 +55,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.TwitterConfigInterface;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterCom extends PluginForHost {
@@ -234,7 +234,8 @@ public class TwitterCom extends PluginForHost {
                             for (final DownloadLink tmp : results) {
                                 /**
                                  * The check for filename-ending is only there for backward-compatibility to crawler revision 45677 and
-                                 * before. </br> TODO: Remove it after 08-2022
+                                 * before. </br>
+                                 * TODO: Remove it after 08-2022
                                  */
                                 if ((link.getName() != null && link.getName().endsWith(".mp4")) || StringUtils.equals(link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_TYPE), "video")) {
                                     result = tmp;
@@ -317,9 +318,8 @@ public class TwitterCom extends PluginForHost {
                             } else if (brc.getHttpConnection().getResponseCode() == 403) {
                                 /* 403 is typically 'rights missing' but in this case it means that the content is offline. */
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            } else if (brc.getHttpConnection().getResponseCode() == 429) {
-                                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
                             }
+                            checkGenericErrors(br);
                             /* Now we got some old errorhandling */
                             final String errorcode = PluginJSonUtils.getJson(brc, "error");
                             final String errormessage = PluginJSonUtils.getJson(brc, "message");
@@ -461,6 +461,12 @@ public class TwitterCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void checkGenericErrors(final Browser br) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate-limit reached", 5 * 60 * 1000l);
+        }
     }
 
     private String getStoredVideoDirecturl(final DownloadLink link) {
@@ -646,9 +652,11 @@ public class TwitterCom extends PluginForHost {
         }
     }
 
-    private boolean checkLogin(final Browser br) throws IOException {
+    private boolean checkLogin(final Browser br) throws IOException, PluginException {
         jd.plugins.decrypter.TwitterComCrawler.prepAPIHeaders(br);
         br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
+        /* E.g. check for error "rate-limit reached" */
+        this.checkGenericErrors(br);
         if (br.getRequest().getHttpConnection().getResponseCode() == 200) {
             return true;
         } else {

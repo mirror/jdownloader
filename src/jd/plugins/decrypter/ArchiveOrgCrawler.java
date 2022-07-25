@@ -143,9 +143,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
          * Preview (= images of book pages) of books may be available along official download --> Only crawl book preview if no official
          * download is possible.
          */
-        final boolean isOfficiallyDownloadable = br.containsHTML("class=\"download-button\"") && !br.containsHTML("class=\"download-lending-message\"");
         final boolean isBookPreviewAvailable = getBookReaderURL(br) != null;
         if (isBookPreviewAvailable) {
+            final boolean isOfficiallyDownloadable = br.containsHTML("class=\"download-button\"") && !br.containsHTML("class=\"download-lending-message\"");
             final BookCrawlMode mode = PluginJsonConfig.get(ArchiveOrgConfig.class).getBookCrawlMode();
             if (isOfficiallyDownloadable) {
                 if (mode == BookCrawlMode.PREFER_ORIGINAL) {
@@ -486,7 +486,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     private String getBookReaderURL(final Browser br) {
-        return br.getRegex("(?i)\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
+        return br.getRegex("(?i)(?:\\'|\")([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)").getMatch(0);
     }
 
     private ArrayList<DownloadLink> crawlXML(final Browser br, final Browser xml, final String root) throws IOException {

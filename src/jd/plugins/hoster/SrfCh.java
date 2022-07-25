@@ -108,7 +108,7 @@ public class SrfCh extends PluginForHost {
             }
             DownloadLink firstMediaItem = null;
             for (final DownloadLink result : results) {
-                if (result.getFinalFileName().matches(".*\\.(mp3|mp4)")) {
+                if (result.getFinalFileName().matches("(?i).*\\.(mp3|mp4)")) {
                     firstMediaItem = result;
                     break;
                 }

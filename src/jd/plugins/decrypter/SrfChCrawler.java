@@ -82,7 +82,7 @@ public class SrfChCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/______.+");
         }
         return ret.toArray(new String[0]);
     }

@@ -72,7 +72,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(web/share/(?:link|init)\\?surl=[A-Za-z0-9\\-_]+(\\&path=[^/]+)?|web/share/videoPlay\\?surl=[A-Za-z0-9\\-_]+\\&dir=[^\\&]+|s/[A-Za-z0-9\\-_]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(web/share/(?:link|init)\\?surl=[A-Za-z0-9\\-_]+(\\&path=[^/]+)?|web/share/videoPlay\\?surl=[A-Za-z0-9\\-_]+\\&dir=[^\\&]+|s/[A-Za-z0-9\\-_]+|(?:[a-z0-9]+/)?sharing/link\\?surl=[A-Za-z0-9\\-_]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -100,6 +100,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
     }
 
     private static final String TYPE_SHORT        = "https?://[^/]+/s/(.+)";
+    private static final String TYPE_SHORT_NEW    = "https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+)";
     /* For such URLs leading to single files we'll crawl all items of the folder that file is in -> Makes it easier */
     private static final String TYPE_SINGLE_VIDEO = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
 
@@ -120,6 +121,9 @@ public class TeraboxComFolder extends PluginForDecrypt {
         final String containerURL;
         if (param.getCryptedUrl().matches(TYPE_SHORT)) {
             surl = new Regex(param.getCryptedUrl(), TYPE_SHORT).getMatch(0);
+            containerURL = param.getCryptedUrl();
+        } else if (param.getCryptedUrl().matches(TYPE_SHORT_NEW)) {
+            surl = new Regex(param.getCryptedUrl(), TYPE_SHORT_NEW).getMatch(0);
             containerURL = param.getCryptedUrl();
         } else if (param.getCryptedUrl().matches(TYPE_SINGLE_VIDEO)) {
             surl = paramsOfAddedURL.get("surl");
