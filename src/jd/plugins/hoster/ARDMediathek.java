@@ -124,7 +124,7 @@ public class ARDMediathek extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (dllink.contains(".m3u8")) {
-            checkFFProbe(link, "Download a HLS Stream");
+            checkFFProbe(link, "Check a HLS Stream");
             br.getPage(this.dllink);
             /* Check for offline and GEO-blocked */
             this.connectionErrorhandling(br.getHttpConnection());

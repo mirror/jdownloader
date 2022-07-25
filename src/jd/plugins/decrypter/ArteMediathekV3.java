@@ -284,10 +284,9 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setProperty(PROPERTY_ORIGINAL_FILENAME, videoStream.get("filename"));
                 final VersionInfo versionInfo = parseVersionInfo(audioCode);
                 /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[ADF] to be same as old vpi */
-                final String linkID = getHost() + "://" + new Regex(videoID, "(\\d+-\\d+)").getMatch(0) + "/" + versionInfo.toString() + "/" + "http_" + bitrate;
                 link.setContentUrl(param.getCryptedUrl());
                 link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
-                link.setLinkID(linkID);
+                link.setLinkID(getHost() + "://" + new Regex(videoID, "(\\d+-\\d+)").getMatch(0) + "/" + versionInfo.toString() + "/" + "http_" + bitrate);
                 /* Get filename according to users' settings. */
                 final String filename = this.getAndSetFilename(link);
                 /* Make sure that our directHTTP plugin will never change this filename. */
