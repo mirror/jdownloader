@@ -343,7 +343,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
         }
         if (pageTitle != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(pageTitle.trim()));
+            fp.setName(Encoding.htmlDecode(pageTitle).trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

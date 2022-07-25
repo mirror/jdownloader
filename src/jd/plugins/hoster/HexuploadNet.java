@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.Time;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -28,10 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.Time;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HexuploadNet extends XFileSharingProBasic {
@@ -104,7 +104,14 @@ public class HexuploadNet extends XFileSharingProBasic {
     public Form findFormDownload2Premium(final DownloadLink downloadLink, final Account account, final Browser br) throws Exception {
         /* 2022-04-07: Special */
         handleSecurityVerification(br);
-        return super.findFormDownload2Premium(downloadLink, account, br);
+        Form form = super.findFormDownload2Premium(downloadLink, account, br);
+        // if (form == null) {
+        // form = br.getFormbyProperty("name", "FDL");
+        // }
+        // if (form == null) {
+        // form = br.getFormByInputFieldPropertyKeyValue("op", "download2");
+        // }
+        return form;
     }
 
     @Override
