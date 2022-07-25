@@ -25,6 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
@@ -98,8 +99,9 @@ public class PhotoShareRu extends PluginForDecrypt {
             for (final String singleLink[] : links) {
                 final DownloadLink dl = createDownloadlink("http://photoshare.ru" + singleLink[0]);
                 // Ending may be changed before download
-                dl.setName(Encoding.htmlDecode(singleLink[1].trim()) + ".jpg");
-                dl.setAvailable(true);
+                dl.setName(Encoding.htmlDecode(singleLink[1]).trim() + ".jpg");
+                /* 2022-07-25: We cannot know in beforehand whether or not those images are online. */
+                dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 decryptedLinks.add(dl);
             }
         }

@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "http://(www\\.)?photoshare\\.ru/photo\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "photoshare.ru" }, urls = { "https?://(?:www\\.)?photoshare\\.ru/photo\\d+\\.html" })
 public class PhotoShareRu extends PluginForHost {
     public PhotoShareRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,7 +60,7 @@ public class PhotoShareRu extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         final String ext = getFileNameExtensionFromString(dllink, ".jpg");
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
