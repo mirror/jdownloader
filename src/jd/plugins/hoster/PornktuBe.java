@@ -22,7 +22,6 @@ import java.util.List;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,11 +41,10 @@ public class PornktuBe extends KernelVideoSharingComV2 {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
+    /** 2022-07-26: Seems like they're GEO-blocking all IPs except for US IPs. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "pornktube.vip", "pornktube.com", "pornktu.be" });
+        ret.add(new String[] { "pornktube.tv", "pornktube.vip", "pornktube.com", "pornktu.be" });
         return ret;
     }
 
@@ -61,6 +59,12 @@ public class PornktuBe extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-07-26: Main domain has changed from pornktube.vip to pornktube.tv */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override

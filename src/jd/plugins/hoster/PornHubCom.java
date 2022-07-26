@@ -458,10 +458,11 @@ public class PornHubCom extends PluginForHost {
                     logger.info("webm not found for:" + viewKey);
                 }
             }
-            if (dlUrl == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                link.setProperty("webm", webm);
+            link.setProperty("webm", webm);
+            if (this.dlUrl == null) {
+                if (br.containsHTML("(?i)>\\s*GIF is unavailable pending review")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GIF is unavailable pending review");
+                }
             }
         } else {
             /* Required later if e.g. directurl has to be refreshed! */
@@ -503,35 +504,37 @@ public class PornHubCom extends PluginForHost {
         } else {
             link.setFinalFileName(html_filename);
         }
-        if (!verifyFinalURL(link, format, this.dlUrl)) {
-            if (!isVideo) {
-                /* We cannot refresh directurls of e.g. photo content - final downloadurls should be static --> WTF */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-            }
-            logger.info("Directurl has expired (?) --> Trying to generate new directurl");
-            final Map<String, Map<String, String>> qualities = getVideoLinks(this, br);
-            if (qualities == null || qualities.size() == 0) {
-                logger.warning("Failed to find any video qualities");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
-            if (this.dlUrl == null && StringUtils.equalsIgnoreCase("mp4", format)) {
-                // 2020-01-11, only HLS available, auto check for hls
-                logger.warning("Failed to get fresh directurl:" + format + "/" + quality + "|auto check for hls");
-                format = "hls";
+        if (!StringUtils.isEmpty(this.dlUrl)) {
+            if (!verifyFinalURL(link, format, this.dlUrl)) {
+                if (!isVideo) {
+                    /* We cannot refresh directurls of e.g. photo content - final downloadurls should be static --> WTF */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                }
+                logger.info("Directurl has expired (?) --> Trying to generate new directurl");
+                final Map<String, Map<String, String>> qualities = getVideoLinks(this, br);
+                if (qualities == null || qualities.size() == 0) {
+                    logger.warning("Failed to find any video qualities");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
-            }
-            if (this.dlUrl == null) {
-                logger.warning("Failed to get fresh directurl:" + format + "/" + quality);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                /* Last chance */
-                logger.warning("Check fresh directurl:" + format + "/" + quality + "/" + dlUrl);
-                if (!verifyFinalURL(link, format, this.dlUrl)) {
-                    logger.info("Fresh directurl did not lead to downloadable content");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
+                if (this.dlUrl == null && StringUtils.equalsIgnoreCase("mp4", format)) {
+                    // 2020-01-11, only HLS available, auto check for hls
+                    logger.warning("Failed to get fresh directurl:" + format + "/" + quality + "|auto check for hls");
+                    format = "hls";
+                    this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
+                }
+                if (this.dlUrl == null) {
+                    logger.warning("Failed to get fresh directurl:" + format + "/" + quality);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    link.setProperty(PROPERT_FORMAT, format);
+                    /* Last chance */
+                    logger.warning("Check fresh directurl:" + format + "/" + quality + "/" + dlUrl);
+                    if (!verifyFinalURL(link, format, this.dlUrl)) {
+                        logger.info("Fresh directurl did not lead to downloadable content");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
+                    } else {
+                        link.setProperty(PROPERT_FORMAT, format);
+                    }
                 }
             }
         }
@@ -902,6 +905,9 @@ public class PornHubCom extends PluginForHost {
     private void doFree(final DownloadLink link) throws Exception, PluginException {
         final String format = link.getStringProperty(PROPERT_FORMAT);
         if (StringUtils.equalsIgnoreCase(format, "hls")) {
+            if (StringUtils.isEmpty(dlUrl)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             checkFFmpeg(link, "Download a HLS Stream");
             final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(br.cloneBrowser(), dlUrl);
             if (hlsContainers == null || hlsContainers.size() != 1) {
@@ -923,7 +929,7 @@ public class PornHubCom extends PluginForHost {
                 if (br.containsHTML(html_privatevideo)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "You're not authorized to watch/download this private video");
                 }
-                if (dlUrl == null) {
+                if (StringUtils.isEmpty(dlUrl)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
