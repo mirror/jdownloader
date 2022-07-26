@@ -147,10 +147,6 @@ public class SiteType {
          */
         Unknown_FilehostScript,
         /**
-         * Script used by some multihosters e.g. <a href="http://www.premiumax.net/">premiumax.net</a>. Not sure what to call this script.
-         */
-        Unknown_MultihosterScript,
-        /**
          * the template that supports mirror stack type sites.. Not sure what to call this script.
          */
         Unknown_MirrorStack,

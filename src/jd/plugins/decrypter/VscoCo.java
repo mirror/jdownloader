@@ -22,12 +22,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -36,7 +38,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vsco.co" }, urls = { "https?://(?:[^/]+\\.vsco\\.co/grid/\\d+|(?:www\\.)?vsco\\.co/[\\w-]+/grid/\\d+|(?:www\\.)?vsco\\.co/[\\w-]+)" })
 public class VscoCo extends PluginForDecrypt {
@@ -48,99 +49,138 @@ public class VscoCo extends PluginForDecrypt {
     private static final String PROPERTY_DATE          = "date";
     private static final String PROPERTY_DATE_CAPTURED = "date_captured";
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String username = new Regex(param.getCryptedUrl(), "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
         if (username == null) {
             username = new Regex(param.getCryptedUrl(), "vsco\\.co/([\\w-]+)").getMatch(0);
         }
-        br.setCurrentURL("https://" + this.getHost() + "/" + username + "/images/1");
-        br.getPage("https://vsco.co/content/Static/userinfo");
-        // final String json = br.getRegex("define\\((.*?)\\)").getMatch(0);
-        // final Map<String, Object> userInfo = JavaScriptEngineFactory.jsonToJavaMap(json);
-        final String cookie_vs = br.getCookie(this.getHost(), "vs");
-        br.getPage("/ajxp/" + cookie_vs + "/2.0/sites?subdomain=" + username);
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String siteid = PluginJSonUtils.getJsonValue(br, "id");
-        if (cookie_vs == null || siteid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String json = br.getRegex("window\\.__PRELOADED_STATE__ = (\\{.*?\\})</script>").getMatch(0);
+        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(json);
+        final Map<String, Object> entities = (Map<String, Object>) root.get("entities");
+        final Map<String, Object> imagesFirstPage = (Map<String, Object>) entities.get("images");
+        final Map<String, Object> videosFirstPage = (Map<String, Object>) entities.get("videos");
+        final Map<String, Object> siteInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "sites/siteByUsername/" + username);
+        final Map<String, Object> site = (Map<String, Object>) siteInfo.get("site");
+        final String siteid = site.get("id").toString();
+        final Map<String, Object> firstPageMediaInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "medias/bySiteId/" + siteid);
+        final String authToken = JavaScriptEngineFactory.walkJson(root, "users/currentUser/tkn").toString();
         long amount_total = 0;
-        /* More than 500 possible */
-        int max_count_per_page = 500;
+        /* Using the same value as website */
+        int max_count_per_page = 14;
         int page = 1;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
-        do {
-            final Browser ajax = br.cloneBrowser();
-            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            ajax.getPage("/ajxp/" + cookie_vs + "/2.0/medias?site_id=" + siteid + "&page=" + page + "&size=" + max_count_per_page);
-            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-            if (page == 1 || page > 1) {
-                amount_total = JavaScriptEngineFactory.toLong(entries.get("total"), 0);
-                if (page == 1 && amount_total == 0) {
-                    logger.info("User owns zero media content!");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (page > 1 && amount_total == 0) {
-                    return decryptedLinks;
-                }
+        final List<Map<String, Object>> mediasFirstPage = (List<Map<String, Object>>) firstPageMediaInfo.get("medias");
+        final SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+        /* Add items of first page --> They got slightly different field names (wtf) which is why we're processing them separately. */
+        for (final Map<String, Object> mediaWeakInfo : mediasFirstPage) {
+            final String type = mediaWeakInfo.get("type").toString();
+            final Map<String, Object> media;
+            if (type.equals("image")) {
+                media = (Map<String, Object>) imagesFirstPage.get(mediaWeakInfo.get("image").toString());
+            } else {
+                media = (Map<String, Object>) videosFirstPage.get(mediaWeakInfo.get("video").toString());
             }
-            final List<Object> medias = (List) entries.get("media");
-            final SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
-            for (final Object resource : medias) {
-                final Map<String, Object> media = (Map<String, Object>) resource;
-                final String fid = (String) media.get("_id");
-                if (fid == null) {
-                    return null;
-                }
-                final String medialink = (String) media.get("permalink");
-                final Boolean isVideo = (Boolean) media.get("is_video");
-                String url_content = null;
-                if (Boolean.TRUE.equals(isVideo)) {
-                    url_content = (String) media.get("video_url");
-                } else {
-                    url_content = (String) media.get("responsive_url");
-                }
-                if (StringUtils.isEmpty(url_content)) {
-                    /* Skip invalid items */
-                    continue;
-                }
-                if (!(url_content.startsWith("http") || url_content.startsWith("//"))) {
-                    url_content = Request.getLocation("//" + url_content, br.getRequest());
-                }
-                final String description = (String) media.get("description");
-                final String filename = username + "_" + fid + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + url_content);
-                dl.setContentUrl(medialink);
-                dl.setName(filename);
-                dl.setAvailable(true);
-                if (!StringUtils.isEmpty(description)) {
-                    dl.setComment(description);
-                }
-                /* Set some Packagizer properties */
-                dl.setProperty(PROPERTY_USERNAME, username);
-                dl.setProperty(PROPERTY_DATE, sd.format(new Date(((Number) media.get("upload_date")).longValue())));
-                dl.setProperty(PROPERTY_DATE_CAPTURED, sd.format(new Date(((Number) media.get("capture_date_ms")).longValue())));
-                decryptedLinks.add(dl);
-                fp.add(dl);
-                distribute(dl);
+            final Boolean isVideo = (Boolean) media.get("isVideo");
+            String url_content = null;
+            if (Boolean.TRUE.equals(isVideo)) {
+                url_content = media.get("videoUrl").toString();
+            } else {
+                url_content = media.get("responsiveUrl").toString();
             }
-            if (medias.size() < max_count_per_page) {
-                /* Fail safe */
-                break;
-            } else if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                break;
+            if (!(url_content.startsWith("http") || url_content.startsWith("//"))) {
+                url_content = Request.getLocation("//" + url_content, br.getRequest());
             }
-            page++;
-        } while (decryptedLinks.size() < amount_total);
-        if (decryptedLinks.size() == 0 && !this.isAbort()) {
-            return null;
+            final String description = (String) media.get("description");
+            final String filename = username + "_" + media.get("id") + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
+            final DownloadLink dl = this.createDownloadlink(url_content);
+            dl.setContentUrl(media.get("permalink").toString());
+            dl.setFinalFileName(filename);
+            dl.setAvailable(true);
+            if (!StringUtils.isEmpty(description)) {
+                dl.setComment(description);
+            }
+            /* Set some Packagizer properties */
+            dl.setProperty(PROPERTY_USERNAME, username);
+            dl.setProperty(PROPERTY_DATE, sd.format(new Date(((Number) media.get("uploadDate")).longValue())));
+            dl.setProperty(PROPERTY_DATE_CAPTURED, sd.format(new Date(((Number) media.get("captureDateMs")).longValue())));
+            ret.add(dl);
+            fp.add(dl);
+            distribute(dl);
         }
-        return decryptedLinks;
+        String nextCursor = (String) firstPageMediaInfo.get("nextCursor");
+        logger.info("Crawled page " + page + " | Items crawled so far: " + ret.size() + " | nextCursor: " + nextCursor);
+        final Browser ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Authorization", "Bearer " + authToken);
+        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        if (!StringUtils.isEmpty(nextCursor)) {
+            do {
+                page++;
+                final UrlQuery query = new UrlQuery();
+                query.add("site_id", siteid);
+                query.add("limit", "14");
+                query.add("cursor", Encoding.urlEncode(nextCursor));
+                ajax.getPage("/api/3.0/medias/profile?" + query.toString());
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+                nextCursor = (String) entries.get("next_cursor");
+                final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) entries.get("media");
+                for (final Map<String, Object> mediaArrayObj : mediaArray) {
+                    final String type = mediaArrayObj.get("type").toString(); // image/video
+                    final Map<String, Object> media = (Map<String, Object>) mediaArrayObj.get(type);
+                    final Boolean isVideo = (Boolean) media.get("is_video");
+                    String url_content = null;
+                    if (Boolean.TRUE.equals(isVideo)) {
+                        url_content = media.get("video_url").toString();
+                    } else {
+                        url_content = media.get("responsive_url").toString();
+                    }
+                    if (!(url_content.startsWith("http") || url_content.startsWith("//"))) {
+                        url_content = Request.getLocation("//" + url_content, br.getRequest());
+                    }
+                    final String description = (String) media.get("description");
+                    final String filename = username + "_" + media.get("_id") + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
+                    final DownloadLink dl = this.createDownloadlink(url_content);
+                    dl.setContentUrl(media.get("permalink").toString());
+                    dl.setFinalFileName(filename);
+                    dl.setAvailable(true);
+                    if (!StringUtils.isEmpty(description)) {
+                        dl.setComment(description);
+                    }
+                    /* Set some Packagizer properties */
+                    dl.setProperty(PROPERTY_USERNAME, username);
+                    dl.setProperty(PROPERTY_DATE, sd.format(new Date(((Number) media.get("upload_date")).longValue())));
+                    dl.setProperty(PROPERTY_DATE_CAPTURED, sd.format(new Date(((Number) media.get("capture_date_ms")).longValue())));
+                    ret.add(dl);
+                    fp.add(dl);
+                    distribute(dl);
+                }
+                logger.info("Crawled page " + page + " | Items crawled so far: " + ret.size() + " | nextCursor: " + nextCursor);
+                if (mediaArray.size() < max_count_per_page) {
+                    /* Fail safe */
+                    logger.info("Stopping because: Current page contains less items than " + max_count_per_page);
+                    break;
+                } else if (StringUtils.isEmpty(nextCursor)) {
+                    logger.info("Stopping because: No nextCursor available");
+                    break;
+                } else if (this.isAbort()) {
+                    logger.info("Stopping because: Crawl process aborted by user");
+                    break;
+                } else {
+                }
+            } while (ret.size() < amount_total);
+        }
+        return ret;
     }
 }
