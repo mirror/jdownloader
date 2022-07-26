@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sendgb.com" }, urls = { "https?://(?:www\\.)?sendgb\\.com/[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sendgb.com" }, urls = { "https?://(?:www\\.)?sendgb\\.com/([A-Za-z0-9]+)" })
 public class SendgbCom extends PluginForHost {
     public SendgbCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,24 +41,28 @@ public class SendgbCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private final boolean FREE_RESUME       = false;
+    private final int     FREE_MAXCHUNKS    = 1;
+    private final int     FREE_MAXDOWNLOADS = -1;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setName(this.getFID(link) + ".zip");
         this.setBrowserExclusive();
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
-        link.setLinkID(linkid);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"boo\\-wrapper\"")) {
@@ -71,8 +75,7 @@ public class SendgbCom extends PluginForHost {
         // if (filename == null) {
         // filename = br.getRegex("").getMatch(0);
         // }
-        String filesize = br.getRegex("class=\"fa fa\\-cloud\\-download\"></i>([^<>\"]+)</div>").getMatch(0);
-        link.setName(linkid + ".zip");
+        final String filesize = br.getRegex("class=\"fa fa\\-cloud\\-download\"></i>([^<>\"]+)</div>").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
