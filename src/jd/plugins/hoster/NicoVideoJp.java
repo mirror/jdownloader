@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -68,6 +67,7 @@ public class NicoVideoJp extends PluginForHost {
     private static final String  html_account_needed         = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
     public static final long     trust_cookie_age            = 300000l;
     private Map<String, Object>  entries                     = null;
+    private final String         PROPERTY_TITLE              = "title";
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,8 +107,10 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final String fid = getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fid + ".mp4");
+        }
         link.setProperty("extension", default_extension);
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
@@ -162,14 +164,10 @@ public class NicoVideoJp extends PluginForHost {
         String jsonapi = br.getRegex("data-api-data=\"([^\"]+)").getMatch(0);
         jsonapi = Encoding.htmlDecode(jsonapi);
         entries = JavaScriptEngineFactory.jsonToJavaMap(jsonapi);
-        entries = (Map<String, Object>) entries.get("video");
-        final String title = (String) entries.get("title");
+        final Map<String, Object> videoInfo = (Map<String, Object>) entries.get("video");
+        final String title = (String) videoInfo.get("title");
         String filename = title;
-        if (StringUtils.isEmpty(filename)) {
-            filename = this.getFID(link);
-        }
-        filename = title;
-        link.setProperty("plainfilename", filename);
+        link.setProperty(PROPERTY_TITLE, filename);
         // if (date == null) {
         // date = br.getRegex("property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}\\+\\d{4})\"").getMatch(0);
         // }
@@ -212,13 +210,12 @@ public class NicoVideoJp extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        br = new Browser();
         return login(account, true);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://info.nicovideo.jp/base/rule.html";
+        return "https://info.nicovideo.jp/base/rule.html";
     }
 
     @Override
@@ -255,26 +252,41 @@ public class NicoVideoJp extends PluginForHost {
             if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final Map<String, Object> movie = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/delivery/");
+            final List<Map<String, Object>> audios = (List<Map<String, Object>>) movie.get("audios");
+            final List<Map<String, Object>> videos = (List<Map<String, Object>>) movie.get("videos");
+            /* Find best audio- and video quality: First available should be best */
+            String audioID = null, videoID = null;
+            for (final Map<String, Object> audio : audios) {
+                if ((Boolean) audio.get("isAvailable")) {
+                    audioID = audio.get("id").toString();
+                    break;
+                }
+            }
+            for (final Map<String, Object> video : videos) {
+                if ((Boolean) video.get("isAvailable")) {
+                    audioID = video.get("id").toString();
+                    break;
+                }
+            }
             final Map<String, Object> dmcInfo = (Map<String, Object>) entries.get("dmcInfo");
-            final Map<String, Object> session_api = (Map<String, Object>) dmcInfo.get("session_api");
-            final String signature = (String) session_api.get("signature");
-            final String recipe_id = (String) session_api.get("recipe_id");
-            final String player_id = (String) session_api.get("player_id");
-            final String service_user_id = (String) session_api.get("service_user_id");
-            final long created_time = JavaScriptEngineFactory.toLong(entries.get("created_time"), 0);
-            final long expire_time = JavaScriptEngineFactory.toLong(entries.get("expire_time"), 0);
-            final Object tokenO = session_api.get("token");
+            final Map<String, Object> session = (Map<String, Object>) movie.get("session");
+            final String signature = (String) session.get("signature");
+            final String recipe_id = (String) session.get("recipe_id");
+            final String player_id = (String) session.get("player_id");
+            final String service_user_id = (String) session.get("service_user_id");
+            final long created_time = ((Number) entries.get("created_time")).longValue();
+            final long expire_time = ((Number) entries.get("expire_time")).longValue();
+            final Object tokenO = session.get("token");
             final Map<String, Object> token = JavaScriptEngineFactory.jsonToJavaMap((String) tokenO);
-            final List<Object> videos = (List<Object>) token.get("videos");
-            final List<Object> audios = (List<Object>) token.get("audios");
             final List<Object> protocols = (List<Object>) token.get("protocols");
-            final Map<String, Object> auth_types = (Map<String, Object>) session_api.get("auth_types");
+            final Map<String, Object> auth_types = (Map<String, Object>) session.get("auth_types");
             final String postData = String.format(
                     "{\"session\":{\"recipe_id\":\"%s\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_1080p\",\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_720p\",\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_480p\",\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p\",\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p_low\"],\"audio_src_ids\":[\"archive_aac_128kbps\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"yes\",\"use_ssl\":\"yes\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"{\\\"service_id\\\":\\\"nicovideo\\\",\\\"player_id\\\":\\\"%s\\\",\\\"recipe_id\\\":\\\"%s\\\",\\\"service_user_id\\\":\\\"%s\\\",\\\"protocols\\\":[{\\\"name\\\":\\\"http\\\",\\\"auth_type\\\":\\\"ht2\\\"},{\\\"name\\\":\\\"hls\\\",\\\"auth_type\\\":\\\"ht2\\\"}],\\\"videos\\\":[\\\"archive_h264_1080p\\\",\\\"archive_h264_360p\\\",\\\"archive_h264_360p_low\\\",\\\"archive_h264_480p\\\",\\\"archive_h264_720p\\\"],\\\"audios\\\":[\\\"archive_aac_128kbps\\\",\\\"archive_aac_64kbps\\\"],\\\"movies\\\":[],\\\"created_time\\\":%d,\\\"expire_time\\\":%d,\\\"content_ids\\\":[\\\"out1\\\"],\\\"heartbeat_lifetime\\\":120000,\\\"content_key_timeout\\\":600000,\\\"priority\\\":0,\\\"transfer_presets\\\":[]}\",\"signature\":\"%s\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"%s\"},\"client_info\":{\"player_id\":\"%s\"},\"priority\":0}}",
                     recipe_id, player_id, recipe_id, service_user_id, created_time, expire_time, signature, service_user_id, player_id);
             br.getHeaders().put("Accept", "application/json");
             br.getHeaders().put("Content-Type", "application/json");
-            br.getHeaders().put("Origin", "https://www.nicovideo.jp");
+            br.getHeaders().put("Origin", "https://www." + this.getHost());
             br.postPageRaw("https://api.dmc.nico/api/sessions?_format=json", postData);
             entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/session");
@@ -299,7 +311,6 @@ public class NicoVideoJp extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
@@ -464,11 +475,11 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
-        final String extension = downloadLink.getStringProperty("extension", default_extension);
-        final String videoid = this.getFID(downloadLink);
-        String videoName = downloadLink.getStringProperty("plainfilename", null);
-        final SubConfiguration cfg = SubConfiguration.getConfig("nicovideo.jp");
+    private String getFormattedFilename(final DownloadLink link) throws ParseException {
+        final String extension = link.getStringProperty("extension", default_extension);
+        final String videoid = this.getFID(link);
+        String title = link.getStringProperty(PROPERTY_TITLE, null);
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
             formattedFilename = defaultCustomFilename;
@@ -476,8 +487,8 @@ public class NicoVideoJp extends PluginForHost {
         if (!formattedFilename.contains("*videoname") || !formattedFilename.contains("*ext*")) {
             formattedFilename = defaultCustomFilename;
         }
-        String date = downloadLink.getStringProperty("originaldate", null);
-        final String channelName = downloadLink.getStringProperty("channel", null);
+        String date = link.getStringProperty("originaldate", null);
+        final String channelName = link.getStringProperty("channel", null);
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
             date = date.replace("T", ":");
@@ -496,23 +507,13 @@ public class NicoVideoJp extends PluginForHost {
                     formattedDate = "";
                 }
             }
-            if (formattedDate != null) {
-                formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            } else {
-                formattedFilename = formattedFilename.replace("*date*", "");
-            }
+            formattedFilename = formattedFilename.replace("*date*", formattedDate);
         }
         formattedFilename = formattedFilename.replace("*videoid*", videoid);
-        if (formattedFilename.contains("*channelname*")) {
-            if (channelName != null) {
-                formattedFilename = formattedFilename.replace("*channelname*", channelName);
-            } else {
-                formattedFilename = formattedFilename.replace("*channelname*", "");
-            }
-        }
+        formattedFilename = formattedFilename.replace("*channelname*", channelName);
         formattedFilename = formattedFilename.replace("*ext*", "." + extension);
         // Insert filename at the end to prevent errors with tags
-        formattedFilename = formattedFilename.replace("*videoname*", videoName);
+        formattedFilename = formattedFilename.replace("*videoname*", title);
         return formattedFilename;
     }
 
