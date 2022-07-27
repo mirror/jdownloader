@@ -49,7 +49,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(?:sm|so|nm)?(\\d+)" })
 public class NicoVideoJp extends PluginForHost {
@@ -193,7 +192,6 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        // checkWatchableGeneral();
         if (link.getBooleanProperty(PROPERTY_ACCOUNT_REQUIRED, false) && account == null) {
             throw new AccountRequiredException();
         } else if (br.containsHTML("(?)>\\s*Sorry, this video can only be viewed in the same region where it was uploaded")) {
@@ -449,10 +447,10 @@ public class NicoVideoJp extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.nicovideojp.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, "Define how the date should look.").setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.nicovideojp.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, "Define how the filenames should look:").setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*channelname* = name of the channel/uploader\r\n");
