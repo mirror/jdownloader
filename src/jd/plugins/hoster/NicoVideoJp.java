@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -50,30 +51,29 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(?:sm|so|nm)?(\\d+)" })
 public class NicoVideoJp extends PluginForHost {
-    private static final String  MAINPAGE                    = "https://www.nicovideo.jp/";
-    private static final String  ONLYREGISTEREDUSERTEXT      = "Only downloadable for registered users";
-    private static final String  CUSTOM_DATE                 = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME             = "CUSTOM_FILENAME";
-    private static final String  TYPE_NM                     = "https?://(www\\.)?nicovideo\\.jp/watch/nm\\d+";
-    private static final String  TYPE_SM                     = "https?://(www\\.)?nicovideo\\.jp/watch/sm\\d+";
-    private static final String  TYPE_SO                     = "https?://(www\\.)?nicovideo\\.jp/watch/so\\d+";
+    private static final String  MAINPAGE                  = "https://www.nicovideo.jp/";
+    private static final String  ONLYREGISTEREDUSERTEXT    = "Only downloadable for registered users";
+    private static final String  CUSTOM_DATE               = "CUSTOM_DATE";
+    private static final String  CUSTOM_FILENAME           = "CUSTOM_FILENAME";
+    private static final String  TYPE_NM                   = "https?://[^/]+/watch/nm\\d+";
+    private static final String  TYPE_SM                   = "https?://[^/]+/watch/sm\\d+";
+    private static final String  TYPE_SO                   = "https?://[^/]+/watch/so\\d+";
     /* Other types may redirect to this type. This is the only type which is also downloadable without account (sometimes?). */
-    private static final String  TYPE_WATCH                  = "https?://(www\\.)?nicovideo\\.jp/watch/\\d+";
-    private static final String  default_extension           = "mp4";
-    private static final boolean RESUME                      = true;
-    private static final int     MAXCHUNKS                   = 0;
-    private static final int     MAXDLS                      = 1;
-    private static final int     economy_active_wait_minutes = 30;
-    private static final String  html_account_needed         = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
-    public static final long     trust_cookie_age            = 300000l;
-    private Map<String, Object>  entries                     = null;
-    private final String         PROPERTY_TITLE              = "title";
-    private final String         PROPERTY_DATE_ORIGINAL      = "originaldate";
-    private final String         PROPERTY_ACCOUNT_REQUIRED   = "account_required";
+    private static final String  TYPE_WATCH                = "https?://[^/]+/watch/\\d+";
+    private static final String  default_extension         = "mp4";
+    private static final boolean RESUME                    = true;
+    private static final int     MAXCHUNKS                 = 0;
+    private static final int     MAXDLS                    = 1;
+    private static final String  html_account_needed       = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
+    public static final long     trust_cookie_age          = 300000l;
+    private Map<String, Object>  entries                   = null;
+    private final String         PROPERTY_TITLE            = "title";
+    private final String         PROPERTY_DATE_ORIGINAL    = "originaldate";
+    private final String         PROPERTY_ACCOUNT_REQUIRED = "account_required";
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://secure.nicovideo.jp/secure/register");
+        this.enablePremium("https://site.nicovideo.jp/premium_contents/");
         setConfigElements();
     }
 
@@ -179,13 +179,6 @@ public class NicoVideoJp extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (!account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
         return login(account, true);
     }
 
@@ -306,73 +299,50 @@ public class NicoVideoJp extends PluginForHost {
      * orce = check cookies and perform a full login if that fails. !force = Accept cookies without checking if they're not older than
      * trust_cookie_age.
      */
-    private AccountInfo login(final Account account, final boolean force) throws Exception {
+    private AccountInfo login(final Account account, final boolean validateCookies) throws Exception {
         final AccountInfo ai = new AccountInfo();
         synchronized (account) {
             this.setBrowserExclusive();
-            final Cookies cookies = account.loadCookies("");
-            if (cookies != null && !force) {
-                /* 2016-05-04: Avoid full login whenever possible! */
-                br.setCookies(this.getHost(), cookies);
-                logger.info("Attempting cookie login");
-                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
-                    /* We trust these cookies --> Do not check them */
-                    logger.info("Trust cookies without check");
-                    return null;
-                }
-                br.getPage("https://www.nicovideo.jp/");
-                if (br.containsHTML("(?i)/logout\">Log out</a>")) {
-                    /* Save new cookie timestamp */
-                    logger.info("Cookie login successful");
-                    br.setCookies(this.getHost(), cookies);
-                    return null;
-                }
-                logger.info("Cookie login failed");
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies == null || userCookies.isEmpty()) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
-            logger.info("Performing full login");
-            /* Try multiple times - it sometimes just doesn't work :( */
-            boolean success = false;
-            for (int i = 0; i <= 2; i++) {
-                br = new Browser();
-                br.setFollowRedirects(true);
-                br.getPage("https://www.nicovideo.jp/");
-                br.getPage("/login");
-                // dont want to follow redirect here, as it takes you to homepage..
-                br.setFollowRedirects(false);
-                // this will redirect with session info.
-                br.getHeaders().put("Accept-Encoding", "gzip, deflate, br");
-                br.getHeaders().put("Referer", "https://account.nicovideo.jp/login");
-                br.postPage("https://account.nicovideo.jp/api/v1/login?show_button_twitter=1&site=niconico&show_button_facebook=1", "mail_tel=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String redirect = br.getRedirectLocation();
-                if (redirect != null) {
-                    if (redirect.contains("&message=cant_login")) {
-                        // invalid user:password, no need to retry.
-                        throw new AccountInvalidException();
-                    } else if (redirect.contains("//account.nicovideo.jp/login?")) {
-                        br.getPage(redirect);
-                    } else {
-                        // do nothing!
-                    }
-                }
-                if (br.getCookie(MAINPAGE, "user_session", Cookies.NOTDELETEDPATTERN) == null) {
-                    continue;
-                }
-                success = true;
-                break;
+            br.setCookies(userCookies);
+            if (!validateCookies) {
+                return null;
             }
-            if (!success) {
-                throw new AccountInvalidException();
+            br.getPage("https://account.nicovideo.jp/my/account");
+            if (!isLoggedIn(br)) {
+                if (account.hasEverBeenValid()) {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                } else {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                }
             }
-            // there are multiple account types (free and paid services)
-            br.getPage("//account.nicovideo.jp/my/account");
+            /*
+             * When using cookie login user can enter whatever he wants into username field but we prefer unique names so user cannot add
+             * the same account for the same service twice.
+             */
+            final String username = br.getRegex("class=\"item profile-nickname\"[^>]*>([^<]+)<").getMatch(0);
+            if (username != null) {
+                account.setUser(Encoding.htmlDecode(username).trim());
+            }
             if (br.containsHTML("(?i)<span class=\"membership--status\">(?:Yearly|Monthly|Weekly|Daily) plan</span>")) {
                 account.setType(AccountType.PREMIUM);
             } else {
                 account.setType(AccountType.FREE);
             }
-            account.saveCookies(br.getCookies(this.getHost()), "");
             ai.setUnlimitedTraffic();
             return ai;
+        }
+    }
+
+    private boolean isLoggedIn(final Browser br) {
+        if (br.containsHTML("/logout")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -387,21 +357,17 @@ public class NicoVideoJp extends PluginForHost {
             /* Fallback */
             formattedFilename = defaultCustomFilename;
         }
-        String date = link.getStringProperty(PROPERTY_DATE_ORIGINAL);
+        String dateStr = link.getStringProperty(PROPERTY_DATE_ORIGINAL);
         final String channelName = link.getStringProperty("channel", "");
         String formattedDate = null;
-        if (date != null && formattedFilename.contains("*date*")) {
-            date = date.replace("T", ":");
+        if (dateStr != null && formattedFilename.contains("*date*")) {
+            dateStr = dateStr.replace("T", ":");
             final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
-            // 2009-08-30T22:49+0900
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm+ssss");
-            Date dateStr = formatter.parse(date);
-            formattedDate = formatter.format(dateStr);
-            Date theDate = formatter.parse(formattedDate);
+            final Date date = new SimpleDateFormat("yyyy-MM-dd:HH:mm+ssss").parse(dateStr);
             if (userDefinedDateFormat != null) {
                 try {
-                    formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
+                    final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(date);
                 } catch (Exception e) {
                     // prevent user error killing plugin.
                     formattedDate = "";

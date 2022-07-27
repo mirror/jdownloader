@@ -2191,7 +2191,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlUserStory(final CryptedLink param) throws Exception {
         this.getPage(param.getCryptedUrl());
         this.siteGeneralErrorhandling(this.br);
-        final String json = br.getRegex("cur\\['stories_list_owner_feed-?\\d+'\\]=(\\[.+\\]);").getMatch(0);
+        final String json = br.getRegex("cur\\['stories_list_owner_feed-?\\d+'\\]=(\\[.*?\\]);\\s+").getMatch(0);
         if (StringUtils.isEmpty(json)) {
             /* Probably user does not have a story at this moment or account is required to view those. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
