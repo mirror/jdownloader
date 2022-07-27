@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.translate._GUI;
@@ -34,6 +35,7 @@ import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -51,8 +53,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(?:sm|so|nm)?(\\d+)" })
 public class NicoVideoJp extends PluginForHost {
-    private static final String  MAINPAGE                  = "https://www.nicovideo.jp/";
-    private static final String  ONLYREGISTEREDUSERTEXT    = "Only downloadable for registered users";
     private static final String  CUSTOM_DATE               = "CUSTOM_DATE";
     private static final String  CUSTOM_FILENAME           = "CUSTOM_FILENAME";
     private static final String  TYPE_NM                   = "https?://[^/]+/watch/nm\\d+";
@@ -63,9 +63,7 @@ public class NicoVideoJp extends PluginForHost {
     private static final String  default_extension         = "mp4";
     private static final boolean RESUME                    = true;
     private static final int     MAXCHUNKS                 = 0;
-    private static final int     MAXDLS                    = 1;
-    private static final String  html_account_needed       = "account\\.nicovideo\\.jp/register\\?from=watch\\&mode=landing\\&sec=not_login_watch";
-    public static final long     trust_cookie_age          = 300000l;
+    private static final int     MAXDLS                    = -1;
     private Map<String, Object>  entries                   = null;
     private final String         PROPERTY_TITLE            = "title";
     private final String         PROPERTY_DATE_ORIGINAL    = "originaldate";
@@ -94,15 +92,8 @@ public class NicoVideoJp extends PluginForHost {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
-    /**
-     * IMPORTANT: The site has a "normal" and "economy" mode. Normal mode = Higher video quality - mp4 streams. Economy mode = lower quality
-     * - flv streams. Premium users are ALWAYS in the normal mode.
-     *
-     * @throws Exception
-     */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, null);
@@ -134,15 +125,8 @@ public class NicoVideoJp extends PluginForHost {
                 // return AvailableStatus.TRUE;
                 throw new AccountRequiredException();
             }
-        } else if (br.containsHTML("class=\"channel-invitation-box-title-text\"")) {
-            /* Channel membership required to watch this content */
-            if (account != null) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Expired session or channel membership required?", 5 * 60 * 1000l);
-            } else {
-                throw new AccountRequiredException();
-            }
         }
-        if (br.containsHTML("this video inappropriate.<")) {
+        if (br.containsHTML("(?i)this video inappropriate\\.<")) {
             final String watch = br.getRegex("(?i)harmful_link\" href=\"([^<>\"]*?)\">Watch this video</a>").getMatch(0);
             if (watch == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -152,27 +136,32 @@ public class NicoVideoJp extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* This title is e.g. useful when a video is GEO-blocked. Example: https://www.nicovideo.jp/watch/so39439590 */
+        String fallbackTitle = br.getRegex("<title>([^<]+)Niconico Video</title>").getMatch(0);
+        if (fallbackTitle != null) {
+            fallbackTitle = Encoding.htmlDecode(fallbackTitle).trim();
+            link.setName(fallbackTitle + ".mp4");
+        }
         String jsonapi = br.getRegex("data-api-data=\"([^\"]+)").getMatch(0);
-        jsonapi = Encoding.htmlDecode(jsonapi);
-        entries = JavaScriptEngineFactory.jsonToJavaMap(jsonapi);
-        final Map<String, Object> video = (Map<String, Object>) entries.get("video");
-        final String description = (String) video.get("description");
-        link.setProperty(PROPERTY_TITLE, video.get("title"));
-        final String registeredAt = (String) video.get("registeredAt");
-        if (!StringUtils.isEmpty(registeredAt)) {
-            link.setProperty(PROPERTY_DATE_ORIGINAL, registeredAt);
-        }
-        link.setFinalFileName(getFormattedFilename(link));
-        // link.setDownloadSize((173222l + 64000l) / 8 * 241);
-        if (br.containsHTML(html_account_needed)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.nicovideojp.only4registered", ONLYREGISTEREDUSERTEXT));
-        }
-        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
-            link.setComment(description);
-        }
-        link.setProperty(PROPERTY_ACCOUNT_REQUIRED, video.get("isAuthenticationRequired"));
-        if ((Boolean) video.get("isDeleted")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (jsonapi != null) {
+            jsonapi = jsonapi.replace("&quot;", "\"");
+            entries = JavaScriptEngineFactory.jsonToJavaMap(jsonapi);
+            final Map<String, Object> video = (Map<String, Object>) entries.get("video");
+            final String description = (String) video.get("description");
+            link.setProperty(PROPERTY_TITLE, Encoding.htmlDecode(video.get("title").toString()));
+            final String registeredAt = (String) video.get("registeredAt");
+            if (!StringUtils.isEmpty(registeredAt)) {
+                link.setProperty(PROPERTY_DATE_ORIGINAL, registeredAt);
+            }
+            link.setFinalFileName(getFormattedFilename(link));
+            // link.setDownloadSize((173222l + 64000l) / 8 * 241);
+            if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+                link.setComment(Encoding.htmlDecode(description));
+            }
+            link.setProperty(PROPERTY_ACCOUNT_REQUIRED, video.get("isAuthenticationRequired"));
+            if ((Boolean) video.get("isDeleted")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -205,27 +194,18 @@ public class NicoVideoJp extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         // checkWatchableGeneral();
-        if (link.getBooleanProperty(PROPERTY_ACCOUNT_REQUIRED) && account == null) {
+        if (link.getBooleanProperty(PROPERTY_ACCOUNT_REQUIRED, false) && account == null) {
             throw new AccountRequiredException();
+        } else if (br.containsHTML("(?)>\\s*Sorry, this video can only be viewed in the same region where it was uploaded")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
         }
-        // TODO: Re-add errorhandling for GEO-blocked items
-        final Map<String, Object> movie = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/delivery/movie");
+        final Map<String, Object> delivery = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/delivery");
+        final Map<String, Object> movie = (Map<String, Object>) delivery.get("movie");
         final List<Map<String, Object>> audios = (List<Map<String, Object>>) movie.get("audios");
         final List<Map<String, Object>> videos = (List<Map<String, Object>>) movie.get("videos");
         /* Find best audio- and video quality: First available should be best */
-        String audioID = null, videoID = null;
-        for (final Map<String, Object> audio : audios) {
-            if ((Boolean) audio.get("isAvailable")) {
-                audioID = audio.get("id").toString();
-                break;
-            }
-        }
-        for (final Map<String, Object> video : videos) {
-            if ((Boolean) video.get("isAvailable")) {
-                videoID = video.get("id").toString();
-                break;
-            }
-        }
+        final String audioID = getHighestQualityStr(audios);
+        final String videoID = getHighestQualityStr(videos);
         final Map<String, Object> session = (Map<String, Object>) movie.get("session");
         final Map<String, Object> apiInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(session, "urls/{0}");
         final String apiURL = apiInfo.get("url").toString();
@@ -237,48 +217,125 @@ public class NicoVideoJp extends PluginForHost {
         // final long created_time = ((Number) entries.get("created_time")).longValue();
         // final long expire_time = ((Number) entries.get("expire_time")).longValue();
         final String token = session.get("token").toString();
+        final String service_user_id = session.get("serviceUserId").toString();
         final Map<String, Object> tokenMap = JavaScriptEngineFactory.jsonToJavaMap(token);
         final String recipe_id = tokenMap.get("recipe_id").toString();
         final String player_id = tokenMap.get("player_id").toString();
-        final String service_user_id = tokenMap.get("service_user_id").toString();
         // final Map<String, Object> auth_types = (Map<String, Object>) session.get("auth_types");
-        final String postData = "{\"session\":{\"recipe_id\":\"" + recipe_id + "\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":" + sessionVideosStr + ",\"audio_src_ids\":" + sessionAudiosStr + "}},{\"src_id_to_mux\":{\"video_src_ids\":[\"archive_h264_360p_low\"],\"audio_src_ids\":[\"" + audioID + "\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"" + booleanToYesNo((Boolean) apiInfo.get("isWellKnownPort")) + "\",\"use_ssl\":\"" + booleanToYesNo((Boolean) apiInfo.get("isSsl"))
-                + "\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"" + token.replaceAll("\"", "\\\\\"") + "\",\"signature\":\"" + signature + "\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"" + service_user_id + "\"},\"client_info\":{\"player_id\":\"" + player_id + "\"},\"priority\":0}}";
+        final String postData = "{\"session\":{\"recipe_id\":\"" + recipe_id + "\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":" + sessionVideosStr + ",\"audio_src_ids\":" + sessionAudiosStr + "}},{\"src_id_to_mux\":{\"video_src_ids\":[\"" + videoID + "\"],\"audio_src_ids\":[\"" + audioID + "\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"" + booleanToYesNo((Boolean) apiInfo.get("isWellKnownPort")) + "\",\"use_ssl\":\"" + booleanToYesNo((Boolean) apiInfo.get("isSsl"))
+                + "\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"" + token.replaceAll("\"", "\\\\\"") + "\",\"signature\":\"" + signature + "\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"" + service_user_id + "\"},\"client_info\":{\"player_id\":\"" + player_id + "\"},\"priority\":" + session.get("priority") + "}}";
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("Content-Type", "application/json");
         br.getHeaders().put("Origin", "https://www." + this.getHost());
         br.postPageRaw(apiURL + "?_format=json", postData);
-        if (br.containsHTML(html_account_needed)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, ONLYREGISTEREDUSERTEXT, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
         final Map<String, Object> response = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final Map<String, Object> session2 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(response, "data/session");
-        final String dllink = session2.get("content_uri").toString();
-        if (StringUtils.isEmpty(dllink)) {
+        final Map<String, Object> data = (Map<String, Object>) response.get("data");
+        final Map<String, Object> responseSession = (Map<String, Object>) data.get("session");
+        final String streamURL = responseSession.get("content_uri").toString();
+        if (StringUtils.isEmpty(streamURL)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final boolean isHLS = true;
-        if (isHLS) {
-            br.getPage(dllink);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
-            dl.startDownload();
-        } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, RESUME, MAXCHUNKS);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
+        logger.info("Chosen media quality IDs: Audio: " + audioID + " | Video: " + videoID);
+        /* Now acquire permission to watch/download this video --> Seems like this is not needed? */
+        // br.getPage("https://nvapi.nicovideo.jp/v1/2ab0cbaa/watch?t=" +
+        // URLEncode.decodeURIComponent(delivery.get("trackingId").toString()));
+        /* Without this "heartbeat", our HLS stream would be invalid after ~120 seconds. */
+        final HeartbeatThread heartbeat = new HeartbeatThread(br.cloneBrowser(), apiURL, session, response);
+        heartbeat.setDaemon(true);
+        heartbeat.start();
+        try {
+            final boolean isHLS = true;
+            if (isHLS) {
+                br.getPage(streamURL);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                checkFFmpeg(link, "Download a HLS Stream");
+                dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+                dl.startDownload();
+            } else {
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, streamURL, RESUME, MAXCHUNKS);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String final_filename = getFormattedFilename(link);
+                link.setFinalFileName(final_filename);
+                dl.startDownload();
             }
-            final String final_filename = getFormattedFilename(link);
-            link.setFinalFileName(final_filename);
-            dl.startDownload();
+        } finally {
+            heartbeat.interrupt();
         }
+    }
+
+    class HeartbeatThread extends Thread {
+        Browser             br       = null;
+        String              apiURL   = null;
+        Map<String, Object> session  = null;
+        Map<String, Object> response = null;
+
+        HeartbeatThread(final Browser br, final String apiURL, final Map<String, Object> session, final Map<String, Object> response) {
+            this.br = br;
+            this.apiURL = apiURL;
+            this.session = session;
+            this.response = response;
+        }
+
+        public void run() {
+            final long heartbeatLifetime = ((Number) session.get("heartbeatLifetime")).longValue(); // typically 120000
+            final long heartbeatIntervalMillis = heartbeatLifetime / 3;
+            final Map<String, Object> responseSession = (Map<String, Object>) JavaScriptEngineFactory.walkJson(response, "data/session");
+            PostRequest heatbeat = null;
+            try {
+                heatbeat = new PostRequest(apiURL + "/" + responseSession.get("id") + "?_format=json&_method=PUT");
+            } catch (final Throwable e) {
+            }
+            final String json = JSonStorage.serializeToJson(response.get("data"));
+            heatbeat.setPostDataString(json);
+            while (true) {
+                try {
+                    /* Typically wait 40 seconds */
+                    sleep(heartbeatIntervalMillis);
+                    br.getPage(heatbeat);
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                    break;
+                }
+            }
+        }
+    }
+
+    private String getHighestQualityStr(final List<Map<String, Object>> medias) {
+        return getHighestQualityMap(medias).get("id").toString();
+    }
+
+    private Map<String, Object> getHighestQualityMap(final List<Map<String, Object>> medias) {
+        Map<String, Object> highestQualityMap = null;
+        /* Lowest number = best */
+        int highestQualityLevel = -10;
+        for (final Map<String, Object> media : medias) {
+            if ((Boolean) media.get("isAvailable")) {
+                final Map<String, Object> metadata = (Map<String, Object>) media.get("metadata");
+                final int levelIndex;
+                if (media.get("id").toString().contains("low")) {
+                    /*
+                     * 2022-07-27: Not sure about this but seems like if low (video-)quality is available, we need to prefer that otherwise
+                     * we'll get an error 500 later on.
+                     */
+                    levelIndex = -3;
+                } else {
+                    levelIndex = ((Number) metadata.get("levelIndex")).intValue();
+                }
+                if (levelIndex < highestQualityLevel || highestQualityMap == null) {
+                    highestQualityMap = media;
+                    highestQualityLevel = levelIndex;
+                }
+            }
+        }
+        return highestQualityMap;
     }
 
     private String booleanToYesNo(final boolean bool) {
