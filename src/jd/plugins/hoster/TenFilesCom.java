@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -28,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenfiles.com" }, urls = { "http://(www\\.)?tenfiles\\.(com|info)/file/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenfiles.com" }, urls = { "https?://(?:www\\.)?tenfiles\\.(?:com|info)/file/([a-z0-9]+)" })
 public class TenFilesCom extends PluginForHost {
     public TenFilesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,6 +43,20 @@ public class TenFilesCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("tenfiles.info/", "tenfiles.com/"));
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
