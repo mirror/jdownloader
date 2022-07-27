@@ -21,16 +21,13 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -50,7 +47,7 @@ public class SendCm extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "send.cm" });
+        ret.add(new String[] { "send.cm", "sendit.cloud", "usersfiles.com" });
         return ret;
     }
 
@@ -65,6 +62,12 @@ public class SendCm extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-07-27: sendit.cloud and usersfiles.com have been morged from another plugin into this one. */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
@@ -110,29 +113,6 @@ public class SendCm extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
-        URLConnectionAdapter con = null;
-        try {
-            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(link.getPluginPatternMatcher()));
-            /* 2020-11-06: Special: Host sometimes provides direct-downloads */
-            if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
-                link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
-                this.storeDirecturl(link, account, con.getURL().toString());
-                return AvailableStatus.TRUE;
-            } else {
-                /* Fallback to template handling */
-                return super.requestFileInformationWebsite(link, account, downloadsStarted);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
     }
 
     @Override
