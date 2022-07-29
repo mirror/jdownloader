@@ -135,23 +135,23 @@ public class XHamsterCom extends PluginForHost {
 
     /* DEV NOTES */
     /* Porn_plugin */
-    public static final long      trust_cookie_age                = 300000l;
-    private static final String   ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
-    private static final boolean  default_allow_multihoster_usage = false;
-    private static final String   HTML_PAID_VIDEO                 = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
-    final String                  SELECTED_VIDEO_FORMAT           = "SELECTED_VIDEO_FORMAT";
+    private static final String   SETTING_ALLOW_MULTIHOST_USAGE          = "ALLOW_MULTIHOST_USAGE";
+    private final boolean         default_allow_multihoster_usage        = false;
+    private static final String   HTML_PAID_VIDEO                        = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
+    private final String          SETTING_SELECTED_VIDEO_FORMAT          = "SELECTED_VIDEO_FORMAT";
     /* The list of qualities/formats displayed to the user */
-    private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p", "2160p" };
-    private boolean               friendsOnly                     = false;
-    public static final String    domain_premium                  = "faphouse.com";
-    public static final String    api_base_premium                = "https://faphouse.com/api";
-    private static final String   TYPE_MOVIES                     = "(?i)^https?://[^/]+/movies/(\\d+)/([^/]+)\\.html$";
-    private static final String   TYPE_VIDEOS                     = "(?i)^https?://[^/]+/videos/([A-Za-z0-9]+)$";
-    private static final String   TYPE_VIDEOS_2                   = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-(\\d+)$";
-    private static final String   TYPE_VIDEOS_3                   = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-([A-Za-z0-9]+)$";
-    private static final String   PROPERTY_USERNAME               = "username";
-    private static final String   PROPERTY_DATE                   = "date";
-    private static final String   PROPERTY_TAGS                   = "tags";
+    private static final String[] FORMATS                                = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p", "2160p" };
+    private boolean               friendsOnly                            = false;
+    public static final String    domain_premium                         = "faphouse.com";
+    public static final String    api_base_premium                       = "https://faphouse.com/api";
+    private static final String   TYPE_MOVIES                            = "(?i)^https?://[^/]+/movies/(\\d+)/([^/]+)\\.html$";
+    private static final String   TYPE_VIDEOS                            = "(?i)^https?://[^/]+/videos/([A-Za-z0-9]+)$";
+    private static final String   TYPE_VIDEOS_2                          = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-(\\d+)$";
+    private static final String   TYPE_VIDEOS_3                          = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-([A-Za-z0-9]+)$";
+    private final String          PROPERTY_USERNAME                      = "username";
+    private final String          PROPERTY_DATE                          = "date";
+    private final String          PROPERTY_TAGS                          = "tags";
+    private final String          PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN = "last_used_free_domain";
 
     private void setConfigElements() {
         String user_text;
@@ -160,15 +160,15 @@ public class XHamsterCom extends PluginForHost {
         } else {
             user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
         }
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, user_text).setDefaultValue(default_allow_multihoster_usage));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ALLOW_MULTIHOST_USAGE, user_text).setDefaultValue(default_allow_multihoster_usage));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_VIDEO_FORMAT, FORMATS, "Preferred Format").setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_VIDEO_FORMAT, FORMATS, "Preferred Format").setDefaultValue(0));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Filename_id", "Only for videos: Change Choose file name to 'filename_ID.exe' e.g. 'test_48604.mp4' ?").setDefaultValue(false));
     }
 
     @Override
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
-        if (this.getPluginConfig().getBooleanProperty(ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
+        if (this.getPluginConfig().getBooleanProperty(SETTING_ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
             return true;
         } else {
             return link.getHost().equalsIgnoreCase(plugin.getHost());
@@ -566,7 +566,7 @@ public class XHamsterCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public String getDllink() throws IOException, PluginException {
         final SubConfiguration cfg = getPluginConfig();
-        final int selected_format = cfg.getIntegerProperty(SELECTED_VIDEO_FORMAT, 0);
+        final int selected_format = cfg.getIntegerProperty(SETTING_SELECTED_VIDEO_FORMAT, 0);
         final List<String> qualities = new ArrayList<String>();
         switch (selected_format) {
         // fallthrough to automatically choose the next best quality
@@ -907,8 +907,18 @@ public class XHamsterCom extends PluginForHost {
                 boolean isloggedinPremium = false;
                 if (cookies != null) {
                     logger.info("Trying cookie login");
-                    br.setCookies(this.getHost(), cookies, true);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
+                    String freeDomain = account.getStringProperty(PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN);
+                    if (freeDomain == null) {
+                        /*
+                         * This will happen e.g. on first login efter revision 46495 or whenever login cookies are available but this
+                         * property is missing for some reason.
+                         */
+                        logger.info("No last_used_free_domain available -> Finding it");
+                        br.getPage("https://" + this.getHost() + "/");
+                        freeDomain = br.getHost();
+                    }
+                    br.setCookies(freeDomain, cookies, true);
+                    if (!force) {
                         /* We trust these cookies --> Do not check them */
                         if (premiumCookies != null) {
                             logger.info("Found stored premium cookies");
@@ -917,11 +927,12 @@ public class XHamsterCom extends PluginForHost {
                         logger.info("Trust cookies without login");
                         return;
                     } else {
-                        /* Try to avoid login cookie whenever possible! */
-                        br.getPage("https://" + this.getHost() + "/");
+                        /* Try to avoid login captcha whenever possible! */
+                        br.getPage("https://" + freeDomain + "/");
                         if (isLoggedInHTML(br)) {
                             /* Save new cookie timestamp */
                             account.saveCookies(br.getCookies(br.getHost()), "");
+                            account.setProperty(PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN, br.getHost());
                             logger.info("Free cookie login successful -> Checking premium cookies");
                             if (premiumCookies != null) {
                                 /* Cookies have already been set in lines above */
@@ -952,7 +963,7 @@ public class XHamsterCom extends PluginForHost {
                     String xhamsterComLoginURL = PluginJSonUtils.getJson(this.br, "https://xhamster.com/premium/in");
                     if (StringUtils.isEmpty(xhamsterComLoginURL)) {
                         /* Fallback */
-                        xhamsterComLoginURL = br.getRegex("(https?://xhamster\\.com/premium/in\\?[^<>\"]+)").getMatch(0);
+                        xhamsterComLoginURL = br.getRegex("(https?://[^/]+/premium/in\\?[^<>\"]+)").getMatch(0);
                     }
                     if (StringUtils.isEmpty(xhamsterComLoginURL)) {
                         logger.warning("Premium login successful but free login failed");
@@ -1042,6 +1053,7 @@ public class XHamsterCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
+                account.setProperty(PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN, br.getHost());
                 logger.info("Checking premium login state");
                 if (!isloggedinPremium) {
                     logger.info("Performing full premium login");
@@ -1074,7 +1086,7 @@ public class XHamsterCom extends PluginForHost {
     private boolean checkPremiumLogin() throws IOException {
         br.getPage(api_base_premium + "/subscription/get");
         if (br.getHttpConnection().getContentType().contains("json")) {
-            logger.info("Successfully checked premium cookies");
+            logger.info("Premium cookies seem to be VALID");
             return true;
         } else {
             logger.info("Premium cookies seem to be invalid");

@@ -88,7 +88,7 @@ public class PicsVc extends PluginForDecrypt {
         } else if (br.containsHTML("class='gnf'")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fpName = br.getRegex("(?i)<title>\\s*([^<>\"]+)\\s*-\\s*(?:PICS\\.VC|SxyPix\\.com)\\s*</title>").getMatch(0);
+        final String fpName = br.getRegex("(?i)<title>\\s*([^<]+)\\s*-\\s*(?:PICS\\.VC|SxyPix\\.com)\\s*</title>").getMatch(0);
         int foundNumberofItems = 0;
         int page = 0;
         final DecimalFormat df = new DecimalFormat("000");

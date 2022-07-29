@@ -115,4 +115,14 @@ public class UploadboxIo extends XFileSharingProBasic {
         }
         return waitStr;
     }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String betterFilesize = new Regex(html, "images_slide/file_down\\.png\"[^>]*>[^<]+<br /><span [^>]+>\\(([^<]+)\\)</span").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
+        return fileInfo;
+    }
 }

@@ -45,7 +45,7 @@ public class UpvidBiz extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /* 2021-05-05: Main domain = upvid.co, download domain = upvid.biz */
-        ret.add(new String[] { "upvid.biz", "upvid.co" });
+        ret.add(new String[] { "upvid.biz", "upvid.co", "upvid.cloud" });
         return ret;
     }
 

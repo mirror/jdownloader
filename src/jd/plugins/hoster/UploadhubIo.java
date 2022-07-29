@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -27,8 +29,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UploadhubIo extends XFileSharingProBasic {
@@ -121,15 +121,6 @@ public class UploadhubIo extends XFileSharingProBasic {
         if (new Regex(correctedBR, "Download \\& Install Our FREE Rapid Download Manager|Visit Your UploadHUB Download Link\\s*<").matches()) {
             /* 2020-11-24: They want to force users to use a self-coded tool which is only available for Windows. */
             throw new AccountRequiredException();
-        }
-    }
-
-    @Override
-    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        if (account != null && account.getType() == AccountType.PREMIUM) {
-            return true;
-        } else {
-            return false;
         }
     }
 }
