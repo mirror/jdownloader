@@ -70,6 +70,9 @@ public class WebcamsbabeCom extends KernelVideoSharingComV2 {
 
     @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        if (host == null || fuid == null || urlSlug == null) {
+            return null;
+        }
         return this.getProtocol() + host + "/videos/" + fuid + "-" + urlSlug + ".html";
     }
 }

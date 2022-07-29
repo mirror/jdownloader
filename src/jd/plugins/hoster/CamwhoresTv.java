@@ -52,7 +52,7 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
      * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
      */
     protected ArrayList<String> getDeadDomains() {
-        return null;
+        return jd.plugins.decrypter.CamwhoresTv.getDeadDomainsStatic();
     }
 
     @Override

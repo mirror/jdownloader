@@ -73,6 +73,9 @@ public class OkXxx extends KernelVideoSharingComV2 {
 
     @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
-        return this.getProtocol() + "/video/" + fuid + "/";
+        if (host == null || fuid == null) {
+            return null;
+        }
+        return this.getProtocol() + host + "/video/" + fuid + "/";
     }
 }
