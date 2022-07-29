@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
@@ -56,7 +54,7 @@ public class WatchMdhTo extends KernelVideoSharingComV2 {
 
     @Override
     protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
-        if (StringUtils.isEmpty(urlTitle)) {
+        if (host == null || urlTitle == null) {
             return null;
         }
         return this.getProtocol() + "www." + this.getHost() + "/" + urlTitle + "/";
