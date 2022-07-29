@@ -67,4 +67,9 @@ public class VjavCom extends KernelVideoSharingComV2 {
         }
         return filename;
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+    }
 }

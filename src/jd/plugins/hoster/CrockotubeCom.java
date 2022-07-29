@@ -109,4 +109,9 @@ public class CrockotubeCom extends KernelVideoSharingComV2 {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "www." + host + "/watch/" + urlSlug + "-" + fuid;
+    }
 }

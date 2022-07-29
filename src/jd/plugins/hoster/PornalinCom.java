@@ -59,4 +59,9 @@ public class PornalinCom extends KernelVideoSharingComV2 {
     protected boolean hasFUIDInsideURL(final String url) {
         return false;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "www." + host + "/video/" + urlSlug + "/";
+    }
 }

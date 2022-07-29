@@ -78,4 +78,12 @@ public class XcumCom extends KernelVideoSharingComV2 {
         }
         return fileTitle;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        if (host == null || fuid == null) {
+            return null;
+        }
+        return this.getProtocol() + host + "/v/" + fuid + "/";
+    }
 }

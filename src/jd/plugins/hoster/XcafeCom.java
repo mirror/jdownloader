@@ -70,4 +70,9 @@ public class XcafeCom extends KernelVideoSharingComV2 {
         /* 2022-01-21: Limited to 4 although more is possible but can be problematic sometimes. */
         return 1;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPatternOnlyNumbers(host, fuid);
+    }
 }

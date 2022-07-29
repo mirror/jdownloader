@@ -68,4 +68,18 @@ public class SmutrCom extends KernelVideoSharingComV2 {
         }
         return filetitle;
     }
+
+    @Override
+    protected String getFUIDFromURL(final String url) {
+        if (url == null) {
+            return null;
+        } else {
+            return new Regex(url, "(\\d+)/?$").getMatch(0);
+        }
+    }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + host + "/v/" + fuid + "/";
+    }
 }

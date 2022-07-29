@@ -63,4 +63,12 @@ public class YourlustCom extends KernelVideoSharingComV2 {
         /* 2022-01-31 */
         return 1;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        if (host == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + host + "/videos/" + urlSlug + ".html";
+    }
 }

@@ -60,4 +60,9 @@ public class PorntrexCom extends KernelVideoSharingComV2 {
     public Class<? extends KVSConfig> getConfigInterface() {
         return KVSConfigPorntrexCom.class;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "www." + host + "/video/" + fuid + "/" + urlSlug;
+    }
 }

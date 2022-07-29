@@ -25,6 +25,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -54,16 +55,16 @@ public class EroVideoNet extends PornEmbedParser {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"meta__title\">([^<>\"]+)").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(?:Watch )?([^<>\"]*?)</title>").getMatch(0);
+        String title = br.getRegex("class=\"meta__title\">([^<>\"]+)").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>(?:Watch )?([^<>\"]*?)</title>").getMatch(0);
         }
-        if (filename == null) {
-            filename = new Regex(param.getCryptedUrl(), "([A-Za-z0-9]+)$").getMatch(0);
+        if (title == null) {
+            title = new Regex(param.getCryptedUrl(), "([A-Za-z0-9]+)$").getMatch(0);
         } else {
-            filename = filename.replace("- Movie - Free Porn Video sharing site ero-video.net", "").trim();
+            title = title.replace("- Movie - Free Porn Video sharing site ero-video.net", "").trim();
         }
-        decryptedLinks.addAll(findEmbedUrls(filename));
+        decryptedLinks.addAll(findEmbedUrls());
         if (decryptedLinks.isEmpty()) {
             final String externID = this.br.getRegex("<a href=\"(http[^<>\"]+)\"[^>]+>[\t\n\r ]*?<i[^<>]+></i>Original URL</a>").getMatch(0);
             if (externID != null) {
@@ -100,7 +101,7 @@ public class EroVideoNet extends PornEmbedParser {
                         } else {
                             for (final String movieURL[] : movieURLs) {
                                 final DownloadLink link = createDownloadlink("directhttp://" + movieURL[2]);
-                                link.setFinalFileName(filename + "_" + movieURL[0] + Plugin.getFileNameExtensionFromURL(movieURL[2]));
+                                link.setFinalFileName(title + "_" + movieURL[0] + Plugin.getFileNameExtensionFromURL(movieURL[2]));
                                 link.setContentUrl(param.getCryptedUrl());
                                 decryptedLinks.add(link);
                             }
@@ -114,8 +115,8 @@ public class EroVideoNet extends PornEmbedParser {
                 br.getPage(hlsURL);
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 final DownloadLink link = this.createDownloadlink(hlsbest.getDownloadurl().replaceAll("https?://", "m3u8s://"));
-                if (filename != null) {
-                    link.setFinalFileName(filename + ".mp4");
+                if (title != null) {
+                    link.setFinalFileName(title + ".mp4");
                 }
                 link.setAvailable(true);
                 decryptedLinks.add(link);
@@ -126,5 +127,14 @@ public class EroVideoNet extends PornEmbedParser {
 
     private String st(String delimiter, String mcd, String pt) {
         return Hash.getMD5(delimiter + mcd + pt.substring(0, 8));
+    }
+
+    @Override
+    boolean isOffline(Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

@@ -138,6 +138,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
+    protected String generateContentURLDefaultVideosPattern(final String host, final String fuid, final String urlSlug) {
+        if (host == null || fuid == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + "www." + host + "/videos/" + fuid + "/" + urlSlug + "/";
+    }
+
     /**
      * Use this e.g. for: </br>
      * example.com/1234/title-inside-url</br>
@@ -153,6 +160,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+/[^/\\?#]+/?|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
+    }
+
+    protected String generateContentURLDefaultVideosPatternWithoutSlashVideos(final String host, final String fuid, final String urlSlug) {
+        if (host == null || fuid == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + "www." + host + "/" + fuid + "/" + urlSlug + "/";
     }
 
     /**
@@ -172,6 +186,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
+    protected String generateContentURLDefaultVideosPatternWithoutFileID(final String host, final String fuid, final String urlSlug) {
+        if (host == null || fuid == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + "www." + host + "/videos/" + urlSlug + "/";
+    }
+
     /**
      * Use this e.g. for:</br>
      * example.com/videos/title-inside-url-1234 OR:</br>
@@ -185,6 +206,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos?/[^/\\?#]+-\\d+/|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
+    }
+
+    protected String generateContentURLDefaultVideosPatternWithFUIDAtEnd(final String host, final String fuid, final String urlSlug) {
+        if (host == null || fuid == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + "www." + host + "/videos/" + urlSlug + "-" + fuid;
     }
 
     /**
@@ -203,6 +231,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
+    protected String generateContentURLDefaultNoVideosNoFUID(final String host, final String urlSlug) {
+        if (host == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + "www." + host + "/" + urlSlug + "/";
+    }
+
     /**
      * Use this e.g. for:</br>
      * example.com/1234</br>
@@ -217,6 +252,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed/)?\\d+/?");
         }
         return ret.toArray(new String[0]);
+    }
+
+    protected String generateContentURLDefaultVideosPatternOnlyNumbers(final String host, final String fuid) {
+        if (host == null || fuid == null) {
+            return null;
+        }
+        return this.getProtocol() + host + "/" + fuid + "/";
     }
 
     /**
@@ -240,15 +282,15 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.kvs-demo.com/terms.php";
+        return "https://www.kvs-demo.com/terms.php";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(type_mobile)) {
-            /* Correct mobile urls --> Normal URLs | 2020-10-30: This is old but still needed for some sites! */
-            final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos?/)?\\d+/[^/\\?#]+/?$)");
-            link.setPluginPatternMatcher(String.format("%swww.%s", info.getMatch(0), info.getMatch(1)));
-        }
+    /**
+     * Override this and add dead domains so upper handling can auto update added URLs and change domain if it contains a dead domain. This
+     * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
+     */
+    protected ArrayList<String> getDeadDomains() {
+        return null;
     }
 
     @Override
@@ -318,10 +360,49 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return false;
     }
 
+    protected String getWorkingDomain(final DownloadLink link) {
+        return getWorkingDomain(link.getPluginPatternMatcher());
+    }
+
+    protected String getWorkingDomain(final String url) {
+        final String addedLinkDomain = Browser.getHost(url, true);
+        final ArrayList<String> deadDomains = this.getDeadDomains();
+        if (deadDomains != null && deadDomains.contains(addedLinkDomain)) {
+            /* Assume that plugin main domain is working. */
+            return this.getHost();
+        } else {
+            /* Assume that domain in user added URL is working. */
+            return addedLinkDomain;
+        }
+    }
+
+    /**
+     * Returns URL to content with a hopefully working domain.
+     */
+    protected String getContentURL(final DownloadLink link) {
+        final String domain = getWorkingDomain(link);
+        final String generatedContentURL = generateContentURL(domain, this.getFUID(link), this.getURLTitle(link.getPluginPatternMatcher()));
+        if (generatedContentURL != null) {
+            return generatedContentURL;
+        } else {
+            /*
+             * Fallback and for websites where it is not always possible to generate contentURLs e.g. videocelebs.net, pornhat.com,
+             * theyarehuge.com.
+             */
+            return this.correctDomainInURL(link.getPluginPatternMatcher());
+        }
+    }
+
     /** Override this to allow attempting to auto-fix broken embed URLs. */
-    protected String generateContentURL(final String fuid, final String urlTitle) {
-        /* TODO: Add ENUM for standard URL-types so that default/superclasses can auto-generate reasonable contentURLs here (?) */
-        return null;
+    abstract String generateContentURL(final String host, final String fuid, final String urlSlug);
+
+    /** Replaces domain inside given URL if it is a known dead domain. */
+    protected String correctDomainInURL(final String url) {
+        return replaceDomainInURL(url, this.getWorkingDomain(url));
+    }
+
+    private static String replaceDomainInURL(final String url, final String newDomain) {
+        return url.replaceFirst(Pattern.quote(Browser.getHost(url, true)), newDomain);
     }
 
     protected Browser prepBR(final Browser br) {
@@ -359,7 +440,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Alternative way to linkcheck (works only for some hosts and only if FUIS is given): privat-zapisi.biz/feed/12345.xml </br>
+     * Alternative way to linkcheck (works only for some hosts and only if FUID is given): privat-zapisi.biz/feed/12345.xml </br>
      * Also working for: webcamsbabe.com
      */
     protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -380,7 +461,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         if (isEmbedURL(link.getPluginPatternMatcher()) && this.useEmbedWorkaround()) {
             /* Embed URL --> Build fake real URL and just go for it */
-            final String fakeContentURL = this.generateContentURL(this.getFUID(link), "xyz");
+            final String fakeContentURL = this.generateContentURL(this.getWorkingDomain(link), this.getFUID(link), "dummystring");
             br.getPage(fakeContentURL);
             if (isOfflineWebsite(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -388,7 +469,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             logger.info("Embed workaround result: Presumed real ContentURL: " + br.getURL());
         } else if (isEmbedURL(link.getPluginPatternMatcher())) {
             /* Embed URL */
-            getPage(link.getPluginPatternMatcher());
+            getPage(correctDomainInURL(link.getPluginPatternMatcher()));
             /* in case there is http<->https or url format redirect */
             br.followRedirect();
             if (isOfflineWebsite(this.br)) {
@@ -437,7 +518,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     urlTitle = urlTitle.replaceAll("[^a-z0-9]", "-");
                     /* Make sure that that string doesn't start- or end with "-". */
                     urlTitle = new Regex(urlTitle, "^(\\-*)(.*?)(\\-*)$").getMatch(1);
-                    realURL = this.generateContentURL(fuid, urlTitle);
+                    realURL = this.generateContentURL(this.getHost(), fuid, urlTitle);
                 }
             }
             if (!StringUtils.isEmpty(realURL)) {
@@ -480,7 +561,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         } else {
             /* Normal URL */
-            getPage(link.getPluginPatternMatcher());
+            getPage(correctDomainInURL(link.getPluginPatternMatcher()));
             /* in case there is http<->https or url format redirect */
             br.followRedirect();
             if (isOfflineWebsite(this.br)) {
@@ -604,7 +685,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected boolean isEmbedURL(final String url) {
-        if (url.matches(type_embedded)) {
+        if (url == null) {
+            return false;
+        } else if (url.matches(type_embedded)) {
             return true;
         } else {
             return false;
@@ -613,6 +696,18 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     protected boolean isHTTPsSupported() {
         return true;
+    }
+
+    protected boolean isRequiresWWW() {
+        return true;
+    }
+
+    protected String getProtocol() {
+        if (isHTTPsSupported()) {
+            return "https://";
+        } else {
+            return "http://";
+        }
     }
 
     protected AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -627,7 +722,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             link.setName(weakFilename);
         }
         final String lifetime = "86400";
-        br.getPage((isHTTPsSupported() ? "https://" : "http://") + this.getHost() + "/api/json/video/" + lifetime + "/" + getAPIParam1(videoID) + "/" + this.getAPICroppedVideoID(videoID) + "/" + videoID + ".json");
+        br.getPage(getProtocol() + this.getHost() + "/api/json/video/" + lifetime + "/" + getAPIParam1(videoID) + "/" + this.getAPICroppedVideoID(videoID) + "/" + videoID + ".json");
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -947,7 +1042,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                         logger.info("Trust cookies without check");
                         return;
                     }
-                    getPage((isHTTPsSupported() ? "https://" : "http://") + "www." + this.getHost() + "/");
+                    getPage(getProtocol() + "www." + this.getHost() + "/");
                     if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -959,7 +1054,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
                 /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
                 logger.info("Performing full login");
-                getPage((isHTTPsSupported() ? "https://" : "http://") + "www." + this.getHost() + "/login/");
+                getPage(getProtocol() + "www." + this.getHost() + "/login/");
                 /*
                  * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
                  * premium accounts available at all.

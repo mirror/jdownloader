@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -27,13 +28,12 @@ public class WebcamsbabeCom extends KernelVideoSharingComV2 {
         super(wrapper);
     }
 
-    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "sexcams-24.com", "webcamsbabe.com" });
         /* Russian version of webcamsbabe.com. Same URL-pattern but different content/file-servers/contentIDs! */
-        ret.add(new String[] { "webcamvau.com", "privat-zapisi.biz" });
+        ret.add(new String[] { "private-records.com", "webcamvau.com", "privat-zapisi.biz" });
         return ret;
     }
 
@@ -52,5 +52,24 @@ public class WebcamsbabeCom extends KernelVideoSharingComV2 {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+-[a-z0-9\\-]+\\.html|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2022-07-29: privat-zapisi.biz is now private-records.com */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    protected String getURLTitle(final String url) {
+        if (url == null) {
+            return null;
+        } else {
+            return new Regex(url, "/videos/\\d+-(.+)\\.html$").getMatch(0);
+        }
+    }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + host + "/videos/" + fuid + "-" + urlSlug + ".html";
     }
 }

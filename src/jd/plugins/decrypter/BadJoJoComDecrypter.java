@@ -47,8 +47,7 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(title));
+        decryptedLinks.addAll(findEmbedUrls());
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
@@ -77,5 +76,10 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
         } else {
             return false;
         }
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return br.getRegex("<title>(.*?)</title>").getMatch(0);
     }
 }

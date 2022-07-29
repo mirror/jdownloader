@@ -89,7 +89,7 @@ public class SuperhqpornComDecrypter extends PornEmbedParser {
             br.getPage(externID);
             externID = null;
         }
-        decryptedLinks.addAll(findEmbedUrls(null));
+        decryptedLinks.addAll(findEmbedUrls());
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }

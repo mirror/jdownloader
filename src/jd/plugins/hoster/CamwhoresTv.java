@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
@@ -44,6 +45,14 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+    }
+
+    /**
+     * Override this and add dead domains so upper handling can auto update added URLs and change domain if it contains a dead domain. This
+     * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
+     */
+    protected ArrayList<String> getDeadDomains() {
+        return null;
     }
 
     @Override
@@ -83,7 +92,7 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String generateContentURL(final String fuid, final String urlTitle) {
-        return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
     }
 }

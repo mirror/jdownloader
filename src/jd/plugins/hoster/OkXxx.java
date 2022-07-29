@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -56,7 +55,7 @@ public class OkXxx extends KernelVideoSharingComV2 {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            link.setPluginPatternMatcher("https://" + this.getHost() + "/video/" + new Regex(link.getPluginPatternMatcher(), type_embedded).getMatch(0) + "/");
+            link.setPluginPatternMatcher(generateContentURL(this.getHost(), this.getFUID(link), null));
         }
     }
 
@@ -70,5 +69,10 @@ public class OkXxx extends KernelVideoSharingComV2 {
             filetitle = br.getRegex("<title>([^<>\"]+) - OK\\.XXX</title>").getMatch(0);
         }
         return filetitle;
+    }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "/video/" + fuid + "/";
     }
 }

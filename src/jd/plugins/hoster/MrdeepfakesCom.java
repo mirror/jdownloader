@@ -58,12 +58,13 @@ public class MrdeepfakesCom extends KernelVideoSharingComV2 {
 
     public void correctDownloadLink(final DownloadLink link) {
         /** 2021-03-35: Special: Fix embed URLs as they won't work! */
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            link.setPluginPatternMatcher("https://mrdeepfakes.com/video/" + this.getFUID(link) + "/this_will_redirect");
+        if (this.isEmbedURL(link.getPluginPatternMatcher())) {
+            link.setPluginPatternMatcher(generateContentURL(this.getHost(), this.getFUID(link), this.getURLTitle(link.getPluginPatternMatcher())));
         }
     }
-    // @Override
-    // protected boolean hasFUIDInsideURL(final String url) {
-    // return false;
-    // }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + host + "/video/" + fuid + "/" + urlSlug;
+    }
 }
