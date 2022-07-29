@@ -815,7 +815,11 @@ public class VKontakteRu extends PluginForDecrypt {
             /* E.g. information has been loaded via ajax request e.g. as part of a wall post/playlist */
             json = br.getRegex("^<\\!--(\\{.+\\})$").getMatch(0);
         }
-        return (Map<String, Object>) recursiveFindVideoMap(JavaScriptEngineFactory.jsonToJavaObject(json), videoid);
+        if (json == null) {
+            return null;
+        } else {
+            return (Map<String, Object>) recursiveFindVideoMap(JavaScriptEngineFactory.jsonToJavaObject(json), videoid);
+        }
     }
 
     public static Object recursiveFindVideoMap(final Object o, final String videoid) {
