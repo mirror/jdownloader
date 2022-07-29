@@ -69,4 +69,9 @@ public class XtitsCom extends KernelVideoSharingComV2 {
             link.setFinalFileName(filetitle + ".mp4");
         }
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+    }
 }

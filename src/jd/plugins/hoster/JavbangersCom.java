@@ -50,4 +50,9 @@ public class JavbangersCom extends KernelVideoSharingComV2 {
         }
         return ret.toArray(new String[0]);
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "www." + host + "/video/" + fuid + "/" + urlSlug;
+    }
 }

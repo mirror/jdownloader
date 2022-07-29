@@ -61,7 +61,7 @@ public class XbabeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String generateContentURL(final String fuid, final String urlTitle) {
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         if (StringUtils.isEmpty(urlTitle)) {
             return null;
         }

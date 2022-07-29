@@ -70,10 +70,10 @@ public class SexvidXxx extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String generateContentURL(final String fuid, final String urlTitle) {
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         if (urlTitle == null) {
             return null;
         }
-        return "https://www." + this.getHost() + "/" + urlTitle + ".html";
+        return this.getProtocol() + "www." + host + "/" + urlTitle + ".html";
     }
 }

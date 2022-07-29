@@ -85,7 +85,7 @@ public class PornadoCo extends PornEmbedParser {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptedLinks.addAll(findEmbedUrls(getFileTitle(param, br)));
+        decryptedLinks.addAll(findEmbedUrls());
         return decryptedLinks;
     }
 

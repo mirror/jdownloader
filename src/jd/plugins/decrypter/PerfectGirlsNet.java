@@ -22,6 +22,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -53,20 +54,22 @@ public class PerfectGirlsNet extends PornEmbedParser {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
         if (!br.containsHTML("<source src=[^<>]+cdn\\.perfectgirls\\.net")) {
-            decryptedLinks.addAll(findEmbedUrls(filename));
+            decryptedLinks.addAll(findEmbedUrls());
             if (!decryptedLinks.isEmpty()) {
                 return decryptedLinks;
             }
         }
+        final String title = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
         final DownloadLink main = createDownloadlink(param.getCryptedUrl());
         if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"|thumbs/misc/not_available\\.gif")) {
             main.setAvailable(false);
             main.setProperty("offline", true);
         } else {
             main.setAvailable(true);
-            main.setName(filename + ".mp4");
+            if (title != null) {
+                main.setName(Encoding.htmlDecode(title).trim() + ".mp4");
+            }
         }
         decryptedLinks.add(main);
         return decryptedLinks;

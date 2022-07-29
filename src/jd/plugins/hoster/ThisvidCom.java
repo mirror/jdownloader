@@ -128,4 +128,9 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
             }
         }
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPatternWithoutFileID(host, fuid, urlSlug);
+    }
 }

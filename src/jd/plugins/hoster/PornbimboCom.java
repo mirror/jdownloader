@@ -53,4 +53,9 @@ public class PornbimboCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "www." + host + "/video/" + fuid + "/" + urlSlug;
+    }
 }

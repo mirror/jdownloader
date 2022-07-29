@@ -81,4 +81,12 @@ public class PornhatCom extends KernelVideoSharingComV2 {
             return new Regex(url, TYPE2).getMatch(0);
         }
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        if (host == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + "www." + host + "/video/" + urlSlug + "/";
+    }
 }

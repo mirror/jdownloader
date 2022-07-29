@@ -87,4 +87,9 @@ public class PervclipsCom extends KernelVideoSharingComV2 {
             return super.getDllink(link, br);
         }
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "www." + host + "/tube/videos/" + urlSlug + "/";
+    }
 }

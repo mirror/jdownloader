@@ -72,7 +72,7 @@ public class CamwhoreshdCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String generateContentURL(final String fuid, final String urlTitle) {
-        return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
     }
 }

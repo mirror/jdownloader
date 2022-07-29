@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
@@ -52,11 +50,7 @@ public class XfreehdCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String generateContentURL(final String fuid, final String urlTitle) {
-        if (StringUtils.isEmpty(fuid) || StringUtils.isEmpty(urlTitle)) {
-            return null;
-        } else {
-            return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
-        }
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
     }
 }

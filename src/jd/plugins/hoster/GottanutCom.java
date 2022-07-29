@@ -72,4 +72,9 @@ public class GottanutCom extends KernelVideoSharingComV2 {
          */
         return true;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "www." + host + "/video/" + fuid + "/" + urlSlug;
+    }
 }

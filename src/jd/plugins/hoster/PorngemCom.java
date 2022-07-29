@@ -52,4 +52,9 @@ public class PorngemCom extends KernelVideoSharingComV2 {
     protected boolean hasFUIDInsideURLAtTheEnd(final String url) {
         return true;
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPatternWithFUIDAtEnd(host, fuid, urlSlug);
+    }
 }

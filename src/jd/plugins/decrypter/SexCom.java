@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.appwork.utils.Files;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,9 +34,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Files;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "https?://(?:www\\.)?sex\\.com/(?:pin/\\d+|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+|link/out\\?id=\\d+|user/[^/]+/[^/]+)" })
 public class SexCom extends PornEmbedParser {
@@ -156,22 +156,8 @@ public class SexCom extends PornEmbedParser {
     }
 
     private ArrayList<DownloadLink> findLink() throws Exception {
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\| Sex\\.com</title>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        }
-        final String name = br.getRegex("(?:Picture|Video|Gif)\\s*-\\s*<span itemprop\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*</span>").getMatch(0);
-        if (name != null) {
-            filename = name;
-        }
-        if (Encoding.isHtmlEntityCoded(filename)) {
-            filename = Encoding.htmlDecode(filename);
-        }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        decryptedLinks.addAll(findEmbedUrls(filename));
+        decryptedLinks.addAll(findEmbedUrls(br, false));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
@@ -187,9 +173,25 @@ public class SexCom extends PornEmbedParser {
             externID = br.getRegex("src: '([^<>']+)',\\s*type: 'video/mp4'").getMatch(0);
         }
         if (externID != null) {
+            String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<title>([^<>\"]*?)\\| Sex\\.com</title>").getMatch(0);
+            }
+            if (title == null) {
+                title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            }
+            final String betterTitle = br.getRegex("(?:Picture|Video|Gif)\\s*-\\s*<span itemprop\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*</span>").getMatch(0);
+            if (betterTitle != null) {
+                title = betterTitle;
+            }
+            if (Encoding.isHtmlEntityCoded(title)) {
+                title = Encoding.htmlDecode(title);
+            }
             final DownloadLink fina = createDownloadlink("directhttp://" + br.getURL(externID).toString());
             fina.setContentUrl(br.getURL());
-            fina.setFinalFileName(filename + ".mp4");
+            if (title != null) {
+                fina.setFinalFileName(title + ".mp4");
+            }
             decryptedLinks.add(fina);
             return decryptedLinks;
         }

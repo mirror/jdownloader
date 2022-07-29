@@ -73,4 +73,9 @@ public class FrprnCom extends KernelVideoSharingComV2 {
         /* 2021-03-02 */
         return br.getRegex("<title>(.*?)</title>").getMatch(0);
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+    }
 }

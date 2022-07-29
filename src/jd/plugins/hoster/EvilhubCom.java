@@ -56,4 +56,9 @@ public class EvilhubCom extends KernelVideoSharingComV2 {
     public void correctDownloadLink(final DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/goto/", "/videos/"));
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+    }
 }

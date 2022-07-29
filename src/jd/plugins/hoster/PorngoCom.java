@@ -58,4 +58,9 @@ public class PorngoCom extends KernelVideoSharingComV2 {
         }
         return title;
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+    }
 }

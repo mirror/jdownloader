@@ -64,4 +64,9 @@ public class EachpornCom extends KernelVideoSharingComV2 {
         String fileTitle = br.getRegex("<title>([^<>\"]+) - EachPorn</title>").getMatch(0);
         return fileTitle;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + "www." + host + "/video/" + fuid + "/" + urlSlug + "/";
+    }
 }

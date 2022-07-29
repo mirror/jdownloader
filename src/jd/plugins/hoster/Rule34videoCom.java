@@ -55,4 +55,9 @@ public class Rule34videoCom extends KernelVideoSharingComV2 {
     public Class<? extends KVSConfig> getConfigInterface() {
         return KVSConfigRule34videoCom.class;
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+    }
 }

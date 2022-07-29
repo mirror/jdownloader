@@ -127,4 +127,9 @@ public class PornktuBe extends KernelVideoSharingComV2 {
         }
         return dllink;
     }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+    }
 }

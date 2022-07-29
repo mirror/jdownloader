@@ -63,4 +63,9 @@ public class Sex3Com extends KernelVideoSharingComV2 {
         }
         return fileTitle;
     }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPatternOnlyNumbers(host, fuid);
+    }
 }

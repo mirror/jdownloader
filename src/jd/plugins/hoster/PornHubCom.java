@@ -548,31 +548,24 @@ public class PornHubCom extends PluginForHost {
             hlsCheck.setAllowedResponseCodes(new int[] { -1 });
             hlsCheck.getPage(url);
             if (hlsCheck.getHttpConnection().getResponseCode() != 200) {
+                /* Directurl needs to be refreshed */
                 return false;
             } else if (!LinkCrawlerDeepInspector.looksLikeMpegURL(hlsCheck.getHttpConnection())) {
+                /* Obligatory seconds check. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(hlsCheck.cloneBrowser());
                 if (hlsContainers == null || hlsContainers.size() != 1) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    final List<M3U8Playlist> m3u8 = hlsContainers.get(0).getM3U8(hlsCheck);
-                    URLConnectionAdapter con = null;
-                    try {
-                        con = hlsCheck.openHeadConnection(m3u8.get(0).getSegment(0).getUrl());
-                        if (con.getResponseCode() != 200) {
-                            return false;
-                        } else if (StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
-                            return false;
-                        } else {
-                            link.setProperty(PROPERT_DIRECTLINK, url);
-                            return true;
-                        }
-                    } finally {
-                        if (con != null) {
-                            con.disconnect();
-                        }
+                    final List<M3U8Playlist> m3u8list = hlsContainers.get(0).getM3U8(hlsCheck);
+                    final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), m3u8list);
+                    final long estimatedSize = downloader.getEstimatedSize();
+                    if (estimatedSize > 0) {
+                        link.setDownloadSize(estimatedSize);
                     }
+                    link.setProperty(PROPERT_DIRECTLINK, url);
+                    return true;
                 }
             }
         } else {

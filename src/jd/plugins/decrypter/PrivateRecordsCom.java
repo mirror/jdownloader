@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -13,27 +13,33 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package jd.plugins.hoster;
+package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.PluginWrapper;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class H2pornCom extends KernelVideoSharingComV2 {
-    public H2pornCom(final PluginWrapper wrapper) {
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class PrivateRecordsCom extends PornEmbedParser {
+    public PrivateRecordsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "h2porn.com" });
+        ret.add(new String[] { "private-records.com", "webcamvau.com", "privat-zapisi.biz" });
         return ret;
     }
 
@@ -49,26 +55,33 @@ public class H2pornCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:videos/|player/iframe_embed\\.php\\?dir=)[a-z0-9\\-]+/?|https?://embed\\." + buildHostsPatternPart(domains) + "/[a-z0-9\\-]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/\\d+-([a-z0-9\\-]+)\\.html");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
-    protected String getURLTitle(final String url) {
-        if (url == null) {
-            return null;
+    protected boolean isSelfhosted(final Browser br) {
+        if (br.containsHTML("video_url\\s*:\\s*'[^\\']+/get_file/")) {
+            return true;
+        } else {
+            return false;
         }
-        return new Regex(url, "([a-z0-9\\-]+)/?$").getMatch(0);
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher("http://h2porn.com/videos/" + getURLTitle(link.getPluginPatternMatcher()) + "/");
+    protected boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.getURL().endsWith("/404.php")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
-    protected boolean hasFUIDInsideURL(final String url) {
-        return false;
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
     }
 }

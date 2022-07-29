@@ -47,21 +47,20 @@ public class PornozavrNet extends PornEmbedParser {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (title == null) {
-            /* Fallback */
-            title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
-        }
-        decryptedLinks.addAll(findEmbedUrls(title));
+        decryptedLinks.addAll(findEmbedUrls());
         if (decryptedLinks.size() == 0) {
+            String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+            if (title == null) {
+                /* Fallback */
+                title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
+            }
             final String dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
             if (dllink != null) {
                 final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
                 dl.setForcedFileName(title + ".mp4");
                 decryptedLinks.add(dl);
             } else {
-                decryptedLinks.add(createOfflinelink(param.getCryptedUrl(), "Failed to find any downloadable Content"));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         return decryptedLinks;

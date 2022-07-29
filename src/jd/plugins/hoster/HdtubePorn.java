@@ -45,15 +45,16 @@ public class HdtubePorn extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+/|embed/\\d+/?)");
-        }
-        return ret.toArray(new String[0]);
+        return buildAnnotationUrlsDefaultVideosPatternWithoutFileID(getPluginDomains());
     }
 
     @Override
     protected boolean hasFUIDInsideURL(final String url) {
         return false;
+    }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPatternWithoutFileID(host, fuid, urlSlug);
     }
 }

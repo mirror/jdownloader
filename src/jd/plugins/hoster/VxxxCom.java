@@ -52,7 +52,7 @@ public class VxxxCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video|embed)-\\d+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video|embed)-\\d+/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -62,7 +62,7 @@ public class VxxxCom extends KernelVideoSharingComV2 {
         if (url == null) {
             return null;
         } else {
-            return new Regex(url, "(\\d+)$").getMatch(0);
+            return new Regex(url, "(\\d+)/?$").getMatch(0);
         }
     }
 
@@ -84,5 +84,13 @@ public class VxxxCom extends KernelVideoSharingComV2 {
             /* Most likely invalid videoID. */
             return null;
         }
+    }
+
+    @Override
+    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        if (host == null || urlSlug == null) {
+            return null;
+        }
+        return this.getProtocol() + host + "/video-" + fuid + "/";
     }
 }

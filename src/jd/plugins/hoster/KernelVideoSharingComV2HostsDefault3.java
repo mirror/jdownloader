@@ -21,8 +21,6 @@ import java.util.List;
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV2 {
     public KernelVideoSharingComV2HostsDefault3(final PluginWrapper wrapper) {
@@ -60,10 +58,7 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
     }
 
     @Override
-    protected String generateContentURL(final String fuid, final String urlTitle) {
-        if (StringUtils.isEmpty(urlTitle)) {
-            return null;
-        }
-        return "https://www." + this.getHost() + "/videos/" + urlTitle + "/";
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
+        return generateContentURLDefaultVideosPatternWithoutFileID(host, fuid, urlTitle);
     }
 }

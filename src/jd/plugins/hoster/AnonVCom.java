@@ -52,12 +52,8 @@ public class AnonVCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String generateContentURL(final String fuid, final String urlTitle) {
-        if (StringUtils.isEmpty(fuid) || StringUtils.isEmpty(urlTitle)) {
-            return null;
-        } else {
-            return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
-        }
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
     }
 
     @Override

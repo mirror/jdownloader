@@ -2,6 +2,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -11,8 +12,6 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -43,23 +42,21 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
-        final String filename = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        decryptedLinks.addAll(findEmbedUrls(filename));
+        decryptedLinks.addAll(findEmbedUrls());
         return decryptedLinks;
     }
 
-    // protected final String getFileTitle(final Browser br) {
-    // return getFileTitle(null, br);
-    // }
+    /** Place dead domains here so crawler will change URLs containing dead domains in an attempt to make them work. */
+    protected ArrayList<String> getDeadDomains() {
+        return null;
+    }
+
     protected String getFileTitle(final CryptedLink param, final Browser br) {
         return null;
     }
 
     /** Returns true if content is offline according to html code or http response. */
-    protected boolean isOffline(final Browser br) {
-        /* TODO: Make this abstract */
-        return false;
-    }
+    abstract boolean isOffline(final Browser br);
 
     /**
      * Override this if it is possible to recognize selfhosted content before looking for external URLs. </br>
@@ -71,6 +68,11 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
 
     /** Use this if you want to change the URL added by the user before processing it. */
     protected void correctCryptedLink(final CryptedLink param) {
+        final String addedLinkDomain = Browser.getHost(param.getCryptedUrl(), true);
+        final ArrayList<String> deadDomains = this.getDeadDomains();
+        if (deadDomains != null && deadDomains.contains(addedLinkDomain)) {
+            param.setCryptedUrl(param.getCryptedUrl().replaceFirst(Pattern.quote(addedLinkDomain), this.getHost()));
+        }
     }
 
     protected ArrayList<DownloadLink> preProcessCryptedLink(final CryptedLink param) throws Exception {
@@ -184,7 +186,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
      * @throws Exception
      */
     public final ArrayList<DownloadLink> findEmbedUrl() throws Exception {
-        return findEmbedUrls(br, null, false);
+        return findEmbedUrls(br, false);
     }
 
     /**
@@ -195,7 +197,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
      * @throws Exception
      */
     public final ArrayList<DownloadLink> findEmbedUrl(final String title) throws Exception {
-        return findEmbedUrls(br, title, false);
+        return findEmbedUrls(br, false);
     }
 
     /**
@@ -207,7 +209,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
      * @throws Exception
      */
     public final ArrayList<DownloadLink> findEmbedUrl(final Browser ibr, final String title) throws Exception {
-        return findEmbedUrls(ibr, title, false);
+        return findEmbedUrls(ibr, false);
     }
 
     /**
@@ -217,18 +219,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
      * @throws Exception
      */
     public final ArrayList<DownloadLink> findEmbedUrls() throws Exception {
-        return findEmbedUrls(br, null, true);
-    }
-
-    /**
-     * finds all embed urls from this.br, with provided title
-     *
-     * @param title
-     * @return
-     * @throws Exception
-     */
-    public final ArrayList<DownloadLink> findEmbedUrls(final String title) throws Exception {
-        return findEmbedUrls(br, title, true);
+        return findEmbedUrls(br, true);
     }
 
     /**
@@ -240,7 +231,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
      * @throws Exception
      */
     public final ArrayList<DownloadLink> findEmbedUrls(final Browser ibr, final String title) throws Exception {
-        return findEmbedUrls(ibr, title, true);
+        return findEmbedUrls(ibr, true);
     }
 
     /**
@@ -259,7 +250,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
      *
      *
      */
-    public final ArrayList<DownloadLink> findEmbedUrls(final Browser br, String title, final boolean processAll) throws Exception {
+    public final ArrayList<DownloadLink> findEmbedUrls(final Browser br, final boolean processAll) throws Exception {
         final DecrypterArrayList<DownloadLink> decryptedLinks = new DecrypterArrayList<DownloadLink>() {
             /**
              *
@@ -280,9 +271,6 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
                 return add(createDownloadlink(url));
             }
         };
-        if (title != null) {
-            title = Encoding.htmlDecode(title).trim();
-        }
         logger.info("PornEmbedParser is being executed...");
         /************************************************************************************************************/
         // Now check for all existant URLs if they're supported by any plugin tagged as porn plugin
@@ -293,11 +281,11 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
                 if (allowResult(url)) {
                     final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
                     if (nextLazyCrawlerPlugins.size() > 0) {
-                        decryptedLinks.addAll(convert(br, title, url, nextLazyCrawlerPlugins));
+                        decryptedLinks.addAll(convert(br, url, nextLazyCrawlerPlugins));
                     }
                     final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
                     if (nextLazyHostPlugins.size() > 0) {
-                        decryptedLinks.addAll(convert(br, title, url, nextLazyHostPlugins));
+                        decryptedLinks.addAll(convert(br, url, nextLazyHostPlugins));
                     }
                 }
             }
@@ -311,7 +299,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         return urls;
     }
 
-    protected List<DownloadLink> convert(final Browser br, final String title, final String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {
+    protected List<DownloadLink> convert(final Browser br, final String url, List<? extends LazyPlugin> lazyPlugins) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (lazyPlugins.size() == 0) {
             return ret;
