@@ -360,20 +360,30 @@ public class RedditComCrawler extends PluginForDecrypt {
                     logger.info("Found external URL: " + externalURL);
                     final String serverFilename = Plugin.getFileNameFromURL(new URL(externalURL));
                     final String serverFilenameWithoutExt;
+                    String ext = null;
                     if (serverFilename.contains(".")) {
+                        ext = Plugin.getFileNameExtensionFromURL(externalURL);
                         serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
                     } else {
                         serverFilenameWithoutExt = serverFilename;
                     }
                     final DownloadLink dl = this.createDownloadlink(externalURL);
                     if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
+                        if (ext == null) {
+                            /* Fallback */
+                            ext = ".mp4";
+                        }
                         addedRedditSelfhostedVideo = true;
-                        dl.setFinalFileName(filenameBaseForSingleItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", ".mp4"));
+                        dl.setFinalFileName(filenameBaseForSingleItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", ext));
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
                         lastAddedMediaItem = dl;
                     } else if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
-                        dl.setFinalFileName(filenameBaseForSingleItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", ".jpg"));
+                        if (ext == null) {
+                            /* Fallback */
+                            ext = ".jpg";
+                        }
+                        dl.setFinalFileName(filenameBaseForSingleItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", ext));
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
                         lastAddedMediaItem = dl;

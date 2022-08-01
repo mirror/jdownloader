@@ -150,6 +150,7 @@ public class TiktokCom extends PluginForHost {
     public static final String  PROPERTY_HAS_WATERMARK                        = "has_watermark";
     public static final String  PROPERTY_FORCE_API                            = "force_api";
     public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE              = "last_used_download_mode";
+    public static final String  PROPERTY_ALLOW_HEAD_REQUEST                   = "allow_head_request";
     private static final String TYPE_VIDEO                                    = "https?://[^/]+/@([^/]+)/video/(\\d+).*?";
     /* API related stuff */
     public static final String  API_BASE                                      = "https://api-h2.tiktokv.com/aweme/v1";
@@ -214,7 +215,11 @@ public class TiktokCom extends PluginForHost {
             try {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
+                if (link.getBooleanProperty(PROPERTY_ALLOW_HEAD_REQUEST, false)) {
+                    con = brc.openHeadConnection(dllink);
+                } else {
+                    con = brc.openGetConnection(dllink);
+                }
                 if (!this.looksLikeDownloadableContent(con)) {
                     try {
                         brc.followConnection(true);
@@ -351,10 +356,12 @@ public class TiktokCom extends PluginForHost {
         } else {
             String description = null;
             final boolean useWebsiteEmbed = true;
-            /* 2021-04-09: Don't use the website-way as their bot protection kicks in right away! */
-            final boolean useWebsite = false;
+            /**
+             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
+             * When using an account and potentially downloading private videos however, we can't use the embed way.
+             */
             String dllink = null;
-            if (useWebsite) {
+            if (account != null) {
                 br.getPage(link.getPluginPatternMatcher());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -365,33 +372,49 @@ public class TiktokCom extends PluginForHost {
                 if (videoJson == null) {
                     videoJson = br.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
                 }
-                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/itemInfo/itemStruct");
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                final Map<String, Object> itemModule = (Map<String, Object>) entries.get("ItemModule");
                 /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
-                if (entries == null) {
+                if (itemModule == null || itemModule.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
+                final Map<String, Object> videoInfo = (Map<String, Object>) itemModule.entrySet().iterator().next().getValue();
+                final String createDateTimestampStr = videoInfo.get("createTime").toString();
                 description = (String) entries.get("desc");
-                final Map<String, Object> videoInfo = (Map<String, Object>) entries.get("itemInfos");
-                dllink = (String) videoInfo.get("downloadAddr");
+                final Map<String, Object> downloadInfo = (Map<String, Object>) videoInfo.get("video");
+                dllink = (String) downloadInfo.get("downloadAddr");
                 if (StringUtils.isEmpty(dllink)) {
-                    dllink = (String) videoInfo.get("playAddr");
+                    dllink = (String) downloadInfo.get("playAddr");
                 }
-                /* 2020-10-26: Doesn't work anymore, returns 403 */
-                if (entries.containsKey("author")) {
-                    final Map<String, Object> authorInfos = (Map<String, Object>) entries.get("author");
-                    final String username = (String) authorInfos.get("uniqueId");
-                    if (!StringUtils.isEmpty(username)) {
-                        link.setProperty(PROPERTY_USERNAME, username);
-                    }
+                link.setProperty(PROPERTY_USERNAME, videoInfo.get("author"));
+                if (!StringUtils.isEmpty(createDateTimestampStr)) {
+                    link.setProperty(PROPERTY_DATE, convertDateFormat(createDateTimestampStr));
                 }
-                if (!StringUtils.isEmpty(createDate)) {
-                    link.setProperty(PROPERTY_DATE, convertDateFormat(createDate));
+                final Map<String, Object> stats = (Map<String, Object>) videoInfo.get("stats");
+                final Object diggCountO = stats.get("diggCount");
+                if (diggCountO != null) {
+                    setLikeCount(link, (Number) diggCountO);
                 }
-                if (dllink == null && isDownload) {
+                final Object shareCountO = stats.get("shareCount");
+                if (shareCountO != null) {
+                    setShareCount(link, (Number) shareCountO);
+                }
+                final Object playCountO = stats.get("playCount");
+                if (playCountO != null) {
+                    setPlayCount(link, (Number) playCountO);
+                }
+                final Object commentCountO = stats.get("commentCount");
+                if (commentCountO != null) {
+                    setCommentCount(link, (Number) commentCountO);
+                }
+                if (dllink == null) {
                     /* Fallback */
-                    dllink = generateDownloadurlOld(link);
+                    if (!isDownload) {
+                        dllink = generateDownloadurlOld(link);
+                    }
+                    link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
+                } else {
+                    link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, false);
                 }
             } else if (useWebsiteEmbed) {
                 /* Old version: https://www.tiktok.com/embed/<videoID> */
@@ -401,12 +424,11 @@ public class TiktokCom extends PluginForHost {
                  * 2021-04-09: Without accessing their website before (= fetches important cookies), we won't be able to use our final
                  * downloadurl!!
                  */
-                final boolean useOEmbedToGetCookies = true;
-                if (useOEmbedToGetCookies) {
-                    /* 2021-04-09: Both ways will work fine but this one is faster and more elegant. */
-                    br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
-                } else {
+                /* 2021-04-09: Both ways will work fine but the oembed one is faster and more elegant. */
+                if (account != null) {
                     br.getPage(link.getPluginPatternMatcher());
+                } else {
+                    br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
                 }
                 if (br.containsHTML("\"status_msg\"\\s*:\\s*\"Something went wrong\"")) {
                     // webmode not possible!? retry with api
@@ -489,9 +511,11 @@ public class TiktokCom extends PluginForHost {
                     /* Fallback */
                     dllink = generateDownloadurlOld(link);
                 }
+                link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
             } else {
                 /* Rev. 40928 and earlier */
                 dllink = generateDownloadurlOld(link);
+                link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
             }
             setDescriptionAndHashtags(link, description);
             if (!StringUtils.isEmpty(dllink)) {
@@ -594,6 +618,7 @@ public class TiktokCom extends PluginForHost {
         setCommentCount(link, (Number) statistics.get("comment_count"));
         link.setAvailable(true);
         setFilename(link);
+        link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
     }
 
     public static void accessAPI(final Browser br, final String path, final UrlQuery query) throws IOException {
@@ -899,12 +924,12 @@ public class TiktokCom extends PluginForHost {
                     showCookieLoginInfo();
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
-                logger.info("Attempting user cookie login");
                 br.setCookies(userCookies);
                 if (!force) {
                     /* Do not verify cookies */
                     return;
                 }
+                logger.info("Attempting user cookie login");
                 prepBRWebAPI(br);
                 br.getPage("https://us." + this.getHost() + "/passport/web/account/info/?" + getWebsiteQuery().toString());
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);

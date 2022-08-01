@@ -36,12 +36,12 @@ public class VolaFileOrg extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getPage(parameter.getCryptedUrl().replace(".io/", ".org/"));
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl().replace(".io/", ".org/"));
         if (br.getHttpConnection().getResponseCode() == 404) {
-            ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followRedirect();
         br.setCookie(getHost(), "allow-download", "1");
@@ -51,7 +51,7 @@ public class VolaFileOrg extends PluginForDecrypt {
         }
         String room = br.getRegex("\"room_id\"\\s*:\\s*\"(.*?)\"").getMatch(0);
         if (room == null) {
-            room = new Regex(parameter.getCryptedUrl(), "/r/([A-Za-z0-9\\-_]+)").getMatch(0);
+            room = new Regex(param.getCryptedUrl(), "/r/([A-Za-z0-9\\-_]+)").getMatch(0);
             if (StringUtils.isEmpty(room)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -64,7 +64,7 @@ public class VolaFileOrg extends PluginForDecrypt {
         query.add("transport", "websocket");
         String passCode = null;
         do {
-            final WebSocketClient wsc = new WebSocketClient(br, new URL("https://volafile.org/api/?" + query.toString()));
+            final WebSocketClient wsc = new WebSocketClient(br, new URL("https://" + this.getHost() + "/api/?" + query.toString()));
             try {
                 wsc.connect();
                 ReadWebSocketFrame frame = wsc.readNextFrame();// sid
@@ -79,7 +79,7 @@ public class VolaFileOrg extends PluginForDecrypt {
                             /* Wrong password - Don't allow 2nd try. */
                             throw new DecrypterRetryException(RetryReason.PASSWORD);
                         }
-                        passCode = getUserInput("Password?", parameter);
+                        passCode = getUserInput("Password?", param);
                         query.add("password", URLEncoder.encode(passCode, "UTF-8"));
                         continue;
                     }

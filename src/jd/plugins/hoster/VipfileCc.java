@@ -17,8 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -41,7 +41,25 @@ public class VipfileCc extends XFileSharingProBasic {
      * captchatype-info: 2019-04-24: null<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "vipfile.cc" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "vipfile.cc" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -86,40 +104,23 @@ public class VipfileCc extends XFileSharingProBasic {
         return -1;
     }
 
-    public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String betterFilename = new Regex(html, "(?i)Download File\\s*:\\s*</span>([^<]+)<span").getMatch(0);
+        if (betterFilename != null) {
+            fileInfo[0] = betterFilename;
+        }
+        return fileInfo;
     }
 
     @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
-    public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < domains.length; i++) {
-            if (i == 0) {
-                /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + XFileSharingProBasic.getDefaultAnnotationPatternPart());
-            } else {
-                ret.add("");
-            }
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        /* 2022-08-01: Seems like all of their files are premium-only */
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            return true;
+        } else {
+            return false;
         }
-        return ret.toArray(new String[0]);
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        return pattern.toString();
     }
 }

@@ -181,7 +181,14 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         final String videoID = vid.get("programId").toString();
         final String title = vid.get("title").toString();
         final String subtitle = (String) vid.get("subtitle");
-        final String dateFormatted = new Regex(vid.get("firstBroadcastDate").toString(), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        final String date;
+        final Object firstBroadcastDateO = vid.get("firstBroadcastDate");
+        if (firstBroadcastDateO != null) {
+            date = firstBroadcastDateO.toString();
+        } else {
+            date = vid.get("creationDate").toString();
+        }
+        final String dateFormatted = new Regex(date, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         final String shortDescription = (String) vid.get("shortDescription");
         final String platform = vid.get("platform").toString();
         final String videoStreamsAPIURL = JavaScriptEngineFactory.walkJson(vid, "links/videoStreams/web/href").toString();

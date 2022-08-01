@@ -1158,14 +1158,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             if (StringUtils.isEmpty(fileInfo[0])) {
                 fileInfo[0] = new Regex(html, "name=\"fname\" (?:type=\"hidden\" )?value=\"(.*?)\"").getMatch(0);
                 if (StringUtils.isEmpty(fileInfo[0])) {
-                    /* vipfile.cc */
-                    fileInfo[0] = new Regex(html, "<h2>.*?Download File\\s*(?:<br\\s*/>\\s*</span>\\s*)?<span[^>]*>\\s*(.*?)\\s*</span>").getMatch(0);
+                    fileInfo[0] = new Regex(html, "<h2>.*?Download File\\s*(?:<span[^>]*>)?\\s*(.*?)\\s*(</span>)?\\s*</h2>").getMatch(0);
+                    /* traits from download1 page below */
                     if (StringUtils.isEmpty(fileInfo[0])) {
-                        fileInfo[0] = new Regex(html, "<h2>.*?Download File\\s*(?:<span[^>]*>)?\\s*(.*?)\\s*(</span>)?\\s*</h2>").getMatch(0);
-                        /* traits from download1 page below */
-                        if (StringUtils.isEmpty(fileInfo[0])) {
-                            fileInfo[0] = new Regex(html, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
-                        }
+                        fileInfo[0] = new Regex(html, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
                     }
                 }
             }

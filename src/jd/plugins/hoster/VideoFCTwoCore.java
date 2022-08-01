@@ -24,6 +24,13 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,13 +53,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class VideoFCTwoCore extends PluginForHost {
@@ -139,7 +139,9 @@ public abstract class VideoFCTwoCore extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(link.getPluginPatternMatcher());
         }
-        if (isOffline(fid)) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new AccountRequiredException();
+        } else if (isOffline(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String newAPIVideotoken = br.getRegex("\\'ae\\'\\s*?,\\s*?\\'([a-f0-9]{32})\\'").getMatch(0);
@@ -430,7 +432,8 @@ public abstract class VideoFCTwoCore extends PluginForHost {
     }
 
     /**
-     * Checks if used is logged in according to HTML code. </br> Designed to work for most of all video.<supportedDomain>.com
+     * Checks if used is logged in according to HTML code. </br>
+     * Designed to work for most of all video.<supportedDomain>.com
      */
     private boolean isLoggedINVideoSubdomain(final Browser br) {
         if (br.containsHTML("/logoff\\.php")) {
