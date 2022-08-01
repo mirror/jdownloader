@@ -58,6 +58,7 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
         switch (event.getType()) {
         case SIGNAL_HUP:
         case SIGNAL_TERM:
+            System.out.println("Handled Event: " + event);
             listener.onOperatingSystemTerm();
             break;
         case SIGNAL:

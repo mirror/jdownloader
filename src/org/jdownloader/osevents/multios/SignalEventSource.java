@@ -24,6 +24,7 @@ public abstract class SignalEventSource {
      * @throws Exception
      */
     public SignalEventSource() throws Exception {
+        // https://blogs.oracle.com/javamagazine/post/a-peek-into-java-17-continuing-the-drive-to-encapsulate-the-java-runtime-internals
         logger = LogController.getInstance().getLogger(SignalEventSource.class.getName());
         signalHandler = Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { Class.forName("sun.misc.SignalHandler") }, new InvocationHandler() {
             @Override
