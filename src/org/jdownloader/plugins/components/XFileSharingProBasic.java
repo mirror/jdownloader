@@ -4742,9 +4742,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                     } catch (final PluginException e) {
                         logger.log(e);
                         if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                            link.setAvailable(false);
+                            link.setAvailableStatus(AvailableStatus.FALSE);
+                        } else if (e.getLinkStatus() == LinkStatus.ERROR_IP_BLOCKED) {
+                            link.setAvailableStatus(AvailableStatus.TRUE);
                         } else {
-                            link.setAvailable(true);
+                            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                         }
                         if (!link.isNameSet()) {
                             setWeakFilename(link);
