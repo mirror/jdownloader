@@ -72,9 +72,6 @@ public class StreamsbNet extends XFileSharingProBasic {
     protected boolean internal_supports_availablecheck_filename_abuse() {
         return false;
     }
-    // @Override
-    // public void correctDownloadLink(final DownloadLink link) {
-    // }
 
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
