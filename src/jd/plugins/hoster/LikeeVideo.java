@@ -22,7 +22,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,11 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LikeeVideo extends PluginForHost {
@@ -72,7 +75,7 @@ public class LikeeVideo extends PluginForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             String regex = "https?://l\\." + buildHostsPatternPart(domains) + "/v/[A-Za-z0-9]+";
-            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/@[^/]+/video/\\d+";
+            regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(@[^/]+/video/\\d+|trending\\?postId=\\d+.*)";
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
@@ -89,6 +92,7 @@ public class LikeeVideo extends PluginForHost {
     private static String       PROPERTY_USERNAME = "username";
     private final String        TYPE_1            = "https://l\\.[^/]+/v/([A-Za-z0-9]+)";
     private final String        TYPE_2            = "https?://[^/]+/@([^/]+)/video/(\\d+)";
+    private final String        TYPE_3            = "https?://[^/]+/trending\\?postId=(\\d+).*";
 
     @Override
     public String getAGBLink() {
@@ -112,7 +116,10 @@ public class LikeeVideo extends PluginForHost {
             return link.getStringProperty(PROPERTY_VIDEO_ID);
         } else if (link.getPluginPatternMatcher().matches(TYPE_2)) {
             return new Regex(link.getPluginPatternMatcher(), TYPE_2).getMatch(1);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_3)) {
+            return new Regex(link.getPluginPatternMatcher(), TYPE_3).getMatch(0);
         } else {
+            /* Unknown pattern */
             return null;
         }
     }
@@ -120,7 +127,7 @@ public class LikeeVideo extends PluginForHost {
     /** Website similar to tiktok.com */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String videoID = this.getVideoID(link);
+        String videoID = this.getVideoID(link);
         if (!link.isNameSet() && videoID != null) {
             /* Fallback */
             link.setName(this.getVideoID(link) + ".mp4");
@@ -128,20 +135,33 @@ public class LikeeVideo extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || (videoID != null && !br.getURL().contains(this.getVideoID(link)))) {
+        if (videoID == null) {
+            /* E.g. shortlinks like l.likee.video/v/blabla */
+            br.getPage(link.getPluginPatternMatcher());
+            videoID = UrlQuery.parse(br.getURL()).get("postId");
+            if (videoID == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Save so next time we can skip this step. */
+            link.setProperty(PROPERTY_VIDEO_ID, videoID);
+        }
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("Accept", "application/json, text/plain, */*");
+        brc.getHeaders().put("Content-Type", "application/json");
+        brc.getHeaders().put("Origin", "https://" + this.getHost());
+        brc.getHeaders().put("Referer", "https://" + this.getHost() + "/");
+        brc.postPageRaw("https://api.like-video.com/likee-activity-flow-micro/videoApi/getVideoInfo", "{\"postIds\":\"" + videoID + "\"}");
+        // br.getPage(link.getPluginPatternMatcher());
+        if (brc.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex(">\\s*window\\.data = (\\{.*?);</script>").getMatch(0);
-        if (json == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        link.setProperty(PROPERTY_TITLE, entries.get("video_title"));
-        link.setProperty(PROPERTY_VIDEO_ID, entries.get("post_id"));
-        link.setProperty(PROPERTY_USERNAME, entries.get("nick_name"));
-        link.setProperty(PROPERTY_DATE, new SimpleDateFormat("yyyy-dd-MM").format(new Date(((Number) entries.get("post_time")).longValue() * 1000)));
-        this.dllink = entries.get("videoUrl").toString();
+        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> videoInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/videoList/{0}");
+        link.setProperty(PROPERTY_TITLE, videoInfo.get("title"));
+        link.setProperty(PROPERTY_VIDEO_ID, videoInfo.get("postId"));
+        link.setProperty(PROPERTY_USERNAME, videoInfo.get("nickname"));
+        link.setProperty(PROPERTY_DATE, new SimpleDateFormat("yyyy-dd-MM").format(new Date(((Number) videoInfo.get("postTime")).longValue() * 1000)));
+        this.dllink = videoInfo.get("videoUrl").toString();
         /* We want to have the video without watermark */
         this.dllink = this.dllink.replaceFirst("_4.mp4", ".mp4");
         setFilename(link);

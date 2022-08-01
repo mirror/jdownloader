@@ -24,6 +24,19 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.FacebookConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -46,18 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.FacebookConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
     @Override
@@ -73,7 +74,6 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
     private static final String TYPE_VIDEO_WITH_UPLOADER_NAME          = "(?i)https://[^/]+/([^/]+)/videos/(\\d+).*";
     // private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
-    private int                 maxChunks                              = 0;
     private static final String PROPERTY_DATE_FORMATTED                = "date_formatted";
     private static final String PROPERTY_TITLE                         = "title";
     /* Real uploader name */
@@ -143,7 +143,7 @@ public class FaceBookComVideos extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         /* 2021-03-22: E.g. remove mobile page subdomain. */
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("(?i)https://[^/]+/", "https://www.facebook.com/"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("(?i)https://[^/]+/", "https://www." + this.getHost() + "/"));
     }
 
     @Override
@@ -174,7 +174,7 @@ public class FaceBookComVideos extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        br.setCookie("http://www.facebook.com", "locale", "en_GB");
+        br.setCookie("http://www." + this.getHost(), "locale", "en_GB");
         br.setFollowRedirects(true);
         return br;
     }
@@ -194,6 +194,14 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private String downloadURL = null;
+
+    public int getMaxChunks(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches(TYPE_PHOTO) || link.getPluginPatternMatcher().matches(TYPE_PHOTO_PART_OF_ALBUM)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBR(this.br);
@@ -336,8 +344,9 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Check video via https://m.facebook.com/watch/?v=<fid> </br> In some cases, this may also work for videos for which an account is
-     * required otherwise. </br> Not all videos can be accessed via this way!
+     * Check video via https://m.facebook.com/watch/?v=<fid> </br>
+     * In some cases, this may also work for videos for which an account is required otherwise. </br>
+     * Not all videos can be accessed via this way!
      */
     @Deprecated
     private AvailableStatus requestFileInformationMobile(final DownloadLink link, final boolean isDownload) throws PluginException, IOException {
@@ -487,9 +496,13 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * 2021-03-18: "plugin embed" method. </br> Not all videos are embeddable via this method thus make sure to have a fallback and do NOT
-     * trust offline status if this fails with exception! </br> This sometimes enables us to: </br> 1. Check content that is otherwise only
-     * available when logedIN. </br> 2. Get higher video quality. </br> 3. Do superfast linkcheck as it's much faster than the FB website.
+     * 2021-03-18: "plugin embed" method. </br>
+     * Not all videos are embeddable via this method thus make sure to have a fallback and do NOT trust offline status if this fails with
+     * exception! </br>
+     * This sometimes enables us to: </br>
+     * 1. Check content that is otherwise only available when logedIN. </br>
+     * 2. Get higher video quality. </br>
+     * 3. Do superfast linkcheck as it's much faster than the FB website.
      */
     @Deprecated
     private AvailableStatus requestFileInformationPluginEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -499,9 +512,9 @@ public class FaceBookComVideos extends PluginForHost {
         /* TODO: Improve offline detection */
         if (videoO == null) {
             /**
-             * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br> They do
-             * return an errormessage for non-embeddable videos but it's language-dependant and thus not easy to parse so we don't try to
-             * catch it here!
+             * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br>
+             * They do return an errormessage for non-embeddable videos but it's language-dependant and thus not easy to parse so we don't
+             * try to catch it here!
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -525,7 +538,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private Object websiteFindAndParseJson() {
-        final String json = br.getRegex(org.appwork.utils.Regex.escape("<script>requireLazy([\"TimeSliceImpl\",\"ServerJS\"],function(TimeSlice,ServerJS){var s=(new ServerJS());s.handle(") + "(\\{.*?\\})\\);requireLazy\\(").getMatch(0);
+        final String json = br.getRegex(Pattern.quote("<script>requireLazy([\"TimeSliceImpl\",\"ServerJS\"],function(TimeSlice,ServerJS){var s=(new ServerJS());s.handle(") + "(\\{.*?\\})\\);requireLazy\\(").getMatch(0);
         return JSonStorage.restoreFromString(json, TypeRef.OBJECT);
     }
 
@@ -584,9 +597,12 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Normal linkcheck via website. </br> Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
+     * Normal linkcheck via website. </br>
+     * Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
      * For other URL-types, website can be quite different depending on the video the user wants to download - it can redirect to random
-     * other URLs!
+     * other URLs! </br>
+     * The Facebook website is hard to parse thus our attempt is to find different json sources to obtain video information from --> Set
+     * crawled data on our DownloadLink and use that later to build filenames- and for downloading.
      *
      * @throws PluginException
      */
@@ -596,44 +612,54 @@ public class FaceBookComVideos extends PluginForHost {
         Object jsonO1 = null, jsonO2 = null, jsonO3 = null;
         Object errorO = null;
         /* Different sources to parse their json. */
-        final String[] jsonRegExes = new String[4];
-        jsonRegExes[0] = "\"adp_CometVideoHomeInjectedLiveVideoQueryRelayPreloader_[a-f0-9]+\",(\\{\"__bbox\".*?)" + Regex.escape("]]]});});});");
+        final List<String> jsonRegExes = new ArrayList<String>();
         /* 2021-03-19: E.g. when user is loggedIN */
-        jsonRegExes[1] = org.appwork.utils.Regex.escape("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Regex.escape(");});});</script>");
+        jsonRegExes.add(Pattern.quote("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Pattern.quote(");});});</script>"));
         /* Same as previous RegEx but lazier. */
-        jsonRegExes[2] = org.appwork.utils.Regex.escape("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Regex.escape(");");
-        jsonRegExes[3] = org.appwork.utils.Regex.escape("{bigPipe.onPageletArrive(") + "(\\{.*?\\})" + Regex.escape(");");
-        final String fid = this.getFID(link);
+        jsonRegExes.add(Pattern.quote("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Pattern.quote(");"));
+        /* 2022-08-01: Lazier attempt: On RegEx which is simply supposed to find all jsons on the current page. */
+        jsonRegExes.add("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>");
+        final String videoID = this.getFID(link);
+        int numberofJsonsFound = 0;
         for (final String jsonRegEx : jsonRegExes) {
             final String[] jsons = br.getRegex(jsonRegEx).getColumn(0);
             for (final String json : jsons) {
+                numberofJsonsFound++;
+                if (json.contains("prefetch_dash_segments")) {
+                    logger.info("hit");
+                }
                 try {
                     final Object jsonO = JavaScriptEngineFactory.jsonToJavaMap(json);
                     /* 2021-03-23: Use JavaScriptEngineFactory as they can also have json without quotes around the keys. */
                     // final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
                     if (jsonO1 == null) {
-                        jsonO1 = this.websiteFindVideoMap1(jsonO, fid);
+                        jsonO1 = this.websiteFindVideoMap1(jsonO, videoID);
                     }
                     if (jsonO2 == null) {
-                        jsonO2 = this.websiteFindVideoMap2(jsonO, fid);
+                        jsonO2 = this.websiteFindVideoMap2(jsonO, videoID);
                     }
                     if (jsonO3 == null) {
-                        jsonO3 = this.websiteFindVideoMap3(jsonO, fid);
+                        jsonO3 = this.websiteFindVideoMap3(jsonO, videoID);
                     }
                     if (errorO == null) {
-                        errorO = this.websiteFindErrorMap(jsonO, fid);
+                        errorO = this.websiteFindErrorMap(jsonO, videoID);
                     }
                 } catch (final Throwable ignore) {
                 }
             }
         }
+        if (numberofJsonsFound == 0) {
+            /* Content may still be offline or only for logged-in users! */
+            logger.warning("Possible fatal failure: Didn't find any json source");
+        }
         /**
-         * Try to find extra data for nicer filenames. </br> Do not trust this source 100% so only set properties which haven't been set
-         * before! </br> This source (video schema object) is not always given!! </br> Example:
-         * https://www.facebook.com/socialchefs/videos/326580738743639
+         * Try to find extra data for nicer filenames. </br>
+         * Do not trust this source 100% so only set properties which haven't been set before! </br>
+         * This source (video schema object) is not always given!! </br>
+         * Example: https://www.facebook.com/socialchefs/videos/326580738743639
          */
         try {
-            logger.info("Set filename info via findSchemaJsonVideoObject");
+            logger.info("Trying to set filename info via findSchemaJsonVideoObject");
             final Map<String, Object> entries = (Map<String, Object>) findSchemaJsonVideoObject();
             final String title = (String) entries.get("name");
             final String uploadDate = (String) entries.get("uploadDate");
@@ -653,6 +679,7 @@ public class FaceBookComVideos extends PluginForHost {
             /* 2021-03-23: Don't use this. Normal website video json provides higher quality! */
             // fallback_downloadurl = (String) entries.get("contentUrl");
         } catch (final Throwable ignore) {
+            logger.info("Failed to find findSchemaJsonVideoObject");
         }
         if (jsonO3 != null) {
             logger.info("Set filename info via jsonO3");
@@ -672,7 +699,6 @@ public class FaceBookComVideos extends PluginForHost {
                 link.setComment(videoDescription);
             }
         }
-        final Form loginform = br.getFormbyProperty("id", "login_form");
         if (jsonO1 != null) {
             // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             // System.out.print(JSonStorage.serializeToJson(jsonO1));
@@ -681,7 +707,7 @@ public class FaceBookComVideos extends PluginForHost {
             this.websitehandleVideoJson(link, jsonO1);
             // if (!link.hasProperty(PROPERTY_UPLOADER) && link.hasProperty(PROPERTY_UPLOADER_URL)) {
             // final String uploaderURL = link.getStringProperty(PROPERTY_UPLOADER_URL);
-            // final String uploader = br.getRegex("<a href=\"/watch/" + org.appwork.utils.Regex.escape(uploaderURL) +
+            // final String uploader = br.getRegex("<a href=\"/watch/" + Pattern.quote(uploaderURL) +
             // "/?\"[^>]*id=\"[^\"]+\"[^>]*>([^<>\"]+)</a>").getMatch(0);
             // if (uploader != null) {
             // link.setProperty(PROPERTY_UPLOADER, uploader);
@@ -751,7 +777,7 @@ public class FaceBookComVideos extends PluginForHost {
              * offline!
              */
             return AvailableStatus.FALSE;
-        } else if (loginform != null) {
+        } else if (br.getFormbyProperty("id", "login_form") != null) {
             throw new AccountRequiredException();
         } else {
             logger.warning("Failed to find any video json");
@@ -870,7 +896,8 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * 2021-11-22: This ones result map will only contain DASH streams --> Only use it to grab video title information, not for downloading
+     * 2021-11-22: This result will only contain DASH streams --> Only use it to grab video title information, not for downloading as we
+     * cannot handle split video/audio for now.
      */
     private Object websiteFindVideoMap3(final Object o, final String videoid) {
         if (o instanceof Map) {
@@ -909,7 +936,8 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Linkcheck via embed URL. </br> Not all videos are embeddable!
+     * Linkcheck via embed URL. </br>
+     * Not all videos are embeddable!
      */
     public AvailableStatus requestFileInformationEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
         br.getPage("https://www." + this.getHost() + "/video/embed?video_id=" + this.getFID(link));
@@ -999,7 +1027,7 @@ public class FaceBookComVideos extends PluginForHost {
         }
         br.getPage(link.getPluginPatternMatcher());
         String dllink = null;
-        final String[] jsons = br.getRegex(org.appwork.utils.Regex.escape("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})\\);</script>").getColumn(0);
+        final String[] jsons = br.getRegex("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>").getColumn(0);
         for (final String json : jsons) {
             final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
             final Map<String, Object> photoMap = (Map<String, Object>) findPhotoMap(jsonO, this.getFID(link));
@@ -1018,9 +1046,8 @@ public class FaceBookComVideos extends PluginForHost {
                     link.setFinalFileName(filename);
                 }
             }
-            maxChunks = 1;
+            link.setProperty(PROPERTY_DIRECTURL_LAST, dllink);
             this.checkDirecturlAndSetFilesize(link, dllink);
-            link.setProperty(PROPERTY_DIRECTURL_OLD, dllink);
         }
         return AvailableStatus.TRUE;
     }
@@ -1135,7 +1162,7 @@ public class FaceBookComVideos extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, this.getMaxChunks(link));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -1165,7 +1192,7 @@ public class FaceBookComVideos extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, true, maxChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, true, this.getMaxChunks(link));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {

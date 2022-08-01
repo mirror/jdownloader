@@ -115,7 +115,7 @@ public class ZbigzCom extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private static final String WEBSITE_API_BASE = "https://api.zbigz.com/v1";
+    private final String WEBSITE_API_BASE = "https://api.zbigz.com/v1";
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
@@ -156,12 +156,12 @@ public class ZbigzCom extends antiDDoSForHost {
                     }
                 }
                 logger.info("Performing full login");
-                getPage("https://zbigz.com/login");
+                getPage("https://" + this.getHost() + "/login");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "application/json, application/xml, text/plain, text/html, *.*");
                 postPage(WEBSITE_API_BASE + "/account/info", "undefined=undefined");
                 /* Important header!! */
-                br.getHeaders().put("Origin", "https://zbigz.com");
+                br.getHeaders().put("Origin", "https://" + this.getHost());
                 final PostFormDataRequest authReq = br.createPostFormDataRequest(WEBSITE_API_BASE + "/account/auth/token");
                 authReq.addFormData(new FormData("undefined", "undefined"));
                 super.sendRequest(authReq);
