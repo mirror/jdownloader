@@ -61,7 +61,7 @@ public class StreamsbNet extends XFileSharingProBasic {
          * streamsb.com is basically only a dummy entry here as no downloadlinks exist that can be used via this domain.
          */
         ret.add(new String[] { "streamsb.com" });
-        ret.add(new String[] { "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com" });
+        ret.add(new String[] { "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com", "javplaya.com" });
         return ret;
     }
 
@@ -72,6 +72,9 @@ public class StreamsbNet extends XFileSharingProBasic {
     protected boolean internal_supports_availablecheck_filename_abuse() {
         return false;
     }
+    // @Override
+    // public void correctDownloadLink(final DownloadLink link) {
+    // }
 
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -82,17 +85,21 @@ public class StreamsbNet extends XFileSharingProBasic {
         if (link.getPluginPatternMatcher().matches("https?://[^/]+/c/[a-z0-9]{12}.*") && link.hasProperty(IS_OFFICIALLY_DOWNLOADABLE) && !link.getBooleanProperty(IS_OFFICIALLY_DOWNLOADABLE)) {
             return result;
         } else {
-            link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
-            result = super.requestFileInformationWebsite(link, account, isDownload);
-            final String officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
-            if (officialDownloadFilesize != null) {
-                /* Do not change pluginpatternmatcher back */
-                logger.info("Item is officially downloadable!");
-                link.setDownloadSize(SizeFormatter.getSize(officialDownloadFilesize));
-                link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, true);
-            } else {
+            try {
+                link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
+                result = super.requestFileInformationWebsite(link, account, isDownload);
+                final String officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
+                if (officialDownloadFilesize != null) {
+                    /* Do not change pluginpatternmatcher back */
+                    logger.info("Item is officially downloadable!");
+                    link.setDownloadSize(SizeFormatter.getSize(officialDownloadFilesize));
+                    link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, true);
+                } else {
+                    link.setPluginPatternMatcher(oldPluginPatternMatcher);
+                    link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
+                }
+            } catch (final Throwable e) {
                 link.setPluginPatternMatcher(oldPluginPatternMatcher);
-                link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
             }
         }
         if (br.getURL().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT)) {
@@ -347,6 +354,12 @@ public class StreamsbNet extends XFileSharingProBasic {
     }
 
     @Override
+    protected URL_TYPE getURLType(final DownloadLink link) {
+        /* 2022-08-01: Return null so that correctDownloadlink does nothing. */
+        return null;
+    }
+
+    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }
@@ -366,6 +379,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         return true;
     }
 
+    @Override
     protected boolean isShortURL(final DownloadLink link) {
         return false;
     }

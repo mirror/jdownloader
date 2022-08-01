@@ -829,51 +829,34 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        final String pathOld = new URL(link.getPluginPatternMatcher()).getPath();
-        try {
-            this.resolveShortURL(this.br, link, account);
-        } catch (final PluginException e) {
-            if (isDownload) {
-                throw e;
-            } else if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                throw e;
-            } else {
-                logger.log(e);
-                /* E.g. failed to find TYPE_NORMAL due to limit reached -> We know that the file is online at least! */
-                return AvailableStatus.TRUE;
-            }
-        }
+        this.resolveShortURL(this.br, link, account);
         correctDownloadLink(link);
         /* First, set fallback-filename */
         if (!link.isNameSet()) {
             setWeakFilename(link);
         }
-        final String pathNew = new URL(link.getPluginPatternMatcher()).getPath();
-        /* Only access URL if it hasn't been accessed before. */
-        if (br.getRequest() == null || !pathOld.equals(pathNew)) {
-            br.setFollowRedirects(true);
-            final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
-            if (this.looksLikeDownloadableContent(con)) {
-                /* We got a direct-URL. */
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final String headerFilename = Plugin.getFileNameFromDispositionHeader(con);
-                if (!StringUtils.isEmpty(headerFilename)) {
-                    link.setFinalFileName(headerFilename);
-                } else {
-                    final String filenameFromURL = Plugin.getFileNameFromURL(con.getURL());
-                    if (filenameFromURL != null) {
-                        /* Fallback */
-                        link.setFinalFileName(filenameFromURL);
-                    }
-                }
-                storeDirecturl(link, account, con.getURL().toString());
-                con.disconnect();
-            } else {
-                br.followConnection();
-                correctBR(br);
+        br.setFollowRedirects(true);
+        final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
+        if (this.looksLikeDownloadableContent(con)) {
+            /* We got a direct-URL. */
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             }
+            final String headerFilename = Plugin.getFileNameFromDispositionHeader(con);
+            if (!StringUtils.isEmpty(headerFilename)) {
+                link.setFinalFileName(headerFilename);
+            } else {
+                final String filenameFromURL = Plugin.getFileNameFromURL(con.getURL());
+                if (filenameFromURL != null) {
+                    /* Fallback */
+                    link.setFinalFileName(filenameFromURL);
+                }
+            }
+            storeDirecturl(link, account, con.getURL().toString());
+            con.disconnect();
+        } else {
+            br.followConnection();
+            correctBR(br);
         }
         if (isOffline(link, this.br, getCorrectBR(br))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
