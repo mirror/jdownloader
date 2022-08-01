@@ -26,6 +26,17 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.FunctionObject;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -44,17 +55,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.FunctionObject;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.hoster.GoogleDriveDirectoryIndex.class })
@@ -84,7 +84,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
 
     /**
      * Crawler plugin that can handle instances of this project:
-     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md or:</br> https://github.com/alx-xlx/goindex </br>
+     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md or:</br>
+     * https://github.com/alx-xlx/goindex </br>
      * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
@@ -237,7 +238,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         final String baseUrl;
         /* urls can already be encoded which breaks stuff, only encode non-encoded content */
         if (!new Regex(param.getCryptedUrl(), "%[a-z0-9]{2}").matches()) {
-            baseUrl = Encoding.urlEncode_light(param.getCryptedUrl());
+            baseUrl = URLEncode.encodeURIComponent(param.getCryptedUrl());
         } else {
             baseUrl = param.getCryptedUrl();
         }
@@ -271,10 +272,10 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 String url = baseUrl;
                 if (type.endsWith(".folder")) {
                     // folder urls have to END in "/" this is how it works in browser no need for workarounds
-                    url += Encoding.urlEncode_light(name) + "/";
+                    url += URLEncode.encodeURIComponent(name) + "/";
                 } else if (!isParameterFile) {
                     // do not this if base is a file!
-                    url += Encoding.urlEncode_light(name);
+                    url += URLEncode.encodeURIComponent(name);
                 }
                 final DownloadLink dl;
                 if (type.endsWith(".folder")) {

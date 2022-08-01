@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -32,8 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
@@ -76,8 +76,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
 
     /**
      * Host plugin that can handle instances of this project:
-     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br> Be sure to add all domains to crawler
-     * plugin GoogleDriveDirectoryIndex.java too!
+     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br>
+     * Be sure to add all domains to crawler plugin GoogleDriveDirectoryIndex.java too!
      */
     /* Connection stuff */
     private final boolean FREE_RESUME               = true;
@@ -108,6 +108,11 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
         try {
             con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
             if (con.getResponseCode() == 401) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new AccountRequiredException();
             } else if (!con.isContentDisposition()) {
                 try {
@@ -122,7 +127,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
                 }
                 /* Usually final filename is already set by crawler plugin. */
                 final String fname = Plugin.getFileNameFromDispositionHeader(con);
-                if (fname != null) {
+                if (fname != null && link.getFinalFileName() == null) {
                     link.setFinalFileName(fname);
                 }
             }

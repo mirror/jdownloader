@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,12 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 //Links come from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "https?://(?:www\\.)?file\\.kareliadecrypted\\.ru/[a-z0-9]+/\\d+" })
 public class FileKareliaRu extends PluginForHost {
-
     public FileKareliaRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -78,7 +76,7 @@ public class FileKareliaRu extends PluginForHost {
         String dllink = null;
         if (downloadLink.getBooleanProperty("partlink")) {
             final boolean singlefile = downloadLink.getBooleanProperty("singlefile", false);
-            final String filename_urlencoded = Encoding.urlEncode_light(downloadLink.getStringProperty("plainfilename"));
+            final String filename_urlencoded = URLEncode.encodeURIComponent(downloadLink.getStringProperty("plainfilename"));
             final Regex fInfo = br.getRegex("\"(https?://[a-z0-9\\-]+\\.karelia\\.ru/" + FID + "/[a-z0-9]+/[a-z0-9]+/" + filename_urlencoded + ")\"");
             dllink = fInfo.getMatch(0);
             if (dllink == null && singlefile) {
@@ -120,5 +118,4 @@ public class FileKareliaRu extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
