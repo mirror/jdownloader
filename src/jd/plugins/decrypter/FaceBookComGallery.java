@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,9 +50,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FaceBookComVideos;
-import jd.utils.JDUtilities;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -115,13 +112,17 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawl(final CryptedLink param) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawl(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final FaceBookComVideos hosterPlugin = (FaceBookComVideos) this.getNewPluginForHostInstance(this.getHost());
+            hosterPlugin.login(account, false);
+        }
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> videoMaps2 = new HashMap<String, Object>();
         final Map<String, Object> videoMaps3 = new HashMap<String, Object>();
         /* Different sources to parse their json. */
         final List<String> jsonRegExes = new ArrayList<String>();
@@ -131,6 +132,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         jsonRegExes.add(Pattern.quote("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Pattern.quote(");"));
         /* 2022-08-01: Lazier attempt: On RegEx which is simply supposed to find all jsons on the current page. */
         jsonRegExes.add("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final HashSet<String> processedJsons = new HashSet<String>();
         int numberofJsonsFound = 0;
         for (final String jsonRegEx : jsonRegExes) {
@@ -145,80 +147,16 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     final Object jsonO = JavaScriptEngineFactory.jsonToJavaMap(json);
                     /* 2021-03-23: Use JavaScriptEngineFactory as they can also have json without quotes around the keys. */
                     // final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
-                    this.websiteFindVideoMaps2(jsonO, videoMaps2);
+                    final ArrayList<DownloadLink> videos = new ArrayList<DownloadLink>();
+                    this.crawlVideos(jsonO, videos);
+                    ret.addAll(videos);
+                    final ArrayList<DownloadLink> photos = new ArrayList<DownloadLink>();
+                    this.crawlPhotos(jsonO, photos);
+                    ret.addAll(photos);
                     this.websiteFindVideoMaps3(jsonO, videoMaps3);
                 } catch (final Throwable ignore) {
+                    // logger.log(ignore);
                 }
-            }
-        }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        int skippedLivestreams = 0;
-        for (final String videoID : videoMaps2.keySet()) {
-            final Map<String, Object> entries = (Map<String, Object>) videoMaps2.get(videoID);
-            final boolean isLivestream = ((Boolean) entries.get("is_live_streaming")).booleanValue();
-            if (isLivestream) {
-                /* Livestreams are not supported */
-                skippedLivestreams++;
-                continue;
-            }
-            final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(videoID);
-            final String url = (String) entries.get("permalink_url");
-            // if (StringUtils.isEmpty(url)) {
-            // url = (String) entries.get("url");
-            // }
-            final DownloadLink thumbnail = this.createDownloadlink(JavaScriptEngineFactory.walkJson(entries, "preferred_thumbnail/image/uri").toString());
-            thumbnail.setAvailable(true);
-            final DownloadLink link = this.createDownloadlink(url);
-            link.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, videoID);
-            final Object playable_duration_in_ms = entries.get("playable_duration_in_ms");
-            if (playable_duration_in_ms instanceof Number) {
-                /* Set this as a possible Packagizer property. */
-                link.setProperty(FaceBookComVideos.PROPERTY_RUNTIME_MILLISECONDS, ((Number) playable_duration_in_ms).longValue());
-            }
-            final String title = (String) entries.get("name");
-            // if (StringUtils.isEmpty(title)) {
-            // /* Typically only available for items without videostreams */
-            // title = (String) entries.get("title_with_fallback");
-            // }
-            final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "owner/name");
-            String publishDateFormatted = null;
-            final Object publish_timeO = entries.get("publish_time");
-            if (publish_timeO instanceof Number) {
-                final long publish_time = ((Number) publish_timeO).longValue();
-                final Date date = new Date(publish_time * 1000);
-                publishDateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(date);
-            }
-            final String description = (String) JavaScriptEngineFactory.walkJson(entries, "savable_description/text");
-            final String uploaderURL = FaceBookComVideos.getUploaderNameFromVideoURL(url);
-            final String urlLow = (String) entries.get("playable_url");
-            final String urlHigh = (String) entries.get("playable_url_quality_hd");
-            if (!StringUtils.isEmpty(urlHigh)) {
-                link.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_HD, urlHigh);
-            }
-            if (!StringUtils.isEmpty(urlLow)) {
-                link.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LOW, urlLow);
-            }
-            if (!StringUtils.isEmpty(description)) {
-                fp.setComment(description);
-            }
-            thisResults.add(thumbnail);
-            thisResults.add(link);
-            for (final DownloadLink thisResult : thisResults) {
-                if (uploaderURL != null) {
-                    thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER_URL, uploaderURL);
-                }
-                if (!StringUtils.isEmpty(title)) {
-                    thisResult.setProperty(FaceBookComVideos.PROPERTY_TITLE, title);
-                }
-                if (!StringUtils.isEmpty(uploader)) {
-                    thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER, uploader);
-                }
-                if (publishDateFormatted != null) {
-                    link.setProperty(FaceBookComVideos.PROPERTY_DATE_FORMATTED, publishDateFormatted);
-                }
-                thisResult._setFilePackage(fp);
             }
         }
         if (ret.isEmpty() && skippedLivestreams > 0) {
@@ -226,10 +164,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            try {
-                IO.writeToFile(new File("fbdebug_videoMaps2.txt"), JSonStorage.serializeToJsonByteArray(videoMaps2), IO.SYNC.META_AND_DATA);
-                IO.writeToFile(new File("fbdebug_videoMaps3.txt"), JSonStorage.serializeToJsonByteArray(videoMaps3), IO.SYNC.META_AND_DATA);
-            } catch (final Throwable e) {
+            final boolean debugWriteFoundJsonsToFile = false;
+            if (debugWriteFoundJsonsToFile) {
+                try {
+                    // IO.writeToFile(new File("fbdebug_videoMaps2.txt"), JSonStorage.serializeToJsonByteArray(videoMaps2),
+                    // IO.SYNC.META_AND_DATA);
+                    IO.writeToFile(new File("fbdebug_videoMaps3.txt"), JSonStorage.serializeToJsonByteArray(videoMaps3), IO.SYNC.META_AND_DATA);
+                } catch (final Throwable e) {
+                }
             }
         }
         if (numberofJsonsFound == 0) {
@@ -256,6 +198,98 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private int skippedLivestreams = 0;
+
+    private void crawlVideos(final Object o, final List<DownloadLink> results) {
+        if (o instanceof Map) {
+            final Map<String, Object> map = (Map<String, Object>) o;
+            for (final Map.Entry<String, Object> entry : map.entrySet()) {
+                final String key = entry.getKey();
+                final Object value = entry.getValue();
+                final String valueStr = value instanceof String ? value.toString() : null;
+                final String __typename = (String) map.get("__typename");
+                if (key.equals("id") && map.containsKey("is_live_streaming") && StringUtils.equals(__typename, "Video") && map.containsKey("dash_manifest")) {
+                    final boolean isLivestream = ((Boolean) map.get("is_live_streaming")).booleanValue();
+                    final String videoID = valueStr;
+                    if (isLivestream) {
+                        /* Livestreams are not supported */
+                        logger.info("Skipping livestream: " + videoID);
+                        skippedLivestreams++;
+                        continue;
+                    }
+                    final String url = (String) map.get("permalink_url");
+                    final DownloadLink thumbnail = this.createDownloadlink(JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri").toString());
+                    thumbnail.setProperty(FaceBookComVideos.PROPERTY_TYPE, "thumbnail");
+                    final DownloadLink link = this.createDownloadlink(url);
+                    final Object playable_duration_in_ms = map.get("playable_duration_in_ms");
+                    if (playable_duration_in_ms instanceof Number) {
+                        /* Set this as a possible Packagizer property. */
+                        link.setProperty(FaceBookComVideos.PROPERTY_RUNTIME_MILLISECONDS, ((Number) playable_duration_in_ms).longValue());
+                    }
+                    final String title = (String) map.get("name");
+                    final String uploader = (String) JavaScriptEngineFactory.walkJson(map, "owner/name");
+                    String publishDateFormatted = null;
+                    final Object publish_timeO = map.get("publish_time");
+                    if (publish_timeO instanceof Number) {
+                        final long publish_time = ((Number) publish_timeO).longValue();
+                        final Date date = new Date(publish_time * 1000);
+                        publishDateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(date);
+                    }
+                    final String description = (String) JavaScriptEngineFactory.walkJson(map, "savable_description/text");
+                    final String uploaderURL = FaceBookComVideos.getUploaderNameFromVideoURL(url);
+                    final String urlLow = (String) map.get("playable_url");
+                    final String urlHigh = (String) map.get("playable_url_quality_hd");
+                    if (!StringUtils.isEmpty(urlHigh)) {
+                        link.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_HD, urlHigh);
+                    }
+                    if (!StringUtils.isEmpty(urlLow)) {
+                        link.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LOW, urlLow);
+                    }
+                    link.setProperty(FaceBookComVideos.PROPERTY_TYPE, "video");
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(videoID);
+                    if (!StringUtils.isEmpty(description)) {
+                        fp.setComment(description);
+                    }
+                    final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
+                    thisResults.add(link);
+                    thisResults.add(thumbnail);
+                    for (final DownloadLink thisResult : thisResults) {
+                        thisResult.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, videoID);
+                        if (uploaderURL != null) {
+                            thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER_URL, uploaderURL);
+                        }
+                        if (!StringUtils.isEmpty(title)) {
+                            thisResult.setProperty(FaceBookComVideos.PROPERTY_TITLE, title);
+                        }
+                        if (!StringUtils.isEmpty(uploader)) {
+                            thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER, uploader);
+                        }
+                        if (publishDateFormatted != null) {
+                            link.setProperty(FaceBookComVideos.PROPERTY_DATE_FORMATTED, publishDateFormatted);
+                        }
+                        thisResult._setFilePackage(fp);
+                        thisResult.setAvailable(true);
+                    }
+                    FaceBookComVideos.setFilename(link);
+                    results.addAll(thisResults);
+                    break;
+                } else if (value instanceof List || value instanceof Map) {
+                    crawlVideos(value, results);
+                }
+            }
+            return;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    crawlVideos(arrayo, results);
+                }
+            }
+            return;
+        } else {
+            return;
+        }
+    }
 
     /** Returns Mao of maps containing information about video + old http streams. */
     private void websiteFindVideoMaps2(final Object o, final Map<String, Object> results) {
@@ -318,42 +352,37 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
     }
 
-    private Object crawlPhotos(final Object o, final Map<String, DownloadLink> results) {
+    private void crawlPhotos(final Object o, final ArrayList<DownloadLink> results) {
         if (o instanceof Map) {
             final Map<String, Object> map = (Map<String, Object>) o;
             for (final Map.Entry<String, Object> entry : map.entrySet()) {
                 final String key = entry.getKey();
                 final Object value = entry.getValue();
                 if (key.equals("id") && value instanceof String) {
-                    final String entry_id = (String) value;
                     if (map.containsKey("__isMedia") && map.containsKey("image")) {
                         final DownloadLink link = this.createDownloadlink(JavaScriptEngineFactory.walkJson(map, "image/uri").toString());
-                        results.put(entry_id.toString(), link);
-                        return o;
+                        link.setProperty(FaceBookComVideos.PROPERTY_TYPE, "photo");
+                        link.setAvailable(true);
+                        results.add(link);
+                        break;
                     } else {
                         continue;
                     }
                 } else if (value instanceof List || value instanceof Map) {
-                    final Object pico = crawlPhotos(value, results);
-                    if (pico != null) {
-                        return pico;
-                    }
+                    crawlPhotos(value, results);
                 }
             }
-            return null;
+            return;
         } else if (o instanceof List) {
             final List<Object> array = (List) o;
             for (final Object arrayo : array) {
                 if (arrayo instanceof List || arrayo instanceof Map) {
-                    final Object pico = crawlPhotos(arrayo, results);
-                    if (pico != null) {
-                        return pico;
-                    }
+                    crawlPhotos(arrayo, results);
                 }
             }
-            return null;
+            return;
         } else {
-            return null;
+            return;
         }
     }
 
@@ -436,26 +465,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     @Override
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
-    }
-
-    @SuppressWarnings("deprecation")
-    private boolean login() throws Exception {
-        /** Login stuff begin */
-        final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
-        final Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
-        if (aa != null) {
-            try {
-                ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, this.br, false);
-                // New account is valid, let's add it to the premium overview
-                return true;
-            } catch (final PluginException e) {
-                handleAccountException(aa, e);
-                logger.info("Account seems to be invalid, returnung empty linklist!");
-                return false;
-            }
-        }
-        return false;
-        /** Login stuff end */
     }
 
     /**

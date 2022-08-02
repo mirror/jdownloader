@@ -87,6 +87,7 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED = "is_checkable_via_plugin_embed";
     public static final String  PROPERTY_ACCOUNT_REQUIRED              = "account_required";
     public static final String  PROPERTY_RUNTIME_MILLISECONDS          = "runtime_milliseconds";
+    public static final String  PROPERTY_TYPE                          = "type";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -148,7 +149,12 @@ public class FaceBookComVideos extends PluginForHost {
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
-        if (fid != null) {
+        final String type = link.getStringProperty(PROPERTY_TYPE);
+        if (fid != null && type != null) {
+            /* New URLs */
+            return this.getHost() + "://" + fid + "/" + type;
+        } else if (fid != null) {
+            /* Older URLs */
             return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
@@ -156,7 +162,12 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     public static String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        final String storedContentID = link.getStringProperty(PROPERTY_CONTENT_ID);
+        if (storedContentID != null) {
+            return storedContentID;
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        }
     }
 
     public boolean isProxyRotationEnabledForLinkChecker() {
@@ -173,12 +184,12 @@ public class FaceBookComVideos extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        br.setCookie("http://www." + this.getHost(), "locale", "en_GB");
+        br.setCookie(this.getHost(), "locale", "en_GB");
         br.setFollowRedirects(true);
         return br;
     }
 
-    private String getDownloadURL(final DownloadLink link) throws Exception {
+    private String getAndCheckDownloadURL(final DownloadLink link) throws Exception {
         String ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_LAST);
         if (ret == null && PluginJsonConfig.get(this.getConfigInterface()).isPreferHD()) {
             ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_HD);
@@ -194,17 +205,35 @@ public class FaceBookComVideos extends PluginForHost {
 
     private String downloadURL = null;
 
-    public int getMaxChunks(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(TYPE_PHOTO) || link.getPluginPatternMatcher().matches(TYPE_PHOTO_PART_OF_ALBUM)) {
-            return 1;
-        } else {
+    private int getMaxChunks(final DownloadLink link) {
+        if (isVideo(link)) {
             return 0;
+        } else {
+            return 1;
+        }
+    }
+
+    private boolean isVideo(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches(TYPE_PHOTO) || link.getPluginPatternMatcher().matches(TYPE_PHOTO_PART_OF_ALBUM)) {
+            return false;
+        } else {
+            final String type = link.getStringProperty(PROPERTY_TYPE);
+            if (type == null) {
+                /* Old video URL (legacy handling) */
+                return true;
+            } else {
+                if (StringUtils.equalsIgnoreCase(type, "video")) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBR(this.br);
-        downloadURL = getDownloadURL(link);
+        downloadURL = getAndCheckDownloadURL(link);
         if (downloadURL != null) {
             logger.info("Availablecheck only via directurl done:" + downloadURL);
             return AvailableStatus.TRUE;
@@ -242,7 +271,7 @@ public class FaceBookComVideos extends PluginForHost {
                         throw new AccountRequiredException();
                     } else {
                         /* Account available --> Login and try again */
-                        login(account, this.br, false);
+                        login(account, false);
                         loggedIn = true;
                         br.getPage(link.getPluginPatternMatcher());
                         search = true;
@@ -260,10 +289,10 @@ public class FaceBookComVideos extends PluginForHost {
             return this.requestFileInformationPhoto(link, isDownload);
         } else {
             if (!link.isNameSet()) {
-                link.setName(this.getFID(link) + ".mp4");
+                link.setName(getFID(link) + ".mp4");
             }
             if (account != null && !loggedIn) {
-                login(account, this.br, false);
+                login(account, false);
             }
             /* Embed only = no nice filenames given */
             final boolean useEmbedOnly = false;
@@ -294,9 +323,9 @@ public class FaceBookComVideos extends PluginForHost {
                     }
                 }
             }
-            this.setFilename(link);
+            setFilename(link);
             if (findAndCheckDownloadurl) {
-                downloadURL = getDownloadURL(link);
+                downloadURL = getAndCheckDownloadURL(link);
                 if (downloadURL == null) {
                     /* E.g. final downloadurl doesn't lead to video-file. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
@@ -363,8 +392,8 @@ public class FaceBookComVideos extends PluginForHost {
      * @throws PluginException
      */
     private void websitehandleVideoJson(final DownloadLink link, final Object jsonO) throws PluginException {
-        final Object videoO = this.websiteFindVideoMap1(jsonO, this.getFID(link));
-        final Object htmlO = pluginEmbedFindHTMLInJson(jsonO, this.getFID(link));
+        final Object videoO = this.websiteFindVideoMap1(jsonO, getFID(link));
+        final Object htmlO = pluginEmbedFindHTMLInJson(jsonO, getFID(link));
         if (htmlO != null) {
             String specialHTML = (String) htmlO;
             specialHTML = PluginJSonUtils.unescape(specialHTML);
@@ -434,7 +463,7 @@ public class FaceBookComVideos extends PluginForHost {
         jsonRegExes.add(Pattern.quote("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Pattern.quote(");"));
         /* 2022-08-01: Lazier attempt: On RegEx which is simply supposed to find all jsons on the current page. */
         jsonRegExes.add("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>");
-        final String videoID = this.getFID(link);
+        final String videoID = getFID(link);
         int numberofJsonsFound = 0;
         for (final String jsonRegEx : jsonRegExes) {
             final String[] jsons = br.getRegex(jsonRegEx).getColumn(0);
@@ -830,19 +859,19 @@ public class FaceBookComVideos extends PluginForHost {
     public AvailableStatus requestFileInformationPhoto(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             /* 2021-03-24: Images are usually .jpg or .png */
-            link.setName(this.getFID(link) + ".png");
+            link.setName(getFID(link) + ".png");
         }
         this.prepBR(this.br);
         final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa != null) {
-            login(aa, this.br, false);
+            login(aa, false);
         }
         br.getPage(link.getPluginPatternMatcher());
         String dllink = null;
         final String[] jsons = br.getRegex("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>").getColumn(0);
         for (final String json : jsons) {
             final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
-            final Map<String, Object> photoMap = (Map<String, Object>) findPhotoMap(jsonO, this.getFID(link));
+            final Map<String, Object> photoMap = (Map<String, Object>) findPhotoMap(jsonO, getFID(link));
             if (photoMap != null) {
                 dllink = (String) JavaScriptEngineFactory.walkJson(photoMap, "image/uri");
                 break;
@@ -853,7 +882,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (filename != null) {
                 if (filename.contains(".")) {
                     /* Set custom filename with given extension */
-                    link.setFinalFileName(this.getFID(link) + filename.substring(filename.lastIndexOf(".")));
+                    link.setFinalFileName(getFID(link) + filename.substring(filename.lastIndexOf(".")));
                 } else {
                     link.setFinalFileName(filename);
                 }
@@ -917,7 +946,7 @@ public class FaceBookComVideos extends PluginForHost {
              * enforces the need of an account for other videos also e.g. by country/IP.
              */
             throw new AccountRequiredException();
-        } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_WATCH) && !br.getURL().contains(this.getFID(link))) {
+        } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_WATCH) && !br.getURL().contains(getFID(link))) {
             /*
              * Specific type of URL will redirect to other URL/mainpage on offline --> Check for that E.g.
              * https://www.facebook.com/watch/?v=2739449049644930
@@ -928,7 +957,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        login(account, this.br, true);
+        login(account, true);
         final AccountInfo ai = new AccountInfo();
         ai.setStatus("Valid Facebook account is active");
         ai.setUnlimitedTraffic();
@@ -1009,11 +1038,11 @@ public class FaceBookComVideos extends PluginForHost {
                 return true;
             } else {
                 /* Remove that so we don't waste time checking this again. */
-                link.removeProperty(PROPERTY_DIRECTURL_LAST);
                 brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(PROPERTY_DIRECTURL_LAST);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
@@ -1023,11 +1052,10 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
-    public void login(final Account account, final Browser br, final boolean validateCookies) throws Exception {
+    public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 prepBR(br);
-                // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 /* 2020-10-9: Experimental login/test */
@@ -1283,10 +1311,6 @@ public class FaceBookComVideos extends PluginForHost {
     @Override
     public Class<? extends FacebookConfig> getConfigInterface() {
         return FacebookConfig.class;
-    }
-
-    private static String getUser(final Browser br) {
-        return jd.plugins.decrypter.FaceBookComGallery.getUser(br);
     }
 
     @Override
