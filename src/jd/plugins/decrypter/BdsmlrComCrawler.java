@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,11 +41,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BdsmlrComCrawler extends PluginForDecrypt {
@@ -78,8 +78,6 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         if (acc != null) {
             final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.BdsmlrCom) hostPlugin).login(acc, false);
-        } else if (false) {
-            throw new AccountRequiredException();
         }
         if (param.getCryptedUrl().matches(TYPE_USER_PROFILE)) {
             return crawlUser(param);
@@ -147,25 +145,20 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         br.getHeaders().put("X-CSRF-TOKEN", csrftoken);
         br.postPage("/loadfirst", "scroll=5&timenow=" + Encoding.urlEncode(infinitescrollDate));
         decryptedLinks.addAll(crawlPosts(br, fp));
-        if (decryptedLinks.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final HashSet<String> dupes = new HashSet<String>();
         final int maxItemsPerPage = 20;
         int index = 0;
         int page = 1;
-        String nextLastPostID = decryptedLinks.get(decryptedLinks.size() - 1).getStringProperty(PROPERTY_POST_ID);
         profileLoop: do {
             final UrlQuery query = new UrlQuery();
             query.add("scroll", Integer.toString(index));
             query.add("timenow", Encoding.urlEncode(infinitescrollDate));
-            query.add("last", nextLastPostID);
+            query.add("last", lastPostID);
             br.postPage("/infinitepb2/" + username, query);
             final ArrayList<DownloadLink> results = crawlPosts(br, fp);
-            String lastPostIDOfActivePost = null;
             int numberofNewItems = 0;
             if (results.isEmpty()) {
-                logger.info("Failed to find any results on current page -> Probably it only contains offline items");
+                logger.info("Failed to find any results on current page -> Probably it only contains offline items or text content");
             } else {
                 for (final DownloadLink result : results) {
                     final String postID = result.getStringProperty(PROPERTY_POST_ID);
@@ -174,54 +167,47 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
                         logger.info("Stopping because: Found dupe: " + postID);
                         break profileLoop;
                     }
-                    lastPostIDOfActivePost = postID;
                     decryptedLinks.add(result);
                     numberofNewItems++;
                 }
             }
-            logger.info("Crawled page " + page + " | Index: " + index + " | New crawled items on this page: " + numberofNewItems + " | Found items total: " + decryptedLinks.size() + " | nextLastPostID: " + nextLastPostID);
+            logger.info("Crawled page " + page + " | Index: " + index + " | New crawled items on this page: " + numberofNewItems + " | Crawled supported items total: " + decryptedLinks.size() + " | lastPostID: " + lastPostID);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
             }
-            nextLastPostID = null;
-            /*
-             * Important: We only crawl media items but deleted items can also be in the timeline in between so sometimes there may be a
-             * block which contains only deleted posts -> Continue pagination until we don't find new postIDs!
-             */
-            final String[] postIDs = br.getRegex("data-id=\"(\\d+)\"[^>]*>").getColumn(0);
-            if (postIDs.length == 0) {
-                logger.info("Stopping because: Failed to find any postIDs on current page");
-                break;
+            if (lastPostID == null) {
+                logger.info("Stopping because: lastPostID is null");
+                break profileLoop;
+            } else if (numberofNewItems == 0) {
+                logger.info("Current page contained ONLY deleted posts or unsupported posts which have been skipped: " + lastNumberofPosts);
             }
-            String lastPostIDGeneral = null;
-            for (final String postID : postIDs) {
-                /* Be sure to add those IDs to our list of dupes! */
-                dupes.add(postID);
-                lastPostIDGeneral = postID;
-            }
-            if (numberofNewItems == 0) {
-                logger.info("Current page contained ONLY deleted posts which have been skipped: " + postIDs.length);
-            } else if (!lastPostIDGeneral.equals(lastPostIDOfActivePost)) {
-                logger.info("Current page contained deleted posts which have been skipped");
-            }
-            nextLastPostID = lastPostIDGeneral;
             index += maxItemsPerPage;
             page++;
         } while (true);
         return decryptedLinks;
     }
 
+    private String lastPostID        = null;
+    private int    lastNumberofPosts = 0;
+
     private ArrayList<DownloadLink> crawlPosts(final Browser br, final FilePackage fp) throws PluginException, IOException {
+        lastPostID = null;
+        lastNumberofPosts = 0;
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage|pubimage)\\s*\">.*?class=\"countinf\")").getColumn(0);
+        final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage|pubimage|typetext)\\s*\">.*?class=\"countinf\")").getColumn(0);
         for (final String post : posts) {
             final Regex postInfo = new Regex(post, "(https?://([\\w\\-]+)\\.[^/]+/post/(\\d+))");
             String postID = postInfo.getMatch(2);
             if (postID == null) {
                 postID = new Regex(post, "<div class=\\\"wrap-post del(\\d+)").getMatch(0);
             }
-            final String type = new Regex(post, "<div class=\"wrap-post del\\d+\\s*(pubvideo|typeimage|pubimage)").getMatch(0);
+            lastPostID = postID;
+            final String type = new Regex(post, "<div class=\"wrap-post del\\d+\\s*([a-z]+)").getMatch(0);
+            if (!type.matches("pubvideo|typeimage|pubimage")) {
+                logger.info("Skipping unsupported post type " + type + " | ID: " + postID);
+                continue;
+            }
             String username = postInfo.getMatch(1);
             if (username == null) {
                 username = new Regex(br.getURL(), "https?://(.*?)\\.bdsmlr\\.com").getMatch(0);
@@ -235,7 +221,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             }
             final Regex direct;
             /* Video posts will also contain URLs to video-thumbnails so let's make sure we only grab exactly what we want. */
-            if ("pubvideo".equals(type)) {
+            if ("pubvideo".equalsIgnoreCase(type)) {
                 direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/videos/(\\d{4})/(\\d{2})[^\"\\']+\\.mp4)(?:\"|\\')");
             } else {
                 direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/photos/(\\d{4})/(\\d{2})[^\"\\']+\\.[a-zA-Z0-9]{2,5})(?:\"|\\')");
@@ -262,6 +248,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             decryptedLinks.add(dl);
             distribute(dl);
         }
+        lastNumberofPosts = posts.length;
         return decryptedLinks;
     }
 }
