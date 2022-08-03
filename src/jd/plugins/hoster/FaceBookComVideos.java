@@ -64,13 +64,13 @@ public class FaceBookComVideos extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.IMAGE_HOST };
     }
 
-    private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/(?:photo\\.php|photo/)\\?fbid=(\\d+)";
-    private static final String TYPE_GROUP_PERMALINK                   = "(?i)https://[^/]+/groups/[^/]+/permalink/\\d+";
-    private static final String TYPE_POSTS                             = "(?i)https://[^/]+/([^/]+)/posts/[^/]+.*";
-    private static final String TYPE_PHOTO_PART_OF_ALBUM               = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
+    private static final String PATTERN_PHOTO                          = "(?i)https?://[^/]+/(?:photo\\.php|photo/)\\?fbid=(\\d+)";
+    private static final String PATTERN_GROUP_PERMALINK                = "(?i)https://[^/]+/groups/[^/]+/permalink/\\d+";
+    private static final String PATTERN_POSTS                          = "(?i)https://[^/]+/([^/]+)/posts/[^/]+.*";
+    private static final String PATTERN_PHOTO_PART_OF_ALBUM            = "(?i)https?://[^/]+/[^/]+/photos/a\\.\\d+/(\\d+)";
     /* Allow parameter 'v' to be anywhere in that URL. */
-    private static final String TYPE_VIDEO_WATCH                       = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
-    private static final String TYPE_VIDEO_WITH_UPLOADER_NAME          = "(?i)https://[^/]+/([^/]+)/videos/(\\d+).*";
+    private static final String PATTERN_VIDEO_WATCH                    = "(?i)https?://[^/]+/watch/(?:live/)?\\?.*v=(\\d+)";
+    private static final String PATTERN_VIDEO_WITH_UPLOADER_NAME       = "(?i)https://[^/]+/([^/]+)/videos/(\\d+).*";
     // private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     public static final String  PROPERTY_DATE_FORMATTED                = "date_formatted";
     public static final String  PROPERTY_TITLE                         = "title";
@@ -88,6 +88,9 @@ public class FaceBookComVideos extends PluginForHost {
     public static final String  PROPERTY_ACCOUNT_REQUIRED              = "account_required";
     public static final String  PROPERTY_RUNTIME_MILLISECONDS          = "runtime_milliseconds";
     public static final String  PROPERTY_TYPE                          = "type";
+    public static final String  TYPE_VIDEO                             = "video";
+    public static final String  TYPE_PHOTO                             = "photo";
+    public static final String  TYPE_THUMBNAIL                         = "thumbnail";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -149,13 +152,9 @@ public class FaceBookComVideos extends PluginForHost {
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
-        final String type = link.getStringProperty(PROPERTY_TYPE);
-        if (fid != null && type != null) {
-            /* New URLs */
-            return this.getHost() + "://" + fid + "/" + type;
-        } else if (fid != null) {
+        if (fid != null) {
             /* Older URLs */
-            return this.getHost() + "://" + fid;
+            return this.getHost() + "://" + fid + "/" + getType(link);
         } else {
             return super.getLinkID(link);
         }
@@ -213,8 +212,9 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
-    private boolean isVideo(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(TYPE_PHOTO) || link.getPluginPatternMatcher().matches(TYPE_PHOTO_PART_OF_ALBUM)) {
+    public static boolean isVideo(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(PATTERN_PHOTO) || link.getPluginPatternMatcher().matches(PATTERN_PHOTO_PART_OF_ALBUM)) {
+            /* Legacy handling */
             return false;
         } else {
             final String type = link.getStringProperty(PROPERTY_TYPE);
@@ -222,12 +222,24 @@ public class FaceBookComVideos extends PluginForHost {
                 /* Old video URL (legacy handling) */
                 return true;
             } else {
-                if (StringUtils.equalsIgnoreCase(type, "video")) {
+                if (StringUtils.equalsIgnoreCase(type, TYPE_VIDEO)) {
                     return true;
                 } else {
                     return false;
                 }
             }
+        }
+    }
+
+    public static String getType(final DownloadLink link) {
+        final String type = link.getStringProperty(PROPERTY_TYPE);
+        if (type != null) {
+            return type;
+        } else if (isVideo(link)) {
+            return TYPE_VIDEO;
+        } else {
+            /* Legacy handling */
+            return TYPE_PHOTO;
         }
     }
 
@@ -241,7 +253,7 @@ public class FaceBookComVideos extends PluginForHost {
         boolean loggedIn = false;
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
         final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
-        if (link.getPluginPatternMatcher().matches(TYPE_GROUP_PERMALINK) || link.getPluginPatternMatcher().matches(TYPE_POSTS)) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_GROUP_PERMALINK) || link.getPluginPatternMatcher().matches(PATTERN_POSTS)) {
             br.getPage(link.getPluginPatternMatcher());
             String video = null;
             boolean search = true;
@@ -285,7 +297,7 @@ public class FaceBookComVideos extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (link.getPluginPatternMatcher().matches(TYPE_PHOTO) || link.getPluginPatternMatcher().matches(TYPE_PHOTO_PART_OF_ALBUM)) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_PHOTO) || link.getPluginPatternMatcher().matches(PATTERN_PHOTO_PART_OF_ALBUM)) {
             return this.requestFileInformationPhoto(link, isDownload);
         } else {
             if (!link.isNameSet()) {
@@ -336,10 +348,20 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     public static String getUploaderURL(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_WITH_UPLOADER_NAME)) {
-            return new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO_WITH_UPLOADER_NAME).getMatch(0);
+        if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO_WITH_UPLOADER_NAME)) {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO_WITH_UPLOADER_NAME).getMatch(0);
         } else {
             return link.getStringProperty(PROPERTY_UPLOADER_URL);
+        }
+    }
+
+    public static String getUploaderNameAny(final DownloadLink link) {
+        final String uploader = link.getStringProperty(PROPERTY_UPLOADER);
+        final String uploaderURL = getUploaderURL(link);
+        if (uploader != null) {
+            return uploader;
+        } else {
+            return uploaderURL;
         }
     }
 
@@ -349,12 +371,10 @@ public class FaceBookComVideos extends PluginForHost {
         String filename = "";
         final String title = link.getStringProperty(PROPERTY_TITLE);
         final String dateFormatted = link.getStringProperty(PROPERTY_DATE_FORMATTED);
-        final String uploader = link.getStringProperty(PROPERTY_UPLOADER);
-        final String uploaderURL = getUploaderURL(link);
         if (dateFormatted != null) {
             filename += dateFormatted + "_";
         }
-        final String uploaderNameForFilename = !StringUtils.isEmpty(uploader) ? uploader : uploaderURL;
+        final String uploaderNameForFilename = getUploaderNameAny(link);
         if (!StringUtils.isEmpty(uploaderNameForFilename)) {
             filename += uploaderNameForFilename + "_";
         }
@@ -946,7 +966,7 @@ public class FaceBookComVideos extends PluginForHost {
              * enforces the need of an account for other videos also e.g. by country/IP.
              */
             throw new AccountRequiredException();
-        } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_WATCH) && !br.getURL().contains(getFID(link))) {
+        } else if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO_WATCH) && !br.getURL().contains(getFID(link))) {
             /*
              * Specific type of URL will redirect to other URL/mainpage on offline --> Check for that E.g.
              * https://www.facebook.com/watch/?v=2739449049644930

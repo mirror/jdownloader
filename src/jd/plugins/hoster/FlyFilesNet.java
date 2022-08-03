@@ -136,7 +136,7 @@ public class FlyFilesNet extends PluginForHost {
             if (br.containsHTML("#downlink\\|#")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
             }
-            dllink = getDllink();
+            dllink = getDllink(br);
             if (dllink == null) {
                 /* 2022-05-30: Assume that content is only downloadable with premium account */
                 throw new AccountRequiredException();
@@ -189,7 +189,7 @@ public class FlyFilesNet extends PluginForHost {
         return null;
     }
 
-    public String getDllink() {
+    public String getDllink(final Browser br) {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = br.getRegex("#downlink\\|(https?://\\w+\\.flyfiles\\.net/\\w+/.+)").getMatch(0);
@@ -206,6 +206,7 @@ public class FlyFilesNet extends PluginForHost {
         login(account, true);
         String expire = new Regex(br, "(?i)<u>Premium</u>: <span id=\"premiumDate\">(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
         if (expire == null) {
+            /* Expired premium --> Free accounts are not supported! */
             ai.setExpired(true);
             return ai;
         }
@@ -222,33 +223,44 @@ public class FlyFilesNet extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBrowser();
                 final Cookies cookies = account.loadCookies("");
-                final String lang = System.getProperty("user.language");
                 if (cookies != null) {
                     br.setCookies(cookies);
-                    /* Trust cookies without check */
-                    return;
-                } else {
-                    logger.info("Performing full login");
-                    br.getPage("https://" + this.getHost());
-                    br.postPage("/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                    if (!br.containsHTML("#login\\|1")) {
-                        throw new AccountInvalidException();
+                    if (!force) {
+                        /* Do not check cookies */
+                        return;
                     }
+                    logger.info("Checking login cookies");
+                    br.getPage("https://" + this.getHost() + "/login.html");
+                    if (isLoggedin(br)) {
+                        logger.info("Cookie login successful");
+                        /* Access sub-page which contains information about this account. */
+                        br.getPage("/");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost());
+                br.postPage("/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (!isLoggedin(br)) {
+                    throw new AccountInvalidException();
                 }
                 br.getPage("/");
-                // only support premium at this stage
-                if (!new Regex(br, "(?i)(<u>Premium</u>: <span id=\"premiumDate\">)").matches()) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
             }
+        }
+    }
+
+    /** Only use this on sub-page /login.html !" */
+    private boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("#login\\|1")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -259,7 +271,7 @@ public class FlyFilesNet extends PluginForHost {
         String dllink = checkDirectLink(link, "premlink");
         if (dllink == null) {
             br.postPage("https://" + this.getHost() + "/", "getDownLink=" + new Regex(link.getDownloadURL(), "net/(.*)").getMatch(0));
-            dllink = getDllink();
+            dllink = getDllink(br);
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.
             if (br.containsHTML("#downlink\\|#")) {

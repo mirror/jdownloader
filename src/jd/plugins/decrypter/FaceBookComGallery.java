@@ -48,6 +48,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.FaceBookComVideos;
@@ -217,13 +218,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         continue;
                     }
                     final String url = (String) map.get("permalink_url");
-                    final DownloadLink thumbnail = this.createDownloadlink(JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri").toString());
-                    thumbnail.setProperty(FaceBookComVideos.PROPERTY_TYPE, "thumbnail");
-                    final DownloadLink link = this.createDownloadlink(url);
+                    final String thumbnailURL = JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri").toString();
+                    final DownloadLink thumbnail = this.createDownloadlink(thumbnailURL);
+                    thumbnail.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_THUMBNAIL);
+                    final DownloadLink video = this.createDownloadlink(url);
                     final Object playable_duration_in_ms = map.get("playable_duration_in_ms");
                     if (playable_duration_in_ms instanceof Number) {
                         /* Set this as a possible Packagizer property. */
-                        link.setProperty(FaceBookComVideos.PROPERTY_RUNTIME_MILLISECONDS, ((Number) playable_duration_in_ms).longValue());
+                        video.setProperty(FaceBookComVideos.PROPERTY_RUNTIME_MILLISECONDS, ((Number) playable_duration_in_ms).longValue());
                     }
                     final String title = (String) map.get("name");
                     final String uploader = (String) JavaScriptEngineFactory.walkJson(map, "owner/name");
@@ -239,19 +241,24 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     final String urlLow = (String) map.get("playable_url");
                     final String urlHigh = (String) map.get("playable_url_quality_hd");
                     if (!StringUtils.isEmpty(urlHigh)) {
-                        link.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_HD, urlHigh);
+                        video.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_HD, urlHigh);
                     }
                     if (!StringUtils.isEmpty(urlLow)) {
-                        link.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LOW, urlLow);
+                        video.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LOW, urlLow);
                     }
-                    link.setProperty(FaceBookComVideos.PROPERTY_TYPE, "video");
+                    video.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_VIDEO);
                     final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(videoID);
+                    final String uploaderNameForPackage = FaceBookComVideos.getUploaderNameAny(video);
+                    if (uploaderNameForPackage != null) {
+                        fp.setName(uploaderNameForPackage + " - " + videoID);
+                    } else {
+                        fp.setName(videoID);
+                    }
                     if (!StringUtils.isEmpty(description)) {
                         fp.setComment(description);
                     }
                     final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
-                    thisResults.add(link);
+                    thisResults.add(video);
                     thisResults.add(thumbnail);
                     for (final DownloadLink thisResult : thisResults) {
                         thisResult.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, videoID);
@@ -265,12 +272,17 @@ public class FaceBookComGallery extends PluginForDecrypt {
                             thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER, uploader);
                         }
                         if (publishDateFormatted != null) {
-                            link.setProperty(FaceBookComVideos.PROPERTY_DATE_FORMATTED, publishDateFormatted);
+                            video.setProperty(FaceBookComVideos.PROPERTY_DATE_FORMATTED, publishDateFormatted);
                         }
                         thisResult._setFilePackage(fp);
                         thisResult.setAvailable(true);
                     }
-                    FaceBookComVideos.setFilename(link);
+                    FaceBookComVideos.setFilename(video);
+                    final String thumbnailFileExtension = Plugin.getFileNameExtensionFromURL(thumbnailURL);
+                    if (thumbnailFileExtension != null) {
+                        final String videoFilename = video.getFinalFileName();
+                        thumbnail.setFinalFileName(this.correctOrApplyFileNameExtension(videoFilename, thumbnailFileExtension));
+                    }
                     results.addAll(thisResults);
                     break;
                 } else if (value instanceof List || value instanceof Map) {
@@ -361,7 +373,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 if (key.equals("id") && value instanceof String) {
                     if (map.containsKey("__isMedia") && map.containsKey("image")) {
                         final DownloadLink link = this.createDownloadlink(JavaScriptEngineFactory.walkJson(map, "image/uri").toString());
-                        link.setProperty(FaceBookComVideos.PROPERTY_TYPE, "photo");
+                        link.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_PHOTO);
                         link.setAvailable(true);
                         results.add(link);
                         break;
