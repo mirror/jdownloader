@@ -796,7 +796,15 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected boolean isOfflineWebsite(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
+            return true;
+        } else if (br.getURL().contains("/404.php")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected boolean isPrivateVideoWebsite(final Browser br) {
