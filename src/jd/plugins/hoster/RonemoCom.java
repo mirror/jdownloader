@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -26,10 +30,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RonemoCom extends antiDDoSForHost {
@@ -58,7 +58,7 @@ public class RonemoCom extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([A-Za-z0-9]+)/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([A-Za-z0-9\\-_]+)(/([A-Za-z0-9\\-_]+))?");
         }
         return ret.toArray(new String[0]);
     }
@@ -106,7 +106,7 @@ public class RonemoCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final Regex hlsinfo = br.getRegex("(https?://rocdn\\.(?:org|net)/([a-z0-9]+)/f/playlist\\.m3u8)");
+        final Regex hlsinfo = br.getRegex("(https?://rocdn\\.[^/]+/([a-z0-9\\-_]+)/f/playlist\\.m3u8)");
         if (!hlsinfo.matches()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
