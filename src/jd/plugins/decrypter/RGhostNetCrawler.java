@@ -31,7 +31,7 @@ public class RGhostNetCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         param.setCryptedUrl(RGhostNet.correctAddedURL(param.getCryptedUrl()));
         RGhostNet.prepBR(this.br);

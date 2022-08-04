@@ -32,7 +32,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -121,11 +120,11 @@ public class CocoleechCom extends PluginForHost {
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
-                link.removeProperty(PROPERTY_DIRECTURL);
                 brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(PROPERTY_DIRECTURL);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
@@ -162,7 +161,7 @@ public class CocoleechCom extends PluginForHost {
             int maxChunks = defaultMAXCHUNKS;
             if (!StringUtils.isEmpty(maxchunksStr) && maxchunksStr.matches("^\\d+$")) {
                 maxChunks = -Integer.parseInt(maxchunksStr);
-                link.setProperty(PROPERTY_MAXCHUNKS, -Integer.parseInt(maxchunksStr));
+                link.setProperty(PROPERTY_MAXCHUNKS, maxChunks);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -206,7 +205,6 @@ public class CocoleechCom extends PluginForHost {
         if ("premium".equalsIgnoreCase(accounttype) && timestampValiduntil > System.currentTimeMillis()) {
             ai.setValidUntil(timestampValiduntil);
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account");
             account.setConcurrentUsePossible(true);
             /*
              * 2017-02-08: Accounts do usually not have general traffic limits - however there are individual host traffic limits see
@@ -219,7 +217,6 @@ public class CocoleechCom extends PluginForHost {
             }
         } else {
             account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) account");
             /*
              * 2016-05-05: According to admin, free accounts cannot download anything.
              */
@@ -246,7 +243,7 @@ public class CocoleechCom extends PluginForHost {
             if ("online".equalsIgnoreCase(status)) {
                 supportedhostslist.add(host);
             } else {
-                logger.info("NOT adding offline host: " + host);
+                logger.info("Not adding currently unsupported host: " + host);
             }
         }
         ai.setMultiHostSupport(this, supportedhostslist);
@@ -277,25 +274,20 @@ public class CocoleechCom extends PluginForHost {
                 throw new AccountInvalidException(statusmsg);
             } else if (statusmsg.equalsIgnoreCase("Incorrect API key.")) {
                 String errormsg = statusmsg + "\r\n Find your API Key here: members.cocoleech.com/settings";
-                errormsg += "\r\nIf you're using myjdownloader, enter your API Key into the username- and password fields.";
+                errormsg += "\r\nIf you're using myjdownloader, enter your API Key into both the username and password fields.";
                 throw new AccountInvalidException(errormsg);
-            } else if (statusmsg.matches("(?i)Daily limit is reached\\. Hours left:\\s*?\\d+")) {
-                mhm.handleErrorGeneric(account, link, "daily_limit_reached", 10, 5 * 60 * 1000l);
-            } else if (statusmsg.equalsIgnoreCase("Failed to generate link.")) {
-                mhm.handleErrorGeneric(account, link, "failedtogeneratelink", 50, 5 * 60 * 1000l);
             } else if (statusmsg.equalsIgnoreCase("Premium membership expired.")) {
-                logger.info("Premium account has expired");
                 account.getAccountInfo().setExpired(true);
                 throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
             } else if (statusmsg.equalsIgnoreCase("Your IP is blocked for today. Please contact support.")) {
                 /* Put all account temp. unavailable errors here. */
                 throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
             } else {
-                /* Unknown error */
+                /* Unknown error or link based error */
                 if (link == null) {
                     throw new AccountUnavailableException(statusmsg, 3 * 60 * 1000l);
                 } else {
-                    mhm.handleErrorGeneric(account, link, "unknown_api_error", 50, 5 * 60 * 1000l);
+                    mhm.handleErrorGeneric(account, link, statusmsg, 50, 5 * 60 * 1000l);
                 }
             }
         }
