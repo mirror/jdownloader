@@ -75,9 +75,8 @@ public class VscoCo extends PluginForDecrypt {
         final String siteid = site.get("id").toString();
         final Map<String, Object> firstPageMediaInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "medias/bySiteId/" + siteid);
         final String authToken = JavaScriptEngineFactory.walkJson(root, "users/currentUser/tkn").toString();
-        long amount_total = 0;
         /* Using the same value as website */
-        int max_count_per_page = 14;
+        int max_count_per_pagination_page = 14;
         int page = 1;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
@@ -167,9 +166,9 @@ public class VscoCo extends PluginForDecrypt {
                     distribute(dl);
                 }
                 logger.info("Crawled page " + page + " | Items crawled so far: " + ret.size() + " | nextCursor: " + nextCursor);
-                if (mediaArray.size() < max_count_per_page) {
+                if (mediaArray.size() < max_count_per_pagination_page) {
                     /* Fail safe */
-                    logger.info("Stopping because: Current page contains less items than " + max_count_per_page);
+                    logger.info("Stopping because: Current page contains less items than " + max_count_per_pagination_page);
                     break;
                 } else if (StringUtils.isEmpty(nextCursor)) {
                     logger.info("Stopping because: No nextCursor available");
@@ -179,7 +178,7 @@ public class VscoCo extends PluginForDecrypt {
                     break;
                 } else {
                 }
-            } while (ret.size() < amount_total);
+            } while (true);
         }
         return ret;
     }

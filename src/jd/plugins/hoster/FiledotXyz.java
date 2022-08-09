@@ -43,7 +43,7 @@ public class FiledotXyz extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "filedot.xyz" });
+        ret.add(new String[] { "filedot.to", "filedot.xyz" });
         return ret;
     }
 
@@ -58,6 +58,12 @@ public class FiledotXyz extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-08-09: Main domain has changed from filedot.xyz to filedot.to. */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
@@ -80,13 +86,13 @@ public class FiledotXyz extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 

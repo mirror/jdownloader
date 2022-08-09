@@ -47,7 +47,7 @@ public class SexalarabCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-%]+/?|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?!categories|category|latest-updates|models|most-popular|search|tags?|top-rated)[a-z0-9\\-%]+/?|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }

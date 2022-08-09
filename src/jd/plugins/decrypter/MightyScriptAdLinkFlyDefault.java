@@ -140,7 +140,7 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             "shortawy.com",
             /** up4cash.com links */
             "up4cash.com",
-            /** ier.ai links */
+            /** 2022-08-09: ier.ai links */
             "ier.ai" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});

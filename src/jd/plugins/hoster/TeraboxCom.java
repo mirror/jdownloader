@@ -269,15 +269,12 @@ public class TeraboxCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("https://www." + this.getHost() + "/disk/home");
         final String bdstoken = br.getRegex("\"bdstoken\":\"([a-f0-9]{32})\"").getMatch(0);
-        if (bdstoken != null) {
+        if (bdstoken == null) {
+            return false;
+        } else {
             account.setProperty(PROPERTY_ACCOUNT_TOKEN, bdstoken);
-        }
-        /* NOT logged in --> Redirect to mainpage */
-        if (br.getURL().contains("/disk/home")) {
             account.saveCookies(this.br.getCookies(this.getHost()), "");
             return true;
-        } else {
-            return false;
         }
     }
 

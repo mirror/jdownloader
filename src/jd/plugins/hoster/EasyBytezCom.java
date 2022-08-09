@@ -25,7 +25,6 @@ import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -130,11 +129,6 @@ public class EasyBytezCom extends XFileSharingProBasic {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /* 2019-08-06: Special */
-        if (AccountType.FREE.equals(account.getType()) && link.getView().getBytesTotal() > account.getAccountInfo().getTrafficLeft()) {
-            // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reconnect required to reset free account traffic", 15 * 60 * 1000l);
-            throw new AccountUnavailableException("Reconnect required to reset free account traffic", 15 * 60 * 1000l);
-        }
         super.handlePremium(link, account);
     }
 
@@ -156,10 +150,9 @@ public class EasyBytezCom extends XFileSharingProBasic {
         }
         if (AccountType.FREE.equals(account.getType())) {
             /*
-             * 2019-08-06: Special: Allow downloads even if account does not have enough traffic. By performing a reconnect we can reset
-             * that limit and the account will have full traffic again (2 GB/day[?])
+             * Special: Allow downloads even if account does not have enough traffic. By performing a reconnect we can reset that limit and
+             * the account will have full traffic again (2 GB/day[?])
              */
-            ai.setSpecialTraffic(true);
             account.setAllowReconnectToResetLimits(true);
         }
         return ai;
