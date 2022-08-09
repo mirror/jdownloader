@@ -287,7 +287,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
             }
         } finally {
             /* Something went seriously wrong? Use fallback filename! */
-            if (StringUtils.isEmpty(fileInfo[0])) {
+            if (StringUtils.isEmpty(fileInfo[0]) && !link.isNameSet()) {
                 link.setName(getFallbackFilename(link));
             }
         }

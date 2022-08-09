@@ -23,6 +23,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -93,7 +94,9 @@ public class WebmshareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String fid = this.getFID(link);
-        link.setFinalFileName(fid + ".webm");
+        if (!link.isNameSet()) {
+            link.setName(fid + ".webm");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -103,6 +106,10 @@ public class WebmshareCom extends PluginForHost {
         } else if (!isVideoContent) {
             /* E.g. https://webmshare.com/terms */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String title = br.getRegex("property=\"og:title\" content=\"([^\"]+) — webmshare\"").getMatch(0);
+        if (title != null) {
+            link.setFinalFileName(Encoding.htmlDecode(title).trim() + ".webm");
         }
         if (!link.isSizeSet()) {
             URLConnectionAdapter con = null;

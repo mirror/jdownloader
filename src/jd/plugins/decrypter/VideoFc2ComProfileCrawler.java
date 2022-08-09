@@ -24,6 +24,7 @@ import org.appwork.utils.Regex;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -72,7 +73,9 @@ public class VideoFc2ComProfileCrawler extends PluginForDecrypt {
         final String userID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl() + "/content");
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new AccountRequiredException();
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String username = br.getRegex("class=\"memberName\"[^<]*>([^<]+)<").getMatch(0);
@@ -89,9 +92,14 @@ public class VideoFc2ComProfileCrawler extends PluginForDecrypt {
         final String expectedNumberofItemsHumanReadable;
         if (expectedNumberofItemsStr != null) {
             expectedNumberofItemsHumanReadable = expectedNumberofItemsStr;
+            expectedNumberofItems = Integer.parseInt(expectedNumberofItemsStr);
         } else {
             expectedNumberofItemsHumanReadable = "??";
             expectedNumberofItems = -1;
+        }
+        if (expectedNumberofItems == 0) {
+            logger.info("Empty profile");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;

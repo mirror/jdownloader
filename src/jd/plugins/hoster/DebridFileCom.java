@@ -17,17 +17,19 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -44,15 +46,12 @@ import jd.plugins.components.MultiHosterManagement;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-file.com" }, urls = { "" })
 public class DebridFileCom extends PluginForHost {
     /* This is a "updated" version of website tout-debrid.ch */
-    private static final String          WEBSITE_BASE                 = "https://debrid-file.com";
-    private static MultiHosterManagement mhm                          = new MultiHosterManagement("debrid-file.com");
-    private static final boolean         account_PREMIUM_resume       = true;
+    private static final String          WEBSITE_BASE = "https://debrid-file.com";
+    private static MultiHosterManagement mhm          = new MultiHosterManagement("debrid-file.com");
+    private static final boolean         resume       = true;
     /** 2020-05-22: PHG: In my tests, it is OK for the chunkload with the value of 10 */
-    private static final int             account_PREMIUM_maxchunks    = -10;
-    private static final int             account_PREMIUM_maxdownloads = -1;
-    private static final boolean         account_FREE_resume          = true;
-    private static final int             account_FREE_maxchunks       = 1;
-    private static final int             account_FREE_maxdownloads    = 1;
+    private static final int             maxchunks    = -10;
+    private static final int             maxdownloads = -1;
 
     @SuppressWarnings("deprecation")
     public DebridFileCom(PluginWrapper wrapper) {
@@ -67,7 +66,7 @@ public class DebridFileCom extends PluginForHost {
 
     private Browser prepBR(final Browser br) {
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
+        // br.getHeaders().put("User-Agent", "JDownloader");
         return br;
     }
 
@@ -86,32 +85,6 @@ public class DebridFileCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private void handleDLMultihoster(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        if (StringUtils.isEmpty(dllink)) {
-            mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
-        }
-        link.setProperty(this.getHost() + "directlink", dllink);
-        final boolean resume;
-        final int maxchunks;
-        if (account.getType() == AccountType.PREMIUM) {
-            resume = account_PREMIUM_resume;
-            maxchunks = account_PREMIUM_maxchunks;
-        } else {
-            resume = account_FREE_resume;
-            maxchunks = account_FREE_maxchunks;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
-        }
-        this.dl.startDownload();
-    }
-
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
@@ -121,79 +94,91 @@ public class DebridFileCom extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBR(this.br);
         mhm.runCheck(account, link);
-        String dllink = checkDirectLink(link, this.getHost() + "directlink");
-        br.setFollowRedirects(true);
-        if (dllink == null) {
-            this.loginWebsite(account);
+        if (!attemptStoredDownloadurlDownload(link)) {
+            br.setFollowRedirects(true);
+            this.loginWebsite(account, false);
             br.getPage(WEBSITE_BASE + "/service");
             final String csrfTokenStr = br.getRegex("meta name=\"csrf-token\" content=\"(.*?)>").getMatch(0);
-            br.setHeader("referer", WEBSITE_BASE + "/service");
+            br.setHeader("Referer", WEBSITE_BASE + "/service");
             br.setHeader("x-csrf-token", csrfTokenStr);
             br.postPage("/service/get-link", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            dllink = br.getRegex("href='(http[^<>\"\\']+)'>").getMatch(0);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String html = entries.get("html").toString();
+            final String dllink = new Regex(html, "href='(http[^<>\"\\']+)'>").getMatch(0);
             if (dllink == null) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
-            } else {
-                dllink = dllink.replace("\\", "");
+                final String errormsg = new Regex(html, "class=\"alert alert-danger\">([^<]+)</div>").getMatch(0);
+                if (errormsg != null) {
+                    mhm.handleErrorGeneric(account, link, errormsg, 50, 5 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 5 * 60 * 1000l);
+                }
+            }
+            link.setProperty(this.getHost() + "directlink", dllink);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to downloadable content", 10, 5 * 60 * 1000l);
             }
         }
-        handleDLMultihoster(account, link, dllink);
+        this.dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                } else {
-                    throw new IOException();
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
+        final String url = link.getStringProperty(this.getHost() + "directlink");
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        boolean valid = false;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
+                return true;
+            } else {
+                link.removeProperty(this.getHost() + "directlink");
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return false;
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
                 }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
+                this.dl = null;
             }
         }
-        return null;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
-        loginWebsite(account);
-        if (br.getURL() == null || !br.getURL().contains("/service")) {
-            br.getPage(WEBSITE_BASE + "/?language-picker-language=en-US");
-            br.getPage(WEBSITE_BASE + "/service");
-        }
+        loginWebsite(account, true);
         final String premiumDaysStr = br.getRegex("(Premium :|VIP\\sexpires\\sin)\\s*(\\d+)\\s*<small").getMatch(1);
         String trafficleftStr = br.getRegex("</small>((<b>(\\d+(\\.|)\\d{1,2} [A-Za-z]+)</b>)|<strong>([A-Za-zé]+)</strong>)").getMatch(0);
-        if (premiumDaysStr == null) {
-            /* Free or plugin failure */
-            /*
-             * account.setType(AccountType.FREE); ai.setTrafficMax("10 GB"); ai.setStatus("Free Account");
-             * account.setMaxSimultanDownloads(account_FREE_maxdownloads); account.setValid(true);
-             */
-            // 2020.03.27 : phg : Free Accounts are not allowed for this plugin
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Plugin for premium accounts only");
-        } else {
+        if (trafficleftStr == null) {
+            /* 2022-08-09 */
+            trafficleftStr = br.getRegex("<strong id=\"trafficLeft\"[^>]*>([^<]+)<").getMatch(0);
+        }
+        if (premiumDaysStr != null) {
             /* Premium */
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account");
-            account.setMaxSimultanDownloads(account_PREMIUM_maxdownloads);
             ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(premiumDaysStr) * 24 * 60 * 60 * 1000l, this.br);
+        } else {
+            /* Free or plugin failure */
+            account.setType(AccountType.FREE);
+            ai.setTrafficMax("10 GB");
         }
+        account.setMaxSimultanDownloads(maxdownloads);
         if (trafficleftStr == null) {
             /* Downloads are not possible if the traffic has not be retrieved */
             ai.setTrafficLeft(0);
@@ -211,16 +196,27 @@ public class DebridFileCom extends PluginForHost {
         return ai;
     }
 
-    private void loginWebsite(final Account account) throws IOException, PluginException, InterruptedException {
+    private void loginWebsite(final Account account, final boolean verifyCookies) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
-                br.getPage(WEBSITE_BASE + "/?language-picker-language=en-US");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Trying to login via cookies");
                     br.setCookies(WEBSITE_BASE, cookies);
-                    br.getPage(WEBSITE_BASE + "/site/login");
+                    if (!verifyCookies) {
+                        /* Do not check cookies */
+                        return;
+                    }
+                    br.getPage(WEBSITE_BASE + "/?language-picker-language=en-US");
+                    /* Small workaround to prevent unwanted redirect: Website redirects to "/pay" in 120 seconds! */
+                    final boolean followRedirectsOld = br.isFollowingRedirects();
+                    try {
+                        br.setFollowRedirects(false);
+                        br.getPage("/service");
+                    } finally {
+                        br.setFollowRedirects(followRedirectsOld);
+                    }
                     if (this.isLoggedIN(this.br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getHost()), "");
@@ -230,6 +226,7 @@ public class DebridFileCom extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
+                br.getPage(WEBSITE_BASE + "/?language-picker-language=en-US");
                 br.getPage(WEBSITE_BASE + "/site/login");
                 final Form loginform = br.getFormbyAction("/site/login");
                 if (loginform == null) {
@@ -278,14 +275,11 @@ public class DebridFileCom extends PluginForHost {
              * previous code as it is not a temporary account error but a fatal plugin error
              */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Blocked by Debrid-File");
+        } else if (br.containsHTML("/site/logout")) {
+            return true;
+        } else {
+            return false;
         }
-        boolean bCookieOK = br.getCookie(br.getHost(), "advanced-frontend", Cookies.NOTDELETEDPATTERN) != null;
-        if (bCookieOK) {
-            if (br.containsHTML("Connexion")) {
-                bCookieOK = false;
-            }
-        }
-        return bCookieOK;
     }
 
     @Override

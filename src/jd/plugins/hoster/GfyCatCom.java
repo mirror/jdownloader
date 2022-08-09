@@ -244,6 +244,7 @@ public class GfyCatCom extends PluginForHost {
                 }
             }
             final Browser brapi = br.cloneBrowser();
+            brapi.setAllowedResponseCodes(410);
             GetRequest request = brapi.createGetRequest("https://api.redgifs.com/v1/gfycats/" + this.getFID(link));
             request.getHeaders().put("Origin", "https://redgifs.com/");
             if (token != null) {
@@ -252,6 +253,8 @@ public class GfyCatCom extends PluginForHost {
             request.getHeaders().put("Authorization", "Bearer " + token);
             brapi.getPage(request);
             if (brapi.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (brapi.getHttpConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             Map<String, Object> entries = JSonStorage.restoreFromString(brapi.toString(), TypeRef.HASHMAP);
