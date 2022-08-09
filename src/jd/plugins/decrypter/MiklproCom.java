@@ -43,7 +43,8 @@ public class MiklproCom extends MightyScriptAdLinkFly {
         final String base64Str = query.get("k");
         final String urlContainingTimestamp = Encoding.Base64Decode(base64Str);
         final UrlQuery query2 = UrlQuery.parse(urlContainingTimestamp);
-        final String timestamp = query2.get("d");
+        String timestamp = query2.get("d");
+        timestamp = Encoding.Base64Decode(timestamp);
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl() + "/?d=" + timestamp);
         if (this.regexAppVars(this.br) == null) {
