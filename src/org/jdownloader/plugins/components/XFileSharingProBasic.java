@@ -4777,16 +4777,21 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                     Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     final List<Object> ressourcelist = (List<Object>) entries.get("result");
                     for (final DownloadLink link : apiLinkcheckLinks) {
-                        boolean foundResult = false;
+                        Map<String, Object> fileInfo = null;
+                        final String thisFUID = this.getFUIDFromURL(link);
                         for (final Object fileO : ressourcelist) {
-                            entries = (Map<String, Object>) fileO;
-                            final String fuid_temp = (String) entries.get("filecode");
-                            if (fuid_temp != null && fuid_temp.equalsIgnoreCase(this.getFUIDFromURL(link))) {
-                                foundResult = true;
+                            final Map<String, Object> fileInfoTmp = (Map<String, Object>) fileO;
+                            String fuid_temp = (String) fileInfoTmp.get("filecode");
+                            if (StringUtils.isEmpty(fuid_temp)) {
+                                /* 2022-08-09 */
+                                fuid_temp = (String) fileInfoTmp.get("file_code");
+                            }
+                            if (StringUtils.equals(fuid_temp, thisFUID)) {
+                                fileInfo = fileInfoTmp;
                                 break;
                             }
                         }
-                        if (!foundResult) {
+                        if (fileInfo == null) {
                             /**
                              * This should never happen. Possible reasons: </br>
                              * - Wrong APIKey </br>
@@ -4799,7 +4804,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                             continue;
                         }
                         /* E.g. check for "result":[{"status":404,"filecode":"xxxxxxyyyyyy"}] */
-                        final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 404);
+                        final long status = JavaScriptEngineFactory.toLong(fileInfo.get("status"), 404);
                         if (status != 200) {
                             link.setAvailable(false);
                             if (!link.isNameSet()) {
@@ -4807,12 +4812,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                             }
                         } else {
                             link.setAvailable(true);
-                            String filename = (String) entries.get("name");
-                            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                            final Object canplay = entries.get("canplay");
-                            final Object views_started = entries.get("views_started");
-                            final Object views = entries.get("views");
-                            final Object length = entries.get("length");
+                            String filename = (String) fileInfo.get("name");
+                            if (StringUtils.isEmpty(filename)) {
+                                filename = (String) fileInfo.get("file_title");
+                            }
+                            final long filesize = JavaScriptEngineFactory.toLong(fileInfo.get("size"), 0);
+                            final Object canplay = fileInfo.get("canplay");
+                            final Object views_started = fileInfo.get("views_started");
+                            final Object views = fileInfo.get("views");
+                            final Object length = fileInfo.get("length");
                             final boolean isVideohost = canplay != null || views_started != null || views != null || length != null;
                             if (!StringUtils.isEmpty(filename)) {
                                 /*
