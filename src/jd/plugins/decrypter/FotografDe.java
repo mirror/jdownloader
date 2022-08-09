@@ -80,7 +80,8 @@ public class FotografDe extends PluginForDecrypt {
         br.setFollowRedirects(true);
         /* 2022-06-11: No matter which URL the user adds we will most likely be redirected to /login */
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404 || getPassForm(br) == null) {
+        final boolean looksLikeBadLink = br.getHttpConnection().getResponseCode() == 404;
+        if (looksLikeBadLink || getPassForm(br) == null) {
             /* Fallback in case user adds bad URL. */
             logger.info("Executing fallback");
             br.getPage("/login");
@@ -91,7 +92,14 @@ public class FotografDe extends PluginForDecrypt {
         for (int i = 0; i <= 2; i++) {
             final Form passform = getPassForm(br);
             if (passform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (looksLikeBadLink) {
+                    logger.info("Link is offline");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    /* E.g. https://www.fotograf.de/agb/ or https://www.fotograf.de/preise */
+                    logger.info("Link seems to be offline");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
             passCode = getUserInput("Password?", param);
             passform.put(Encoding.urlEncode("data[GuestAccess][code][]"), Encoding.urlEncode(passCode));

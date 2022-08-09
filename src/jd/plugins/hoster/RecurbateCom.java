@@ -57,15 +57,15 @@ public class RecurbateCom extends antiDDoSForHost {
 
     /* DEV NOTES */
     // Tags: Porn plugin
-    // other:
     /* Connection stuff */
     /* Global limits */
-    private static final boolean resume               = true;
-    private static final int     free_maxchunks       = -2;
+    private final boolean resume               = true;
+    private final int     free_maxchunks       = -2;
     /* Free (+ free account) and premium specific limits */
-    private static final int     free_maxdownloads    = 1;
-    private static final int     premium_maxdownloads = 10;
-    private static final String  PROPERTY_USER        = "username";
+    private final int     free_maxdownloads    = 1;
+    private final int     premium_maxdownloads = 10;
+    private final String  PROPERTY_DATE        = "date";
+    private final String  PROPERTY_USER        = "username";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -120,8 +120,19 @@ public class RecurbateCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String date = br.getRegex("(?i)show recorded at (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        if (date == null) {
+            date = br.getRegex("(?i)show on (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        }
+        if (date != null) {
+            link.setProperty(PROPERTY_DATE, date);
+        }
         String performer = br.getRegex("/performer/([^/\"<>]+)").getMatch(0);
-        if (performer != null) {
+        if (date != null && performer != null) {
+            performer = Encoding.htmlDecode(performer).trim();
+            link.setProperty(PROPERTY_USER, performer);
+            link.setFinalFileName(date + "_" + performer + "_" + this.getFID(link) + ".mp4");
+        } else if (performer != null) {
             performer = Encoding.htmlDecode(performer).trim();
             link.setProperty(PROPERTY_USER, performer);
             link.setFinalFileName(performer + "_" + this.getFID(link) + ".mp4");

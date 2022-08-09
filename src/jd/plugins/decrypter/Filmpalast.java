@@ -24,28 +24,40 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filmpalast.to" }, urls = { "https?://(www\\.)?filmpalast\\.to/stream/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filmpalast.to" }, urls = { "https?://(?:www\\.)?filmpalast\\.to/stream/([a-z0-9\\-]+)" })
 public class Filmpalast extends PluginForDecrypt {
     public Filmpalast(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = br.getRegex("<title>(?:Serie|Film)\\s*([^<]+)\\s*kostenlos online in HD anschauen").getMatch(0);
-        String[][] links = br.getRegex("data-player-url=\"([^\"]+)\"").getMatches();
-        for (String[] link : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link[0])));
+        final String[] streamLinks = br.getRegex("data-player-url=\"([^\"]+)\"").getColumn(0);
+        if (streamLinks != null && streamLinks.length > 0) {
+            for (final String link : streamLinks) {
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+            }
+        }
+        final String[] downloadlinks = br.getRegex("class=\"button rb iconPlay\" target=\"_blank\" href=\"([^\"]+)\"").getColumn(0);
+        if (downloadlinks != null && downloadlinks.length > 0) {
+            for (final String link : downloadlinks) {
+                decryptedLinks.add(createDownloadlink(link));
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
