@@ -17,9 +17,15 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -32,7 +38,7 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "clicksfly.com", "gifsis.com", "blogginggyanbox.com", "buyitonline.store", "clk.ink", "counsellingresult2016.in", "yourtechguider.com", "1921681254.tech", "iitjeemainguide.in", "yesmoviesapp.info", "newskart.xyz", "funnyquiz.blog", "fabsdeals.com", "utimetableresult.in", "geki.tech", "govtsmartjob.com", "clkfly.pw", "technodia.xyz", "ourtechnoew.xyz", "mutharammss.xyz", "viralcollect.info", "govtsmartjob.com", "clk.asia" });
+        ret.add(new String[] { "clicksfly.com", "clkfly.pw", "clk.asia" });
         return ret;
     }
 
@@ -54,6 +60,21 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br.getPage(param.getCryptedUrl());
+        Form form = br.getForm(0);
+        form.setAction(Encoding.urlDecode(form.getInputField("url").getValue(), true));
+        submitForm(form);
+        Thread.sleep(30000);
+        form = br.getForm(0);
+        br.setHeader("x-requested-with", "XMLHttpRequest");
+        submitForm(form);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        String finallink = (String) entries.get("url");
+        if (finallink != null) {
+            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            decryptedLinks.add(createDownloadlink(finallink));
+            return decryptedLinks;
+        }
         return super.decryptIt(param, progress);
     }
 
