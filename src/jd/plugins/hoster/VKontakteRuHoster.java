@@ -420,6 +420,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         link.setProperty(PROPERTY_VIDEO_SELECTED_QUALITY, quality);
                         /* Correct filename which did not contain any quality modifier before. */
                         link.setFinalFileName(link.getStringProperty(PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + quality + ".mp4");
+                        this.finalUrl = result.getStringProperty(PROPERTY_GENERAL_directlink);
                     }
                 }
             } else {

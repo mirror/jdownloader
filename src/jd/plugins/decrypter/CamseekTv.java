@@ -39,6 +39,6 @@ public class CamseekTv extends PornEmbedParser {
     }
 
     protected boolean isOffline(final Browser br) {
-        return jd.plugins.hoster.KamababaCom.isOfflineByErrorOrResponsecode(br);
+        return jd.plugins.hoster.KamababaCom.isOffline404(br);
     }
 }

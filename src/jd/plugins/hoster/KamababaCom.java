@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,9 +33,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.KamababaComCrawler;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { KamababaComCrawler.class })
@@ -107,7 +107,7 @@ public class KamababaCom extends PluginForHost {
         return br.getRegex("<meta itemprop=\\\"name\\\" content=\\\"([^<>\\\"]+)\\\" />").getMatch(0);
     }
 
-    public static final boolean isOfflineByErrorOrResponsecode(final Browser br) {
+    public static final boolean isOffline404(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
         } else {
@@ -116,8 +116,24 @@ public class KamababaCom extends PluginForHost {
     }
 
     public static final boolean isOffline(final Browser br) {
-        final boolean offlineNoVideoContent = !br.containsHTML("schema\\.org/VideoObject") && !br.containsHTML("class=\"video-player\"");
-        return isOfflineByErrorOrResponsecode(br) || offlineNoVideoContent;
+        if (isOffline404(br)) {
+            return true;
+        } else {
+            if (!isSelfhostedContent(br)) {
+                /* No video content --> Offline */
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public static boolean isSelfhostedContent(final Browser br) {
+        if (br.containsHTML("schema\\.org/VideoObject") || br.containsHTML("class=\"video-player\"")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
