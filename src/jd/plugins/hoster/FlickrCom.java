@@ -1000,19 +1000,11 @@ public class FlickrCom extends PluginForHost {
         final String formattedDate = formatToUserDefinedDate(link.getLongProperty(PROPERTY_DATE, 0), userDefinedDateFormat, customStringForEmptyTags);
         final String formattedDateTaken = formatToUserDefinedDate(link.getLongProperty(PROPERTY_DATE_TAKEN, 0), userDefinedDateFormat, customStringForEmptyTags);
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) {
+        if (StringUtils.isEmpty(formattedFilename)) {
             formattedFilename = defaultCustomFilename;
         } else {
-            final String[] requiredFilenameTags = new String[] { "content_id", "date", "date_taken", "username", "username_internal", "username_full", "username_url" };
-            boolean filenameFormatContainsAtLeastOneRequiredTag = false;
-            for (final String requiredFilenameTag : requiredFilenameTags) {
-                if (formattedFilename.contains("*" + requiredFilenameTag + "*")) {
-                    filenameFormatContainsAtLeastOneRequiredTag = true;
-                    break;
-                }
-            }
-            if (!formattedFilename.endsWith("*extension*") || !filenameFormatContainsAtLeastOneRequiredTag) {
-                /* Ensure that the user entered a somewhat 'valid' custom filename pattern - if not, use the default name */
+            if (!formattedFilename.endsWith("*extension*")) {
+                /* Fallback: Ensure that the user entered a somewhat 'valid' custom filename pattern - if not, use the default name */
                 formattedFilename = defaultCustomFilename;
             }
         }

@@ -128,8 +128,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "goodporn.to" });
         /* 2022-05-02 */
         ret.add(new String[] { "heavyfetish.com" });
-        /* 2022-05-19 */
-        ret.add(new String[] { "whoreshub.com" });
         /* 2022-06-05 */
         ret.add(new String[] { "fapcat.com" });
         /* 2022-07-08 */

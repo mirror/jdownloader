@@ -113,6 +113,9 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
             if (ret.isEmpty() && assumeSelfhostedContentOnNoResults()) {
                 ret.add(getDownloadLinkSelfhosted(param, br));
             }
+            if (ret.isEmpty() && assumeOfflineOnNoResults()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return ret;
         }
     }
@@ -163,6 +166,11 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
 
     /** Assumes that content is selfhosted if no external results are found. */
     protected boolean assumeSelfhostedContentOnNoResults() {
+        return false;
+    }
+
+    /** Override this and return true if FILE_NOT_FOUND exception should be thrown if there are no results. */
+    protected boolean assumeOfflineOnNoResults() {
         return false;
     }
 
