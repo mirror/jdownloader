@@ -9,7 +9,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "pornerone.com", type = Type.HOSTER)
+@PluginHost(host = "pornone.com", type = Type.HOSTER)
 public interface PornoneComConfig extends PluginConfigInterface {
     public static enum PreferredStreamQuality implements LabelInterface {
         BEST {

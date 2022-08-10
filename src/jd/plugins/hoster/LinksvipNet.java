@@ -24,7 +24,6 @@ import java.util.Locale;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -35,6 +34,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -53,7 +53,6 @@ public class LinksvipNet extends PluginForHost {
     private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     private static final boolean                           USE_API                   = false;
     private final String                                   website_html_loggedin     = "/login/logout\\.php";
-    private static Object                                  LOCK                      = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currentAcc                = null;
     private DownloadLink                                   currentLink               = null;
@@ -121,7 +120,7 @@ public class LinksvipNet extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = prepBRWebsite(this.br);
+        prepBRWebsite(this.br);
         setConstants(account, link);
         mhm.runCheck(currentAcc, currentLink);
         synchronized (hostUnavailableMap) {
@@ -166,7 +165,7 @@ public class LinksvipNet extends PluginForHost {
     private String getDllinkWebsite(final DownloadLink link) throws IOException, PluginException {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        this.postAPISafe("https://" + this.getHost() + "/GetLinkFs", "pass=undefined&hash=undefined&captcha=&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+        br.postPage("https://" + this.getHost() + "/GetLinkFs", "pass=undefined&hash=undefined&captcha=&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
         final String dllink = PluginJSonUtils.getJsonValue(this.br, "linkvip");
         return dllink;
     }
@@ -178,8 +177,6 @@ public class LinksvipNet extends PluginForHost {
             final String contenttype = dl.getConnection().getContentType();
             if (contenttype.contains("html")) {
                 br.followConnection();
-                updatestatuscode();
-                handleAPIErrors(this.br);
                 mhm.handleErrorGeneric(currentAcc, currentLink, "unknowndlerror", 2, 5 * 60 * 1000l);
             }
             this.dl.startDownload();
@@ -217,7 +214,7 @@ public class LinksvipNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        this.br = prepBRWebsite(this.br);
+        prepBRWebsite(this.br);
         final AccountInfo ai;
         if (USE_API) {
             ai = fetchAccountInfoAPI(account);
@@ -263,15 +260,11 @@ public class LinksvipNet extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             /* Load cookies */
             br.setCookiesExclusive(true);
-            this.br = prepBRWebsite(this.br);
-            if (USE_API) {
-                loginAPI(account, force);
-            } else {
-                loginWebsite(account, force);
-            }
+            prepBRWebsite(this.br);
+            loginWebsite(account, force);
         }
     }
 
@@ -280,6 +273,10 @@ public class LinksvipNet extends PluginForHost {
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Do not check cookies */
+                    return;
+                }
                 /*
                  * Even though login is forced first check if our cookies are still valid --> If not, force login!
                  */
@@ -295,47 +292,20 @@ public class LinksvipNet extends PluginForHost {
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            this.postAPISafe("/login/", "auto_login=checked&u=" + Encoding.urlEncode(currentAcc.getUser()) + "&p=" + Encoding.urlEncode(currentAcc.getPass()));
+            br.postPage("/login/", "auto_login=checked&u=" + Encoding.urlEncode(currentAcc.getUser()) + "&p=" + Encoding.urlEncode(currentAcc.getPass()));
             final String status = PluginJSonUtils.getJson(br, "status");
             if ("1".equals(status)) {
                 /* Login should be okay and we should get the cookies now! */
                 br.getPage("/login/logined.php");
             }
             if (!br.containsHTML(website_html_loggedin)) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new AccountInvalidException();
             }
             account.saveCookies(this.br.getCookies(this.getHost()), "");
         } catch (final PluginException e) {
             account.clearCookies("");
             throw e;
         }
-    }
-
-    private void loginAPI(final Account account, final boolean force) throws Exception {
-    }
-
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
-        br.getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-    }
-
-    private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-        br.postPage(accesslink, postdata);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-    }
-
-    /** Keep this for possible future API implementation */
-    private void updatestatuscode() {
-    }
-
-    /** Keep this for possible future API implementation */
-    private void handleAPIErrors(final Browser br) throws PluginException {
     }
 
     @Override
