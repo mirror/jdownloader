@@ -4829,8 +4829,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                                 if (Encoding.isHtmlEntityCoded(filename)) {
                                     filename = Encoding.htmlDecode(filename);
                                 }
-                                if (isVideohost && !StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
-                                    filename += ".mp4";
+                                if (isVideohost) {
+                                    filename = this.correctOrApplyFileNameExtension(filename, ".mp4");
                                 }
                                 link.setFinalFileName(filename);
                             } else {
