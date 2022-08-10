@@ -169,7 +169,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         return false;
     }
 
-    /** Override this and return true if FILE_NOT_FOUND exception should be thrown if there are no results. */
+    /** Override this and return true if PluginException with LinkStatus FILE_NOT_FOUND should be thrown if no results were found. */
     protected boolean assumeOfflineOnNoResults() {
         return false;
     }
