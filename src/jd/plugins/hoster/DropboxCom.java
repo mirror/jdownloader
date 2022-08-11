@@ -466,7 +466,7 @@ public class DropboxCom extends PluginForHost {
                     link.setProperty(PROPERTY_PASSWORD_COOKIE, password_cookie);
                 }
                 link.setDownloadPassword(passCode);
-                dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
+                dllink = this.getOldDirecturl(link);
             } else {
                 resume_supported = true;
                 dllink = this.getOldDirecturl(link);
