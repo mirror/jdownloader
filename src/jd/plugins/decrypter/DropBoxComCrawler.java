@@ -20,10 +20,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.components.config.DropBoxConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -41,22 +56,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DropboxCom;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.plugins.components.config.DropBoxConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|s|sc)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
-public class DropBoxCom extends PluginForDecrypt {
-    public DropBoxCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/(?:(?:sh|s|sc|scl)/[^<>\"]+|l/[A-Za-z0-9]+).*|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+|https?://dl\\.dropboxusercontent\\.com/s/.+" })
+public class DropBoxComCrawler extends PluginForDecrypt {
+    public DropBoxComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -80,17 +82,17 @@ public class DropBoxCom extends PluginForDecrypt {
          * we'll run into problems for sure!
          */
         final Browser dummy_login_browser = new Browser();
-        final boolean canLoginViaAPI = jd.plugins.hoster.DropboxCom.setAPILoginHeaders(dummy_login_browser, account);
+        final boolean canLoginViaAPI = DropboxCom.setAPILoginHeaders(dummy_login_browser, account);
         final boolean urlCanBeCrawledViaAPI = !param.toString().contains("disallow_crawl_via_api=true") && !param.toString().matches(DropboxCom.TYPE_SC_GALLERY);
         final boolean canUseAPI = canLoginViaAPI && urlCanBeCrawledViaAPI;
-        if (canUseAPI && jd.plugins.hoster.DropboxCom.useAPI()) {
+        if (canUseAPI && DropboxCom.useAPI()) {
             br = dummy_login_browser;
             /**
              * 2019-09-19: TODO: Check if there is a way to use this part of their API without logging in e.g. general authorization header
              * provided by our official Dropbox developer account! Then make sure we do not run into some kind of rate-limit!
              */
-            jd.plugins.hoster.DropboxCom.prepBrAPI(this.br);
-            jd.plugins.hoster.DropboxCom.setAPILoginHeaders(this.br, account);
+            DropboxCom.prepBrAPI(this.br);
+            DropboxCom.setAPILoginHeaders(this.br, account);
             return crawlViaAPI(param);
         } else {
             return crawlViaWebsite(param);
@@ -98,16 +100,9 @@ public class DropBoxCom extends PluginForDecrypt {
     }
 
     private String correctAddedURL(final String url_original) {
-        String url_new;
-        final String args = new Regex(url_original, "(\\?.+)").getMatch(0);
-        if (args != null) {
-            /* Remove that from our initial URL. */
-            url_new = url_original.replace(args, "");
-        } else {
-            url_new = url_original;
-        }
-        if (url_new.matches(TYPE_DIRECTLINK_OLD)) {
-            url_new = "https://www." + this.getHost() + "/s/" + new Regex(url_new, TYPE_DIRECTLINK_OLD).getMatch(0);
+        String url_new = url_original;
+        if (url_original.matches(TYPE_DIRECTLINK_OLD)) {
+            url_new = "https://www." + this.getHost() + "/s/" + new Regex(url_original, TYPE_DIRECTLINK_OLD).getMatch(0);
         }
         if (!url_new.equals(url_original)) {
             logger.info("Added URL has been changed: " + url_original + " --> " + url_new);
@@ -131,7 +126,7 @@ public class DropBoxCom extends PluginForDecrypt {
         boolean is_root;
         boolean is_single_file = false;
         String path;
-        if (jd.plugins.hoster.DropboxCom.isSingleFile(parameter)) {
+        if (DropboxCom.isSingleFile(parameter)) {
             /* This is crucial to access single files!! */
             path = null;
             is_root = true;
@@ -174,8 +169,8 @@ public class DropBoxCom extends PluginForDecrypt {
                     postdata_get_shared_link_metadata += ",\"path\":\"" + path + "\"";
                 }
                 postdata_get_shared_link_metadata += ",\"link_password\":\"" + passCode + "\"}";
-                br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/sharing/get_shared_link_metadata", postdata_get_shared_link_metadata);
-                error_summary = jd.plugins.hoster.DropboxCom.getErrorSummaryField(this.br);
+                br.postPageRaw(DropboxCom.API_BASE + "/sharing/get_shared_link_metadata", postdata_get_shared_link_metadata);
+                error_summary = DropboxCom.getErrorSummaryField(this.br);
                 if (error_summary != null) {
                     if (error_summary.contains("shared_link_access_denied")) {
                         logger.info("URL appears to be password protected or your account is lacking the rights to view it");
@@ -230,7 +225,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 postdata_list_folder += ",\"path\":\"" + path + "\"";
             }
             postdata_list_folder += "}";
-            br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder", postdata_list_folder);
+            br.postPageRaw(DropboxCom.API_BASE + "/files/list_folder", postdata_list_folder);
         }
         int page = 0;
         do {
@@ -324,6 +319,7 @@ public class DropBoxCom extends PluginForDecrypt {
                         dl.setProperty(DropboxCom.PROPERTY_IS_SINGLE_FILE, true);
                     }
                     dl.setProperty(DropboxCom.PROPERTY_MAINPAGE, parameter);
+                    dl.setContainerUrl(parameter);
                     // dl.setProperty("serverside_path_full", serverside_path_full);
                     dl.setLinkID(this.getHost() + "://" + id);
                     dl.setContentUrl(parameter);
@@ -357,14 +353,14 @@ public class DropBoxCom extends PluginForDecrypt {
                  * 2019-09-20: I was not able to test this - tested with an example URL which contained over 1000 items but they all showed
                  * up on the first page!
                  */
-                br.postPageRaw(jd.plugins.hoster.DropboxCom.API_BASE + "/files/list_folder/continue", "{\"cursor\":\"" + cursor + "\"}");
+                br.postPageRaw(DropboxCom.API_BASE + "/files/list_folder/continue", "{\"cursor\":\"" + cursor + "\"}");
             }
         } while (has_more && !StringUtils.isEmpty(cursor) && !this.isAbort());
         return decryptedLinks;
     }
 
     private ArrayList<DownloadLink> crawlViaWebsite(final CryptedLink param) throws Exception {
-        jd.plugins.hoster.DropboxCom.prepBrWebsite(br);
+        DropboxCom.prepBrWebsite(br);
         /* Website may return hige amounts of json/html */
         br.setLoadLimit(br.getLoadLimit() * 4);
         final boolean enforceCrawlSubfoldersByProperty = param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_CRAWL_SUBFOLDERS);
@@ -500,7 +496,7 @@ public class DropBoxCom extends PluginForDecrypt {
         int page = page_start;
         String json_source = null;
         /* Contains information about current folder but not about subfolders and/or files! */
-        final String current_folder_json_source = br.getRegex("InitReact\\.mountComponent\\(mod,\\s*(\\{\"module_name\":\\s*\"modules/clean/react/shared_link_folder.*?\\})\\);").getMatch(0);
+        final String current_folder_json_source = br.getRegex("InitReact\\.mountComponent\\(mod, *(\\{[^\\n\\r]*?folderSharedLinkInfo[^\\n\\r]*?\\})\\);\\s+").getMatch(0);
         String currentRootFolderName = null;
         if (current_folder_json_source != null) {
             final Map<String, Object> folderInfo = JavaScriptEngineFactory.jsonToJavaMap(current_folder_json_source);
@@ -519,29 +515,52 @@ public class DropBoxCom extends PluginForDecrypt {
         } else {
             userReadableFolderName = "Unknown folder name";
         }
-        int current_numberof_items;
+        int current_page_numberof_items;
         int page_num = 0;
         String next_request_voucher = null;
         int website_max_items_per_page = 30;
+        final String rlkey = UrlQuery.parse(param.getCryptedUrl()).get("rlkey");
+        final Regex urlinfo0 = new Regex(param.getCryptedUrl(), "https://[^/]+/scl/([^/]+)/([^/]+)/([^/]+)");
+        final String link_key;
+        final String secure_hash;
+        final String link_type;
+        if (urlinfo0.matches()) {
+            link_type = "c";
+            link_key = urlinfo0.getMatch(1);
+            secure_hash = urlinfo0.getMatch(2);
+        } else {
+            link_type = "s";
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), "https?://[^/]+/([^/]+)/([^/]+)/([^/]+)");
+            // final String link_type_url = urlinfo.getMatch(0);
+            link_key = urlinfo.getMatch(1);
+            secure_hash = urlinfo.getMatch(2);
+        }
+        final String cookie_t = br.getCookie(getHost(), "t", Cookies.NOTDELETEDPATTERN);
         do {
             page_num++;
-            current_numberof_items = 0;
+            current_page_numberof_items = 0;
             logger.info("Crawling page: " + page_num);
             if (page == page_start) {
+                /* Try to obtain json from html code if we're on the first page. */
                 json_source = br.getRegex("REGISTER_SHARED_LINK_FOLDER_PRELOAD_HANDLER\"\\]\\.responseReceived\\(\"(\\{.*?\\})\"\\)\\}\\);").getMatch(0);
-                if (json_source == null) {
-                    /* Assume that folder is offline */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (json_source != null) {
+                    json_source = PluginJSonUtils.unescape(json_source);
+                } else {
+                    logger.info("Failed to find json source for folder content on first page --> Maybe ajax request is needed already");
                 }
-                json_source = PluginJSonUtils.unescape(json_source);
-            } else {
-                final Regex urlinfo = new Regex(param.getCryptedUrl(), "https?://[^/]+/sh/([^/]+)/([^/]+)");
-                final String link_key = urlinfo.getMatch(0);
-                final String secure_hash = urlinfo.getMatch(1);
-                final String cookie_t = br.getCookie(getHost(), "t");
-                if (StringUtils.isEmpty(next_request_voucher) || cookie_t == null || link_key == null || secure_hash == null) {
-                    logger.warning("Failed to find more content");
-                    break;
+            }
+            if (json_source == null || page != page_start) {
+                if (cookie_t == null || link_key == null || secure_hash == null) {
+                    if (decryptedLinks.isEmpty()) {
+                        /* Assume that folder is offline */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        logger.warning("Failed to find more content");
+                        break;
+                    }
+                } else if (StringUtils.isEmpty(next_request_voucher) && page_num > page_start) {
+                    /* next_request_voucher is required for pagination */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 String sub_path = PluginJSonUtils.getJson(current_folder_json_source, "subPath");
                 if (sub_path == null) {
@@ -549,17 +568,22 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
                 br.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.getHeaders().put("content-type", "application/x-www-form-urlencoded; charset=UTF-8");
-                br.getHeaders().put("Origin", "https://www.dropbox.com");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br.getHeaders().put("Origin", "https://www." + this.getHost());
                 final Form pagination_form = new Form();
                 pagination_form.setMethod(MethodType.POST);
-                pagination_form.setAction("https://www.dropbox.com/list_shared_link_folder_entries");
+                pagination_form.setAction("/list_shared_link_folder_entries");
                 pagination_form.put("is_xhr", "true");
                 pagination_form.put("link_key", link_key);
-                pagination_form.put("link_type", "s");
+                pagination_form.put("link_type", link_type);
                 pagination_form.put("secure_hash", secure_hash);
                 pagination_form.put("sub_path", sub_path);
-                pagination_form.put("voucher", Encoding.urlEncode(next_request_voucher));
+                if (rlkey != null) {
+                    pagination_form.put("rlkey", Encoding.urlEncode(rlkey));
+                }
+                if (next_request_voucher != null) {
+                    pagination_form.put("voucher", Encoding.urlEncode(next_request_voucher));
+                }
                 pagination_form.put("t", cookie_t);
                 br.submitForm(pagination_form);
                 json_source = br.toString();
@@ -573,6 +597,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 if (next_request_voucher.contains("\\\\")) {
                     next_request_voucher = PluginJSonUtils.unescape(next_request_voucher);
                 }
+                /* Dev-only! */
                 final boolean enterRequestVoucherDebugCode = false;
                 if (enterRequestVoucherDebugCode) {
                     final Map<String, Object> next_request_voucherMap = JSonStorage.restoreFromString(next_request_voucher, TypeRef.HASHMAP);
@@ -638,10 +663,11 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
             }
             if (!ressourcelist_files.isEmpty()) {
-                current_numberof_items += ressourcelist_files.size();
+                current_page_numberof_items += ressourcelist_files.size();
                 for (final Map<String, Object> file : ressourcelist_files) {
                     final DownloadLink dl = this.crawlFolderItem(file);
                     if (dl == null) {
+                        /* Skip invalid items */
                         continue;
                     }
                     if (!StringUtils.isEmpty(passCode)) {
@@ -662,7 +688,7 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
             }
             if (!ressourcelist_folders.isEmpty()) {
-                current_numberof_items += ressourcelist_folders.size();
+                current_page_numberof_items += ressourcelist_folders.size();
                 if (crawlSubfolders) {
                     for (final Map<String, Object> folder : ressourcelist_folders) {
                         final DownloadLink dl = this.crawlFolderItem(folder);
@@ -679,7 +705,7 @@ public class DropBoxCom extends PluginForDecrypt {
                     }
                 }
             }
-            if (current_numberof_items < website_max_items_per_page) {
+            if (current_page_numberof_items < website_max_items_per_page) {
                 logger.info("Stopping because: Current page contains less items than " + website_max_items_per_page);
                 break;
             } else if (StringUtils.isEmpty(next_request_voucher)) {
@@ -705,25 +731,25 @@ public class DropBoxCom extends PluginForDecrypt {
             dl = createSingleFileDownloadLink(url);
             /* Try to grab special downloadurls needed for items without official download button. */
             final String filename = (String) entries.get("filename");
-            final long filesize = JavaScriptEngineFactory.toLong(entries.get("bytes"), 0);
+            final Number filesize = (Number) entries.get("bytes");
             final String videoStreamURL = (String) JavaScriptEngineFactory.walkJson(entries, "preview/content/transcode_url");
             final String photoStreamURL = (String) JavaScriptEngineFactory.walkJson(entries, "preview/content/full_size_src");
-            if (filesize > 0) {
+            if (filesize != null) {
                 /*
                  * Don't set verified filesize here as some files are not officially downloadable but are downloadable as stream -->
                  * Filesize may vary for those!
                  */
                 // dl.setVerifiedFileSize(filesize);
-                dl.setDownloadSize(filesize);
+                dl.setDownloadSize(filesize.longValue());
             }
             dl.setFinalFileName(filename);
             dl.setAvailable(true);
             if (!StringUtils.isEmpty(videoStreamURL)) {
-                dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, videoStreamURL);
+                dl.setProperty(DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, videoStreamURL);
             } else if (!StringUtils.isEmpty(photoStreamURL)) {
-                dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, photoStreamURL);
+                dl.setProperty(DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, photoStreamURL);
             }
-            dl.setProperty(jd.plugins.hoster.DropboxCom.PROPERTY_ORIGINAL_FILENAME, filename);
+            dl.setProperty(DropboxCom.PROPERTY_ORIGINAL_FILENAME, filename);
         }
         return dl;
     }
