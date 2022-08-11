@@ -15,9 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Random;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -35,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "https?://(?:www(?:\\d+)?\\.)?adrive\\.com/public/([0-9a-zA-Z]+)(\\?path=[^\\&]+)?" })
 public class AdriveComDecrypter extends PluginForDecrypt {
@@ -42,19 +41,19 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final PluginForHost hostPlg = this.getNewPluginForHostInstance(this.getHost());
         br.setFollowRedirects(true);
-        final String parameter = param.toString();
-        final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String fid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (fid == null) {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final UrlQuery query = UrlQuery.parse(parameter);
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         String subfolderPath = query.get("path");
         String iframe = null;
-        final String subdomain = new Regex(parameter, "https?://(www\\d+[^/]+)/").getMatch(0);
+        final String subdomain = new Regex(param.getCryptedUrl(), "https?://(www\\d+[^/]+)/").getMatch(0);
         if (subdomain != null && !StringUtils.isEmpty(subfolderPath)) {
             /*
              * Workaround required: Subdomain/server given via users' URL may have changed in the meantime --> Access root folder --> Get
@@ -62,8 +61,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
              */
             br.getPage("https://www." + this.getHost() + "/public/" + fid);
             if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML(fid)) {
-                decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             iframe = br.getRegex("<iframe[^>]*src=\"(https?://\\w+\\.adrive.com/public/(?:view/)?[^\"]+\\.html)\"").getMatch(0);
             if (iframe == null) {
@@ -73,12 +71,11 @@ public class AdriveComDecrypter extends PluginForDecrypt {
             final String currentSubdomain = Browser.getHost(iframe, true);
             br.getPage("https://" + currentSubdomain + "/public/" + fid + "?path=" + subfolderPath);
         } else {
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
             iframe = br.getRegex("<iframe[^>]*src=\"(https?://\\w+\\.adrive.com/public/(?:view/)?[^\"]+\\.html)\"").getMatch(0);
             if (iframe != null) {
-                if (br.containsHTML("The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login") || iframe == null) {
-                    decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
-                    return decryptedLinks;
+                if (br.containsHTML("(?i)The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login") || iframe == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 // continue links can be direct download links
                 URLConnectionAdapter con = null;
@@ -88,17 +85,17 @@ public class AdriveComDecrypter extends PluginForDecrypt {
                         br.followConnection();
                     } else {
                         String filename = getFileNameFromHeader(con);
-                        long filesize = con.getContentLength();
+                        long filesize = con.getCompleteContentLength();
                         if (filename != null && filesize > 0) {
-                            final DownloadLink dl = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                            final DownloadLink dl = new DownloadLink(hostPlg, this.getHost(), this.getHost(), br.getURL(), true);
                             dl.setDownloadSize(filesize);
                             dl.setFinalFileName(filename);
                             dl.setLinkID("adrivecom://" + fid);
-                            dl.setProperty("mainlink", parameter);
+                            dl.setProperty("mainlink", param.getCryptedUrl());
                             dl.setProperty("directlink", br.getURL());
                             dl.setAvailable(true);
-                            decryptedLinks.add(dl);
-                            return decryptedLinks;
+                            ret.add(dl);
+                            return ret;
                         }
                     }
                 } finally {
@@ -108,27 +105,24 @@ public class AdriveComDecrypter extends PluginForDecrypt {
                     }
                 }
                 if (br.getHttpConnection().getResponseCode() == 404 || br.toString().matches("<b>File doesn't exist\\. Please turn on javascript\\.</b>\\s*<script> window\\.top.location=\"http://www\\.adrive\\.com/public/noexist\"; </script>")) {
-                    decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
         }
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML(fid)) {
-            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("\"noFiles\"")) {
             logger.info("Empty folder");
-            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("id=\"startdownload\"")) {
             /* Special case: Single file, direct download */
-            final DownloadLink dl = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            final DownloadLink dl = new DownloadLink(hostPlg, this.getHost(), this.getHost(), br.getURL(), true);
             dl.setLinkID("adrivecom://" + fid);
-            dl.setProperty("mainlink", parameter);
+            dl.setProperty("mainlink", param.getCryptedUrl());
             dl.setProperty("directlink", br.getURL());
             dl.setProperty("directdl", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         /*
          * E.g. required when user adds the root folder --> Path is not given in URL and we need to find the name of the current (=
@@ -142,23 +136,12 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         if (linktext == null) {
             // not always defect! -raztoki20160119
             if (br.containsHTML("class=\"error-msg\"") || br.getURL().matches("^https?://[^/]+/?$")) {
-                // we can assume its a SINGLE file! we wont know its size
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                try {
-                    final String filename = getFileNameFromURL(new URL(iframe));
-                    dl.setFinalFileName(filename);
-                    dl.setLinkID("adrivecom://" + fid + "/" + filename);
-                } catch (final Throwable e) {
-                }
-                decryptedLinks.add(dl);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String[] links = new Regex(linktext, "<tr>(.*?)</tr>").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleinfo : links) {
@@ -168,34 +151,32 @@ public class AdriveComDecrypter extends PluginForDecrypt {
                     continue;
                 }
                 folderURL = br.getURL(folderURL).toString();
-                decryptedLinks.add(this.createDownloadlink(folderURL));
+                ret.add(this.createDownloadlink(folderURL));
             } else {
                 final Regex info = new Regex(singleinfo, "<td class=\"name\">[\t\n\r ]+<a href=\"(https?://download[^<>\"]*?)\">([^<>\"]*?)</a>");
                 final String directlink = info.getMatch(0);
                 String filename = info.getMatch(1);
                 final String filesize = new Regex(singleinfo, "<td class=\"size\">([^<>\"]*?)</td>").getMatch(0);
                 if (filename == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 filename = Encoding.htmlDecode(filename.trim());
-                final DownloadLink dl = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                final DownloadLink dl = new DownloadLink(hostPlg, this.getHost(), this.getHost(), directlink, true);
                 if (filesize == null || directlink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setFinalFileName(filename);
                 dl.setLinkID("adrivecom://" + fid + "/" + filename);
-                dl.setProperty("mainlink", parameter);
+                dl.setProperty("mainlink", param.getCryptedUrl());
                 dl.setProperty("directlink", directlink);
                 dl.setAvailable(true);
                 if (!StringUtils.isEmpty(subfolderPath)) {
                     dl.setRelativeDownloadFolderPath(Encoding.htmlDecode(subfolderPath));
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }

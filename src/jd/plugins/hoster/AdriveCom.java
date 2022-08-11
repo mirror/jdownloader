@@ -28,9 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "http://adrivedecrypted\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "" })
 public class AdriveCom extends PluginForHost {
     public AdriveCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +52,7 @@ public class AdriveCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String mainlink = link.getStringProperty("mainlink", null);
+        final String mainlink = link.getStringProperty("mainlink");
         if (link.getBooleanProperty("directdl", false)) {
             /* 2020-08-24: Special rare case */
             if (mainlink == null) {
@@ -69,7 +68,9 @@ public class AdriveCom extends PluginForHost {
                 try {
                     con = br.openHeadConnection(this.dllink);
                     if (con.isContentDisposition()) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                         link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
                     }
                 } finally {
@@ -80,17 +81,15 @@ public class AdriveCom extends PluginForHost {
                 }
             }
         } else {
-            /* Make sure links came via the new decrpter */
-            if (!link.getDownloadURL().matches("http://adrivedecrypted\\.com/\\d+") || mainlink == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (link.getBooleanProperty("offline", false)) {
+            if (mainlink == null) {
+                /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(mainlink);
-            dllink = link.getStringProperty("directlink", null);
+            dllink = link.getStringProperty("directlink");
             String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
             if (goToLink != null) {
-                br.getPage("http://www.adrive.com" + goToLink);
+                br.getPage(goToLink);
             }
             if (br.containsHTML("The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -110,13 +109,25 @@ public class AdriveCom extends PluginForHost {
         if (link.getBooleanProperty(AdriveCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        // final String mainlink = link.getStringProperty("mainlink");
+        // br.getHeaders().put("Referer", mainlink);
+        // br.getPage(mainlink);
+        final boolean resume = true;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink.replaceFirst("https://", "http://"), resume, maxChunks);
         URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition()) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
+            // /* 2022-08-11: E.g. redirect from https to http */
+            // final String redirect = br.getRegex("window\\.top\\.location=\"(http?://[^\"]+)\"").getMatch(0);
+            // if (redirect != null) {
+            // dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink.replaceFirst("https://", "http://"), resume, maxChunks);
+            // if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            // br.followConnection();
+            // }
+            // }
             if (br.containsHTML("File overlimit")) {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.adrivecom.errors.toomanyconnections", "Too many connections"), 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l);
             }
         }
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
@@ -153,7 +164,7 @@ public class AdriveCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
