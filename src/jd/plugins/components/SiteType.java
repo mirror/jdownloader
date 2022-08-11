@@ -36,7 +36,7 @@ public class SiteType {
         Danbooru,
         /**
          * Porn website/script: <a href="http://www.evilangel.com/">evilangel.com</a><br />
-         * example: <a href="http://analacrobats.com/">analacrobats.com</a>
+         * example: <a href="https://evilangel.com/">evilangel.com</a>
          */
         EvilAngelNetwork,
         /**
