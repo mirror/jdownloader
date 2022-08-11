@@ -586,12 +586,9 @@ public class DropboxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
         } else if (!useAPI()) {
-            dlURL = this.getRootFolderURL(link, link.getPluginPatternMatcher());
-            /* website downloads */
+            /* Website downloads */
             loginWebsite(account, false);
-            if (!dlURL.contains("?dl=1") && !dlURL.contains("&dl=1")) {
-                dlURL = dlURL + "&dl=1";
-            }
+            dlURL = this.getOldDirecturl(link);
         } else {
             /* API download - uses different handling + errorhandling! */
             handleDownloadAccountAPI(account, link);
