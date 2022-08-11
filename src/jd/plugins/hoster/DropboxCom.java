@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Map;
@@ -24,6 +25,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -65,7 +67,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("dropboxdecrypted.com/", "dropbox.com/").replaceAll("#", "%23").replaceAll("\\?dl=\\d", ""));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("dropboxdecrypted.com/", "dropbox.com/").replaceAll("#", "%23"));
     }
 
     @Override
@@ -149,9 +151,7 @@ public class DropboxCom extends PluginForHost {
             }
             /* 2019-09-25: Do nothing, trust filename & size which was set in crawler. At this stage we know that the content is online! */
         } else {
-            /* Append "?dl=1" to source URL. */
-            String dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
-            dllink = dllink.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
+            final String dllink = getOldDirecturl(link);
             URLConnectionAdapter con = null;
             final Browser brc = br.cloneBrowser();
             try {
@@ -194,7 +194,6 @@ public class DropboxCom extends PluginForHost {
                         if (link.hasProperty(PROPERTY_PREVIEW_DOWNLOADLINK)) {
                             return AvailableStatus.TRUE;
                         } else {
-                            logger.info("No download button available");
                             throw new PluginException(LinkStatus.ERROR_FATAL, "No download button available");
                         }
                     }
@@ -276,6 +275,16 @@ public class DropboxCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getOldDirecturl(final DownloadLink link) throws MalformedURLException {
+        final UrlQuery params = UrlQuery.parse(link.getPluginPatternMatcher());
+        params.addAndReplace("dl", "1");
+        final String urlWithoutParams = URLHelper.getURL(new URL(link.getPluginPatternMatcher()), false, true, true).toString();
+        String dllink = urlWithoutParams;
+        dllink = dllink.replaceFirst("(?i)/dropbox\\.com/", "/www.dropbox.com/");
+        dllink += "?" + params.toString();
+        return dllink;
     }
 
     @Override
@@ -379,6 +388,7 @@ public class DropboxCom extends PluginForHost {
         final boolean resume_supported;
         String dllink = null;
         if (link.hasProperty(IS_OFFICIALLY_DOWNLOADABLE) && !link.getBooleanProperty(IS_OFFICIALLY_DOWNLOADABLE, true)) {
+            /* Workaround for files without official downloadbutton e.g. some video streams --> Downloads stream/"preview file" */
             logger.info("Attempting stream download");
             dllink = link.getStringProperty(PROPERTY_PREVIEW_DOWNLOADLINK);
             resume_supported = false;
@@ -386,14 +396,14 @@ public class DropboxCom extends PluginForHost {
             logger.info("Attempting official download");
             if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
                 /* Complete image gallery */
-                if (link.getFinalFileName() != null && link.getFinalFileName().endsWith(".zip")) {
+                if (StringUtils.endsWithCaseInsensitive(link.getFinalFileName(), ".zip")) {
                     /* .zip containing all files of that gallery - this may only happen if the single-object crawler fails */
                     resume_supported = false;
                 } else {
                     /* Single object of a gallery (most likely picture or video) */
                     resume_supported = true;
                 }
-                final String cookie_t = br.getCookie(this.getHost(), "t");
+                final String cookie_t = br.getCookie(this.getHost(), "t", Cookies.NOTDELETEDPATTERN);
                 if (cookie_t == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -403,12 +413,11 @@ public class DropboxCom extends PluginForHost {
                 dlform.setAction("https://www." + this.getHost() + "/sharing/fetch_user_content_link");
                 dlform.put("is_xhr", "true");
                 dlform.put("t", cookie_t);
-                dlform.put("url", link.getPluginPatternMatcher());
-                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                /*
-                 * All this does is basically change our main URL: https://www.dropbox.com/sc/<value1>/<value2> -->
-                 * https://dl-web.dropbox.com/zip_collection/<value1>/<value2>
-                 */
+                dlform.put("url", Encoding.urlEncode(link.getPluginPatternMatcher()));
+                // dlform.put("url",
+                // Encoding.urlEncode("https://www.dropbox.com/scl/fo/5oi20b8fmpv793ll572i2/h/2020-how_it_works%20%281080p%29.mp4?dl=0&rlkey=agqiezx8kvcjp3frtwoqq65bv"));
+                // dlform.put("origin", "PREVIEW_PAGE");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.submitForm(dlform);
                 dllink = br.toString();
                 if (!dllink.startsWith("http")) {
@@ -460,7 +469,7 @@ public class DropboxCom extends PluginForHost {
                 dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
             } else {
                 resume_supported = true;
-                dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "&dl=1");
+                dllink = this.getOldDirecturl(link);
             }
         }
         handleDownload(link, dllink, resume_supported);
@@ -577,23 +586,18 @@ public class DropboxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
         } else if (!useAPI()) {
-            dlURL = getDllinkAccountWebsite(account, link);
+            dlURL = this.getRootFolderURL(link, link.getPluginPatternMatcher());
+            /* website downloads */
+            loginWebsite(account, false);
+            if (!dlURL.contains("?dl=1") && !dlURL.contains("&dl=1")) {
+                dlURL = dlURL + "&dl=1";
+            }
         } else {
             /* API download - uses different handling + errorhandling! */
             handleDownloadAccountAPI(account, link);
             return;
         }
         handleDownload(link, dlURL, resume);
-    }
-
-    private String getDllinkAccountWebsite(final Account account, final DownloadLink link) throws Exception {
-        String dlURL = this.getRootFolderURL(link, link.getPluginPatternMatcher());
-        /* website downloads */
-        loginWebsite(account, false);
-        if (!dlURL.contains("?dl=1") && !dlURL.contains("&dl=1")) {
-            dlURL = dlURL + "&dl=1";
-        }
-        return dlURL;
     }
 
     /** API download (account required) */
@@ -698,12 +702,13 @@ public class DropboxCom extends PluginForHost {
 
     /** Returns either the URL to the root folder of our current file or the link that goes to that particular file. */
     private String getRootFolderURL(final DownloadLink link, final String fallback) {
-        String contentURL = link.getStringProperty(PROPERTY_MAINPAGE, null);
-        if (contentURL == null) {
-            /* Fallback for old URLs or such, added without API */
-            contentURL = fallback;
+        final String contentURL = link.getStringProperty(PROPERTY_MAINPAGE);
+        if (contentURL != null) {
+            return contentURL;
+        } else {
+            /* Fallback for old URLs or such added via website-crawler. */
+            return contentURL;
         }
-        return contentURL;
     }
 
     /** Only use this in crawler!! In host-plugins, use isSingleFile(final DownloadLink link)!! */
