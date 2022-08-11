@@ -165,11 +165,6 @@ public class SxyprnCom extends antiDDoSForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 5;
-    }
-
-    @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, null);
         handleDownload(link, null);
@@ -275,6 +270,11 @@ public class SxyprnCom extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
         handleDownload(link, null);
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 5;
     }
 
     @Override
