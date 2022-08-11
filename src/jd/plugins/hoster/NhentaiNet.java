@@ -19,7 +19,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -27,13 +32,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NhentaiNet extends antiDDoSForHost {
     public NhentaiNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST };
     }
 
     /* DEV NOTES */
@@ -95,25 +102,33 @@ public class NhentaiNet extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            final String dllink = br.getRegex("(https?://[^/]+/galleries/\\d+/\\d+\\.(?:jpe?g|png))").getMatch(0);
+            final String dllink = getDirecturl(br);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                final String urlExtension = getFileNameExtensionFromURL(dllink);
-                final String fileExtension = getFileNameExtensionFromString(link.getName());
-                if (urlExtension != null && !StringUtils.equalsIgnoreCase(urlExtension, fileExtension)) {
-                    final String fixExtension = link.getName().replaceFirst(fileExtension + "$", urlExtension);
-                    link.setFinalFileName(fixExtension);
-                }
+            }
+            final String urlExtension = getFileNameExtensionFromURL(dllink);
+            final String fileExtension = getFileNameExtensionFromString(link.getName());
+            if (urlExtension != null && !StringUtils.equalsIgnoreCase(urlExtension, fileExtension)) {
+                final String fixExtension = link.getName().replaceFirst(fileExtension + "$", urlExtension);
+                link.setFinalFileName(fixExtension);
             }
             return AvailableStatus.TRUE;
         }
     }
 
+    private String getDirecturl(final Browser br) {
+        String dllink = br.getRegex("(https?://[^/]+/galleries/\\d+/\\d+\\.(?:jpe?g|png))").getMatch(0);
+        if (dllink == null) {
+            /* 2022-08-11 */
+            dllink = br.getRegex("href=\"/g/\\d+/\\d+/?\">\\s*<img src=\"(https?://[^\"]+)\"").getMatch(0);
+        }
+        return dllink;
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final String dllink = br.getRegex("(https?://[^/]+/galleries/\\d+/\\d+\\.(?:jpe?g|png))").getMatch(0);
+        final String dllink = getDirecturl(br);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

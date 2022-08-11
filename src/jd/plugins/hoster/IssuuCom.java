@@ -20,6 +20,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.IssuuComConfig;
 
 import jd.PluginWrapper;
@@ -29,6 +30,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -87,50 +89,29 @@ public class IssuuCom extends PluginForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        br.getPage("https://" + this.getHost() + "/");
-                        if (isLoggedIn(br)) {
-                            logger.info("Cookie login successful");
-                            return;
-                        } else {
-                            logger.info("Cookie login failed");
-                            br.clearCookies(br.getHost());
-                        }
-                    }
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies == null) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
-                final String lang = System.getProperty("user.language");
-                if (isMailAdress(account.getUser())) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte den Benutzername und nicht die Mailadresse in das 'Benutzername' Feld eingeben!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                this.br.setCookies(this.getHost(), userCookies);
+                if (!force) {
+                    /* Do not check cookies */
+                    return;
+                }
+                br.setFollowRedirects(true);
+                br.getPage("https://" + this.getHost() + "/home/publisher");
+                if (isLoggedIn(br)) {
+                    logger.info("User cookie login successful");
+                    return;
+                } else {
+                    logger.info("User cookie login failed");
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInstead of using your mailadress, please enter your username in the 'username' field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                     }
                 }
-                logger.info("Performing full login");
-                br.setFollowRedirects(false);
-                br.getHeaders().put("Accept", "*/*");
-                // br.getPage("https://api.issuu.com/query?username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
-                // Encoding.urlEncode(account.getPass()) +
-                // "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json&jsonCallback=_jqjsp&_" +
-                // System.currentTimeMillis() + "=");
-                this.br.getPage("https://" + this.getHost() + "/signin?onLogin=%2F");
-                String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json";
-                final String csrf = this.br.getCookie(this.getHost(), "issuu.model.lcsrf");
-                if (csrf != null) {
-                    postdata += "&loginCsrf=" + Encoding.urlEncode(csrf);
-                }
-                br.postPage("https://" + this.br.getHost() + "/query", postdata);
-                if (br.getCookie(this.getHost(), "site.model.token", Cookies.NOTDELETEDPATTERN) == null || br.containsHTML("\"message\":\"Login failed\"")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -148,17 +129,12 @@ public class IssuuCom extends PluginForHost {
         }
     }
 
-    private static boolean isMailAdress(final String value) {
-        return value.matches(".+@.+");
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) User");
         return ai;
     }
 
