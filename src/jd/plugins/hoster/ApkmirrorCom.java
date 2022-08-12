@@ -74,7 +74,6 @@ public class ApkmirrorCom extends antiDDoSForHost {
         final String md5 = this.br.getRegex("class=\"appspec\\-value wordbreak\\-all\">([a-f0-9]{32})<").getMatch(0);
         if (filesize != null) {
             filesize = filesize.replace(",", "");
-            // link.setDownloadSize(Long.parseLong(filesize));
             link.setVerifiedFileSize(Long.parseLong(filesize));
         }
         if (md5 != null) {
