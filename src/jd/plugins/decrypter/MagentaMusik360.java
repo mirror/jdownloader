@@ -4,14 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.MagentaMusik360Config;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -24,7 +16,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magenta-musik-360.de" }, urls = { "https?://(?:www\\.)?magenta-musik-360\\.de/.+" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MagentaMusik360Config;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magentamusik.de" }, urls = { "https?://(?:www\\.)?(?:magenta-musik-360|magentamusik)\\.de/.+" })
 public class MagentaMusik360 extends PluginForDecrypt {
     public MagentaMusik360(final PluginWrapper wrapper) {
         super(wrapper);
@@ -37,11 +38,14 @@ public class MagentaMusik360 extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        if (parameter.getCryptedUrl().matches("https?://(?:www\\.)?magenta-musik-360\\.de/(?:[^/]+/)?[a-zA-Z0-9\\-%_]+-\\d{10,}(?:-\\d+)?")) {
+        if (parameter.getCryptedUrl().matches("https?://(?:www\\.)?(?:magenta-musik-360|magentamusik)\\.de/(?:[^/]+/)?[a-zA-Z0-9\\-%_]+-\\d{10,}(?:-\\d+)?")) {
             /* Type1 */
-            final String itemId = new Regex(parameter.getCryptedUrl(), "-(\\d+)(-\\d+)?$").getMatch(0);
+            final String itemId = new Regex(parameter.getCryptedUrl(), "-(\\d{10,})(-\\d+)?$").getMatch(0);
             final String playerVersion = "58935";
             br.getPage("https://wcss.t-online.de/cvss/magentamusic/vodplayer/v3/player/" + playerVersion + "/" + itemId + "/Main%20Movie?referrer=https%3A%2F%2Fwcss.t-online.de%2Fcvss%2Fmagentamusic%2Fvodplayer%2Fv3%2Fdetails%2F" + playerVersion + "%2F" + itemId + "%3F%24whiteLabelId%3DMM3&%24whiteLabelId=MM3&_c=aHR0cHM6d3d3Lm1hZ2VudGEtbXVzaWstMzYwLmRl");
             if (br.getHttpConnection().getResponseCode() == 404) {

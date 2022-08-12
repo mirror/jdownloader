@@ -18,14 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AnavidzCom extends XFileSharingProBasic {
@@ -106,8 +108,10 @@ public class AnavidzCom extends XFileSharingProBasic {
                 br.clearAll();
                 br.getHeaders().remove("Referer");
                 br.setRequest(null);
-                requestFileInformationVideoEmbed(br, link, account, false);
-                // throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
+                final String url = requestFileInformationVideoEmbed(br, link, account, false);
+                if (url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         return status;

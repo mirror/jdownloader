@@ -89,6 +89,33 @@ public abstract class antiDDoSForHost extends PluginForHost {
     protected final WeakHashMap<Browser, Boolean> browserPrepped        = new WeakHashMap<Browser, Boolean>();
     public final static String                    antiDDoSCookiePattern = cfRequiredCookies + "|" + icRequiredCookies + "|" + suRequiredCookies + "|" + bfRequiredCookies;
 
+    public static boolean replaceCloudFlareEmailProtection(Browser br) {
+        final Request request = br.getRequest();
+        if (request != null) {
+            String html = request.getHtmlCode();
+            while (true) {
+                final String emailProtection = new Regex(html, "(<a\\s*href\\s*=\\s*\"/cdn-cgi/l/email-protection\".*?</a>)").getMatch(0);
+                if (emailProtection != null) {
+                    final String data_cfemail = new Regex(emailProtection, "data-cfemail\\s*=\\s*\"([a-fA-F0-9]+)\"").getMatch(0);
+                    final int r = Integer.parseInt(data_cfemail.substring(0, 2), 16);
+                    String result = "";
+                    for (int n = 2; n < data_cfemail.length() - 1; n = n + 2) {
+                        final int i = Integer.parseInt(String.valueOf(new char[] { data_cfemail.charAt(n), data_cfemail.charAt(n + 1) }), 16) ^ r;
+                        result += Character.toString((char) i);
+                    }
+                    html = html.replace(emailProtection, result);
+                } else {
+                    break;
+                }
+            }
+            if (!StringUtils.equals(html, request.toString())) {
+                request.setHtmlCode(html);
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             return prepBr;
