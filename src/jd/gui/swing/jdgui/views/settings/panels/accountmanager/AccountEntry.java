@@ -24,10 +24,13 @@ public class AccountEntry {
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
-        final PluginForHost plugin;
-        if (account != null && (plugin = account.getPlugin()) != null) {
-            ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(plugin.getLazyP());
-            ConfigurationView.getInstance().getSubPanel(PluginSettings.class).scrollToAccount(account);
+        final PluginSettings pluginSettings = ConfigurationView.getInstance().getSubPanel(PluginSettings.class);
+        if (pluginSettings != null && account != null) {
+            final PluginForHost plugin = account.getPlugin();
+            if (plugin != null) {
+                pluginSettings.setPlugin(plugin.getLazyP());
+                pluginSettings.scrollToAccount(account);
+            }
         }
     }
 }
