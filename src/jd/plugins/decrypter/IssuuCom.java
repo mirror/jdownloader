@@ -26,7 +26,6 @@ import org.jdownloader.plugins.components.config.IssuuComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -96,17 +95,7 @@ public class IssuuCom extends PluginForDecrypt {
         final String title = metadata.get("title").toString();
         final DecimalFormat df = new DecimalFormat("0000");
         final String generalNaming = title + " by " + ownerUsername + " [" + title + "] (" + pages.size() + " pages)";
-        if (AccountController.getInstance().hasAccount(getHost(), Boolean.TRUE, Boolean.TRUE, null, null) && ((Boolean) metadata.get("downloadable")) && cfg.isPreferImagesOverPDF()) {
-            final DownloadLink pdf = createDownloadlink(param.getCryptedUrl());
-            pdf.setAvailable(true);
-            final String pdfFilename = generalNaming + ".pdf";
-            pdf.setFinalFileName(pdfFilename);
-            pdf.setProperty(jd.plugins.hoster.IssuuCom.PROPERTY_FINAL_NAME, pdfFilename);
-            if (documentID != null) {
-                pdf.setProperty(jd.plugins.hoster.IssuuCom.PROPERTY_DOCUMENT_ID, documentID);
-            }
-            decryptedLinks.add(pdf);
-        } else {
+        if (!((Boolean) metadata.get("downloadable")) || cfg.isPreferImagesOverPDF()) {
             /* Old format of directURLs: "https://image.issuu.com/<documentID>/jpg/page_<pageNumberStartingFromOne>.jpg" */
             int pagenumber = 0;
             for (final Map<String, Object> page : pages) {
@@ -117,6 +106,16 @@ public class IssuuCom extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
+        } else {
+            final DownloadLink pdf = createDownloadlink(param.getCryptedUrl());
+            pdf.setAvailable(true);
+            final String pdfFilename = generalNaming + ".pdf";
+            pdf.setFinalFileName(pdfFilename);
+            pdf.setProperty(jd.plugins.hoster.IssuuCom.PROPERTY_FINAL_NAME, pdfFilename);
+            if (documentID != null) {
+                pdf.setProperty(jd.plugins.hoster.IssuuCom.PROPERTY_DOCUMENT_ID, documentID);
+            }
+            decryptedLinks.add(pdf);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(generalNaming);
