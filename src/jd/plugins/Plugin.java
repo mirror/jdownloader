@@ -23,9 +23,12 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -392,11 +395,17 @@ public abstract class Plugin implements ActionListener {
     }
 
     public String getPluginVersionHash() {
-        Class<?> clazz = getClass();
+        final LinkedList<Class<?>> pluginChain = new LinkedList<Class<?>>();
+        pluginChain.add(getClass());
+        final HashSet<Class<?>> pluginDone = new HashSet<Class<?>>();
         final StringBuilder sb = new StringBuilder();
         sb.append(getHost());
         sb.append(getVersion());
-        while (clazz != null && Plugin.class.isAssignableFrom(clazz)) {
+        while (pluginChain.size() > 0) {
+            final Class<?> clazz = pluginChain.removeFirst();
+            if (clazz == null || !Plugin.class.isAssignableFrom(clazz) || !pluginDone.add(clazz)) {
+                continue;
+            }
             final HostPlugin hostPlugin;
             final DecrypterPlugin decryptPlugin;
             if ((hostPlugin = clazz.getAnnotation(HostPlugin.class)) != null) {
@@ -408,7 +417,11 @@ public abstract class Plugin implements ActionListener {
                 sb.append(clazz.getName());
                 sb.append(decryptPlugin.revision());
             }
-            clazz = clazz.getSuperclass();
+            final PluginDependencies pluginDependencies = clazz.getAnnotation(PluginDependencies.class);
+            if (pluginDependencies != null) {
+                pluginChain.addAll(Arrays.asList(pluginDependencies.dependencies()));
+            }
+            pluginChain.add(clazz.getSuperclass());
         }
         if (sb.length() > 0) {
             return Hash.getSHA256(sb.toString());
