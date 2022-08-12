@@ -54,7 +54,6 @@ public class AdriveCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String mainlink = link.getStringProperty("mainlink");
         if (link.getBooleanProperty("directdl", false)) {
-            /* 2020-08-24: Special rare case */
             if (mainlink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -85,8 +84,32 @@ public class AdriveCom extends PluginForHost {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.getPage(mainlink);
             dllink = link.getStringProperty("directlink");
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(this.dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    br.followConnection();
+                    final String adsPage = br.getRegex("window\\.top\\.location=\"(http[^\"]+)\"").getMatch(0);
+                    if (adsPage != null) {
+                        /* This will set a special cookie which then allows us to download */
+                        br.getPage(adsPage);
+                        con = br.openHeadConnection(this.dllink);
+                    }
+                }
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+            br.getPage(mainlink);
             String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
             if (goToLink != null) {
                 br.getPage(goToLink);
@@ -109,22 +132,15 @@ public class AdriveCom extends PluginForHost {
         if (link.getBooleanProperty(AdriveCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        // final String mainlink = link.getStringProperty("mainlink");
-        // br.getHeaders().put("Referer", mainlink);
-        // br.getPage(mainlink);
         final boolean resume = true;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink.replaceFirst("https://", "http://"), resume, maxChunks);
-        URLConnectionAdapter con = dl.getConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+        final URLConnectionAdapter con = dl.getConnection();
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection();
-            // /* 2022-08-11: E.g. redirect from https to http */
-            // final String redirect = br.getRegex("window\\.top\\.location=\"(http?://[^\"]+)\"").getMatch(0);
-            // if (redirect != null) {
-            // dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink.replaceFirst("https://", "http://"), resume, maxChunks);
-            // if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            // br.followConnection();
-            // }
-            // }
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("File overlimit")) {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l);
