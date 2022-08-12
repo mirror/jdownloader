@@ -65,8 +65,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
+import org.appwork.utils.os.ContainerRuntime;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.os.Docker;
 import org.appwork.utils.os.Snap;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.swing.EDTHelper;
@@ -300,7 +300,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     CrossSystem.openFile(directory);
                 }
             });
-            if (Snap.isInsideSnap() || Docker.isInsideDocker() || HardwareType.getHardware() != null) {
+            if (Snap.isInsideSnap() || ContainerRuntime.isInsideContainer() || HardwareType.getHardware() != null) {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_environment()), "spanx");
                 if (HardwareType.getHardware() != null) {
                     stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_hardware()), "gapleft 10");
@@ -310,9 +310,9 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     stats.add(new JLabel("Snap:"), "gapleft 10");
                     stats.add(createLink(Snap.getSnapInstanceName()));
                 }
-                if (Docker.isInsideDocker()) {
-                    stats.add(new JLabel("Docker:"), "gapleft 10");
-                    stats.add(createLink(Docker.getDockerContainerID()));
+                if (ContainerRuntime.isInsideContainer()) {
+                    stats.add(new JLabel(ContainerRuntime.getType() + ":"), "gapleft 10");
+                    stats.add(createLink(ContainerRuntime.getID()));
                 }
             }
             if (map != null) {

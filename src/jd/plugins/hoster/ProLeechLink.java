@@ -8,26 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.ProleechLinkConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -46,6 +26,25 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.ProleechLinkConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -71,8 +70,8 @@ public class ProLeechLink extends antiDDoSForHost {
     private static final String                 PROPERTY_ACCOUNT_apikey                   = "apikey";
     private static final String                 PROPERTY_ACCOUNT_api_login_dialog_shown   = "api_login_dialog_shown";
     private static final String                 PROPERTY_ACCOUNT_api_migration_successful = "api_migration_successful";
-    // private static final String PROPERTY_ACCOUNT_api_converted = "api_converted";
 
+    // private static final String PROPERTY_ACCOUNT_api_converted = "api_converted";
     @Override
     public String getAGBLink() {
         return "https://proleech.link/page/terms";
@@ -1136,8 +1135,23 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     private boolean isDownloadConnection(URLConnectionAdapter con) throws IOException {
-        final boolean ret = con.isOK() && (con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application/force-download"));
-        return ret;
+        final String contentType = con.getContentType();
+        final int responseCode = con.getResponseCode();
+        switch (responseCode) {
+        case 200:
+        case 206:
+            if (con.isContentDisposition()) {
+                return true;
+            } else if (StringUtils.containsIgnoreCase(contentType, "application/force-download")) {
+                return true;
+            } else if (StringUtils.containsIgnoreCase(contentType, "application/octet-stream")) {
+                return true;
+            } else {
+                return false;
+            }
+        default:
+            return false;
+        }
     }
 
     @Override

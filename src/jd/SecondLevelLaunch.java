@@ -88,9 +88,9 @@ import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory.TLS;
+import org.appwork.utils.os.ContainerRuntime;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
-import org.appwork.utils.os.Docker;
 import org.appwork.utils.os.Snap;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
@@ -431,8 +431,8 @@ public class SecondLevelLaunch {
             LoggerFactory.getDefaultLogger().log(ignore);
         }
         try {
-            if (Docker.isInsideDocker()) {
-                LoggerFactory.getDefaultLogger().info("Docker detected:" + Docker.getDockerContainerID());
+            if (ContainerRuntime.isInsideContainer()) {
+                LoggerFactory.getDefaultLogger().info(ContainerRuntime.getType() + " detected:" + ContainerRuntime.getID());
             }
         } catch (final Throwable ignore) {
             LoggerFactory.getDefaultLogger().log(ignore);

@@ -37,8 +37,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.os.ContainerRuntime;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.os.Docker;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
@@ -181,8 +181,8 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
                 LoggerFactory.getDefaultLogger().log(e);
             }
             try {
-                if (Docker.isInsideDocker()) {
-                    sb.append("|Docker");
+                if (ContainerRuntime.isInsideContainer()) {
+                    sb.append("|" + ContainerRuntime.getType());
                 }
             } catch (final Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);

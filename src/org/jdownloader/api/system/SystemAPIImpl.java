@@ -21,7 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
-import org.appwork.utils.os.Docker;
+import org.appwork.utils.os.ContainerRuntime;
 import org.appwork.utils.os.Snap;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
@@ -153,7 +153,7 @@ public class SystemAPIImpl implements SystemAPI {
             LoggerFactory.getDefaultLogger().log(ignore);
         }
         try {
-            ret.setDocker(Docker.isInsideDocker());
+            ret.setDocker(ContainerRuntime.isInsideDocker());
         } catch (final Throwable ignore) {
             LoggerFactory.getDefaultLogger().log(ignore);
         }

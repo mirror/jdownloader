@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.components.config.IssuuComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +31,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.config.IssuuComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "https?://(?:www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_\\.]+|https?://e\\.issuu\\.com/embed\\.html#\\d+/\\d+" })
 public class IssuuCom extends PluginForDecrypt {
@@ -95,7 +95,7 @@ public class IssuuCom extends PluginForDecrypt {
         final String title = metadata.get("title").toString();
         final DecimalFormat df = new DecimalFormat("0000");
         final String generalNaming = title + " by " + ownerUsername + " [" + title + "] (" + pages.size() + " pages)";
-        if (!((Boolean) metadata.get("downloadable")) || cfg.isPreferImagesOverPDF()) {
+        if (cfg.isPreferImagesOverPDF() || !Boolean.TRUE.equals(metadata.get("downloadable"))) {
             /* Old format of directURLs: "https://image.issuu.com/<documentID>/jpg/page_<pageNumberStartingFromOne>.jpg" */
             int pagenumber = 0;
             for (final Map<String, Object> page : pages) {

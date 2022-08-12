@@ -82,8 +82,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
     }
 
     private static final String TYPE_ALBUM   = "https?://[^/]+/a/([A-Za-z0-9]+)";
-    private static final String TYPE_VIDEO   = "https?://stream(\\d*)\\.[^/]+/v/(.+\\.mp4)";
-    private static final String TYPE_VIDEO_2 = "https?://cdn(\\d*)\\.[^/]+/(.+\\.mp4)";
+    private static final String TYPE_VIDEO   = "https?://stream(\\d+)\\.[^/]+/v/(.+\\.mp4)";
+    private static final String TYPE_VIDEO_2 = "https?://cdn(\\d+)\\.[^/]+/(.+\\.mp4)";
 
     private DownloadLink add(List<DownloadLink> decryptedLinks, Set<String> dups, String directurl, final String filename, final String filesizeBytes, final String filesize) {
         if (dups == null || dups.add(directurl)) {
@@ -112,7 +112,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (param.getCryptedUrl().matches(TYPE_VIDEO) || param.getCryptedUrl().matches(TYPE_VIDEO_2)) {
+        if ((param.getCryptedUrl().matches(TYPE_VIDEO) || param.getCryptedUrl().matches(TYPE_VIDEO_2))) {
+            // only if domain already contains specific server number
             add(decryptedLinks, null, param.getCryptedUrl(), null, null, null);
         } else {
             /* TYPE_ALBUM */
@@ -122,6 +123,10 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             }
             final String albumjs = br.getRegex("const albumData\\s*=\\s*(\\{.*?\\})").getMatch(0);
             String fpName = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
+            if (fpName == null) {
+                // bunkr.is
+                fpName = br.getRegex("property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+            }
             if (fpName == null) {
                 fpName = br.getRegex("<h1 id=\"title\"[^>]*title=\"([^\"]+)\"[^>]*>").getMatch(0);
                 if (fpName == null) {
@@ -134,11 +139,19 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             String json = br.getRegex("<script\\s*id\\s*=\\s*\"__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\">\\s*(\\{.*?\\})\\s*</script").getMatch(0);
             if (json != null) {
                 final HashMap<String, Object> map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                final List<Map<String, Object>> files = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(map, "props/pageProps/files");
+                List<Map<String, Object>> files = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(map, "props/pageProps/files");
+                final Map<String, Object> pagePropsFile = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "props/pageProps/file");
+                if (pagePropsFile != null) {
+                    files = new ArrayList<Map<String, Object>>();
+                    files.add(pagePropsFile);
+                }
                 if (files != null) {
                     for (Map<String, Object> file : files) {
                         final String name = (String) file.get("name");
-                        final String cdn = (String) file.get("cdn");
+                        String cdn = (String) file.get("cdn");
+                        if (StringUtils.isEmpty(cdn)) {
+                            cdn = (String) file.get("mediafiles");
+                        }
                         final String size = StringUtils.valueOfOrNull(file.get("size"));
                         if (name != null && cdn != null) {
                             final String directurl = URLHelper.parseLocation(new URL(cdn), name);
