@@ -100,12 +100,10 @@ public class AnavidzCom extends XFileSharingProBasic {
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
-        if (br.containsHTML("(?i)>\\s*This video can be watched as embed only")) {
+        if (status == AvailableStatus.TRUE && br.containsHTML("(?i)>\\s*This video can be watched as embed only")) {
             /* 2022-08-12: Special handling: Retry without Referer header */
             if (isDownload) {
                 br.clearAll();
-                // br = new Browser();
-                // br.getHeaders().put("Referer", "https://google.com/");
                 br.getHeaders().remove("Referer");
                 br.setRequest(null);
                 requestFileInformationVideoEmbed(br, link, account, false);
