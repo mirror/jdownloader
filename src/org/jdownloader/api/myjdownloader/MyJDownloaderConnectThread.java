@@ -20,15 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.controlling.reconnect.Reconnecter;
-import jd.controlling.reconnect.Reconnecter.ReconnectResult;
-import jd.controlling.reconnect.ReconnecterEvent;
-import jd.controlling.reconnect.ReconnecterListener;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.NoGateWayException;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -47,8 +38,8 @@ import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.appwork.utils.net.httpserver.requests.HTTPBridge;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.os.ContainerRuntime;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.os.Docker;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionRequest;
@@ -74,6 +65,15 @@ import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage;
 import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE;
 import org.jdownloader.myjdownloader.client.json.SessionInfoResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
+
+import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
+import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.NoGateWayException;
 
 public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, ReconnecterListener {
     public static class SessionInfoWrapper extends SessionInfo {
@@ -1181,8 +1181,8 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
 
     protected String getUniqueDeviceIDSalt() {
         String idSalt = CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath() + CrossSystem.getOS().name() + CrossSystem.getARCHFamily().name() + CrossSystem.is64BitArch() + CrossSystem.is64BitOperatingSystem() + System.getProperty("user.name");
-        if (Docker.isInsideDocker()) {
-            idSalt = idSalt + Docker.getDockerContainerID();
+        if (ContainerRuntime.isInsideDocker()) {
+            idSalt = idSalt + ContainerRuntime.getID();
         }
         return Hash.getSHA256(idSalt);
     }
