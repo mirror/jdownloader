@@ -15,21 +15,21 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "apkmirror.com" }, urls = { "https?://(?:www\\.)?apkmirror\\.com/apk/[^/]+/[^/]+/[^/]+/[^/]+\\-download/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "apkmirror.com" }, urls = { "https?://(?:www\\.)?apkmirror\\.com/apk/(([^/]+)/([^/]+)/([^/]+)/([^/]+))\\-download/" })
 public class ApkmirrorCom extends antiDDoSForHost {
     public ApkmirrorCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,24 +56,27 @@ public class ApkmirrorCom extends antiDDoSForHost {
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        String weakTitle = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (!link.isNameSet()) {
+            final Regex apkEnding = new Regex(weakTitle, "(.+)-apk$");
+            if (apkEnding.matches()) {
+                weakTitle = apkEnding.getMatch(0);
+            }
+            weakTitle = weakTitle.replace("/", "_");
+            link.setName(weakTitle + ".apk");
+        }
         this.setBrowserExclusive();
-        getPage(link.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("disqus_title\\s*?=\\s*?\"([^<>\"]+)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h3 title=\"([^<>\"]+)\"").getMatch(0);
-        }
-        String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
+        String filesize = br.getRegex("\\(([0-9,]+) bytes\\)").getMatch(0);
         final String md5 = this.br.getRegex("class=\"appspec\\-value wordbreak\\-all\">([a-f0-9]{32})<").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize != null) {
+            filesize = filesize.replace(",", "");
+            // link.setDownloadSize(Long.parseLong(filesize));
+            link.setVerifiedFileSize(Long.parseLong(filesize));
         }
-        filename = Encoding.htmlDecode(filename).trim() + ".apk";
-        filesize = filesize.replace(",", "");
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         if (md5 != null) {
             link.setMD5Hash(md5);
         }
@@ -81,53 +84,65 @@ public class ApkmirrorCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink lnk) throws Exception, PluginException {
+        requestFileInformation(lnk);
+        doFree(lnk, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            getPage(this.br.getURL() + "download/");
-            dllink = br.getRegex("download\\.php\\?id=(\\d+)").getMatch(0);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (!attemptStoredDownloadurlDownload(link, resumable, maxchunks, directlinkproperty)) {
+            final String step1 = br.getRegex("\"([^\"]+/download/?\\?key=[a-f0-9]+[^\"]*)").getMatch(0);
+            if (step1 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(step1);
+            final String dllink = br.getRegex("\"([^\"]+download\\.php\\?id=[^\"]+)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http://www.apkmirror.com/wp-content/themes/APKMirror/download.php?id=" + dllink;
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception {
+        final String url = link.getStringProperty(directlinkproperty);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        boolean valid = false;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
+                return true;
+            } else {
+                link.removeProperty(directlinkproperty);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            return false;
+        } finally {
+            if (!valid) {
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
                 }
+                this.dl = null;
             }
         }
-        return dllink;
     }
 
     @Override

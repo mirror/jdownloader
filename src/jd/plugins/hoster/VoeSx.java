@@ -177,13 +177,12 @@ public class VoeSx extends XFileSharingProBasic {
     }
 
     @Override
-    protected String requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
+    protected String requestFileInformationVideoEmbed(final Browser br, final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
         /* 2021-03-09: Special: New browser required else they won't let us stream some videos at all! */
         final boolean embedOnly = br.containsHTML(">\\s*This video can be watched as embed only");
-        final Browser brc = new Browser();
-        brc.setFollowRedirects(true);
-        brc.getPage("https://" + this.getHost() + "/e/" + this.getFUIDFromURL(link));
-        final String dllink = getDllinkVideohost(brc.toString());
+        br.setFollowRedirects(true);
+        br.getPage("https://" + this.getHost() + "/e/" + this.getFUIDFromURL(link));
+        final String dllink = getDllinkVideohost(br.toString());
         if (StringUtils.isEmpty(dllink) && embedOnly) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
         }

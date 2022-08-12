@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -94,6 +95,24 @@ public class AnavidzCom extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 0;
         }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
+        if (br.containsHTML("(?i)>\\s*This video can be watched as embed only")) {
+            /* 2022-08-12: Special handling: Retry without Referer header */
+            if (isDownload) {
+                br.clearAll();
+                // br = new Browser();
+                // br.getHeaders().put("Referer", "https://google.com/");
+                br.getHeaders().remove("Referer");
+                br.setRequest(null);
+                requestFileInformationVideoEmbed(br, link, account, false);
+                // throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
+            }
+        }
+        return status;
     }
 
     @Override

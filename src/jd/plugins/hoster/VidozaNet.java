@@ -131,7 +131,7 @@ public class VidozaNet extends XFileSharingProBasic {
                 if (title != null) {
                     link.setFinalFileName(Encoding.htmlDecode(title) + ".mp4");
                 }
-                requestFileInformationVideoEmbed(link, account, true);
+                requestFileInformationVideoEmbed(br.cloneBrowser(), link, account, true);
                 return AvailableStatus.TRUE;
             } else {
                 throw e;

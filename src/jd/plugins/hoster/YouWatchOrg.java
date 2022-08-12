@@ -129,35 +129,34 @@ public class YouWatchOrg extends XFileSharingProBasic {
     }
 
     @Override
-    protected String requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
+    protected String requestFileInformationVideoEmbed(final Browser br, final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
         /*
          * Some video sites contain their directurl right on the first page - let's use this as an indicator and assume that the file is
          * online if we find a directurl. This also speeds-up linkchecking! Example: uqload.com
          */
         String dllink = getDllink(link, account, br, correctedBR);
-        final Browser brc = this.br.cloneBrowser();
         if (StringUtils.isEmpty(dllink)) {
-            if (brc.getURL() != null && !brc.getURL().contains("/embed")) {
+            if (br.getURL() != null && !br.getURL().contains("/embed")) {
                 final String embed_access = getMainPage() + "/embed-" + this.getFUIDFromURL(link) + ".html";
-                getPage(brc, embed_access);
+                getPage(br, embed_access);
                 /**
                  * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video
                  * code" OR "Video embed restricted for this user"
                  */
-                final String iframeURL = brc.getRegex("<iframe [^>]*src=\"(https?://[^/]+/embed-[a-z0-9]{12}[^\"]+)\"").getMatch(0);
+                final String iframeURL = br.getRegex("<iframe [^>]*src=\"(https?://[^/]+/embed-[a-z0-9]{12}[^\"]+)\"").getMatch(0);
                 if (iframeURL != null) {
-                    getPage(brc, iframeURL);
+                    getPage(br, iframeURL);
                 }
             }
             /*
              * Important: Do NOT use 404 as offline-indicator here as the website-owner could have simply disabled embedding while it was
              * enabled before --> This would return 404 for all '/embed' URLs! Only rely on precise errormessages!
              */
-            if (brc.toString().equalsIgnoreCase("File was deleted")) {
+            if (br.toString().equalsIgnoreCase("File was deleted")) {
                 /* Should be valid for all XFS hosts e.g. speedvideo.net, uqload.com */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dllink = getDllink(link, account, brc, brc.toString());
+            dllink = getDllink(link, account, br, br.toString());
             // final String url_thumbnail = getVideoThumbnailURL(br.toString());
         }
         if (findFilesize && !StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {

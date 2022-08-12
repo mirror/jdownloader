@@ -23,6 +23,10 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,10 +41,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -210,7 +210,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                 if (StringUtils.isEmpty(dllink) && this.internal_isVideohosterEmbed(this.br)) {
                     try {
                         logger.info("Trying to get link via embed");
-                        dllink = requestFileInformationVideoEmbed(link, account, false);
+                        dllink = requestFileInformationVideoEmbed(br.cloneBrowser(), link, account, false);
                         if (StringUtils.isEmpty(dllink)) {
                             logger.info("FAILED to get link via embed");
                         } else {

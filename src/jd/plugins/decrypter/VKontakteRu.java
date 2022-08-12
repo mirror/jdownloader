@@ -37,6 +37,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -613,10 +614,15 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    private QualitySelectionMode mode = null;
+    private QualitySelectionMode mode      = null;
+    private Boolean              preferHLS = null;
 
     public void setQualitySelectionMode(QualitySelectionMode mode) {
         this.mode = mode;
+    }
+
+    public void setPreferHLS(final Boolean preferHLS) {
+        this.preferHLS = preferHLS;
     }
 
     public QualitySelectionMode getQualitySelectionMode() {
@@ -624,6 +630,14 @@ public class VKontakteRu extends PluginForDecrypt {
             return mode;
         } else {
             return VKontakteRuHoster.getSelectedVideoQualitySelectionMode();
+        }
+    }
+
+    public Boolean getPreferHLS() {
+        if (this.preferHLS != null) {
+            return this.preferHLS;
+        } else {
+            return VKontakteRuHoster.getConfigPreferHLS();
         }
     }
 
@@ -752,8 +766,70 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         /* Find needed information */
-        final Map<String, String> foundQualities = findAvailableVideoQualities(video);
-        if (foundQualities == null || foundQualities.isEmpty()) {
+        final Map<String, String> foundQualities = new LinkedHashMap<String, String>();
+        final String http_url = (String) video.get("postlive_mp4");
+        final String http_quality = http_url != null ? new Regex(http_url, "(\\d+)\\.mp4").getMatch(0) : null;
+        if (http_url != null && http_quality != null) {
+            foundQualities.put(http_quality + "p", http_url);
+        }
+        /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
+        final String[][] qualities = { { "cache2160", "url2160", "2160p" }, { "cache1440", "url1440", "1440p" }, { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" }, { "cache144", "url144", "144p" } };
+        for (final String[] qualityInfo : qualities) {
+            String finallink = (String) video.get(qualityInfo[0]);
+            if (finallink == null) {
+                finallink = (String) video.get(qualityInfo[1]);
+            }
+            if (finallink != null && !foundQualities.containsKey(qualityInfo[2])) {
+                foundQualities.put(qualityInfo[2], finallink);
+            }
+        }
+        final String manifest = (String) video.get("manifest");
+        if (manifest != null) {
+            // mpd doesn't use split video/audio, 2021-04-19
+            String representations[] = new Regex(manifest, "(<Representation.*?</Representation>)").getColumn(0);
+            for (final String[] qualityInfo : qualities) {
+                if (!foundQualities.containsKey(qualityInfo[2])) {
+                    for (final String representation : representations) {
+                        final int height = Integer.parseInt(qualityInfo[2].replaceAll("[^\\d]", ""));
+                        if (representation.contains("height=\"" + height + "\"")) {
+                            String url = new Regex(representation, "<BaseURL>\\s*(.*?)\\s*</BaseURL>").getMatch(0);
+                            if (url != null) {
+                                url = Encoding.htmlOnlyDecode(url);
+                                foundQualities.put(qualityInfo[2], url);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        boolean crawledHLS = false;
+        final String hls_master = (String) video.get("hls");
+        if (!StringUtils.isEmpty(hls_master)) {
+            if (foundQualities.isEmpty()) {
+                /* HLS as fallback */
+                crawledHLS = true;
+            } else if (this.getPreferHLS()) {
+                foundQualities.clear();
+                crawledHLS = true;
+            }
+            if (crawledHLS) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(hls_master);
+                final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(brc);
+                for (final HlsContainer hlsQuality : hlsQualities) {
+                    foundQualities.put(hlsQuality.getHeight() + "p", hlsQuality.getDownloadurl());
+                }
+            }
+        }
+        // create sorted linkedHashMap with best->worse quality sort order
+        final Map<String, String> foundAndSortedQualities = new LinkedHashMap<String, String>();
+        for (final String[] qualityInfo : qualities) {
+            final String url = foundQualities.get(qualityInfo[2]);
+            if (url != null) {
+                foundAndSortedQualities.put(qualityInfo[2], url);
+            }
+        }
+        if (foundAndSortedQualities.isEmpty()) {
             /* Assume that content is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -763,7 +839,7 @@ public class VKontakteRu extends PluginForDecrypt {
         } else {
             fp.setName(titleToUse);
         }
-        final Map<String, String> selectedQualities = getSelectedVideoQualities(foundQualities, qualitySelectionMode, getPreferredQualityString());
+        final Map<String, String> selectedQualities = getSelectedVideoQualities(foundAndSortedQualities, qualitySelectionMode, getPreferredQualityString());
         if (selectedQualities.isEmpty()) {
             logger.info("User has selected unavailable qualities only (or only unknown qualities are available)");
             return ret;
@@ -796,6 +872,11 @@ public class VKontakteRu extends PluginForDecrypt {
             dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_DATE, dateFormatted);
             if (!StringUtils.isEmpty(author)) {
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER, author);
+            }
+            if (crawledHLS) {
+                dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_STREAM_TYPE, VKontakteRuHoster.VIDEO_STREAM_TYPE_HLS);
+            } else {
+                dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_STREAM_TYPE, VKontakteRuHoster.VIDEO_STREAM_TYPE_HTTP);
             }
             if (fastLinkcheck) {
                 dl.setAvailable(true);
@@ -1196,67 +1277,6 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         logger.info("Total videolinks found: " + offset);
-        return ret;
-    }
-
-    /**
-     * Same function in hoster and decrypter plugin, sync it!!
-     *
-     * @throws Exception
-     */
-    public static Map<String, String> findAvailableVideoQualities(final Map<String, Object> video) throws Exception {
-        final Map<String, String> foundQualities = new LinkedHashMap<String, String>();
-        final String http_url = (String) video.get("postlive_mp4");
-        final String http_quality = http_url != null ? new Regex(http_url, "(\\d+)\\.mp4").getMatch(0) : null;
-        if (http_url != null && http_quality != null) {
-            foundQualities.put(http_quality + "p", http_url);
-        }
-        /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
-        final String[][] qualities = { { "cache2160", "url2160", "2160p" }, { "cache1440", "url1440", "1440p" }, { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" }, { "cache144", "url144", "144p" } };
-        for (final String[] qualityInfo : qualities) {
-            String finallink = (String) video.get(qualityInfo[0]);
-            if (finallink == null) {
-                finallink = (String) video.get(qualityInfo[1]);
-            }
-            if (finallink != null && !foundQualities.containsKey(qualityInfo[2])) {
-                foundQualities.put(qualityInfo[2], finallink);
-            }
-        }
-        final String manifest = (String) video.get("manifest");
-        if (manifest != null) {
-            // mpd doesn't use split video/audio, 2021-04-19
-            String representations[] = new Regex(manifest, "(<Representation.*?</Representation>)").getColumn(0);
-            for (final String[] qualityInfo : qualities) {
-                if (!foundQualities.containsKey(qualityInfo[2])) {
-                    for (final String representation : representations) {
-                        final int height = Integer.parseInt(qualityInfo[2].replaceAll("[^\\d]", ""));
-                        if (representation.contains("height=\"" + height + "\"")) {
-                            String url = new Regex(representation, "<BaseURL>\\s*(.*?)\\s*</BaseURL>").getMatch(0);
-                            if (url != null) {
-                                url = Encoding.htmlOnlyDecode(url);
-                                foundQualities.put(qualityInfo[2], url);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        /* 2020-08-13: Last resort - only download HLS stream if nothing else is available! */
-        if (foundQualities.isEmpty()) {
-            final String hls_master = (String) video.get("hls");
-            if (!StringUtils.isEmpty(hls_master)) {
-                foundQualities.put("HLS", hls_master);
-            }
-            return foundQualities;
-        }
-        // create sorted linkedHashMap with best->worse quality sort order, see getSelectedVideoQualities
-        final Map<String, String> ret = new LinkedHashMap<String, String>();
-        for (final String[] qualityInfo : qualities) {
-            final String url = foundQualities.get(qualityInfo[2]);
-            if (url != null) {
-                ret.put(qualityInfo[2], url);
-            }
-        }
         return ret;
     }
 

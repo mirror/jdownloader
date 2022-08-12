@@ -97,6 +97,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  FASTLINKCHECK_AUDIO                                                         = "FASTLINKCHECK_AUDIO";
     public static final String  VIDEO_QUALITY_SELECTION_MODE                                                = "VIDEO_QUALITY_SELECTION_MODE";
     public static final String  PREFERRED_VIDEO_QUALITY                                                     = "PREFERRED_VIDEO_QUALITY";
+    public static final String  CONFIG_PREFER_HLS                                                           = "PREFER_HLS";
     public static final String  VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME                                      = "VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME";
     public static final String  VKWALL_GRAB_ALBUMS                                                          = "VKWALL_GRAB_ALBUMS";
     public static final String  VKWALL_GRAB_PHOTOS                                                          = "VKWALL_GRAB_PHOTOS";
@@ -152,6 +153,9 @@ public class VKontakteRuHoster extends PluginForHost {
     // public static String PROPERTY_VIDEO_PREFERRED_QUALITY = "video_preferred_quality";
     public static String        PROPERTY_VIDEO_LIST_ID                                                      = "video_list_id";
     public static String        PROPERTY_VIDEO_SELECTED_QUALITY                                             = "selectedquality";
+    public static String        PROPERTY_VIDEO_STREAM_TYPE                                                  = "video_stream_type";
+    public static String        VIDEO_STREAM_TYPE_HLS                                                       = "hls";
+    public static String        VIDEO_STREAM_TYPE_HTTP                                                      = "http";
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
@@ -385,6 +389,9 @@ public class VKontakteRuHoster extends PluginForHost {
                     /* Refresh directlink */
                     this.finalUrl = null;
                     final VKontakteRu crawler = (VKontakteRu) this.getNewPluginForDecryptInstance(this.getHost());
+                    if (this.isHLS(link, this.finalUrl)) {
+                        crawler.setPreferHLS(Boolean.TRUE);
+                    }
                     if (!StringUtils.isEmpty(chosenQuality)) {
                         /* Be sure to let crawler crawl all possible qualities, then look for the one we're looking for. */
                         crawler.setQualitySelectionMode(QualitySelectionMode.ALL);
@@ -412,15 +419,10 @@ public class VKontakteRuHoster extends PluginForHost {
                             logger.warning("More results available than expected: " + results.size());
                         }
                         final DownloadLink result = results.get(0);
-                        final String quality = result.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY);
-                        /*
-                         * Set this quality which will also update the linkID of this DownloadLink so user cannot add the same quality
-                         * multiple times.
-                         */
-                        link.setProperty(PROPERTY_VIDEO_SELECTED_QUALITY, quality);
+                        link.setProperties(result.getProperties());
                         /* Correct filename which did not contain any quality modifier before. */
-                        link.setFinalFileName(link.getStringProperty(PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + quality + ".mp4");
-                        this.finalUrl = result.getStringProperty(PROPERTY_GENERAL_directlink);
+                        link.setFinalFileName(result.getFinalFileName());
+                        this.finalUrl = link.getStringProperty(PROPERTY_GENERAL_directlink);
                     }
                 }
             } else {
@@ -584,11 +586,18 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         if (this.isHLS(link, this.finalUrl)) {
             /* HLS download */
-            br.getPage(this.finalUrl);
-            handleTooManyRequests(this, br);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            final String hlsURL;
+            if (this.finalUrl.contains(".m3u8")) {
+                /* Legacy handling: Remove this after 2023-01 */
+                br.getPage(this.finalUrl);
+                handleTooManyRequests(this, br);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                hlsURL = hlsbest.getDownloadurl();
+            } else {
+                hlsURL = this.finalUrl;
+            }
             checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl = new HLSDownloader(link, br, hlsURL);
             dl.startDownload();
         } else {
             if (dl == null) {
@@ -898,12 +907,11 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private boolean isHLS(final DownloadLink link, final String url) {
-        final String qualityStr = link.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY);
-        if (StringUtils.equalsIgnoreCase(qualityStr, "HLS")) {
-            return true;
-        } else if (url == null) {
+        if (url == null) {
             return false;
         } else if (url.contains(".m3u8") || url.contains("video_hls.php")) {
+            return true;
+        } else if (StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_VIDEO_STREAM_TYPE), VIDEO_STREAM_TYPE_HLS)) {
             return true;
         } else {
             return false;
@@ -937,14 +945,12 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             if (this.looksLikeDownloadableContent(con)) {
                 if (!isHLS(link, finalUrl)) {
-                    final long foundFilesize = con.getCompleteContentLength();
                     final String headerFilename = Plugin.getFileNameFromHeader(con);
                     if (link.getFinalFileName() == null && headerFilename != null) {
                         link.setFinalFileName(Encoding.htmlDecode(headerFilename));
                     }
-                    /* 2016-12-01: Set filesize if it has not been set before. */
-                    if (link.getDownloadSize() < foundFilesize) {
-                        link.setDownloadSize(foundFilesize);
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
                 if (isDownload) {
@@ -1695,6 +1701,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final int      default_VIDEO_QUALITY_SELECTION_MODE                                                = 0;
     public static final int      default_PREFERRED_VIDEO_QUALITY                                                     = 0;
     public static final boolean  default_ALLOW_BEST                                                                  = false;
+    public static final boolean  default_CONFIG_PREFER_HLS                                                           = false;
     public static final boolean  default_VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME                                      = true;
     public static final boolean  default_ALLOW_BEST_OF_SELECTION                                                     = false;
     public static final boolean  default_VKWALL_GRAB_ALBUMS                                                          = true;
@@ -1825,6 +1832,10 @@ public class VKontakteRuHoster extends PluginForHost {
         return QualitySelectionMode.values()[Math.min(QualitySelectionMode.values().length - 1, index)];
     }
 
+    public static boolean getConfigPreferHLS() {
+        return SubConfiguration.getConfig("vk.com").getBooleanProperty(CONFIG_PREFER_HLS, default_CONFIG_PREFER_HLS);
+    }
+
     public static String getPreferredQualityString() {
         final int index = SubConfiguration.getConfig("vk.com").getIntegerProperty(PREFERRED_VIDEO_QUALITY, default_PREFERRED_VIDEO_QUALITY);
         final Quality quality = Quality.values()[Math.min(Quality.values().length - 1, index)];
@@ -1863,6 +1874,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), VIDEO_QUALITY_SELECTION_MODE, getVideoQualitySelectionModeStrings(), "Video quality selection mode").setDefaultValue(default_VIDEO_QUALITY_SELECTION_MODE));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), PREFERRED_VIDEO_QUALITY, getVideoQualityStrings(), "Preferred video quality").setDefaultValue(default_PREFERRED_VIDEO_QUALITY));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), CONFIG_PREFER_HLS, "Prefer HLS stream download?").setDefaultValue(default_CONFIG_PREFER_HLS));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME, "Append the uploaders' name to the beginning of filenames?").setDefaultValue(default_VIDEO_ADD_NAME_OF_UPLOADER_TO_FILENAME));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Wall settings (for 'vk.com/wall-123...' and 'vk.com/wall-123..._123...' links):"));

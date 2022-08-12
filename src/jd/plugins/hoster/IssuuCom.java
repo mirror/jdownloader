@@ -20,6 +20,8 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.IssuuComConfig;
 
@@ -31,7 +33,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -56,11 +58,19 @@ public class IssuuCom extends PluginForHost {
     public static final String PROPERTY_FINAL_NAME  = "finalname";
     public static final String PROPERTY_DOCUMENT_ID = "document_id";
 
+    private String getUsername(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private String getDocumentSlug(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+    }
+
     /** Using oembed API: http://developers.issuu.com/api/oembed.html */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        /* Tyically this oembed API returns 501 for offline content */
+        /* Typically this oembed API returns 501 for offline content */
         this.br.setAllowedResponseCodes(501);
         this.br.setFollowRedirects(true);
         final String filename = link.getStringProperty("finalname");
@@ -80,9 +90,7 @@ public class IssuuCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        /* Account required to download */
-        throw new AccountRequiredException();
+        handleDownload(link, null);
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -138,13 +146,16 @@ public class IssuuCom extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDownload(link, account);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         DOCUMENTID = this.br.getRegex("\"thumbnail_url\":\"https?://image\\.issuu\\.com/([^<>\"/]*?)/").getMatch(0);
         if (DOCUMENTID == null) {
-            this.br.getPage(link.getDownloadURL());
+            this.br.getPage(link.getPluginPatternMatcher());
             if (br.containsHTML(">We can\\'t find what you\\'re looking for") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -153,27 +164,27 @@ public class IssuuCom extends PluginForHost {
         if (DOCUMENTID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        login(account, true);
-        final String token = br.getCookie(this.getHost(), "site.model.token", Cookies.NOTDELETEDPATTERN);
-        br.getPage("http://api." + this.getHost() + "/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
-        final String code = PluginJSonUtils.getJsonValue(br, "code");
-        final String message = PluginJSonUtils.getJsonValue(br, "message");
-        if ("015".equals(code) || "Download limit reached".equals(message)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        if (account != null) {
+            login(account, true);
+        }
+        br.getPage("/call/document-page/document-download/" + getUsername(link) + "/" + this.getDocumentSlug(link));
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Number code = (Number) entries.get("code");
+        final String message = (String) entries.get("message");
+        if ("Download limit reached".equals(message) || (code != null && code.intValue() == 15)) {
+            throw new AccountUnavailableException("Downloadlimit reached", 5 * 60 * 1000);
         }
         if ("Document access denied".equals(message)) {
             /* TODO: Find errorcode for this */
             throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
         }
-        String dllink = br.getRegex("\"url\":\"(https?://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+        final String dllink = (String) entries.get("url");
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replace("\\", "");
-        // We HAVE to wait here, otherwise we'll get an empty file
+        // We have to wait here, otherwise we'll get an empty file!
         sleep(3 * 1000l, link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             try {
