@@ -26,6 +26,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -49,14 +57,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PornHubCom;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubComVideoCrawler extends PluginForDecrypt {
@@ -421,8 +421,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
             /**
-             * E.g. users/bla/videos --> /users/bla/videos/favorites </br> Without this we might only see some of all items and no
-             * pagination which is needed to be able to find all items.
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
+             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
              */
             logger.info("Found seeAllURL: " + seeAllURL);
             PornHubCom.getPage(br, seeAllURL);
@@ -733,6 +733,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             final String viewkey = PornHubCom.getViewkeyFromURL(param.getCryptedUrl());
             final String newLink = br.getRegex("(https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/view_video\\.php\\?viewkey=" + Pattern.quote(viewkey) + ")").getMatch(0);
             if (newLink == null) {
+                checkVideoErrors(br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             param.setCryptedUrl(newLink);
@@ -753,34 +754,15 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         // PornHubCom.getPage(br, PornHubCom.createPornhubVideolink(viewkey, aa));
         final String siteTitle = PornHubCom.getSiteTitle(this, br);
         final Map<String, Map<String, String>> qualities = PornHubCom.getVideoLinks(this, br);
+        if (qualities == null || qualities.isEmpty()) {
+            this.checkVideoErrors(br);
+        }
         logger.info("Debug info: foundLinks_all: " + qualities);
-        if ((qualities == null || qualities.isEmpty()) && br.containsHTML(PornHubCom.html_purchase_only)) {
-            logger.info("Debug info: This video has to be purchased separately: " + param.getCryptedUrl());
-            throw new AccountRequiredException();
-        } else if (isFlagged(br)) {
-            logger.info("Debug info: flagged: " + param.getCryptedUrl());
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (isGeoRestricted(br)) {
-            logger.info("Debug info: geo_blocked: " + param.getCryptedUrl());
-            final DownloadLink dl = createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.GEO, "(GeoBlocked)viewkey=" + viewkey));
-            ret.add(dl);
-            return ret;
-        } else if (br.containsHTML(PornHubCom.html_privatevideo)) {
-            logger.info("Debug info: html_privatevideo: " + param.getCryptedUrl());
-            throw new AccountRequiredException();
-        } else if (br.containsHTML(PornHubCom.html_premium_only)) {
-            logger.info("Debug info: html_premium_only: " + param.getCryptedUrl());
-            throw new AccountRequiredException();
-        } else if (isOfflineVideo(br)) {
-            if (qualities == null || qualities.size() == 0) {
-                logger.info("Debug info: offline: " + param.getCryptedUrl());
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                logger.info("TODO: check isOfflineVideo");
-            }
-        } else if (!br.getURL().contains(viewkey)) {
+        if (!br.getURL().contains(viewkey)) {
             logger.info("Debug info: unknown: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (qualities == null || qualities.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         boolean hasMP4 = false;
         for (Entry<String, Map<String, String>> entry : qualities.entrySet()) {
@@ -811,146 +793,168 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         if (better_date != null) {
             uploadDate = better_date;
         }
-        if (qualities != null) {
-            if (qualities.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            boolean skippedFlag = false;
-            for (final Entry<String, Map<String, String>> qualityEntry : qualities.entrySet()) {
-                final String quality = qualityEntry.getKey();
-                final Map<String, String> formatMap = qualityEntry.getValue();
-                for (final Entry<String, String> formatEntry : formatMap.entrySet()) {
-                    final String format = formatEntry.getKey().toLowerCase(Locale.ENGLISH);
-                    final String url = formatEntry.getValue();
-                    if (StringUtils.isEmpty(url)) {
-                        continue;
-                    } else if (!crawlHLS && "hls".equals(format)) {
-                        logger.info("Don't grab:" + format + "/" + quality);
-                        skippedFlag = true;
-                        continue;
-                    } else if (!crawlMP4 && "mp4".equals(format)) {
-                        logger.info("Don't grab:" + format + "/" + quality);
-                        skippedFlag = true;
-                        continue;
-                    }
-                    final boolean grab;
-                    if (bestonly) {
-                        /* Best only = Grab all available qualities here and then pick the best later. */
-                        grab = true;
-                    } else {
-                        /* Either only user selected items or best of user selected --> bestselectiononly == true */
-                        grab = cfg.getBooleanProperty(quality, true);
-                    }
-                    if (grab) {
-                        logger.info("Grab:" + format + "/" + quality);
-                        final String server_filename = PornHubCom.getFilenameFromURL(url);
-                        String html_filename = siteTitle + "_";
-                        final DownloadLink dl = getDecryptDownloadlink(viewkey, format, quality);
-                        dl.setProperty(PornHubCom.PROPERT_DIRECTLINK, url);
-                        dl.setProperty(PornHubCom.PROPERT_QUALITY, quality);
-                        dl.setProperty("mainlink", param.getCryptedUrl());
-                        dl.setProperty(PornHubCom.PROPERTY_VIEWKEY, viewkey);
-                        dl.setProperty(PornHubCom.PROPERT_FORMAT, format);
-                        dl.setLinkID("pornhub://" + viewkey + "_" + format + "_" + quality);
-                        if (!StringUtils.isEmpty(username)) {
-                            html_filename = html_filename + username + "_";
-                        }
-                        if (StringUtils.equalsIgnoreCase(format, "hls")) {
-                            html_filename += "hls_";
-                        }
-                        html_filename += quality + "p.mp4";
-                        dl.setProperty("decryptedfilename", html_filename);
-                        {
-                            /* Set some Packagizer properties */
-                            if (!StringUtils.isEmpty(username)) {
-                                dl.setProperty(PornHubCom.PROPERTY_USERNAME, username);
-                            }
-                            if (!StringUtils.isEmpty(uploadDate)) {
-                                dl.setProperty(PornHubCom.PROPERT_DATE, uploadDate);
-                            }
-                            if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
-                                dl.setProperty(PornHubCom.PROPERTY_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
-                            }
-                        }
-                        if (prefer_server_filename && server_filename != null) {
-                            dl.setFinalFileName(server_filename);
-                        } else {
-                            dl.setFinalFileName(html_filename);
-                        }
-                        dl.setContentUrl(param.getCryptedUrl());
-                        if (fastlinkcheck) {
-                            dl.setAvailable(true);
-                        }
-                        ret.add(dl);
-                    } else {
-                        skippedFlag = true;
-                        logger.info("Don't grab:" + format + "/" + quality);
-                    }
+        if (qualities == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (qualities.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        boolean skippedFlag = false;
+        for (final Entry<String, Map<String, String>> qualityEntry : qualities.entrySet()) {
+            final String quality = qualityEntry.getKey();
+            final Map<String, String> formatMap = qualityEntry.getValue();
+            for (final Entry<String, String> formatEntry : formatMap.entrySet()) {
+                final String format = formatEntry.getKey().toLowerCase(Locale.ENGLISH);
+                final String url = formatEntry.getValue();
+                if (StringUtils.isEmpty(url)) {
+                    continue;
+                } else if (!crawlHLS && "hls".equals(format)) {
+                    logger.info("Don't grab:" + format + "/" + quality);
+                    skippedFlag = true;
+                    continue;
+                } else if (!crawlMP4 && "mp4".equals(format)) {
+                    logger.info("Don't grab:" + format + "/" + quality);
+                    skippedFlag = true;
+                    continue;
                 }
-            }
-            if (ret.size() == 0) {
-                if (skippedFlag) {
-                    throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS);
+                final boolean grab;
+                if (bestonly) {
+                    /* Best only = Grab all available qualities here and then pick the best later. */
+                    grab = true;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /* Either only user selected items or best of user selected --> bestselectiononly == true */
+                    grab = cfg.getBooleanProperty(quality, true);
                 }
-            }
-            if (bestonly || bestselectiononly) {
-                DownloadLink best = null;
-                for (final DownloadLink found : ret) {
-                    if (best == null) {
-                        best = found;
-                    } else {
-                        final String bestQuality = best.getStringProperty(PornHubCom.PROPERT_QUALITY);
-                        final String foundQuality = found.getStringProperty(PornHubCom.PROPERT_QUALITY);
-                        if (Integer.parseInt(foundQuality) > Integer.parseInt(bestQuality)) {
-                            best = found;
-                        } else {
-                            final String foundFormat = found.getStringProperty(PornHubCom.PROPERT_FORMAT);
-                            if (Integer.parseInt(foundQuality) == Integer.parseInt(bestQuality) && StringUtils.equalsIgnoreCase(foundFormat, "mp4")) {
-                                best = found;
-                            }
+                if (grab) {
+                    logger.info("Grab:" + format + "/" + quality);
+                    final String server_filename = PornHubCom.getFilenameFromURL(url);
+                    String html_filename = siteTitle + "_";
+                    final DownloadLink dl = getDecryptDownloadlink(viewkey, format, quality);
+                    dl.setProperty(PornHubCom.PROPERT_DIRECTLINK, url);
+                    dl.setProperty(PornHubCom.PROPERT_QUALITY, quality);
+                    dl.setProperty("mainlink", param.getCryptedUrl());
+                    dl.setProperty(PornHubCom.PROPERTY_VIEWKEY, viewkey);
+                    dl.setProperty(PornHubCom.PROPERT_FORMAT, format);
+                    dl.setLinkID("pornhub://" + viewkey + "_" + format + "_" + quality);
+                    if (!StringUtils.isEmpty(username)) {
+                        html_filename = html_filename + username + "_";
+                    }
+                    if (StringUtils.equalsIgnoreCase(format, "hls")) {
+                        html_filename += "hls_";
+                    }
+                    html_filename += quality + "p.mp4";
+                    dl.setProperty("decryptedfilename", html_filename);
+                    {
+                        /* Set some Packagizer properties */
+                        if (!StringUtils.isEmpty(username)) {
+                            dl.setProperty(PornHubCom.PROPERTY_USERNAME, username);
+                        }
+                        if (!StringUtils.isEmpty(uploadDate)) {
+                            dl.setProperty(PornHubCom.PROPERT_DATE, uploadDate);
+                        }
+                        if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
+                            dl.setProperty(PornHubCom.PROPERTY_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
                         }
                     }
-                }
-                if (best != null) {
-                    ret.clear();
-                    ret.add(best);
-                }
-            }
-            if (crawlThumbnail) {
-                // higher resolution
-                String thumbnailURL = br.getRegex("\"thumbnailUrl\"\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
-                if (thumbnailURL == null) {
-                    // lower resolution
-                    thumbnailURL = br.getRegex("<img\\s*id\\s*=\\s*\"videoElementPoster\"[^>]*src\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
-                    if (thumbnailURL == null) {
-                        thumbnailURL = br.getRegex("<img\\s*src\\s*=\\s*\"(https?://.*?)\"[^>]*id\\s*=\\s*\"videoElementPoster\"").getMatch(0);
+                    if (prefer_server_filename && server_filename != null) {
+                        dl.setFinalFileName(server_filename);
+                    } else {
+                        dl.setFinalFileName(html_filename);
                     }
-                }
-                if (thumbnailURL != null) {
-                    String html_filename = siteTitle;
-                    if (!StringUtils.isEmpty(username)) {
-                        html_filename += "_" + username;
-                    }
-                    html_filename += getFileNameExtensionFromURL(thumbnailURL, ".jpg");
-                    DownloadLink dl = createDownloadlink("directhttp://" + thumbnailURL);
-                    dl.setProperty(DirectHTTP.FIXNAME, html_filename);
-                    dl.setFinalFileName(html_filename);
                     dl.setContentUrl(param.getCryptedUrl());
-                    dl.setLinkID("pornhub://" + viewkey + "_thumnail");
                     if (fastlinkcheck) {
                         dl.setAvailable(true);
                     }
                     ret.add(dl);
+                } else {
+                    skippedFlag = true;
+                    logger.info("Don't grab:" + format + "/" + quality);
                 }
             }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(siteTitle);
-            fp.addLinks(ret);
-            return ret;
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (ret.size() == 0) {
+            if (skippedFlag) {
+                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        if (bestonly || bestselectiononly) {
+            DownloadLink best = null;
+            for (final DownloadLink found : ret) {
+                if (best == null) {
+                    best = found;
+                } else {
+                    final String bestQuality = best.getStringProperty(PornHubCom.PROPERT_QUALITY);
+                    final String foundQuality = found.getStringProperty(PornHubCom.PROPERT_QUALITY);
+                    if (Integer.parseInt(foundQuality) > Integer.parseInt(bestQuality)) {
+                        best = found;
+                    } else {
+                        final String foundFormat = found.getStringProperty(PornHubCom.PROPERT_FORMAT);
+                        if (Integer.parseInt(foundQuality) == Integer.parseInt(bestQuality) && StringUtils.equalsIgnoreCase(foundFormat, "mp4")) {
+                            best = found;
+                        }
+                    }
+                }
+            }
+            if (best != null) {
+                ret.clear();
+                ret.add(best);
+            }
+        }
+        if (crawlThumbnail) {
+            // higher resolution
+            String thumbnailURL = br.getRegex("\"thumbnailUrl\"\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
+            if (thumbnailURL == null) {
+                // lower resolution
+                thumbnailURL = br.getRegex("<img\\s*id\\s*=\\s*\"videoElementPoster\"[^>]*src\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+                if (thumbnailURL == null) {
+                    thumbnailURL = br.getRegex("<img\\s*src\\s*=\\s*\"(https?://.*?)\"[^>]*id\\s*=\\s*\"videoElementPoster\"").getMatch(0);
+                }
+            }
+            if (thumbnailURL != null) {
+                String html_filename = siteTitle;
+                if (!StringUtils.isEmpty(username)) {
+                    html_filename += "_" + username;
+                }
+                html_filename += getFileNameExtensionFromURL(thumbnailURL, ".jpg");
+                DownloadLink dl = createDownloadlink("directhttp://" + thumbnailURL);
+                dl.setProperty(DirectHTTP.FIXNAME, html_filename);
+                dl.setFinalFileName(html_filename);
+                dl.setContentUrl(param.getCryptedUrl());
+                dl.setLinkID("pornhub://" + viewkey + "_thumnail");
+                if (fastlinkcheck) {
+                    dl.setAvailable(true);
+                }
+                ret.add(dl);
+            }
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(siteTitle);
+        fp.addLinks(ret);
+        return ret;
+    }
+
+    private void checkVideoErrors(final Browser br) throws PluginException, DecrypterRetryException {
+        if (br.containsHTML(PornHubCom.html_purchase_only)) {
+            throw new AccountRequiredException();
+        } else if (isFlagged(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (isGeoRestricted(br)) {
+            throw new DecrypterRetryException(RetryReason.GEO, "(GeoBlocked)url=" + br.getURL());
+        } else if (br.containsHTML(PornHubCom.html_privatevideo)) {
+            throw new AccountRequiredException();
+        } else if (br.containsHTML(PornHubCom.html_premium_only)) {
+            throw new AccountRequiredException();
+        } else if (isOfflineVideo(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /*
+         * 2022-08-16: Generic, can also be GEO-blocked error e.g. <span class="removedVideoText">Dieses Video ist in Ihrem Land nicht
+         * verfügbar.</span>
+         */
+        if (br.containsHTML("class=\"removedVideoText\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 

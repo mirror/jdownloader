@@ -122,14 +122,14 @@ public class BatoTo extends PluginForDecrypt {
             }
         } else {
             final String chapterID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-            final String batojs = br.getRegex("batojs = (.*?);").getMatch(0);
-            String secret = null;
-            final String cipherText = br.getRegex("const server = \"([^\"]+)").getMatch(0);
+            final String batojs = br.getRegex("const batoPass = (.*?);\\s+").getMatch(0);
+            final String cipherText = br.getRegex("const batoWord = \"([^\"]+)").getMatch(0);
             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             final StringBuilder sb = new StringBuilder();
             sb.append("var batojs = " + batojs + ";");
             sb.append("var server = \"" + cipherText + "\";");
+            String secret = null;
             try {
                 engine.eval(sb.toString());
                 secret = engine.get("batojs").toString();
@@ -138,10 +138,9 @@ public class BatoTo extends PluginForDecrypt {
             }
             final String server = aesDecrypt(secret, cipherText).replace("\"", "");
             final String titleSeries = br.getRegex("<a href=\"/series/\\d+\">([^<]+)</a>").getMatch(0);
-            final Regex chapterInfo = br.getRegex("property\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"\\s*([^>]*)\\s*-\\s*Chapter\\s*(\\d+)\\s*\"\\s*/>");
-            final String titleChapter = chapterInfo.getMatch(0);
-            final String chapterNumber = chapterInfo.getMatch(1);
-            String imgsText = br.getRegex("const images = \\[(.*?);").getMatch(0);
+            final String titleChapter = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+            final String chapterNumber = new Regex(titleChapter, "Chapter\\s*(\\d+)").getMatch(0);
+            String imgsText = br.getRegex("const imgHttpLis = \\[(.*?);").getMatch(0);
             if (titleSeries == null || titleChapter == null) {
                 logger.info(br.toString());
                 logger.info(titleSeries + "|" + titleChapter);

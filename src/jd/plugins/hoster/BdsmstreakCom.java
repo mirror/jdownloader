@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bdsmstreak.com" }, urls = { "https?://(?:www\\.)?bdsmstreak\\.com/(?:embed/\\d+|video/\\d+(?:/[a-z0-9\\-]+)?)" })
 public class BdsmstreakCom extends PluginForHost {
     public BdsmstreakCom(PluginWrapper wrapper) {
@@ -40,7 +40,6 @@ public class BdsmstreakCom extends PluginForHost {
 
     /* DEV NOTES */
     // Tags:
-    // protocol: no https
     // other:
     /* Connection stuff */
     private static final boolean free_resume       = true;
@@ -88,6 +87,8 @@ public class BdsmstreakCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)\"Video not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(this.br.getURL(), "([a-z0-9\\-]+)/?$").getMatch(0);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
@@ -121,7 +122,7 @@ public class BdsmstreakCom extends PluginForHost {
                 con = brc.openHeadConnection(dllink);
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     // this.dllink = con.getURL().toString();
                     link.setProperty("directlink", dllink);

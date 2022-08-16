@@ -39,9 +39,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sufile.com", "dufile.com" }, urls = { "http://(?:www\\.)?sufile\\.com/(?:file|vip|down)/([a-z0-9]+)\\.html", "https?://(?:www\\.)?dufile\\.com/(?:file|down)/([a-z0-9]+)\\.html" })
-public class SuFileCom extends PluginForHost {
-    public SuFileCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dufile.com" }, urls = { "https?://(?:www\\.)?dufile\\.com/(?:file|down)/([a-z0-9]+)\\.html" })
+public class DuFileCom extends PluginForHost {
+    public DuFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.sufile.com/upgrade.html");
     }
