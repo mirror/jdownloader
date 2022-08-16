@@ -136,7 +136,8 @@ public class ChipDe extends PluginForHost {
                 }
                 link.setProperty(PROPERTY_DOWNLOAD_TARGET, download.get("Target").toString());
             }
-            final String filesizeBytesStr = br.getRegex("itemprop=\"fileSize\" content=\"([0-9\\.]+)\"").getMatch(0);
+            /* Sometimes contains a comma and trash after that (wtf?) */
+            final String filesizeBytesStr = br.getRegex("itemprop=\"fileSize\" content=\"(\\d+)(\\.\\d+)?\"").getMatch(0);
             if (StringUtils.isEmpty(filename)) {
                 filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }

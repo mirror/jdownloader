@@ -75,4 +75,14 @@ public class CamwhoreshdCom extends KernelVideoSharingComV2 {
     protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
     }
+
+    @Override
+    protected String removeUnwantedURLTitleStuff(String urltitle) {
+        if (urltitle == null) {
+            return null;
+        }
+        urltitle = super.removeUnwantedURLTitleStuff(urltitle);
+        urltitle = urltitle.replaceFirst("(-| )[a-f0-9]{16}$", "");
+        return urltitle;
+    }
 }

@@ -15,12 +15,15 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -35,8 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" })
 public class ClipHunterCom extends PluginForHost {
@@ -72,9 +73,13 @@ public class ClipHunterCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("cliphunter.com", "qchange", "h");
+        br.setCookie(this.getHost(), "qchange", "h");
         if (link.getBooleanProperty("offline")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -95,19 +100,26 @@ public class ClipHunterCom extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!linkOk(link)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!isDownload) {
+                /* Direct-url is only valid once! */
+                if (!linkOk(link)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -118,8 +130,10 @@ public class ClipHunterCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
-            if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
-                dl.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    dl.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 linkOk = true;
             }
         } finally {
@@ -155,7 +169,7 @@ public class ClipHunterCom extends PluginForHost {
         // parse decryptalgo
         final String jsUrl = br.getRegex("<script.*?src=\"(https?://\\S+gexo\\S+player[_a-z\\d]+\\.js)\"").getMatch(0);
         final String[] encryptedUrls = br.getRegex("\"url\":\"([^<>\"]*?)\"").getColumn(0);
-        final String json_full = br.getRegex("var gexoFiles = (\\{.+\\});").getMatch(0);
+        final String json_full = br.getRegex("var gexoFiles = (\\{.*?\\});\\s+").getMatch(0);
         // System.out.println("json_full: " + json_full);
         if ((encryptedUrls == null || encryptedUrls.length == 0) && json_full == null) {
             if (!br.containsHTML("var flashVars")) {
