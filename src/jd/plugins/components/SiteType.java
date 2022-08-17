@@ -42,7 +42,7 @@ public class SiteType {
         /**
          * <b>URL to script :</b> <a href="https://www.scriptplazza.com/flexshare-file-hosting-script/">FlexShare</a> <br />
          * <b>Main host template class:</b> FlexShareCore<br />
-         * <b>Examples</b> <a href="https:/extmatrix.com/">extmatrix.com</a>, <a href="https:/filepup.net/">filepup.net</a><br />
+         * <b>Examples</b> <a href="https:/extmatrix.com/">extmatrix.com</a><br />
          */
         FlexShare,
         /**

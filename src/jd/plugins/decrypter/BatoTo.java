@@ -41,11 +41,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -94,8 +95,6 @@ public class BatoTo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setCleanupPackageName(false);
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         /* Login if possible */
@@ -109,6 +108,8 @@ public class BatoTo extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(param.toString()));
             return decryptedLinks;
         }
+        FilePackage fp = FilePackage.getInstance();
+        fp.setCleanupPackageName(false);
         if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/series/")) {
             String[] chapters = br.getRegex("<a[^>]+class\\s*=\\s*\"[^\"]*chapt[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]*/chapter/[^\"]+)\"").getColumn(0);
             if (chapters != null && chapters.length > 0) {
@@ -135,38 +136,40 @@ public class BatoTo extends PluginForDecrypt {
                 secret = engine.get("batojs").toString();
             } catch (final Exception e) {
                 logger.log(e);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String server = aesDecrypt(secret, cipherText).replace("\"", "");
+            final String result = aesDecrypt(secret, cipherText);
+            final String[] imgParams = result.replaceAll("(\\[|\\]|\")", "").split(",");
             final String titleSeries = br.getRegex("<a href=\"/series/\\d+\">([^<]+)</a>").getMatch(0);
             final String titleChapter = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
             final String chapterNumber = new Regex(titleChapter, "Chapter\\s*(\\d+)").getMatch(0);
             String imgsText = br.getRegex("const imgHttpLis = \\[(.*?);").getMatch(0);
-            if (titleSeries == null || titleChapter == null) {
-                logger.info(br.toString());
-                logger.info(titleSeries + "|" + titleChapter);
-                throw new DecrypterException("Decrypter broken for link: " + param);
+            if (chapterNumber != null && titleChapter != null) {
+                fp.setName(titleSeries + " - Chapter " + chapterNumber + ": " + titleChapter);
+            } else if (titleChapter != null) {
+                fp.setName(titleChapter);
+            } else {
+                fp = null;
             }
-            fp.setName(titleSeries + " - Chapter " + chapterNumber + ": " + titleChapter);
             imgsText = imgsText.replace("\"", "");
             final String[] imgs = imgsText.split(",");
             int index = 0;
             final DecimalFormat df = new DecimalFormat("00");
+            final int padLength = StringUtils.getPadLength(imgs.length);
             for (String url : imgs) {
-                url = server + url;
-                final String pageNumberFormatted = df.format(index);
+                final String params = imgParams[index];
+                url = url + "?" + params;
                 final DownloadLink link = createDownloadlink(url);
-                final String fname_without_ext = fp.getName() + " - Page " + pageNumberFormatted;
+                final String fname_without_ext = fp.getName() + " - Page " + StringUtils.formatByPadLength(padLength, index);
+                final String ext = Plugin.getFileNameExtensionFromURL(url);
                 link.setProperty("fname_without_ext", fname_without_ext);
-                final String urlWithoutParams;
-                if (url.contains("?")) {
-                    urlWithoutParams = url.substring(0, url.lastIndexOf("?"));
-                } else {
-                    urlWithoutParams = url;
-                }
-                link.setFinalFileName(fname_without_ext + Plugin.getFileNameExtensionFromURL(urlWithoutParams));
+                link.setFinalFileName(fname_without_ext + ext);
                 link.setAvailable(true);
-                link.setContentUrl("http://bato.to/reader#" + chapterID + "_" + pageNumberFormatted);
-                fp.add(link);
+                link.setContainerUrl(param.getCryptedUrl());
+                link.setContentUrl(br.getURL());
+                if (fp != null) {
+                    fp.add(link);
+                }
                 distribute(link);
                 decryptedLinks.add(link);
                 index++;

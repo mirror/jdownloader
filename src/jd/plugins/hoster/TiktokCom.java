@@ -568,6 +568,10 @@ public class TiktokCom extends PluginForHost {
         final Map<String, Object> play_addr = (Map<String, Object>) video.get("play_addr");
         if (PluginJsonConfig.get(TiktokConfig.class).getDownloadMode() == DownloadMode.API_HD) {
             /* User prefers to download HD version */
+            /*
+             * 2022-08-17: Look like HD versions have been disabled serverside see e.g.:
+             * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
+             */
             /**
              * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
              * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any

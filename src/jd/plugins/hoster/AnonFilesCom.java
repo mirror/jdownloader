@@ -121,10 +121,6 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
         return AnonFilesComConfig.class;
     }
 
-    /**
-     * 2021-02-05: Sometimes the download of original files/streams fails but download of a lower quality / transcoded file is still
-     * possible.
-     */
     @Override
     protected boolean allowLowerQualityStreamingFallback() {
         return PluginJsonConfig.get(this.getConfigInterface()).isAllowFallbackToLowerQuality();
