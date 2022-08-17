@@ -1107,6 +1107,9 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         numberOfEntriesStr = numberOfEntriesStr.replace(",", "");
         final int numberOfEntries = (int) StrictMath.ceil((Double.parseDouble(numberOfEntriesStr)));
+        if (numberOfEntries == 0) {
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         final int entries_per_page = 26;
         final int entries_alreadyOnPage = 0;
         logger.info("Decrypting " + numberOfEntriesStr + " entries for linktype: " + type);
@@ -2744,6 +2747,8 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (br.containsHTML("class=\"profile_deleted_text\"")) {
             /* Profile deleted or no permissions to view it */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().matches("https?://[^/]+/login\\?.*")) {
+            throw new AccountRequiredException();
         }
         /* General errorhandling end */
     }
