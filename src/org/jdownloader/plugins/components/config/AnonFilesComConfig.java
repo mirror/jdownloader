@@ -12,8 +12,27 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "anonfiles.com", type = Type.HOSTER)
 public interface AnonFilesComConfig extends PluginConfigInterface {
+    final String                                       text_MaxSimultaneousFreeDownloads = "Set max simultaneous free downloads";
+    final String                                       text_AllowFallbackToLowerQuality  = "Allow fallback to lower quality video download if download of original quality fails?";
+    final String                                       text_PreferredCdnNode             = "Define preferred CDN node e.g. 'cdn-104.anonfiles.com'";
+    public static final AnonFilesComConfig.TRANSLATION TRANSLATION                       = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getMaxSimultaneousFreeDownloads_label() {
+            return text_MaxSimultaneousFreeDownloads;
+        }
+
+        public String getAllowFallbackToLowerQuality_label() {
+            return text_AllowFallbackToLowerQuality;
+        }
+
+        public String getPreferredCdnNode_label() {
+            return text_PreferredCdnNode;
+        }
+    }
+
     @AboutConfig
-    @DescriptionForConfigEntry("Set max simultaneous free downloads")
+    @DescriptionForConfigEntry(text_MaxSimultaneousFreeDownloads)
     @DefaultIntValue(2)
     @SpinnerValidator(min = 1, max = 20, step = 1)
     @Order(10)
@@ -23,14 +42,14 @@ public interface AnonFilesComConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Allow fallback to lower quality video download if download of original quality fails?")
+    @DescriptionForConfigEntry(text_AllowFallbackToLowerQuality)
     @Order(20)
     boolean isAllowFallbackToLowerQuality();
 
     void setAllowFallbackToLowerQuality(boolean b);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Define preferred CDN node e.g. 'cdn-104.anonfiles.com'")
+    @DescriptionForConfigEntry(text_PreferredCdnNode)
     @Order(30)
     String getPreferredCdnNode();
 
