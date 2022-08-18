@@ -144,18 +144,26 @@ public class DatoidCz extends antiDDoSForHost {
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         setWeakFilename(link);
+        br.setFollowRedirects(true);
         final String fid = this.getFID(link);
         getPage(link.getPluginPatternMatcher());
-        if (!br.getURL().contains(fid) || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(fid)) {
+            /* E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"filename\">([^<>\"]+)<").getMatch(0);
+        final String filename = br.getRegex("class=\"filename\">([^<>\"]+)<").getMatch(0);
         final String filesize = br.getRegex("class=\"icon-size\"></i>([^<>\"]+)<").getMatch(0);
         if (filename != null) {
             link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        /* Check for non-file subpages e.g. https://datoid.cz/faq */
+        if (filename == null && filesize == null && !br.containsHTML("data-code=\"" + fid)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
