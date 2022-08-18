@@ -153,18 +153,19 @@ public class DatPiffCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     dllink = trackPrefix + trackServerFilename;
-                } else {
-                    final Form dlform = br.getFormbyProperty("id", "loginform");
-                    if (dlform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final Browser brc = br.cloneBrowser();
-                    brc.setFollowRedirects(false);
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    brc.submitForm(dlform);
-                    dllink = brc.getRedirectLocation();
+                } else if (br.containsHTML("(?i)>\\s*This track contains commercially-available content which we can not legally offer for download")) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This track is not downloadable");
                 }
+                final Form dlform = br.getFormbyProperty("id", "loginform");
+                if (dlform == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken track");
+                }
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(false);
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                brc.submitForm(dlform);
+                dllink = brc.getRedirectLocation();
             } else {
                 /* Download complete mixtape as .zip file. */
                 if (br.containsHTML(PATTERN_PREMIUMONLY)) {

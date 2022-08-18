@@ -38,6 +38,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -56,6 +57,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.FaceBookComGallery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
@@ -245,6 +247,25 @@ public class FaceBookComVideos extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBR(this.br);
+        if (!link.hasProperty(PROPERTY_TYPE) && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* Legacy handling: Convert old items to new ones */
+            // TODO: Remove after 01/2023
+            final FaceBookComGallery crawler = (FaceBookComGallery) this.getNewPluginForDecryptInstance(this.getHost());
+            final ArrayList<DownloadLink> results = crawler.decryptIt(new CrawledLink(link.getPluginPatternMatcher()));
+            DownloadLink newLink = null;
+            for (final DownloadLink result : results) {
+                if (getType(result).equals(getType(link))) {
+                    newLink = result;
+                    break;
+                }
+            }
+            if (newLink == null) {
+                /* This should never happen. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setProperties(newLink.getProperties());
+            link.setPluginPatternMatcher(newLink.getPluginPatternMatcher());
+        }
         downloadURL = getAndCheckDownloadURL(link);
         if (downloadURL != null) {
             logger.info("Availablecheck only via directurl done:" + downloadURL);
