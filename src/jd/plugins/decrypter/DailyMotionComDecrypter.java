@@ -36,6 +36,8 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -467,15 +469,25 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 title = (String) json.get("title");
             }
         }
-        if (videoSource == null || title == null || videoID == null || channelName == null || dateFormatted == null) {
-            final Map<String, Object> map = videoSource != null ? JSonStorage.restoreFromString(videoSource, TypeRef.HASHMAP) : null;
-            final Map<String, Object> error = map != null ? (Map<String, Object>) map.get("error") : null;
-            if (error != null && (410 == JavaScriptEngineFactory.toInteger(error.get("status_code"), -1) || "Content deleted".equals(error.get("title")) || "DM002".equals(error.get("code")))) {
-                // {title=Content deleted., message=This video is no longer available because it has been deleted., raw_message=This video
-                // is no longer available because it has been deleted., code=DM002, status_code=410, refresh=0}
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Map<String, Object> map = videoSource != null ? JSonStorage.restoreFromString(videoSource, TypeRef.HASHMAP) : null;
+        final Map<String, Object> error = map != null ? (Map<String, Object>) map.get("error") : null;
+        if (error != null) {
+            final String errorTitle = StringUtils.valueOfOrNull(error.get("title"));
+            final Number statusCode = (Number) error.get("status_code");
+            final Object code = error.get("code");
+            if ("Video geo-restricted by the owner.".equals(errorTitle) || "DM007".equals(code)) {
+                // status_code=403
+                throw new DecrypterRetryException(RetryReason.GEO, "Geo-Restricted by owner - " + title + ".mp4");
+            } else if ("Channel offline.".equals(errorTitle)) {
+                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Channel offline - " + title + ".mp4");
+            } else if ("Private content.".equals(errorTitle) || "DM010".equals(code)) {
+                // status_code=403
+                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Private content - " + title + ".mp4");
+            } else if ("Content deleted.".endsWith(errorTitle) || "DM002".equals(code)) {
+                // status_code=410
+                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Content deleted - " + title + ".mp4");
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error:" + errorTitle);
         }
         title = Encoding.htmlDecode(title).trim();
         /* Some errorhandling */
@@ -485,10 +497,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setProperty("countryblock", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
-        } else if (new Regex(videoSource, "\"title\":\"Video geo\\-restricted by the owner").matches()) {
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setFinalFileName("Geo-Restricted by owner - " + title + ".mp4");
-            decryptedLinks.add(dl);
         } else if (new Regex(videoSource, "(his content as suitable for mature audiences only|You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it)").matches() && !acc_in_use) {
             final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setFinalFileName(title + ".mp4");
@@ -505,10 +513,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setFinalFileName("Encoding in progress - " + title + ".mp4");
             decryptedLinks.add(dl);
             return decryptedLinks;
-        } else if (new Regex(videoSource, "\"title\":\"Channel offline\\.\"").matches()) {
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setFinalFileName("Channel offline - " + title + ".mp4");
-            decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

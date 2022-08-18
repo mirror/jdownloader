@@ -26,14 +26,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -57,6 +49,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PornHubCom;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubComVideoCrawler extends PluginForDecrypt {
@@ -421,8 +421,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
             /**
-             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
-             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br> Without this we might only see some of all items and no
+             * pagination which is needed to be able to find all items.
              */
             logger.info("Found seeAllURL: " + seeAllURL);
             PornHubCom.getPage(br, seeAllURL);
@@ -761,8 +761,10 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         if (!br.getURL().contains(viewkey)) {
             logger.info("Debug info: unknown: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (qualities == null || qualities.isEmpty()) {
+        } else if (qualities == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (qualities.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean hasMP4 = false;
         for (Entry<String, Map<String, String>> entry : qualities.entrySet()) {
@@ -792,12 +794,6 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final String better_date = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         if (better_date != null) {
             uploadDate = better_date;
-        }
-        if (qualities == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (qualities.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean skippedFlag = false;
         for (final Entry<String, Map<String, String>> qualityEntry : qualities.entrySet()) {

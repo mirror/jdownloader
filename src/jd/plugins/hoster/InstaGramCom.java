@@ -22,23 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -68,6 +51,23 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 @PluginDependencies(dependencies = { InstaGramComDecrypter.class })
@@ -339,8 +339,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br>
-     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
+     * grab best quality but keep effects/filters.
      *
      * @throws Exception
      */
@@ -659,7 +659,17 @@ public class InstaGramCom extends PluginForHost {
                     }
                 }
                 logger.info("Full login required");
+                final boolean requestWithNoCookies = br.getCookies(getHost()).isEmpty();
                 br.getPage(MAINPAGE + "/");
+                if (br.getHttpConnection().getResponseCode() == 500) {
+                    if (requestWithNoCookies) {
+                        // maybe with set cookies the request will work now?
+                        br.getPage(MAINPAGE + "/");
+                    }
+                    if (br.getHttpConnection().getResponseCode() == 500) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
                 final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (csrftoken == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -988,7 +998,7 @@ public class InstaGramCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
         br.setCookie(MAINPAGE, "ig_pr", "1");
         // 429 == too many requests, we need to rate limit requests.
-        br.setAllowedResponseCodes(new int[] { 400, 429 });
+        br.setAllowedResponseCodes(new int[] { 400, 429, 500 });
         br.setFollowRedirects(true);
         return br;
     }
