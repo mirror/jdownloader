@@ -55,7 +55,7 @@ public class CspanOrg extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\\'og:title\\' content=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("property\\s*=\\s*\\'og:title\\'.*?content\\s*=\\s*\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             /* Fallback */
             filename = new Regex(link.getPluginPatternMatcher(), "([^/]+)$").getMatch(0);
@@ -79,7 +79,7 @@ public class CspanOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* 2021-01-11: Old non working rtmp-endpoint: "https://www.c-span.org/common/services/flashXml.php?programid=" + progid */
-        String hlsMaster = br.getRegex("(https?://[^/]+/program/program\\." + progid + "[^<>\"]+\\.m3u8)").getMatch(0);
+        String hlsMaster = br.getRegex("(https?://[^/]+/program/program\\." + progid + "[^<>\"]*\\.m3u8)").getMatch(0);
         String dllink_http = null;
         if (hlsMaster == null) {
             /* First try to get mobile http URL */

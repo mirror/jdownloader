@@ -58,7 +58,7 @@ public class BookFiOrg extends antiDDoSForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "b-ok.cc", "b-ok.org", "bookfi.net", "bookfi.org", "bookzz.org", "de1lib.org", "pt1lib.org", "1lib.eu", "1lib.org", "2lib.org", "b-ok.xyz", "b-ok.global", "3lib.net", "4lib.org", "eu1lib.org", "1lib.limited", "1lib.education", "1lib.pl" });
+        ret.add(new String[] { "b-ok.cc", "b-ok.org", "art1lib.org", "art1lib.com", "bookfi.net", "bookfi.org", "bookshome.net", "bookshome.org", "booksc.org", "booksc.xyz", "booksc.eu", "booksc.me", "bookzz.org", "de1lib.org", "zlibrary.org", "libsolutions.net", "pt1lib.org", "1lib.eu", "1lib.org", "2lib.org", "b-ok.xyz", "b-ok.global", "3lib.net", "4lib.org", "eu1lib.org", "1lib.limited", "1lib.education", "1lib.to", "1lib.pl", "1lib.vip" });
         return ret;
     }
 
