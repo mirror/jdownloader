@@ -158,15 +158,27 @@ public class JSRhinoPermissionRestricter {
             cx.setClassShutter(new ClassShutter() {
                 public boolean visibleToScripts(final String className) {
                     final Thread thread = Thread.currentThread();
-                    final boolean trusted = TRUSTED_THREAD.containsKey(thread);
+                    final boolean threadTrusted = TRUSTED_THREAD.containsKey(thread);
+                    Boolean jsShutterResult = null;
                     if (thread instanceof JSShutterDelegate) {
-                        if (((JSShutterDelegate) thread).isClassVisibleToScript(trusted, className)) {
-                            return true;
+                        if (((JSShutterDelegate) thread).isClassVisibleToScript(threadTrusted, className)) {
+                            jsShutterResult = true;
                         } else {
-                            return false;
+                            jsShutterResult = false;
                         }
                     }
-                    if (trusted) {
+                    final JSShutterDelegate jsShutter = THREAD_JSSHUTTER.get(thread);
+                    if (jsShutter != null) {
+                        if (jsShutter.isClassVisibleToScript(threadTrusted, className)) {
+                            jsShutterResult = true;
+                        } else {
+                            jsShutterResult = false;
+                        }
+                    }
+                    if (jsShutterResult != null) {
+                        return jsShutterResult;
+                    }
+                    if (threadTrusted) {
                         LogController.CL().severe("Trusted Thread Loads: " + className + "|Thread:" + thread);
                         return true;
                     } else if (className.startsWith("adapter")) {
@@ -214,14 +226,16 @@ public class JSRhinoPermissionRestricter {
         }
     }
 
-    public static final ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
+    public static final ConcurrentHashMap<Thread, Boolean>           TRUSTED_THREAD   = new ConcurrentHashMap<Thread, Boolean>();
+    public static final ConcurrentHashMap<Thread, JSShutterDelegate> THREAD_JSSHUTTER = new ConcurrentHashMap<Thread, JSShutterDelegate>();
 
     public static Object evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
+        final Thread thread = Thread.currentThread();
         try {
-            TRUSTED_THREAD.put(Thread.currentThread(), true);
+            TRUSTED_THREAD.put(thread, true);
             return cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
         } finally {
-            TRUSTED_THREAD.remove(Thread.currentThread());
+            TRUSTED_THREAD.remove(thread);
         }
     }
 

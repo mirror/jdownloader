@@ -173,17 +173,31 @@ public class JSHtmlUnitPermissionRestricter {
                     if (className == null) {
                         return false;
                     } else {
-                        final Thread cur = Thread.currentThread();
-                        final boolean trusted = TRUSTED_THREAD.containsKey(cur);
-                        if (cur instanceof JSShutterDelegate) {
-                            if (((JSShutterDelegate) cur).isClassVisibleToScript(trusted, className)) {
-                                LOADED.add(className);
-                                return true;
+                        final Thread thread = Thread.currentThread();
+                        final boolean threadTrusted = TRUSTED_THREAD.containsKey(thread);
+                        Boolean jsShutterResult = null;
+                        if (thread instanceof JSShutterDelegate) {
+                            if (((JSShutterDelegate) thread).isClassVisibleToScript(threadTrusted, className)) {
+                                jsShutterResult = true;
                             } else {
-                                return false;
+                                jsShutterResult = false;
                             }
                         }
-                        if (trusted) {
+                        final JSShutterDelegate jsShutter = THREAD_JSSHUTTER.get(thread);
+                        if (jsShutter != null) {
+                            if (jsShutter.isClassVisibleToScript(threadTrusted, className)) {
+                                jsShutterResult = true;
+                            } else {
+                                jsShutterResult = false;
+                            }
+                        }
+                        if (jsShutterResult != null) {
+                            if (jsShutterResult.booleanValue()) {
+                                LOADED.add(className);
+                            }
+                            return jsShutterResult;
+                        }
+                        if (threadTrusted) {
                             LOADED.add(className);
                             return true;
                         } else if (className.startsWith("adapter")) {
@@ -306,14 +320,16 @@ public class JSHtmlUnitPermissionRestricter {
         return CONTEXT_FACTORY;
     }
 
-    public static ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
+    public static final ConcurrentHashMap<Thread, Boolean>           TRUSTED_THREAD   = new ConcurrentHashMap<Thread, Boolean>();
+    public static final ConcurrentHashMap<Thread, JSShutterDelegate> THREAD_JSSHUTTER = new ConcurrentHashMap<Thread, JSShutterDelegate>();
 
     public static Object evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
+        final Thread thread = Thread.currentThread();
         try {
-            TRUSTED_THREAD.put(Thread.currentThread(), true);
+            TRUSTED_THREAD.put(thread, true);
             return cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
         } finally {
-            TRUSTED_THREAD.remove(Thread.currentThread());
+            TRUSTED_THREAD.remove(thread);
         }
     }
 
@@ -322,35 +338,12 @@ public class JSHtmlUnitPermissionRestricter {
     }
 
     public static Script compileTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
+        final Thread thread = Thread.currentThread();
         try {
-            TRUSTED_THREAD.put(Thread.currentThread(), true);
+            TRUSTED_THREAD.put(thread, true);
             return cx.compileString(source, sourceName, lineno, securityDomain);
         } finally {
-            TRUSTED_THREAD.remove(Thread.currentThread());
+            TRUSTED_THREAD.remove(thread);
         }
     }
-    // public synchronized static String evalJavaObject(String json) {
-    // // final ContextFactory factory = ContextFactory.getGlobal();
-    // Global scope = new Global();
-    //
-    // Context cx = Context.enter();
-    // try {
-    // cx.setOptimizationLevel(-1);
-    // // ScriptableObject.putProperty(scope, "myObj", json);
-    // cx.setOptimizationLevel(-1);
-    // cx.setLanguageVersion(Context.VERSION_1_5);
-    // cx.initStandardObjects();
-    // String js = json;
-    // Object jsObject = cx.evaluateString(scope, js, js, 1, null);
-    // String done = (String) cx.evaluateString(scope, "JSON.stringify(myObj);", "JSON.stringify(eval(myObj));", 1, null);
-    // // scope.init(cx);
-    // // net.sourceforge.htmlunit.corejs.javascript.tools.debugger.Main.main(null);
-    // return done;
-    // } catch (Throwable e) {
-    // e.printStackTrace();
-    // return json;
-    // } finally {
-    // Context.exit();
-    // }
-    // }
 }
