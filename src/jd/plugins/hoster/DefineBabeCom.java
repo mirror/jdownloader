@@ -48,6 +48,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.DefinebabeComDecrypter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class DefineBabeCom extends PluginForHost {
@@ -129,7 +130,7 @@ public class DefineBabeCom extends PluginForHost {
         } else if (br.containsHTML("Please, call later\\.")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is busy", 5 * 60 * 1000l);
         }
-        String title = jd.plugins.decrypter.DefinebabeComDecrypter.getURLTitleCleaned(br.getURL());
+        String title = DefinebabeComDecrypter.getFileTitle(br);
         final String videoID = getVideoID(br);
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

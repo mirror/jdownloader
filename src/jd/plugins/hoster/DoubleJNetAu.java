@@ -55,6 +55,8 @@ public class DoubleJNetAu extends PluginForHost {
         return -1;
     }
 
+    private String dllinkHTTP = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -62,30 +64,36 @@ public class DoubleJNetAu extends PluginForHost {
         br.getHeaders().put("User-Agent", "Opera/9.80 (Windows NT 6.1; Win64; x64) Presto/2.12.388 Version/12.17");
         // first get
         br.getPage(link.getPluginPatternMatcher());
-        String contentID = br.getRegex("-\\s*On-demand\\s*\\(([A-Za-z0-9]+)\\)</a></h2></div>").getMatch(0);
-        if (contentID == null) {
-            /* 2022-02-08 */
-            contentID = br.getRegex("\"arid\": \"papi:([A-Za-z0-9]+)\"").getMatch(0);
+        final String aacURL = br.getRegex("\"url\":\"(https?://[^\"]+\\.aac)").getMatch(0);
+        if (aacURL != null) {
+            dllinkHTTP = aacURL;
+            link.setFinalFileName(br._getURL().getPath() + ".aac");
+        } else {
+            String contentID = br.getRegex("-\\s*On-demand\\s*\\(([A-Za-z0-9]+)\\)</a></h2></div>").getMatch(0);
+            if (contentID == null) {
+                /* 2022-02-08 */
+                contentID = br.getRegex("\"arid\": \"papi:([A-Za-z0-9]+)\"").getMatch(0);
+            }
+            if (contentID == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setLinkID(this.getHost() + "://" + contentID);
+            // get associated json crapola
+            // getAjax("http://program.abcradio.net.au/api/v1/on_demand/" + contentID + ".json");
+            getAjax("https://program.abcradio.net.au/api/v1/programitems/" + contentID + ".json");
+            final Map<String, Object> root = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+            dllinkHTTP = br.getRegex("(?i)Try to\\s*<a href=\"(https?://[^<>\"]+\\.mp3)\"").getMatch(0);
+            link.setFinalFileName(root.get("title").toString() + ".m4a");
         }
-        if (contentID == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        link.setLinkID(this.getHost() + "://" + contentID);
-        // get associated json crapola
-        // getAjax("http://program.abcradio.net.au/api/v1/on_demand/" + contentID + ".json");
-        getAjax("https://program.abcradio.net.au/api/v1/programitems/" + contentID + ".json");
-        final Map<String, Object> root = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
-        link.setFinalFileName(root.get("title").toString() + ".m4a");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final String httpStream = br.getRegex("(?i)Try to\\s*<a href=\"(https?://[^<>\"]+\\.mp3)\"").getMatch(0);
-        if (httpStream != null) {
+        if (dllinkHTTP != null) {
             /* Download http stream */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, httpStream, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllinkHTTP, true, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);

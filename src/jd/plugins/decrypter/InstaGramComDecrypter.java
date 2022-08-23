@@ -746,6 +746,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         List<Object> resource_data_list = null;
         do {
             final String json = websiteGetJson();
+            if (json == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             entries = restoreFromString(json, TypeRef.HASHMAP);
             user = (Map<String, Object>) get(entries, "entry_data/ProfilePage/{0}/user", "entry_data/ProfilePage/{0}/graphql/user");
             resource_data_list = (List) get(user, "edge_owner_to_timeline_media/edges", "media/nodes");

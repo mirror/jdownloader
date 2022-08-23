@@ -117,4 +117,24 @@ public class DosyashareCom extends YetiShareCore {
         }
         return dllink;
     }
+
+    @Override
+    public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
+        super.scanInfo(link, fileInfo);
+        final String betterFilename = br.getRegex("class=\"col-sm-12 upl\"[^>]*>\\s*<h1>([^<>\"]+)</h1>").getMatch(0);
+        if (betterFilename != null) {
+            fileInfo[0] = betterFilename;
+        }
+        final String betterFilesize = br.getRegex("<small>([^<]+)</small></h4>").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
+        return fileInfo;
+    }
+
+    @Override
+    public boolean supports_availablecheck_over_info_page(final DownloadLink link) {
+        /* 2022-08-23: Not supported anymore */
+        return false;
+    }
 }
