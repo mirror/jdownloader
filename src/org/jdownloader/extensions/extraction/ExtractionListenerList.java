@@ -391,8 +391,10 @@ public class ExtractionListenerList implements ExtractionListener {
             logger.warning("FileNotFound");
             if (currentArchive.getCrcError().size() != 0) {
                 setStatus(controller, rootArchive, ExtractionStatus.ERROR_CRC);
-            } else {
+            } else if (currentArchive.getMissingFiles().size() > 0) {
                 setStatus(controller, rootArchive, ExtractionStatus.ERRROR_FILE_NOT_FOUND);
+            } else {
+                setStatus(controller, rootArchive, ExtractionStatus.ERROR);
             }
             cleanupIncompleteExtraction(controller, currentArchive);
             break;
