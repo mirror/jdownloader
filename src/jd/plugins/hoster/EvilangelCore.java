@@ -295,14 +295,37 @@ public abstract class EvilangelCore extends PluginForHost {
                      * 2nd json with more information but no downloadlinks is also available in html as json see: dataLayer = [{"dvdDetails"
                      */
                     final Map<String, Object> root = JSonStorage.restoreFromString(htmlVideoJson2, TypeRef.HASHMAP);
-                    final Map<String, Object> movieInfos = (Map<String, Object>) root.get("movieInfos");
-                    final String dvdReleaseDate = (String) movieInfos.get("dvdReleaseDate");
-                    final String dvdName = (String) movieInfos.get("dvdName");
-                    if (dvdReleaseDate != null) {
-                        link.setProperty(PROPERTY_DATE, dvdReleaseDate);
+                    final Map<String, Object> sceneInfos = (Map<String, Object>) root.get("sceneInfos");
+                    if (sceneInfos != null) {
+                        final String sceneId = sceneInfos.get("sceneId").toString();
+                        if (br.getURL().contains(sceneId)) {
+                            final String sceneReleaseDate = (String) sceneInfos.get("sceneReleaseDate");
+                            final String sceneTitle = (String) sceneInfos.get("sceneTitle");
+                            if (sceneReleaseDate != null) {
+                                link.setProperty(PROPERTY_DATE, sceneReleaseDate);
+                            }
+                            if (!StringUtils.isEmpty(sceneTitle)) {
+                                filename = sceneTitle;
+                            }
+                        }
                     }
-                    if (!StringUtils.isEmpty(dvdName)) {
-                        filename = dvdName;
+                    /**
+                     * A scene can also contain DVD-information. </br>
+                     * --> Ensure to set the correct information which is later used for filenames.
+                     */
+                    final Map<String, Object> movieInfos = (Map<String, Object>) root.get("movieInfos");
+                    if (movieInfos != null) {
+                        final String dvdId = movieInfos.get("dvdId").toString();
+                        if (br.getURL().contains(dvdId)) {
+                            final String dvdReleaseDate = (String) movieInfos.get("dvdReleaseDate");
+                            final String dvdName = (String) movieInfos.get("dvdName");
+                            if (dvdReleaseDate != null) {
+                                link.setProperty(PROPERTY_DATE, dvdReleaseDate);
+                            }
+                            if (!StringUtils.isEmpty(dvdName)) {
+                                filename = dvdName;
+                            }
+                        }
                     }
                     final List<Map<String, Object>> streamingSrcs = (List<Map<String, Object>>) root.get("streamingSources");
                     String bestQualityDownloadurl = null;
