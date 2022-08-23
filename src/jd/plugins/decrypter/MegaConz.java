@@ -39,6 +39,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.MinTimeSoftReference;
+import org.appwork.storage.config.MinTimeSoftReferenceCleanup;
 import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonObjectHashMap;
@@ -81,9 +83,9 @@ public class MegaConz extends PluginForDecrypt {
         return null;
     }
 
-    private static Object                                                           GLOBAL_LOCK = new Object();
-    private static WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>> CACHE       = new WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>>();
-    private final Charset                                                           UTF8        = Charset.forName("UTF-8");
+    private static HashMap<String, MinTimeSoftReference<List<Map<String, Object>>>> GLOBAL_CACHE  = new HashMap<String, MinTimeSoftReference<List<Map<String, Object>>>>();
+    private static WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>> CRAWLER_CACHE = new WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>>();
+    private final Charset                                                           UTF8          = Charset.forName("UTF-8");
 
     protected Object toObject(final Object object) {
         if (object == null) {
@@ -136,21 +138,43 @@ public class MegaConz extends PluginForDecrypt {
         br.addAllowedResponseCodes(500);
         int retryCounter = 0;
         final Map<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
-        List<Map<String, Object>> folderNodes = new ArrayList<Map<String, Object>>();
-        synchronized (CACHE) {
+        List<Map<String, Object>> folderNodes = null;
+        final MegaConzConfig config = PluginJsonConfig.get(MegaConzConfig.class);
+        final boolean isCrawlerSetFullPathAsPackagename = config.isCrawlerSetFullPathAsPackagename();
+        synchronized (CRAWLER_CACHE) {
             LinkCrawler crawler = getCrawler();
             if (crawler != null) {
                 crawler = crawler.getRoot();
             }
+            Map<String, List<Map<String, Object>>> map = null;
             if (crawler != null) {
-                Map<String, List<Map<String, Object>>> map = CACHE.get(crawler);
+                map = CRAWLER_CACHE.get(crawler);
                 if (map == null) {
                     map = new HashMap<String, List<Map<String, Object>>>();
-                    CACHE.put(crawler, map);
+                    CRAWLER_CACHE.put(crawler, map);
                 }
                 if (map.containsKey(folderID)) {
                     folderNodes = map.get(folderID);
-                } else {
+                }
+            }
+            if (folderNodes == null) {
+                MinTimeSoftReference<List<Map<String, Object>>> cached = GLOBAL_CACHE.get(folderID);
+                if (cached != null) {
+                    folderNodes = cached.get();
+                }
+                if (folderNodes == null) {
+                    folderNodes = new ArrayList<Map<String, Object>>();
+                    final long minTime = config.getMaxCacheFolderDetails();
+                    if (minTime > 0) {
+                        GLOBAL_CACHE.put(folderID, new MinTimeSoftReference<List<Map<String, Object>>>(folderNodes, minTime * 60 * 1000, folderID, new MinTimeSoftReferenceCleanup() {
+                            @Override
+                            public void onMinTimeSoftReferenceCleanup(MinTimeSoftReference<?> minTimeWeakReference) {
+                                minTimeWeakReference.clear();
+                            }
+                        }));
+                    }
+                }
+                if (map != null) {
                     map.put(folderID, folderNodes);
                 }
             }
@@ -468,7 +492,7 @@ public class MegaConz extends PluginForDecrypt {
                     fp = fpMap.get(path);
                     if (fp == null) {
                         fp = FilePackage.getInstance();
-                        if (PluginJsonConfig.get(MegaConzConfig.class).isCrawlerSetFullPathAsPackagename()) {
+                        if (isCrawlerSetFullPathAsPackagename) {
                             fp.setName(path);
                         } else {
                             fp.setName(path.substring(path.lastIndexOf("/") + 1));

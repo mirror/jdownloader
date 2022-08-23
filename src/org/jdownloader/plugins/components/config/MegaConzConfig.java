@@ -61,6 +61,10 @@ public interface MegaConzConfig extends PluginConfigInterface {
         public String getCrawlerSetFullPathAsPackagename_label() {
             return "Folder crawler: Set full path as package name (if disabled, only name of respective folder will be used as packagename)?";
         }
+
+        public String getMaxCacheFolderDetails_label() {
+            return "Folder crawler: Max. time(minutes) to cache folder details for faster crawling";
+        }
     }
 
     @AboutConfig
@@ -182,4 +186,13 @@ public interface MegaConzConfig extends PluginConfigInterface {
     boolean isCrawlerSetFullPathAsPackagename();
 
     void setCrawlerSetFullPathAsPackagename(boolean b);
+
+    @AboutConfig
+    @SpinnerValidator(min = 0, max = 60, step = 1)
+    @DefaultIntValue(5)
+    @DescriptionForConfigEntry("Max. time(minutes) to cache folder details for faster crawling")
+    @Order(120)
+    int getMaxCacheFolderDetails();
+
+    void setMaxCacheFolderDetails(int minutes);
 }
