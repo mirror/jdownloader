@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,6 +31,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropdoc.ru" }, urls = { "https?://(?:www\\.)?dropdoc\\.ru/(?:doc|download)/(\\d+)" })
 public class DropdocRu extends PluginForHost {
@@ -70,11 +70,10 @@ public class DropdocRu extends PluginForHost {
             link.setName(getFID(link) + ".pdf");
         }
         this.setBrowserExclusive();
-        br.setAllowedResponseCodes(new int[] { 400 });
+        br.setAllowedResponseCodes(new int[] { 400, 451 });
         br.setFollowRedirects(true);
-        ;
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 451) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);

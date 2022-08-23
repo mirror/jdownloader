@@ -99,7 +99,7 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
         }
         final String ltext = text;
         if (!StringUtils.isEmpty(ltext)) {
-            final String finds[] = ltext.replaceAll("[^a-zA-Z0-9 ]+", "").replace("colour", "color").replace("directory", "folder").toLowerCase(Locale.ENGLISH).split("\\s");
+            final String finds[] = ltext.replaceAll("[^a-zA-Z0-9 ,]+", "").replace("colour", "color").replace("directory", "folder").toLowerCase(Locale.ENGLISH).split("(\\s|,)");
             if (finds.length > 0) {
                 for (final Iterator<AdvancedConfigEntry> it = newtableData.iterator(); it.hasNext();) {
                     final AdvancedConfigEntry next = it.next();
