@@ -8,25 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -45,6 +26,25 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.ProleechLinkConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -136,8 +136,8 @@ public class ProLeechLink extends antiDDoSForHost {
         {
             /* Grab premium hosts */
             getPage("/page/hostlist");
-            filehosts_premium_onlineArray = this.regexPremiumHostsOnlineWebsite();
-            traffic_max_dailyStr = this.regexMaxDailyTrafficWebsite();
+            filehosts_premium_onlineArray = this.regexPremiumHostsOnlineWebsite(br);
+            traffic_max_dailyStr = this.regexMaxDailyTrafficWebsite(br);
         }
         /* Set supported hosts depending on account type */
         if (account.getType() == AccountType.PREMIUM && !ai.isExpired()) {
@@ -166,7 +166,7 @@ public class ProLeechLink extends antiDDoSForHost {
         clearDownloadHistoryWebsite(account, true);
         /* 2020-06-04: Workaround: Save apikey to try to use API for downloading */
         this.getPage("/jdownloader");
-        final String apiuser = br.getRegex("<h4>API Username:</h4>\\s*<p>([^<>\"]+)</p>").getMatch(0);
+        final String apiuser = br.getRegex("(?i)<h4>\\s*API Username\\s*:\\s*</h4>\\s*<p>([^<>\"]+)</p>").getMatch(0);
         final String apikey = br.getRegex("class=\"apipass\"[^>]*>([a-z0-9]+)<").getMatch(0);
         String accstatus = ai.getStatus();
         if (accstatus == null) {
@@ -205,8 +205,8 @@ public class ProLeechLink extends antiDDoSForHost {
             /* Get list of supported hosts from website */
             try {
                 getPage("/page/hostlist");
-                filehosts_premium_onlineArray = regexPremiumHostsOnlineWebsite();
-                trafficmaxDailyStr = this.regexMaxDailyTrafficWebsite();
+                filehosts_premium_onlineArray = regexPremiumHostsOnlineWebsite(br);
+                trafficmaxDailyStr = this.regexMaxDailyTrafficWebsite(br);
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.info("Failed to fetch list of supported hosts from website");
@@ -214,8 +214,18 @@ public class ProLeechLink extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         } else {
             trafficusedTodayStr = PluginJSonUtils.getJson(br, "used_today");
-            /* 2022-19-08: Fallback: Static value taken from: https://proleech.link/page/hostlist */
-            trafficmaxDailyStr = "100 GB";
+            /* Small workaround: Use website to find daily max traffic value as API doesn't provide that information. */
+            try {
+                final Browser brc = br.cloneBrowser();
+                this.getPage(brc, "/page/hostlist");
+                trafficmaxDailyStr = this.regexMaxDailyTrafficWebsite(brc);
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+            if (trafficmaxDailyStr == null) {
+                /* 2022-19-08: Fallback: Static value taken from: https://proleech.link/page/hostlist */
+                trafficmaxDailyStr = "100 GB";
+            }
             final String premiumStatus = PluginJSonUtils.getJson(br, "premium");
             String expiredate = PluginJSonUtils.getJson(br, "subscriptions_date");
             if ("true".equalsIgnoreCase(premiumStatus) || "yes".equalsIgnoreCase(premiumStatus)) {
@@ -400,7 +410,7 @@ public class ProLeechLink extends antiDDoSForHost {
         return thread;
     }
 
-    private List<String> regexPremiumHostsOnlineWebsite() throws PluginException {
+    private List<String> regexPremiumHostsOnlineWebsite(final Browser br) throws PluginException {
         List<String> filehosts_premium_onlineArray = new ArrayList<String>();
         final String[] filehosts_premium_online = br.getRegex("<td>\\s*\\d+\\s*</td>\\s*<td>\\s*<img[^<]+/?>\\s*([^<]*?)\\s*</td>\\s*<td>\\s*<span\\s*class\\s*=\\s*\"label\\s*label-success\"\\s*>\\s*Online").getColumn(0);
         if (filehosts_premium_online == null || filehosts_premium_online.length == 0) {
@@ -425,7 +435,7 @@ public class ProLeechLink extends antiDDoSForHost {
 
     /* 2019-11-11: New: Max daily traffic value [80 GB at this moment] */
     /* 2022-19-08: New: Max daily traffic value [100 GB at this moment] */
-    private String regexMaxDailyTrafficWebsite() {
+    private String regexMaxDailyTrafficWebsite(final Browser br) {
         return br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
     }
 
