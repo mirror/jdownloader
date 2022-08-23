@@ -134,6 +134,7 @@ public class Archive {
      * ArchiveFiles CRC error.
      */
     private final List<ArchiveFile>                      crcError;
+    private final List<ArchiveFile>                      missingFiles;
     /**
      * List of the extracted files.
      */
@@ -162,6 +163,7 @@ public class Archive {
         factory = link;
         archives = new CopyOnWriteArrayList<ArchiveFile>();
         crcError = new CopyOnWriteArrayList<ArchiveFile>();
+        missingFiles = new CopyOnWriteArrayList<ArchiveFile>();
         extractedFiles = new CopyOnWriteArrayList<File>();
         skippedFiles = new CopyOnWriteArrayList<File>();
         contents = new ContentView();
@@ -173,6 +175,7 @@ public class Archive {
         factory = link;
         archives = new CopyOnWriteArrayList<ArchiveFile>();
         crcError = new CopyOnWriteArrayList<ArchiveFile>();
+        missingFiles = new CopyOnWriteArrayList<ArchiveFile>();
         extractedFiles = new CopyOnWriteArrayList<File>();
         skippedFiles = new CopyOnWriteArrayList<File>();
         contents = new ContentView();
@@ -262,6 +265,14 @@ public class Archive {
 
     public void addCrcError(ArchiveFile crc) {
         this.crcError.add(crc);
+    }
+
+    public void addMissingFile(ArchiveFile missing) {
+        this.missingFiles.add(missing);
+    }
+
+    public List<ArchiveFile> getMissingFiles() {
+        return missingFiles;
     }
 
     public List<ArchiveFile> getCrcError() {

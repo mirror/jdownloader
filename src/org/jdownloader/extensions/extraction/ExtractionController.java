@@ -260,7 +260,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                         logger.info("Missing File: " + archiveFile.getFilePath());
                     }
                     logger.info("Could not find archive file " + archiveFile.getFilePath());
-                    archive.addCrcError(archiveFile);
+                    archive.addMissingFile(archiveFile);
                 } else {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
                         final DownloadLinkArchiveFile downloadLinkArchiveFile = (DownloadLinkArchiveFile) archiveFile;
@@ -272,7 +272,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                     }
                 }
             }
-            if (archive.getCrcError().size() > 0) {
+            if (archive.getMissingFiles().size() > 0) {
                 fireEvent(ExtractionEvent.Type.FILE_NOT_FOUND);
                 logger.info("Failed");
                 return null;
