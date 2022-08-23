@@ -44,6 +44,7 @@ import org.appwork.utils.KeyUtils;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.images.SVGIO;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
@@ -63,7 +64,6 @@ import org.jdownloader.logging.LogController;
 
 public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     public Dimension getPreferredScrollableViewportSize() {
-
         return this.getPreferredSize();
     }
 
@@ -72,7 +72,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     }
 
     public boolean getScrollableTracksViewportHeight() {
-
         return false;
     }
 
@@ -85,27 +84,17 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     }
 
     private JLabel            label;
-
     private MenuItemData      item;
     private ExtTextField      name;
     private ExtButton         iconChange;
-
     private MenuManagerDialog managerFrame;
-
     private JCheckBox         visibleBox;
-
     private ExtTextField      shortcut;
-
     private CustomPanel       customPanel;
-
     private JLabel            namelabel;
-
     private JButton           iconKeyReset;
-
     private JButton           nameReset;
-
     private JButton           shortCutReset;
-
     private JLabel            shortcutLabel;
 
     public Dimension getPreferredSize() {
@@ -119,32 +108,25 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         super("ins 5,wrap 2", "[grow,fill][]", "[22!][]");
         this.managerFrame = m;
         label = SwingUtils.toBold(new JLabel());
-
         add(label);
-
         add(new JSeparator(), "spanx");
         add(SwingUtils.toBold(new JLabel(_GUI.T.InfoPanel_InfoPanel_properties_())), "spanx");
         // MenuItemProperty.HIDE_IF_DISABLED;
         // MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED;
         // MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING;
-
         visibleBox = new JCheckBox();
         visibleBox.addActionListener(this);
         name = new ExtTextField() {
-
             @Override
             public void onChanged() {
                 if (item == null) {
                     return;
                 }
                 item.setName(name.getText());
-
                 updateResetButtons(item);
                 updateHeaderLabel(item);
                 managerFrame.fireUpdate();
-
             }
-
         };
         name.setHelpText(_GUI.T.InfoPanel_InfoPanel_customname_help());
         iconChange = new ExtButton(new AppAction() {
@@ -154,14 +136,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 final JPopupMenu p = new JPopupMenu();
-
                 final File imagesDir = NewTheme.I().getImagesDirectory();
-
                 final ArrayList<File> files = new ArrayList<File>();
                 Files.internalWalkThroughStructure(new FileHandler<RuntimeException>() {
-
                     @Override
                     public void intro(File f) throws RuntimeException {
                     }
@@ -171,11 +149,12 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                         final String name = f.getName().toLowerCase(Locale.ENGLISH);
                         if ("fav".equals(name) && f.isDirectory()) {
                             return false;
+                        } else {
+                            if (name.endsWith(".png") || (SVGIO.isSupported() && name.endsWith(".svg"))) {
+                                files.add(f);
+                            }
+                            return true;
                         }
-                        if (name.endsWith(".png") || name.endsWith(".svg")) {
-                            files.add(f);
-                        }
-                        return true;
                     }
 
                     @Override
@@ -187,7 +166,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 list.setVisibleRowCount(30);
                 final ListCellRenderer org = list.getCellRenderer();
                 list.setCellRenderer(new ListCellRenderer() {
-
                     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                         File f = (File) value;
                         // String key = value.toString().substring(0, value.toString().length() - 4);
@@ -204,24 +182,20 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 list.setFixedCellWidth(24);
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                 list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
                     public void valueChanged(ListSelectionEvent e) {
                         File v = (File) list.getSelectedValue();
                         String rel = Files.getRelativePath(imagesDir, v);
                         rel = rel.substring(0, rel.length() - 4);
                         item.setIconKey(rel);
-
                         updateInfo(item);
                         p.setVisible(false);
                         managerFrame.fireUpdate();
                     }
                 });
-
                 // list.setMinimumSize(new Dimension(64, 64));
                 p.setLayout(new MigLayout("ins 5", "[grow,fill]", "[grow,fill]"));
                 p.add(list, "width 32:n:n");
                 p.show(iconChange, 0, iconChange.getHeight());
-
             }
         });
         // icon=new JLabel(9)
@@ -235,7 +209,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         // String newName = null;
@@ -257,9 +230,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     }
                 };
             }
-
         }), "width 22!,height 22!");
-
         add(iconChange, "newline");
         add(iconKeyReset = new JButton(new AppAction() {
             {
@@ -269,7 +240,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         // String newIconKey = null;
@@ -290,13 +260,11 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     }
                 };
             }
-
         }), "width 22!,height 22!");
         shortcut = new ExtTextField();
         shortcut.setHelpText(_GUI.T.InfoPanel_InfoPanel_shortcuthelp2());
         shortcut.setEditable(false);
         shortcut.addKeyListener(new KeyListener() {
-
             @Override
             public void keyTyped(KeyEvent e) {
             }
@@ -311,11 +279,9 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 KeyStroke currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
                 shortcut.setText(msg1);
                 item.setShortcut(currentShortcut == null ? null : currentShortcut.toString());
-
                 // managerFrame.repaint();
                 updateResetButtons(item);
             }
-
         });
         if (managerFrame.getManager().isAcceleratorsEnabled()) {
             add(shortcutLabel = label(_GUI.T.InfoPanel_InfoPanel_shortcuts()), "hidemode 3");
@@ -328,7 +294,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
                             item.setShortcut(resetShortcut);
@@ -337,20 +302,16 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                         }
                     };
                 }
-
             }), "width 22!,height 22!,hidemode 3");
         }
-
         add(label(_GUI.T.InfoPanel_InfoPanel_hidden_2()));
         add(visibleBox, "spanx");
-
         add(new JSeparator(), "spanx");
         customPanel = new CustomPanel(managerFrame);
         add(customPanel, "spanx,growx,pushx");
     }
 
     private String resetIconKey;
-
     private String resetName;
     private String resetShortcut;
 
@@ -359,7 +320,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     }
 
     private class Entry {
-
         private MenuItemData  mid;
         private ActionContext so;
         private GetterSetter  gs;
@@ -369,7 +329,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             this.so = so;
             this.gs = gs;
         }
-
     }
 
     public void updateResetButtons(final MenuItemData value) {
@@ -384,12 +343,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             }
         } else {
             try {
-
                 if (value.getActionData() == null || !value.getActionData()._isValidDataForCreatingAnAction() || (value instanceof MenuLink)) {
                     return;
                 }
                 ActionData actionData = value.getActionData();
-
                 Class<?> clazz = actionData._getClazz();
                 Constructor<?> c = clazz.getConstructor(new Class[] {});
                 CustomizableAppAction ret = (CustomizableAppAction) c.newInstance(new Object[] {});
@@ -403,13 +360,11 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 if (shortCutReset != null) {
                     shortCutReset.setEnabled(true);
                 }
-
                 if (StringUtils.equals(name.getText(), ret.getName())) {
                     resetName = MenuItemData.EMPTY;
                 } else {
                     resetName = ret.getName();
                 }
-
                 if (StringUtils.equals(value.getIconKey(), ret.getIconKey())) {
                     resetIconKey = MenuItemData.EMPTY;
                 } else {
@@ -417,7 +372,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 }
                 iconKeyReset.setToolTipText(_GUI.T.ManagerFrame_layoutPanel_resettodefault_parametered(resetIconKey));
                 nameReset.setToolTipText(_GUI.T.ManagerFrame_layoutPanel_resettodefault_parametered(resetName));
-
                 if (shortCutReset != null) {
                     if (StringUtils.equals(value.getShortcut(), ret.getValue(Action.ACCELERATOR_KEY) + "")) {
                         resetShortcut = MenuItemData.EMPTY;
@@ -426,7 +380,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     }
                     shortCutReset.setToolTipText(_GUI.T.ManagerFrame_layoutPanel_resettodefault_parametered(resetShortcut));
                 }
-
             } catch (Throwable e) {
                 LogController.CL().log(e);
             }
@@ -448,18 +401,13 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             return;
         }
         visibleBox.setSelected(value.isVisible());
-
         MenuItemData mid = (value);
         Rectangle bounds = null;
-
         String n = mid.getName();
-
         name.setText(n);
-
         // renderer.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
         updateHeaderLabel(mid);
         customPanel.removeAll();
-
         CustomizableAppAction action = null;
         try {
             if (mid.getActionData() != null && mid.getActionData()._isValidDataForCreatingAnAction() && !(mid instanceof MenuLink)) {
@@ -472,7 +420,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 if (shortCutReset != null) {
                     shortCutReset.setVisible(true);
                 }
-
                 action = mid.createAction();
                 name.setText(action.getName());
                 if (StringUtils.isEmpty(action.getName())) {
@@ -483,47 +430,37 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 }
                 KeyStroke ks = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
                 if (ks != null) {
-
                     shortcut.setText(KeyUtils.getShortcutString(ks, true));
-
                 } else {
-
                     shortcut.setText("");
                 }
                 List<ActionContext> sos = action.getSetupObjects();
                 if (sos != null) {
                     ArrayList<Entry> lst = new ArrayList<Entry>();
                     for (ActionContext so : sos) {
-
                         ArrayList<GetterSetter> gss = new ArrayList<GetterSetter>(ReflectionUtils.getGettersSetteres(so.getClass()));
                         for (GetterSetter gs : gss) {
-
                             if (gs.hasGetter() && gs.hasSetter()) {
                                 if (gs.hasAnnotation(Customizer.class)) {
                                     lst.add(new Entry(mid, so, gs));
-
                                 }
                             }
                         }
                     }
                     Collections.sort(lst, new Comparator<Entry>() {
-
                         @Override
                         public int compare(Entry o1, Entry o2) {
                             try {
                                 String lbl1 = o1.gs.getKey();
                                 String lbl2 = o2.gs.getKey();
-
                                 Customizer oc1 = o1.gs.getAnnotation(Customizer.class);
                                 Customizer oc2 = o2.gs.getAnnotation(Customizer.class);
                                 if (oc1 != null) {
-
                                     lbl1 = CustomPanel.getNameForCustomizer(o1.gs);
                                 }
                                 if (oc2 != null) {
                                     lbl2 = CustomPanel.getNameForCustomizer(o2.gs);
                                 }
-
                                 return lbl1.compareToIgnoreCase(lbl2);
                             } catch (Throwable e) {
                                 e.printStackTrace();
@@ -534,7 +471,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     for (Entry e : lst) {
                         customPanel.add(e.mid.getActionData(), action, e.so, e.gs);
                     }
-
                 }
             } else {
                 shortcut.setText("");
@@ -559,37 +495,27 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             e.printStackTrace();
         }
         revalidate();
-
     }
 
     public void updateHeaderLabel(MenuItemData mid) {
-
         String type = null;
         String name = mid.getName();
         Icon icon = null;
         if (mid.getIconKey() != null) {
             icon = (MenuItemData.getIcon(mid.getIconKey(), 20));
         }
-
         if (mid instanceof MenuContainer) {
-
             type = _GUI.T.InfoPanel_update_submenu();
-
             // label.setText(_GUI.T.InfoPanel_updateInfo_header_actionlabel(, ));
-
         } else if (mid instanceof SeparatorData) {
-
             name = _GUI.T.Renderer_getTreeCellRendererComponent_separator();
-
         } else {
             if (mid instanceof MenuLink) {
                 type = _GUI.T.InfoPanel_update_link();
-
             } else {
                 if (mid._isValidated()) {
                     try {
                         AppAction action = mid.createAction();
-
                         if (StringUtils.isEmpty(name)) {
                             name = action.getName();
                         }
@@ -598,7 +524,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                             icon = action.getSmallIcon();
                         }
                     } catch (Exception e) {
-
                     }
                 }
                 if (StringUtils.isEmpty(name)) {
@@ -610,10 +535,8 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     }
                 }
                 if (StringUtils.isEmpty(name)) {
-
                     name = mid.getActionData().getClazzName();
                     name = name.substring(name.lastIndexOf(".") + 1);
-
                 }
                 if (MenuItemData.isEmptyValue(mid.getIconKey())) {
                     icon = null;
@@ -623,9 +546,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     name = name.substring(name.lastIndexOf(".") + 1);
                     name += "(" + MenuItemData.EMPTY + ")";
                 }
-
             }
-
         }
         if (StringUtils.isNotEmpty(type)) {
             label.setText(_GUI.T.InfoPanel_updateInfo_header_actionlabel(name, type));
@@ -638,9 +559,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     @Override
     public void actionPerformed(ActionEvent e) {
         item.setVisible(visibleBox.isSelected());
-
         managerFrame.repaint();
-
     }
-
 }
