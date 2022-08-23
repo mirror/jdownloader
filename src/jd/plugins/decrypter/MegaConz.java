@@ -50,6 +50,7 @@ import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.storage.simplejson.mapper.JSonMapper;
 import org.appwork.utils.ByteArrayWrapper;
 import org.appwork.utils.IO;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.MegaConzConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -171,9 +172,13 @@ public class MegaConz extends PluginForDecrypt {
                             public void onMinTimeSoftReferenceCleanup(MinTimeSoftReference<?> minTimeWeakReference) {
                                 minTimeWeakReference.clear();
                                 synchronized (CRAWLER_CACHE) {
-                                    final MinTimeSoftReference<List<Map<String, Object>>> cache = GLOBAL_CACHE.get(minTimeWeakReference.getID());
-                                    if (cache == minTimeWeakReference) {
-                                        GLOBAL_CACHE.remove(minTimeWeakReference.getID());
+                                    if (JVMVersion.isMinimum(JVMVersion.JAVA_1_8)) {
+                                        GLOBAL_CACHE.remove(minTimeWeakReference.getID(), minTimeWeakReference);
+                                    } else {
+                                        final MinTimeSoftReference<List<Map<String, Object>>> cache = GLOBAL_CACHE.get(minTimeWeakReference.getID());
+                                        if (cache == minTimeWeakReference) {
+                                            GLOBAL_CACHE.remove(minTimeWeakReference.getID());
+                                        }
                                     }
                                 }
                             }
