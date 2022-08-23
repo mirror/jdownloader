@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -24,6 +20,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 /**
  * A plugin for downloading JPG galleries from plain HTML of configured sites. Single galleries are supported, but also all galleries for a
@@ -44,20 +44,42 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
 
     protected static class SiteData {
         // these 2 are mandatory
-        public final String  host;
-        private final String galleryUrlRegexSuffix;
+        public final String[] host;
+        private final String  galleryUrlRegexSuffix;
         // if only single galleries are supported for that host, leave those 2 as "null". otherwise both are mandatory
-        private final String galleriesUrlRegexSuffix;
-        private final String galleryHrefRegex;
+        private final String  galleriesUrlRegexSuffix;
+        private final String  galleryHrefRegex;
         // access those only via their respective methods
-        private Pattern      _galleryUrlPattern;
-        private Pattern      _galleriesUrlPattern;
+        private Pattern       _galleryUrlPattern;
+        private Pattern       _galleriesUrlPattern;
 
+        @Deprecated
         protected SiteData(String host, String galleryUrlRegexSuffix, String galleriesRegexSuffix, String galleryHrefRegex) {
+            this(new String[] { host }, galleryUrlRegexSuffix, galleriesRegexSuffix, galleryHrefRegex);
+        }
+
+        protected SiteData(String host[], String galleryUrlRegexSuffix, String galleriesRegexSuffix, String galleryHrefRegex) {
             this.host = host;
             this.galleryUrlRegexSuffix = galleryUrlRegexSuffix;
             this.galleriesUrlRegexSuffix = galleriesRegexSuffix;
             this.galleryHrefRegex = galleryHrefRegex;
+        }
+
+        private String getHostPattern() {
+            if (host.length == 1) {
+                return host[0].replace(".", "\\.");
+            } else {
+                final StringBuilder sb = new StringBuilder();
+                sb.append("(");
+                for (String entry : host) {
+                    if (sb.length() > 1) {
+                        sb.append("|");
+                    }
+                    sb.append(entry.replace(".", "\\."));
+                }
+                sb.append(")");
+                return sb.toString();
+            }
         }
 
         protected String getUrlRegex() {
@@ -65,12 +87,12 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
             if (StringUtils.isNotEmpty(galleriesUrlRegexSuffix)) {
                 uri = "(" + uri + "|" + galleriesUrlRegexSuffix + ")";
             }
-            return HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + uri;
+            return HTTPS_WWW_REGEX_PREFIX + getHostPattern() + uri;
         }
 
         protected synchronized Pattern getGalleryUrlPattern() {
             if (_galleryUrlPattern == null) {
-                _galleryUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + galleryUrlRegexSuffix, Pattern.CASE_INSENSITIVE);
+                _galleryUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + getHostPattern() + galleryUrlRegexSuffix, Pattern.CASE_INSENSITIVE);
             }
             return _galleryUrlPattern;
         }
@@ -80,7 +102,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
                 return null;
             }
             if (_galleriesUrlPattern == null) {
-                _galleriesUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + galleriesUrlRegexSuffix, Pattern.CASE_INSENSITIVE);
+                _galleriesUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + getHostPattern() + galleriesUrlRegexSuffix, Pattern.CASE_INSENSITIVE);
             }
             return _galleriesUrlPattern;
         }
@@ -104,51 +126,48 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     private static final List<SiteData> SITE_DATA = new ArrayList<SiteData>();
     static {
         // only single gallery
-        SITE_DATA.add(new SiteData("coedcherry.com", "./*pics/[^/]+", null, null));
-        SITE_DATA.add(new SiteData("erocurves.com", "/.+", null, null));
-        SITE_DATA.add(new SiteData("pornpics.com", "/galleries/.+", null, null));
-        SITE_DATA.add(new SiteData("xxxporn.pics", "/sex/(?!\\d+).+", null, null));
-        SITE_DATA.add(new SiteData("fapcat.com", "/albums/\\d+/.+", null, null));
+        SITE_DATA.add(new SiteData(new String[] { "coedcherry.com" }, "./*pics/[^/]+", null, null));
+        SITE_DATA.add(new SiteData(new String[] { "erocurves.com" }, "/.+", null, null));
+        SITE_DATA.add(new SiteData(new String[] { "pornpics.com", "pornpics.de" }, "/galleries/.+", null, null));
+        SITE_DATA.add(new SiteData(new String[] { "xxxporn.pics" }, "/sex/(?!\\d+).+", null, null));
+        SITE_DATA.add(new SiteData(new String[] { "fapcat.com" }, "/albums/\\d+/.+", null, null));
         // single gallery and all per model
-        SITE_DATA.add(new SiteData("babesource.com", "/galleries/[^/]+-\\d+\\.html", "/pornstars/.+", "[^\"']+babesource\\.com/galleries[^\"']+"));
-        SITE_DATA.add(new SiteData("sexygirlspics.com", "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+sexygirlspics\\.com/pics[^\"']+"));
-        SITE_DATA.add(new SiteData("pichunter.com", "/gallery/.+", "/models/.+", "/gallery/[^\"']+"));
-        SITE_DATA.add(new SiteData("nastypornpics.com", "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+nastypornpics\\.com/pics[^\"']+"));
-        SITE_DATA.add(new SiteData("viewgals.com", "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+viewgals\\.com/pics[^\"']+"));
-        SITE_DATA.add(new SiteData("sexhd.pics", "/gallery/[^/]+/[^/]+/.+", "/gallery/[^/]+/?$", "/gallery/[^/\"']+/[^/\"']+/[^/\"']+/?"));
-        SITE_DATA.add(new SiteData("hqsluts.com", "/[^/]+-\\d+", "/sluts/.+", "/[^/\"']+-\\d+/"));
+        SITE_DATA.add(new SiteData(new String[] { "babesource.com" }, "/galleries/[^/]+-\\d+\\.html", "/pornstars/.+", "[^\"']+babesource\\.com/galleries[^\"']+"));
+        SITE_DATA.add(new SiteData(new String[] { "sexygirlspics.com" }, "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+sexygirlspics\\.com/pics[^\"']+"));
+        SITE_DATA.add(new SiteData(new String[] { "pichunter.com" }, "/gallery/.+", "/models/.+", "/gallery/[^\"']+"));
+        SITE_DATA.add(new SiteData(new String[] { "nastypornpics.com" }, "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+nastypornpics\\.com/pics[^\"']+"));
+        SITE_DATA.add(new SiteData(new String[] { "viewgals.com" }, "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+viewgals\\.com/pics[^\"']+"));
+        SITE_DATA.add(new SiteData(new String[] { "sexhd.pics" }, "/gallery/[^/]+/[^/]+/.+", "/gallery/[^/]+/?$", "/gallery/[^/\"']+/[^/\"']+/[^/\"']+/?"));
+        SITE_DATA.add(new SiteData(new String[] { "hqsluts.com" }, "/[^/]+-\\d+", "/sluts/.+", "/[^/\"']+-\\d+/"));
     }
 
     public SimpleHtmlBasedGalleryPlugin(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public static List<String[]> getSupportedSites() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        for (SiteData siteData : SITE_DATA) {
-            ret.add(new String[] { siteData.host, siteData.getUrlRegex() });
-        }
-        return ret;
-    }
-
     public static String[] getAnnotationNames() {
         final List<String> ret = new ArrayList<String>();
-        for (final String[] supportedSite : getSupportedSites()) {
-            ret.add(supportedSite[0]);
+        for (SiteData siteData : SITE_DATA) {
+            ret.add(siteData.host[0]);
         }
         return ret.toArray(new String[0]);
     }
 
-    // TODO REVIEW really necessary?
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { getHost() };
+        final String host = getHost();
+        for (SiteData siteData : SITE_DATA) {
+            if (StringUtils.equals(host, siteData.host[0])) {
+                return siteData.host;
+            }
+        }
+        return new String[] { host };
     }
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        for (final String[] supportedSite : getSupportedSites()) {
-            ret.add(supportedSite[1]);
+        for (SiteData siteData : SITE_DATA) {
+            ret.add(siteData.getUrlRegex());
         }
         return ret.toArray(new String[0]);
     }

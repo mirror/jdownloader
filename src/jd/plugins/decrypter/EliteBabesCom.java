@@ -5,55 +5,39 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 /**
  * Downloads single galleries and all per model from elitebabes.com. Re-uses functionality from SimpleHtmlBasedGalleryPlugin, but has
  * specific functionality to get the gallery urls.
- * 
+ *
  * It supports auto-paging for all galleries of a model.
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class EliteBabesCom extends SimpleHtmlBasedGalleryPlugin {
-
     private static final SiteData SITE_DATA = new SiteData("elitebabes.com", "/(?!model/).+", "/model/.+", "[^\"']+");
 
     public EliteBabesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public static List<String[]> getSupportedSites() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { SITE_DATA.host, SITE_DATA.getUrlRegex() });
-        return ret;
-    }
-
     public static String[] getAnnotationNames() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] supportedSite : getSupportedSites()) {
-            ret.add(supportedSite[0]);
-        }
-        return ret.toArray(new String[0]);
+        return new String[] { SITE_DATA.host[0] };
     }
 
-    // TODO REVIEW really necessary?
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { getHost() };
+        return SITE_DATA.host;
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] supportedSite : getSupportedSites()) {
-            ret.add(supportedSite[1]);
-        }
-        return ret.toArray(new String[0]);
+        return new String[] { SITE_DATA.getUrlRegex() };
     }
 
     @Override

@@ -214,8 +214,8 @@ public class ProLeechLink extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         } else {
             trafficusedTodayStr = PluginJSonUtils.getJson(br, "used_today");
-            /* 2020-06-04: Fallback: Static value taken from: https://proleech.link/page/hostlist */
-            trafficmaxDailyStr = "80 GB";
+            /* 2022-19-08: Fallback: Static value taken from: https://proleech.link/page/hostlist */
+            trafficmaxDailyStr = "100 GB";
             final String premiumStatus = PluginJSonUtils.getJson(br, "premium");
             String expiredate = PluginJSonUtils.getJson(br, "subscriptions_date");
             if ("true".equalsIgnoreCase(premiumStatus) || "yes".equalsIgnoreCase(premiumStatus)) {
@@ -424,6 +424,7 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     /* 2019-11-11: New: Max daily traffic value [80 GB at this moment] */
+    /* 2022-19-08: New: Max daily traffic value [100 GB at this moment] */
     private String regexMaxDailyTrafficWebsite() {
         return br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
     }
