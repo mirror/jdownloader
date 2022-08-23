@@ -69,7 +69,7 @@ public class XiaoshenkeNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([a-f0-9]+)(/([a-zA-Z0-9_/\\+\\=\\-%]+))?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video[a-z]?/([a-f0-9]+)(/([a-zA-Z0-9_/\\+\\=\\-%]+))?");
         }
         return ret.toArray(new String[0]);
     }
