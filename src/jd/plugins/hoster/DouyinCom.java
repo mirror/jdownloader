@@ -60,7 +60,7 @@ public class DouyinCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "douyin.com" });
+        ret.add(new String[] { "douyin.com", "iesdouyin.com" });
         return ret;
     }
 
@@ -76,7 +76,7 @@ public class DouyinCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:share/)?video/(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -153,7 +153,7 @@ public class DouyinCom extends PluginForHost {
             final Map<String, Object> video = (Map<String, Object>) videoInfo.get("video");
             this.dllink = (String) JavaScriptEngineFactory.walkJson(video, "play_addr/url_list/{0}");
         } else {
-            br.getPage(link.getPluginPatternMatcher());
+            br.getPage("https://www." + this.getHost() + "/video/" + this.getFID(link));
             if (isBotProtectionActive(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
             } else if (br.getHttpConnection().getResponseCode() == 404) {

@@ -23,9 +23,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -47,10 +44,8 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -951,8 +946,7 @@ public class XHamsterCom extends PluginForHost {
                         }
                     }
                 }
-                /** 2021-01-08: Free login is broken and premium works for both -> Use premium login only */
-                final boolean usePremiumLoginONLY = true;
+                final boolean usePremiumLoginONLY = false;
                 if (br.getHost() == null) {
                     br.getPage("https://" + this.getHost() + "/");
                 }
@@ -966,85 +960,38 @@ public class XHamsterCom extends PluginForHost {
                         xhamsterComLoginURL = br.getRegex("(https?://[^/]+/premium/in\\?[^<>\"]+)").getMatch(0);
                     }
                     if (StringUtils.isEmpty(xhamsterComLoginURL)) {
-                        logger.warning("Premium login successful but free login failed");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    /* Now we should also be logged in as free- user! */
-                    br.getPage(xhamsterComLoginURL);
-                } else {
-                    if (htmlIsOldDesign(br)) {
-                        final Form login = br.getFormbyProperty("name", "loginForm");
-                        if (login == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        /* set action, website changes action in js! */
-                        login.setAction(br.getURL("/ajax/login.php").toExternalForm());
-                        Browser br = this.br.cloneBrowser();
-                        final long now = System.currentTimeMillis();
-                        final String xsid;
-                        {
-                            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-                            final ScriptEngine engine = manager.getEngineByName("javascript");
-                            engine.eval("res1 = Math.floor(Math.random()*100000000).toString(16);");
-                            engine.eval("now = " + now);
-                            engine.eval("res2 = now.toString(16).substring(0,8);");
-                            xsid = (String) engine.get("res1") + ":" + (String) engine.get("res2");
-                        }
-                        // set in login form and cookie to the correct section
-                        login.put("stats", Encoding.urlEncode(xsid));
-                        br.setCookie(br.getHost(), "xsid", xsid);
-                        // now some other fingerprint set via js, again cookie and login form
-                        final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
-                        br.setCookie(br.getHost(), "fingerprint", fingerprint);
-                        login.put("fingerprint", fingerprint);
-                        login.put("username", Encoding.urlEncode(account.getUser()));
-                        login.put("password", Encoding.urlEncode(account.getPass()));
-                        login.put("remember", "on");
-                        // login.put("_", now + "");
-                        br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.submitForm(login);
-                        /* Account is fine but we need a stupid login captcha */
-                        if (br.containsHTML("\"errors\":\"invalid_captcha\"") && br.containsHTML("\\$\\('#loginCaptchaRow'\\)\\.show\\(\\)")) {
-                            if (this.getDownloadLink() == null) {
-                                final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
-                                this.setDownloadLink(dummyLink);
-                            }
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                            br = this.br.cloneBrowser();
-                            login.put("_", System.currentTimeMillis() + "");
-                            br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
-                            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                            login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                            br.submitForm(login);
-                        }
+                        logger.warning("Looks like this is a free account");
                     } else {
-                        /* 2020-08-31: Current key should be: 6Le0H9IUAAAAAIQylhldG3_JgdRkQInX5RUDXzqG */
-                        final String siteKeyV3 = PluginJSonUtils.getJson(br, "recaptchaKeyV3");
-                        final String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
-                        final String id = createID();
-                        final String requestdataFormat = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"trusted\":true,\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"\",\"g-recaptcha-response\":\"%s\"}}]";
-                        final String requestdataFormatCaptcha = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"\",\"trusted\":true,\"g-recaptcha-response\":\"%s\"}}]";
-                        String requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), "");
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.postPageRaw("/x-api", requestData);
-                        if (br.containsHTML("showCaptcha\":true")) {
-                            if (this.getDownloadLink() == null) {
-                                final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "https://xhamster.com", true);
-                                this.setDownloadLink(dummyLink);
-                            }
-                            final String recaptchaV2Response;
-                            if (!StringUtils.isEmpty(siteKeyV3)) {
-                                /* 2020-03-17 */
-                                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, br, siteKeyV3).getToken();
-                            } else {
-                                /* Old */
-                                recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
-                            }
-                            requestData = String.format(requestdataFormatCaptcha, id, account.getUser(), account.getPass(), recaptchaV2Response);
-                            /* TODO: Fix this */
-                            br.postPageRaw("/x-api", requestData);
+                        logger.info("Looks like this is a premium account");
+                        /* Now we should also be logged in as free- user! */
+                        br.getPage(xhamsterComLoginURL);
+                    }
+                } else {
+                    /* 2020-08-31: Current key should be: 6Le0H9IUAAAAAIQylhldG3_JgdRkQInX5RUDXzqG */
+                    final String siteKeyV3 = PluginJSonUtils.getJson(br, "recaptchaKeyV3");
+                    final String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
+                    final String id = createID();
+                    final String requestdataFormat = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"trusted\":true,\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"\",\"g-recaptcha-response\":\"%s\"}}]";
+                    final String requestdataFormatCaptcha = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"\",\"trusted\":true,\"g-recaptcha-response\":\"%s\"}}]";
+                    String requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), "");
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.postPageRaw("/x-api", requestData);
+                    if (br.containsHTML("showCaptcha\":true")) {
+                        if (this.getDownloadLink() == null) {
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "https://xhamster.com", true);
+                            this.setDownloadLink(dummyLink);
                         }
+                        final String recaptchaV2Response;
+                        if (!StringUtils.isEmpty(siteKeyV3)) {
+                            /* 2020-03-17 */
+                            recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, br, siteKeyV3).getToken();
+                        } else {
+                            /* Old */
+                            recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
+                        }
+                        requestData = String.format(requestdataFormatCaptcha, id, account.getUser(), account.getPass(), recaptchaV2Response);
+                        /* TODO: Fix this */
+                        br.postPageRaw("/x-api", requestData);
                     }
                 }
                 /* Check whether or not we're logged in */
@@ -1098,11 +1045,7 @@ public class XHamsterCom extends PluginForHost {
         logger.info("Performing full premium login");
         br.getHeaders().put("Referer", null);
         /* Login premium --> Same logindata */
-        br.getPage("https://faphouse.com/");
-        if (this.getDownloadLink() == null) {
-            final DownloadLink dummyLink = new DownloadLink(this, "Account", "faphouse.com", "https://faphouse.com", true);
-            this.setDownloadLink(dummyLink);
-        }
+        br.getPage("https://" + domain_premium + "/");
         String rcKey = br.getRegex("data-site-key=\"([^\"]+)\"").getMatch(0);
         if (rcKey == null) {
             /* Fallback: reCaptchaKey timestamp: 2020-08-04 */
@@ -1165,11 +1108,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private boolean isLoggedInHTML(final Browser br) {
-        if (htmlIsOldDesign(br)) {
-            return br.containsHTML("id=\"menuLogin\"");
-        } else {
-            return br.containsHTML("\"myProfile\"");
-        }
+        return br.containsHTML("\"myProfile\"");
     }
 
     @Override

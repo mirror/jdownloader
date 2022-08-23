@@ -53,13 +53,7 @@ public class DefinebabeComDecrypter extends PornEmbedParser {
 
     @Override
     protected String getFileTitle(final CryptedLink param, final Browser br) {
-        String title = br.getRegex("<div id=\"sp\">\\s*?<b>([^<>\"]+)</b>").getMatch(0);
-        if (title == null) {
-            /* Fallback */
-            title = getURLTitleCleaned(br.getURL());
-        }
-        title = Encoding.htmlDecode(title).trim();
-        return title;
+        return getFileTitle(br);
     }
 
     @Override
@@ -70,5 +64,19 @@ public class DefinebabeComDecrypter extends PornEmbedParser {
         } else {
             return false;
         }
+    }
+
+    public static String getFileTitle(final Browser br) {
+        String title = br.getRegex("<div id=\"sp\">\\s*?<b>([^<>\"]+)</b>").getMatch(0);
+        if (title == null) {
+            /* 2022-08-23 */
+            title = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+        }
+        if (title == null) {
+            /* Fallback */
+            title = getURLTitleCleaned(br.getURL());
+        }
+        title = Encoding.htmlDecode(title).trim();
+        return title;
     }
 }

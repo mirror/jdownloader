@@ -22,20 +22,20 @@ import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.dcm.Dcm;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,7 +43,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "digitalcomicmuseum.com" }, urls = { "https?://(?:www\\.)?digitalcomicmuseum\\.com/index\\.php\\?dlid=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "digitalcomicmuseum.com" }, urls = { "https?://(?:www\\.)?digitalcomicmuseum\\.com/.*\\?dl?id=\\d+" })
 public class DigitalcomicmuseumCom extends PluginForHost {
     public DigitalcomicmuseumCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,34 +58,54 @@ public class DigitalcomicmuseumCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME               = false;
     private static final int     FREE_MAXCHUNKS            = 1;
-    private static final int     FREE_MAXDOWNLOADS         = 20;
+    private static final int     FREE_MAXDOWNLOADS         = -1;
     private static final boolean ACCOUNT_FREE_RESUME       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    /* don't touch the following! */
-    private String               fid                       = null;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = -1;
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        try {
+            final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
+            String fid = query.get("did");
+            if (fid == null) {
+                fid = query.get("dlid");
+            }
+            return fid;
+        } catch (final Throwable e) {
+        }
+        return null;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            /* Set fallback name */
+            link.setName(fid);
+        }
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage("https://" + this.getHost() + "/index.php?dlid=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("/images/error\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<a href='index\\.php\\?dlid=" + fid + "'>([^<>]*?)</a>").getMatch(0);
-        if (filename == null) {
-            /* Fallback */
-            filename = fid;
-        }
-        String filesize = br.getRegex(">Filesize:</td>[\t\n\r ]+<td colspan='2'>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename.trim());
-        link.setName(filename);
+        String filename = br.getRegex("<a href='index\\.php\\?dlid=\\d+'>([^<>]*?)</a>").getMatch(0);
+        final String filesize = br.getRegex(">Filesize:</td>[\t\n\r ]+<td colspan='2'>([^<>\"]*?)</td>").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename.trim());
+            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -93,35 +113,35 @@ public class DigitalcomicmuseumCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        throw new AccountRequiredException();
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -129,11 +149,8 @@ public class DigitalcomicmuseumCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://digitalcomicmuseum.com";
-    private static Object       LOCK     = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             final boolean ifr = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
@@ -175,7 +192,7 @@ public class DigitalcomicmuseumCom extends PluginForHost {
                 login.put("hash_passwrd", result);
                 login.put("cookielength", "-1");
                 br.submitForm(login);
-                if (br.getCookie(MAINPAGE, "rwd_password") == null) {
+                if (br.getCookie(this.getHost(), "rwd_password", Cookies.NOTDELETEDPATTERN) == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -192,22 +209,14 @@ public class DigitalcomicmuseumCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Free Account");
-        account.setValid(true);
         return ai;
     }
 
@@ -228,14 +237,18 @@ public class DigitalcomicmuseumCom extends PluginForHost {
             dllink = "/" + Encoding.htmlOnlyDecode(dllink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
