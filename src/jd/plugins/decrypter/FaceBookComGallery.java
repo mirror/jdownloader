@@ -68,6 +68,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     public static String[] getAnnotationNames() {
         return new String[] { "facebook.com" };
     }
+
     public static String[] getAnnotationUrls() {
         // return new String[] { "https?://(?:www\\.)?facebook\\.com/.+" };
         return new String[] { "https?://(?:www\\.)?facebook_plugin_unfinished\\.com/.+" };
@@ -127,7 +128,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         /* 2022-08-01: Lazier attempt: On RegEx which is simply supposed to find all jsons on the current page. */
         jsonRegExes.add("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> videoPermalinks = new ArrayList<DownloadLink>();
+        // final ArrayList<DownloadLink> videoPermalinks = new ArrayList<DownloadLink>();
         final HashSet<String> processedJsons = new HashSet<String>();
         int numberofJsonsFound = 0;
         for (final String jsonRegEx : jsonRegExes) {
