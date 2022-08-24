@@ -147,6 +147,25 @@ public class LinkCrawler {
     protected final WeakHashMap<LinkCrawler, Object>                      children                    = new WeakHashMap<LinkCrawler, Object>();
     protected final static WeakHashMap<LinkCrawler, Set<LinkCrawlerLock>> LOCKS                       = new WeakHashMap<LinkCrawler, Set<LinkCrawlerLock>>();
     protected final AtomicReference<LinkCrawlerGeneration>                linkCrawlerGeneration       = new AtomicReference<LinkCrawlerGeneration>(null);
+    protected final static WeakHashMap<LinkCrawler, Map<String, Object>>  CRAWLER_CACHE               = new WeakHashMap<LinkCrawler, Map<String, Object>>();
+
+    public Object getCrawlerCache(final String key) {
+        synchronized (CRAWLER_CACHE) {
+            final Map<String, Object> cache = CRAWLER_CACHE.get(this);
+            return cache != null ? cache.get(key) : null;
+        }
+    }
+
+    public Object putCrawlerCache(final String key, Object value) {
+        synchronized (CRAWLER_CACHE) {
+            Map<String, Object> cache = CRAWLER_CACHE.get(this);
+            if (cache == null) {
+                cache = new HashMap<String, Object>();
+                CRAWLER_CACHE.put(this, cache);
+            }
+            return cache.put(key, value);
+        }
+    }
 
     protected LinkCrawlerGeneration getValidLinkCrawlerGeneration() {
         synchronized (linkCrawlerGeneration) {
@@ -1021,6 +1040,9 @@ public class LinkCrawler {
     }
 
     protected void crawlerStopped() {
+        synchronized (CRAWLER_CACHE) {
+            CRAWLER_CACHE.remove(this);
+        }
     }
 
     protected void crawlerStarted() {
