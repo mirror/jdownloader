@@ -70,7 +70,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+-.{4,}");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!history/)[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+-.{4,}");
         }
         return ret.toArray(new String[0]);
     }

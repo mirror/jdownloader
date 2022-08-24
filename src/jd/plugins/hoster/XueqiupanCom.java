@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "feimaoyun.com" }, urls = { "https?://(?:www\\.)?xueqiupan\\.com/file\\-(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xueqiupan.com" }, urls = { "https?://(?:www\\.)?xueqiupan\\.com/file\\-(\\d+)\\.html" })
 public class XueqiupanCom extends PluginForHost {
     public XueqiupanCom(PluginWrapper wrapper) {
         super(wrapper);
