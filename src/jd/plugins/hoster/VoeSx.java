@@ -17,8 +17,11 @@ package jd.plugins.hoster;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,12 +31,12 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import jd.plugins.decrypter.VoeSxCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { VoeSxCrawler.class })
 public class VoeSx extends XFileSharingProBasic {
     public VoeSx(final PluginWrapper wrapper) {
         super(wrapper);
@@ -48,22 +51,7 @@ public class VoeSx extends XFileSharingProBasic {
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "voe.sx", "voe-unblock.com", "voe-unblock.net", "voeunblock.com", "voeunblk.com", "voeunblck.com", "voe-un-block.com", "un-block-voe.net", "voeunbl0ck.com", "voeunblock1.com", "voeunblock2.com", "voeunblock3.com", "voeunblock4.com", "voeunblock5.com", "voeunblock6.com", "voeun-block.net", "v-o-e-unblock.com", "audaciousdefaulthouse.com", "launchreliantcleaverriver.com", "reputationsheriffkennethsand.com", "fittingcentermondaysunday.com", "housecardsummerbutton.com", "fraudclatterflyingcar.com" });
-        return ret;
-    }
-
-    public static final String getDefaultAnnotationPatternPartVoeSx() {
-        return "/(?:embed-|e/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
-    }
-
-    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + VoeSx.getDefaultAnnotationPatternPartVoeSx());
-        }
-        return ret.toArray(new String[0]);
+        return VoeSxCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -76,7 +64,7 @@ public class VoeSx extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return VoeSx.buildAnnotationUrls(getPluginDomains());
+        return VoeSxCrawler.getAnnotationUrls();
     }
 
     @Override
@@ -110,13 +98,13 @@ public class VoeSx extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return -5;
+            return 0;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return -5;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -5;
+            return 0;
         }
     }
 
@@ -187,5 +175,48 @@ public class VoeSx extends XFileSharingProBasic {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
         }
         return dllink;
+    }
+
+    @Override
+    protected String getDllinkViaOfficialVideoDownload(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        if (returnFilesize) {
+            return null;
+        } else {
+            logger.info("[DownloadMode] Trying to find official video downloads");
+            String continueLink = br.getRegex("(?:\"|')(/dl\\?op=download_orig[^\"\\']+)").getMatch(0);
+            if (continueLink == null) {
+                /* No official download available */
+                logger.info("Failed to find any official video downloads");
+                return null;
+            }
+            if (br.containsHTML("&embed=&adb=")) {
+                /* 2022-08-24: This might give us more download-speed, not sure though. */
+                continueLink += "&embed=&adb=0";
+            }
+            this.getPage(br, continueLink);
+            String dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
+            if (StringUtils.isEmpty(dllink)) {
+                /*
+                 * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a
+                 * result.
+                 */
+                dllink = br.getRegex("(?i)>\\s*Download Link\\s*</td>\\s*<td><a href=\"(https?://[^\"]+)\"").getMatch(0);
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                logger.warning("Failed to find dllink via official video download");
+            } else {
+                logger.info("Successfully found dllink via official video download");
+                final String filesizeBytesStr = br.getRegex("File Size \\(bytes\\)</td>\\s*<td>\\s*(\\d+)\\s*<").getMatch(0);
+                if (filesizeBytesStr != null) {
+                    link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
+                }
+            }
+            return dllink;
+        }
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideoVoeSx> getConfigInterface() {
+        return XFSConfigVideoVoeSx.class;
     }
 }
