@@ -72,7 +72,7 @@ public class XvideosCom extends XvideosCore {
             pattern += "video\\d+/.*|";
             pattern += "embedframe/\\d+|";
             // pattern += "[a-z0-9\\-]+/upload/[^/]+/\\d+/[a-z0-9_\\-]+|";
-            pattern += "[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+)";
+            pattern += "[a-z0-9\\-]+/(upload|pornstar|model)/[a-z0-9\\-_]+/\\d+/[^/#\\?]+)";
             ret.add(pattern);
         }
         return ret.toArray(new String[0]);

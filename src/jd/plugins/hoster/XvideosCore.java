@@ -163,7 +163,7 @@ public abstract class XvideosCore extends PluginForHost {
     /* xnxx.gold */
     private static final String type_normal_2                   = "https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                          // xnxx.gold
     private static final String type_embed                      = "https?://[^/]+/embedframe/(\\d+)";
-    private static final String type_special1                   = "https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([a-z0-9_\\-]+)";
+    private static final String type_special1                   = "https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([^/]+)";
     private static final String type_special2                   = "https?://[^/]+/[^/]+/(upload|pornstar|model)/([a-z0-9\\-\\_]+)/(\\d+).*";
     private static final String NOCHUNKS                        = "NOCHUNKS";
     private String              streamURL                       = null;

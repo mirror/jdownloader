@@ -229,7 +229,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 fpName = itemID + "_" + fpName;
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName).trim());
             if (!PluginJsonConfig.get(this.getConfigInterface()).isCrawlUserWorksIndividually()) {
                 fp.setAllowInheritance(true);
             }

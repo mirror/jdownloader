@@ -261,7 +261,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         } while (!this.isAbort());
     }
 
-    private void crawlChannel(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
+    private void crawlChannel(final String parameter, final ArrayList<DownloadLink> ret) throws IOException, PluginException {
         final Set<String> dupeList = new HashSet<String>();
         final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)");
         // final String type = urlinfo.getMatch(0);
@@ -272,8 +272,8 @@ public class XvideosComProfile extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(username.trim()));
-        fp.addLinks(decryptedLinks);
+        fp.setName(Encoding.htmlDecode(username).trim());
+        fp.addLinks(ret);
         final String url_base = this.br.getURL("/channels/" + username + "/videos/new").toString();
         short pageNum = 0;
         final short maxItemsPerPage = 36;
@@ -287,7 +287,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             }
             // users don't always have profile... as bug reporter Guardao finds links from google... false positive.
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 400) {
-                if (decryptedLinks.isEmpty()) {
+                if (ret.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     /* Stop in the middle -> Should never happen */
@@ -301,16 +301,16 @@ public class XvideosComProfile extends PluginForDecrypt {
                 logger.info("Stopping because: User doesn't have any videos");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] links = new Regex(PluginJSonUtils.unescape(br.toString()), "(/" + org.appwork.utils.Regex.escape(username) + "/\\d+/[\\w\\-]+)").getColumn(0);
             int numberofItemsOnCurrentPage = 0;
-            for (String singleLink : links) {
-                final String videoID = new Regex(singleLink, "/[^/]+/(\\d+)").getMatch(0);
+            final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("videos");
+            for (final Map<String, Object> video : videos) {
+                final String singleLink = video.get("u").toString();
+                final String videoID = video.get("id").toString();
                 /* Only add new URLs */
-                if (!dupeList.contains(videoID)) {
+                if (!dupeList.contains(singleLink)) {
                     final String titleURL = new Regex(singleLink, "/([^/]+)$").getMatch(0);
-                    singleLink = "https://www." + this.br.getHost() + "/video" + videoID + "/" + titleURL;
                     final String nameTemp;
-                    final DownloadLink dl = createDownloadlink(singleLink);
+                    final DownloadLink dl = createDownloadlink(br.getURL(singleLink).toString());
                     /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
                     dl.setAvailable(true);
                     fp.add(dl);
@@ -322,7 +322,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                     dl.setName(nameTemp + ".mp4");
                     /* Packagizer properties */
                     dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                     numberofItemsOnCurrentPage++;
                     dupeList.add(videoID);
@@ -330,8 +330,8 @@ public class XvideosComProfile extends PluginForDecrypt {
                     // logger.info("Found dupe: " + videoID);
                 }
             }
-            logger.info("Crawled page: " + pageNum + " | Crawled items on current page: " + numberofItemsOnCurrentPage + " | Progress overall: " + decryptedLinks.size() + "/" + totalNumberofItems);
-            if (decryptedLinks.size() >= totalNumberofItems) {
+            logger.info("Crawled page: " + pageNum + " | Crawled items on current page: " + numberofItemsOnCurrentPage + " | Progress overall: " + ret.size() + "/" + totalNumberofItems);
+            if (ret.size() >= totalNumberofItems) {
                 /* We found all items */
                 logger.info("Stopping because: Reached the end");
                 break;
@@ -344,7 +344,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 pageNum++;
             }
         } while (!this.isAbort());
-        if (decryptedLinks.size() == 0) {
+        if (ret.isEmpty()) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

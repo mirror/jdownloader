@@ -9,7 +9,7 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "voe.sx", type = Type.HOSTER)
 public interface XFSConfigVideoVoeSx extends XFSConfigVideo {
-    final String text_CrawlSubtitle = "Crawl subtitle?";
+    final String text_CrawlSubtitle = "Crawl subtitle(s)?";
 
     @AboutConfig
     @DefaultBooleanValue(true)

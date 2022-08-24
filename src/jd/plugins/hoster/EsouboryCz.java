@@ -24,7 +24,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,6 +37,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -90,9 +90,6 @@ public class EsouboryCz extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "/([a-f0-9]{8}/[a-z0-9\\-]+)(?:/?|\\.html)").getMatch(0);
     }
 
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
@@ -120,16 +117,15 @@ public class EsouboryCz extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, Exception {
         br.setFollowRedirects(true);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
         final String name_url = new Regex(link.getPluginPatternMatcher(), "(?:file|soubor|redir)/[a-f0-9]{8}/([a-z0-9\\-]+)").getMatch(0);
         if (name_url != null) {
             link.setName(name_url);
         }
         String filename;
         String filesize;
-        if (aa != null && USE_API_FOR_SELFHOSTED_CONTENT) {
+        if (account != null && USE_API_FOR_SELFHOSTED_CONTENT) {
             /* API */
-            br.getPage(API_BASE + "/exists?token=" + loginAPI(aa, false) + "&url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
+            br.getPage(API_BASE + "/exists?token=" + loginAPI(account, false) + "&url=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             if (!br.containsHTML("\"exists\":true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -143,33 +139,38 @@ public class EsouboryCz extends PluginForHost {
             br.getPage(link.getPluginPatternMatcher());
             if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!this.canHandle(br.getURL())) {
+                /* E.g. redirect to https://www.esoubory.cz/search/blabla.html */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // final Regex linkinfo = br.getRegex("<h1>([^<>\"]*?)<span class=\"bluetext upper\">\\(([^<>\"]*?)\\)</span>");
-            final Regex linkinfo = br.getRegex("<h1>\\s*([^<>]*?)\\((\\d+(,\\d+)? (K|M|G)B)\\)\\s*</h1>");
+            final Regex linkinfo = br.getRegex("<h1>\\s*([^<>]*?)\\((\\d+((,|\\.)\\d+)? (K|M|G)B)\\)\\s*</h1>");
             filename = linkinfo.getMatch(0);
             filesize = linkinfo.getMatch(1);
+            if (filesize == null) {
+                filesize = br.getRegex("<span class=\"fa fa-hdd-o\"></span>([^<]+)</span>").getMatch(0);
+            }
             String fileextension = br.getRegex("<span class=\"fa fa\\-file\"></span>([^<>\"]+)</span>").getMatch(0);
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            filename = Encoding.htmlDecode(filename).trim();
-            if (fileextension != null) {
-                fileextension = fileextension.trim();
-                if (!filename.endsWith(fileextension)) {
-                    filename += fileextension;
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename).trim();
+                if (fileextension != null) {
+                    fileextension = fileextension.trim();
+                    filename = this.correctOrApplyFileNameExtension(filename, fileextension);
                 }
+                /* Do not set the final filename here as we'll have the API when downloading via account anyways! */
+                link.setName(filename);
             }
-            filesize = filesize.replace(",", ".");
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-            /* Do not set the final filename here as we'll have the API when downloading via account anyways! */
-            link.setName(filename);
+            if (filesize != null) {
+                filesize = filesize.replace(",", ".");
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        throw new AccountRequiredException();
     }
 
     @Override
