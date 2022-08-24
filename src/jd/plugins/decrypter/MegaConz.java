@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.crypto.BadPaddingException;
@@ -39,8 +38,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.MinTimeSoftReference;
-import org.appwork.storage.config.MinTimeSoftReferenceCleanup;
+import org.appwork.storage.config.MaxTimeSoftReference;
+import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
 import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonObjectHashMap;
@@ -84,9 +83,8 @@ public class MegaConz extends PluginForDecrypt {
         return null;
     }
 
-    private static HashMap<String, MinTimeSoftReference<List<Map<String, Object>>>> GLOBAL_CACHE  = new HashMap<String, MinTimeSoftReference<List<Map<String, Object>>>>();
-    private static WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>> CRAWLER_CACHE = new WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>>();
-    private final Charset                                                           UTF8          = Charset.forName("UTF-8");
+    private static HashMap<String, MaxTimeSoftReference<List<Map<String, Object>>>> GLOBAL_CACHE = new HashMap<String, MaxTimeSoftReference<List<Map<String, Object>>>>();
+    private final Charset                                                           UTF8         = Charset.forName("UTF-8");
 
     protected Object toObject(final Object object) {
         if (object == null) {
@@ -142,24 +140,17 @@ public class MegaConz extends PluginForDecrypt {
         List<Map<String, Object>> folderNodes = null;
         final MegaConzConfig config = PluginJsonConfig.get(MegaConzConfig.class);
         final boolean isCrawlerSetFullPathAsPackagename = config.isCrawlerSetFullPathAsPackagename();
-        synchronized (CRAWLER_CACHE) {
+        synchronized (GLOBAL_CACHE) {
+            final String key = getHost() + "://FolderNodes/" + folderID;
             LinkCrawler crawler = getCrawler();
             if (crawler != null) {
                 crawler = crawler.getRoot();
             }
-            Map<String, List<Map<String, Object>>> map = null;
             if (crawler != null) {
-                map = CRAWLER_CACHE.get(crawler);
-                if (map == null) {
-                    map = new HashMap<String, List<Map<String, Object>>>();
-                    CRAWLER_CACHE.put(crawler, map);
-                }
-                if (map.containsKey(folderID)) {
-                    folderNodes = map.get(folderID);
-                }
+                folderNodes = (List<Map<String, Object>>) crawler.getCrawlerCache(key);
             }
             if (folderNodes == null) {
-                MinTimeSoftReference<List<Map<String, Object>>> cached = GLOBAL_CACHE.get(folderID);
+                final MaxTimeSoftReference<List<Map<String, Object>>> cached = GLOBAL_CACHE.get(folderID);
                 if (cached != null) {
                     folderNodes = cached.get();
                 }
@@ -167,15 +158,15 @@ public class MegaConz extends PluginForDecrypt {
                     folderNodes = new ArrayList<Map<String, Object>>();
                     final long minTime = config.getMaxCacheFolderDetails();
                     if (minTime > 0) {
-                        GLOBAL_CACHE.put(folderID, new MinTimeSoftReference<List<Map<String, Object>>>(folderNodes, minTime * 60 * 1000, folderID, new MinTimeSoftReferenceCleanup() {
+                        GLOBAL_CACHE.put(folderID, new MaxTimeSoftReference<List<Map<String, Object>>>(folderNodes, minTime * 60 * 1000, folderID, new MaxTimeSoftReferenceCleanupCallback() {
                             @Override
-                            public void onMinTimeSoftReferenceCleanup(MinTimeSoftReference<?> minTimeWeakReference) {
+                            public void onMaxTimeSoftReferenceCleanup(MaxTimeSoftReference<?> minTimeWeakReference) {
                                 minTimeWeakReference.clear();
-                                synchronized (CRAWLER_CACHE) {
+                                synchronized (GLOBAL_CACHE) {
                                     if (JVMVersion.isMinimum(JVMVersion.JAVA_1_8)) {
                                         GLOBAL_CACHE.remove(minTimeWeakReference.getID(), minTimeWeakReference);
                                     } else {
-                                        final MinTimeSoftReference<List<Map<String, Object>>> cache = GLOBAL_CACHE.get(minTimeWeakReference.getID());
+                                        final MaxTimeSoftReference<List<Map<String, Object>>> cache = GLOBAL_CACHE.get(minTimeWeakReference.getID());
                                         if (cache == minTimeWeakReference) {
                                             GLOBAL_CACHE.remove(minTimeWeakReference.getID());
                                         }
@@ -185,8 +176,8 @@ public class MegaConz extends PluginForDecrypt {
                         }));
                     }
                 }
-                if (map != null) {
-                    map.put(folderID, folderNodes);
+                if (crawler != null) {
+                    crawler.putCrawlerCache(key, folderNodes);
                 }
             }
         }

@@ -467,9 +467,9 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
     }
 
     public void clearCachedAction() {
-        MinTimeWeakReference<CustomizableAppAction> old = action.getAndSet(null);
+        final MinTimeWeakReference<CustomizableAppAction> old = action.getAndSet(null);
         if (old != null) {
-            old.clearReference();
+            old.clear();
         }
     }
 
