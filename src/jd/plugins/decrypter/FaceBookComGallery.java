@@ -15,19 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -73,7 +68,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     public static String[] getAnnotationNames() {
         return new String[] { "facebook.com" };
     }
-
     public static String[] getAnnotationUrls() {
         // return new String[] { "https?://(?:www\\.)?facebook\\.com/.+" };
         return new String[] { "https?://(?:www\\.)?facebook_plugin_unfinished\\.com/.+" };
@@ -124,7 +118,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> videoMaps3 = new HashMap<String, Object>();
         /* Different sources to parse their json. */
         final List<String> jsonRegExes = new ArrayList<String>();
         /* 2021-03-19: E.g. when user is loggedIN */
@@ -134,6 +127,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         /* 2022-08-01: Lazier attempt: On RegEx which is simply supposed to find all jsons on the current page. */
         jsonRegExes.add("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> videoPermalinks = new ArrayList<DownloadLink>();
         final HashSet<String> processedJsons = new HashSet<String>();
         int numberofJsonsFound = 0;
         for (final String jsonRegEx : jsonRegExes) {
@@ -154,7 +148,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     final ArrayList<DownloadLink> photos = new ArrayList<DownloadLink>();
                     this.crawlPhotos(jsonO, photos);
                     ret.addAll(photos);
-                    this.websiteFindVideoMaps3(jsonO, videoMaps3);
+                    // if (ret.isEmpty()) {
+                    // this.crawlVideoPermalinks(jsonO, videoPermalinks);
+                    // }
                 } catch (final Throwable ignore) {
                     // logger.log(ignore);
                 }
@@ -163,17 +159,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (ret.isEmpty() && skippedLivestreams > 0) {
             logger.info("Livestreams are not supported");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            final boolean debugWriteFoundJsonsToFile = false;
-            if (debugWriteFoundJsonsToFile) {
-                try {
-                    // IO.writeToFile(new File("fbdebug_videoMaps2.txt"), JSonStorage.serializeToJsonByteArray(videoMaps2),
-                    // IO.SYNC.META_AND_DATA);
-                    IO.writeToFile(new File("fbdebug_videoMaps3.txt"), JSonStorage.serializeToJsonByteArray(videoMaps3), IO.SYNC.META_AND_DATA);
-                } catch (final Throwable e) {
-                }
-            }
         }
         if (numberofJsonsFound == 0) {
             logger.info("Failed to find any jsons --> Probably unsupported URL");
@@ -207,8 +192,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String key = entry.getKey();
                 final Object value = entry.getValue();
                 final String valueStr = value instanceof String ? value.toString() : null;
-                final String __typename = (String) map.get("__typename");
-                if (key.equals("id") && map.containsKey("is_live_streaming") && StringUtils.equals(__typename, "Video") && map.containsKey("dash_manifest")) {
+                if (key.equals("id") && map.containsKey("is_live_streaming") && map.containsKey("dash_manifest")) {
                     final boolean isLivestream = ((Boolean) map.get("is_live_streaming")).booleanValue();
                     final String videoID = valueStr;
                     if (isLivestream) {
@@ -302,67 +286,34 @@ public class FaceBookComGallery extends PluginForDecrypt {
             return;
         }
     }
-
-    /** Returns Mao of maps containing information about video + old http streams. */
-    private void websiteFindVideoMaps2(final Object o, final Map<String, Object> results) {
-        if (o instanceof Map) {
-            final Map<String, Object> map = (Map<String, Object>) o;
-            for (final Map.Entry<String, Object> entry : map.entrySet()) {
-                final String key = entry.getKey();
-                final Object value = entry.getValue();
-                final String valueStr = value instanceof String ? value.toString() : null;
-                final String __typename = (String) map.get("__typename");
-                if (key.equals("id") && map.containsKey("is_live_streaming") && StringUtils.equals(__typename, "Video")) {
-                    results.put(valueStr, map);
-                    break;
-                } else if (value instanceof List || value instanceof Map) {
-                    websiteFindVideoMaps2(value, results);
-                }
-            }
-            return;
-        } else if (o instanceof List) {
-            final List<Object> array = (List) o;
-            for (final Object arrayo : array) {
-                if (arrayo instanceof List || arrayo instanceof Map) {
-                    websiteFindVideoMaps2(arrayo, results);
-                }
-            }
-            return;
-        } else {
-            return;
-        }
-    }
-
-    /** Returns Mao of maps containing information about video + new DASH streams. */
-    private void websiteFindVideoMaps3(final Object o, final Map<String, Object> results) {
-        if (o instanceof Map) {
-            final Map<String, Object> map = (Map<String, Object>) o;
-            for (final Map.Entry<String, Object> entry : map.entrySet()) {
-                final String key = entry.getKey();
-                final Object value = entry.getValue();
-                if (key.equals("data") && map.containsKey("path") && map.containsKey("extensions") && value instanceof Map) {
-                    final Map<String, Object> dataMap = (Map<String, Object>) value;
-                    final String thisIDStr = dataMap.get("id").toString();
-                    if (thisIDStr.matches("\\d+") && dataMap.containsKey("live_status")) {
-                        results.put(thisIDStr, map);
-                    }
-                } else if (value instanceof List || value instanceof Map) {
-                    websiteFindVideoMaps3(value, results);
-                }
-            }
-            return;
-        } else if (o instanceof List) {
-            final List<Object> array = (List) o;
-            for (final Object arrayo : array) {
-                if (arrayo instanceof List || arrayo instanceof Map) {
-                    websiteFindVideoMaps3(arrayo, results);
-                }
-            }
-            return;
-        } else {
-            return;
-        }
-    }
+    // private void crawlVideoPermalinks(final Object o, final List<DownloadLink> results) {
+    // if (o instanceof Map) {
+    // final Map<String, Object> map = (Map<String, Object>) o;
+    // final String __typename = (String) map.get("__typename");
+    // final String url = (String) map.get("wwwUrl");
+    // if (StringUtils.equals(__typename, "Video") && !StringUtils.isEmpty(url)) {
+    // results.add(this.createDownloadlink(url));
+    // } else {
+    // for (final Map.Entry<String, Object> entry : map.entrySet()) {
+    // final Object value = entry.getValue();
+    // if (value instanceof List || value instanceof Map) {
+    // crawlVideoPermalinks(value, results);
+    // }
+    // }
+    // }
+    // return;
+    // } else if (o instanceof List) {
+    // final List<Object> array = (List) o;
+    // for (final Object arrayo : array) {
+    // if (arrayo instanceof List || arrayo instanceof Map) {
+    // crawlVideoPermalinks(arrayo, results);
+    // }
+    // }
+    // return;
+    // } else {
+    // return;
+    // }
+    // }
 
     private void crawlPhotos(final Object o, final ArrayList<DownloadLink> results) {
         if (o instanceof Map) {
