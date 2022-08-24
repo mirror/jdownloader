@@ -251,7 +251,14 @@ public class DouyinCom extends PluginForHost {
 
     private static boolean isBotProtectionActive(final Browser br) {
         /* 2021-08-30: This may happen for some users. Captcha required --> Trying again with another IP may or may not help. */
-        return br.containsHTML("window\\.TTGCaptcha\\.init");
+        if (br.containsHTML("window\\.TTGCaptcha\\.init")) {
+            return true;
+        } else if (br.containsHTML("(?i)error magic number")) {
+            /* 2022-08-24 */
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Recursive function to find photoMap inside json. */
@@ -294,7 +301,15 @@ public class DouyinCom extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link)) {
             requestFileInformation(link, true);
             if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (PluginJsonConfig.get(DouyinComConfig.class).isUseAPI()) {
+                    /*
+                     * In API mode we can be sure that the videourl should be available --> Assume that the video is broken and also not
+                     * playable via browser.
+                     */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {

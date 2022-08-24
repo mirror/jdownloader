@@ -38,7 +38,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -49,6 +48,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -247,11 +247,12 @@ public class FaceBookComVideos extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBR(this.br);
-        if (!link.hasProperty(PROPERTY_TYPE) && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        final boolean useBetaTestHandlingInIDE = true;
+        if (!link.hasProperty(PROPERTY_TYPE) && DebugMode.TRUE_IN_IDE_ELSE_FALSE && useBetaTestHandlingInIDE) {
             /* Legacy handling: Convert old items to new ones */
             // TODO: Remove after 01/2023
             final FaceBookComGallery crawler = (FaceBookComGallery) this.getNewPluginForDecryptInstance(this.getHost());
-            final ArrayList<DownloadLink> results = crawler.decryptIt(new CrawledLink(link.getPluginPatternMatcher()));
+            final ArrayList<DownloadLink> results = crawler.decryptIt(new CryptedLink(link.getPluginPatternMatcher()), null);
             DownloadLink newLink = null;
             for (final DownloadLink result : results) {
                 if (getType(result).equals(getType(link))) {

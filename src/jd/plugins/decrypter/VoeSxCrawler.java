@@ -19,6 +19,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -29,6 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -87,15 +89,24 @@ public class VoeSxCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ret.add(link);
         final XFSConfigVideoVoeSx cfg = PluginJsonConfig.get(XFSConfigVideoVoeSx.class);
-        /* TODO: Implement this in a better way and add support for multiple subtitles (multiple languages) */
-        final String subtitleURL = this.br.getRegex("(/srt/\\d+/[^/\"]+\\.vtt)").getMatch(0);
-        if (subtitleURL != null && cfg.isCrawlSubtitle()) {
-            final URL subtitleURLFull = br.getURL(subtitleURL);
-            // final String originalSubtitleFilename = Plugin.getFileNameFromURL(subtitleURLFull);
-            final DownloadLink subtitle = createDownloadlink(subtitleURLFull.toString());
-            subtitle.setFinalFileName(packagename + ".vtt");
-            subtitle.setAvailable(true);
-            ret.add(subtitle);
+        if (cfg.isCrawlSubtitle()) {
+            final String[] subtitleHTMLs = br.getRegex("<track kind=\"captions\"[^<]+/>").getColumn(-1);
+            if (subtitleHTMLs != null) {
+                for (final String subtitleHTML : subtitleHTMLs) {
+                    final String subtitleURL = new Regex(subtitleHTML, "src=\"([^\"]+\\.vtt)\"").getMatch(0);
+                    final URL subtitleURLFull = br.getURL(subtitleURL);
+                    final DownloadLink subtitle = createDownloadlink(subtitleURLFull.toString());
+                    if (subtitleHTMLs.length == 1) {
+                        /* There is only one subtitle --> Set same title as video-file. */
+                        subtitle.setFinalFileName(packagename + ".vtt");
+                    } else {
+                        /* There are multiple subtitles available -> Set different name for each */
+                        subtitle.setFinalFileName(packagename + "_" + Plugin.getFileNameFromURL(subtitleURLFull));
+                    }
+                    subtitle.setAvailable(true);
+                    ret.add(subtitle);
+                }
+            }
         }
         fp.addLinks(ret);
         return ret;

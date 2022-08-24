@@ -71,7 +71,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     public static String[] getAnnotationNames() {
-        return new String[] { "facebook.com_old" };
+        return new String[] { "facebook.com" };
     }
 
     public static String[] getAnnotationUrls() {
@@ -101,7 +101,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private boolean      debug                           = false;
 
     @Deprecated
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         // for debugging
         if (debug) {
             disableLogger();
