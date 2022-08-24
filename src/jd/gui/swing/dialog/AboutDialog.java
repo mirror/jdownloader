@@ -146,7 +146,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         try {
             final File file = Application.getResource("licenses/jdownloader.license");
             if (file.isFile()) {
-                JButton btn = Factory.createButton(_GUI.T.jd_gui_swing_components_AboutDialog_license(), new AbstractIcon(IconKey.ICON_PREMIUM, 16), new ActionListener() {
+                final JButton btn = Factory.createButton(_GUI.T.jd_gui_swing_components_AboutDialog_license(), new AbstractIcon(IconKey.ICON_PREMIUM, 16), new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         final String license = JDIO.readFileToString(file);
                         try {
