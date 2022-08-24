@@ -20,23 +20,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodriveCom extends PluginForHost {
@@ -100,6 +100,12 @@ public class DoodriveCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private Browser prepBR(final Browser br) {
+        br.setCookie(this.getHost(), "cookieconsent", "1");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         return requestFileInformation(link, false);
@@ -110,7 +116,7 @@ public class DoodriveCom extends PluginForHost {
             /* Set fallback filename */
             link.setName(this.getFID(link));
         }
-        br.setFollowRedirects(true);
+        prepBR(br);
         if (isDownload) {
             /* Download: Do not waste any time/steps as we should already know the onlinestatus by now. */
             synchronized (cookies) {
@@ -180,107 +186,59 @@ public class DoodriveCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            Form preDlForm = br.getFormbyActionRegex(".*bot-verify");
-            if (preDlForm == null) {
-                /* 2021-05-06 */
-                preDlForm = br.getFormbyKey("verify");
-            }
-            if (preDlForm != null) {
-                /* Step1 */
-                br.setFollowRedirects(true);
-                br.getHeaders().put("Origin", "https://" + this.getHost());
-                /* It may be set to null so it wouldn't be sent then */
-                preDlForm.put("verify", "");
-                br.submitForm(preDlForm);
-                /* Step 1.1: (Optional) Redirect to fake "blog" page e.g. "gositestat.com" */
-                final Form blogForm = br.getFormbyKey("doo-verify");
-                if (blogForm != null) {
-                    br.submitForm(blogForm);
-                }
-                /* Step2: Captcha & waittime */
-                preDlForm = br.getFormbyKey("doo-verify");
-                if (preDlForm == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                /* 2021-06-11: No waittime required anymore */
-                // final long timestampBeforeCaptcha = System.currentTimeMillis();
-                // int waitSeconds = 10;
-                // try {
-                // final Browser brc = br.cloneBrowser();
-                // brc.getPage("https://" + this.br.getHost() + "/assets/js/global.js");
-                // final String waitStr = brc.getRegex("time\\s*:\\s*(\\d+)").getMatch(0);
-                // if (waitStr != null) {
-                // waitSeconds = Integer.parseInt(waitStr);
-                // }
-                // } catch (final Throwable e) {
-                // logger.log(e);
-                // logger.warning("Failed to find pre-download-waittime in js");
-                // }
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                preDlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                /* Very important! */
-                preDlForm.put("verify", "");
-                // /* Substract the time the user took to solve the captcha so that time is not wasted. */
-                // final long timeToWait = waitSeconds * 1001l - (System.currentTimeMillis() - timestampBeforeCaptcha);
-                // this.sleep(timeToWait, link);
-                br.submitForm(preDlForm);
-                /* Look for final Form leading back from "external" site to doodrive --> Download */
-                Form verifyOut = null;
-                for (final Form form : this.br.getForms()) {
-                    if (form.containsHTML("doo-verify-out")) {
-                        verifyOut = form;
-                        break;
-                    }
-                }
-                if (verifyOut != null) {
-                    br.submitForm(verifyOut);
-                    /* 2021-06-11: Typically redirect to "/f/<fuid>?f=<someHash>" */
-                } else {
-                    /* Let's continue and hope this Form just wasn't required. */
-                    logger.warning("Failed to find verifyOut Form");
-                }
-                /*
-                 * Now we should have cookies that allow us to linkcheck other links without having to enter more captchas. A download
-                 * captcha will still be required for each download!
-                 */
-                synchronized (cookies) {
-                    cookies.set(br.getCookies(br.getURL()));
-                }
-                /* Only now can we know whether or not that file is online. */
-                parseFileInfo(link);
-            } else {
-                logger.info("No 'verify' Form required");
-            }
-            /* Final step */
-            final Form dlform = br.getFormbyKey("f");
-            if (dlform == null) {
+            /* Step 1: "Download with Direct URL" + captcha */
+            final Form step1 = br.getFormbyKey("f");
+            if (step1 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /*
              * This captcha should only be required if we're using the cookies of another "verified" session meaning that the user should
              * never have to solve two captchas to download one file!
              */
-            if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform) || dlform.containsHTML("class=\"recaptcha-submit\"")) {
-                final String key = dlform.getRegex("data-sitekey=\"([^\"]+)\"").getMatch(0);
+            if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(step1) || step1.containsHTML("class=\"recaptcha-submit\"")) {
+                final String key = step1.getRegex("data-sitekey=\"([^\"]+)\"").getMatch(0);
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, key).getToken();
-                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                step1.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
-            URLConnectionAdapter con = br.openFormConnection(dlform);
-            if (!looksLikeDownloadableContent(con)) {
-                br.followConnection();
-                final Form form = br.getFormbyKey("data");
-                if (form == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.submitForm(form);
-                final String url = br.getRegex("window\\.location\\.href\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
-                if (url == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resumable, maxchunks);
-            } else {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest(), resumable, maxchunks);
+            br.submitForm(step1);
+            /* Step 2: "Verification Required" */
+            final Form step2 = br.getFormbyKey("data");
+            if (step2 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.submitForm(step2);
+            /* Step 3: Quick redirect via form */
+            final Form step3 = br.getFormbyKey("CSRFToken");
+            if (step3 != null) {
+                final InputField verify = step3.getInputField("verify");
+                if (verify != null) {
+                    verify.setDisabled(false);
+                }
+                br.submitForm(step3);
+            }
+            /* Step 4: "Successfully Verified" */
+            final Form step4 = br.getFormbyKey("CSRFToken");
+            if (step4 != null) {
+                final InputField verify = step4.getInputField("verify");
+                if (verify != null) {
+                    verify.setDisabled(false);
+                }
+                br.submitForm(step4);
+            }
+            /* Step 5 */
+            final Form step5 = br.getFormbyActionRegex(".*direct-downloader");
+            if (step5 != null) {
+                br.submitForm(step5);
+            }
+            String dllink = br.getRegex("window\\.location\\.href = \"(https?://[^\"]+)\";").getMatch(0);
+            dllink = null;
+            if (dllink == null) {
+                dllink = br.getRegex("(https://[^/]+/d/[^\"]+)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);

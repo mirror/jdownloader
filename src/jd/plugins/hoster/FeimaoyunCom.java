@@ -16,8 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,12 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "feimaoyun.com" }, urls = { "https?://(?:www\\.)?feemoo\\.com/(file\\-\\d+\\.html|#/s/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FeimaoyunCom extends PluginForHost {
     public FeimaoyunCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,6 +67,30 @@ public class FeimaoyunCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "feimaoyun.com", "feemoo.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(file\\-\\d+\\.html|(#/)?s/\\d+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = getFID(link);
@@ -76,52 +101,37 @@ public class FeimaoyunCom extends PluginForHost {
         }
     }
 
-    @Override
-    public String rewriteHost(String host) {
-        if (host == null || host.equalsIgnoreCase("feemoo.com")) {
-            return this.getHost();
-        } else {
-            return super.rewriteHost(host);
-        }
-    }
-
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getPluginPatternMatcher(), "(\\d+)(?:\\.html)?$").getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         if (!link.isNameSet()) {
+            /* Fallback name */
             link.setName(this.getFID(link));
         }
-        br.postPage("https://www." + this.getHost() + "/index.php/down_detaila", "code=" + this.getFID(link));
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.postPage("https://www." + this.getHost() + "/index.php/down/new_detailv2", "code=" + this.getFID(link));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 0);
-        if (status == 0) {
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final int status = ((Number) entries.get("status")).intValue();
+        if (status != 1) {
+            /* E.g. {"msg":"\u6587\u4ef6\u4e0d\u5b58\u5728","status":0,"data":{"file_status":"is_notexist"}} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/file");
-        String filename = (String) entries.get("file_name");
-        final String filesize = (String) entries.get("file_size");
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        String filename = data.get("file_name").toString();
+        final long filesize = Long.parseLong(data.get("file_origin_size").toString());
         if (!StringUtils.isEmpty(filename)) {
             /* Set final filename here because server filenames are bad. */
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        } else if (!link.isNameSet()) {
-            /* Fallback */
-            link.setName(this.getFID(link));
+            link.setFinalFileName(filename);
         }
-        if (!StringUtils.isEmpty(filesize)) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        final long isDeleted = JavaScriptEngineFactory.toLong(entries.get("is_del"), 0);
-        if (isDeleted == 1) {
-            /* 2020-12-03: Filename- and size can be given for offline items too! */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize > 0) {
+            link.setVerifiedFileSize(filesize);
         }
         return AvailableStatus.TRUE;
     }
@@ -133,13 +143,13 @@ public class FeimaoyunCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String fid = getFID(link);
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             if (true) {
                 /* 2020-12-03: Failed to find any way to download as free user */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new AccountRequiredException();
             }
+            final String fid = getFID(link);
             String down2_url = null;
             if (br.containsHTML("/down2-" + fid)) {
                 br.getPage("/down2-" + fid + ".html");
@@ -245,10 +255,11 @@ public class FeimaoyunCom extends PluginForHost {
 
     /**
      * @param validateCookies
-     *            true = check cookies for validity, perform full login if necessary </br> false = Just set cookies and return false if
-     *            cookies are younger than 300000l
+     *            true = check cookies for validity, perform full login if necessary </br>
+     *            false = Just set cookies and return false if cookies are younger than 300000l
      *
-     * @return true = Cookies are validated </br> false = Cookies are not validated (only set on current Browser instance)
+     * @return true = Cookies are validated </br>
+     *         false = Cookies are not validated (only set on current Browser instance)
      */
     @SuppressWarnings("deprecation")
     private boolean login(final Account account, final boolean validateCookies) throws Exception {

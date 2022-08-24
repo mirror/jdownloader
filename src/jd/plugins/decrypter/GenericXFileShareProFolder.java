@@ -22,6 +22,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,18 +48,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.TakefileLink;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
-    private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "powvideo.net", "youwatch.org", "salefiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "novafile.org", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
-                                                 /** file-up.org domains */
-                                                 "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc", "uploadboy.com", "uploadboy.me" };
+    private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "powvideo.net", "youwatch.org", "salefiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "novafile.org", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
+            /** file-up.org domains */
+            "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc", "uploadboy.com", "uploadboy.me" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
     private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
 
