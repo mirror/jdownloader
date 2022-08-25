@@ -121,16 +121,20 @@ public class TiktokCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
+        final String fid = getContentID(link);
         if (fid != null) {
-            return this.getHost() + "://" + fid;
+            return this.getHost() + "://" + fid + "_" + getType(link) + "_" + getIndexNumber(link);
         } else {
             return super.getLinkID(link);
         }
     }
 
-    public static String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "https?://.*/(?:video|v|embed)/(\\d+)").getMatch(0);
+    public static String getContentID(final DownloadLink link) {
+        return getContentID(link.getPluginPatternMatcher());
+    }
+
+    public static String getContentID(final String url) {
+        return new Regex(url, "https?://.*/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
     // private String dllink = null;
@@ -151,7 +155,12 @@ public class TiktokCom extends PluginForHost {
     public static final String  PROPERTY_FORCE_API                            = "force_api";
     public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE              = "last_used_download_mode";
     public static final String  PROPERTY_ALLOW_HEAD_REQUEST                   = "allow_head_request";
-    private static final String TYPE_VIDEO                                    = "https?://[^/]+/@([^/]+)/video/(\\d+).*?";
+    public static final String  PROPERTY_TYPE                                 = "type";
+    public static final String  PROPERTY_INDEX                                = "index";
+    public static final String  TYPE_AUDIO                                    = "audio";
+    public static final String  TYPE_VIDEO                                    = "video";
+    public static final String  TYPE_PICTURE                                  = "picture";
+    private static final String PATTERN_VIDEO                                 = "https?://[^/]+/@([^/]+)/video/(\\d+).*?";
     /* API related stuff */
     public static final String  API_BASE                                      = "https://api-h2.tiktokv.com/aweme/v1";
     public static final String  API_VERSION_NAME                              = "20.9.3";
@@ -179,7 +188,7 @@ public class TiktokCom extends PluginForHost {
         if (account != null) {
             this.login(account, false);
         }
-        final String fid = getFID(link);
+        final String fid = getContentID(link);
         if (fid == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -280,7 +289,7 @@ public class TiktokCom extends PluginForHost {
         if (!StringUtils.isEmpty(username)) {
             filename += "_@" + username;
         }
-        filename += "_" + getFID(link) + ".mp4";
+        filename += "_" + getContentID(link) + ".mp4";
         /* Only set final filename if ALL information is available! */
         if (link.hasProperty(PROPERTY_DATE) && !StringUtils.isEmpty(username)) {
             link.setFinalFileName(filename);
@@ -306,6 +315,20 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
+    public static String getType(final DownloadLink link) {
+        final String storedType = link.getStringProperty(PROPERTY_TYPE);
+        if (storedType != null) {
+            return storedType;
+        } else {
+            /* Old items added in revisions in which we were only supporting single video items. */
+            return TYPE_VIDEO;
+        }
+    }
+
+    public static int getIndexNumber(final DownloadLink link) {
+        return link.getIntegerProperty(PROPERTY_INDEX, 0);
+    }
+
     private String getStoredDirecturl(final DownloadLink link) {
         return link.getStringProperty(getStoredDirecturlProperty(link));
     }
@@ -316,15 +339,15 @@ public class TiktokCom extends PluginForHost {
         }
         /* In website mode we neither know whether or not a video is watermarked nor can we download it without watermark. */
         link.removeProperty(PROPERTY_HAS_WATERMARK);
-        final String fid = getFID(link);
+        final String fid = getContentID(link);
         prepBRWebsite(br);
-        if (!link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
+        if (!link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
             /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL. */
             br.setFollowRedirects(false);
             br.getPage("https://m.tiktok.com/v/" + fid + ".html");
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
-                if (!redirect.matches(TYPE_VIDEO)) {
+                if (!redirect.matches(PATTERN_VIDEO)) {
                     /* Redirect to unsupported URL -> Most likely mainpage -> Offline! */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -349,9 +372,9 @@ public class TiktokCom extends PluginForHost {
                 /* {"status_msg":"Something went wrong"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String title = (String) entries.get("title");
-            if (!StringUtils.isEmpty(title) && StringUtils.isEmpty(link.getComment())) {
-                link.setComment(title);
+            final String description = (String) entries.get("title");
+            if (!StringUtils.isEmpty(description)) {
+                TiktokCom.setDescriptionAndHashtags(link, description);
             }
         } else {
             String description = null;
@@ -410,7 +433,7 @@ public class TiktokCom extends PluginForHost {
                 if (dllink == null) {
                     /* Fallback */
                     if (!isDownload) {
-                        dllink = generateDownloadurlOld(link);
+                        dllink = generateDownloadurlOld(br, fid);
                     }
                     link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
                 } else {
@@ -509,12 +532,12 @@ public class TiktokCom extends PluginForHost {
                 }
                 if (dllink == null && isDownload) {
                     /* Fallback */
-                    dllink = generateDownloadurlOld(link);
+                    dllink = generateDownloadurlOld(br, fid);
                 }
                 link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
             } else {
                 /* Rev. 40928 and earlier */
-                dllink = generateDownloadurlOld(link);
+                dllink = generateDownloadurlOld(br, fid);
                 link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
             }
             setDescriptionAndHashtags(link, description);
@@ -529,7 +552,7 @@ public class TiktokCom extends PluginForHost {
     public void checkAvailablestatusAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBRAPI(br);
         final UrlQuery query = getAPIQuery();
-        query.add("aweme_id", getFID(link));
+        query.add("aweme_id", getContentID(link));
         /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
         // accessAPI(br, "/feed", query);
         accessAPI(br, "/aweme/detail", query);
@@ -729,8 +752,8 @@ public class TiktokCom extends PluginForHost {
     public static String getUsername(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_USERNAME)) {
             return TiktokComCrawler.sanitizeUsername(link.getStringProperty(PROPERTY_USERNAME));
-        } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
-            return TiktokComCrawler.sanitizeUsername(new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0));
+        } else if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
+            return TiktokComCrawler.sanitizeUsername(new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO).getMatch(0));
         } else {
             return null;
         }
@@ -793,8 +816,8 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    private String generateDownloadurlOld(final DownloadLink link) throws IOException {
-        this.br.getPage("https://www." + this.getHost() + "/node/video/playwm?id=" + this.getFID(link));
+    public static String generateDownloadurlOld(final Browser br, final String contentID) throws IOException {
+        br.getPage("https://www.tiktok.com/node/video/playwm?id=" + contentID);
         return new URL(br.toString()).toString();
     }
 
