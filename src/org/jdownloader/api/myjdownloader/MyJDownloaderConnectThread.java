@@ -1181,9 +1181,13 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
 
     protected String getUniqueDeviceIDSalt() {
         String idSalt = CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath() + CrossSystem.getOS().name() + CrossSystem.getARCHFamily().name() + CrossSystem.is64BitArch() + CrossSystem.is64BitOperatingSystem() + System.getProperty("user.name");
-        if (ContainerRuntime.isInsideDocker()) {
-            idSalt = idSalt + ContainerRuntime.getID();
+        try {
+            if (ContainerRuntime.isInsideDocker()) {
+                idSalt = idSalt + ContainerRuntime.getID();
+            }
+        } catch (Throwable ignore) {
         }
+        // tmp ordner timestamp
         return Hash.getSHA256(idSalt);
     }
 
