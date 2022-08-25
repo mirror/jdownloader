@@ -668,10 +668,28 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isPreferBouncyCastleForTLS();
 
     void setPreferBouncyCastleForTLS(boolean b);
+
     // @AboutConfig
     // @DefaultBooleanValue(true)
     // @DescriptionForConfigEntry("Enable/Disable JXBrowser usage. JXBrowser Plugin required!")
     // boolean isJxBrowserEnabled();
     //
     // void setJxBrowserEnabled(boolean b);
+    @AboutConfig
+    @DescriptionForConfigEntry("Timeout for network problems")
+    @SpinnerValidator(min = 0, max = 1000000)
+    @DefaultIntValue(15000)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @Deprecated
+    int getNetworkIssuesTimeout();
+
+    void setNetworkIssuesTimeout(int timeout);
+
+    @AboutConfig
+    @DefaultLongValue(10 * 60 * 1000l)
+    @DescriptionForConfigEntry("Waittime in ms if a Download had unknown IOException")
+    @Deprecated
+    long getDownloadUnknownIOExceptionWaittime();
+
+    void setDownloadUnknownIOExceptionWaittime(long ms);
 }
