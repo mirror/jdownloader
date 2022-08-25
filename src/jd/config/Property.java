@@ -28,7 +28,6 @@ import java.util.WeakHashMap;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.ReflectionUtils;
 
@@ -313,7 +312,7 @@ public class Property implements Serializable {
         if (NEWIMPLEMENTATION != null) {
             synchronized (NEWIMPLEMENTATION) {
                 final Object[] propertiesList = this.propertiesList;
-                final MinimalMemoryMap<String, Object> ret = new MinimalMemoryMap<String, Object>(getPropertiesSize());
+                final Map<String, Object> ret = newMapInstance(getPropertiesSize());
                 if (propertiesList != null) {
                     final int length = propertiesList.length;
                     for (int index = 0; index < length; index += 2) {
@@ -333,6 +332,15 @@ public class Property implements Serializable {
                     return new HashMap<String, Object>(lInternal);
                 }
             }
+        }
+    }
+
+    public static Map<String, Object> newMapInstance(int size) {
+        try {
+            final Class<?> minimalMap = Class.forName("org.appwork.storage.simplejson.MinimalMemoryMap");
+            return (Map<String, Object>) minimalMap.getConstructor(int.class).newInstance(size);
+        } catch (Throwable e) {
+            return new HashMap<String, Object>(size);
         }
     }
 
@@ -425,7 +433,7 @@ public class Property implements Serializable {
 
     protected Map<String, Object> optimizeMapInstance(final Map<String, Object> map) {
         if (map != null && map.size() > 0) {
-            final MinimalMemoryMap<String, Object> ret = new MinimalMemoryMap<String, Object>();
+            final Map<String, Object> ret = newMapInstance(0);
             final Iterator<Entry<String, Object>> it = map.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> next = it.next();
@@ -499,7 +507,7 @@ public class Property implements Serializable {
                 if (value == null || value == NULL) {
                     return false;
                 } else {
-                    properties = new MinimalMemoryMap<String, Object>(8);
+                    properties = newMapInstance(8);
                     return setProperty(key, value);
                 }
             } else {
