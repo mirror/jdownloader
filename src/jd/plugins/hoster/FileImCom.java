@@ -16,20 +16,23 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileim.com" }, urls = { "https?://(?:www\\.)?fileim\\.com/file/([a-z0-9]+)\\.html" })
 public class FileImCom extends PluginForHost {
@@ -60,78 +63,99 @@ public class FileImCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://www.fileim.com/", "SiteLang", "en-us");
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("fileim.com/notfound.html") || br.containsHTML("(Sorry, the file or folder does not exist|>Not Found<|FileIM \\- Not Found)")) {
+        br.setCookie(this.getHost(), "SiteLang", "en-us");
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to /notfound.html */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(Sorry, the file or folder does not exist|>Not Found<|FileIM \\- Not Found)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("id=\"FileName\" title=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>[\t\n\r ]+FileIM Download File: ([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>\\s*FileIM Download File\\s*: ([^<>\"]*?)</title>").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("id=\"download_name\" title=\"([^<>\"]*?)\"").getMatch(0);
         }
-        String filesize = br.getRegex("id=\"FileSize\">([^<>\"]*?)<").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesizeBytes = null;
+        try {
+            filesizeBytes = br.getFormbyKey("download_name").getInputField("download_filesize").getValue();
+        } catch (final Throwable ignore) {
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll("(\\(|\\))", "")));
+        final String filesizeVague = br.getRegex("id=\"FileSize\">([^<>\"]*?)<").getMatch(0);
+        if (filename != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+        }
+        if (filesizeBytes != null) {
+            link.setVerifiedFileSize(Long.parseLong(filesizeBytes));
+        } else if (filesizeVague != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeVague.replaceAll("(\\(|\\))", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (br.containsHTML("\">Another Download Is Progressing")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
         }
-        final String linkid = new Regex(downloadLink.getDownloadURL(), "([a-f0-9]+)$").getMatch(0);
-        final String download_fuseronlycode = this.br.getRegex("id=\"download_fuseronlycode\" value=\"([^<>\"]+)\"").getMatch(0);
+        final Form form = br.getFormbyKey("download_name");
+        final String download_mip = form.getInputField("download_mip").getValue();
+        final String download_args = form.getInputField("download_args").getValue();
+        final String download_fuseronlycode = form.getInputField("download_fonlycode").getValue();
         final String fid = br.getRegex("download\\.fid=(\\d+);").getMatch(0);
-        if (fid == null || download_fuseronlycode == null) {
+        if (download_args == null || download_mip == null || fid == null || download_fuseronlycode == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage("/ajax/download/gettimer.ashx");
-        String waittime = br2.getRegex("(\\d+)_\\d+").getMatch(0);
-        if (waittime == null) {
-            waittime = br2.getRegex("(\\d+)").getMatch(0);
+        /* 2022-08-25: Waittime is skippable */
+        final boolean skipWaittime = true;
+        if (!skipWaittime) {
+            br2.getPage("/ajax/download/gettimer.ashx");
+            final String waitSecondsStr = br2.getRegex("^(\\d+)(_\\d+)?").getMatch(0);
+            final int waitSeconds = Integer.parseInt(waitSecondsStr);
+            /* 2022-08-25: Seems to be min 30 max 180 seconds */
+            final int waitSecondsDefault = 30;
+            if (waitSeconds > waitSecondsDefault) {
+                logger.info("Pre-download waittime is higher than default value --> A reconnect could bring it back down to " + waitSecondsDefault + " seconds");
+            }
+            /* Longer than X seconds? Let's reconnect! */
+            if (waitSeconds >= 300) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
+            sleep(waitSeconds * 1001l, link);
         }
-        int wait = 150;
-        if (waittime != null) {
-            wait = Integer.parseInt(waittime);
-        }
-        /* Longer than 10 minutes? Let's reconnect! */
-        if (wait >= 600) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        }
-        sleep(wait * 1001l, downloadLink);
         br2.getPage("/ajax/download/getdownservers.ashx?type=0");
-        String domain = br2.getRegex("domain%3A\\'([^<>\"\\']+)\\'").getMatch(0);
-        if (domain == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        domain = Encoding.htmlDecode(domain);
-        final String dllink = "http://" + domain + "/download.ashx?a=" + br2.toString();
-        br2.getPage("http://" + domain + "/hi.ashx?jsoncallback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&fileuseronlycode=" + download_fuseronlycode + "&fileonlycode=" + linkid + "&filesize=" + downloadLink.getDownloadSize() + "&_=" + System.currentTimeMillis());
-        final String isfile = PluginJSonUtils.getJsonValue(br2, "isfile");
-        if ("false".equalsIgnoreCase(isfile)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        } else if (true) {
-            /* TODO */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        final List<Map<String, Object>> downservers = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(Encoding.htmlDecode(br2.getHttpConnection().getRequest().getHtmlCode()));
+        final Map<String, Object> downserver0 = downservers.get(0);
+        final String domain = downserver0.get("domain").toString();
+        br2.getPage("/ajax/download/setperdown.ashx?mip=" + Encoding.urlEncode(download_mip) + "&args=" + Encoding.urlEncode(download_args));
+        final String dlpath = br2.getHttpConnection().getRequest().getHtmlCode();
+        final String filenameSlug = link.getName().replaceAll("[^a-zA-Z0-9]", "_");
+        /* 2022-08-25: This direct-URL is not re-usable! */
+        final String dllink = "http://" + domain + "/download/" + dlpath + "/" + download_args + "/" + filenameSlug;
+        // br2.getPage("http://" + domain + "/hi.ashx?jsoncallback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() +
+        // "&fileuseronlycode=" + download_fuseronlycode + "&fileonlycode=" + this.getFID(link) + "&filesize=" + link.getDownloadSize() +
+        // "&_=" + System.currentTimeMillis());
+        // final String isfile = PluginJSonUtils.getJsonValue(br2, "isfile");
+        /* 2022-08-25: Without this small delay we won't be able to download. */
+        this.sleep(2000, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getLongContentLength() == 0) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Empty file", 60 * 60 * 1000l);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("<div> Another download is started")) {
-                logger.warning("Hoster believes your IP address is already downloading");
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (br.containsHTML("(?i)<div>\\s*Another download is started")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster believes your IP address is already downloading", 10 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

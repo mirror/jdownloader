@@ -50,6 +50,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -57,6 +58,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.PixivNetGallery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixivNet extends PluginForHost {
@@ -91,6 +93,11 @@ public class PixivNet extends PluginForHost {
             ret.add("decryptedpixivnet://(?:www\\.)?.+|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?:/ajax/illust/\\d+/ugoira_meta|/novel/show\\.php\\?id=\\d+)");
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public void init() {
+        PixivNetGallery.setRequestIntervalLimitGlobal();
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -172,9 +179,7 @@ public class PixivNet extends PluginForHost {
                 link.setName(this.getFID(link) + ".txt");
             }
             br.getPage(link.getPluginPatternMatcher());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkErrors(br);
             final String novelID = this.getFID(link);
             final String json = br.getRegex("id=\"meta-preload-data\"[^>]*content='([^\\']*?)'").getMatch(0);
             final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
@@ -240,6 +245,7 @@ public class PixivNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(galleryurl);
+            checkErrors(br);
             if (jd.plugins.decrypter.PixivNetGallery.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -372,6 +378,17 @@ public class PixivNet extends PluginForHost {
         }
     }
 
+    public static void checkErrors(final Browser br) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 401) {
+            /* Session expired or account required to access content. */
+            throw new AccountRequiredException();
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("return_to=")) {
+            throw new AccountRequiredException();
+        }
+    }
+
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
         if (urlConnection.getURL().toString().matches(TYPE_ANIMATION_META)) {
@@ -436,7 +453,8 @@ public class PixivNet extends PluginForHost {
                 br.getPage("https://www." + this.getHost() + "/login.php?ref=wwwtop_accounts_index");
                 final String loginJson = br.getRegex("class=\"json-data\" value='(\\{.*?)\\'>").getMatch(0);
                 final Map<String, Object> loginInfo = JSonStorage.restoreFromString(loginJson, TypeRef.HASHMAP);
-                final Form loginform = new Form("/ajax/login?lang=en");
+                final Form loginform = new Form();
+                loginform.setAction("/ajax/login?lang=en");
                 loginform.setMethod(MethodType.POST);
                 final String loginTT = loginInfo.get("pixivAccount.tt").toString();
                 String loginSource = (String) loginInfo.get("pixivAccount.source"); // usually "pc"
@@ -493,6 +511,8 @@ public class PixivNet extends PluginForHost {
                 loginform.put("g_recaptcha_response", Encoding.urlEncode(reCaptchaV2Response));
                 loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(reCaptchaEnterpriseInvisibleResponse));
                 loginform.put("tt", Encoding.urlEncode(loginTT));
+                br.getHeaders().put("Accept", "application/json");
+                br.getHeaders().put("Origin", "https://accounts." + br.getHost());
                 final Request loginRequest = br.createFormRequest(loginform);
                 loginRequest.getHeaders().put("Accept", "application/json");
                 loginRequest.getHeaders().put("Origin", "https://accounts." + br.getHost());
@@ -536,7 +556,7 @@ public class PixivNet extends PluginForHost {
     private boolean checkCookieLogin(final Account account, final Cookies cookies, final boolean validateCookies) throws IOException {
         br.setCookies(account.getHoster(), cookies);
         if (!validateCookies) {
-            logger.info("Trust cookies without check");
+            /* Do not validate cookies */
             return true;
         } else {
             br.getPage("https://www." + account.getHoster() + "/en");
