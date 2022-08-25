@@ -29,8 +29,7 @@ import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
 
-import com.sun.jna.platform.win32.Advapi32Util;
-import com.sun.jna.platform.win32.WinReg;
+import com.sun.jna.platform.win32.KnownFolders;
 
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
@@ -38,10 +37,8 @@ public interface GeneralSettings extends ConfigInterface {
         public String getDefaultValue(KeyHandler<String> keyHandler) {
             if (CrossSystem.isWindows()) {
                 try {
-                    // https://docs.microsoft.com/de-de/windows/win32/shell/knownfolderid?redirectedfrom=MSDN, FOLDERID_Downloads,
-                    // {374DE290-123F-4565-9164-39C4925E467B}
-                    final String ret = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}");
-                    if (new File(ret).isDirectory()) {
+                    final String ret = com.sun.jna.platform.win32.Shell32Util.getKnownFolderPath(KnownFolders.FOLDERID_Downloads);
+                    if (CrossSystem.isAbsolutePath(ret) && new File(ret).isDirectory()) {
                         return ret;
                     }
                 } catch (Throwable e) {
