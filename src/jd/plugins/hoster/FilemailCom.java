@@ -48,15 +48,6 @@ public class FilemailCom extends PluginForHost {
     private String               dllink            = null;
     private static final String  TYPE_SHORT        = ".+fil\\.email/[A-Za-z0-9]+";
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -78,43 +69,45 @@ public class FilemailCom extends PluginForHost {
         }
         link.setLinkID(transferid);
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        br.getPage("https://www.filemail.com/api/transfer/get?filesLimit=1000&skipreg=false&transferid=" + transferid);
+        br.getPage("https://www." + this.getHost() + "/api/transfer/get?filesLimit=100&skipreg=false&transferid=" + transferid);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final long filesize;
-        final String filename;
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (Map<String, Object>) entries.get("transfer");
-        final boolean isExpired = ((Boolean) entries.get("isexpired")).booleanValue();
-        if (isExpired) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final List<Object> ressourcelist = (List<Object>) entries.get("files");
-        if (ressourcelist.size() == 1) {
-            entries = (Map<String, Object>) ressourcelist.get(0);
-            filename = (String) entries.get("filename");
-            dllink = (String) entries.get("downloadurl");
-            filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
-        } else {
-            filename = transferid + ".zip";
-            dllink = (String) entries.get("compressedfileurl");
-            filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setFinalFileName(filename);
-        if (filesize > 0) {
-            link.setDownloadSize(filesize);
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> transfer = (Map<String, Object>) entries.get("transfer");
+        final String message = (String) transfer.get("message");
+        final boolean isExpired = ((Boolean) transfer.get("isexpired")).booleanValue();
+        try {
+            /* File information can still be available even for expired items. */
+            final List<Object> ressourcelist = (List<Object>) transfer.get("files");
+            if (ressourcelist.size() == 1) {
+                final Map<String, Object> file = (Map<String, Object>) ressourcelist.get(0);
+                link.setVerifiedFileSize(((Number) file.get("filesize")).longValue());
+                link.setFinalFileName(file.get("filename").toString());
+                link.setMD5Hash(file.get("md5").toString());
+                dllink = file.get("downloadurl").toString();
+            } else {
+                /* Folder: Download all files as compressed .zip file. */
+                if (StringUtils.isEmpty(message)) {
+                    link.setFinalFileName(transferid + ".zip");
+                } else {
+                    link.setFinalFileName(transferid + "_" + message + ".zip");
+                }
+                link.setDownloadSize(((Number) transfer.get("size")).longValue());
+                dllink = transfer.get("compressedfileurl").toString();
+            }
+        } finally {
+            if (isExpired) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -134,30 +127,6 @@ public class FilemailCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // br2.setFollowRedirects(true);
-    // con = br2.openHeadConnection(dllink);
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;

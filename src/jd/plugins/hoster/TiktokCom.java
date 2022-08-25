@@ -157,6 +157,7 @@ public class TiktokCom extends PluginForHost {
     public static final String  PROPERTY_ALLOW_HEAD_REQUEST                   = "allow_head_request";
     public static final String  PROPERTY_TYPE                                 = "type";
     public static final String  PROPERTY_INDEX                                = "index";
+    public static final String  PROPERTY_INDEX_MAX                            = "index_max";
     public static final String  TYPE_AUDIO                                    = "audio";
     public static final String  TYPE_VIDEO                                    = "video";
     public static final String  TYPE_PICTURE                                  = "picture";
@@ -289,9 +290,16 @@ public class TiktokCom extends PluginForHost {
         if (!StringUtils.isEmpty(username)) {
             filename += "_@" + username;
         }
-        filename += "_" + getContentID(link) + ".mp4";
+        filename += "_" + getContentID(link);
+        final int index_max = getIndexMaxNumber(link);
+        if (index_max > 0) {
+            /* Append index to filenames */
+            filename += "_" + getIndexNumber(link);
+        }
+        /* TODO: Add support for images and audio */
+        filename += ".mp4";
         /* Only set final filename if ALL information is available! */
-        if (link.hasProperty(PROPERTY_DATE) && !StringUtils.isEmpty(username)) {
+        if (dateFormatted != null && !StringUtils.isEmpty(username)) {
             link.setFinalFileName(filename);
         } else {
             link.setName(filename);
@@ -327,6 +335,10 @@ public class TiktokCom extends PluginForHost {
 
     public static int getIndexNumber(final DownloadLink link) {
         return link.getIntegerProperty(PROPERTY_INDEX, 0);
+    }
+
+    public static int getIndexMaxNumber(final DownloadLink link) {
+        return link.getIntegerProperty(PROPERTY_INDEX_MAX, 0);
     }
 
     private String getStoredDirecturl(final DownloadLink link) {

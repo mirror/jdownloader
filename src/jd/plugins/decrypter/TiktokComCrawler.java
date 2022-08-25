@@ -452,6 +452,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 audio.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, chosenImageURL);
                 audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_PICTURE);
                 audio.setProperty(TiktokCom.PROPERTY_INDEX, index);
+                audio.setProperty(TiktokCom.PROPERTY_INDEX_MAX, images.size());
                 index++;
             }
             /* Force crawl audio as audio is part of that "image slideshow" on tiktok website. */
