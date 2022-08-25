@@ -43,6 +43,7 @@ import javax.swing.UIManager;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.ClipboardMonitoring;
+import jd.controlling.reconnect.ReconnectPluginController;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.JDGui;
@@ -376,8 +377,10 @@ public class AboutDialog extends AbstractDialog<Integer> {
         } catch (Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
-        stats.add(new JLabel("UPNP:"), "");
-        stats.add(createLink("Cling", "https://github.com/4thline/cling"));
+        if ("SIMPLEUPNP".equals(ReconnectPluginController.getInstance().getActivePlugin().getID())) {
+            stats.add(new JLabel("UPNP:"), "");
+            stats.add(createLink("Cling", "https://github.com/4thline/cling"));
+        }
         stats.add(new JLabel("Extraction:"));
         final JPanel extraction = new JPanel(new MigLayout("ins 0,wrap 2"));
         extraction.add(createLink("7ZipJBindings (" + get7ZipJBindingDetails() + ")", "https://github.com/borisbrodski/sevenzipjbinding"));
