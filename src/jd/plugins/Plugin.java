@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
@@ -659,18 +658,9 @@ public abstract class Plugin implements ActionListener {
     public <T> T restoreFromString(final String json, final TypeRef<T> typeRef) {
         if (TypeRef.HASHMAP == typeRef || TypeRef.LIST == typeRef || TypeRef.OBJECT == typeRef || TypeRef.MAP == typeRef) {
             try {
-                final org.appwork.storage.simplejson.JSonParser factory = new org.appwork.storage.simplejson.JSonParser(json) {
-                    @Override
-                    protected Map<String, ? extends Object> createJSonObject() {
-                        return new org.appwork.storage.simplejson.MinimalMemoryMap<String, Object>();
-                    }
-
-                    @Override
-                    protected String dedupeString(String string) {
-                        return JSonStorage.dedupeString(string);
-                    }
-                };
-                return (T) factory.parse();
+                if (Class.forName("org.appwork.storage.simplejson.JSonParser", false, getClass().getClassLoader()) != null) {
+                    return (T) new MinimalMemoryJSonParser(json).parse();
+                }
             } catch (ParserException e) {
                 throw new JSonMapperException(e);
             } catch (Throwable e) {
