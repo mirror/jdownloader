@@ -69,8 +69,6 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonParser;
-import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.storage.simplejson.ParserException;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
@@ -660,25 +658,26 @@ public abstract class Plugin implements ActionListener {
 
     public <T> T restoreFromString(final String json, final TypeRef<T> typeRef) {
         if (TypeRef.HASHMAP == typeRef || TypeRef.LIST == typeRef || TypeRef.OBJECT == typeRef || TypeRef.MAP == typeRef) {
-            final JSonParser factory = new JSonParser(json) {
-                @Override
-                protected Map<String, ? extends Object> createJSonObject() {
-                    return new MinimalMemoryMap<String, Object>();
-                }
-
-                @Override
-                protected String dedupeString(String string) {
-                    return JSonStorage.dedupeString(string);
-                }
-            };
             try {
+                final org.appwork.storage.simplejson.JSonParser factory = new org.appwork.storage.simplejson.JSonParser(json) {
+                    @Override
+                    protected Map<String, ? extends Object> createJSonObject() {
+                        return new org.appwork.storage.simplejson.MinimalMemoryMap<String, Object>();
+                    }
+
+                    @Override
+                    protected String dedupeString(String string) {
+                        return JSonStorage.dedupeString(string);
+                    }
+                };
                 return (T) factory.parse();
             } catch (ParserException e) {
                 throw new JSonMapperException(e);
+            } catch (Throwable e) {
+                logger.log(e);
             }
-        } else {
-            return JSonStorage.restoreFromString(json, typeRef);
         }
+        return JSonStorage.restoreFromString(json, typeRef);
     }
 
     public CrawledLink convert(final DownloadLink link) {
