@@ -264,10 +264,10 @@ public class PluginClassLoader extends URLClassLoader {
         private final Class<?> mapStaticFields(final Class<?> currentClass) {
             if (isMapStaticFields() && currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
                 final String currentClassName = currentClass.getName();
-                final Field[] fields = currentClass.getDeclaredFields();
                 LogInterface logger = null;
                 final Object lock = getClassLock(currentClass);
                 try {
+                    final Field[] fields = currentClass.getDeclaredFields();
                     synchronized (lock) {
                         HashMap<String, Object> sharedPluginObjects = getSharedPluginObjects(currentClass);
                         final boolean sharedPluginsObjectsExisting = sharedPluginObjects != null;
