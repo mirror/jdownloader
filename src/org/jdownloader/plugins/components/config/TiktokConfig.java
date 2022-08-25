@@ -22,6 +22,9 @@ public interface TiktokConfig extends PluginConfigInterface {
     final String                                 text_CrawlMode                                             = "Select profile crawl mode";
     final String                                 text_ProfileCrawlerMaxItemsLimit                           = "Profile crawler: Define max number of items to be fetched: 0 = disable profile crawler, -1 = fetch all items";
     final String                                 text_TagCrawlerMaxItemsLimit                               = "Tag crawler: Define max number of items to be fetched: 0 = disable tag crawler, -1 = fetch all items";
+    final String                                 text_VideoCrawlerCrawlAudioSeparately                      = "Video crawler: Crawl audio separately?";
+    final String                                 text_ImageCrawlerCrawlImagesWithoutWatermark               = "Image crawler: Crawl images without watermark?";
+    final String                                 text_PreferredImageFormat                                  = "Image crawler: Choose preferred image format";
 
     public static class TRANSLATION {
         public String getEnableFastLinkcheck_label() {
@@ -50,6 +53,18 @@ public interface TiktokConfig extends PluginConfigInterface {
 
         public String getTagCrawlerMaxItemsLimit_label() {
             return text_TagCrawlerMaxItemsLimit;
+        }
+
+        public String getVideoCrawlerCrawlAudioSeparately_label() {
+            return text_VideoCrawlerCrawlAudioSeparately;
+        }
+
+        public String getImageCrawlerCrawlImagesWithoutWatermark_label() {
+            return text_ImageCrawlerCrawlImagesWithoutWatermark;
+        }
+
+        public String getPreferredImageFormat_label() {
+            return text_PreferredImageFormat;
         }
     }
 
@@ -147,4 +162,43 @@ public interface TiktokConfig extends PluginConfigInterface {
     int getTagCrawlerMaxItemsLimit();
 
     void setTagCrawlerMaxItemsLimit(int items);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_EnableFastLinkcheck)
+    @Order(80)
+    boolean isVideoCrawlerCrawlAudioSeparately();
+
+    void setVideoCrawlerCrawlAudioSeparately(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_ImageCrawlerCrawlImagesWithoutWatermark)
+    @Order(90)
+    boolean isImageCrawlerCrawlImagesWithoutWatermark();
+
+    void setImageCrawlerCrawlImagesWithoutWatermark(boolean b);
+
+    public static enum ImageFormat implements LabelInterface {
+        JPEG {
+            @Override
+            public String getLabel() {
+                return "jpeg";
+            }
+        },
+        WEBP {
+            @Override
+            public String getLabel() {
+                return "webp";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("JPEG")
+    @Order(91)
+    @DescriptionForConfigEntry(text_PreferredImageFormat)
+    ImageFormat getPreferredImageFormat();
+
+    void setPreferredImageFormat(final ImageFormat format);
 }

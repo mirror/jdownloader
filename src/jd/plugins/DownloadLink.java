@@ -261,6 +261,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         init(plugin, null, host, pluginPatternMatcher, isEnabled);
     }
 
+    public DownloadLink(final PluginForHost plugin, final String host, final String pluginPatternMatcher) {
+        init(plugin, null, host, pluginPatternMatcher, true);
+    }
+
     public void init(final PluginForHost plugin, final String name, final String host, final String pluginPatternMatcher, final boolean isEnabled) {
         setDefaultPlugin(plugin);
         setView(new DefaultDownloadLinkViewImpl());
