@@ -337,6 +337,7 @@ public class Property implements Serializable {
 
     public static Map<String, Object> newMapInstance(int size) {
         try {
+            // 25.08.2022 - avoid upgrade issues, remove me after some months
             final Class<?> minimalMap = Class.forName("org.appwork.storage.simplejson.MinimalMemoryMap");
             return (Map<String, Object>) minimalMap.getConstructor(int.class).newInstance(size);
         } catch (Throwable e) {
