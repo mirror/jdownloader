@@ -3,6 +3,8 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -27,34 +29,41 @@ import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
 
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
         @Override
         public String getDefaultValue(KeyHandler<String> keyHandler) {
-            if (CrossSystem.isLinux()) {
+            if (CrossSystem.isWindows()) {
+                try {
+                    // https://docs.microsoft.com/de-de/windows/win32/shell/knownfolderid?redirectedfrom=MSDN, FOLDERID_Downloads,
+                    // {374DE290-123F-4565-9164-39C4925E467B}
+                    final String ret = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders", "{374DE290-123F-4565-9164-39C4925E467B}");
+                    if (new File(ret).isDirectory()) {
+                        return ret;
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            } else if (CrossSystem.isLinux()) {
                 try {
                     /**
-                     * 2021-10-06: Comment by pspzockerscene </br>
-                     * Try to find a nice default download folder for Synology. </br>
-                     * Main issue here: The Synology DSM system does not have any kind of base download folder which is visible to the user.
-                     * The folders below are only trail and error/assumptions. </br>
+                     * 2021-10-06: Comment by pspzockerscene </br> Try to find a nice default download folder for Synology. </br> Main issue
+                     * here: The Synology DSM system does not have any kind of base download folder which is visible to the user. The
+                     * folders below are only trail and error/assumptions. </br>
                      *
                      * \@download = old temp download directory of "DownloadStation" Synology application RE:
-                     * https://www.synology-forum.de/threads/wo-ist-der-temporaere-speicherort.50969/ </br>
-                     * DownloadStation never created any user visible download folders but instead upon first start it asks the user to
-                     * choose a default download folder. </br>
-                     * public = No idea what folder that should be. </br>
-                     * Folders which are definitely always accessible/visible to the Synology users are e.g. paths to reemovable media such
-                     * as: </br>
-                     * /volumeUSB1/usbshare or /volumeUSB2/usbshare </br>
-                     * --> Just keep in mind that using those might be a bad idea too because typically users use the Synology USB port for
-                     * small USB stick or backup HDDs so they do not expect an application to just writefiles on them. </br>
+                     * https://www.synology-forum.de/threads/wo-ist-der-temporaere-speicherort.50969/ </br> DownloadStation never created
+                     * any user visible download folders but instead upon first start it asks the user to choose a default download folder.
+                     * </br> public = No idea what folder that should be. </br> Folders which are definitely always accessible/visible to
+                     * the Synology users are e.g. paths to reemovable media such as: </br> /volumeUSB1/usbshare or /volumeUSB2/usbshare
+                     * </br> --> Just keep in mind that using those might be a bad idea too because typically users use the Synology USB
+                     * port for small USB stick or backup HDDs so they do not expect an application to just writefiles on them. </br>
                      * Ultimately the best solution would be to have a path selector built in myjdownloader which is simply limited to all
-                     * the folders that the user can see -> Problem solved. </br>
-                     * Conclusion: It is not possible to get a good default download folder for Synology users! The code below is not really
-                     * helpful.
+                     * the folders that the user can see -> Problem solved. </br> Conclusion: It is not possible to get a good default
+                     * download folder for Synology users! The code below is not really helpful.
                      */
                     final HardwareTypeInterface hardwareType = HardwareType.getHardware();
                     if (hardwareType != null && HardwareTypeInterface.ID.SYNOLOGY.equals(hardwareType.getHardwareType())) {
@@ -136,6 +145,7 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Mirrordetection works caseinsensitive on filename")
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isForceMirrorDetectionCaseInsensitive();
 
     void setForceMirrorDetectionCaseInsensitive(boolean b);
@@ -175,7 +185,7 @@ public interface GeneralSettings extends ConfigInterface {
     int getDownloadSpeedLimit();
 
     @AboutConfig
-    @DescriptionForConfigEntry("If >0, JD will start additional downloads when total speed is below this value")
+    @DescriptionForConfigEntry("If >0, JD will start additional downloads when total speed is below this value. unit is byte/s")
     @DefaultIntValue(0)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getAutoMaxDownloadsSpeedLimit();
@@ -186,7 +196,7 @@ public interface GeneralSettings extends ConfigInterface {
     final static int HARD_MAX_DOWNLOADS = SOFT_MAX_DOWNLOADS * 2;
 
     @AboutConfig
-    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, if >0, JD will auto start max x downloads")
+    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, if >0, JD will auto start max x downloads. unit is milliseconds")
     @DefaultIntValue(5)
     @SpinnerValidator(min = 0, max = HARD_MAX_DOWNLOADS)
     int getAutoMaxDownloadsSpeedLimitMaxDownloads();
@@ -220,11 +230,6 @@ public interface GeneralSettings extends ConfigInterface {
     public void setProxyHostBanTimeout(long r);
 
     @AboutConfig
-    @DefaultLongValue(10 * 60 * 1000l)
-    @DescriptionForConfigEntry("Waittime in ms if a Download had unknown IOException")
-    long getDownloadUnknownIOExceptionWaittime();
-
-    @AboutConfig
     @DescriptionForConfigEntry("flush download buffers after x ms")
     @DefaultIntValue(2 * 60 * 1000)
     int getFlushBufferTimeout();
@@ -244,15 +249,15 @@ public interface GeneralSettings extends ConfigInterface {
     int getForcedFreeSpaceOnDisk();
 
     @AboutConfig
+    @DefaultEnumValue("ASK_FOR_EACH_FILE")
+    IfFileExistsAction getIfFileExistsAction();
+
+    @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Allow unsafe filenames for file exists check")
     boolean isAllowUnsafeFileNameForFileExistsCheck();
 
     void setAllowUnsafeFileNameForFileExistsCheck(boolean b);
-
-    @AboutConfig
-    @DefaultEnumValue("ASK_FOR_EACH_FILE")
-    IfFileExistsAction getIfFileExistsAction();
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -299,13 +304,6 @@ public interface GeneralSettings extends ConfigInterface {
     int getMaxSimultaneDownloadsPerHost();
 
     @AboutConfig
-    @DescriptionForConfigEntry("Timeout for network problems")
-    @SpinnerValidator(min = 0, max = 1000000)
-    @DefaultIntValue(15000)
-    @RequiresRestart("A JDownloader Restart is Required")
-    int getNetworkIssuesTimeout();
-
-    @AboutConfig
     @DescriptionForConfigEntry("Pause Speed. in Pause Mode we limit speed to this value to keep connections open, but use hardly bandwidth")
     @DefaultIntValue(10240)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
@@ -330,9 +328,6 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isCopySingleRealURL();
 
     void setCopySingleRealURL(boolean b);
-
-    @AboutConfig
-    boolean isAutoaddLinksAfterLinkcheck();
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -373,8 +368,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     boolean isShowCountdownonAutoStartDownloads();
 
-    boolean isSilentRestart();
-
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Use available Accounts?")
@@ -389,8 +382,6 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isAutoSortChildrenEnabled();
 
     void setAutoSortChildrenEnabled(boolean b);
-
-    void setAutoaddLinksAfterLinkcheck(boolean selected);
 
     void setAutoOpenContainerAfterDownload(boolean b);
 
@@ -431,8 +422,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDownloadTempUnavailableRetryWaittime(long ms);
 
-    void setDownloadUnknownIOExceptionWaittime(long ms);
-
     void setFilterRegex(boolean b);
 
     void setFlushBufferTimeout(int ms);
@@ -457,17 +446,12 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setMaxSimultaneDownloadsPerHost(int num);
 
-    void setNetworkIssuesTimeout(int timeout);
-
     void setPauseSpeed(int kb);
 
     @DefaultBooleanValue(true)
     @AboutConfig
     @DescriptionForConfigEntry("@see AutoStartCountdownSeconds")
     void setShowCountdownonAutoStartDownloads(boolean b);
-
-    @DefaultBooleanValue(false)
-    void setSilentRestart(boolean b);
 
     void setUseAvailableAccounts(boolean b);
 
@@ -537,20 +521,15 @@ public interface GeneralSettings extends ConfigInterface {
     void setSambaPrefetchEnabled(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("If disabled, JDownloader will only grab links that have an dedicated HostPlugin (no basic Http Links)")
-    boolean isDirectHTTPCrawlerEnabled();
-
-    void setDirectHTTPCrawlerEnabled(boolean b);
-
-    @AboutConfig
     @DescriptionForConfigEntry("Set a list of hostplugin names to ignore")
+    @DefaultJsonObject(value = "[]")
     String[] getCrawlerHostPluginBlacklist();
 
     void setCrawlerHostPluginBlacklist(String[] blacklist);
 
     @AboutConfig
     @DescriptionForConfigEntry("Set a list of crawlerplugin names to ignore")
+    @DefaultJsonObject(value = "[]")
     String[] getCrawlerCrawlerPluginBlacklist();
 
     void setCrawlerCrawlerPluginBlacklist(String[] blacklist);

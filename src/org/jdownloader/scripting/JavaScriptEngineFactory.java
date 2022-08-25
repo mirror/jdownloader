@@ -30,6 +30,7 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
+import jd.config.Property;
 import jd.parser.Regex;
 import jd.plugins.components.ThrowingRunnable;
 
@@ -474,9 +475,9 @@ public class JavaScriptEngineFactory {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 *
+                 * 
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 *
+                 * 
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
@@ -1195,7 +1196,7 @@ public class JavaScriptEngineFactory {
             return obj;
         } else if (obj instanceof org.mozilla.javascript.NativeObject) {
             final Object[] entries = ((org.mozilla.javascript.NativeObject) obj).getIds();
-            final MinimalMemoryMap<String, Object> ret = new MinimalMemoryMap<String, Object>(entries.length);
+            final Map<String, Object> ret = Property.newMapInstance(entries.length);
             for (Object s : entries) {
                 if (s instanceof String) {
                     ret.put((String) s, toMap(((org.mozilla.javascript.NativeObject) obj).get(s)));
@@ -1214,7 +1215,7 @@ public class JavaScriptEngineFactory {
             return ret;
         } else if (obj instanceof net.sourceforge.htmlunit.corejs.javascript.NativeObject) {
             final Object[] entries = ((net.sourceforge.htmlunit.corejs.javascript.NativeObject) obj).getIds();
-            final MinimalMemoryMap<String, Object> ret = new MinimalMemoryMap<String, Object>(entries.length);
+            final Map<String, Object> ret = Property.newMapInstance(entries.length);
             for (Object s : entries) {
                 if (s instanceof String) {
                     ret.put((String) s, toMap(((net.sourceforge.htmlunit.corejs.javascript.NativeObject) obj).get(s)));
