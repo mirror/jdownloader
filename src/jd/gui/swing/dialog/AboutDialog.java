@@ -301,20 +301,39 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     CrossSystem.openFile(directory);
                 }
             });
-            if (Snap.isInsideSnap() || ContainerRuntime.isInsideContainer() || HardwareType.getHardware() != null) {
-                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_environment()), "spanx");
+            JLabel envLabel = new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_environment());
+            try {
                 if (HardwareType.getHardware() != null) {
+                    if (envLabel != null) {
+                        stats.add(envLabel, "spanx");
+                        envLabel = null;
+                    }
                     stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_hardware()), "gapleft 10");
                     stats.add(createLink(HardwareType.getHardware().toString()));
                 }
+            } catch (Throwable ignore) {
+            }
+            try {
                 if (Snap.isInsideSnap()) {
+                    if (envLabel != null) {
+                        stats.add(envLabel, "spanx");
+                        envLabel = null;
+                    }
                     stats.add(new JLabel("Snap:"), "gapleft 10");
                     stats.add(createLink(Snap.getSnapInstanceName()));
                 }
+            } catch (Throwable ignore) {
+            }
+            try {
                 if (ContainerRuntime.isInsideContainer()) {
+                    if (envLabel != null) {
+                        stats.add(envLabel, "spanx");
+                        envLabel = null;
+                    }
                     stats.add(new JLabel(ContainerRuntime.getType() + ":"), "gapleft 10");
                     stats.add(createLink(ContainerRuntime.getID()));
                 }
+            } catch (Throwable ignore) {
             }
             if (map != null) {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
