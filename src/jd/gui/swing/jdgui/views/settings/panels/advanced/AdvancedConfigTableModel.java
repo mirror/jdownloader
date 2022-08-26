@@ -167,7 +167,11 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
 
             @Override
             public String getStringValue(AdvancedConfigEntry value) {
-                return value.getDescription();
+                if (value.hasDescription()) {
+                    return value.getDescription();
+                } else {
+                    return null;
+                }
             }
 
             @Override

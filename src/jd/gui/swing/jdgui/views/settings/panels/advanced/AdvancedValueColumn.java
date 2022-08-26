@@ -22,7 +22,6 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.EnumLabel;
-import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
@@ -453,7 +452,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         if (Clazz.isBoolean(object.getType())) {
             return booleanColumn;
         } else if (object.getType() == String.class) {
-            if (object.getKeyHandler().getAnnotation(HexColorString.class) != null) {
+            if (object.hasHexColorString()) {
                 return colorColumn;
             }
             return stringColumn;
