@@ -12,6 +12,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.ConfigEntryKeywords;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -133,12 +134,43 @@ public class AdvancedConfigEntry {
         return keyHandler.getRawType();
     }
 
+    private Boolean hasDescription = null;
+
+    public boolean hasDescription() {
+        if (hasDescription == null) {
+            hasDescription = keyHandler.getAnnotation(DescriptionForConfigEntry.class) != null;
+        }
+        return hasDescription;
+    }
+
+    private Boolean hasHexColorString = null;
+
+    public boolean hasHexColorString() {
+        if (hasHexColorString == null) {
+            hasHexColorString = keyHandler.getAnnotation(HexColorString.class) != null;
+        }
+        return hasHexColorString;
+    }
+
+    private Boolean hasDefaultValue = null;
+
+    public boolean hasDefaultValue() {
+        if (hasDefaultValue == null) {
+            hasDefaultValue = keyHandler.hasDefaultValue();
+        }
+        return hasDefaultValue;
+    }
+
     public String getDescription() {
-        final DescriptionForConfigEntry an = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
-        if (an != null) {
-            return an.value();
-        } else {
+        if (!hasDescription()) {
             return null;
+        } else {
+            final DescriptionForConfigEntry an = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
+            if (an != null) {
+                return an.value();
+            } else {
+                return null;
+            }
         }
     }
 
@@ -160,12 +192,25 @@ public class AdvancedConfigEntry {
         }
     }
 
+    private Boolean hasValidator = null;
+
+    public boolean hasValidator() {
+        if (hasValidator == null) {
+            hasValidator = keyHandler.getAnnotation(SpinnerValidator.class) != null;
+        }
+        return hasValidator;
+    }
+
     public Validator getValidator() {
-        final SpinnerValidator an = keyHandler.getAnnotation(SpinnerValidator.class);
-        if (an != null) {
-            return new org.jdownloader.settings.advanced.RangeValidator(an.min(), an.max());
-        } else {
+        if (!hasValidator()) {
             return null;
+        } else {
+            final SpinnerValidator an = keyHandler.getAnnotation(SpinnerValidator.class);
+            if (an != null) {
+                return new org.jdownloader.settings.advanced.RangeValidator(an.min(), an.max());
+            } else {
+                return null;
+            }
         }
     }
 

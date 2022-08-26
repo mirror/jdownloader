@@ -44,11 +44,11 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         public boolean isEnabled() {
             if (value == null) {
                 return false;
-            } else if (value.getDescription() != null) {
+            } else if (value.hasDescription()) {
                 return true;
-            } else if (value.getValidator() != null) {
+            } else if (value.hasValidator()) {
                 return true;
-            } else if (value.getKeyHandler().hasDefaultValue()) {
+            } else if (value.hasDefaultValue()) {
                 return true;
             } else {
                 return false;
@@ -133,7 +133,7 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         public void setEntry(AdvancedConfigEntry value) {
             final Object currentValue = value.getValue();
             if (currentValue == null) {
-                setEnabledIntern(value.getKeyHandler().hasDefaultValue());
+                setEnabledIntern(value.hasDefaultValue());
             } else {
                 final Object defaultValue = value.getDefault();
                 final boolean isDefault = AdvancedConfigEntry.equals(currentValue, defaultValue);
