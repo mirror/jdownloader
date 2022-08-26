@@ -31,6 +31,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -52,10 +53,12 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TiktokComCrawler;
@@ -138,35 +141,35 @@ public class TiktokCom extends PluginForHost {
     }
 
     // private String dllink = null;
-    public static final String  PROPERTY_DIRECTURL_WEBSITE                    = "directurl";
-    public static final String  PROPERTY_DIRECTURL_API                        = "directurl_api";
-    public static final String  PROPERTY_USERNAME                             = "username";
-    public static final String  PROPERTY_USER_ID                              = "user_id";
-    public static final String  PROPERTY_VIDEO_ID                             = "videoid";
-    public static final String  PROPERTY_DATE                                 = "date";
-    public static final String  PROPERTY_DATE_LAST_MODIFIED_HEADER            = "date_last_modified_header";
-    public static final String  PROPERTY_DESCRIPTION                          = "description";
-    public static final String  PROPERTY_HASHTAGS                             = "hashtags";
-    public static final String  PROPERTY_LIKE_COUNT                           = "like_count";
-    public static final String  PROPERTY_PLAY_COUNT                           = "play_count";
-    public static final String  PROPERTY_SHARE_COUNT                          = "share_count";
-    public static final String  PROPERTY_COMMENT_COUNT                        = "comment_count";
-    public static final String  PROPERTY_HAS_WATERMARK                        = "has_watermark";
-    public static final String  PROPERTY_FORCE_API                            = "force_api";
-    public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE              = "last_used_download_mode";
-    public static final String  PROPERTY_ALLOW_HEAD_REQUEST                   = "allow_head_request";
-    public static final String  PROPERTY_TYPE                                 = "type";
-    public static final String  PROPERTY_INDEX                                = "index";
-    public static final String  PROPERTY_INDEX_MAX                            = "index_max";
-    public static final String  TYPE_AUDIO                                    = "audio";
-    public static final String  TYPE_VIDEO                                    = "video";
-    public static final String  TYPE_PICTURE                                  = "picture";
-    private static final String PATTERN_VIDEO                                 = "https?://[^/]+/@([^/]+)/video/(\\d+).*?";
+    public static final String PROPERTY_DIRECTURL_WEBSITE                    = "directurl";
+    public static final String PROPERTY_DIRECTURL_API                        = "directurl_api";
+    public static final String PROPERTY_USERNAME                             = "username";
+    public static final String PROPERTY_USER_ID                              = "user_id";
+    public static final String PROPERTY_VIDEO_ID                             = "videoid";
+    public static final String PROPERTY_DATE                                 = "date";
+    public static final String PROPERTY_DATE_LAST_MODIFIED_HEADER            = "date_last_modified_header";
+    public static final String PROPERTY_DESCRIPTION                          = "description";
+    public static final String PROPERTY_HASHTAGS                             = "hashtags";
+    public static final String PROPERTY_LIKE_COUNT                           = "like_count";
+    public static final String PROPERTY_PLAY_COUNT                           = "play_count";
+    public static final String PROPERTY_SHARE_COUNT                          = "share_count";
+    public static final String PROPERTY_COMMENT_COUNT                        = "comment_count";
+    public static final String PROPERTY_HAS_WATERMARK                        = "has_watermark";
+    public static final String PROPERTY_FORCE_API                            = "force_api";
+    public static final String PROPERTY_LAST_USED_DOWNLOAD_MODE              = "last_used_download_mode";
+    public static final String PROPERTY_ALLOW_HEAD_REQUEST                   = "allow_head_request";
+    public static final String PROPERTY_TYPE                                 = "type";
+    public static final String PROPERTY_INDEX                                = "index";
+    public static final String PROPERTY_INDEX_MAX                            = "index_max";
+    public static final String TYPE_AUDIO                                    = "audio";
+    public static final String TYPE_VIDEO                                    = "video";
+    public static final String TYPE_PICTURE                                  = "picture";
+    public static final String PATTERN_VIDEO                                 = "https?://[^/]+/@([^/]+)/video/(\\d+).*";
     /* API related stuff */
-    public static final String  API_BASE                                      = "https://api-h2.tiktokv.com/aweme/v1";
-    public static final String  API_VERSION_NAME                              = "20.9.3";
-    public static final String  API_VERSION_CODE                              = "293";
-    private final String        PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT = "has_shown_download_mode_hint";
+    public static final String API_BASE                                      = "https://api-h2.tiktokv.com/aweme/v1";
+    public static final String API_VERSION_NAME                              = "20.9.3";
+    public static final String API_VERSION_CODE                              = "293";
+    private final String       PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT = "has_shown_download_mode_hint";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -198,6 +201,23 @@ public class TiktokCom extends PluginForHost {
         if (!link.isNameSet()) {
             /* Fallback-filename */
             link.setName(fid + ".mp4");
+        }
+        final boolean useNewHandling = false;
+        if (!link.hasProperty(PROPERTY_TYPE) && DebugMode.TRUE_IN_IDE_ELSE_FALSE && useNewHandling) {
+            /* TODO: Update old --> New URLs via new crawler */
+            final TiktokComCrawler crawler = (TiktokComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
+            final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(new CryptedLink(link.getPluginPatternMatcher()), account);
+            DownloadLink result = null;
+            for (final DownloadLink thisresult : results) {
+                if (this.getLinkID(thisresult).equals(this.getLinkID(link))) {
+                    result = thisresult;
+                    break;
+                }
+            }
+            if (result == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         boolean webMode = false;
         if (configUseAPI() || link.hasProperty(PROPERTY_FORCE_API)) {
@@ -294,10 +314,18 @@ public class TiktokCom extends PluginForHost {
         final int index_max = getIndexMaxNumber(link);
         if (index_max > 0) {
             /* Append index to filenames */
-            filename += "_" + getIndexNumber(link);
+            filename += "_" + StringUtils.formatByPadLength(index_max + 1, getIndexNumber(link) + 1);
         }
-        /* TODO: Add support for images and audio */
-        filename += ".mp4";
+        final String directurl = getStoredDirecturl(link);
+        final String extByURL = Plugin.getFileNameExtensionFromURL(directurl);
+        final String type = getType(link);
+        if (type.equals(TYPE_VIDEO)) {
+            filename += ".mp4";
+        } else if (type.equals(TYPE_AUDIO) && extByURL == null) {
+            filename += ".mp3";
+        } else {
+            filename += extByURL;
+        }
         /* Only set final filename if ALL information is available! */
         if (dateFormatted != null && !StringUtils.isEmpty(username)) {
             link.setFinalFileName(filename);
@@ -306,7 +334,7 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    private boolean configUseAPI() {
+    private static boolean configUseAPI() {
         final DownloadMode mode = PluginJsonConfig.get(TiktokConfig.class).getDownloadMode();
         if (mode == DownloadMode.API || mode == DownloadMode.API_HD) {
             return true;
@@ -315,7 +343,7 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    private String getStoredDirecturlProperty(final DownloadLink link) {
+    private static String getStoredDirecturlProperty(final DownloadLink link) {
         if (configUseAPI() || link.hasProperty(PROPERTY_FORCE_API)) {
             return PROPERTY_DIRECTURL_API;
         } else {
@@ -341,7 +369,7 @@ public class TiktokCom extends PluginForHost {
         return link.getIntegerProperty(PROPERTY_INDEX_MAX, 0);
     }
 
-    private String getStoredDirecturl(final DownloadLink link) {
+    private static String getStoredDirecturl(final DownloadLink link) {
         return link.getStringProperty(getStoredDirecturlProperty(link));
     }
 

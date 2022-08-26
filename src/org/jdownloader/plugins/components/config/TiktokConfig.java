@@ -115,7 +115,7 @@ public interface TiktokConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("WEBSITE")
+    @DefaultEnumValue("API")
     @Order(40)
     @DescriptionForConfigEntry(text_DownloadMode)
     DownloadMode getDownloadMode();
