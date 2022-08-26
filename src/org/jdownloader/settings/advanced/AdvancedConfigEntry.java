@@ -183,12 +183,25 @@ public class AdvancedConfigEntry {
         }
     }
 
+    private Boolean hasKeywords = null;
+
+    public boolean hasKeywords() {
+        if (hasKeywords == null) {
+            hasKeywords = keyHandler.getAnnotation(ConfigEntryKeywords.class) != null;
+        }
+        return hasKeywords;
+    }
+
     public String[] getKeywords() {
-        final ConfigEntryKeywords an = keyHandler.getAnnotation(ConfigEntryKeywords.class);
-        if (an != null) {
-            return an.value();
-        } else {
+        if (!hasKeywords()) {
             return null;
+        } else {
+            final ConfigEntryKeywords an = keyHandler.getAnnotation(ConfigEntryKeywords.class);
+            if (an != null) {
+                return an.value();
+            } else {
+                return null;
+            }
         }
     }
 
