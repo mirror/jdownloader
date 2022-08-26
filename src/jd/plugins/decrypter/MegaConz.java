@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.Reference;
 import java.nio.charset.Charset;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -83,8 +84,8 @@ public class MegaConz extends PluginForDecrypt {
         return null;
     }
 
-    private static HashMap<String, MaxTimeSoftReference<List<Map<String, Object>>>> GLOBAL_CACHE = new HashMap<String, MaxTimeSoftReference<List<Map<String, Object>>>>();
-    private final Charset                                                           UTF8         = Charset.forName("UTF-8");
+    private static HashMap<String, Reference<List<Map<String, Object>>>> GLOBAL_CACHE = new HashMap<String, Reference<List<Map<String, Object>>>>();
+    private final Charset                                                UTF8         = Charset.forName("UTF-8");
 
     protected Object toObject(final Object object) {
         if (object == null) {
@@ -137,47 +138,57 @@ public class MegaConz extends PluginForDecrypt {
         br.addAllowedResponseCodes(500);
         int retryCounter = 0;
         final Map<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
-        List<Map<String, Object>> folderNodes = null;
         final MegaConzConfig config = PluginJsonConfig.get(MegaConzConfig.class);
+        boolean newCore = false;
+        try {
+            Class.forName("org.appwork.storage.config.MaxTimeSoftReference");
+            newCore = true;
+        } catch (Throwable ignore) {
+        }
         final boolean isCrawlerSetFullPathAsPackagename = config.isCrawlerSetFullPathAsPackagename();
-        synchronized (GLOBAL_CACHE) {
-            final String key = getHost() + "://FolderNodes/" + folderID;
-            LinkCrawler crawler = getCrawler();
-            if (crawler != null) {
-                crawler = crawler.getRoot();
-            }
-            if (crawler != null) {
-                folderNodes = (List<Map<String, Object>>) crawler.getCrawlerCache(key);
-            }
-            if (folderNodes == null) {
-                final MaxTimeSoftReference<List<Map<String, Object>>> cached = GLOBAL_CACHE.get(folderID);
-                if (cached != null) {
-                    folderNodes = cached.get();
+        List<Map<String, Object>> folderNodes = null;
+        if (!newCore) {
+            folderNodes = new ArrayList<Map<String, Object>>();
+        } else {
+            synchronized (GLOBAL_CACHE) {
+                final String key = getHost() + "://FolderNodes/" + folderID;
+                LinkCrawler crawler = getCrawler();
+                if (crawler != null) {
+                    crawler = crawler.getRoot();
+                }
+                if (crawler != null) {
+                    folderNodes = (List<Map<String, Object>>) crawler.getCrawlerCache(key);
                 }
                 if (folderNodes == null) {
-                    folderNodes = new ArrayList<Map<String, Object>>();
-                    final long minTime = config.getMaxCacheFolderDetails();
-                    if (minTime > 0) {
-                        GLOBAL_CACHE.put(folderID, new MaxTimeSoftReference<List<Map<String, Object>>>(folderNodes, minTime * 60 * 1000, folderID, new MaxTimeSoftReferenceCleanupCallback() {
-                            @Override
-                            public void onMaxTimeSoftReferenceCleanup(MaxTimeSoftReference<?> minTimeWeakReference) {
-                                minTimeWeakReference.clear();
-                                synchronized (GLOBAL_CACHE) {
-                                    if (JVMVersion.isMinimum(JVMVersion.JAVA_1_8)) {
-                                        GLOBAL_CACHE.remove(minTimeWeakReference.getID(), minTimeWeakReference);
-                                    } else {
-                                        final MaxTimeSoftReference<List<Map<String, Object>>> cache = GLOBAL_CACHE.get(minTimeWeakReference.getID());
-                                        if (cache == minTimeWeakReference) {
-                                            GLOBAL_CACHE.remove(minTimeWeakReference.getID());
+                    final Reference<List<Map<String, Object>>> cached = GLOBAL_CACHE.get(folderID);
+                    if (cached != null) {
+                        folderNodes = cached.get();
+                    }
+                    if (folderNodes == null) {
+                        folderNodes = new ArrayList<Map<String, Object>>();
+                        final long minTime = config.getMaxCacheFolderDetails();
+                        if (minTime > 0) {
+                            GLOBAL_CACHE.put(folderID, new MaxTimeSoftReference<List<Map<String, Object>>>(folderNodes, minTime * 60 * 1000, folderID, new MaxTimeSoftReferenceCleanupCallback() {
+                                @Override
+                                public void onMaxTimeSoftReferenceCleanup(MaxTimeSoftReference<?> minTimeWeakReference) {
+                                    minTimeWeakReference.clear();
+                                    synchronized (GLOBAL_CACHE) {
+                                        if (JVMVersion.isMinimum(JVMVersion.JAVA_1_8)) {
+                                            GLOBAL_CACHE.remove(minTimeWeakReference.getID(), minTimeWeakReference);
+                                        } else {
+                                            final Reference<List<Map<String, Object>>> cache = GLOBAL_CACHE.get(minTimeWeakReference.getID());
+                                            if (cache == minTimeWeakReference) {
+                                                GLOBAL_CACHE.remove(minTimeWeakReference.getID());
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        }));
+                            }));
+                        }
                     }
-                }
-                if (crawler != null) {
-                    crawler.putCrawlerCache(key, folderNodes);
+                    if (crawler != null) {
+                        crawler.putCrawlerCache(key, folderNodes);
+                    }
                 }
             }
         }
