@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.appwork.storage.JSonStorage;
@@ -39,7 +38,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.HttpConnection.HttpConnectionType;
-import org.appwork.utils.net.httpserver.HttpConnectionRunnable;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.net.httpserver.HttpServer;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
@@ -461,38 +459,23 @@ public class DeprecatedAPIServer extends HttpServer {
     }
 
     @Override
-    protected HttpConnectionRunnable createConnectionHandler(final ThreadPoolExecutor threadPool, final Socket clientSocket) throws IOException {
-        return new HttpConnectionRunnable() {
+    protected Runnable createConnectionHandler(final Socket clientSocket) throws IOException {
+        return new Runnable() {
             @Override
             public void run() {
                 try {
-                    final HttpConnection run = autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
+                    final HttpConnection httpConnection = autoWrapSSLConnection(clientSocket, new AutoSSLHttpConnectionFactory() {
                         @Override
                         public HttpConnection create(Socket clientSocket, InputStream is, OutputStream os) throws IOException {
                             return new CustomHttpConnection(DeprecatedAPIServer.this, clientSocket, is, os);
                         }
                     });
-                    if (run == null) {
-                        throw new NullPointerException();
-                    } else if (threadPool != null && false) {
-                        threadPool.execute(run);
-                    } else {
-                        run.run();
+                    if (httpConnection != null) {
+                        httpConnection.run();
                     }
-                } catch (final Throwable e) {
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
-                    try {
-                        clientSocket.close();
-                    } catch (final IOException e1) {
-                    }
+                } catch (Throwable e) {
+                    LogController.CL(DeprecatedAPIServer.class).log(e);
                 }
-            }
-
-            @Override
-            public Socket getClientSocket() {
-                return clientSocket;
             }
         };
     }
