@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -27,8 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sync.com" }, urls = { "https?://(?:www\\.)?4sync\\.com/(?:file|rar|video|web/directDownload)/[A-Za-z0-9\\_\\-]+" })
 public class FourSyncCom extends PluginForHost {
@@ -52,7 +52,7 @@ public class FourSyncCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("https://www.4sync.com/", "4langcookie", "en");
+        br.setCookie("https://www." + this.getHost(), "4langcookie", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">4Sync \\- Page not found<|>The webpage you've requested wasn't found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -76,11 +76,10 @@ public class FourSyncCom extends PluginForHost {
             /* 2017-01-20 */
             filesize = this.br.getRegex("class=\"fileInfoBlock\">\\s*?<span>([^<>\"]+)<").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            /* 2017-01-20: Do not set final filename here as the extension is often missing! */
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
-        /* 2017-01-20: Do not set final filename here as the extension is often missing! */
-        link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         }
@@ -88,8 +87,8 @@ public class FourSyncCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (br.getURL().contains("errorMaxSessions=MAX_IP")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
         }
@@ -100,9 +99,13 @@ public class FourSyncCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.getURL().contains("errorMaxSessions=MAX_IP")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
             }
