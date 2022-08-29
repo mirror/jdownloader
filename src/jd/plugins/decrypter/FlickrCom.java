@@ -71,7 +71,6 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String                  TYPE_SET_SINGLE          = "^https?://[^/]+/photos/([^<>\"/]+)/(?:sets|albums)/(\\d+).*";
     private static final String                  TYPE_GALLERY             = "^https?://[^/]+/photos/([^<>\"/]+)/galleries/(\\d+).*";
     private static final String                  TYPE_SETS_OF_USER_ALL    = "^https?://[^/]+/photos/([^/]+)/(?:albums|sets)/?$";
-    private static final String                  TYPE_SINGLE_PHOTO        = "^https?://[^/]+/photos/[^<>\"/]+/\\d+.*";
     private static final String                  TYPE_PHOTO               = "https?://[^/]+/photos/.*?";
     private static final String                  TYPE_USER                = "^https?://[^/]+/photos/([^/]+)/?$";
     private static final String                  INVALIDLINKS             = "^https?://[^/]+/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
@@ -100,18 +99,18 @@ public class FlickrCom extends PluginForDecrypt {
      * Using API: https://www.flickr.com/services/api/ - with websites public apikey.
      */
     @SuppressWarnings("deprecation")
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         correctAddedURL(param);
         prepBrowserAPI(this.br);
+        final PluginForHost flickrHostPlugin = this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             /* Login whenever possible */
-            final PluginForHost flickrHostPlugin = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.FlickrCom) flickrHostPlugin).login(account, false);
         }
         if (param.getCryptedUrl().matches(INVALIDLINKS) || param.getCryptedUrl().equals("https://www.flickr.com/photos/groups/") || param.getCryptedUrl().contains("/map")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (param.getCryptedUrl().matches(TYPE_SINGLE_PHOTO)) {
+        } else if (flickrHostPlugin.canHandle(param.getCryptedUrl())) {
             /* Pass to hostplugin */
             decryptedLinks.add(createDownloadlink(param.getCryptedUrl()));
             return decryptedLinks;
@@ -265,8 +264,8 @@ public class FlickrCom extends PluginForDecrypt {
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = true;
         } else {
-            /* Unsupported URL --> Developer mistake! */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Unsupported URL */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (looksLikeInternalUsername(usernameFromURL)) {
             usernameInternal = usernameFromURL;

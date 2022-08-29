@@ -22,6 +22,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "5mod-file.ru" }, urls = { "https?://(?:www\\.)?5mod-file\\.ru/download/file/\\d+\\.php" })
@@ -30,20 +32,22 @@ public class FivemodFileRu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Файл не найден")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*Файл не найден")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Если у вас пишет файл не найден")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String finallink = this.br.getRegex("href='(https?://[^<>\"\\']+)' class='download'").getMatch(0);
         if (finallink != null) {
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             /* Assume that file is selfhosted */
-            final DownloadLink dl = this.createDownloadlink(parameter);
+            final DownloadLink dl = this.createDownloadlink(param.getCryptedUrl());
             jd.plugins.hoster.FivemodFileRu.parseFileInfo(dl, this.br);
             /* Avoid another http request right away in host plugin. */
             dl.setAvailable(true);
