@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -34,11 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/([a-f0-9]{16})" })
 public class FourShareVn extends PluginForHost {
@@ -81,15 +81,12 @@ public class FourShareVn extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML(">FID Không hợp lệ\\!|file not found|(F|f)ile (này)? đã bị xóa|File không tồn tại?| Error: FileLink da bi xoa|>Xin lỗi Bạn, file này không còn tồn tại|File suspended:") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1[^>]*>\\s*<strong>\\s*([^<>\"]+)\\s*</strong>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);
         }
-        String filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Download\\s*([^<>\"]+) \\| 4share\\.vn\\s*</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<h1[^>]*>\\s*<strong>\\s*([^<>\"]+)\\s*</strong>").getMatch(0);
-            }
         }
         String filesize = br.getRegex(">\\s*Kích thước\\s*:\\s*<strong>\\s*(\\d+(?:\\.\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*</strong>").getMatch(0);
         if (filesize == null) {
@@ -100,16 +97,23 @@ public class FourShareVn extends PluginForHost {
                 filesize = br.getRegex("/strong>\\s*</h1>\\s*(\\d+[^<>\"]+)<br/>").getMatch(0);
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
-        link.setName(filename.trim());
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         final String md5 = br.getRegex("MD5\\s*:?\\s*([a-f0-9]{32})").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5);
+        }
+        /* Website may still provide names of deleted files --> First check for file info, then check for offline status. */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*FID Không hợp lệ\\!|file not found|(F|f)ile (này)? đã bị xóa|File không tồn tại?| Error: FileLink da bi xoa|>Xin lỗi Bạn, file này không còn tồn tại|File suspended:") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*File đã xóa?")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
@@ -122,11 +126,11 @@ public class FourShareVn extends PluginForHost {
             getPage("/member");
             /*
              * TODO
-             * 
+             *
              * Ngày đăng ký: 2012-xx-xx 10:10:10 Ngày hết hạn: 2012-xx-xx 10:10:10 , còn 59 ngày sử dụng - Gold còn lại: 293 (293 - TKC + 0
              * - TKP ) Gold TKC - Tài khoản Chính, là loại gold nạp tiền trực tiếp; Gold TKP - Tài khoản Phụ, là loại Gold được thưởng Gold
              * đã dùng: 607 (607 + 0) Gold đã nạp: 900 (900 + ) Bạn đã download từ 4Share hôm nay : 91.01 GB [Tất cả: 1.34 TB]
-             * 
+             *
              * Feedback from customer: My account pays a monthly fee. Looks like there's a limit to it, I'm not sure how many GB it is. Gold
              * = Monthly renew
              */
