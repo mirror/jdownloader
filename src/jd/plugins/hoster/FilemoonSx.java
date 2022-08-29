@@ -162,10 +162,6 @@ public class FilemoonSx extends XFileSharingProBasic {
         }
         return null;
     }
-    // @Override
-    // public void correctDownloadLink(final DownloadLink link) {
-    // // do nothing
-    // }
 
     @Override
     protected boolean supports_availablecheck_alt() {
