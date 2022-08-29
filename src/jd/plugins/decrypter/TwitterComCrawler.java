@@ -146,14 +146,19 @@ public class TwitterComCrawler extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        resumeURL = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_RESUME_URL) : param.getCryptedUrl();
+        this.resumeURL = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_RESUME_URL) : null;
         /* Parse some special URL params which are relevant for profile crawl process later. */
-        final UrlQuery addedURLQuery = UrlQuery.parse(resumeURL);
+        final UrlQuery query;
+        if (this.resumeURL != null) {
+            query = UrlQuery.parse(resumeURL);
+        } else {
+            query = UrlQuery.parse(param.getCryptedUrl());
+        }
         try {
-            maxTweetsToCrawl = Integer.parseInt(addedURLQuery.get("maxitems"));
+            maxTweetsToCrawl = Integer.parseInt(query.get("maxitems"));
         } catch (final Throwable ignore) {
         }
-        final String maxTweetDateStrTmp = addedURLQuery.get("max_date");
+        final String maxTweetDateStrTmp = query.get("max_date");
         if (maxTweetDateStrTmp != null) {
             try {
                 crawlUntilTimestamp = TimeFormatter.getMilliSeconds(maxTweetDateStrTmp, "yyyy-MM-dd", Locale.ENGLISH);
@@ -164,9 +169,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
         }
         try {
-            preGivenPageNumber = Integer.parseInt(addedURLQuery.get("page"));
-            preGivenNumberOfTotalWalkedThroughTweetsCount = Integer.parseInt(addedURLQuery.get("totalCrawledTweetsCount"));
-            preGivenNextCursor = Encoding.htmlDecode(addedURLQuery.get("nextCursor"));
+            preGivenPageNumber = Integer.parseInt(query.get("page"));
+            preGivenNumberOfTotalWalkedThroughTweetsCount = Integer.parseInt(query.get("totalCrawledTweetsCount"));
+            preGivenNextCursor = Encoding.htmlDecode(query.get("nextCursor"));
             logger.info("Resuming from last state: page = " + preGivenPageNumber + " | totalCrawledTweetsCount = " + preGivenNumberOfTotalWalkedThroughTweetsCount + " | nextCursor = " + preGivenNextCursor);
         } catch (final Throwable ignore) {
         }
@@ -875,7 +880,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             addedURLQuery.addAndReplace("page", Integer.toString(page));
             addedURLQuery.addAndReplace("totalCrawledTweetsCount", Integer.toString(totalCrawledTweetsCount));
             addedURLQuery.addAndReplace("nextCursor", Encoding.urlEncode(nextCursor));
-            resumeURL = addedURLWithoutParams + "?" + addedURLQuery.toString();
+            this.resumeURL = addedURLWithoutParams + "?" + addedURLQuery.toString();
             page++;
             /* Wait before accessing next page. */
             this.sleep(cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds(), param);
