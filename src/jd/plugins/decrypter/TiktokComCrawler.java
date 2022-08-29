@@ -100,22 +100,22 @@ public class TiktokComCrawler extends PluginForDecrypt {
     private final String TYPE_PLAYLIST_MUSIC = "https?://[^/]+/music/([a-z0-9\\-]+)-(\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (param.getCryptedUrl().matches(TYPE_REDIRECT) || param.getCryptedUrl().matches(TYPE_APP)) {
             /* Single redirect URLs */
-            br.setFollowRedirects(false);
+            br.setFollowRedirects(true);
             br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String finallink = br.getRedirectLocation();
-            if (finallink == null) {
+            } else if (!hosterPlugin.canHandle(br.getURL())) {
+                /* E.g. redirect to mainpage */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            ret.add(createDownloadlink(finallink));
+            logger.info("Old URL: " + param.getCryptedUrl() + " | New URL: " + br.getURL());
+            ret.add(createDownloadlink(br.getURL()));
             return ret;
-        } else if (plg.canHandle(param.getCryptedUrl())) {
+        } else if (hosterPlugin.canHandle(param.getCryptedUrl())) {
             return crawlSingleMedia(param);
         } else if (param.getCryptedUrl().matches(TYPE_USER_USERNAME) || param.getCryptedUrl().matches(TYPE_USER_USER_ID)) {
             return crawlProfile(param);
@@ -153,7 +153,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
 
     /** This can crawl single videos from website. */
     @Deprecated
-    public ArrayList<DownloadLink> crawlSingleMediaWebsite(String url, final Account account) throws Exception {
+    public ArrayList<DownloadLink> crawlSingleMediaWebsite(final String url, final Account account) throws Exception {
         final TiktokCom hostPlg = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
             hostPlg.login(account, false);
@@ -165,28 +165,21 @@ public class TiktokComCrawler extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         prepBRWebsite(br);
-        if (!url.matches(TiktokCom.PATTERN_VIDEO)) {
-            /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL. */
-            br.setFollowRedirects(false);
-            br.getPage("https://m." + this.getHost() + "/v/" + fid + ".html");
-            final String redirect = br.getRedirectLocation();
-            if (redirect != null) {
-                if (!redirect.matches(TiktokCom.PATTERN_VIDEO)) {
-                    /* Redirect to unsupported URL -> Most likely mainpage -> Offline! */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                url = redirect;
-            }
-        }
         final TiktokConfig cfg = PluginJsonConfig.get(hostPlg.getConfigInterface());
-        final DownloadLink video = this.createDownloadlink(url);
+        final DownloadLink video = new DownloadLink(hostPlg, this.getHost(), url);
         String description = null;
+        String username = null;
+        Object diggCountO = null;
+        Object shareCountO = null;
+        Object playCountO = null;
+        Object commentCountO = null;
+        String dateFormatted = null;
         final boolean useWebsiteEmbed = true;
         /**
          * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
          * When using an account and potentially downloading private videos however, we can't use the embed way.
          */
-        String dllink = null;
+        String videoDllink = null;
         if (account != null) {
             br.getPage(url);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -205,37 +198,25 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> videoInfo = (Map<String, Object>) itemModule.entrySet().iterator().next().getValue();
-            final String createDateTimestampStr = videoInfo.get("createTime").toString();
             description = (String) entries.get("desc");
             final Map<String, Object> downloadInfo = (Map<String, Object>) videoInfo.get("video");
-            dllink = (String) downloadInfo.get("downloadAddr");
-            if (StringUtils.isEmpty(dllink)) {
-                dllink = (String) downloadInfo.get("playAddr");
+            videoDllink = (String) downloadInfo.get("downloadAddr");
+            if (StringUtils.isEmpty(videoDllink)) {
+                videoDllink = (String) downloadInfo.get("playAddr");
             }
-            video.setProperty(TiktokCom.PROPERTY_USERNAME, videoInfo.get("author"));
+            username = videoInfo.get("author").toString();
+            final String createDateTimestampStr = videoInfo.get("createTime").toString();
             if (!StringUtils.isEmpty(createDateTimestampStr)) {
-                video.setProperty(TiktokCom.PROPERTY_DATE, TiktokCom.convertDateFormat(createDateTimestampStr));
+                dateFormatted = TiktokCom.convertDateFormat(createDateTimestampStr);
             }
             final Map<String, Object> stats = (Map<String, Object>) videoInfo.get("stats");
-            final Object diggCountO = stats.get("diggCount");
-            if (diggCountO != null) {
-                TiktokCom.setLikeCount(video, (Number) diggCountO);
-            }
-            final Object shareCountO = stats.get("shareCount");
-            if (shareCountO != null) {
-                TiktokCom.setShareCount(video, (Number) shareCountO);
-            }
-            final Object playCountO = stats.get("playCount");
-            if (playCountO != null) {
-                TiktokCom.setPlayCount(video, (Number) playCountO);
-            }
-            final Object commentCountO = stats.get("commentCount");
-            if (commentCountO != null) {
-                TiktokCom.setCommentCount(video, (Number) commentCountO);
-            }
-            if (dllink == null) {
+            diggCountO = stats.get("diggCount");
+            shareCountO = stats.get("shareCount");
+            playCountO = stats.get("playCount");
+            commentCountO = stats.get("commentCount");
+            if (videoDllink == null) {
                 /* Fallback */
-                dllink = TiktokCom.generateDownloadurlOld(br, fid);
+                videoDllink = TiktokCom.generateDownloadurlOld(br, fid);
                 video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
             } else {
                 video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, false);
@@ -300,60 +281,72 @@ public class TiktokComCrawler extends PluginForDecrypt {
             final Map<String, Object> itemInfos = (Map<String, Object>) videoData.get("itemInfos");
             final Map<String, Object> musicInfos = (Map<String, Object>) videoData.get("musicInfos");
             // entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
-            // TODO: Fix this being 0 in some cases: Obtain video information from different part of website
+            /* In some cases this will be "0". In these cases, the date will be obtained from "last modified" header via website. */
             final String createTime = itemInfos.get("createTime").toString();
             description = (String) itemInfos.get("text");
-            dllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
+            videoDllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
             /* Always look for username --> Username given inside URL which user added can be wrong! */
             final Object authorInfosO = videoData.get("authorInfos");
             if (authorInfosO != null) {
                 final Map<String, Object> authorInfos = (Map<String, Object>) authorInfosO;
-                final String username = (String) authorInfos.get("uniqueId");
-                if (!StringUtils.isEmpty(username)) {
-                    video.setProperty(TiktokCom.PROPERTY_USERNAME, username);
-                }
+                username = (String) authorInfos.get("uniqueId");
             }
             /* Set more Packagizer properties */
-            final Object diggCountO = itemInfos.get("diggCount");
-            if (diggCountO != null) {
-                TiktokCom.setLikeCount(video, (Number) diggCountO);
-            }
-            final Object playCountO = itemInfos.get("playCount");
-            if (playCountO != null) {
-                TiktokCom.setPlayCount(video, (Number) playCountO);
-            }
-            final Object shareCountO = itemInfos.get("shareCount");
-            if (shareCountO != null) {
-                TiktokCom.setShareCount(video, (Number) shareCountO);
-            }
-            final Object commentCountO = itemInfos.get("commentCount");
-            if (commentCountO != null) {
-                TiktokCom.setCommentCount(video, (Number) commentCountO);
-            }
+            diggCountO = itemInfos.get("diggCount");
+            playCountO = itemInfos.get("playCount");
+            shareCountO = itemInfos.get("shareCount");
+            commentCountO = itemInfos.get("commentCount");
             if (!StringUtils.isEmpty(createTime) && !"0".equals(createTime)) {
-                video.setProperty(TiktokCom.PROPERTY_DATE, TiktokCom.convertDateFormat(createTime));
+                dateFormatted = TiktokCom.convertDateFormat(createTime);
             }
-            if (dllink == null) {
+            if (videoDllink == null) {
                 /* Fallback */
-                dllink = TiktokCom.generateDownloadurlOld(br, fid);
+                videoDllink = TiktokCom.generateDownloadurlOld(br, fid);
             }
             video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
             if (cfg.isVideoCrawlerCrawlAudioSeparately() && musicInfos != null) {
-                // TODO: Add audio support
+                final List<String> audioURLs = (List<String>) musicInfos.get("playUrl");
+                final String audioDirecturl = audioURLs.get(0);
+                final DownloadLink audio = new DownloadLink(hostPlg, this.getHost(), url);
+                audio.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, audioDirecturl);
+                audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
+                audio.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
+                ret.add(audio);
             }
         } else {
             /* Rev. 40928 and earlier */
-            dllink = TiktokCom.generateDownloadurlOld(br, fid);
+            videoDllink = TiktokCom.generateDownloadurlOld(br, fid);
             video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
         }
-        TiktokCom.setDescriptionAndHashtags(video, description);
-        if (!StringUtils.isEmpty(dllink)) {
-            video.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, dllink);
+        if (!StringUtils.isEmpty(videoDllink)) {
+            video.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, videoDllink);
         }
         video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
-        video.setAvailable(true);
-        TiktokCom.setFilename(video);
         ret.add(video);
+        /* Add additional properties */
+        for (final DownloadLink result : ret) {
+            result.setAvailable(true);
+            TiktokCom.setFilename(result);
+            TiktokCom.setDescriptionAndHashtags(result, description);
+            if (!StringUtils.isEmpty(username)) {
+                result.setProperty(TiktokCom.PROPERTY_USERNAME, username);
+            }
+            if (diggCountO != null) {
+                TiktokCom.setLikeCount(result, (Number) diggCountO);
+            }
+            if (shareCountO != null) {
+                TiktokCom.setShareCount(result, (Number) shareCountO);
+            }
+            if (playCountO != null) {
+                TiktokCom.setPlayCount(result, (Number) playCountO);
+            }
+            if (commentCountO != null) {
+                TiktokCom.setCommentCount(result, (Number) commentCountO);
+            }
+            if (dateFormatted != null) {
+                result.setProperty(TiktokCom.PROPERTY_DATE, dateFormatted);
+            }
+        }
         return ret;
     }
 

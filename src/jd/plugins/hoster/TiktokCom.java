@@ -257,25 +257,24 @@ public class TiktokCom extends PluginForHost {
                         logger.log(e);
                     }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 10 * 60 * 1000l);
-                } else {
-                    /*
-                     * 2020-05-04: Do not use header anymore as it seems like they've modified all files < December 2019 so their
-                     * "Header dates" are all wrong now.
-                     */
-                    // createDate = con.getHeaderField("Last-Modified");
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    final String lastModifiedHeaderValue = brc.getRequest().getResponseHeader("Last-Modified");
-                    if (lastModifiedHeaderValue != null) {
-                        link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
-                        if (webMode && !link.hasProperty(PROPERTY_DATE)) {
-                            /*
-                             * Filename has already been set before but date was not available --> Set filename again as date information is
-                             * given now.
-                             */
-                            setFilename(link);
-                        }
+                }
+                /*
+                 * 2020-05-04: Do not use header anymore as it seems like they've modified all files < December 2019 so their "Header dates"
+                 * are all wrong now.
+                 */
+                // createDate = con.getHeaderField("Last-Modified");
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String lastModifiedHeaderValue = brc.getRequest().getResponseHeader("Last-Modified");
+                if (lastModifiedHeaderValue != null) {
+                    link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
+                    if (webMode && !link.hasProperty(PROPERTY_DATE)) {
+                        /*
+                         * Filename has already been set before but date was not available --> Set filename again as date information is
+                         * given now.
+                         */
+                        setFilename(link);
                     }
                 }
             } finally {
@@ -381,19 +380,19 @@ public class TiktokCom extends PluginForHost {
         link.removeProperty(PROPERTY_HAS_WATERMARK);
         final String fid = getContentID(link);
         prepBRWebsite(br);
+        boolean accessedContentURL = false;
         if (!link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
             /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL. */
-            br.setFollowRedirects(false);
+            br.setFollowRedirects(true);
             br.getPage("https://m.tiktok.com/v/" + fid + ".html");
-            final String redirect = br.getRedirectLocation();
-            if (redirect != null) {
-                if (!redirect.matches(PATTERN_VIDEO)) {
-                    /* Redirect to unsupported URL -> Most likely mainpage -> Offline! */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                /* Set new URL so we do not have to handle that redirect next time. */
-                link.setPluginPatternMatcher(redirect);
+            if (!this.canHandle(br.getURL())) {
+                /* Redirect to unsupported URL -> Most likely mainpage -> Offline! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            logger.info("Old URL: " + link.getPluginPatternMatcher() + " | New URL: " + br.getURL());
+            /* Set new URL so we do not have to handle that redirect next time. */
+            link.setPluginPatternMatcher(br.getURL());
+            accessedContentURL = true;
         }
         if (PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck() && !isDownload) {
             br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
@@ -425,7 +424,9 @@ public class TiktokCom extends PluginForHost {
              */
             String dllink = null;
             if (account != null) {
-                br.getPage(link.getPluginPatternMatcher());
+                if (!accessedContentURL) {
+                    br.getPage(link.getPluginPatternMatcher());
+                }
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
@@ -489,7 +490,9 @@ public class TiktokCom extends PluginForHost {
                  */
                 /* 2021-04-09: Both ways will work fine but the oembed one is faster and more elegant. */
                 if (account != null) {
-                    br.getPage(link.getPluginPatternMatcher());
+                    if (!accessedContentURL) {
+                        br.getPage(link.getPluginPatternMatcher());
+                    }
                 } else {
                     br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
                 }
@@ -861,6 +864,7 @@ public class TiktokCom extends PluginForHost {
         return new URL(br.toString()).toString();
     }
 
+    /** Converts given date to format yyyy-MM-dd */
     public static String convertDateFormat(final String sourceDateString) {
         if (sourceDateString == null) {
             return null;
