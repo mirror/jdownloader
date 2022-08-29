@@ -5153,16 +5153,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * readable filename displayed in the linkgrabber or also for mass-linkchecking as in this case these is no filename given inside HTML.
      */
     protected void setWeakFilename(final DownloadLink link) {
-        final String weak_fallback_filename = this.getFallbackFilename(link);
-        if (weak_fallback_filename != null) {
-            link.setName(weak_fallback_filename);
+        final String weakFilename = this.getFallbackFilename(link);
+        if (weakFilename != null) {
+            link.setName(weakFilename);
         }
         /*
          * Only set MineHint if: 1. No filename at all is set OR the given name does not contain any fileextension, AND 2. We know that the
          * filehost is only hosting specific data (audio, video, pictures)!
          */
-        final boolean fallback_filename_contains_file_extension = weak_fallback_filename != null && weak_fallback_filename.contains(".");
-        final boolean setMineHint = weak_fallback_filename == null || !fallback_filename_contains_file_extension;
+        final boolean fallback_filename_contains_file_extension = weakFilename != null && weakFilename.contains(".");
+        final boolean setMineHint = weakFilename == null || !fallback_filename_contains_file_extension;
         if (setMineHint) {
             /* Only setMimeHint if weak filename does not contain filetype. */
             if (this.isImagehoster()) {

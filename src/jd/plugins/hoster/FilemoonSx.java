@@ -17,12 +17,12 @@ package jd.plugins.hoster;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoFilemoonSx;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +34,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+import jd.plugins.decrypter.FilemoonSxCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilemoonSx extends XFileSharingProBasic {
@@ -50,10 +51,7 @@ public class FilemoonSx extends XFileSharingProBasic {
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "filemoon.sx" });
-        return ret;
+        return FilemoonSxCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -66,19 +64,7 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return FilemoonSx.buildAnnotationUrls(getPluginDomains());
-    }
-
-    public static final String getDefaultAnnotationPatternPartFilemoon() {
-        return "/(?:e|d)/[a-z0-9]+";
-    }
-
-    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + FilemoonSx.getDefaultAnnotationPatternPartFilemoon());
-        }
-        return ret.toArray(new String[0]);
+        return FilemoonSxCrawler.getAnnotationUrls();
     }
 
     @Override
@@ -133,11 +119,11 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     @Override
-    public String getFUIDFromURL(final DownloadLink dl) {
+    public String getFUIDFromURL(final DownloadLink link) {
         try {
-            final String url = dl.getPluginPatternMatcher();
+            final String url = link.getPluginPatternMatcher();
             if (url != null) {
-                final String result = new Regex(new URL(url).getPath(), "([a-z0-9]+)$").getMatch(0);
+                final String result = new Regex(new URL(url).getPath(), "/./([a-z0-9]+)").getMatch(0);
                 return result;
             }
         } catch (MalformedURLException e) {
@@ -147,9 +133,39 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     @Override
-    public String getFilenameFromURL(final DownloadLink dl) {
+    public String getFilenameFromURL(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/./[^/]+/(.+)").getMatch(0);
+    }
+
+    @Override
+    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
+        switch (type) {
+        case EMBED:
+            return "/e/" + fuid;
+        case NORMAL:
+            return "/d/" + fuid;
+        default:
+            throw new IllegalArgumentException("Unsupported type:" + type + "|" + fuid);
+        }
+    }
+
+    @Override
+    protected URL_TYPE getURLType(final String url) {
+        if (url != null) {
+            if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
+                return URL_TYPE.NORMAL;
+            } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
+                return URL_TYPE.EMBED;
+            } else {
+                logger.info("Unknown URL_TYPE:" + url);
+            }
+        }
         return null;
     }
+    // @Override
+    // public void correctDownloadLink(final DownloadLink link) {
+    // // do nothing
+    // }
 
     @Override
     protected boolean supports_availablecheck_alt() {
@@ -188,5 +204,10 @@ public class FilemoonSx extends XFileSharingProBasic {
             dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
         }
         handleDownload(link, account, dllink, null);
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideoFilemoonSx> getConfigInterface() {
+        return XFSConfigVideoFilemoonSx.class;
     }
 }
