@@ -31,8 +31,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class AkwamCc extends PluginForDecrypt {
-    public AkwamCc(PluginWrapper wrapper) {
+public class AkwamCcCrawler extends PluginForDecrypt {
+    public AkwamCcCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 

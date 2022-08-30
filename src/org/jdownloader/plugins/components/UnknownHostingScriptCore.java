@@ -254,7 +254,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                  */
                 /*
                  * E.g. wrong language cookie set --> Website will always first redirect to mainpage and set supported language-cookie (e.g.
-                 * minfil.com does not support "lang":"us") [see prepBrowser()]
+                 * bayfiles.com does not support "lang":"us") [see prepBrowser()]
                  */
                 final boolean isNoAPIUrlAnymore = !br.getURL().contains(this.getFID(link));
                 final boolean isOffline = br.getHttpConnection().getResponseCode() == 404;
@@ -280,10 +280,13 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
             fileInfo[0] = Encoding.htmlDecode(fileInfo[0]).trim();
             link.setName(fileInfo[0]);
             if (fileInfo[1] != null) {
-                if (!fileInfo[1].matches("\\d+")) {
+                if (fileInfo[1].matches("\\d+")) {
+                    /* Filesize via API */
+                    link.setVerifiedFileSize(Long.parseLong(fileInfo[1]));
+                } else {
                     fileInfo[1] = Encoding.htmlDecode(fileInfo[1].replace(",", ""));
+                    link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
                 }
-                link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
             }
         } finally {
             /* Something went seriously wrong? Use fallback filename! */
@@ -411,7 +414,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            /* Example of a website which supports videostreaming: minfil.com */
+            /* Example of a website which supports videostreaming: bayfiles.com */
             getDllink(link, account);
         }
         if (this.dl == null) {
@@ -469,7 +472,11 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
             return null;
         }
         dllink = fixDownloadurl(dllink);
-        dllink = prepareFinalDownloadurl(dllink);
+        final String newDllink = prepareFinalDownloadurl(dllink);
+        if (!StringUtils.equals(dllink, newDllink)) {
+            logger.info("Final downloadurl was changed according to user preference: Old: " + dllink + " | New: " + newDllink);
+            dllink = newDllink;
+        }
         if (!this.allowLowerQualityStreamingFallback()) {
             this.checkDownloadurl(link, account, true, dllink);
             return dllink;
@@ -670,7 +677,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     public Browser prepBrowser(final Browser br) {
         /*
          * Prefer English html CAUTION: A wrong language cookie (= unsupported by that website) will cause every request to redirect to
-         * their mainpage until a supported language-cookie is set (example of unsupported English language: minfil.com)
+         * their mainpage until a supported language-cookie is set (example of unsupported English language: bayfiles.com)
          */
         br.setCookie(this.getHost(), "lang", "us");
         if (enable_random_user_agent()) {
@@ -694,39 +701,40 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                 prepBrowser(this.br, account.getHoster());
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean loggedInViaCookies = false;
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
+                    if (!force) {
+                        /* Do not check cookies */
                         return;
                     }
                     logger.info("Verifying login-cookies");
                     getPage(this.getMainPage() + "/");
-                    loggedInViaCookies = isLoggedinHTML();
+                    if (isLoggedinHTML(br)) {
+                        logger.info("Successfully logged in via cookies");
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Look like cookie session expired");
+                        br.clearCookies(br.getHost());
+                    }
                 }
-                if (loggedInViaCookies) {
-                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
-                    logger.info("Successfully logged in via cookies");
-                } else {
-                    logger.info("Performing full login");
-                    getPage(this.getProtocol() + this.getHost() + "/login");
-                    Form loginform = br.getFormByInputFieldKeyValue("submit", "Login");
-                    if (loginform == null) {
-                        loginform = br.getFormbyKey("password");
-                    }
-                    if (loginform == null) {
-                        logger.info("Fallback to custom built loginform");
-                        loginform = new Form();
-                        loginform.setAction(br.getURL());
-                        loginform.put("submit", "Login");
-                    }
-                    loginform.put("username", Encoding.urlEncode(account.getUser()));
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    submitForm(loginform);
-                    if (!isLoggedinHTML()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                logger.info("Performing full login");
+                getPage(this.getProtocol() + this.getHost() + "/login");
+                Form loginform = br.getFormByInputFieldKeyValue("submit", "Login");
+                if (loginform == null) {
+                    loginform = br.getFormbyKey("password");
+                }
+                if (loginform == null) {
+                    logger.info("Fallback to custom built loginform");
+                    loginform = new Form();
+                    loginform.setAction(br.getURL());
+                    loginform.put("submit", "Login");
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                submitForm(loginform);
+                if (!isLoggedinHTML(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -738,8 +746,12 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedinHTML() {
-        return br.containsHTML("/logout");
+    private boolean isLoggedinHTML(final Browser br) {
+        if (br.containsHTML("/logout")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

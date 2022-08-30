@@ -152,7 +152,7 @@ public class AnimeUltimeNet extends PluginForHost {
             br.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             /* 2022-08-12: Pre download waittime is skippable */
-            final boolean skipPreDownloadWaittime = true;
+            final boolean skipPreDownloadWaittime = false;
             if (!skipPreDownloadWaittime) {
                 final int waittime = ((Number) entries.get("wait")).intValue();
                 this.sleep(waittime * 1001l, link);

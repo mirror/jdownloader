@@ -46,7 +46,7 @@ public class BcVc extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         {
             final String linkInsideLink = new Regex(param.getCryptedUrl(), "(?:bc\\.vc|bcvc\\.live|bcvc\\.xyz)/\\d+/(.+)").getMatch(0);
             if (linkInsideLink != null) {
@@ -59,8 +59,8 @@ public class BcVc extends antiDDoSForDecrypt {
                 if (!StringUtils.containsIgnoreCase(finalLinkInsideLink, getHost() + "/")) {
                     final DownloadLink link = createDownloadlink(finalLinkInsideLink);
                     link.setProperty("Referer", param.toString());
-                    decryptedLinks.add(link);
-                    return decryptedLinks;
+                    ret.add(link);
+                    return ret;
                 } else {
                     param.setCryptedUrl(linkInsideLink);
                 }
@@ -78,8 +78,8 @@ public class BcVc extends antiDDoSForDecrypt {
             redirect = br.getRegex("top\\.location\\.href = \"((?:https?|ftp)[^<>\"]*?)\"").getMatch(0);
         }
         if (redirect != null && !this.canHandle(redirect)) {
-            decryptedLinks.add(createDownloadlink(redirect));
-            return decryptedLinks;
+            ret.add(createDownloadlink(redirect));
+            return ret;
         } else if (redirect != null) {
             getPage(redirect);
         }
@@ -91,10 +91,10 @@ public class BcVc extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Unable to connect to database")) {
             logger.info("Link can't be decrypted because of server problems: " + param.getCryptedUrl());
-            return decryptedLinks;
+            return ret;
         }
-        decryptedLinks.add(this.crawlBcbclive(param));
-        return decryptedLinks;
+        ret.add(this.crawlBcbclive(param));
+        return ret;
     }
 
     private DownloadLink crawlBcbclive(final CryptedLink param) throws IOException, PluginException, InterruptedException {

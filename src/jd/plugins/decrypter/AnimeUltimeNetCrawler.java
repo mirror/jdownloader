@@ -20,9 +20,11 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
@@ -62,16 +64,22 @@ public class AnimeUltimeNetCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
         final String[] urls = br.getRegex("(info\\-0\\-1/((\\d+)(/([^/]+))?))").getColumn(0);
         for (String url : urls) {
             url = "/" + url;
-            decryptedLinks.add(createDownloadlink(br.getURL(url).toString()));
+            ret.add(createDownloadlink(br.getURL(url).toString()));
         }
-        return decryptedLinks;
+        if (title != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(title));
+            fp.addLinks(ret);
+        }
+        return ret;
     }
 }

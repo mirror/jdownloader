@@ -158,6 +158,16 @@ public class VscoCo extends PluginForDecrypt {
                                 dl.setProperty(PROPERTY_USERNAME, username);
                                 dl.setProperty(PROPERTY_DATE, sd.format(new Date(((Number) media.get("upload_date")).longValue())));
                                 dl.setProperty(PROPERTY_DATE_CAPTURED, sd.format(new Date(((Number) media.get("capture_date_ms")).longValue())));
+                                if (Boolean.FALSE.equals(isVideo)) {
+                                    final Map<String, Object> image_meta = (Map<String, Object>) media.get("image_meta");
+                                    if (image_meta != null) {
+                                        final Number file_size = (Number) image_meta.get("file_size");
+                                        if (file_size != null) {
+                                            dl.setDownloadSize(file_size.longValue());
+                                        }
+                                        // dl.setMD5Hash(imageMeta.get("file_hash").toString());
+                                    }
+                                }
                                 ret.add(dl);
                                 fp.add(dl);
                                 distribute(dl);
@@ -181,6 +191,8 @@ public class VscoCo extends PluginForDecrypt {
                     } else {
                     }
                 } while (true);
+            } else {
+                logger.info("No pagination available for this profile");
             }
         }
         return ret;
@@ -223,8 +235,13 @@ public class VscoCo extends PluginForDecrypt {
             dl.setProperty(PROPERTY_DATE_CAPTURED, sd.format(new Date(((Number) media.get("captureDateMs")).longValue())));
             if (Boolean.FALSE.equals(isVideo)) {
                 final Map<String, Object> imageMeta = (Map<String, Object>) media.get("imageMeta");
-                dl.setDownloadSize(((Number) imageMeta.get("fileSize")).longValue());
-                // dl.setMD5Hash(imageMeta.get("fileHash").toString());
+                if (imageMeta != null) {
+                    final Number filesize = (Number) imageMeta.get("fileSize");
+                    if (filesize != null) {
+                        dl.setDownloadSize(filesize.longValue());
+                    }
+                    // dl.setMD5Hash(imageMeta.get("fileHash").toString());
+                }
             }
             return dl;
         }
