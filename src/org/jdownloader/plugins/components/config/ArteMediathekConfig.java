@@ -35,9 +35,9 @@ public interface ArteMediathekConfig extends PluginConfigInterface {
     final String                                        text_CrawlLanguageUnknown                          = "Crawl unknown languages?";
     final String                                        text_QualitySelectionFallbackMode                  = "Define what to add if based on your selection no results are found";
     final String                                        text_GetFilenameSchemeTypeV2                       = "Select filename scheme type";
-    final String                                        text_GetFilenameScheme                             = "Enter filename scheme";
+    final String                                        text_GetFilenameScheme                             = "Enter custom filename scheme";
     final String                                        text_GetPackagenameSchemeType                      = "Select package name scheme type";
-    final String                                        text_GetPackagenameScheme                          = "Enter package name scheme";
+    final String                                        text_GetPackagenameScheme                          = "Enter custom package name scheme";
     public static final ArteMediathekConfig.TRANSLATION TRANSLATION                                        = new TRANSLATION();
 
     public static class TRANSLATION {
