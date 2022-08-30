@@ -74,7 +74,7 @@ public class RouterUtils {
 
     private static String callArpToolDefault(final String ipAddress) throws IOException, InterruptedException {
         String out = null;
-        final InetAddress hostAddress = HTTPConnectionUtils.resolvHostIP(ipAddress, IPVERSION.IPV4_ONLY)[0];
+        final InetAddress hostAddress = RouterUtils.resolveHostname(ipAddress)[0];
         // TODO: Check/Add IPv6 Support. We speak IPv4-Only with Router
         ProcessBuilder pb = null;
         try {
@@ -285,8 +285,7 @@ public class RouterUtils {
                                     if (ASYNCH_RETURN != null) {
                                         return;
                                     }
-                                    RouterUtils.ASYNCH_RETURN = HTTPConnectionUtils.resolvHostIP(host, IPVERSION.IPV4_ONLY)[0];
-                                    // TODO: Check/Add IPv6 Support. We speak IPv4-Only with Router
+                                    RouterUtils.ASYNCH_RETURN = RouterUtils.resolveHostname(host)[0];
                                     threadPool.shutdown();
                                 }
                             }
@@ -329,13 +328,16 @@ public class RouterUtils {
             }
             final String m = new Regex(string, pat).getMatch(0);
             if (m != null && !"0.0.0.0".equals(m)) {
-                System.out.println("NetStat: check " + m);
                 if (checkPort(m)) {
-                    return InetAddress.getByName(m);
+                    return resolveHostname(m)[0];
                 }
             }
         }
         return null;
+    }
+
+    public static InetAddress[] resolveHostname(final String hostName) throws UnknownHostException {
+        return HTTPConnectionUtils.resolvHostIP(hostName, IPVERSION.IPV4_IPV6);
     }
 
     /**
@@ -361,13 +363,8 @@ public class RouterUtils {
                         final String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
-                                final InetAddress ia = InetAddress.getByName(hostname);
-                                /* first we try to connect to http */
-                                if (RouterUtils.checkPort(hostname)) {
-                                    return ia;
-                                }
-                                /* then lets try https */
-                                if (RouterUtils.checkPort(hostname)) {
+                                final InetAddress ia = resolveHostname(hostname)[0];
+                                if (RouterUtils.checkPort(ia.getHostAddress())) {
                                     return ia;
                                 }
                             } catch (final Exception e) {
@@ -393,13 +390,8 @@ public class RouterUtils {
                         final String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
-                                final InetAddress ia = InetAddress.getByName(hostname);
-                                /* first we try to connect to http */
-                                if (RouterUtils.checkPort(hostname)) {
-                                    return ia;
-                                }
-                                /* then lets try https */
-                                if (RouterUtils.checkPort(hostname)) {
+                                final InetAddress ia = resolveHostname(hostname)[0];
+                                if (RouterUtils.checkPort(ia.getHostAddress())) {
                                     return ia;
                                 }
                             } catch (final Exception e) {
@@ -445,7 +437,7 @@ public class RouterUtils {
      * @throws InterruptedException
      */
     public static String getMacAddress(final String ip) throws UnknownHostException, IOException, InterruptedException {
-        final String ret = RouterUtils.getMacAddress(InetAddress.getByName(ip));
+        final String ret = RouterUtils.getMacAddress(resolveHostname(ip)[0]);
         if (ret != null) {
             return ret.replace(":", "").replace("-", "").toUpperCase();
         }
@@ -493,7 +485,7 @@ public class RouterUtils {
             exec.start();
             exec.waitTimeout();
             try {
-                return InetAddress.getByName(ret[0]);
+                return resolveHostname(ret[0])[0];
             } catch (Throwable e) {
                 return null;
             }

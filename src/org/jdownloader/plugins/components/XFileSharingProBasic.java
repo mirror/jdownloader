@@ -867,7 +867,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         final boolean isFollowRedirect = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
-            probeDirectDownload(link, account, br, br.createGetRequest(link.getPluginPatternMatcher()), true);
+            if (probeDirectDownload(link, account, br, br.createGetRequest(link.getPluginPatternMatcher()), true)) {
+                return AvailableStatus.TRUE;
+            }
         } finally {
             br.setFollowRedirects(isFollowRedirect);
         }
@@ -1032,8 +1034,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 /* Short URLs -> We need to find the long FUID! */
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
-                probeDirectDownload(link, account, brc, brc.createGetRequest(pluginPatternMatcher), true);
-                if (this.isOffline(link, brc, brc.toString())) {
+                if (probeDirectDownload(link, account, brc, brc.createGetRequest(pluginPatternMatcher), true)) {
+                    return;
+                } else if (this.isOffline(link, brc, brc.toString())) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 URL_TYPE type = getURLType(brc.getURL());

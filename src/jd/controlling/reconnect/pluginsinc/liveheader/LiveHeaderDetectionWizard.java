@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,8 +50,6 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -700,7 +699,7 @@ public class LiveHeaderDetectionWizard {
             routerName = impl.getRouterName();
             firmware = impl.getFirmware();
             try {
-                gatewayAdress = HTTPConnectionUtils.resolvHostIP(impl.getHostName(), IPVERSION.IPV4_IPV6)[0];
+                gatewayAdress = RouterUtils.resolveHostname(impl.getHostName())[0];
                 gatewayAdressIP = gatewayAdress.getHostAddress();
                 gatewayAdressHost = gatewayAdress.getHostName();
                 break;
@@ -730,7 +729,7 @@ public class LiveHeaderDetectionWizard {
         }
         mac = null;
         manufactor = null;
-        gatewayAdress = HTTPConnectionUtils.resolvHostIP(gatewayIP, IPVERSION.IPV4_IPV6)[0];
+        gatewayAdress = RouterUtils.resolveHostname(gatewayIP)[0];
         gatewayAdressHost = gatewayAdress.getHostName();
         gatewayAdressIP = gatewayAdress.getHostAddress();
         try {
@@ -745,7 +744,8 @@ public class LiveHeaderDetectionWizard {
         for (final UpnpRouterDevice d : devices) {
             if (d._getHost() != null) {
                 try {
-                    if (gatewayAdress.equals(InetAddress.getByName(d._getHost()))) {
+                    final List<InetAddress> check = Arrays.asList(RouterUtils.resolveHostname(d._getHost()));
+                    if (check.contains(gatewayAdress)) {
                         myUpnpDevice = d;
                         break;
                     }
@@ -830,7 +830,7 @@ public class LiveHeaderDetectionWizard {
                             routerName = impl.getRouterName();
                             firmware = impl.getFirmware();
                             try {
-                                gatewayAdress = HTTPConnectionUtils.resolvHostIP(impl.getHostName(), IPVERSION.IPV4_IPV6)[0];
+                                gatewayAdress = RouterUtils.resolveHostname(impl.getHostName())[0];
                                 gatewayAdressIP = gatewayAdress.getHostAddress();
                                 gatewayAdressHost = gatewayAdress.getHostName();
                                 break;

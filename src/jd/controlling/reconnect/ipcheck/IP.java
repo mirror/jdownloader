@@ -28,20 +28,11 @@ public class IP {
             final String parts[] = ip.split("\\.");
             if (parts.length == 4) {
                 /* filter private networks */
+                if (isLocalIP(ip)) {
+                    throw new InvalidIPRangeException(ip);
+                }
                 final int n1 = Integer.parseInt(parts[0]);
-                /* 10.0.0.0-10.255.255.255 */
-                if (n1 == 10) {
-                    throw new InvalidIPRangeException(ip);
-                }
                 final int n2 = Integer.parseInt(parts[1]);
-                /* 192.168.0.0 - 192.168.255.255 */
-                if (n1 == 192 && n2 == 168) {
-                    throw new InvalidIPRangeException(ip);
-                }
-                /* 172.16.0.0 - 172.31.255.255 */
-                if (n1 == 172 && n2 >= 16 && n2 <= 31) {
-                    throw new InvalidIPRangeException(ip);
-                }
                 final int n3 = Integer.parseInt(parts[2]);
                 final int n4 = Integer.parseInt(parts[3]);
                 /* fritzbox sends 0.0.0.0 while its offline */
@@ -67,17 +58,18 @@ public class IP {
      * @param ip
      * @return
      */
-    public static boolean validateIP(final String ip) {
+    private static boolean validateIP(final String ip) {
         if (ip == null) {
             return false;
+        } else {
+            try {
+                return ip != null && Pattern.compile(JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckPattern()).matcher(ip.trim()).matches();
+            } catch (final Exception e) {
+                LogController.CL().severe("Could not validate IP!");
+                LogController.CL().log(e);
+            }
+            return true;
         }
-        try {
-            return Pattern.compile(JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckPattern()).matcher(ip.trim()).matches();
-        } catch (final Exception e) {
-            LogController.CL().severe("Could not validate IP!");
-            LogController.CL().log(e);
-        }
-        return true;
     }
 
     protected final String ip;
@@ -104,7 +96,11 @@ public class IP {
     }
 
     public int hashCode() {
-        return this.ip.hashCode();
+        if (ip == null) {
+            return super.hashCode();
+        } else {
+            return this.ip.hashCode();
+        }
     }
 
     public String toString() {
@@ -119,45 +115,27 @@ public class IP {
             if (whiteListArray != null && Arrays.asList(whiteListArray).contains(gatewayIP)) {
                 return RouterUtils.checkPort(gatewayIP);
             } else {
-                boolean localip = isLocalIP(gatewayIP);
-                if (!localip) {
-                    try {
-                        localip = isLocalIP(InetAddress.getByName(gatewayIP).getHostAddress());
-                    } catch (UnknownHostException e) {
-                        LogController.CL().log(e);
-                    }
-                }
-                return localip && RouterUtils.checkPort(gatewayIP);
+                return isLocalIP(gatewayIP) && RouterUtils.checkPort(gatewayIP);
             }
         }
     }
 
     public static boolean isLocalIP(String ip) {
-        if (ip == null) {
+        if (StringUtils.isEmpty(ip)) {
             return false;
-        }
-        if (ip.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
-            final String parts[] = ip.split("\\.");
-            if (parts.length == 4) {
-                /* filter private networks */
-                final int n1 = Integer.parseInt(parts[0]);
-                final int n2 = Integer.parseInt(parts[1]);
-                // final int n3 = Integer.parseInt(parts[2]);
-                // final int n4 = Integer.parseInt(parts[3]);
-                /* 10.0.0.0-10.255.255.255 */
-                if (n1 == 10 || n1 == 127) {
-                    return true;
+        } else {
+            try {
+                final InetAddress[] inetAddresses = InetAddress.getAllByName(ip);
+                for (final InetAddress inetAddress : inetAddresses) {
+                    if (inetAddress.isSiteLocalAddress() || inetAddress.isLoopbackAddress()) {
+                        return true;
+                    }
                 }
-                /* 192.168.0.0 - 192.168.255.255 */
-                if (n1 == 192 && n2 == 168) {
-                    return true;
-                }
-                /* 172.16.0.0 - 172.31.255.255 */
-                if (n1 == 172 && n2 >= 16 && n2 <= 31) {
-                    return true;
-                }
+                return false;
+            } catch (UnknownHostException e) {
+                LogController.CL().log(e);
+                return false;
             }
         }
-        return false;
     }
 }
