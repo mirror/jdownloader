@@ -1606,6 +1606,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             return;
         }
         requestFileInformationWebsite(link, account, true);
+        br.setFollowRedirects(false);
         String dllink = null;
         String officialVideoDownloadURL = null;
         int download1counter = 0;
