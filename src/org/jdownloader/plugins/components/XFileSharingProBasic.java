@@ -1672,8 +1672,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                     } while (true);
                 }
             }
+            if (!StringUtils.isEmpty(dllink)) {
+                logger.info("Stepping out of download1 loop because: Found directurl");
+                break;
+            }
             /* Check for errors and download1 Form. Only execute this once! */
-            if (StringUtils.isEmpty(dllink) && download1counter == 0) {
+            if (download1counter == 0) {
                 /*
                  * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it and
                  * most likely end up with error "Fatal countdown error (countdown skipped)"
@@ -1690,6 +1694,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                         break;
                     }
                     dllink = getDllink(link, account, br, getCorrectBR(br));
+                    if (!StringUtils.isEmpty(dllink)) {
+                        logger.info("Stepping out of download1 loop because: Found directurl");
+                        break;
+                    }
                 } else {
                     logger.info("Failed to find download1 Form");
                     break;
@@ -1770,6 +1778,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                     break;
                 } else if (download2 == null) {
                     /* Failure */
+                    logger.info("Stepping out of download2 loop because: download2 form is null");
                     break;
                 } else {
                     /* Continue to next round / next pre-download page */
