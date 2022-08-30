@@ -105,10 +105,7 @@ public class LinkCrawlerRetry extends PluginForHost {
                             LinkCollector.getInstance().removeChildren(links);
                             for (final CrawledLink crawledLink : links) {
                                 final DownloadLink downloadLink = crawledLink.getDownloadLink();
-                                if (downloadLink != null) {
-                                    // allow LinkCrawler to process this link again
-                                    downloadLink.setDefaultPlugin(null);
-                                }
+                                prepareForLinkCrawler(downloadLink);
                             }
                             retry(links);
                             return null;
@@ -122,6 +119,15 @@ public class LinkCrawlerRetry extends PluginForHost {
     private void retry(List<CrawledLink> links) {
         final JobLinkCrawler jlc = LinkCollector.getInstance().newJobLinkCrawler(new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails()));
         jlc.crawl(links);
+    }
+
+    protected void prepareForLinkCrawler(DownloadLink downloadLink) {
+        if (downloadLink != null) {
+            // allow LinkCrawler to process this link again
+            downloadLink.setDefaultPlugin(null);
+            // required for LinkCrawler.breakPluginForDecryptLoop
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+        }
     }
 
     @Override
@@ -142,8 +148,7 @@ public class LinkCrawlerRetry extends PluginForHost {
                             DownloadController.getInstance().removeChildren(downloadLinks);
                             final List<CrawledLink> links = new ArrayList<CrawledLink>();
                             for (final DownloadLink downloadLink : downloadLinks) {
-                                // allow LinkCrawler to process this link again
-                                downloadLink.setDefaultPlugin(null);
+                                prepareForLinkCrawler(downloadLink);
                                 links.add(new CrawledLink(downloadLink));
                             }
                             retry(links);
