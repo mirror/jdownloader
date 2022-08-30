@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +31,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -132,17 +132,20 @@ public class OuoIo extends antiDDoSForDecrypt {
             captchaForm.put("s_width", Integer.toString(new Random().nextInt(1000)));
             captchaForm.put("s_height", Integer.toString(new Random().nextInt(1000)));
         }
-        final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
-            @Override
-            public TYPE getType() {
-                // parser fails to auto detect reCaptcha type due to js
-                return TYPE.INVISIBLE;
+        if (false) {
+            // 2020-30-08 - captcha not required/verified :)
+            final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+                @Override
+                public TYPE getType() {
+                    // parser fails to auto detect reCaptcha type due to js
+                    return TYPE.INVISIBLE;
+                }
+            };
+            if (helper.getSiteKey() != null) {
+                final String recaptchaV2Response = helper.getToken();
+                // captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                captchaForm.put("x-token", Encoding.urlEncode(recaptchaV2Response));
             }
-        };
-        if (helper.getSiteKey() != null) {
-            final String recaptchaV2Response = helper.getToken();
-            // captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            captchaForm.put("x-token", Encoding.urlEncode(recaptchaV2Response));
         }
         br.setFollowRedirects(false);
         br.submitForm(captchaForm);
