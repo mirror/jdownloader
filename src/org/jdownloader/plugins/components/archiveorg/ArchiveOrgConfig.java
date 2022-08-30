@@ -28,6 +28,14 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
         public String getFileCrawlerCrawlArchiveView_label() {
             return text_FileCrawlerCrawlArchiveView;
         }
+
+        public String getBookImageQuality_label() {
+            return text_BookImageQuality;
+        }
+
+        public String getBookCrawlMode_label() {
+            return text_BookCrawlMode;
+        }
     }
 
     @AboutConfig
