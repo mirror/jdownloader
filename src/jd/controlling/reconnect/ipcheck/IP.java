@@ -23,6 +23,7 @@ public class IP {
      * @return
      * @throws IPCheckException
      */
+    // TODO: add IPv6 support
     public static IP getInstance(final String ip) throws IPCheckException {
         if (ip.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
             final String parts[] = ip.split("\\.");
@@ -42,8 +43,9 @@ public class IP {
                 if (n1 >= 0 && n1 <= 255 && n2 >= 0 && n2 <= 255 && n3 >= 0 && n3 <= 255 && n4 >= 0 && n4 <= 255) {
                     if (!IP.validateIP(ip)) {
                         throw new ForbiddenIPException(ip);
+                    } else {
+                        return new IP(ip);
                     }
-                    return new IP(ip);
                 } else {
                     throw new InvalidIPException(ip);
                 }
@@ -59,17 +61,13 @@ public class IP {
      * @return
      */
     private static boolean validateIP(final String ip) {
-        if (ip == null) {
-            return false;
-        } else {
-            try {
-                return ip != null && Pattern.compile(JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckPattern()).matcher(ip.trim()).matches();
-            } catch (final Exception e) {
-                LogController.CL().severe("Could not validate IP!");
-                LogController.CL().log(e);
-            }
-            return true;
+        try {
+            return ip != null && Pattern.compile(JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckPattern()).matcher(ip.trim()).matches();
+        } catch (final Exception e) {
+            LogController.CL().severe("Could not validate IP!");
+            LogController.CL().log(e);
         }
+        return true;
     }
 
     protected final String ip;
@@ -115,27 +113,37 @@ public class IP {
             if (whiteListArray != null && Arrays.asList(whiteListArray).contains(gatewayIP)) {
                 return RouterUtils.checkPort(gatewayIP);
             } else {
-                return isLocalIP(gatewayIP) && RouterUtils.checkPort(gatewayIP);
+                boolean localip = isLocalIP(gatewayIP);
+                if (!localip) {
+                    try {
+                        localip = isLocalIP(resolveSiteLocalAddress(gatewayIP).getHostAddress());
+                    } catch (UnknownHostException e) {
+                        LogController.CL().log(e);
+                    }
+                }
+                return localip && RouterUtils.checkPort(gatewayIP);
             }
         }
     }
 
-    public static boolean isLocalIP(String ip) {
-        if (StringUtils.isEmpty(ip)) {
+    public static boolean isLocalIP(final String ip) {
+        try {
+            final InetAddress ret = resolveSiteLocalAddress(ip);
+            return ip != null && ip.equals(ret.getHostAddress());
+        } catch (UnknownHostException e) {
             return false;
-        } else {
-            try {
-                final InetAddress[] inetAddresses = InetAddress.getAllByName(ip);
-                for (final InetAddress inetAddress : inetAddresses) {
-                    if (inetAddress.isSiteLocalAddress() || inetAddress.isLoopbackAddress()) {
-                        return true;
-                    }
+        }
+    }
+
+    public static InetAddress resolveSiteLocalAddress(final String ip) throws UnknownHostException {
+        if (!StringUtils.isEmpty(ip)) {
+            final InetAddress[] inetAddresses = RouterUtils.resolveHostname(ip);
+            for (final InetAddress inetAddress : inetAddresses) {
+                if (inetAddress.isSiteLocalAddress()) {
+                    return inetAddress;
                 }
-                return false;
-            } catch (UnknownHostException e) {
-                LogController.CL().log(e);
-                return false;
             }
         }
+        throw new UnknownHostException("no siteLocalAddress:" + ip);
     }
 }

@@ -1,6 +1,7 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -144,8 +145,9 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         if (script == null || script.length() == 0) {
             throw new ReconnectException("No LiveHeader Script found");
         }
-        if (!IP.isValidRouterIP(getRouter())) {
-            throw new ReconnectException("Invalid Router IP:\"" + getRouter() + "\"");
+        final String router = getRouter();
+        if (!IP.isValidRouterIP(router)) {
+            throw new ReconnectException("Invalid Router IP:\"" + router + "\"");
         }
         final HashMap<String, String> map = new HashMap<String, String>();
         map.put("user", user);
@@ -154,19 +156,14 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         map.put("password", pass);
         map.put("basicauth", Encoding.Base64Encode(user + ":" + pass));
         map.put("auth", Encoding.Base64Encode(user + ":" + pass));
-        if (IP.isLocalIP(getRouter())) {
-            map.put("ip", getRouter());
-            map.put("routerip", getRouter());
-        } else {
-            try {
-                final String ip = RouterUtils.resolveHostname(getRouter())[0].getHostAddress();
-                map.put("ip", ip);
-                map.put("routerip", ip);
-            } catch (UnknownHostException e) {
-                throw new ReconnectException(e);
-            }
+        try {
+            final InetAddress ip = IP.resolveSiteLocalAddress(router);
+            map.put("ip", ip.getHostAddress());
+            map.put("routerip", ip.getHostAddress());
+        } catch (UnknownHostException e) {
+            throw new ReconnectException(e);
         }
-        map.put("host", getRouter());
+        map.put("host", router);
         this.internalVariables = Collections.unmodifiableMap(map);
         logger.info("Internal Variables: " + internalVariables);
         this.parsedVariables = new HashMap<String, String>();

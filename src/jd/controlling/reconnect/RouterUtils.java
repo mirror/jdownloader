@@ -18,6 +18,8 @@ package jd.controlling.reconnect;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -452,7 +454,7 @@ public class RouterUtils {
     public static InetAddress getWindowsGateway() {
         if (CrossSystem.isWindows()) {
             // tested on win7
-            final String[] ret = new String[1];
+            final InetAddress[] ret = new InetAddress[1];
             final Executer exec = new Executer("tracert ");
             exec.addProcessListener(new ProcessListener() {
                 private int counter = 0;
@@ -465,11 +467,10 @@ public class RouterUtils {
                     final Matcher matcher = Pattern.compile(IP.IP_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(latestLine);
                     if (matcher.find()) {
                         if (counter++ > 0) {
-                            ;
-                            String firstRouteIP = matcher.group(0);
-                            if (IP.isLocalIP(firstRouteIP)) {
-                                ret[0] = firstRouteIP;
-                            } else {
+                            try {
+                                final String firstRouteIP = matcher.group(0);
+                                ret[0] = IP.resolveSiteLocalAddress(firstRouteIP);
+                            } catch (UnknownHostException e) {
                                 exec.interrupt();
                             }
                         }
@@ -485,7 +486,7 @@ public class RouterUtils {
             exec.start();
             exec.waitTimeout();
             try {
-                return resolveHostname(ret[0])[0];
+                return ret[0];
             } catch (Throwable e) {
                 return null;
             }
@@ -514,7 +515,7 @@ public class RouterUtils {
                 for (int i = 1; i < lines.length; i++) {
                     final Matcher matcher = Pattern.compile(IP.IP_PATTERN, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(lines[i]);
                     if (matcher.find()) {
-                        String firstRouteIP = matcher.group(0);
+                        final String firstRouteIP = matcher.group(0);
                         if (IP.isLocalIP(firstRouteIP)) {
                             return false;
                         } else {
@@ -579,13 +580,17 @@ public class RouterUtils {
         ret.add("dsldevice.domain.name");
         for (final InetAddress ia : HTTPProxyUtils.getLocalIPs()) {
             try {
-                String ip = ia.getHostAddress();
-                if (ip != null && ip.lastIndexOf(".") != -1) {
-                    final String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
-                    for (int i = 0; i < 255; i++) {
-                        final String lhost = host + i;
-                        if (!lhost.equals(ip) && !ret.contains(lhost)) {
-                            ret.add(lhost);
+                if (ia instanceof Inet6Address) {
+                    continue;
+                } else if (ia instanceof Inet4Address) {
+                    final String ip = ia.getHostAddress();
+                    if (ip != null && ip.lastIndexOf(".") != -1) {
+                        final String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
+                        for (int i = 1; i < 255; i++) {
+                            final String lhost = host + i;
+                            if (!lhost.equals(ip) && !ret.contains(lhost)) {
+                                ret.add(lhost);
+                            }
                         }
                     }
                 }
