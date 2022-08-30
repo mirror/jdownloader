@@ -16,9 +16,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
+import jd.plugins.decrypter.AkwamCcCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-@PluginDependencies(dependencies = { jd.plugins.decrypter.AkwamCc.class })
+@PluginDependencies(dependencies = { AkwamCcCrawler.class })
 public class AkwamCc extends antiDDoSForHost {
     public AkwamCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -30,7 +31,7 @@ public class AkwamCc extends antiDDoSForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.AkwamCc.getPluginDomains();
+        return AkwamCcCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
