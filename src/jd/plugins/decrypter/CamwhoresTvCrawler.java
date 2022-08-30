@@ -26,10 +26,11 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.hoster.CamwhoresTv;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class CamwhoresTv extends PornEmbedParser {
-    public CamwhoresTv(PluginWrapper wrapper) {
+public class CamwhoresTvCrawler extends PornEmbedParser {
+    public CamwhoresTvCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -99,6 +100,7 @@ public class CamwhoresTv extends PornEmbedParser {
 
     @Override
     protected String getFileTitle(final CryptedLink param, final Browser br) {
-        return new Regex(param.getCryptedUrl(), "/videos/(?:\\d+/|private/)([^/]+)/$").getMatch(0).replace("-", " ").trim();
+        final String urltitle = new Regex(param.getCryptedUrl(), "/videos/(?:\\d+/|private/)([^/]+)/$").getMatch(0);
+        return CamwhoresTv.removeUnwantedURLTitleStuffStatic(urltitle);
     }
 }

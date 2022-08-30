@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,11 +36,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -53,10 +53,10 @@ public class OuoIo extends antiDDoSForDecrypt {
     private String fuid      = null;
     private String slink     = null;
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // they don't support http.. redirects to https.
-        set(param.toString().replace("//www.", "//").replace("http://", "https://"));
+        set(param.getCryptedUrl().replace("//www.", "//").replace("http://", "https://"));
         DownloadLink fallBack = null;
         if (slink != null) {
             String link = Encoding.urlDecode(slink, false);
@@ -75,13 +75,13 @@ public class OuoIo extends antiDDoSForDecrypt {
             }
             fallBack = createDownloadlink(link);
             if (true) {
-                decryptedLinks.add(fallBack);
-                return decryptedLinks;
+                ret.add(fallBack);
+                return ret;
             }
         } else if (fuid == null && slink == null) {
             // fuid is just a URL owner identifier! slink value is needed, without it you can't get the end URL!
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(createOfflinelink(parameter));
+            return ret;
         }
         final String browserReferrer = getBrowserReferrer();
         if (browserReferrer != null) {
@@ -93,8 +93,8 @@ public class OuoIo extends antiDDoSForDecrypt {
             if (redirect != null) {
                 if (!Browser.getHost(redirect).matches("(ouo.io|ouo.press|cpmlink.net|uskip.me)")) {
                     // don't follow redirects to other hosts
-                    decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-                    return decryptedLinks;
+                    ret.add(createDownloadlink(br.getRedirectLocation()));
+                    return ret;
                 } else {
                     getPage(redirect);
                 }
@@ -102,14 +102,14 @@ public class OuoIo extends antiDDoSForDecrypt {
         } while (br.getRedirectLocation() != null);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             if (fallBack != null) {
-                decryptedLinks.add(fallBack);
+                ret.add(fallBack);
             } else {
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                ret.add(this.createOfflinelink(parameter));
             }
-            return decryptedLinks;
+            return ret;
         } else if (br.containsHTML("class=\"no-found\"")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter));
+            return ret;
         }
         Form captchaForm = br.getFormbyProperty("id", "skip");
         if (captchaForm == null) {
@@ -119,8 +119,8 @@ public class OuoIo extends antiDDoSForDecrypt {
             /* Last chance errorhandling */
             if (!br.containsHTML("/go/" + this.fuid)) {
                 /* E.g. https://ouo.io/rates */
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                ret.add(createOfflinelink(parameter));
+                return ret;
             }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -132,34 +132,36 @@ public class OuoIo extends antiDDoSForDecrypt {
             captchaForm.put("s_width", Integer.toString(new Random().nextInt(1000)));
             captchaForm.put("s_height", Integer.toString(new Random().nextInt(1000)));
         }
-        final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br);
-        if (helper.getSiteKey() != null) {
+        final String sitekey = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^\"]+)\"").getMatch(0);
+        if (sitekey != null) {
+            final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, sitekey) {
+                @Override
+                public TYPE getType() {
+                    return TYPE.INVISIBLE;
+                }
+            };
             final String recaptchaV2Response = helper.getToken();
-            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            // captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            captchaForm.put("x-token", Encoding.urlEncode(recaptchaV2Response));
         }
         br.setFollowRedirects(false);
         br.submitForm(captchaForm);
         String finalLink = handleRedirect(br);
         if (finalLink != null) {
-            decryptedLinks.add(createDownloadlink(finalLink));
+            ret.add(createDownloadlink(finalLink));
         }
         finalLink = getFinalLink(br);
         if (!StringUtils.isEmpty(finalLink)) {
-            getPage(finalLink);
-            // auto handle simple redirects
-            finalLink = handleRedirect(br);
-            if (finalLink != null) {
-                decryptedLinks.add(createDownloadlink(finalLink));
-            }
+            ret.add(createDownloadlink(finalLink));
         }
-        if (decryptedLinks.size() > 0) {
-            return decryptedLinks;
+        if (ret.size() > 0) {
+            return ret;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
-    private String handleRedirect(Browser br) throws IOException {
+    private String handleRedirect(final Browser br) throws IOException {
         while (true) {
             String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;\\s*url=(https?://[^\"]*)").getMatch(0);
             if (redirect == null) {
@@ -187,8 +189,8 @@ public class OuoIo extends antiDDoSForDecrypt {
         return finallink;
     }
 
-    private void set(final String downloadLink) {
-        parameter = downloadLink;
+    private void set(final String link) {
+        parameter = link;
         fuid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
         slink = new Regex(parameter, "(?:\\?s|&cr)=((?:http|ftp).+|[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);
     }
