@@ -424,7 +424,11 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             final String[] scripts = new Regex(source, "<\\s*script\\s+(?:.*?<\\s*/\\s*script\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
             if (scripts != null) {
                 for (final String script : scripts) {
-                    final String siteKey = new Regex(script, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                    String siteKey = new Regex(script, "data-sitekey\\s*=\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+                    if (siteKey != null) {
+                        return siteKey;
+                    }
+                    siteKey = new Regex(script, "google\\.\\w+/recaptcha/api\\.js\\?render=(" + apiKeyRegex + ")").getMatch(0);
                     if (siteKey != null) {
                         return siteKey;
                     }

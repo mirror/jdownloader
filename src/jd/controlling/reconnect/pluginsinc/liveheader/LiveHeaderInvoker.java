@@ -20,6 +20,7 @@ import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
+import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
@@ -42,8 +43,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 import org.appwork.utils.parser.UrlQuery;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -160,7 +159,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             map.put("routerip", getRouter());
         } else {
             try {
-                final String ip = HTTPConnectionUtils.resolvHostIP(getRouter(), IPVERSION.IPV4_IPV6)[0].getHostAddress();
+                final String ip = RouterUtils.resolveHostname(getRouter())[0].getHostAddress();
                 map.put("ip", ip);
                 map.put("routerip", ip);
             } catch (UnknownHostException e) {
@@ -676,7 +675,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     }
                     return;
                 }
-                final String verifyIP = HTTPConnectionUtils.resolvHostIP(verify, IPVERSION.IPV4_ONLY)[0].getHostAddress();
+                final String verifyIP = RouterUtils.resolveHostname(verify)[0].getHostAddress();
                 // TODO: Check/Add IPv6 Support. We speak IPv4-Only with Router
                 if (whiteList.contains(verifyIP)) {
                     if (verifiedIPs != null) {
