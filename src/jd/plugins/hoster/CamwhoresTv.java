@@ -18,9 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.HostPlugin;
+import jd.plugins.decrypter.CamwhoresTvCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamwhoresTv extends KernelVideoSharingComV2 {
@@ -31,7 +35,7 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
 
     /** Sync this between camwhores hoster + crawler plugins!! */
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.CamwhoresTv.getPluginDomains();
+        return CamwhoresTvCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -52,7 +56,7 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
      * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
      */
     protected ArrayList<String> getDeadDomains() {
-        return jd.plugins.decrypter.CamwhoresTv.getDeadDomainsStatic();
+        return CamwhoresTvCrawler.getDeadDomainsStatic();
     }
 
     @Override
@@ -94,5 +98,27 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
     @Override
     protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
+    }
+
+    @Override
+    protected String removeUnwantedURLTitleStuff(final String urltitle) {
+        return removeUnwantedURLTitleStuffStatic(urltitle);
+    }
+
+    public static String removeUnwantedURLTitleStuffStatic(String urltitle) {
+        if (urltitle == null) {
+            return null;
+        }
+        if (!StringUtils.isEmpty(urltitle)) {
+            final String removeMe = new Regex(urltitle, "((-[a-f0-9]{8})?-[a-f0-9]{16}-?)$").getMatch(0);
+            if (removeMe != null) {
+                urltitle = urltitle.replace(removeMe, "");
+            }
+            /* Make the url-filenames look better by using spaces instead of '-'. */
+            urltitle = urltitle.replace("-", " ");
+            /* Remove eventually existing spaces at the end */
+            urltitle = urltitle.trim();
+        }
+        return urltitle;
     }
 }
