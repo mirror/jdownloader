@@ -22,6 +22,14 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.UdemyComConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -42,14 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.UdemyComConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "udemy.com" }, urls = { "https?://(?:www\\.)?udemydecrypted\\.com/(.+\\?dtcode=[A-Za-z0-9]+|lecture_id/\\d+)" })
 public class UdemyCom extends PluginForHost {
@@ -135,10 +135,10 @@ public class UdemyCom extends PluginForHost {
             prepBRAPI(this.br);
             if (asset_type.equalsIgnoreCase("File")) {
                 /* Download File (usually .jpg pictures). */
-                this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + lecture_id + "/supplementary-assets/" + asset_id + "?fields%5Basset%5D=download_urls,stream_urls");
+                this.br.getPage("https://www." + this.getHost() + "/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + lecture_id + "/supplementary-assets/" + asset_id + "?fields%5Basset%5D=download_urls,stream_urls");
                 dllink = PluginJSonUtils.getJsonValue(this.br, "file");
             } else if (asset_type.equalsIgnoreCase("Article")) {
-                this.br.getPage("https://www.udemy.com/api-2.0/assets/" + asset_id + "/?fields[asset]=@min,status,delayed_asset_message,processing_errors,body");
+                this.br.getPage("https://www." + this.getHost() + "/api-2.0/assets/" + asset_id + "/?fields[asset]=@min,status,delayed_asset_message,processing_errors,body");
                 textAssetType = true;
                 ext = ".html";
             } else {
@@ -153,7 +153,7 @@ public class UdemyCom extends PluginForHost {
                  * + "/lectures/" + lecture_id +
                  * "?fields%5Basset%5D=@min,download_urls,stream_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=@default,view_html,course&page_config=ct_v4&tracking_tag=ctp_lecture"
                  */
-                this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + lecture_id + "?fields%5Basset%5D=@min,download_urls,stream_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=asset,description,download_url,is_free,last_watched_second&fields[asset]=asset_type,length,media_license_token,course_is_drmed,media_sources,captions,thumbnail_sprite,slides,slide_urls,download_urls");
+                this.br.getPage("https://www." + this.getHost() + "/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + lecture_id + "?fields%5Basset%5D=@min,download_urls,stream_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=asset,description,download_url,is_free,last_watched_second&fields[asset]=asset_type,length,media_license_token,course_is_drmed,media_sources,captions,thumbnail_sprite,slides,slide_urls,download_urls");
                 if (this.br.getHttpConnection().getResponseCode() == 403) {
                     /* E.g. {"detail": "You do not have permission to perform this action."} */
                     /* User tries to download content which he did not buy/subscribe to. */
@@ -171,11 +171,13 @@ public class UdemyCom extends PluginForHost {
                 final boolean drm;
                 if ((Boolean) asset.get("course_is_drmed") == Boolean.TRUE) {
                     /**
-                     * Indicates that most of all courses' items are DRM protected but not necessary all of them! </br> Also course owners
-                     * can enable official download functionality for their courses which would probably not change this boolean! </br> How
-                     * to find non-DRM protected items: </br> 1. Open any course in your browser when logged in into any udemy.com account.
-                     * </br> 2. Click on ""Preview this course" in the top right corner. </br> --> All items you can preview there (seems
-                     * like random clips throughout the course) are streamable without DRM!
+                     * Indicates that most of all courses' items are DRM protected but not necessary all of them! </br>
+                     * Also course owners can enable official download functionality for their courses which would probably not change this
+                     * boolean! </br>
+                     * How to find non-DRM protected items: </br>
+                     * 1. Open any course in your browser when logged in into any udemy.com account. </br>
+                     * 2. Click on ""Preview this course" in the top right corner. </br>
+                     * --> All items you can preview there (seems like random clips throughout the course) are streamable without DRM!
                      */
                     drm = true;
                     link.setProperty(PROPERTY_IS_DRM_PROTECTED, true);
@@ -631,13 +633,13 @@ public class UdemyCom extends PluginForHost {
                 }
                 logger.info("Performing full login");
                 br.setFollowRedirects(true);
-                br.getPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE");
+                br.getPage("https://www." + this.getHost() + "/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE");
                 final String csrftoken = br.getCookie(this.getHost(), "csrftoken");
                 if (StringUtils.isEmpty(csrftoken)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String postData = "csrfmiddlewaretoken=" + csrftoken + "&locale=de_DE&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&displayType=ajax";
-                br.postPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE", postData);
+                br.postPage("/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE", postData);
                 if (br.containsHTML("data-purpose=\"do-login\"")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
