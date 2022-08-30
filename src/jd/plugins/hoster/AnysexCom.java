@@ -51,11 +51,6 @@ public class AnysexCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("/embed/", "/"));
-    }
-
-    @Override
     protected String getFileTitle(final DownloadLink link) {
         String fileTitle = br.getRegex("<title>([^<>\"]+) - AnySex\\.com Video</title>").getMatch(0);
         if (fileTitle == null) {
