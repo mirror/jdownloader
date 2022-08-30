@@ -2,14 +2,14 @@ package jd.controlling.linkcrawler;
 
 import java.util.List;
 
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 
 public abstract class LinkCrawlerDeepInspector {
     /**
@@ -77,6 +77,7 @@ public abstract class LinkCrawlerDeepInspector {
         return false;
     }
 
+    /** Use this to check for HLS content. */
     public static boolean looksLikeMpegURL(URLConnectionAdapter con) {
         return con != null && (StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl") || StringUtils.equalsIgnoreCase(con.getContentType(), "application/x-mpegurl"));
     }
