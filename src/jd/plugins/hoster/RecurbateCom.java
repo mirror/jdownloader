@@ -16,7 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -59,13 +61,15 @@ public class RecurbateCom extends antiDDoSForHost {
     // Tags: Porn plugin
     /* Connection stuff */
     /* Global limits */
-    private final boolean resume               = true;
-    private final int     free_maxchunks       = -2;
+    private final boolean resume                  = true;
+    private final int     free_maxchunks          = -2;
     /* Free (+ free account) and premium specific limits */
-    private final int     free_maxdownloads    = 1;
-    private final int     premium_maxdownloads = 10;
-    private final String  PROPERTY_DATE        = "date";
-    private final String  PROPERTY_USER        = "username";
+    private final int     free_maxdownloads       = 1;
+    private final int     premium_maxdownloads    = 10;
+    private final String  PROPERTY_DATE           = "date";
+    private final String  PROPERTY_DATE_ORIGINAL  = "date_original";
+    private final String  PROPERTY_DATE_TIMESTAMP = "date_timestamp";
+    private final String  PROPERTY_USER           = "username";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -113,6 +117,7 @@ public class RecurbateCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
+            /* Set fallback filename e.g. for offline items. */
             link.setName(this.getFID(link) + ".mp4");
         }
         br.setFollowRedirects(true);
@@ -120,18 +125,26 @@ public class RecurbateCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String date = br.getRegex("(?i)show recorded at (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-        if (date == null) {
-            date = br.getRegex("(?i)show on (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        String dateStr = br.getRegex("(?i)show recorded at (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
+        if (dateStr == null) {
+            dateStr = br.getRegex("(?i)show on (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
         }
-        if (date != null) {
-            link.setProperty(PROPERTY_DATE, date);
+        if (dateStr != null) {
+            final long dateTimestamp = TimeFormatter.getMilliSeconds(dateStr, "yyyy-MM-dd HH:mm", Locale.ENGLISH);
+            final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            final Date theDate = new Date(dateTimestamp);
+            /* Save timestamp separately so we can later convert that into any format we want. */
+            link.setProperty(PROPERTY_DATE_TIMESTAMP, dateTimestamp);
+            /* Save date in the form it's presented by the website. */
+            link.setProperty(PROPERTY_DATE_ORIGINAL, dateStr);
+            /* Save date only in format yyyy-MM-dd. */
+            link.setProperty(PROPERTY_DATE, formatter.format(theDate));
         }
         String performer = br.getRegex("/performer/([^/\"<>]+)").getMatch(0);
-        if (date != null && performer != null) {
+        if (dateStr != null && performer != null) {
             performer = Encoding.htmlDecode(performer).trim();
             link.setProperty(PROPERTY_USER, performer);
-            link.setFinalFileName(date + "_" + performer + "_" + this.getFID(link) + ".mp4");
+            link.setFinalFileName(link.getStringProperty(PROPERTY_DATE) + "_" + performer + "_" + this.getFID(link) + ".mp4");
         } else if (performer != null) {
             performer = Encoding.htmlDecode(performer).trim();
             link.setProperty(PROPERTY_USER, performer);
