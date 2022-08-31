@@ -67,19 +67,19 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
         PREFER_ORIGINAL {
             @Override
             public String getLabel() {
-                return "Original files if possible else lose book pages";
+                return "Original files if possible else loose book pages";
             }
         },
-        ORIGINAL_AND_LOSE_PAGES {
+        ORIGINAL_AND_LOOSE_PAGES {
             @Override
             public String getLabel() {
-                return "Original files if possible and lose book pages";
+                return "Original files if possible and loose book pages";
             }
         },
-        LOSE_PAGES {
+        LOOSE_PAGES {
             @Override
             public String getLabel() {
-                return "Only lose book pages";
+                return "Only loose book pages";
             }
         };
     }

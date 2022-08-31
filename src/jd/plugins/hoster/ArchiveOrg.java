@@ -139,7 +139,6 @@ public class ArchiveOrg extends PluginForHost {
 
     private boolean isBookLendingRequired(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_IS_LENDING_REQUIRED)) {
-            /* Legacy */
             return true;
         } else {
             return false;
@@ -419,14 +418,14 @@ public class ArchiveOrg extends PluginForHost {
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 query.addAndReplace("action", "browse_book");
                 br.postPage("/services/loans/loan/", query);
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 if (br.getHttpConnection().getResponseCode() == 400) {
+                    /*
+                     * Happens if you try to borrow a book that can't be borrowed or if you try to borrow a book while too many (2022-08-31:
+                     * max 10) books per hour have already been borrowed with the current account.
+                     */
                     final String error = (String) entries.get("error");
-                    if (StringUtils.equalsIgnoreCase(error, "This book is not available to borrow at this time. Please try again later.")) {
-                        logger.info("Borrow not needed");
-                        return;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure");
-                    }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure: " + error);
                 }
             }
             /* This should set a cookie called "br-load-<bookID>" */
