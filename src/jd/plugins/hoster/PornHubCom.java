@@ -202,7 +202,8 @@ public class PornHubCom extends PluginForHost {
                 @Override
                 public SSLSocketStreamOptions modify(SSLSocketStreamOptions sslSocketStreamOptions, HTTPConnection httpConnection) {
                     if (Thread.currentThread() == currentThread) {
-                        sslSocketStreamOptions.getDisabledCipherSuites().clear();
+                        sslSocketStreamOptions.getCustomFactorySettings().add("JSSE_TLS1.3_ENABLED");
+                        sslSocketStreamOptions.getCustomFactorySettings().add("BC_TLS1.3_ENABLED");
                     }
                     return sslSocketStreamOptions;
                 }
@@ -704,6 +705,7 @@ public class PornHubCom extends PluginForHost {
                                 try {
                                     final Browser brc = br.cloneBrowser();
                                     brc.setFollowRedirects(true);
+                                    brc.getHeaders().put("Connection", "close");
                                     brc.getPage(dllink_temp);
                                     final List<Object> mp4Medias = plugin.restoreFromString(brc.toString(), TypeRef.LIST);
                                     medias.addAll(mp4Medias);

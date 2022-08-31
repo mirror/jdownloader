@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -30,9 +26,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { jd.plugins.decrypter.NhentaiNet.class })
 public class NhentaiNet extends antiDDoSForHost {
     public NhentaiNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,6 +54,12 @@ public class NhentaiNet extends antiDDoSForHost {
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(jd.plugins.decrypter.NhentaiNet.getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2020-07-15: myfile.is is now anonfiles.com */
+        return this.rewriteHost(jd.plugins.decrypter.NhentaiNet.getPluginDomains(), host);
     }
 
     @Override

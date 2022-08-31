@@ -24,6 +24,7 @@ import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.IconKey;
@@ -65,6 +66,7 @@ public class EasyBox804 extends RouterPlugin implements IPCheckProvider {
                 try {
                     br = new Browser();
                     br.setVerbose(true);
+                    br.setIPVersion(IPVERSION.IPV4_IPV6);
                     br.setDebug(true);
                     br.setProxySelector(new NoProxySelector());
                     if (System.getProperty("fiddler") != null) {

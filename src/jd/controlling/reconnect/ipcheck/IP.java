@@ -113,15 +113,12 @@ public class IP {
             if (whiteListArray != null && Arrays.asList(whiteListArray).contains(gatewayIP)) {
                 return RouterUtils.checkPort(gatewayIP);
             } else {
-                boolean localip = isLocalIP(gatewayIP);
-                if (!localip) {
-                    try {
-                        localip = isLocalIP(resolveSiteLocalAddress(gatewayIP).getHostAddress());
-                    } catch (UnknownHostException e) {
-                        LogController.CL().log(e);
-                    }
+                try {
+                    return resolveSiteLocalAddress(gatewayIP) != null && RouterUtils.checkPort(gatewayIP);
+                } catch (UnknownHostException e) {
+                    LogController.CL().log(e);
                 }
-                return localip && RouterUtils.checkPort(gatewayIP);
+                return false;
             }
         }
     }

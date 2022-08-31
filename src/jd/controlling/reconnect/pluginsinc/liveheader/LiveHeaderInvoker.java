@@ -1,6 +1,7 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 import org.appwork.utils.parser.UrlQuery;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -156,8 +158,9 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         map.put("password", pass);
         map.put("basicauth", Encoding.Base64Encode(user + ":" + pass));
         map.put("auth", Encoding.Base64Encode(user + ":" + pass));
+        final InetAddress ip;
         try {
-            final InetAddress ip = IP.resolveSiteLocalAddress(router);
+            ip = IP.resolveSiteLocalAddress(router);
             map.put("ip", ip.getHostAddress());
             map.put("routerip", ip.getHostAddress());
         } catch (UnknownHostException e) {
@@ -169,6 +172,9 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         this.parsedVariables = new HashMap<String, String>();
         this.verifiedIPs = new HashSet<String>();
         Browser br = new Browser();
+        if (ip instanceof Inet4Address) {
+            br.setIPVersion(IPVERSION.IPV4_IPV6);
+        }
         br.setDebug(true);
         br.setVerbose(true);
         /* set custom timeouts here because 10secs is a LONG time ;) */
@@ -732,7 +738,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     }
 
     private void parseVariables(final LHProcessFeedback feedback, final String patStr, final String[] keys, final Browser br) throws ReconnectFailedException {
-        if (br != null && StringUtils.isNotEmpty(patStr)) {
+        if (br != null && br.getRequest() != null && StringUtils.isNotEmpty(patStr)) {
             logger.info("Parse Variables:" + patStr);
             final Pattern pattern = Pattern.compile(patStr, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
             Matcher matcher = pattern.matcher(br + "");

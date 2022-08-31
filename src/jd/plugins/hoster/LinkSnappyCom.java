@@ -95,7 +95,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             if (br.getURL() == null || !br.getURL().contains("/api/USERDETAILS")) {
                 getPage("https://" + this.getHost() + "/api/USERDETAILS");
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) entries.get("return");
             final Object expireO = entries.get("expire");
             logger.info("expire:" + expireO);
@@ -349,7 +349,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
-                final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> data = restoreFromString(br.toString(), TypeRef.HASHMAP);
                 this.handleErrors(this.getDownloadLink(), account);
                 if (data.get("return") == null) {
                     logger.warning("Bad cache state/answer");
@@ -420,7 +420,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     urlinfo.put("linkpass", passCode);
                 }
                 getPage(String.format(urlRaw, URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo))));
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final List<Object> ressourcelist = (List<Object>) entries.get("links");
                 entries = (Map<String, Object>) ressourcelist.get(0);
                 final String message = this.getError(entries);
@@ -603,7 +603,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     private void handleErrors(final DownloadLink link, final Account account) throws PluginException, InterruptedException {
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Object linksO = entries.get("links");
         if (linksO != null && linksO instanceof List) {
             /* Make sure we're working on the correct map! */
@@ -672,7 +672,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     private String getError(final Browser br) {
-        return getError(JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP));
+        return getError(restoreFromString(br.toString(), TypeRef.HASHMAP));
     }
 
     private String getError(Map<String, Object> map) {
@@ -718,7 +718,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
                 logger.info("Validating cookies");
                 getPage("https://" + this.getHost() + "/api/USERDETAILS");
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final String error = getError(entries);
                 // invalid username is shown when 2factorauth is required o_O.
                 if (error == null) {
@@ -734,7 +734,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             /* Full login is required */
             logger.info("Performing full login");
             getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String error = getError(entries);
             if (error != null) {
                 final String redirect = (String) entries.get("redirect");

@@ -9,16 +9,16 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.logging.Logger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
-
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 
 public class UPNPReconnectInvoker extends ReconnectInvoker {
     private final String serviceType;
@@ -34,7 +34,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         // this works for fritz box.
         // old code did NOT work:
         /*
-         *
+         * 
          * final String data = "<?xml version=\"1.0\"?>\n" +
          * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
          * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final
@@ -43,7 +43,8 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
          * command + "\""); p
          */
         final URL url = new URL(controlUrl);
-        final HTTPConnection con = new HTTPConnectionImpl(url);
+        final HTTPConnectionImpl con = new HTTPConnectionImpl(url);
+        con.setIPVersion(IPVERSION.IPV4_IPV6);
         if ("GetExternalIPAddress".equalsIgnoreCase(command)) {
             con.setReadTimeout(2000);
         }

@@ -48,6 +48,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.images.SVGIO;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.PublicSuffixList;
@@ -494,15 +495,15 @@ public class FavIcons {
         URLConnectionAdapter con = null;
         byte[] bytes = null;
         try {
-            String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")").getMatch(4);
+            String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getMatch(4);
             if (StringUtils.isEmpty(url)) {
-                url = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png).*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
+                url = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
             }
             if (StringUtils.isEmpty(url)) {
                 /*
                  * workaround for hoster with not complete url, eg rapidshare.com
                  */
-                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?\\.(ico|png).*?)('|\")").getMatch(3);
+                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getMatch(3);
                 if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
                     url = "http://" + url;
                 }
@@ -521,7 +522,7 @@ public class FavIcons {
                     try {
                         List<BufferedImage> ret = null;
                         if (bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71) {
-                            final BufferedImage img = downloadImage(new ByteArrayInputStream(bytes));
+                            final BufferedImage img = downloadImage(con, logger, new ByteArrayInputStream(bytes));
                             if (img != null) {
                                 ret = new ArrayList<BufferedImage>();
                                 ret.add(img);
@@ -559,9 +560,11 @@ public class FavIcons {
                         throw new Throwable("Try again with other ImageLoader");
                     } catch (Throwable e) {
                         /* maybe redirect to different icon format? */
-                        final BufferedImage img = downloadImage(new ByteArrayInputStream(bytes));
+                        final BufferedImage img = downloadImage(con, logger, new ByteArrayInputStream(bytes));
                         if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
                             return img;
+                        } else {
+                            logger.log(e);
                         }
                     }
                 }
@@ -608,9 +611,19 @@ public class FavIcons {
         return ret;
     }
 
-    private static BufferedImage downloadImage(InputStream is) {
+    private static BufferedImage downloadImage(URLConnectionAdapter con, LogInterface logger, InputStream is) {
         try {
-            BufferedImage ret = ImageIO.read(is);
+            BufferedImage ret = null;
+            if (StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".svg")) {
+                try {
+                    ret = SVGIO.getImageFromSVG(is, 32, 32, null);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+            }
+            if (ret == null) {
+                ret = ImageIO.read(is);
+            }
             if (ret == null) {
                 /* workaround for gif images */
                 final GifDecoder d = new GifDecoder();
@@ -622,6 +635,7 @@ public class FavIcons {
             }
             return ret;
         } catch (Throwable e) {
+            logger.log(e);
         }
         return null;
     }

@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -37,6 +33,10 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PixeldrainCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PixeldrainCom.class })
@@ -98,7 +98,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink(generateFileURL(file.get("id").toString()));
             dl.setContentUrl(generateContentURL(folderID, index));
             dl.setContainerUrl(param.getCryptedUrl());
-            PixeldrainCom.setDownloadLinkInfo(this, dl, file);
+            PixeldrainCom.setDownloadLinkInfo(this, dl, null, file);
             if (targetIndex != null && index == targetIndex.intValue()) {
                 /* User wants only one item within that folder */
                 logger.info("Found target-file at index: " + index + " | " + dl.getFinalFileName());

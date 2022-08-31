@@ -60,7 +60,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "nhentai.net", "nhentai.to", "nhentai.xxx" });
+        ret.add(new String[] { "nhentai.xxx", "nhentai.to", "nhentai.net" });
         return ret;
     }
 
@@ -94,7 +94,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replaceFirst("\\.(to|net)/", ".xxx/");
         final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
         getPage(parameter);
