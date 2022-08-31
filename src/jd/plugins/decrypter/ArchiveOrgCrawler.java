@@ -150,7 +150,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (isOfficiallyDownloadable) {
                 if (mode == BookCrawlMode.PREFER_ORIGINAL) {
                     return crawlDetails(param);
-                } else if (mode == BookCrawlMode.ORIGINAL_AND_LOSE_PAGES) {
+                } else if (mode == BookCrawlMode.ORIGINAL_AND_LOOSE_PAGES) {
                     final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                     ret.addAll(crawlDetails(param));
                     ret.addAll(crawlBook(param, account));
@@ -355,6 +355,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final Map<String, Object> data = (Map<String, Object>) root.get("data");
             final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
+            // final Map<String, Object> lendingStatus = (Map<String, Object>) data.get("lendingStatus");
+            // if ((Boolean) lendingStatus.get("user_at_max_loans")) {
+            // // TODO: Throw exception if this happens
+            // }
             final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
             final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
             if (daysLeftOnLoan > 0) {
