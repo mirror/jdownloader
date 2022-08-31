@@ -1,12 +1,16 @@
 package org.jdownloader.plugins.components.archiveorg;
 
+import java.util.ArrayList;
+
 import org.appwork.utils.Time;
 
 import jd.http.Cookies;
 
 public class ArchiveOrgLendingInfo {
-    private Cookies cookies   = null;
-    private Long    timestamp = null;
+    private Cookies           cookies                             = null;
+    private Long              timestamp                           = null;
+    private ArrayList<String> pageURLs                            = new ArrayList<String>();
+    private int               numberofSuccessfullyDownloadedPages = 0;
 
     public ArchiveOrgLendingInfo(final Cookies cookies) {
         this.cookies = cookies;
@@ -49,6 +53,32 @@ public class ArchiveOrgLendingInfo {
             return false;
         } else {
             return true;
+        }
+    }
+
+    public void addPageURL(final int index, final String url) {
+        this.pageURLs.add(index, url);
+    }
+
+    /** Returns URL to desired pageNumber. */
+    public String getPageURL(final int pageNumber) {
+        if (this.pageURLs.size() >= pageNumber) {
+            return this.pageURLs.get(pageNumber - 1);
+        } else {
+            return null;
+        }
+    }
+
+    /** Increases downloaded page counter. */
+    public void downloadedPage() {
+        this.numberofSuccessfullyDownloadedPages += 1;
+    }
+
+    public boolean looksLikeBookDownloadIsComplete() {
+        if (this.numberofSuccessfullyDownloadedPages >= this.pageURLs.size()) {
+            return true;
+        } else {
+            return false;
         }
     }
 }

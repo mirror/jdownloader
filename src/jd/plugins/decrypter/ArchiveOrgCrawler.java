@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -33,6 +34,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -432,6 +434,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         final List<Object> imagesO = (List<Object>) brOptions.get("data");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArchiveOrgLendingInfo internalLendingInfo;
+        if (loanedSecondsLeft > 0 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            internalLendingInfo = hostPlugin.getLendingInfo(bookId, account);
+        } else {
+            internalLendingInfo = null;
+        }
         for (final Object imageO : imagesO) {
             /*
              * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page -->
@@ -472,6 +480,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setLinkID(this.getHost() + "://" + idForLinkID + "_preview_" + pageNum);
                 } else {
                     dl.setLinkID(this.getHost() + "://" + idForLinkID + "_" + pageNum);
+                }
+                if (loanedSecondsLeft > 0 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    internalLendingInfo.addPageURL(pageNum, url);
                 }
                 ret.add(dl);
             }
