@@ -458,7 +458,7 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /** Returns LendingInfo/session for given bookID + acccount. */
-    private ArchiveOrgLendingInfo getLendingInfo(final String bookID, final Account account) {
+    public ArchiveOrgLendingInfo getLendingInfo(final String bookID, final Account account) {
         final String key = getLendingInfoKey(bookID, account);
         synchronized (bookBorrowSessions) {
             final ArchiveOrgLendingInfo ret = bookBorrowSessions.get(key);
