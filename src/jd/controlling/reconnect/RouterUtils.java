@@ -24,9 +24,11 @@ import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,14 +60,13 @@ public class RouterUtils {
     private static final String         PATTERN_WIN_ARP = "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?";
     private static final LogSource      LOGGER          = LogController.getInstance().getLogger("RouterUtils");
     private static volatile InetAddress ADDRESS_CACHE;
+
     /**
      * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a
      * webservice on any adress. See {@link #updateHostTable()}
      *
      * @return
      */
-    private static volatile InetAddress ASYNCH_RETURN;
-
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
         if (CrossSystem.isWindows()) {
             return RouterUtils.callArpToolWindows(ipAddress);
@@ -195,7 +196,7 @@ public class RouterUtils {
                 final String domain = Browser.getHost(redirect);
                 logger.info("Redirect To: " + redirect + "|Domain:" + domain);
                 // some isps or DNS server redirect in case of no server found
-                if (redirect != null && !InetAddress.getByName(domain).equals(InetAddress.getByName(host))) {
+                if (redirect != null && !RouterUtils.resolveHostname(domain)[0].equals(RouterUtils.resolveHostname(host))) {
                     // if we have redirects, the new domain should be the local one,
                     // too
                     return false;
@@ -234,21 +235,19 @@ public class RouterUtils {
         try {
             try {
                 address = RouterUtils.getIPFormNetStat();
-                if (address != null) {
-                    return address;
-                }
             } catch (Exception e) {
                 LOGGER.log(e);
             }
-            try {
-                address = RouterUtils.getIPFromRouteCommand();
-                if (address != null) {
-                    return address;
+            if (address == null) {
+                try {
+                    address = RouterUtils.getIPFromRouteCommand();
+                } catch (Exception e) {
+                    LOGGER.log(e);
                 }
-            } catch (Exception e) {
-                LOGGER.log(e);
             }
-            address = RouterUtils.getIpFormHostTable();
+            if (address == null) {
+                address = RouterUtils.getIpFormHostTable();
+            }
             return address;
         } finally {
             RouterUtils.ADDRESS_CACHE = address;
@@ -261,45 +260,34 @@ public class RouterUtils {
      * @return
      * @throws InterruptedException
      */
-    public static InetAddress getIpFormHostTable() throws InterruptedException {
-        java.util.List<String> hostNames = RouterUtils.getHostTable();
-        RouterUtils.ASYNCH_RETURN = null;
-        final Object LOCK = new Object();
+    private static InetAddress getIpFormHostTable() throws InterruptedException {
+        final List<String> hostNames = RouterUtils.getHostTable();
+        final AtomicReference<InetAddress> ret = new AtomicReference<InetAddress>();
         final ThreadPoolExecutor threadPool = new ThreadPoolExecutor(4, 4, 2000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
         threadPool.allowCoreThreadTimeOut(true);
         for (final String host : hostNames) {
             try {
-                if (ASYNCH_RETURN != null) {
-                    break;
-                }
-                threadPool.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (ASYNCH_RETURN != null) {
-                                return;
-                            }
-                            if (RouterUtils.checkPort(host)) {
-                                if (ASYNCH_RETURN != null) {
-                                    return;
-                                }
-                                synchronized (LOCK) {
-                                    if (ASYNCH_RETURN != null) {
-                                        return;
+                if (ret.get() == null) {
+                    threadPool.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                if (ret.get() == null) {
+                                    final InetAddress ia = IP.resolveSiteLocalAddress(host);
+                                    if (IP.isValidRouterIP(ia.getHostAddress()) && ret.compareAndSet(null, ia)) {
+                                        threadPool.shutdown();
                                     }
-                                    RouterUtils.ASYNCH_RETURN = RouterUtils.resolveHostname(host)[0];
-                                    threadPool.shutdown();
                                 }
+                            } catch (final Throwable e) {
                             }
-                        } catch (final Throwable e) {
                         }
-                    }
-                });
+                    });
+                }
             } catch (final Throwable e) {
             }
         }
         threadPool.awaitTermination(5000, TimeUnit.MILLISECONDS);
-        return RouterUtils.ASYNCH_RETURN;
+        return ret.get();
     }
 
     /**
@@ -310,7 +298,7 @@ public class RouterUtils {
      * @throws IOException
      * @throws UnsupportedEncodingException
      */
-    public static InetAddress getIPFormNetStat() throws InterruptedException, UnsupportedEncodingException, IOException {
+    private static InetAddress getIPFormNetStat() throws InterruptedException, UnsupportedEncodingException, IOException {
         final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
         ProcessBuilder pb = ProcessBuilderFactory.create("netstat", "-rn");
         pb.redirectErrorStream(true);
@@ -330,7 +318,7 @@ public class RouterUtils {
             }
             final String m = new Regex(string, pat).getMatch(0);
             if (m != null && !"0.0.0.0".equals(m)) {
-                if (checkPort(m)) {
+                if (IP.isValidRouterIP(m)) {
                     return resolveHostname(m)[0];
                 }
             }
@@ -347,7 +335,7 @@ public class RouterUtils {
      *
      * @return
      */
-    public static InetAddress getIPFromRouteCommand() {
+    private static InetAddress getIPFromRouteCommand() {
         if (CrossSystem.isUnix() || CrossSystem.isMac()) {
             if (new File("/sbin/route").exists()) {
                 if (CrossSystem.isMac()) {
@@ -366,7 +354,7 @@ public class RouterUtils {
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
                                 final InetAddress ia = resolveHostname(hostname)[0];
-                                if (RouterUtils.checkPort(ia.getHostAddress())) {
+                                if (IP.isValidRouterIP(ia.getHostAddress())) {
                                     return ia;
                                 }
                             } catch (final Exception e) {
@@ -393,7 +381,7 @@ public class RouterUtils {
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
                                 final InetAddress ia = resolveHostname(hostname)[0];
-                                if (RouterUtils.checkPort(ia.getHostAddress())) {
+                                if (IP.isValidRouterIP(ia.getHostAddress())) {
                                     return ia;
                                 }
                             } catch (final Exception e) {

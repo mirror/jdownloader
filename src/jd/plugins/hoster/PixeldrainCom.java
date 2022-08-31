@@ -56,7 +56,6 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -110,7 +109,6 @@ public class PixeldrainCom extends PluginForHost {
     public static final String    API_BASE                                      = "https://pixeldrain.com/api";
     protected static final String PIXELDRAIN_JD_API_HELP_PAGE                   = "https://pixeldrain.com/user/connect_app?app=jdownloader";
     private static final String   PROPERTY_CAPTCHA_REQUIRED                     = "captcha_required";
-    private static final String   PROPERTY_DOWNLOAD_SPEED_LIMIT                 = "download_speed_limit";
     private static final String   PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG = "has_shown_apikey_help_dialog";
 
     @Override
@@ -141,16 +139,12 @@ public class PixeldrainCom extends PluginForHost {
         }
     }
 
-    @Override
-    public boolean isSpeedLimited(final DownloadLink link, final Account account) {
-        if (link != null && StringUtils.equals(link.getHost(), getHost())) {
-            if (link.getIntegerProperty(PROPERTY_DOWNLOAD_SPEED_LIMIT, 0) > 0) {
-                return true;
-            } else {
-                return super.isSpeedLimited(link, account);
-            }
+    public boolean isTransferLimitReached(final DownloadLink link, final Account account) {
+        final String speedLimitPropertyKey = getSpeedLimitProperty(account);
+        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+            return false;
         } else {
-            return super.isSpeedLimited(link, account);
+            return link.getIntegerProperty(speedLimitPropertyKey, 0) > 0;
         }
     }
 
@@ -197,15 +191,6 @@ public class PixeldrainCom extends PluginForHost {
     public boolean checkLinks(final DownloadLink[] urls) {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return this.checkLinks(urls, account);
-    }
-
-    @Override
-    public void setBrowser(Browser br) {
-        super.setBrowser(br);
-        if (br != null) {
-            // re by admin
-            br.setIPVersion(IPVERSION.IPV6_IPV4);
-        }
     }
 
     public boolean checkLinks(final DownloadLink[] allLinks, final Account account) {
@@ -273,7 +258,7 @@ public class PixeldrainCom extends PluginForHost {
                             /* FileID not in response, so its offline */
                             link.setAvailable(false);
                         } else {
-                            setDownloadLinkInfo(this, link, data);
+                            setDownloadLinkInfo(this, link, account, data);
                         }
                     }
                 } finally {
@@ -305,8 +290,16 @@ public class PixeldrainCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    protected static String getSpeedLimitProperty(final Account account) {
+        if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
+            return "download_speed_limit";
+        } else {
+            return "download_speed_limit_" + account.getUser();
+        }
+    }
+
     /** Shared function used by crawler & host plugin. */
-    public static void setDownloadLinkInfo(final Plugin plugin, final DownloadLink link, final Map<String, Object> data) throws PluginException {
+    public static void setDownloadLinkInfo(final Plugin plugin, final DownloadLink link, final Account account, final Map<String, Object> data) throws PluginException {
         final String filename = (String) data.get("name");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
@@ -324,10 +317,11 @@ public class PixeldrainCom extends PluginForHost {
             link.removeProperty(PROPERTY_CAPTCHA_REQUIRED);
         }
         final Object speedLimit = data.get("download_speed_limit");
+        final String speedLimitPropertyKey = getSpeedLimitProperty(account);
         if (speedLimit == null || ((speedLimit instanceof Number) && ((Number) speedLimit).intValue() == 0)) {
-            link.removeProperty(PROPERTY_DOWNLOAD_SPEED_LIMIT);
+            link.removeProperty(speedLimitPropertyKey);
         } else {
-            link.setProperty(PROPERTY_DOWNLOAD_SPEED_LIMIT, speedLimit);
+            link.setProperty(speedLimitPropertyKey, speedLimit);
         }
         final String abuse_type = (String) data.get("abuse_type");
         if (!StringUtils.isEmpty(abuse_type)) {
@@ -344,7 +338,7 @@ public class PixeldrainCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account);
-        if (this.isSpeedLimited(link, account) && PluginJsonConfig.get(getConfigInterface()).isReconnectOnSpeedLimit()) {
+        if (isTransferLimitReached(link, account) && PluginJsonConfig.get(getConfigInterface()).isReconnectOnSpeedLimit()) {
             /**
              * User prefers to perform reconnect to be able to download without speedlimit again. </br> 2022-07-19: Speedlimit sits only on
              * IP, not on account but our upper system will of not do reconnects for accounts atm.

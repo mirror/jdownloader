@@ -716,6 +716,9 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
         PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
         handleErrorsAndCaptcha(this.br, account);
+        if (hasOfflineRemovedVideoText(br) || hasOfflineVideoNotice(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean bestonly = cfg.getBooleanProperty(PornHubCom.BEST_ONLY, false);
@@ -942,6 +945,10 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             throw new AccountRequiredException();
         } else if (br.containsHTML(PornHubCom.html_premium_only)) {
             throw new AccountRequiredException();
+        } else if (hasOfflineRemovedVideoText(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (hasOfflineVideoNotice(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isOfflineVideo(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -962,8 +969,16 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         return br.containsHTML(">\\s*Video has been flagged for verification in accordance with our trust and safety policy.?\\s*<");
     }
 
+    public static boolean hasOfflineRemovedVideoText(final Browser br) {
+        return br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of") || br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>") || br.containsHTML("<span[^>]*>\\s*This video is currently unavailable\\s*</span>");
+    }
+
+    public static boolean hasOfflineVideoNotice(final Browser br) {
+        return br.containsHTML("<div[^>]*class[^>]*video-notice[^>]*>\\s*<p>\\s*<span>\\s*This video has been disabled");
+    }
+
     public static boolean isOfflineVideo(final Browser br) {
-        return (!StringUtils.containsIgnoreCase(br.getURL(), "/embed/") && !br.containsHTML("\\'embedSWF\\'")) || br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of") || br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>") || isOfflineGeneral(br);
+        return (!StringUtils.containsIgnoreCase(br.getURL(), "/embed/") && !br.containsHTML("\\'embedSWF\\'")) || hasOfflineRemovedVideoText(br) || isOfflineGeneral(br);
     }
 
     public static boolean isOfflineGeneral(final Browser br) {
