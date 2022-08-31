@@ -274,7 +274,7 @@ public class RouterUtils {
                             try {
                                 if (ret.get() == null) {
                                     final InetAddress ia = IP.resolveSiteLocalAddress(host);
-                                    if (IP.isValidRouterIP(ia.getHostAddress()) && ret.compareAndSet(null, ia)) {
+                                    if (ret.get() == null && IP.isValidRouterIP(ia.getHostAddress()) && ret.compareAndSet(null, ia)) {
                                         threadPool.shutdown();
                                     }
                                 }
@@ -298,7 +298,7 @@ public class RouterUtils {
      * @throws IOException
      * @throws UnsupportedEncodingException
      */
-    private static InetAddress getIPFormNetStat() throws InterruptedException, UnsupportedEncodingException, IOException {
+    public static InetAddress getIPFormNetStat() throws InterruptedException, UnsupportedEncodingException, IOException {
         final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
         ProcessBuilder pb = ProcessBuilderFactory.create("netstat", "-rn");
         pb.redirectErrorStream(true);
@@ -335,7 +335,7 @@ public class RouterUtils {
      *
      * @return
      */
-    private static InetAddress getIPFromRouteCommand() {
+    public static InetAddress getIPFromRouteCommand() {
         if (CrossSystem.isUnix() || CrossSystem.isMac()) {
             if (new File("/sbin/route").exists()) {
                 if (CrossSystem.isMac()) {
