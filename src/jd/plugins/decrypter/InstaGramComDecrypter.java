@@ -747,7 +747,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         do {
             final String json = websiteGetJson();
             if (json == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /*
+                 * 2022-08-31: This website handling is mostly obsolete/broken and has been replaced by the "Graphql" handling by Instagram.
+                 * Make users add an account so API handling is used instead.
+                 */
+                if (account == null) {
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             entries = restoreFromString(json, TypeRef.HASHMAP);
             user = (Map<String, Object>) get(entries, "entry_data/ProfilePage/{0}/user", "entry_data/ProfilePage/{0}/graphql/user");
