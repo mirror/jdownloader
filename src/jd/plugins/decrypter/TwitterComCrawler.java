@@ -789,7 +789,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         query.append("userId", userID, false);
         query.append("count", expected_items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
-        final String addedURLWithoutParams = URLHelper.getURL(new URL(param.getCryptedUrl()), false, false, false).toString();
+        final String addedURLWithoutParams = URLHelper.getUrlWithoutParams(param.getCryptedUrl());
         final UrlQuery addedURLQuery = UrlQuery.parse(resumeURL);
         int totalCrawledTweetsCount = 0;
         int page = 1;

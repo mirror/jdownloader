@@ -27,6 +27,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.SrfChConfig;
 import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
 import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
@@ -45,6 +47,7 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.SrfCh;
@@ -117,6 +120,7 @@ public class SrfChCrawler extends PluginForDecrypt {
             if (videoDetail != null) {
                 return this.crawlVideo(videoDetail.get("urn").toString(), mode, qualitySelectionFallbackMode);
             } else if (show != null) {
+                /* Crawl latest episode of tv-series-overview */
                 final Map<String, Object> latestMedia = (Map<String, Object>) show.get("latestMedia");
                 return this.crawlVideo(latestMedia.get("urn").toString(), mode, qualitySelectionFallbackMode);
             } else {
@@ -178,9 +182,6 @@ public class SrfChCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final List<Integer> selectedQualities = getSelectedQualities();
-        final SrfCh hosterPlugin = (SrfCh) this.getNewPluginForHostInstance(this.getHost());
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
         this.br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/" + urn + ".json?onlyChapters=false&vector=portalplay");
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -193,6 +194,9 @@ public class SrfChCrawler extends PluginForDecrypt {
         if (chapterList.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final List<Integer> selectedQualities = getSelectedQualities();
+        final SrfCh hosterPlugin = (SrfCh) this.getNewPluginForHostInstance(this.getHost());
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int numberofGeoBlockedItems = 0;
         String lastBlockReason = null;
         /* 2022-07-22: I've never seen an item containing multiple chapters but whatever... */
@@ -200,14 +204,14 @@ public class SrfChCrawler extends PluginForDecrypt {
             final String title = chapter.get("title").toString();
             final String dateFormatted = new Regex(chapter.get("date"), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             final String thisURN = chapter.get("urn").toString(); // should be == urn
-            final String ext;
+            final String videoAudioExt;
             final String mediaType = (String) chapter.get("mediaType");
             final String contentURL;
             if (mediaType.equalsIgnoreCase("AUDIO")) {
-                ext = ".mp3";
+                videoAudioExt = ".mp3";
                 contentURL = "https://www." + this.getHost() + "/audio/tv/" + toSlug(showTitle) + "/video/" + toSlug(title) + "?urn=" + thisURN;
             } else if (mediaType.equalsIgnoreCase("VIDEO")) {
-                ext = ".mp4";
+                videoAudioExt = ".mp4";
                 contentURL = "https://www." + this.getHost() + "/play/tv/" + toSlug(showTitle) + "/video/" + toSlug(title) + "?urn=" + thisURN;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported mediaType:" + mediaType);
@@ -219,7 +223,7 @@ public class SrfChCrawler extends PluginForDecrypt {
             }
             String URLHTTP360p = (String) chapter.get("podcastSdUrl");
             String URLHTTP720p = (String) chapter.get("podcastHdUrl");
-            String bestHLSMaster = null;
+            String bestHLSMasterURL = null;
             lastBlockReason = (String) chapter.get("blockReason");
             if (!StringUtils.isEmpty(lastBlockReason)) {
                 numberofGeoBlockedItems++;
@@ -251,7 +255,7 @@ public class SrfChCrawler extends PluginForDecrypt {
                         }
                     }
                 } else if (protocol.equalsIgnoreCase("HLS")) {
-                    bestHLSMaster = url;
+                    bestHLSMasterURL = url;
                 } else {
                     /* Skip unsupported protocol */
                     logger.info("Skipping protocol: " + protocol);
@@ -293,8 +297,8 @@ public class SrfChCrawler extends PluginForDecrypt {
             int bestHeight = 0;
             DownloadLink best = null;
             if (crawlHLS) {
-                /* Sign URL */
-                String acl = new Regex(bestHLSMaster, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
+                /* Sign HLS master URL */
+                String acl = new Regex(bestHLSMasterURL, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
                 if (acl == null) {
                     logger.warning("Failed to find acl");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -311,16 +315,20 @@ public class SrfChCrawler extends PluginForDecrypt {
                 authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
                 authparams = URLEncode.encodeURIComponent(authparams);
                 authparams = authparams.replace("*", "%2A");
-                bestHLSMaster += "&hdnts=" + authparams;
-                final String param_caption = new Regex(bestHLSMaster, "caption=([^\\&]+)").getMatch(0);
+                String bestHLSMasterURLFixed = bestHLSMasterURL;
+                // bestHLSMasterURL += "&hdnts=" + authparams;
+                final String param_caption = new Regex(bestHLSMasterURL, "caption=([^\\&]+)").getMatch(0);
                 if (param_caption != null) {
                     String param_caption_new = param_caption;
                     param_caption_new = Encoding.htmlDecode(param_caption_new);
                     param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
                     param_caption_new = param_caption_new.replace("%3D", "=");
-                    bestHLSMaster = bestHLSMaster.replace(param_caption, param_caption_new);
+                    bestHLSMasterURLFixed = bestHLSMasterURLFixed.replace(param_caption, param_caption_new);
                 }
-                br.getPage(bestHLSMaster);
+                final UrlQuery hlsMasterQuery = UrlQuery.parse(bestHLSMasterURLFixed);
+                hlsMasterQuery.add("hdnts", authparams);
+                String bestHLSMasterURLFixedWithoutParams = URLHelper.getUrlWithoutParams(bestHLSMasterURLFixed);
+                br.getPage(bestHLSMasterURLFixedWithoutParams + "?" + hlsMasterQuery.toString());
                 final List<HlsContainer> containers = HlsContainer.getHlsQualities(br);
                 for (final HlsContainer container : containers) {
                     if (foundQualities.containsKey(container.getHeight())) {
@@ -364,8 +372,23 @@ public class SrfChCrawler extends PluginForDecrypt {
             if (!StringUtils.isEmpty(description)) {
                 fp.setComment(description);
             }
+            final SrfChConfig cfg = PluginJsonConfig.get(SrfChConfig.class);
+            if (cfg.isCrawlThumbnail()) {
+                final String thumbnailURL = (String) chapter.get("imageUrl");
+                if (!StringUtils.isEmpty(thumbnailURL)) {
+                    final DownloadLink thumbnail = this.createDownloadlink(thumbnailURL);
+                    final String ext = Plugin.getFileNameExtensionFromURL(thumbnailURL);
+                    if (ext != null) {
+                        thumbnail.setFinalFileName(titleBase + ext);
+                    }
+                    retChapter.add(thumbnail);
+                }
+            }
             for (final DownloadLink result : retChapter) {
-                result.setFinalFileName(titleBase + "_" + result.getStringProperty(PROPERTY_HEIGHT) + ext);
+                if (result.hasProperty(PROPERTY_HEIGHT)) {
+                    /* Only set filename for video/audio items. */
+                    result.setFinalFileName(titleBase + "_" + result.getStringProperty(PROPERTY_HEIGHT) + videoAudioExt);
+                }
                 result.setContentUrl(contentURL);
                 result.setAvailable(true);
                 result._setFilePackage(fp);

@@ -12,6 +12,7 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "srf.ch", type = Type.HOSTER)
 public interface SrfChConfig extends PluginConfigInterface {
+    final String                    text_CrawlThumbnail               = "Crawl thumbnail?";
     final String                    text_QualitySelectionMode         = "Define how this plugin should pick your desired qualities";
     final String                    text_Crawl180p                    = "Crawl 180?";
     final String                    text_Crawl270p                    = "Crawl 270?";
@@ -23,6 +24,10 @@ public interface SrfChConfig extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                       = new TRANSLATION();
 
     public static class TRANSLATION {
+        public String getCrawlThumbnail_label() {
+            return text_CrawlThumbnail;
+        }
+
         public String getQualitySelectionMode_label() {
             return text_QualitySelectionMode;
         }
@@ -55,6 +60,14 @@ public interface SrfChConfig extends PluginConfigInterface {
             return text_QualitySelectionFallbackMode;
         }
     }
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_CrawlThumbnail)
+    @Order(90)
+    boolean isCrawlThumbnail();
+
+    void setCrawlThumbnail(boolean b);
 
     public static enum QualitySelectionMode implements LabelInterface {
         BEST {
