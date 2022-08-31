@@ -24,18 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -59,6 +47,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.PixivNetGallery;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixivNet extends PluginForHost {
@@ -182,7 +181,7 @@ public class PixivNet extends PluginForHost {
             checkErrors(br);
             final String novelID = this.getFID(link);
             final String json = br.getRegex("id=\"meta-preload-data\"[^>]*content='([^\\']*?)'").getMatch(0);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.HASHMAP);
             final Map<String, Object> novelInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "novel/" + novelID);
             final String createDate = novelInfo.get("createDate").toString();
             final String dateFormatted = new Regex(createDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
@@ -442,8 +441,7 @@ public class PixivNet extends PluginForHost {
                 }
                 /**
                  * 2022-06-08: TODO: Full login via website is broken (captcha fails) --> Inform user to use cookie login in the meanwhile
-                 * </br>
-                 * RE ticket https://svn.jdownloader.org/issues/90125
+                 * </br> RE ticket https://svn.jdownloader.org/issues/90125
                  */
                 if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     showCookieLoginInfo();
@@ -452,7 +450,7 @@ public class PixivNet extends PluginForHost {
                 logger.info("Performing full login");
                 br.getPage("https://www." + this.getHost() + "/login.php?ref=wwwtop_accounts_index");
                 final String loginJson = br.getRegex("class=\"json-data\" value='(\\{.*?)\\'>").getMatch(0);
-                final Map<String, Object> loginInfo = JSonStorage.restoreFromString(loginJson, TypeRef.HASHMAP);
+                final Map<String, Object> loginInfo = restoreFromString(loginJson, TypeRef.HASHMAP);
                 final Form loginform = new Form();
                 loginform.setAction("/ajax/login?lang=en");
                 loginform.setMethod(MethodType.POST);
@@ -517,7 +515,7 @@ public class PixivNet extends PluginForHost {
                 loginRequest.getHeaders().put("Accept", "application/json");
                 loginRequest.getHeaders().put("Origin", "https://accounts." + br.getHost());
                 br.getPage(loginRequest);
-                final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.HASHMAP);
                 if ((Boolean) response.get("error") == Boolean.TRUE) {
                     throw new AccountInvalidException();
                 }
