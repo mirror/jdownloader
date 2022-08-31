@@ -346,9 +346,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                  * Skip subtitled versions if not wished by user. This needs to happen before BEST selection otherwise subtitled versions
                  * would still be incorperated in BEST selection which would be wrong.
                  */
-                if (videoStreamId.equals("6524470") || videoStreamId.equals("6524465")) {
-                    logger.info("WTF");
-                }
                 if (versionInfo.hasAnySubtitle()) {
                     if (versionInfo.hasSubtitleAudioDescription() && !cfg.isCrawlSubtitledBurnedInVersionsAudioDescription()) {
                         continue;
