@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,13 +40,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 /**
  *
@@ -92,8 +92,9 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         return 1;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        /* 2022-08-31: Seems like the .xxx domain is less likely to be blocked due to Cloudflare intervening. */
         final String parameter = param.toString().replaceFirst("\\.(to|net)/", ".xxx/");
         final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
@@ -150,13 +151,13 @@ public class NhentaiNet extends antiDDoSForDecrypt {
             final DownloadLink dl = createDownloadlink(Request.getLocation(url, br.getRequest()));
             dl.setFinalFileName(df.format(pageNumber) + getFileNameExtensionFromString(url, extensionGuess));
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        fp.addLinks(decryptedLinks);
+        fp.addLinks(ret);
         // fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, false);
-        return decryptedLinks;
+        return ret;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

@@ -33,6 +33,7 @@ import org.jdownloader.plugins.components.config.ArteMediathekConfig.LanguageSel
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.PackagenameSchemeType;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.ThumbnailFilenameMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -128,7 +129,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             logger.info("User has deselected all qualities and set QualitySelectionFallbackMode to QualitySelectionFallbackMode.NONE --> Doing nothing");
             return ret;
         }
-        final String urlLanguage = gerUrlLanguage(param.getCryptedUrl());
+        final String urlLanguage = getUrlLanguage(param.getCryptedUrl());
         final String contentID = gerUrlContentID(param.getCryptedUrl());
         prepBRAPI(br);
         /* API will return all results in german or french depending on 'urlLanguage'! */
@@ -148,7 +149,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         return ret;
     }
 
-    private String gerUrlLanguage(final String url) {
+    private String getUrlLanguage(final String url) {
         if (url.matches(TYPE_NORMAL)) {
             return new Regex(url, TYPE_NORMAL).getMatch(0);
         } else {
@@ -239,12 +240,40 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             fp.setComment(shortDescription);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        /* Crawl thumbnail if wished by user */
         final QualitySelectionMode mode = cfg.getQualitySelectionMode();
         /* Crawl video streams */
         /* Collect list of user desired/allowed qualities */
         final List<Integer> selectedQualitiesHeight = getSelectedHTTPQualities();
-        final List<Language> selectedLanguages = getSelectedLanguages(param.getCryptedUrl());
+        final String langFromURLStr = getUrlLanguage(param.getCryptedUrl());
+        if (langFromURLStr == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Language langFromURL = iso6391CodeToLanguageEnum(langFromURLStr);
+        final List<Language> selectedLanguages = new ArrayList<Language>();
+        if (cfg.getLanguageSelectionMode() == LanguageSelectionMode.ALL_SELECTED) {
+            if (cfg.isCrawlLanguageEnglish()) {
+                selectedLanguages.add(Language.ENGLISH);
+            }
+            if (cfg.isCrawlLanguageFrench()) {
+                selectedLanguages.add(Language.FRENCH);
+            }
+            if (cfg.isCrawlLanguageGerman()) {
+                selectedLanguages.add(Language.GERMAN);
+            }
+            if (cfg.isCrawlLanguageItalian()) {
+                selectedLanguages.add(Language.ITALIAN);
+            }
+            if (cfg.isCrawlLanguagePolish()) {
+                selectedLanguages.add(Language.POLISH);
+            }
+            if (cfg.isCrawlLanguageUnknown()) {
+                selectedLanguages.add(Language.OTHER);
+            }
+        } else {
+            /* Language by URL */
+            selectedLanguages.add(langFromURL);
+        }
         final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
         /*
          * Now filter by language, user selected qualities and so on. User can e.g. select multiple languages and best video quality of each
@@ -267,6 +296,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                     /* 2022-05-25: Only grab HTTP streams for now, skip all others */
                     continue;
                 }
+                final String videoStreamId = videoStream.get("videoStreamId").toString();
                 final int height = ((Number) videoStream.get("height")).intValue();
                 final int durationSeconds = ((Number) videoStream.get("durationSeconds")).intValue();
                 final int bitrate = ((Number) videoStream.get("bitrate")).intValue();
@@ -303,7 +333,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setDownloadSize(bitrate / 8 * 1024 * durationSeconds);
                 link._setFilePackage(fp);
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    link.setComment(vid.get("id").toString());
+                    link.setComment(videoStreamId.toString());
                 }
                 allResults.add(link);
                 /* Try to find the best version regardless of user settings. */
@@ -316,19 +346,34 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                  * Skip subtitled versions if not wished by user. This needs to happen before BEST selection otherwise subtitled versions
                  * would still be incorperated in BEST selection which would be wrong.
                  */
+                if (videoStreamId.equals("6524470") || videoStreamId.equals("6524465")) {
+                    logger.info("WTF");
+                }
                 if (versionInfo.hasAnySubtitle()) {
-                    if (versionInfo.hasSubtitleFull() && !cfg.isCrawlSubtitledBurnedInVersionsFull()) {
+                    if (versionInfo.hasSubtitleAudioDescription() && !cfg.isCrawlSubtitledBurnedInVersionsAudioDescription()) {
                         continue;
-                    } else if (versionInfo.hasSubtitleForHearingImpaired() && !cfg.isCrawlSubtitledBurnedInVersionsPartial()) {
+                    } else if (versionInfo.hasSubtitleFull() && !cfg.isCrawlSubtitledBurnedInVersionsFull()) {
                         continue;
-                    }
-                    if (versionInfo.hasSubtitleForHearingImpaired() && !cfg.isCrawlSubtitledBurnedInVersionsHearingImpaired()) {
+                    } else if (versionInfo.hasSubtitlePartial() && !cfg.isCrawlSubtitledBurnedInVersionsPartial()) {
+                        continue;
+                    } else if (versionInfo.hasSubtitleForHearingImpaired() && !cfg.isCrawlSubtitledBurnedInVersionsHearingImpaired()) {
                         continue;
                     }
                 }
-                if (!selectedLanguages.contains(versionInfo.getAudioLanguage())) {
-                    /* Skip unwanted languages */
-                    continue;
+                if (cfg.getLanguageSelectionMode() == LanguageSelectionMode.ALL_SELECTED) {
+                    /* Allow only selected languages, skip the rest */
+                    if (!selectedLanguages.contains(versionInfo.getAudioLanguage())) {
+                        /* Skip unwanted languages */
+                        logger.info("Skipping videoStreamId: " + videoStreamId);
+                        continue;
+                    }
+                } else {
+                    /* Allow only language by URL and original version, skip the rest */
+                    if (versionInfo.getAudioLanguage() != langFromURL && !versionInfo.isOriginalVersion()) {
+                        /* Skip unwanted languages */
+                        logger.info("Skipping videoStreamId: " + videoStreamId);
+                        continue;
+                    }
                 }
                 /* Collect best quality (regardless of user preferred video resolution config) */
                 if (link.getView().getBytesTotal() > bestAllowedFilesize || bestAllowed == null) {
@@ -353,7 +398,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 if (bestAllowed != null) {
                     finalSelection.add(best);
                 } else {
-                    logger.info("Failed to find bestAllowed -> User must have bad plugin settings");
+                    logger.info("Failed to find bestAllowed -> User might have bad plugin settings");
                 }
             } else if (mode == QualitySelectionMode.BEST_OF_SELECTED) {
                 /*
@@ -363,7 +408,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 if (bestOfUserSelected != null) {
                     finalSelection.add(bestOfUserSelected);
                 } else {
-                    logger.info("Failed to find bestOfUserSelected -> User must have bad plugin settings");
+                    logger.info("Failed to find bestOfUserSelected -> User might have bad plugin settings");
                 }
             } else {
                 // ALL_SELECTED
@@ -386,6 +431,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             }
         }
         logger.info("Adding video results " + ret.size() + "/" + allResults.size());
+        /* Crawl thumbnail if wished by user */
         if (cfg.isCrawlThumbnail()) {
             final Map<String, Object> mainImage = (Map<String, Object>) vid.get("mainImage");
             final String imageCaption = (String) mainImage.get("caption");
@@ -394,7 +440,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             thumbnail.setContentUrl(param.getCryptedUrl());
             thumbnail.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
             final String extension = mainImage.get("extension").toString();
-            if (ret.size() == 1) {
+            final ThumbnailFilenameMode thumbnailFilenameMode = cfg.getThumbnailFilenameMode();
+            if (ret.size() == 1 && thumbnailFilenameMode == ThumbnailFilenameMode.AUTO) {
                 /* Only one video result --> Use same filename as that result for thumbnail. */
                 final String filenameOfTheOnlyAddedVideo = ret.get(0).getFinalFileName();
                 thumbnail.setFinalFileName(filenameOfTheOnlyAddedVideo.substring(0, filenameOfTheOnlyAddedVideo.lastIndexOf(".")) + "." + extension);
@@ -467,40 +514,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     }
 
     private final List<Integer> knownQualitiesHeight = Arrays.asList(new Integer[] { 1080, 720, 480, 360, 240 });
-
-    private List<Language> getSelectedLanguages(final String url) throws PluginException {
-        final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
-        final List<Language> selectedLanguages = new ArrayList<Language>();
-        if (cfg.getLanguageSelectionMode() == LanguageSelectionMode.ALL_SELECTED) {
-            if (cfg.isCrawlLanguageEnglish()) {
-                selectedLanguages.add(Language.ENGLISH);
-            }
-            if (cfg.isCrawlLanguageFrench()) {
-                selectedLanguages.add(Language.FRENCH);
-            }
-            if (cfg.isCrawlLanguageGerman()) {
-                selectedLanguages.add(Language.GERMAN);
-            }
-            if (cfg.isCrawlLanguageItalian()) {
-                selectedLanguages.add(Language.ITALIAN);
-            }
-            if (cfg.isCrawlLanguagePolish()) {
-                selectedLanguages.add(Language.POLISH);
-            }
-            if (cfg.isCrawlLanguageUnknown()) {
-                selectedLanguages.add(Language.OTHER);
-            }
-        } else {
-            /* Language by URL */
-            final String langFromURL = gerUrlLanguage(url);
-            if (langFromURL == null) {
-                /* Developer mistake */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            selectedLanguages.add(iso6391CodeToLanguageEnum(langFromURL));
-        }
-        return selectedLanguages;
-    }
 
     private List<Integer> getSelectedHTTPQualities() {
         final ArteMediathekConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
@@ -616,12 +629,20 @@ public class ArteMediathekV3 extends PluginForDecrypt {
 
     private static enum SubtitleType {
         NONE,
+        /**
+         * Audio description is not a real subtitle by defintion(?) but since the audio is part of the video and it is used as "subtitle
+         * replacement" it makes sense to put it here.
+         */
+        AUDIO_DESCRIPTION,
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
 
         private static SubtitleType parse(final String apiosCode) {
-            if (apiosCode.matches("[A-Z]+-ST(A|F)")) {
+            if (apiosCode.matches(".*?AUD.*?")) {
+                /* E.g. "VFAUD" or "VAAUD" */
+                return AUDIO_DESCRIPTION;
+            } else if (apiosCode.matches("[A-Z]+-ST(A|F)")) {
                 /* Forced subtitles e.g. parts of original film got foreign language -> Those parts are subtitled */
                 return PARTIAL;
             } else if (apiosCode.matches("[A-Z]+-STMA?.*?")) {
@@ -667,9 +688,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
 
         Language getAudioLanguage();
 
+        Language getAudioLanguageByVersionType();
+
         Language getSubtitleLanguage();
 
         SubtitleType getSubtitleType();
+
+        boolean hasSubtitleAudioDescription();
 
         boolean hasAnySubtitle();
 
@@ -678,6 +703,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         boolean hasSubtitlePartial();
 
         boolean hasSubtitleForHearingImpaired();
+
+        boolean isOriginalVersion();
     }
 
     public static VersionInfo parseVersionInfo(final String apiosCode) {
@@ -698,7 +725,27 @@ public class ArteMediathekV3 extends PluginForDecrypt {
 
             @Override
             public Language getAudioLanguage() {
-                return audioLanguage;
+                if (audioLanguage == Language.OTHER) {
+                    /* Try to determine language by VersionType */
+                    return getAudioLanguageByVersionType();
+                } else {
+                    return audioLanguage;
+                }
+            }
+
+            @Override
+            public Language getAudioLanguageByVersionType() {
+                if (versionType == VersionType.ORIGINAL_FRANCAIS) {
+                    return Language.FRENCH;
+                } else if (versionType == VersionType.NON_ORIGINAL_FRANCAIS) {
+                    return Language.FRENCH;
+                } else if (versionType == VersionType.ORIGINAL_GERMAN) {
+                    return Language.GERMAN;
+                } else if (versionType == VersionType.NON_ORIGINAL_GERMAN) {
+                    return Language.GERMAN;
+                } else {
+                    return Language.OTHER;
+                }
             }
 
             @Override
@@ -731,6 +778,15 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             }
 
             @Override
+            public boolean hasSubtitleAudioDescription() {
+                if (SubtitleType.AUDIO_DESCRIPTION.equals(getSubtitleType())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
             public boolean hasSubtitleFull() {
                 if (SubtitleType.FULL.equals(getSubtitleType())) {
                     return true;
@@ -751,6 +807,15 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             @Override
             public boolean hasSubtitleForHearingImpaired() {
                 if (SubtitleType.HEARING_IMPAIRED.equals(getSubtitleType())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public boolean isOriginalVersion() {
+                if (versionType == VersionType.ORIGINAL || versionType == VersionType.ORIGINAL_FRANCAIS || versionType == VersionType.ORIGINAL_GERMAN) {
                     return true;
                 } else {
                     return false;
