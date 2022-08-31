@@ -34,6 +34,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -48,6 +49,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.decrypter.DefinebabeComDecrypter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -56,6 +58,11 @@ public class DefineBabeCom extends PluginForHost {
         super(wrapper);
         /* Don't overload the server. */
         this.setStartIntervall(3 * 1000l);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     public static List<String[]> getPluginDomains() {
@@ -111,6 +118,16 @@ public class DefineBabeCom extends PluginForHost {
         }
     }
 
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        final String fid = getFID(link);
+        if (link != null && StringUtils.equals(getHost(), link.getHost()) && fid != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
@@ -140,7 +157,10 @@ public class DefineBabeCom extends PluginForHost {
             br.getPage("/player/config.php?id=" + videoID);
             try {
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                this.dllink = (String) entries.get("video_url");
+                this.dllink = (String) entries.get("video_alt_url");
+                if (StringUtils.isEmpty(this.dllink)) {
+                    this.dllink = (String) entries.get("video_url");
+                }
             } catch (final Throwable e) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?", e);
             }
@@ -276,6 +296,11 @@ public class DefineBabeCom extends PluginForHost {
                 return;
             }
         }
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override
