@@ -21,6 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -36,25 +44,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidb.it" }, urls = { "" })
 public class RapidbIt extends PluginForHost {
-    private final String                 API_BASE               = "https://rapidb.it/api";
-    private static MultiHosterManagement mhm                    = new MultiHosterManagement("rapidb.it");
-    private final boolean                resume                 = true;
-    private final int                    maxchunks              = 0;
-    private final String                 PROPERTY_ACCOUNT_TOKEN = "login_token";
+    private final String                 API_BASE                    = "https://rapidb.it/api";
+    private static MultiHosterManagement mhm                         = new MultiHosterManagement("rapidb.it");
+    private final boolean                resume                      = true;
+    private final int                    maxchunks                   = 0;
+    private final String                 PROPERTY_ACCOUNT_TOKEN      = "login_token";
+    private final String                 PROPERTY_SERVERSIDE_FILE_ID = "file_id";
 
     /**
      * 2022-07-19: While their API docs state all possible errormessages, their API does not return any errormessage - only error-codes.
-     * </br> This is where this static mapping comes into play.
+     * </br>
+     * This is where this static mapping comes into play.
      */
     private Map<Integer, String> getErrorCodeMap() {
         final Map<Integer, String> ret = new HashMap<Integer, String>();
@@ -121,11 +123,11 @@ public class RapidbIt extends PluginForHost {
     }
 
     private String getMultihosterFileID(final DownloadLink link) {
-        return link.getStringProperty(getPropertyKey("file_id"));
+        return link.getStringProperty(getPropertyKey(PROPERTY_SERVERSIDE_FILE_ID));
     }
 
     private void setMultihosterFileID(final DownloadLink link, final String file_id) {
-        link.setProperty(getPropertyKey("file_id"), file_id);
+        link.setProperty(getPropertyKey(PROPERTY_SERVERSIDE_FILE_ID), file_id);
     }
 
     @Override
@@ -168,6 +170,10 @@ public class RapidbIt extends PluginForHost {
             final Map<String, Object> dlresponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             handleErrorMap(account, link, dlresponse);
             final List<Map<String, Object>> files = (List<Map<String, Object>>) dlresponse.get("result");
+            if (files.isEmpty()) {
+                /* We're too fast or server too slow: Expected file is not yet on serverside queue list. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverside download in progress (serverside file_id " + file_id + " is not yet on queue list)", 5 * 1000l);
+            }
             final Map<String, Object> file = files.get(0);
             final String dllink = (String) file.get("download_url");
             if (StringUtils.isEmpty(dllink)) {
