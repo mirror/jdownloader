@@ -15,19 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -40,6 +32,8 @@ import jd.plugins.Account.AccountError;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -48,6 +42,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PixivNet.class })
@@ -91,11 +93,38 @@ public class PixivNetGallery extends PluginForDecrypt {
         setRequestIntervalLimitGlobal();
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 2;
+    }
+
     public static void setRequestIntervalLimitGlobal() {
-        Browser.setRequestIntervalLimitGlobal("pixiv.net", 500);
+        Browser.setRequestIntervalLimitGlobal("pixiv.net", 750);
     }
 
     private static final String TYPE_GALLERY = ".+/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=|artworks/)(\\d+)";
+    private static Object       REQUEST_LOCK = new Object();
+
+    private String getPage(final CryptedLink param, Browser br, String url) throws IOException, DecrypterRetryException {
+        try {
+            br.setAllowedResponseCodes(429);
+            synchronized (REQUEST_LOCK) {
+                while (!isAbort()) {
+                    final String ret = br.getPage(url);
+                    if (br.getHttpConnection().getResponseCode() != 429) {
+                        return ret;
+                    } else {
+                        sleep(30 * 1000l, param);
+                    }
+                }
+            }
+            throw new DecrypterRetryException(RetryReason.IP);
+        } catch (IOException e) {
+            throw e;
+        } catch (InterruptedException e) {
+            throw new DecrypterRetryException(RetryReason.IP, null, null, e);
+        }
+    }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -114,9 +143,9 @@ public class PixivNetGallery extends PluginForDecrypt {
                 if (itemID == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find galleryid");
                 }
-                br.getPage("https://www." + this.getHost() + "/ajax/illust/" + itemID);
+                getPage(param, br, "https://www." + this.getHost() + "/ajax/illust/" + itemID);
                 PixivNet.checkErrors(br);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final Map<String, Object> body = (Map<String, Object>) entries.get("body");
                 /* 2020-05-08: illustType 0 = image, 1 = ??, 2 = animation (?) */
                 final long illustType = JavaScriptEngineFactory.toLong(body.get("illustType"), 0);
@@ -146,8 +175,8 @@ public class PixivNetGallery extends PluginForDecrypt {
                 ret.add(generateDownloadLink(param.getCryptedUrl(), itemID, illustTitle, illustUploadDate, username, tags, singleLink));
                 if (pagecount > 1) {
                     /* == click on "Load more" */
-                    br.getPage("/ajax/illust/" + itemID + "/pages?lang=en");
-                    final Map<String, Object> illustMap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    getPage(param, br, "/ajax/illust/" + itemID + "/pages?lang=en");
+                    final Map<String, Object> illustMap = restoreFromString(br.toString(), TypeRef.MAP);
                     final List<Map<String, Object>> additionalpics = (List<Map<String, Object>>) illustMap.get("body");
                     int counter = 0;
                     for (final Map<String, Object> picMap : additionalpics) {
@@ -168,7 +197,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                     logger.info("Found animation");
                     try {
                         final String animationsMetadataURL = this.br.getURL("/ajax/illust/" + itemID + "/ugoira_meta?lang=en").toString();
-                        br.getPage(animationsMetadataURL);
+                        getPage(param, br, animationsMetadataURL);
                         final String filenameBase = itemID + "_" + illustTitle;
                         if (PluginJsonConfig.get(this.getConfigInterface()).isCrawlAnimationsMetadata()) {
                             final DownloadLink meta = this.createDownloadlink(animationsMetadataURL);
@@ -219,7 +248,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find userid");
                     }
                 }
-                br.getPage(param.getCryptedUrl());
+                getPage(param, br, param.getCryptedUrl());
                 PixivNet.checkErrors(br);
                 if (isOffline(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -278,15 +307,15 @@ public class PixivNetGallery extends PluginForDecrypt {
                     }
                     if (page == 0 && !isBookmarks) {
                         query.append("lang", "en", false);
-                        brc.getPage(url + "?" + query.toString());
+                        getPage(param, brc, url + "?" + query.toString());
                     } else {
                         query.append("tag", "", false);
                         query.append("offset", offset + "", false);
                         query.append("limit", maxitemsperpage + "", false);
                         query.append("rest", "show", false);
-                        brc.getPage(url + "?" + query.toString());
+                        getPage(param, brc, url + "?" + query.toString());
                     }
-                    final Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> map = restoreFromString(brc.toString(), TypeRef.MAP);
                     if (map == null) {
                         break;
                     }
