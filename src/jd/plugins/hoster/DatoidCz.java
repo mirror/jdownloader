@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -39,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz", "pornoid.cz" }, urls = { "https?://(?:www\\.)?datoid\\.(?:cz|sk)/([A-Za-z0-9]+)(/([^/]+))?", "https?://(?:www\\.)?pornoid\\.(?:cz|sk)/([A-Za-z0-9]+)(/([^/]+))?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class DatoidCz extends antiDDoSForHost {
     public DatoidCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,6 +58,35 @@ public class DatoidCz extends antiDDoSForHost {
     @Override
     public String getAGBLink() {
         return "http://datoid.cz/kontakty";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "datoid.cz", "datoid.sk" });
+        ret.add(new String[] { "pornoid.cz", "pornoid.sk" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]{2,})(/([^/]+))?");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public void correctDownloadLink(DownloadLink link) {
