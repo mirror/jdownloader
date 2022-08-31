@@ -10,8 +10,7 @@ import jd.plugins.FilePackageView.PluginState;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.views.components.MergedIcon;
 
-public class PluginStateCollection extends ArrayList<PluginState> {
-
+public class PluginStateCollection extends ArrayList<PluginState<?>> {
     private boolean    multiline;
     private MergedIcon mergedIcon;
 
@@ -29,30 +28,28 @@ public class PluginStateCollection extends ArrayList<PluginState> {
 
     private String text;
 
-    public PluginStateCollection(Collection<PluginState> values) {
+    public PluginStateCollection(Collection<PluginState<?>> values) {
         super(values);
-
         ArrayList<Icon> icons = new ArrayList<Icon>();
         StringBuilder tt = new StringBuilder();
         multiline = false;
-        for (PluginState state : this) {
-            if (state.getIcon() != null) {
-                icons.add(state.getIcon());
+        for (final PluginState<?> state : this) {
+            final Icon icon = state.getIcon();
+            if (icon != null) {
+                icons.add(icon);
             }
-            if (StringUtils.isNotEmpty(state.getDescription())) {
+            final String description = state.getDescription();
+            if (StringUtils.isNotEmpty(description)) {
                 if (tt.length() > 0) {
                     tt.append("\r\n");
                     multiline = true;
                 }
-                tt.append(state.getDescription());
+                tt.append(description);
             }
-
         }
         text = tt.toString();
         if (icons.size() > 0) {
             mergedIcon = new MergedIcon(icons.toArray(new Icon[] {}));
         }
-
     }
-
 }
