@@ -678,7 +678,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     }
                     return;
                 }
-                final String verifyIP = RouterUtils.resolveHostname(verify)[0].getHostAddress();
+                final String verifyIP = RouterUtils.resolveHostname(verify).getHostAddress();
                 // TODO: Check/Add IPv6 Support. We speak IPv4-Only with Router
                 if (whiteList.contains(verifyIP)) {
                     if (verifiedIPs != null) {

@@ -699,7 +699,7 @@ public class LiveHeaderDetectionWizard {
             routerName = impl.getRouterName();
             firmware = impl.getFirmware();
             try {
-                gatewayAdress = RouterUtils.resolveHostname(impl.getHostName())[0];
+                gatewayAdress = RouterUtils.resolveHostname(impl.getHostName());
                 gatewayAdressIP = gatewayAdress.getHostAddress();
                 gatewayAdressHost = gatewayAdress.getHostName();
                 break;
@@ -729,7 +729,7 @@ public class LiveHeaderDetectionWizard {
         }
         mac = null;
         manufactor = null;
-        gatewayAdress = RouterUtils.resolveHostname(gatewayIP)[0];
+        gatewayAdress = RouterUtils.resolveHostname(gatewayIP);
         gatewayAdressHost = gatewayAdress.getHostName();
         gatewayAdressIP = gatewayAdress.getHostAddress();
         try {
@@ -830,7 +830,7 @@ public class LiveHeaderDetectionWizard {
                             routerName = impl.getRouterName();
                             firmware = impl.getFirmware();
                             try {
-                                gatewayAdress = RouterUtils.resolveHostname(impl.getHostName())[0];
+                                gatewayAdress = RouterUtils.resolveHostname(impl.getHostName());
                                 gatewayAdressIP = gatewayAdress.getHostAddress();
                                 gatewayAdressHost = gatewayAdress.getHostName();
                                 break;
