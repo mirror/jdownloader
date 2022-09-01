@@ -249,8 +249,8 @@ public class GfyCatCom extends PluginForHost {
             request.getHeaders().put("Origin", "https://redgifs.com/");
             if (token != null) {
                 request.getHeaders().put("Referer", "https://redgifs.com/");
+                request.getHeaders().put("Authorization", "Bearer " + token);
             }
-            request.getHeaders().put("Authorization", "Bearer " + token);
             brapi.getPage(request);
             if (brapi.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

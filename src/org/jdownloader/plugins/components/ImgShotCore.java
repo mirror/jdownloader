@@ -109,7 +109,7 @@ public class ImgShotCore extends antiDDoSForHost {
      * A lot of hosts have it enabled although they do not display a download button on their website! </br>
      * default = true </br>
      * Example official download supported but broken serverside: imagedecode.com, imageteam.org </br>
-     * Example official download working fine: imgwallet.com, imgadult.com, imgtornado.com, acidimg.com
+     * Example official download working fine: imgwallet.com, imgadult.com
      */
     protected boolean enforceOfficialDownloadURL() {
         return true;

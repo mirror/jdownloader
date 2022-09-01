@@ -58,16 +58,7 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
             }
             final String postText = br.getRegex("<textarea([^>]*class='PostEditTA'.*?)</textarea>").getMatch(0);
             if (postText != null) {
-                logger.info("Found postText");
-                final String[] urls = HTMLParser.getHttpLinks(postText, br.getURL());
-                if (urls.length == 0) {
-                    logger.info("Failed to find any external URLs in postText");
-                } else {
-                    logger.info("Found URLs in postText: " + urls.length);
-                    for (final String url : urls) {
-                        ret.add(this.createDownloadlink(url));
-                    }
-                }
+                ret.addAll(crawlURLsGeneric(postText));
             }
             /* This kind of URL also has a selfhosted video which will be handled by our host plugin */
             final DownloadLink main = this.createDownloadlink(param.getCryptedUrl());
@@ -78,8 +69,33 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
             }
             main.setAvailable(true);
             ret.add(main);
+        } else if (br.getURL().matches("https?://[^/]+/blog/[a-fA-F0-9]{13}/\\d+\\.html")) {
+            /* Crawl all [video-] posts within a blog | first page only */
+            final String[] posts = br.getRegex("(<div class='post_el_small'>.*?</div></div>)").getColumn(0);
+            for (final String postHTML : posts) {
+                if (!postHTML.contains("post_vid_thumb")) {
+                    /* 2019-09-24: Try to skip non-video (e.g. text-only) content */
+                    continue;
+                }
+                final String postURL = new Regex(postHTML, "href='(/post/[a-fA-F0-9]{13}(?:\\.html)?)").getMatch(0);
+                String postText = new Regex(postHTML, "data-title='([^\\']+)' ").getMatch(0);
+                if (postURL != null && postText != null) {
+                    final DownloadLink link = createDownloadlink(br.getURL(postURL).toString());
+                    postText = Encoding.htmlDecode(postText).trim();
+                    link.setName(postText + ".mp4");
+                    link.setAvailable(true);
+                    ret.add(link);
+                    ret.addAll(crawlURLsGeneric(postText));
+                }
+            }
+            final String packageName = new Regex(param.getCryptedUrl(), "/([^/]*?)\\.html").getMatch(0);
+            if (packageName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(packageName);
+                fp.addLinks(ret);
+            }
         } else {
-            /* Crawl all posts within a page */
+            /* Crawl all [video-] posts within a generic page or category e.g. https://sxyprn.com/hardcore.html?sm=trending | all pages */
             final String[] posts = br.getRegex("(<div class='post_el_small'>.*?</span>\\s*</div>\\s*</a>\\s*</div>)").getColumn(0);
             for (final String postHTML : posts) {
                 if (!postHTML.contains("post_vid_thumb")) {
@@ -89,13 +105,16 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
                 final String[][] hits = new Regex(postHTML, "href=(?:\"|')(/post/[a-fA-F0-9]{13}(?:\\.html)?)[^<>]*?title='(.*?)'").getMatches();
                 for (final String[] hit : hits) {
                     final DownloadLink link = createDownloadlink(br.getURL(hit[0]).toString());
-                    link.setName(Encoding.htmlDecode(hit[1]).trim() + ".mp4");
+                    final String postText = Encoding.htmlDecode(hit[1]).trim();
+                    link.setName(postText + ".mp4");
                     link.setAvailable(true);
                     ret.add(link);
+                    ret.addAll(crawlURLsGeneric(postText));
                 }
             }
             final boolean isSpecificPageGivenInURL = UrlQuery.parse(param.getCryptedUrl()).get("page") != null;
-            if (!isSpecificPageGivenInURL) {
+            /* Only look for more pages if we're currently on page 1 and also found some results on that page. */
+            if (!isSpecificPageGivenInURL && !ret.isEmpty()) {
                 /* Does the post have multiple pages? Add them so they will go into this crawler again. */
                 final String pages[] = br.getRegex("<a href=(?:\"|')(/[^/]*?\\.html\\?page=\\d+)").getColumn(0);
                 for (final String page : pages) {
@@ -112,6 +131,15 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
                 fp.setName(packageName);
                 fp.addLinks(ret);
             }
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlURLsGeneric(final String text) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String[] urls = HTMLParser.getHttpLinks(text, br.getURL());
+        for (final String url : urls) {
+            ret.add(this.createDownloadlink(url));
         }
         return ret;
     }
