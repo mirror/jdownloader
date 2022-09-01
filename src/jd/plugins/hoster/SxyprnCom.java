@@ -63,16 +63,18 @@ public class SxyprnCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, Account account) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fid);
+        }
         json = null;
         dllink = null;
         br.setFollowRedirects(true);
-        if (account == null) {
-            account = AccountController.getInstance().getValidAccount(this.getHost());
-        }
         if (account != null) {
             this.login(this.br, account, false);
         }
@@ -85,7 +87,6 @@ public class SxyprnCom extends antiDDoSForHost {
         if (link.getFinalFileName() == null && title != null) {
             link.setFinalFileName(Encoding.htmlDecode(title).trim() + ".mp4");
         }
-        final String fid = this.getFID(link);
         // authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
         json = br.getRegex("data-vnfo=\\'([^\\']+)\\'").getMatch(0);
         String vnfo = PluginJSonUtils.getJsonValue(json, fid);
@@ -109,10 +110,7 @@ public class SxyprnCom extends antiDDoSForHost {
     }
 
     public static final boolean isOffline(final Browser br) {
-        final String title = regexTitle(br);
-        if (title == null) {
-            return true;
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
         } else if (br.containsHTML("(?i)class='page_message'[^>]*>\\s*Post Not Found")) {
             return true;
@@ -207,37 +205,35 @@ public class SxyprnCom extends antiDDoSForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                boolean isLoggedin = false;
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
-                    if (!validateCookies && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
-                        logger.info("Trust cookies without check");
+                    if (!validateCookies) {
+                        /* Don't validate cookies */
                         return;
                     }
                     getPage(brlogin, "https://" + this.getHost() + "/");
                     if (this.isLoggedin(brlogin)) {
                         logger.info("Cookie login successful");
-                        isLoggedin = true;
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
                     } else {
                         logger.info("Cookie login failed");
-                        isLoggedin = false;
+                        br.clearCookies(br.getHost());
                     }
                 }
-                if (!isLoggedin) {
-                    logger.info("Performing full login");
-                    getPage(brlogin, "https://" + this.getHost() + "/");
-                    final Form loginform = new Form();
-                    loginform.setMethod(MethodType.POST);
-                    loginform.setAction("/php/login.php");
-                    loginform.put("email", Encoding.urlEncode(account.getUser()));
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    this.submitForm(brlogin, loginform);
-                    getPage(brlogin, "https://" + this.getHost() + "/");
-                    if (!isLoggedin(brlogin)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                logger.info("Performing full login");
+                getPage(brlogin, "https://" + this.getHost() + "/");
+                final Form loginform = new Form();
+                loginform.setMethod(MethodType.POST);
+                loginform.setAction("/php/login.php");
+                loginform.put("email", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                this.submitForm(brlogin, loginform);
+                getPage(brlogin, "https://" + this.getHost() + "/");
+                if (!isLoggedin(brlogin)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {

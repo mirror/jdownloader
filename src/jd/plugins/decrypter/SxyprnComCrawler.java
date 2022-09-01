@@ -12,6 +12,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -40,7 +41,6 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        final boolean isSpecificPageGivenInURL = UrlQuery.parse(param.getCryptedUrl()).get("page") != null;
         if (account != null) {
             ((jd.plugins.hoster.SxyprnCom) plg).login(this.br, account, false);
         }
@@ -48,7 +48,8 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
         if (SxyprnCom.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(param.getCryptedUrl(), plg.getSupportedLinks()).matches()) {
+        if (plg.canHandle(param.getCryptedUrl())) {
+            /* Single post */
             final String packageName = SxyprnCom.regexTitle(br);
             if (packageName != null) {
                 final FilePackage fp = FilePackage.getInstance();
@@ -78,6 +79,7 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
             main.setAvailable(true);
             ret.add(main);
         } else {
+            /* Crawl all posts within a page */
             final String[] posts = br.getRegex("(<div class='post_el_small'>.*?</span>\\s*</div>\\s*</a>\\s*</div>)").getColumn(0);
             for (final String postHTML : posts) {
                 if (!postHTML.contains("post_vid_thumb")) {
@@ -87,11 +89,12 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
                 final String[][] hits = new Regex(postHTML, "href=(?:\"|')(/post/[a-fA-F0-9]{13}(?:\\.html)?)[^<>]*?title='(.*?)'").getMatches();
                 for (final String[] hit : hits) {
                     final DownloadLink link = createDownloadlink(br.getURL(hit[0]).toString());
-                    link.setName(hit[1].trim() + ".mp4");
+                    link.setName(Encoding.htmlDecode(hit[1]).trim() + ".mp4");
                     link.setAvailable(true);
                     ret.add(link);
                 }
             }
+            final boolean isSpecificPageGivenInURL = UrlQuery.parse(param.getCryptedUrl()).get("page") != null;
             if (!isSpecificPageGivenInURL) {
                 /* Does the post have multiple pages? Add them so they will go into this crawler again. */
                 final String pages[] = br.getRegex("<a href=(?:\"|')(/[^/]*?\\.html\\?page=\\d+)").getColumn(0);
@@ -104,9 +107,11 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
                 }
             }
             final String packageName = new Regex(param.getCryptedUrl(), "/([^/]*?)\\.html").getMatch(0);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(packageName);
-            fp.addLinks(ret);
+            if (packageName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(packageName);
+                fp.addLinks(ret);
+            }
         }
         return ret;
     }
