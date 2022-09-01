@@ -100,7 +100,7 @@ public class FileImCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        if (br.containsHTML("\">Another Download Is Progressing")) {
+        if (br.containsHTML("\">\\s*Another Download Is Progressing")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
         }
         final Form form = br.getFormbyKey("download_name");
@@ -124,7 +124,7 @@ public class FileImCom extends PluginForHost {
             if (waitSeconds > waitSecondsDefault) {
                 logger.info("Pre-download waittime is higher than default value --> A reconnect could bring it back down to " + waitSecondsDefault + " seconds");
             }
-            /* Longer than X seconds? Let's reconnect! */
+            /* Longer than X seconds? Let's reconnect to lower this time to default. */
             if (waitSeconds >= 300) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
@@ -137,17 +137,21 @@ public class FileImCom extends PluginForHost {
         br2.getPage("/ajax/download/setperdown.ashx?mip=" + Encoding.urlEncode(download_mip) + "&args=" + Encoding.urlEncode(download_args));
         final String dlpath = br2.getHttpConnection().getRequest().getHtmlCode();
         final String filenameSlug = link.getName().replaceAll("[^a-zA-Z0-9]", "_");
-        /* 2022-08-25: This direct-URL is not re-usable! */
-        final String dllink = "http://" + domain + "/download/" + dlpath + "/" + download_args + "/" + filenameSlug;
         // br2.getPage("http://" + domain + "/hi.ashx?jsoncallback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() +
         // "&fileuseronlycode=" + download_fuseronlycode + "&fileonlycode=" + this.getFID(link) + "&filesize=" + link.getDownloadSize() +
         // "&_=" + System.currentTimeMillis());
         // final String isfile = PluginJSonUtils.getJsonValue(br2, "isfile");
+        // if (!StringUtils.equalsIgnoreCase(isfile, "true")) {
+        // /* Broken file? */
+        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+        // }
         /* 2022-08-25: Without this small delay we won't be able to download. */
         this.sleep(2000, link);
+        /* 2022-08-25: This direct-URL is not re-usable! */
+        final String dllink = "http://" + domain + "/download/" + dlpath + "/" + download_args + "/" + filenameSlug;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getLongContentLength() == 0) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Empty file", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Empty file", 5 * 60 * 1000l);
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -155,10 +159,14 @@ public class FileImCom extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            if (br.containsHTML("(?i)<div>\\s*Another download is started")) {
+            final String errorcodeStr = br.getRegex("\\[(\\d+)\\]：").getMatch(0);
+            if (errorcodeStr != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error " + errorcodeStr);
+            } else if (br.containsHTML("(?i)<div>\\s*Another download is started")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster believes your IP address is already downloading", 10 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
