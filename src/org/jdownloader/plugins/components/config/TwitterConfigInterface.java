@@ -12,13 +12,16 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "twitter.com", type = Type.HOSTER)
 public interface TwitterConfigInterface extends PluginConfigInterface {
-    public static final TRANSLATION TRANSLATION                      = new TRANSLATION();
-    final String                    text_UseOriginalFilenames        = "Use original filename instead of plugin filenames?";
-    final String                    text_MarkTweetRepliesViaFilename = "Append '_reply' to filenames of tweets that are replies to other tweets?";
-    final String                    text_AddTweetTextAsTextfile      = "Add tweet text as textfile?";
-    final String                    text_CrawlURLsInsideTweetText    = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
-    final String                    text_CrawlRetweetsV2             = "[Unfinished, only crawls first page] Crawl retweets?";
-    final String                    text_PreferHLSVideoDownload      = "Videos: Prefer HLS over http download?";
+    public static final TRANSLATION TRANSLATION                                              = new TRANSLATION();
+    final String                    text_UseOriginalFilenames                                = "Use original filename instead of plugin filenames?";
+    final String                    text_MarkTweetRepliesViaFilename                         = "Append '_reply' to filenames of tweets that are replies to other tweets?";
+    final String                    text_AddTweetTextAsTextfile                              = "Add tweet text as textfile?";
+    final String                    text_CrawlURLsInsideTweetText                            = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
+    final String                    text_CrawlRetweetsV2                                     = "[Unfinished, only crawls first page] Crawl retweets?";
+    final String                    text_PreferHLSVideoDownload                              = "Videos: Prefer HLS over http download?";
+    final String                    text_GlobalRequestIntervalLimitApiTwitterComMilliseconds = "Define global request limit for api.twitter.com in milliseconds (0 = no limit)";
+    final String                    text_GlobalRequestIntervalLimitTwimgComMilliseconds      = "Define global request limit for twimg.com in milliseconds (0 = no limit)";
+    final String                    text_ProfileCrawlerWaittimeBetweenPaginationMilliseconds = "Profile crawler: Wait time between pagination requests in milliseconds";
 
     public static class TRANSLATION {
         /* 2022-03-18: Not needed anymore for now. */
@@ -42,7 +45,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
             return text_CrawlURLsInsideTweetText;
         }
 
-        public String getCrawlRetweets_label() {
+        public String getCrawlRetweetsV2_label() {
             return text_CrawlRetweetsV2;
         }
 
@@ -51,15 +54,15 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         }
 
         public String getGlobalRequestIntervalLimitApiTwitterComMilliseconds_label() {
-            return "Define global request limit for api.twitter.com in milliseconds (0 = no limit)";
+            return text_GlobalRequestIntervalLimitApiTwitterComMilliseconds;
         }
 
         public String getGlobalRequestIntervalLimitTwimgComMilliseconds_label() {
-            return "Define global request limit for twimg.com in milliseconds (0 = no limit)";
+            return text_GlobalRequestIntervalLimitTwimgComMilliseconds;
         }
 
         public String getProfileCrawlerWaittimeBetweenPaginationMilliseconds_label() {
-            return "Profile crawler: Wait time between pagination requests in milliseconds";
+            return text_ProfileCrawlerWaittimeBetweenPaginationMilliseconds;
         }
     }
     /* 2022-03-18: Not needed anymore for now. */
@@ -123,7 +126,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @SpinnerValidator(min = 0, max = 60000, step = 100)
     @DefaultIntValue(500)
-    @DescriptionForConfigEntry("Define global request limit for api.twitter.com in milliseconds (0 = no limit)")
+    @DescriptionForConfigEntry(text_GlobalRequestIntervalLimitApiTwitterComMilliseconds)
     @Order(60)
     int getGlobalRequestIntervalLimitApiTwitterComMilliseconds();
 
@@ -132,7 +135,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @SpinnerValidator(min = 0, max = 60000, step = 100)
     @DefaultIntValue(500)
-    @DescriptionForConfigEntry("Define global request limit for twimg.com in milliseconds (0 = no limit)")
+    @DescriptionForConfigEntry(text_GlobalRequestIntervalLimitTwimgComMilliseconds)
     @Order(70)
     int getGlobalRequestIntervalLimitTwimgComMilliseconds();
 
@@ -141,7 +144,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @SpinnerValidator(min = 0, max = 30000, step = 100)
     @DefaultIntValue(3000)
-    @DescriptionForConfigEntry("Profile crawler: Wait time between pagination requests in milliseconds")
+    @DescriptionForConfigEntry(text_ProfileCrawlerWaittimeBetweenPaginationMilliseconds)
     @Order(80)
     int getProfileCrawlerWaittimeBetweenPaginationMilliseconds();
 
