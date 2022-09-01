@@ -17,7 +17,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     final String                    text_MarkTweetRepliesViaFilename = "Append '_reply' to filenames of tweets that are replies to other tweets?";
     final String                    text_AddTweetTextAsTextfile      = "Add tweet text as textfile?";
     final String                    text_CrawlURLsInsideTweetText    = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
-    final String                    text_CrawlRetweets               = "[BETA] Crawl retweets?";
+    final String                    text_CrawlRetweetsV2             = "[Unfinished, only crawls first page] Crawl retweets?";
     final String                    text_PreferHLSVideoDownload      = "Videos: Prefer HLS over http download?";
 
     public static class TRANSLATION {
@@ -43,7 +43,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         }
 
         public String getCrawlRetweets_label() {
-            return text_CrawlRetweets;
+            return text_CrawlRetweetsV2;
         }
 
         public String getPreferHLSVideoDownload_label() {
@@ -96,13 +96,13 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     void setAddTweetTextAsTextfile(boolean b);
 
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry(text_CrawlRetweets)
+    @DescriptionForConfigEntry(text_CrawlRetweetsV2)
     @Order(35)
-    boolean isCrawlRetweets();
+    boolean isCrawlRetweetsV2();
 
-    void setCrawlRetweets(boolean b);
+    void setCrawlRetweetsV2(boolean b);
 
     @DefaultBooleanValue(false)
     @AboutConfig
