@@ -8,6 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.controlling.captcha.SkipRequest;
+import jd.parser.Regex;
+import jd.plugins.Plugin;
+
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -18,6 +22,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.HTTPHeader;
@@ -40,11 +45,6 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
-
-import jd.controlling.TaskQueue;
-import jd.controlling.captcha.SkipRequest;
-import jd.parser.Regex;
-import jd.plugins.Plugin;
 
 public abstract class BrowserReference implements ExtendedHttpRequestHandler, HttpRequestHandler, ConnectionHook {
     private final AbstractBrowserChallenge challenge;
@@ -99,10 +99,16 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     protected final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
     protected final SingleReachableState             canClose    = new SingleReachableState("canClose");
+    protected final static Queue                     QUEUE       = new Queue("BrowserReference") {
+        @Override
+        public void killQueue() {
+            LogController.CL().log(new Throwable("YOU CANNOT KILL ME!"));
+        }
+    };
 
     public void open() throws IOException {
         if (!canClose.isReached()) {
-            TaskQueue.getQueue().addWait(new QueueAction<Void, IOException>() {
+            QUEUE.addWait(new QueueAction<Void, IOException>() {
                 @Override
                 protected Void run() throws IOException {
                     synchronized (handlerInfo) {
@@ -209,7 +215,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     protected void unregisterRequestHandler() {
-        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
                 final HttpHandlerInfo lHandlerInfo;

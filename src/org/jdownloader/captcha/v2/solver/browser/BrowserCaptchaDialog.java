@@ -736,7 +736,15 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == this.okButton) {
-            openBrowser();
+            new Thread("BrowserCaptchaDialog:actionPerformed:" + challenge) {
+                {
+                    setDaemon(true);
+                }
+
+                public void run() {
+                    openBrowser();
+                };
+            }.start();
         } else {
             super.actionPerformed(e);
         }
