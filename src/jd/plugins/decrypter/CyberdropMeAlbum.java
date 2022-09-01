@@ -140,9 +140,17 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             if (json != null) {
                 final HashMap<String, Object> map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                 List<Map<String, Object>> files = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(map, "props/pageProps/files");
-                final Map<String, Object> pagePropsFile = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "props/pageProps/file");
-                if (pagePropsFile != null) {
+                if (files == null) {
+                    files = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(map, "props/pageProps/album/files");
+                }
+                if (files == null) {
                     files = new ArrayList<Map<String, Object>>();
+                }
+                Map<String, Object> pagePropsFile = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "props/pageProps/file");
+                if (pagePropsFile == null) {
+                    pagePropsFile = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "props/pageProps/album/file");
+                }
+                if (pagePropsFile != null) {
                     files.add(pagePropsFile);
                 }
                 if (files != null) {
