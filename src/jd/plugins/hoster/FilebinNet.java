@@ -79,7 +79,7 @@ public class FilebinNet extends PluginForHost {
         } else if (br.containsHTML("(?i)>\\s*This bin is empty")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filesize = br.getRegex("Total size</dt>\\s*<dd class=\"col-sm-9\">[^\\(]+\\((\\d+) bytes\\)").getMatch(0);
+        final String filesize = br.getRegex("(?i)Total size</dt>\\s*<dd class=\"col-sm-9\">[^\\(]+\\((\\d+) bytes\\)").getMatch(0);
         if (filesize != null) {
             /* Do not set verifiedFilesize as it may vary! */
             link.setDownloadSize(SizeFormatter.getSize(filesize));
