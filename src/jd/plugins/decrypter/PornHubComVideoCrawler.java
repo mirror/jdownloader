@@ -335,7 +335,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 logger.info("found NEW content: page=" + page + "|max_page=" + maxPage + "|all_found=" + foundItems + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.size() : -1) + "|page_added=" + numberofActuallyAddedItems + "|page_dupes=" + numberOfDupeItems);
             }
             logger.info(String.format("Found %d new items", numberofActuallyAddedItems));
-            final String next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
+            final String next = br.getRegex("page_next[^\"]*\"[^>]*>\\s*<a href=\"([^\"]*?page=\\d+)\"").getMatch(0);
             final String nextAjax = br.getRegex("onclick=\"[^\"]*loadMoreDataStream\\(([^\\)]+)\\)").getMatch(0);
             if (nextAjax != null) {
                 final String[] ajaxVars = nextAjax.replace("'", "").split(", ");
@@ -452,7 +452,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 // PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
                 // br.postPage(parameter + "/ajax?o=mr&page=" + page, "");
                 /* e.g. different handling for '/model/' URLs */
-                final String nextpage_url_old = br.getRegex("class=\"page_next\"><a href=\"(/[^\"]+\\?page=\\d+)\"").getMatch(0);
+                final String nextpage_url_old = br.getRegex("class=\"page_next\"[^>]*>\\s*<a href=\"(/[^\"]+\\?page=\\d+)\"").getMatch(0);
                 final Regex nextpageAjaxRegEx = br.getRegex("onclick=\"loadMoreData\\(\\'(/users/[^<>\"\\']+)',\\s*'(\\d+)',\\s*'\\d+'\\)");
                 final String nextpage_url;
                 if (nextpage_url_old != null) {
