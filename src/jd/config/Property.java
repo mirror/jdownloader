@@ -72,7 +72,7 @@ public class Property implements Serializable {
     public static final Object  NULL              = new Object();
     /* do not remove to keep stable compatibility */
     private Map<String, Object> properties        = null;
-    private static final Object NEWIMPLEMENTATION = new Object();
+    private final Object        NEWIMPLEMENTATION = new Object();
     private Object[]            propertiesList    = null;
 
     private void ensureCapacity(final int capacity) {
@@ -92,6 +92,9 @@ public class Property implements Serializable {
 
     private boolean putObject(String key, Object value) {
         synchronized (NEWIMPLEMENTATION) {
+            if (propertiesList == null && (value == null || value == NULL)) {
+                return false;
+            }
             ensureCapacity(1);
             final Object[] propertiesList = this.propertiesList;
             if (key != null) {
@@ -312,8 +315,9 @@ public class Property implements Serializable {
         if (NEWIMPLEMENTATION != null) {
             synchronized (NEWIMPLEMENTATION) {
                 final Object[] propertiesList = this.propertiesList;
-                final Map<String, Object> ret = newMapInstance(getPropertiesSize());
-                if (propertiesList != null) {
+                final int size = getPropertiesSize();
+                final Map<String, Object> ret = newMapInstance(size);
+                if (propertiesList != null && size > 0) {
                     final int length = propertiesList.length;
                     for (int index = 0; index < length; index += 2) {
                         if (propertiesList[index] != null) {
@@ -478,15 +482,24 @@ public class Property implements Serializable {
         final Map<String, Object> newProperties = optimizeMapInstance(properties);
         if (newProperties != null && newProperties.size() > 0) {
             if (NEWIMPLEMENTATION != null) {
-                ensureCapacity(newProperties.size());
-                for (final Entry<String, Object> entry : newProperties.entrySet()) {
-                    putObject(entry.getKey(), entry.getValue());
+                synchronized (NEWIMPLEMENTATION) {
+                    propertiesList = null;
+                    ensureCapacity(newProperties.size());
+                    for (final Entry<String, Object> entry : newProperties.entrySet()) {
+                        putObject(entry.getKey(), entry.getValue());
+                    }
                 }
             } else {
                 this.properties = newProperties;
             }
         } else {
-            this.properties = null;
+            if (NEWIMPLEMENTATION != null) {
+                synchronized (NEWIMPLEMENTATION) {
+                    propertiesList = null;
+                }
+            } else {
+                this.properties = null;
+            }
         }
     }
 
