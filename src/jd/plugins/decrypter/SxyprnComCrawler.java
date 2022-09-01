@@ -38,12 +38,12 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             ((jd.plugins.hoster.SxyprnCom) plg).login(this.br, account, false);
         }
+        br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (SxyprnCom.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

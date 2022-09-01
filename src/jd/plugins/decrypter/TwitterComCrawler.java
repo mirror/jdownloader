@@ -687,7 +687,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlUser(final CryptedLink param, final Account account) throws Exception {
-        if (PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweets()) {
+        if (PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
             return this.crawlUserViaWebAPI(param, account);
         } else {
             return crawlUserViaAPI(param, account);
