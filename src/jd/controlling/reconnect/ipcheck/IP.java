@@ -134,7 +134,7 @@ public class IP {
 
     public static InetAddress resolveSiteLocalAddress(final String ip) throws UnknownHostException {
         if (!StringUtils.isEmpty(ip)) {
-            final InetAddress[] inetAddresses = RouterUtils.resolveHostname(ip);
+            final InetAddress[] inetAddresses = RouterUtils.resolveHostnames(ip);
             for (final InetAddress inetAddress : inetAddresses) {
                 if (inetAddress.isSiteLocalAddress()) {
                     return inetAddress;

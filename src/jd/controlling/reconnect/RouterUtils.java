@@ -77,7 +77,7 @@ public class RouterUtils {
 
     private static String callArpToolDefault(final String ipAddress) throws IOException, InterruptedException {
         String out = null;
-        final InetAddress hostAddress = RouterUtils.resolveHostname(ipAddress)[0];
+        final InetAddress hostAddress = RouterUtils.resolveHostname(ipAddress);
         // TODO: Check/Add IPv6 Support. We speak IPv4-Only with Router
         ProcessBuilder pb = null;
         try {
@@ -146,6 +146,7 @@ public class RouterUtils {
         try {
             logger.info("Check " + host + ":" + port);
             final Browser br = new Browser();
+            br.setIPVersion(IPVERSION.IPV4_IPV6);
             br.setLogger(logger);
             br.setDebug(true);
             br.setVerbose(true);
@@ -196,7 +197,7 @@ public class RouterUtils {
                 final String domain = Browser.getHost(redirect);
                 logger.info("Redirect To: " + redirect + "|Domain:" + domain);
                 // some isps or DNS server redirect in case of no server found
-                if (redirect != null && !RouterUtils.resolveHostname(domain)[0].equals(RouterUtils.resolveHostname(host))) {
+                if (redirect != null && !RouterUtils.resolveHostname(domain).equals(RouterUtils.resolveHostname(host))) {
                     // if we have redirects, the new domain should be the local one,
                     // too
                     return false;
@@ -319,14 +320,18 @@ public class RouterUtils {
             final String m = new Regex(string, pat).getMatch(0);
             if (m != null && !"0.0.0.0".equals(m)) {
                 if (IP.isValidRouterIP(m)) {
-                    return resolveHostname(m)[0];
+                    return resolveHostname(m);
                 }
             }
         }
         return null;
     }
 
-    public static InetAddress[] resolveHostname(final String hostName) throws UnknownHostException {
+    public static InetAddress resolveHostname(final String hostName) throws UnknownHostException {
+        return HTTPConnectionUtils.resolvHostIP(hostName, IPVERSION.IPV4_IPV6)[0];
+    }
+
+    public static InetAddress[] resolveHostnames(final String hostName) throws UnknownHostException {
         return HTTPConnectionUtils.resolvHostIP(hostName, IPVERSION.IPV4_IPV6);
     }
 
@@ -353,7 +358,7 @@ public class RouterUtils {
                         final String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
-                                final InetAddress ia = resolveHostname(hostname)[0];
+                                final InetAddress ia = resolveHostname(hostname);
                                 if (IP.isValidRouterIP(ia.getHostAddress())) {
                                     return ia;
                                 }
@@ -380,7 +385,7 @@ public class RouterUtils {
                         final String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             try {
-                                final InetAddress ia = resolveHostname(hostname)[0];
+                                final InetAddress ia = resolveHostname(hostname);
                                 if (IP.isValidRouterIP(ia.getHostAddress())) {
                                     return ia;
                                 }
@@ -427,7 +432,7 @@ public class RouterUtils {
      * @throws InterruptedException
      */
     public static String getMacAddress(final String ip) throws UnknownHostException, IOException, InterruptedException {
-        final String ret = RouterUtils.getMacAddress(resolveHostname(ip)[0]);
+        final String ret = RouterUtils.getMacAddress(resolveHostname(ip));
         if (ret != null) {
             return ret.replace(":", "").replace("-", "").toUpperCase();
         }
