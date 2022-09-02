@@ -74,16 +74,16 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/[A-Za-z0-9]+";
-            regex += "|https?://stream\\d*\\." + buildHostsPatternPart(domains) + "/v/[^/]+\\.mp4";
-            regex += "|https?://cdn\\d*\\." + buildHostsPatternPart(domains) + "/[^/]+\\.mp4";
+            regex += "|https?://stream\\d*\\." + buildHostsPatternPart(domains) + "/v/[^/]+\\.(?:mp4|m4v)";
+            regex += "|https?://cdn\\d*\\." + buildHostsPatternPart(domains) + "/[^/]+\\.(?:mp4|m4v)";
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
 
     private static final String TYPE_ALBUM   = "https?://[^/]+/a/([A-Za-z0-9]+)";
-    private static final String TYPE_VIDEO   = "https?://stream(\\d+)\\.[^/]+/v/(.+\\.mp4)";
-    private static final String TYPE_VIDEO_2 = "https?://cdn(\\d+)\\.[^/]+/(.+\\.mp4)";
+    private static final String TYPE_VIDEO   = "https?://stream(\\d+)\\.[^/]+/v/(.+\\.(?:mp4|m4v))";
+    private static final String TYPE_VIDEO_2 = "https?://cdn(\\d+)\\.[^/]+/(.+\\.(?:mp4|m4v))";
 
     private DownloadLink add(List<DownloadLink> decryptedLinks, Set<String> dups, String directurl, final String filename, final String filesizeBytes, final String filesize) {
         if (dups == null || dups.add(directurl)) {
