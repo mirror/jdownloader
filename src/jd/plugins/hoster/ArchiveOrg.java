@@ -292,24 +292,25 @@ public class ArchiveOrg extends PluginForHost {
                     if (lendingInfoForAfterDownload != null) {
                         lendingInfoForAfterDownload.increaseDownloadedPageCounter();
                         if (lendingInfoForAfterDownload.looksLikeBookDownloadIsComplete()) {
+                            final String bookID = this.getBookID(link);
                             try {
-                                logger.info("Returning book: " + this.getBookID(link));
+                                logger.info("Returning book " + bookID);
                                 final UrlQuery query = new UrlQuery();
                                 query.add("action", "return_loan");
-                                query.add("identifier", this.getBookID(link));
+                                query.add("identifier", bookID);
                                 br.postPage("https://" + this.getHost() + "/services/loans/loan", query);
                                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                                 if ((Boolean) entries.get("success") == Boolean.TRUE) {
-                                    logger.info("Successfully returned book");
+                                    logger.info("Successfully returned book " + bookID);
                                 } else {
-                                    logger.info("Failed to return book: json response: " + br.getRequest().getHtmlCode());
+                                    logger.info("Failed to return book " + bookID + " json response: " + br.getRequest().getHtmlCode());
                                 }
                             } catch (final Throwable wtf) {
                                 logger.log(wtf);
                                 logger.warning("Failed to return book: Exception happened");
                             } finally {
                                 /* Remove from cache */
-                                bookBorrowSessions.remove(getLendingInfoKey(this.getBookID(link), account));
+                                bookBorrowSessions.remove(getLendingInfoKey(bookID, account));
                             }
                         }
                     }
