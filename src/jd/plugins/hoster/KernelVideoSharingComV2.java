@@ -661,6 +661,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                         } catch (IOException e) {
                             logger.log(e);
                         }
+                        if (br.getHttpConnection().getResponseCode() == 429) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "429 too many requests", 1 * 60 * 1000l);
+                        }
                         exceptionNoFile();
                     }
                 } finally {
