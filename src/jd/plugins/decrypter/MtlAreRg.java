@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
@@ -45,17 +46,15 @@ public class MtlAreRg extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(false);
         br.setFollowRedirects(true);
-        if (!getUserLogin(parameter)) {
+        if (!getUserLogin(param.getCryptedUrl())) {
             logger.info("No- or wrong logindata entered!");
             throw new AccountRequiredException();
         } else if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<td width='99%' style='word-wrap:break-word;'>\\s*<div>\\s*<img[^>]*/>\\s*\\&nbsp;\\s*<b>\\s*(.*?)\\s*</div>\\s*</td>").getMatch(0);
         if (fpName == null) {
@@ -68,25 +67,25 @@ public class MtlAreRg extends PluginForDecrypt {
             fpName = fpName.replaceAll("(</b>(\\s*,)?)", "");
         }
         // Filter links in hide(s)
-        String pagepieces[] = br.getRegex("<\\!\\-\\-HideBegin\\-\\->(.*?)<\\!\\-\\-HideEnd\\-\\->").getColumn(0);
-        if (pagepieces == null || pagepieces.length == 0) {
+        final String htmls[] = br.getRegex("<\\!\\-\\-HideBegin\\-\\->(.*?)<\\!\\-\\-HideEnd\\-\\->").getColumn(0);
+        if (htmls == null || htmls.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (String pagepiece : pagepieces) {
+        for (String pagepiece : htmls) {
             String[] links = HTMLParser.getHttpLinks(pagepiece, "");
             if (links != null && links.length != 0) {
                 for (String link : links) {
-                    decryptedLinks.add(createDownloadlink(link));
+                    ret.add(createDownloadlink(link));
                 }
             }
         }
         if (fpName != null) {
-            fpName = Encoding.htmlDecode(fpName.trim());
+            fpName = Encoding.htmlDecode(fpName).trim();
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private boolean getUserLogin(final String url) throws IOException, DecrypterException {
@@ -95,7 +94,7 @@ public class MtlAreRg extends PluginForDecrypt {
             if (logincookie != null) {
                 br.setCookie(this.getHost(), "masession_id", logincookie);
                 br.getPage(url);
-                if (this.isLoggedIN()) {
+                if (this.isLoggedIN(br)) {
                     logger.info("Cookie login successful");
                     return true;
                 } else {
@@ -119,7 +118,7 @@ public class MtlAreRg extends PluginForDecrypt {
             br.getPage("https://" + this.getHost() + "/forum/index.php?act=Login");
             br.postPage("/forum/index.php?act=Login&CODE=01", "UserName=" + Encoding.urlEncode(username) + "&PassWord=" + Encoding.urlEncode(password) + "&CookieDate=1");
             logincookie = br.getCookie(br.getHost(), "masession_id", Cookies.NOTDELETEDPATTERN);
-            if (logincookie != null && this.isLoggedIN()) {
+            if (logincookie != null && this.isLoggedIN(br)) {
                 logger.info("Full login successful");
                 this.getPluginConfig().setProperty("user", username);
                 this.getPluginConfig().setProperty("pass", password);
@@ -139,13 +138,12 @@ public class MtlAreRg extends PluginForDecrypt {
         }
     }
 
-    boolean isLoggedIN() {
+    boolean isLoggedIN(final Browser br) {
         /* Check if user control-panel is visible. */
         return br.containsHTML("id=\"userlinks\"");
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }

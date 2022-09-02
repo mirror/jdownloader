@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
@@ -54,7 +55,7 @@ public class IssuuCom extends PluginForHost {
         return "https://issuu.com/acceptterms";
     }
 
-    private String             DOCUMENTID           = null;
+    private String             documentID           = null;
     public static final String PROPERTY_FINAL_NAME  = "finalname";
     public static final String PROPERTY_DOCUMENT_ID = "document_id";
 
@@ -153,22 +154,38 @@ public class IssuuCom extends PluginForHost {
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        DOCUMENTID = this.br.getRegex("\"thumbnail_url\":\"https?://image\\.issuu\\.com/([^<>\"/]*?)/").getMatch(0);
-        if (DOCUMENTID == null) {
+        documentID = this.br.getRegex("\"thumbnail_url\":\"https?://image\\.issuu\\.com/([^<>\"/]*?)/").getMatch(0);
+        if (documentID == null) {
             this.br.getPage(link.getPluginPatternMatcher());
             if (br.containsHTML(">We can\\'t find what you\\'re looking for") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            DOCUMENTID = PluginJSonUtils.getJsonValue(br, "documentId");
+            documentID = PluginJSonUtils.getJsonValue(br, "documentId");
         }
-        if (DOCUMENTID == null) {
+        if (documentID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (account != null) {
             login(account, true);
         }
         br.getPage("/call/document-page/document-download/" + getUsername(link) + "/" + this.getDocumentSlug(link));
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = null;
+        try {
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        } catch (final JSonMapperException e) {
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                /* No json response --> Document not downloadable --> Check for errormessage in plaintext */
+                final String text = br.getRequest().getHtmlCode();
+                if (text.length() <= 100 && br.getRequest().getResponseHeader("Content-Type").equalsIgnoreCase("text/plain")) {
+                    /* E.g. "The publisher does not have the license to enable download" */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, text);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Error 403: Document is not downloadable");
+                }
+            } else {
+                throw e;
+            }
+        }
         final Number code = (Number) entries.get("code");
         final String message = (String) entries.get("message");
         if ("Download limit reached".equals(message) || (code != null && code.intValue() == 15)) {
