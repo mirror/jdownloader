@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -30,6 +27,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KatfileCom extends XFileSharingProBasic {
@@ -88,9 +87,8 @@ public class KatfileCom extends XFileSharingProBasic {
     @Override
     public Form findFormDownload1Free(final Browser br) throws Exception {
         final Form download1 = super.findFormDownload1Free(br);
-        final boolean forceFormWorkaround = false;
-        if (download1 != null && !DebugMode.TRUE_IN_IDE_ELSE_FALSE || forceFormWorkaround) {
-            /* 2022-09-01 */
+        if (false && download1 != null) {
+            /* 2022-09-02 - fixed in Form class */
             final String formkey = "method_free";
             final InputField method_free = download1.getInputField(formkey);
             String value = method_free.getValue();
