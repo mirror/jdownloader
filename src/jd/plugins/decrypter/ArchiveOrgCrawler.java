@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -34,7 +33,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -73,15 +71,25 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     final Set<String>  dups       = new HashSet<String>();
     private ArchiveOrg hostPlugin = null;
 
+    @Override
+    public void init() {
+        try {
+            this.hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
+        } catch (final Throwable ignore) {
+        }
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
         param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
          */
         final Account account = AccountController.getInstance().getValidAccount("archive.org");
         if (account != null) {
+            if (this.hostPlugin == null) {
+                this.init();
+            }
             hostPlugin.login(account, false);
         }
         URLConnectionAdapter con = null;
@@ -155,13 +163,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 } else if (mode == BookCrawlMode.ORIGINAL_AND_LOOSE_PAGES) {
                     final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                     ret.addAll(crawlDetails(param));
-                    ret.addAll(crawlBook(param, account));
+                    ret.addAll(crawlBook(br, param, account));
                     return ret;
                 } else {
-                    return crawlBook(param, account);
+                    return crawlBook(br, param, account);
                 }
             } else {
-                return crawlBook(param, account);
+                return crawlBook(br, param, account);
             }
         } else if (isArchiveContent) {
             return crawlArchiveContent();
@@ -330,79 +338,43 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlBook(final CryptedLink param, final Account account) throws Exception {
+    /** Crawls desired book. Given browser instance needs to access URL to book in beforehand! */
+    public ArrayList<DownloadLink> crawlBook(final Browser br, final CryptedLink param, final Account account) throws Exception {
         /* Crawl all pages of a book */
-        final String bookID = new Regex(br.getURL(), "https?://[^/]+/(?:details|download)/([^/]+)").getMatch(0);
-        if (bookID == null) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final String bookAjaxURL = getBookReaderURL(br);
         if (bookAjaxURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // if (bookAjaxURL.contains(bookID) && !bookAjaxURL.endsWith(bookID)) {
-        // /* Correct URL */
-        // bookAjaxURL = new Regex(bookAjaxURL, "(.+" + Regex.escape(bookID) + ")").getMatch(0);
-        // }
-        Boolean isLendingRequired = null;
-        boolean crawlerBorrowedBookInThisRun = false;
+        final String bookID = UrlQuery.parse(bookAjaxURL).get("id");
+        if (StringUtils.isEmpty(bookID)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         long loanedSecondsLeft = 0;
-        Map<String, Object> brOptions = null;
-        do {
-            br.getPage(bookAjaxURL);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final Map<String, Object> data = (Map<String, Object>) root.get("data");
-            final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
-            // final Map<String, Object> lendingStatus = (Map<String, Object>) data.get("lendingStatus");
-            // if ((Boolean) lendingStatus.get("user_at_max_loans")) {
-            // // TODO: Throw exception if this happens
-            // }
-            final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
-            final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
-            if (daysLeftOnLoan > 0) {
-                loanedSecondsLeft += daysLeftOnLoan * 24 * 60 * 60;
-            }
-            if (secondsLeftOnLoan > 0) {
-                loanedSecondsLeft += secondsLeftOnLoan;
-            }
-            brOptions = (Map<String, Object>) data.get("brOptions");
-            isLendingRequired = (Boolean) lendingInfo.get("isLendingRequired") == Boolean.TRUE;
-            if (crawlerBorrowedBookInThisRun) {
-                /* We've borrowed that book in the first run of this loop -> Quit loop */
-                break;
-            }
-            /* Borrow book if necessary */
-            if (isLendingRequired == Boolean.TRUE) {
-                if (account != null) {
-                    if (loanedSecondsLeft > 0) {
-                        logger.info("User has already borrowed this book with current account --> Obtaining borrow-cookies");
-                        this.hostPlugin.borrowBook(br.cloneBrowser(), account, bookID, true);
-                        break;
-                    } else {
-                        logger.info("Borrowing book --> All pages should be downloadable");
-                        /* Try to borrow book if account is available */
-                        this.hostPlugin.borrowBook(br.cloneBrowser(), account, bookID, false);
-                        /*
-                         * Go through this loop again: Refreshes page so we can download all pages and will not only get the preview images
-                         */
-                        crawlerBorrowedBookInThisRun = true;
-                        continue;
-                    }
-                } else {
-                    logger.info("Cannot borrow book --> Only preview pages can be downloaded");
-                }
-            }
-            break;
-        } while (true);
-        String contentURLFormat = "https://" + this.getHost() + "/details/" + bookID;
+        br.getPage(bookAjaxURL);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> data = (Map<String, Object>) root.get("data");
+        final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
+        // final Map<String, Object> lendingStatus = (Map<String, Object>) data.get("lendingStatus");
+        // if ((Boolean) lendingStatus.get("user_at_max_loans")) {
+        // // TODO: Maybe throw exception if this happens
+        // }
+        final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
+        final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
+        if (daysLeftOnLoan > 0) {
+            loanedSecondsLeft += daysLeftOnLoan * 24 * 60 * 60;
+        }
+        if (secondsLeftOnLoan > 0) {
+            loanedSecondsLeft += secondsLeftOnLoan;
+        }
+        final Map<String, Object> brOptions = (Map<String, Object>) data.get("brOptions");
+        final boolean isLendingRequired = (Boolean) lendingInfo.get("isLendingRequired") == Boolean.TRUE;
+        String contentURLFormat = generateBookContentURL(bookID);
         final String bookId = brOptions.get("bookId").toString();
         String title = (String) brOptions.get("bookTitle");
         final String subPrefix = (String) brOptions.get("subPrefix");
-        final String idForLinkID;
         final boolean isMultiVolumeBook;
         if (subPrefix != null && !subPrefix.equals(bookId)) {
             /**
@@ -410,11 +382,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
              * Problem: Title is the same for all items --> Append this subPrefix to the title to fix that.
              */
             title += " - " + subPrefix;
-            idForLinkID = bookId + "_" + subPrefix;
             contentURLFormat += "/" + subPrefix;
             isMultiVolumeBook = true;
         } else {
-            idForLinkID = bookId;
             isMultiVolumeBook = false;
         }
         final String pageFormat;
@@ -423,23 +393,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         } else {
             pageFormat = "/page/%d";
         }
-        contentURLFormat += "%s";
+        // contentURLFormat += "%s";
         /*
          * Defines how book pages will be arranged on the archive.org website. User can open single pages faster in browser if we get this
          * right.
          */
         final String bookDisplayMode = new Regex(bookAjaxURL, "/mode/([^/]+)").getMatch(0);
-        if (bookDisplayMode != null) {
-            contentURLFormat += "/mode/" + bookDisplayMode;
-        }
         final List<Object> imagesO = (List<Object>) brOptions.get("data");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArchiveOrgLendingInfo internalLendingInfo;
-        if (loanedSecondsLeft > 0 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            internalLendingInfo = hostPlugin.getLendingInfo(bookId, account);
-        } else {
-            internalLendingInfo = null;
-        }
         for (final Object imageO : imagesO) {
             /*
              * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page -->
@@ -448,22 +409,28 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final List<Object> pagesO = (List<Object>) imageO;
             for (final Object pageO : pagesO) {
                 final Map<String, Object> bookpage = (Map<String, Object>) pageO;
-                final int pageNum = ((Number) bookpage.get("leafNum")).intValue();
+                final int pageIndex = ((Number) bookpage.get("leafNum")).intValue();
                 final String url = bookpage.get("uri").toString();
                 final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", url, true);
-                if (pageNum == 1) {
-                    /* Special for first page -> URL does not contain path to page for first page. */
-                    dl.setContentUrl(String.format(contentURLFormat, ""));
-                } else {
-                    dl.setContentUrl(String.format(contentURLFormat, String.format(pageFormat, pageNum - 1)));
+                String contentURL = contentURLFormat;
+                if (pageIndex > 1) {
+                    contentURL += String.format(pageFormat, pageIndex + 1);
                 }
-                dl.setFinalFileName(pageNum + "_ " + title + ".jpg");
+                if (bookDisplayMode != null) {
+                    contentURL += "/mode/" + bookDisplayMode;
+                }
+                dl.setContentUrl(contentURL);
+                dl.setFinalFileName(pageIndex + "_" + title + ".jpg");
                 dl.setProperty(ArchiveOrg.PROPERTY_BOOK_ID, bookID);
+                dl.setProperty(ArchiveOrg.PROPERTY_BOOK_PAGE, pageIndex);
                 if (isMultiVolumeBook) {
                     dl.setProperty(ArchiveOrg.PROPERTY_BOOK_SUB_PREFIX, subPrefix);
                 }
                 if (isLendingRequired == Boolean.TRUE) {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_LENDING_REQUIRED, true);
+                }
+                if (loanedSecondsLeft > 0) {
+                    dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
                  * Mark pages that are not viewable in browser as offline. </br>
@@ -472,17 +439,17 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 final Boolean viewable = (Boolean) bookpage.get("viewable");
                 if (viewable == null || viewable == Boolean.TRUE) {
                     dl.setAvailable(true);
+                    if (account == null || loanedSecondsLeft == 0) {
+                        dl.setProperty(ArchiveOrg.PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
+                    }
                 } else {
-                    dl.setAvailable(false);
-                    dl.setProperty(ArchiveOrg.PROPERTY_IS_UN_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
-                }
-                if (account == null && isLendingRequired == Boolean.TRUE) {
-                    dl.setLinkID(this.getHost() + "://" + idForLinkID + "_preview_" + pageNum);
-                } else {
-                    dl.setLinkID(this.getHost() + "://" + idForLinkID + "_" + pageNum);
-                }
-                if (loanedSecondsLeft > 0 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    internalLendingInfo.addPageURL(pageNum, url);
+                    /* Only downloadable with account */
+                    if (PluginJsonConfig.get(ArchiveOrgConfig.class).isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable()) {
+                        dl.setAvailable(false);
+                    } else {
+                        /* Always mark all pages as online. Non-viewable pages can only be downloaded when an account is present. */
+                        dl.setAvailable(true);
+                    }
                 }
                 ret.add(dl);
             }
@@ -601,5 +568,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
         return ArchiveOrgConfig.class;
+    }
+
+    public static String generateBookContentURL(final String bookID) {
+        return "https://archive.org/details/" + bookID;
     }
 }
