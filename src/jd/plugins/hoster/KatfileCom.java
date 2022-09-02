@@ -27,6 +27,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -99,6 +100,14 @@ public class KatfileCom extends XFileSharingProBasic {
             download1.put("method_free", value);
         }
         return download1;
+    }
+
+    @Override
+    public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
+        super.doFree(link, account);
     }
 
     @Override
