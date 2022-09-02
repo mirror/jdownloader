@@ -16,8 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,6 +24,7 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
@@ -46,12 +46,14 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.ArchiveOrgCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:[\\w\\.]+)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -65,14 +67,25 @@ public class ArchiveOrg extends PluginForHost {
         return "https://archive.org/about/terms.php";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        if (this.isBook(link)) {
+            return this.getHost() + "://" + this.getBookID(link) + "/" + this.getBookSubPrefix(link) + "/" + this.getBookPageIndexNumber(link);
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     /* Connection stuff */
-    private final int                                     MAXDOWNLOADS                                  = -1;
-    private static final String                           PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN           = "download_serverside_broken";
-    public static final String                            PROPERTY_BOOK_ID                              = "book_id";
-    public static final String                            PROPERTY_BOOK_SUB_PREFIX                      = "book_sub_prefix";
-    public static final String                            PROPERTY_IS_LENDING_REQUIRED                  = "is_lending_required";
-    public static final String                            PROPERTY_IS_UN_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_un_downloadable_book_preview_page";
-    private static HashMap<String, ArchiveOrgLendingInfo> bookBorrowSessions                            = new HashMap<String, ArchiveOrgLendingInfo>();
+    private final int                                     MAXDOWNLOADS                                    = -1;
+    private static final String                           PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN             = "download_serverside_broken";
+    public static final String                            PROPERTY_BOOK_ID                                = "book_id";
+    public static final String                            PROPERTY_BOOK_SUB_PREFIX                        = "book_sub_prefix";
+    public static final String                            PROPERTY_BOOK_PAGE                              = "book_page";
+    public static final String                            PROPERTY_IS_LENDING_REQUIRED                    = "is_lending_required";
+    public static final String                            PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_free_downloadable_book_preview_page";
+    public static final String                            PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP            = "is_borrowed_until_timestamp";
+    private static HashMap<String, ArchiveOrgLendingInfo> bookBorrowSessions                              = new HashMap<String, ArchiveOrgLendingInfo>();
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -83,8 +96,6 @@ public class ArchiveOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (link.getPluginPatternMatcher().endsWith("my_dir")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (isUnDownloadableBookPreviewPage(link)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         if (account != null) {
@@ -92,14 +103,17 @@ public class ArchiveOrg extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (!isDownload) {
-            if (account == null && this.requiresAccount(link)) {
+            if (this.requiresAccount(link) && account == null) {
+                return AvailableStatus.UNCHECKABLE;
+            } else if (this.isBookLendingRequired(link)) {
+                /* Do not lend books during availablecheck */
                 return AvailableStatus.UNCHECKABLE;
             }
             URLConnectionAdapter con = null;
             try {
                 /* 2021-02-25: Do not use HEAD request anymore! */
                 prepDownloadHeaders(br, link);
-                con = br.openGetConnection(getDirectURL(link));
+                con = br.openGetConnection(getDirectURL(link, account));
                 connectionErrorhandling(con, link, account, null);
                 final String filenameFromHeader = getFileNameFromHeader(con);
                 if (filenameFromHeader != null) {
@@ -118,8 +132,8 @@ public class ArchiveOrg extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private boolean isUnDownloadableBookPreviewPage(final DownloadLink link) {
-        if (link.hasProperty(PROPERTY_IS_UN_DOWNLOADABLE_BOOK_PREVIEW_PAGE)) {
+    private boolean isFreeDownloadableBookPreviewPage(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE)) {
             return true;
         } else {
             return false;
@@ -145,8 +159,37 @@ public class ArchiveOrg extends PluginForHost {
         }
     }
 
+    private boolean isLendAtThisMoment(final DownloadLink link) {
+        final long borrowedUntilTimestamp = link.getLongProperty(PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, -1);
+        if (borrowedUntilTimestamp > System.currentTimeMillis()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private int getBookPageIndexNumber(final DownloadLink link) {
+        final int storedBookPage = link.getIntegerProperty(PROPERTY_BOOK_PAGE, -1);
+        if (storedBookPage != -1) {
+            return storedBookPage;
+        } else {
+            /* Legacy handling for older items */
+            final String pageStr = new Regex(link.getContentUrl(), ".*/page/n?(\\d+)").getMatch(0);
+            if (pageStr != null) {
+                return Integer.parseInt(pageStr) - 1;
+            } else {
+                /* Fallback: This should never happen */
+                return 1;
+            }
+        }
+    }
+
+    private String getBookSubPrefix(final DownloadLink link) {
+        return link.getStringProperty(PROPERTY_BOOK_SUB_PREFIX);
+    }
+
     private boolean requiresAccount(final DownloadLink link) {
-        if (this.isBookLendingRequired(link)) {
+        if (this.isBookLendingRequired(link) && !this.isFreeDownloadableBookPreviewPage(link)) {
             return true;
         } else {
             return false;
@@ -219,28 +262,10 @@ public class ArchiveOrg extends PluginForHost {
 
     private void handleDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, account, true);
-        ArchiveOrgLendingInfo lendingInfo = null;
+        ArchiveOrgLendingInfo lendingInfoForBeforeDownload = null;
         if (account != null) {
             this.login(account, false);
-            if (this.isBook(link)) {
-                if (this.isBookLendingRequired(link)) {
-                    final String bookID = getBookID(link);
-                    if (bookID == null) {
-                        /* Old/broken items */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    lendingInfo = this.getLendingInfo(this.getBookID(link), account);
-                    if (lendingInfo != null) {
-                        br.setCookies(lendingInfo.getCookies());
-                    } else {
-                        /**
-                         * Try download anyways as our errorhandling will borrow the book which is then downloadable for us. </br>
-                         * User could e.g. have added account via cookie login so borrow session for some books may be available regardless.
-                         */
-                        logger.info("Borrow required but no borrow session available -> We will most likely run into errorhandling soon");
-                    }
-                }
-            }
+            lendingInfoForBeforeDownload = this.getLendingInfo(link, account);
         } else {
             if (this.requiresAccount(link)) {
                 throw new AccountRequiredException();
@@ -248,8 +273,9 @@ public class ArchiveOrg extends PluginForHost {
         }
         cleanupBorrowSessionMap();
         prepDownloadHeaders(br, link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, getDirectURL(link), isResumeable(link, account), getMaxChunks(link, account));
-        connectionErrorhandling(br.getHttpConnection(), link, account, lendingInfo);
+        final String directurl = getDirectURL(link, account);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, account), getMaxChunks(link, account));
+        connectionErrorhandling(br.getHttpConnection(), link, account, lendingInfoForBeforeDownload);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -258,7 +284,40 @@ public class ArchiveOrg extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
-        dl.startDownload();
+        if (dl.startDownload()) {
+            try {
+                synchronized (bookBorrowSessions) {
+                    /* lendingInfo could have changed in the meantime */
+                    final ArchiveOrgLendingInfo lendingInfoForAfterDownload = this.getLendingInfo(link, account);
+                    if (lendingInfoForAfterDownload != null) {
+                        lendingInfoForAfterDownload.increaseDownloadedPageCounter();
+                        if (lendingInfoForAfterDownload.looksLikeBookDownloadIsComplete()) {
+                            try {
+                                logger.info("Returning book: " + this.getBookID(link));
+                                final UrlQuery query = new UrlQuery();
+                                query.add("action", "return_loan");
+                                query.add("identifier", this.getBookID(link));
+                                br.postPage("https://" + this.getHost() + "/services/loans/loan", query);
+                                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                                if ((Boolean) entries.get("success") == Boolean.TRUE) {
+                                    logger.info("Successfully returned book");
+                                } else {
+                                    logger.info("Failed to return book: json response: " + br.getRequest().getHtmlCode());
+                                }
+                            } catch (final Throwable wtf) {
+                                logger.log(wtf);
+                                logger.warning("Failed to return book: Exception happened");
+                            } finally {
+                                /* Remove from cache */
+                                bookBorrowSessions.remove(getLendingInfoKey(this.getBookID(link), account));
+                            }
+                        }
+                    }
+                }
+            } catch (final Exception ignore) {
+                logger.log(ignore);
+            }
+        }
     }
 
     /** Removes expired entries from bookBorrowSessions. */
@@ -268,26 +327,50 @@ public class ArchiveOrg extends PluginForHost {
             while (iterator.hasNext()) {
                 final Entry<String, ArchiveOrgLendingInfo> entry = iterator.next();
                 final ArchiveOrgLendingInfo lendingInfo = entry.getValue();
-                if (!lendingInfo.isValid()) {
+                if (!lendingInfo.isValid() || lendingInfo.looksLikeBookDownloadIsComplete()) {
                     iterator.remove();
                 }
             }
         }
     }
 
-    private String getDirectURL(final DownloadLink link) throws MalformedURLException {
+    private String getDirectURL(final DownloadLink link, final Account account) throws Exception {
         if (this.isBook(link)) {
+            if (this.requiresAccount(link) && account == null) {
+                throw new AccountRequiredException();
+            }
+            String directurl = null;
+            if (this.isFreeDownloadableBookPreviewPage(link)) {
+                directurl = link.getPluginPatternMatcher();
+            } else {
+                final String bookID = this.getBookID(link);
+                ArchiveOrgLendingInfo lendingInfo = this.getLendingInfo(bookID, account);
+                if (lendingInfo != null) {
+                    directurl = lendingInfo.getPageURL(this.getBookPageIndexNumber(link));
+                }
+                if (lendingInfo != null && directurl != null) {
+                    /* Use existing session */
+                    br.setCookies(lendingInfo.getCookies());
+                } else {
+                    this.borrowBook(br, account, bookID, false);
+                    lendingInfo = this.getLendingInfo(bookID, account);
+                    directurl = lendingInfo.getPageURL(this.getBookPageIndexNumber(link));
+                    if (StringUtils.isEmpty(directurl)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
             final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
-            final URL uri = new URL(link.getPluginPatternMatcher());
-            final UrlQuery query = UrlQuery.parse(uri.getQuery());
+            // final URL url = new URL(directurl);
+            final UrlQuery query = UrlQuery.parse(directurl);
             query.add("rotate", "0");
             /* This one defines the image quality. This may only work for borrowed books but we'll append it to all book URLs regardless. */
             query.add("scale", Integer.toString(cfg.getBookImageQuality()));
-            /* Get url without query */
-            String url = URLHelper.getURL(uri, false, true, true).toString();
+            /* Get url without parameters */
+            String newURL = URLHelper.getUrlWithoutParams(directurl);
             /* Append our new query */
-            url += "?" + query.toString();
-            return url;
+            newURL += "?" + query.toString();
+            return newURL;
         } else {
             return link.getPluginPatternMatcher();
         }
@@ -398,7 +481,7 @@ public class ArchiveOrg extends PluginForHost {
      * Borrows given bookID which gives us a token we can use to download all pages of that book. </br>
      * It is typically valid for one hour.
      */
-    public void borrowBook(final Browser br, final Account account, final String bookID, final boolean skipAllExceptLastStep) throws Exception {
+    private void borrowBook(final Browser br, final Account account, final String bookID, final boolean skipAllExceptLastStep) throws Exception {
         if (account == null) {
             /* Account is required to borrow books. */
             throw new AccountRequiredException();
@@ -453,12 +536,41 @@ public class ArchiveOrg extends PluginForHost {
                 logger.warning("WTF book was borrowed but no borrow-cookies are present!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            bookBorrowSessions.put(getLendingInfoKey(bookID, account), new ArchiveOrgLendingInfo(borrowCookies));
+            final ArchiveOrgLendingInfo newLendingInfo = new ArchiveOrgLendingInfo(borrowCookies);
+            final ArchiveOrgCrawler crawler = (ArchiveOrgCrawler) this.getNewPluginForDecryptInstance(this.getHost());
+            final String bookURL = ArchiveOrgCrawler.generateBookContentURL(bookID);
+            br.getPage(bookURL);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final ArrayList<String> pageURLs = new ArrayList<String>();
+            final ArrayList<DownloadLink> results = crawler.crawlBook(br, new CryptedLink(bookURL), account);
+            for (final DownloadLink result : results) {
+                if (!this.isLendAtThisMoment(result)) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Book lending failure: Loaned book is still not viewable");
+                }
+                pageURLs.add(result.getPluginPatternMatcher());
+            }
+            newLendingInfo.setPageURLs(pageURLs);
+            /* Keep track of download progress! */
+            final ArchiveOrgLendingInfo oldLendingInfo = this.getLendingInfo(bookID, account);
+            if (oldLendingInfo != null && oldLendingInfo.getNumberofSuccessfullyDownloadedPages() > 0) {
+                newLendingInfo.setNumberofSuccessfullyDownloadedPages(oldLendingInfo.getNumberofSuccessfullyDownloadedPages());
+            }
+            bookBorrowSessions.put(getLendingInfoKey(bookID, account), newLendingInfo);
         }
+    }
+
+    public ArchiveOrgLendingInfo getLendingInfo(final DownloadLink link, final Account account) {
+        return getLendingInfo(this.getBookID(link), account);
     }
 
     /** Returns LendingInfo/session for given bookID + acccount. */
     public ArchiveOrgLendingInfo getLendingInfo(final String bookID, final Account account) {
+        if (account == null || bookID == null) {
+            return null;
+        }
         final String key = getLendingInfoKey(bookID, account);
         synchronized (bookBorrowSessions) {
             final ArchiveOrgLendingInfo ret = bookBorrowSessions.get(key);
@@ -504,8 +616,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        final boolean ret = super.looksLikeDownloadableContent(urlConnection);
-        if (ret) {
+        if (super.looksLikeDownloadableContent(urlConnection)) {
             return true;
         } else if (StringUtils.containsIgnoreCase(urlConnection.getURL().getPath(), ".xml")) {
             /* 2021-02-15: Special handling for .xml files */
@@ -516,7 +627,11 @@ public class ArchiveOrg extends PluginForHost {
         } else {
             /* MimeType file-extension and extension at the end of the URL are the same -> Also accept as downloadable content. */
             final String extension = getExtensionFromMimeType(urlConnection.getContentType());
-            return extension != null && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), "." + extension);
+            if (StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), "." + extension)) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
@@ -531,11 +646,24 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-        /*
-         * Remove this property otherwise there is the possibility that the user gets a permanent error for certain files while they might
-         * just be temporarily unavailable (this should never happen...)!
-         */
-        link.removeProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN);
+        if (link != null) {
+            /*
+             * Remove this property otherwise there is the possibility that the user gets a permanent error for certain files while they
+             * might just be temporarily unavailable (this should never happen...)!
+             */
+            link.removeProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN);
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            if (account != null) {
+                synchronized (bookBorrowSessions) {
+                    final ArchiveOrgLendingInfo lendingInfo = this.getLendingInfo(link, account);
+                    if (lendingInfo != null) {
+                        if (lendingInfo.getNumberofSuccessfullyDownloadedPages() > 0) {
+                            lendingInfo.setNumberofSuccessfullyDownloadedPages(lendingInfo.getNumberofSuccessfullyDownloadedPages() - 1);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override

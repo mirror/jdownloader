@@ -38,9 +38,10 @@ public class ArchiveOrgLendingInfo {
             return null;
         } else {
             final long timePassedSinceLastLoan = Time.systemIndependentCurrentJVMTimeMillis() - this.timestamp.longValue();
-            if (timePassedSinceLastLoan < 5 * 60 * 1000) {
+            final long maxLoanTimeframeMillis = 5 * 60 * 1000;
+            if (timePassedSinceLastLoan < maxLoanTimeframeMillis) {
                 /* Book has been loaned within the last 5 minutes -> Wait at least 5 minutes between loaning. */
-                return timePassedSinceLastLoan;
+                return maxLoanTimeframeMillis - timePassedSinceLastLoan;
             } else {
                 return null;
             }
@@ -56,22 +57,31 @@ public class ArchiveOrgLendingInfo {
         }
     }
 
-    public void addPageURL(final int index, final String url) {
-        this.pageURLs.add(index, url);
+    public void setPageURLs(final ArrayList<String> urls) {
+        this.pageURLs.clear();
+        this.pageURLs.addAll(urls);
     }
 
-    /** Returns URL to desired pageNumber. */
-    public String getPageURL(final int pageNumber) {
-        if (this.pageURLs.size() >= pageNumber) {
-            return this.pageURLs.get(pageNumber - 1);
+    /** Returns URL to desired pageIndexNumber. */
+    public String getPageURL(final int pageIndexNumber) {
+        if (pageIndexNumber > -1 && pageIndexNumber < this.pageURLs.size()) {
+            return this.pageURLs.get(pageIndexNumber);
         } else {
             return null;
         }
     }
 
     /** Increases downloaded page counter. */
-    public void downloadedPage() {
+    public void increaseDownloadedPageCounter() {
         this.numberofSuccessfullyDownloadedPages += 1;
+    }
+
+    public void setNumberofSuccessfullyDownloadedPages(final int num) {
+        this.numberofSuccessfullyDownloadedPages = num;
+    }
+
+    public int getNumberofSuccessfullyDownloadedPages() {
+        return this.numberofSuccessfullyDownloadedPages;
     }
 
     public boolean looksLikeBookDownloadIsComplete() {

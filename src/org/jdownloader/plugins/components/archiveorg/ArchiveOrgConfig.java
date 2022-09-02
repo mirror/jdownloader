@@ -14,11 +14,12 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "archive.org", type = Type.CRAWLER)
 public interface ArchiveOrgConfig extends PluginConfigInterface {
-    final String                    text_FileCrawlerCrawlOnlyOriginalVersions = "File crawler: Download only original versions of files?";
-    final String                    text_FileCrawlerCrawlArchiveView          = "File crawler: Also crawl archive view?";
-    final String                    text_BookImageQuality                     = "Set book image quality (0 = highest, 10 = lowest)";
-    final String                    text_BookCrawlMode                        = "Set book crawl mode";
-    public static final TRANSLATION TRANSLATION                               = new TRANSLATION();
+    final String                    text_FileCrawlerCrawlOnlyOriginalVersions                    = "File crawler: Download only original versions of files?";
+    final String                    text_FileCrawlerCrawlArchiveView                             = "File crawler: Also crawl archive view?";
+    final String                    text_BookImageQuality                                        = "Set book image quality (0 = highest, 10 = lowest)";
+    final String                    text_BookCrawlMode                                           = "Set book crawl mode";
+    final String                    text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable = "Mark non viewable book pages as offline if no account is available?";
+    public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getFileCrawlerCrawlOnlyOriginalVersions_label() {
@@ -35,6 +36,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
         public String getBookCrawlMode_label() {
             return text_BookCrawlMode;
+        }
+
+        public String getMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable_label() {
+            return text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable;
         }
     }
 
@@ -91,4 +96,12 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     BookCrawlMode getBookCrawlMode();
 
     void setBookCrawlMode(final BookCrawlMode bookCrawlerMode);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable)
+    @Order(50)
+    boolean isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable();
+
+    void setMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable(boolean b);
 }
