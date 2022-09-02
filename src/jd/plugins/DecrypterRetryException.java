@@ -11,8 +11,10 @@ public class DecrypterRetryException extends Exception {
         PLUGIN_SETTINGS(_JDT.T.decrypter_pluginsettings()),
         PASSWORD(_JDT.T.decrypter_wrongpassword()),
         HOST(_JDT.T.plugins_errors_hosterproblem()),
+        HOST_RATE_LIMIT(_JDT.T.plugins_errors_hosterproblem_rate_limit()),
         GEO(_JDT.T.decrypter_unavailable_geo()),
         IP(_JDT.T.decrypter_unavailable_ip());
+
         private final String exp;
 
         private RetryReason(String exp) {
