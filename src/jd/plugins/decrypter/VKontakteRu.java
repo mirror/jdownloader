@@ -300,7 +300,7 @@ public class VKontakteRu extends PluginForDecrypt {
              * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
              */
             return crawlPhotoAlbumWebsite(param);
-        } else if (param.getCryptedUrl().matches(PATTERN_PHOTO_ALBUMS)) {
+        } else if (param.getCryptedUrl().matches(PATTERN_PHOTO_ALBUMS) || param.getCryptedUrl().matches(PATTERN_ID_LINK)) {
             /**
              * Photo albums lists/overviews Example: http://vk.com/albums46486585
              */
@@ -1059,6 +1059,11 @@ public class VKontakteRu extends PluginForDecrypt {
          * Another possibility to get these (but still no API): https://vk.com/al_photos.php act=show_albums&al=1&owner=<owner_id> AblumsXXX
          * --> XXX may also be the owner_id, depending on linktype.
          */
+        final Regex idregex = new Regex(param.getCryptedUrl(), PATTERN_ID_LINK);
+        if (idregex.matches()) {
+            /* Change id links -> albums links */
+            param.setCryptedUrl("https://" + this.getHost() + "/albums" + idregex.getMatch(0));
+        }
         getPage(param.getCryptedUrl());
         if (br.containsHTML("class=\"photos_no_content\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -2789,9 +2794,6 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (url.matches(PATTERN_PUBLIC_LINK) || isClubUrl(url) || url.matches(PATTERN_EVENT_LINK)) {
             /* group and club links --> wall links */
             url = "https://" + this.getHost() + "/wall-" + new Regex(param.getCryptedUrl(), "https?://[^/]+/[a-z]+((\\-)?\\d+)").getMatch(0);
-        } else if (url.matches(PATTERN_ID_LINK)) {
-            /* Change id links -> albums links */
-            url = "https://" + this.getHost() + "/albums" + new Regex(url, PATTERN_ID_LINK).getMatch(0);
         } else if (url.matches(PATTERN_WALL_LOOPBACK_LINK)) {
             /* Remove loopback-part as it only contains information which we need later but not in the link */
             url = new Regex(url, "(https?://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);

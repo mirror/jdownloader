@@ -20,17 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.SiteType.SiteTemplate;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -41,6 +30,17 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JoinPeerTubeOrg extends antiDDoSForHost {
@@ -100,7 +100,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
                 "serv1.wiki-tube.de", "video.lavolte.net", "peertube.r5c3.fr", "mountaintown.video", "ptmir1.inter21.net", "tube.foxden.party", "vod.lumikko.dev", "fotogramas.politicaconciencia.org", "peertube.manalejandro.com", "tube.mrbesen.de", "www4.mir.inter21.net", "tgi.hosted.spacebear.ee", "peertube.genma.fr", "video.csc49.fr", "tube.wolfe.casa", "tube.linkse.media", "video.dresden.network", "peertube.zapashcanon.fr", "maindreieck-tv.de", "40two.tube", "tube.amic37.fr", "video.comptoir.net", "peertube.tux.ovh", "kino.schuerz.at", "peertube.tiennot.net", "tututu.tube", "peertube.interhop.org", "tube.picasoft.net", "wiki-tube.de", "video.stuartbrand.co.uk", "video.internet-czas-dzialac.pl", "peertube.cythin.com", "thecool.tube", "thaitube.in.th", "tv.bitma.st", "peertube.chtisurel.net", "videos.testimonia.org", "peertube.informaction.info", "video.mass-trespass.uk",
                 "v.lastorder.xyz", "daschauher.aksel.rocks", "video.mstddntfdn.online", "tube.cyano.at", "media.skewed.de", "visionon.tv", "peertube.securitymadein.lu", "video.linux.it", "peertube.aventer.biz", "tuktube.com", "v.basspistol.org", "libremedia.video", "mojotube.net", "mytube.kn-cloud.de", "video.nogafam.es", "peertube.stream", "videos.leslionsfloorball.fr", "player.ojamajo.moe", "ftsi.ru", "video.cigliola.com", "xxx.noho.st", "peertube.stefofficiel.me", "video.eradicatinglove.xyz", "canard.tube", "videos.jordanwarne.xyz", "video.anartist.org", "tube.jeena.net", "video.mundodesconocido.com", "video.screamer.wiki", "tube.cloud-libre.eu", "videos.coletivos.org", "videos.wakkerewereld.nu", "peertube.travelpandas.eu", "peertube.runfox.tk", "video.pourpenser.pro", "video.sdm-tools.net", "peertube.anzui.dev", "video.up.edu.ph", "video.igem.org", "worldofvids.com",
                 "peertube.pi2.dev", "video.pony.gallery", "tube.skrep.in", "tube.others.social", "tube-poitiers.beta.education.fr", "peertube.satoshishop.de", "streamsource.video", "vid.wildeboer.net", "battlepenguin.video", "peertube.cloud.sans.pub", "tube.vraphim.com", "refuznik.video", "tube.shela.nu", "video.1146.nohost.me", "peertube.davigge.com", "videos.tankernn.eu", "vod.ksite.de", "tube.grin.hu", "peertube.swarm.solvingmaz.es", "videos.fsci.in", "media.inno3.cricket", "video.livecchi.cloud", "tube.cryptography.dog", "peertube.zergy.net", "vid.ncrypt.at", "watch.krazy.party", "videos.tcit.fr", "video.valme.io", "peertube.patapouf.xyz", "video.violoncello.ch", "peertube.gidikroon.eu", "tubedu.org", "tv.netwhood.online", "watch.breadtube.tv", "video.exodus-privacy.eu.org", "peertube.social", "vidcommons.org", "auf1.tv", "tube.porn3dx.com", "framatube.org", "gegenstimme.tv",
-        "tube.network.europa.eu" });
+                "tube.network.europa.eu", "alttube.fr" });
         return ret;
     }
 
@@ -138,9 +138,9 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
 
     /**
      * Debug function which can find new instances compatible with this code/plugin/template from:
-     * https://instances.joinpeertube.org/instances </br> Important: Do NOT overwrite old entries with these ones! Looks like this list is
-     * not reliably collecting "all" peertube instances and/or single peertube instances can turn off some kind of
-     * "allow my instance to appear on tht list" setting!
+     * https://instances.joinpeertube.org/instances </br>
+     * Important: Do NOT overwrite old entries with these ones! Looks like this list is not reliably collecting "all" peertube instances
+     * and/or single peertube instances can turn off some kind of "allow my instance to appear on tht list" setting!
      */
     private static ArrayList<String> findNewScriptInstances() {
         if (false) {
@@ -206,10 +206,14 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(400);
         final String host = Browser.getHost(link.getPluginPatternMatcher(), true);
         final Browser brc = br.cloneBrowser();
         getPage(brc, "https://" + host + "/api/v1/videos/" + this.getFID(link));
-        if (brc.getHttpConnection().getResponseCode() == 404) {
+        if (brc.getHttpConnection().getResponseCode() == 400) {
+            /* Can e.g. happen when bad video parameter is used e.g. https://alttube.fr/w/p */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (brc.getHttpConnection().getResponseCode() == 404) {
             /* 2020-07-03: E.g. {"error":"Video not found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

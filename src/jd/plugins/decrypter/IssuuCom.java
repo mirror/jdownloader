@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.config.IssuuComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,11 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.components.config.IssuuComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "https?://(?:www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_\\.]+|https?://e\\.issuu\\.com/embed\\.html#\\d+/\\d+" })
 public class IssuuCom extends PluginForDecrypt {
     public IssuuCom(PluginWrapper wrapper) {
@@ -46,8 +46,8 @@ public class IssuuCom extends PluginForDecrypt {
     private static final String TYPE_NORMAL = "https?://(?:www\\.)?issuu\\.com/([a-z0-9\\-_\\.]+)/docs/([a-z0-9\\-_\\.]+)";
     private static final String TYPE_EMBED  = "https?://e\\.issuu\\.com/embed\\.html#(\\d+)/(\\d+)";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex embed = new Regex(param.getCryptedUrl(), TYPE_EMBED);
         final IssuuComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         this.br.setFollowRedirects(true);
@@ -104,7 +104,7 @@ public class IssuuCom extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink("https://" + page.get("imageUri"));
                 dl.setFinalFileName(title + "_page_" + df.format(pagenumber) + ".jpg");
                 dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             final DownloadLink pdf = createDownloadlink(param.getCryptedUrl());
@@ -115,12 +115,12 @@ public class IssuuCom extends PluginForDecrypt {
             if (documentID != null) {
                 pdf.setProperty(jd.plugins.hoster.IssuuCom.PROPERTY_DOCUMENT_ID, documentID);
             }
-            decryptedLinks.add(pdf);
+            ret.add(pdf);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(generalNaming);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     private boolean isOffline(final Browser br) {
