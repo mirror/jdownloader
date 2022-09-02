@@ -563,19 +563,29 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         } else {
             /* API mode. Required when we're logged in. */
+            logger.info("Auto fallback to API crawler");
             if (account == null) {
                 throw new AccountRequiredException();
             }
-            String internalMediaID = br.getRegex("property=\"al:ios:url\" content=\"instagram://media\\?id=(\\d+)").getMatch(0);
-            if (internalMediaID == null) {
-                internalMediaID = br.getRegex("\"media_id\"\\s*:\\s*\"(\\d+)").getMatch(0);
-            }
-            if (internalMediaID == null) {
-                if (br.containsHTML("\"shortcode\":\"" + galleryID)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String internalMediaID = null;
+            do {
+                internalMediaID = br.getRegex("property=\"al:ios:url\" content=\"instagram://media\\?id=(\\d+)").getMatch(0);
+                if (internalMediaID == null) {
+                    internalMediaID = br.getRegex("\"media_id\"\\s*:\\s*\"(\\d+)").getMatch(0);
                 }
+                if (internalMediaID != null || loggedIN.get()) {
+                    break;
+                } else {
+                    logger.info("Failed to find internalMediaID in logged-out state --> Retry with account");
+                    this.loginOrFail(account, loggedIN);
+                    br.getPage(param.getCryptedUrl());
+                    InstaGramCom.checkErrors(br);
+                    continue;
+                }
+            } while (true);
+            if (internalMediaID == null) {
+                logger.info("Content is either offline or given account is lacking permissions to view it.");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return this.crawlGalleryAltAPI(param, account, loggedIN, internalMediaID);
         }

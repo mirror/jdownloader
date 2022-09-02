@@ -19,22 +19,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.plugins.Account;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV2 {
-    public KernelVideoSharingComV2HostsDefault3(final PluginWrapper wrapper) {
+public class Porn00Org extends KernelVideoSharingComV2 {
+    public Porn00Org(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "shameless.com" });
-        ret.add(new String[] { "bravotube.net" });
-        ret.add(new String[] { "hellporno.com" });
-        ret.add(new String[] { "alphaporno.com" });
-        ret.add(new String[] { "upskirt.tv" });
+        ret.add(new String[] { "porn00.org" });
         return ret;
     }
 
@@ -59,5 +56,20 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
     @Override
     protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         return generateContentURLDefaultVideosPatternWithoutFileID(host, fuid, urlTitle);
+    }
+
+    @Override
+    protected int getMaxChunks(final Account account) {
+        return -2;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
     }
 }
