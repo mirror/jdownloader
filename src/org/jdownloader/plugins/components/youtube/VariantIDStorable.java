@@ -78,6 +78,20 @@ public class VariantIDStorable implements Storable {
 
     private String projection;
     private int    height;
+    private int    vheight;
+
+    public int getVheight() {
+        if (vheight > 0) {
+            return vheight;
+        } else {
+            return height;
+        }
+    }
+
+    public void setVheight(int vheight) {
+        this.vheight = vheight;
+    }
+
     private int    aBitrate;
     private int    fps;
     private String vCodec;
@@ -94,22 +108,17 @@ public class VariantIDStorable implements Storable {
             AudioVariant avar = (AudioVariant) variant;
             this.aBitrate = avar.getiTagAudioOrVideoItagEquivalent().getAudioBitrate().getKbit();
             this.aCodec = avar.getiTagAudioOrVideoItagEquivalent().getAudioCodec().name();
-        }
-        if (variant instanceof VideoVariant) {
+        } else if (variant instanceof VideoVariant) {
             VideoVariant vvar = (VideoVariant) variant;
-
             this.aBitrate = vvar.getiTagAudioOrVideoItagEquivalent().getAudioBitrate().getKbit();
             this.aCodec = vvar.getiTagAudioOrVideoItagEquivalent().getAudioCodec().name();
             this.vCodec = vvar.getiTagVideo().getVideoCodec().name();
             this.fps = vvar.getiTagVideo().getVideoFrameRate().getInt();
             this.height = vvar.getiTagVideo().getVideoResolution().getHeight();
             this.projection = vvar.getProjection().name();
-
-        }
-        if (variant instanceof SubtitleVariant) {
-
-        }
-        if (variant instanceof ImageVariant) {
+            this.vheight = vvar.getVideoHeight();
+        } else if (variant instanceof SubtitleVariant) {
+        } else if (variant instanceof ImageVariant) {
             this.base = variant.getBaseVariant().name();
         }
     }
@@ -131,8 +140,8 @@ public class VariantIDStorable implements Storable {
     public String createGroupingID() {
         if (VariantGroup.VIDEO.name().equals(getGroup())) {
             return getGroup() + "_" + projection;
+        } else {
+            return getGroup();
         }
-        return getGroup();
     }
-
 }

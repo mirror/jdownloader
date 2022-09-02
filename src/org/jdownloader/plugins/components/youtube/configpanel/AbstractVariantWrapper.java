@@ -19,8 +19,9 @@ public class AbstractVariantWrapper {
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof AbstractVariantWrapper)) {
             return false;
+        } else {
+            return ((AbstractVariantWrapper) obj).blackListEntry.createUniqueID().equals(blackListEntry.createUniqueID());
         }
-        return ((AbstractVariantWrapper) obj).blackListEntry.createUniqueID().equals(blackListEntry.createUniqueID());
     }
 
     @Override
@@ -43,51 +44,53 @@ public class AbstractVariantWrapper {
     public int getWidth() {
         if (variant instanceof VideoVariant) {
             return ((VideoVariant) variant).getVideoWidth();
-        }
-        if (variant instanceof ImageVariant) {
+        } else if (variant instanceof ImageVariant) {
             return ((ImageVariant) variant).getWidth();
-
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public int getAudioBitrate() {
         if (variant instanceof AudioInterface) {
             return ((AudioInterface) variant).getAudioBitrate().getKbit();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public int getFramerate() {
         if (variant instanceof VideoVariant) {
             return ((VideoVariant) variant).getVideoFrameRate();
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public String getVideoCodec() {
         if (variant instanceof VideoVariant) {
             return ((VideoVariant) variant).getVideoCodec().getLabel();
+        } else {
+            return "";
         }
-        return "";
     }
 
     public String getAudioCodec() {
         if (variant instanceof AudioInterface) {
             return ((AudioInterface) variant).getAudioCodec().getLabel();
+        } else {
+            return "";
         }
-        return "";
     }
 
     public int getHeight() {
         if (variant instanceof VideoVariant) {
             return ((VideoVariant) variant).getVideoHeight();
-        }
-        if (variant instanceof ImageVariant) {
+        } else if (variant instanceof ImageVariant) {
             return ((ImageVariant) variant).getHeight();
-
+        } else {
+            return -1;
         }
-        return -1;
     }
 
     public VariantIDStorable getVariableIDStorable() {
@@ -97,8 +100,8 @@ public class AbstractVariantWrapper {
     public Projection getProjection() {
         if (variant instanceof VideoVariant) {
             return ((VideoVariant) variant).getProjection();
+        } else {
+            return null;
         }
-        return null;
     }
-
 }
