@@ -393,7 +393,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         } else {
             pageFormat = "/page/%d";
         }
-        // contentURLFormat += "%s";
         /*
          * Defines how book pages will be arranged on the archive.org website. User can open single pages faster in browser if we get this
          * right.
