@@ -49,7 +49,7 @@ public class MtlAreRg extends PluginForDecrypt {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), true, 1000);
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), true, 3000);
     }
 
     @Override
