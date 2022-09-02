@@ -89,6 +89,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hoster problem?" })
     String plugins_errors_hosterproblem();
 
+    @Default(lngs = { "en" }, values = { "Hoster problem rate limit reached" })
+    String plugins_errors_hosterproblem_rate_limit();
+
     @Default(lngs = { "en" }, values = { "Download incomplete" })
     String download_error_message_incomplete();
 

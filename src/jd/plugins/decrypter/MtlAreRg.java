@@ -30,6 +30,8 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -46,10 +48,16 @@ public class MtlAreRg extends PluginForDecrypt {
     }
 
     @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), true, 1000);
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(false);
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(400);
         if (!getUserLogin(param.getCryptedUrl())) {
             logger.info("No- or wrong logindata entered!");
             throw new AccountRequiredException();
@@ -88,12 +96,13 @@ public class MtlAreRg extends PluginForDecrypt {
         return ret;
     }
 
-    private boolean getUserLogin(final String url) throws IOException, DecrypterException {
+    private boolean getUserLogin(final String url) throws IOException, DecrypterException, PluginException, DecrypterRetryException {
         synchronized (LOCK) {
             String logincookie = this.getPluginConfig().getStringProperty("masession_id");
             if (logincookie != null) {
                 br.setCookie(this.getHost(), "masession_id", logincookie);
                 br.getPage(url);
+                checkErrors(br);
                 if (this.isLoggedIN(br)) {
                     logger.info("Cookie login successful");
                     return true;
@@ -116,7 +125,9 @@ public class MtlAreRg extends PluginForDecrypt {
                 }
             }
             br.getPage("https://" + this.getHost() + "/forum/index.php?act=Login");
+            checkErrors(br);
             br.postPage("/forum/index.php?act=Login&CODE=01", "UserName=" + Encoding.urlEncode(username) + "&PassWord=" + Encoding.urlEncode(password) + "&CookieDate=1");
+            checkErrors(br);
             logincookie = br.getCookie(br.getHost(), "masession_id", Cookies.NOTDELETEDPATTERN);
             if (logincookie != null && this.isLoggedIN(br)) {
                 logger.info("Full login successful");
@@ -138,6 +149,14 @@ public class MtlAreRg extends PluginForDecrypt {
         }
     }
 
+    private void checkErrors(final Browser br) throws PluginException, DecrypterRetryException {
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
     boolean isLoggedIN(final Browser br) {
         /* Check if user control-panel is visible. */
         return br.containsHTML("id=\"userlinks\"");
@@ -145,5 +164,11 @@ public class MtlAreRg extends PluginForDecrypt {
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* Try to avoid rate-limit. */
+        return 1;
     }
 }
