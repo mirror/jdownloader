@@ -658,8 +658,12 @@ public abstract class Plugin implements ActionListener {
     public <T> T restoreFromString(final String json, final TypeRef<T> typeRef) {
         if (TypeRef.HASHMAP == typeRef || TypeRef.LIST == typeRef || TypeRef.OBJECT == typeRef || TypeRef.MAP == typeRef) {
             try {
-                if (Class.forName("org.appwork.storage.simplejson.JSonParser", false, getClass().getClassLoader()) != null) {
-                    return (T) new MinimalMemoryJSonParser(json).parse();
+                if (json == null) {
+                    return null;
+                } else {
+                    if (Class.forName("org.appwork.storage.simplejson.JSonParser", false, getClass().getClassLoader()) != null) {
+                        return (T) new MinimalMemoryJSonParser(json).parse();
+                    }
                 }
             } catch (ParserException e) {
                 throw new JSonMapperException(e);

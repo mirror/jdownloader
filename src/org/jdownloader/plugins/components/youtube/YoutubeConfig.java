@@ -13,6 +13,7 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
+import org.appwork.storage.config.annotations.DefaultOnNull;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -243,6 +244,13 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @DefaultJsonObject("[]")
     List<VideoFrameRate> getChooseVariantDialogBlacklistedVideoFramerates();
+
+    @AboutConfig
+    @DefaultEnumValue("P_4320")
+    @DefaultOnNull
+    VideoResolution getMaxVideoResolution();
+
+    void setMaxVideoResolution(VideoResolution resolution);
 
     @AboutConfig
     @DefaultIntValue(15)

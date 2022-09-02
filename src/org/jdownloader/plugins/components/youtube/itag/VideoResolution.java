@@ -24,8 +24,8 @@ public enum VideoResolution implements LabelInterface, IntegerInterface {
     P_144(256, 144),
     P_90(120, 90),
     P_72(128, 72), ;
-    private int height;
-    private int width;
+    private final int height;
+    private final int width;
 
     private VideoResolution(int width, int height) {
         this.height = height;
@@ -50,7 +50,7 @@ public enum VideoResolution implements LabelInterface, IntegerInterface {
     }
 
     public static VideoResolution getByHeight(int height) {
-        for (VideoResolution r : values()) {
+        for (final VideoResolution r : values()) {
             if (r.getHeight() == height) {
                 return r;
             }

@@ -504,6 +504,7 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             final List<AbstractVariant> enabledVariants = new ArrayList<AbstractVariant>(AbstractVariant.listVariants());
             final HashSet<VariantGroup> enabledVariantGroups = new HashSet<VariantGroup>();
+            final VideoResolution maxVideoResolution = CFG_YOUTUBE.CFG.getMaxVideoResolution();
             {
                 // nest this, so we don't have variables table full of entries that get called only once
                 final List<VariantIDStorable> disabled = CFG_YOUTUBE.CFG.getDisabledVariants();
@@ -573,12 +574,19 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
             // write all available variants to groups and allVariants
-            List<VariantInfo> variants = vid.findVariants();
+            List<VariantInfo> foundVariants = vid.findVariants();
             VideoVariant bestVideoResolution = null;
-            for (VariantInfo vi : variants) {
-                if (vi.getVariant() instanceof VideoVariant) {
-                    if (bestVideoResolution == null || bestVideoResolution.getVideoHeight() < ((VideoVariant) vi.getVariant()).getVideoHeight()) {
-                        bestVideoResolution = (VideoVariant) vi.getVariant();
+            {
+                final Iterator<VariantInfo> it = foundVariants.iterator();
+                while (it.hasNext()) {
+                    final VariantInfo vi = it.next();
+                    if (vi.getVariant() instanceof VideoVariant) {
+                        final VideoVariant videoVariant = (VideoVariant) vi.getVariant();
+                        if (videoVariant.getVideoHeight() > maxVideoResolution.getHeight()) {
+                            it.remove();
+                        } else if (bestVideoResolution == null || bestVideoResolution.getVideoHeight() < videoVariant.getVideoHeight()) {
+                            bestVideoResolution = videoVariant;
+                        }
                     }
                 }
             }
@@ -586,10 +594,10 @@ public class TbCmV2 extends PluginForDecrypt {
             List<VariantInfo> subtitles = enabledVariantGroups.contains(VariantGroup.SUBTITLES) ? vid.findSubtitleVariants() : new ArrayList<VariantInfo>();
             ArrayList<VariantInfo> descriptions = enabledVariantGroups.contains(VariantGroup.DESCRIPTION) ? vid.findDescriptionVariant() : new ArrayList<VariantInfo>();
             if (subtitles != null) {
-                variants.addAll(subtitles);
+                foundVariants.addAll(subtitles);
             }
             if (descriptions != null) {
-                variants.addAll(descriptions);
+                foundVariants.addAll(descriptions);
             }
             List<YoutubeVariantCollection> links = YoutubeVariantCollection.load();
             if (requestedVariant != null) {
@@ -599,59 +607,59 @@ public class TbCmV2 extends PluginForDecrypt {
                 varList.add(new VariantIDStorable(requestedVariant));
                 links.add(new YoutubeVariantCollection("Dummy", varList));
             }
-            HashSet<String> allowedVariantsSet = new HashSet<String>();
+            final HashMap<String, AbstractVariant> allowedVariantsMap = new HashMap<String, AbstractVariant>();
             for (AbstractVariant v : enabledVariants) {
-                VariantIDStorable storable = new VariantIDStorable(v);
-                allowedVariantsSet.add(storable.createUniqueID());
+                final VariantIDStorable storable = new VariantIDStorable(v);
+                allowedVariantsMap.put(storable.createUniqueID(), v);
             }
-            HashMap<VariantInfo, VariantIDStorable> storables = new HashMap<VariantInfo, VariantIDStorable>();
-            for (VariantInfo v : variants) {
-                System.out.println(v.getVariant());
-                VariantIDStorable storable = new VariantIDStorable(v.getVariant());
-                storables.put(v, storable);
+            final HashMap<VariantInfo, String[]> foundVariableMap = new HashMap<VariantInfo, String[]>();
+            for (VariantInfo v : foundVariants) {
+                final VariantIDStorable storable = new VariantIDStorable(v.getVariant());
+                foundVariableMap.put(v, new String[] { storable.createUniqueID(), storable.createGroupingID(), storable.getContainer() });
             }
             if (CFG_YOUTUBE.CFG.isCollectionMergingEnabled()) {
                 for (YoutubeVariantCollection l : links) {
                     if (!l.isEnabled()) {
                         continue;
                     }
-                    ArrayList<VariantInfo> linkVariants = new ArrayList<VariantInfo>();
-                    ArrayList<VariantInfo> cutLinkVariantsDropdown = new ArrayList<VariantInfo>();
-                    HashSet<String> customAlternateSet = l.createUniqueIDSetForDropDownList();
+                    final ArrayList<VariantInfo> linkVariants = new ArrayList<VariantInfo>();
+                    final ArrayList<VariantInfo> cutLinkVariantsDropdown = new ArrayList<VariantInfo>();
+                    final HashSet<String> customAlternateSet = l.createUniqueIDSetForDropDownList();
                     if (customAlternateSet.size() > 0) {
-                        for (VariantInfo v : variants) {
-                            VariantIDStorable vi = storables.get(v);
-                            if (customAlternateSet.contains(vi.createUniqueID())) {
-                                if (allowedVariantsSet.contains(vi.createUniqueID())) {
-                                    cutLinkVariantsDropdown.add(v);
-                                    helper.extendedDataLoading(v, variants);
+                        for (Entry<VariantInfo, String[]> foundVariant : foundVariableMap.entrySet()) {
+                            final String uId = foundVariant.getValue()[0];
+                            if (customAlternateSet.contains(uId)) {
+                                if (allowedVariantsMap.containsKey(uId)) {
+                                    final VariantInfo variant = foundVariant.getKey();
+                                    cutLinkVariantsDropdown.add(variant);
+                                    helper.extendedDataLoading(variant, foundVariants);
                                 }
                             }
                         }
                     }
                     if (StringUtils.isNotEmpty(l.getGroupingID())) {
-                        for (VariantInfo v : variants) {
-                            VariantIDStorable vi = storables.get(v);
-                            if (StringUtils.equals(l.getGroupingID(), vi.createGroupingID())) {
-                                if (allowedVariantsSet.contains(vi.createUniqueID())) {
-                                    linkVariants.add(v);
-                                    helper.extendedDataLoading(v, variants);
-                                }
-                            } else if (StringUtils.equals(l.getGroupingID(), vi.getContainer())) {
-                                if (allowedVariantsSet.contains(vi.createUniqueID())) {
-                                    linkVariants.add(v);
-                                    helper.extendedDataLoading(v, variants);
+                        final String groupingID = l.getGroupingID();
+                        for (Entry<VariantInfo, String[]> foundVariant : foundVariableMap.entrySet()) {
+                            final String gId = foundVariant.getValue()[1];
+                            final String cId = foundVariant.getValue()[2];
+                            if (StringUtils.equals(groupingID, gId) || StringUtils.equals(groupingID, cId)) {
+                                final String uId = foundVariant.getValue()[0];
+                                if (allowedVariantsMap.containsKey(uId)) {
+                                    final VariantInfo variant = foundVariant.getKey();
+                                    linkVariants.add(variant);
+                                    helper.extendedDataLoading(variant, foundVariants);
                                 }
                             }
                         }
                     } else if (l.getVariants() != null && l.getVariants().size() > 0) {
                         HashSet<String> idSet = l.createUniqueIDSet();
-                        for (VariantInfo v : variants) {
-                            VariantIDStorable vi = storables.get(v);
-                            if (idSet.contains(vi.createUniqueID())) {
-                                if (allowedVariantsSet.contains(vi.createUniqueID())) {
-                                    linkVariants.add(v);
-                                    helper.extendedDataLoading(v, variants);
+                        for (Entry<VariantInfo, String[]> foundVariant : foundVariableMap.entrySet()) {
+                            final String uId = foundVariant.getValue()[0];
+                            if (idSet.contains(uId)) {
+                                if (allowedVariantsMap.containsKey(uId)) {
+                                    final VariantInfo variant = foundVariant.getKey();
+                                    linkVariants.add(variant);
+                                    helper.extendedDataLoading(variant, foundVariants);
                                 }
                             }
                         }
@@ -725,11 +733,12 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             } else {
                 ArrayList<VariantInfo> linkVariants = new ArrayList<VariantInfo>();
-                for (VariantInfo v : variants) {
-                    VariantIDStorable vi = storables.get(v);
-                    if (allowedVariantsSet.contains(vi.createUniqueID())) {
-                        linkVariants.add(v);
-                        helper.extendedDataLoading(v, variants);
+                for (Entry<VariantInfo, String[]> foundVariant : foundVariableMap.entrySet()) {
+                    final String uId = foundVariant.getValue()[0];
+                    if (allowedVariantsMap.containsKey(uId)) {
+                        final VariantInfo variant = foundVariant.getKey();
+                        linkVariants.add(variant);
+                        helper.extendedDataLoading(variant, foundVariants);
                     }
                 }
                 Collections.sort(linkVariants, new Comparator<VariantInfo>() {
