@@ -19,12 +19,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -38,10 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(?:[a-z0-9]+\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[a-z0-9]+)" })
 public class WebShareCz extends PluginForHost {
@@ -76,11 +72,12 @@ public class WebShareCz extends PluginForHost {
         }
         final String filename = getXMLtagValue("name");
         final String filesize = getXMLtagValue("size");
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(filename.trim());
         }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -122,44 +119,41 @@ public class WebShareCz extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "file/([A-Za-z0-9]+)/").getMatch(0);
     }
 
-    private final String MAINPAGE = "http://webshare.cz";
-
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force) {
+                        /* Do not verify cookies */
                         return;
                     }
+                    br.postPage("https://" + this.getHost() + "/api/user_data/", "wst=" + getToken(account));
+                    final String status = getXMLtagValue("status");
+                    if (StringUtils.equalsIgnoreCase(status, "OK")) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
+                    }
                 }
+                logger.info("Performing full login");
                 final String lang = System.getProperty("user.language");
                 br.setFollowRedirects(false);
-                br.postPage("https://webshare.cz/api/salt/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&wst=");
+                br.postPage("https://" + this.getHost() + "/api/salt/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&wst=");
                 final String salt = br.getRegex("<salt>([^<>\"]*?)</salt>").getMatch(0);
                 if (salt == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String password = JDHash.getSHA1(crypt_md5(account.getPass().getBytes("UTF-8"), salt));
                 final String digest = Hash.getMD5(account.getUser() + ":Webshare:" + account.getPass());
-                br.postPage("https://webshare.cz/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
+                br.postPage("/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
                 if (br.containsHTML("<code>LOGIN_FATAL_\\d+</code>")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -168,26 +162,16 @@ public class WebShareCz extends PluginForHost {
                     }
                 }
                 final String token = getXMLtagValue("token");
-                if (token == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (StringUtils.isEmpty(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 account.setProperty("token", token);
-                br.setCookie(MAINPAGE, "wst", token);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                br.setCookie(br.getHost(), "wst", token);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -196,13 +180,10 @@ public class WebShareCz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
+        login(account, true);
+        if (!br.getURL().contains("/api/user_data/")) {
+            br.postPage("/api/user_data/", "wst=" + getToken(account));
         }
-        br.postPage("http://webshare.cz/api/user_data/", "wst=" + getToken(account));
         final String status = getXMLtagValue("status");
         if (!StringUtils.equalsIgnoreCase(status, "OK")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Status:" + status, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -220,7 +201,6 @@ public class WebShareCz extends PluginForHost {
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
-                ai.setStatus("Free User");
             }
         } else {
             ai.setValidUntil(System.currentTimeMillis() + Integer.parseInt(days) * 24 * 60 * 60 * 1000l);
@@ -238,16 +218,20 @@ public class WebShareCz extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         final boolean isPremium = AccountType.PREMIUM.equals(account.getType());
-        br.postPage("http://webshare.cz/api/file_link/", "ident=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0) + "&wst=" + getToken(account));
+        br.postPage("https://" + this.getHost() + "/api/file_link/", "ident=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0) + "&wst=" + getToken(account));
         final String dllink = getXMLtagValue("link");
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isPremium, isPremium ? 0 : 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -259,25 +243,25 @@ public class WebShareCz extends PluginForHost {
 
     /*
      * Copyright (c) 1999 University of California. All rights reserved.
-     * 
+     *
      * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
      * are met: 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following
      * disclaimer. 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
      * disclaimer in the documentation and/or other materials provided with the distribution. 3. Neither the name of the author nor the
      * names of any co-contributors may be used to endorse or promote products derived from this software without specific prior written
      * permission.
-     * 
+     *
      * THIS SOFTWARE IS PROVIDED BY CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
      * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL CONTRIBUTORS BE LIABLE FOR ANY
      * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
      * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
      * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
      * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-     * 
+     *
      * $FreeBSD: src/lib/libcrypt/misc.c,v 1.1 1999/09/20 12:45:49 markm Exp $
      */
     static char[] itoa64 = /* 0 ... 63 => ascii - 64 */
-                         "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+            "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
 
     private static String cryptTo64(long v, int n) {
         StringBuilder result = new StringBuilder();
@@ -293,7 +277,7 @@ public class WebShareCz extends PluginForHost {
      * <phk@login.dknet.dk> wrote this file. As long as you retain this notice you can do whatever you want with this stuff. If we meet some
      * day, and you think this stuff is worth it, you can buy me a beer in return. Poul-Henning Kamp
      * ----------------------------------------------------------------------------
-     * 
+     *
      * $FreeBSD: src/lib/libcrypt/crypt-md5.c,v 1.5 1999/12/17 20:21:45 peter Exp $
      */
     private final String magic    = "$1$"; /*

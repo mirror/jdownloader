@@ -201,6 +201,7 @@ public class SrfChCrawler extends PluginForDecrypt {
         String lastBlockReason = null;
         /* 2022-07-22: I've never seen an item containing multiple chapters but whatever... */
         for (final Map<String, Object> chapter : chapterList) {
+            final String chapterID = chapter.get("id").toString();
             final String title = chapter.get("title").toString();
             final String dateFormatted = new Regex(chapter.get("date"), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             final String thisURN = chapter.get("urn").toString(); // should be == urn
@@ -226,175 +227,185 @@ public class SrfChCrawler extends PluginForDecrypt {
             String bestHLSMasterURL = null;
             lastBlockReason = (String) chapter.get("blockReason");
             if (!StringUtils.isEmpty(lastBlockReason)) {
+                /* 2022-09-03: GEO-block can be easily circumvented as they will provide working HLS URLs anyways. */
+                logger.info("Chapter might to be GEO-blocked: " + chapterID);
                 numberofGeoBlockedItems++;
-                continue;
             }
-            // final String id = (String) entries.get("id");
-            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) chapter.get("resourceList");
-            if (ressourcelist == null || ressourcelist.size() == 0) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            boolean foundHD = false;
-            for (final Map<String, Object> resource : ressourcelist) {
-                /* Every resource is usually available in "SD" and "HD" */
-                final String quality = resource.get("quality").toString();
-                final String url = resource.get("url").toString();
-                final String protocol = resource.get("protocol").toString();
-                if (quality.equalsIgnoreCase("HD")) {
-                    foundHD = true;
+            try {
+                // final String id = (String) entries.get("id");
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) chapter.get("resourceList");
+                if (ressourcelist == null || ressourcelist.size() == 0) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (protocol.equalsIgnoreCase("HTTP") || protocol.equalsIgnoreCase("HTTPS")) {
-                    if (foundHD) {
-                        if (StringUtils.isEmpty(URLHTTP720p)) {
-                            URLHTTP720p = url;
-                        }
-                    } else {
-                        if (StringUtils.isEmpty(URLHTTP360p)) {
-                            URLHTTP360p = url;
-                        }
+                boolean foundHD = false;
+                for (final Map<String, Object> resource : ressourcelist) {
+                    /* Every resource is usually available in "SD" and "HD" */
+                    final String quality = resource.get("quality").toString();
+                    final String url = resource.get("url").toString();
+                    final String protocol = resource.get("protocol").toString();
+                    if (quality.equalsIgnoreCase("HD")) {
+                        foundHD = true;
                     }
-                } else if (protocol.equalsIgnoreCase("HLS")) {
-                    bestHLSMasterURL = url;
-                } else {
-                    /* Skip unsupported protocol */
-                    logger.info("Skipping protocol: " + protocol);
-                    continue;
-                }
-                if (foundHD) {
-                    break;
-                }
-            }
-            final Map<Integer, DownloadLink> foundQualities = new HashMap<Integer, DownloadLink>();
-            if (URLHTTP360p != null) {
-                final DownloadLink dlHTTP360p = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), URLHTTP360p, true);
-                dlHTTP360p.setProperty(PROPERTY_WIDTH, 640);
-                dlHTTP360p.setProperty(PROPERTY_HEIGHT, 360);
-                foundQualities.put(360, dlHTTP360p);
-            }
-            if (URLHTTP720p != null) {
-                final DownloadLink dlHTTP720p = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), URLHTTP720p, true);
-                dlHTTP720p.setProperty(PROPERTY_WIDTH, 1280);
-                dlHTTP720p.setProperty(PROPERTY_HEIGHT, 720);
-                foundQualities.put(720, dlHTTP720p);
-            }
-            /* Decide whether or not we need to crawl HLS qualities. */
-            boolean crawlHLS;
-            if (mode == QualitySelectionMode.BEST) {
-                /* Best quality is only possible via HLS. Max quality via http: 720p. */
-                crawlHLS = true;
-            } else {
-                crawlHLS = false;
-                /* Check if user wants to have a quality that isn't already found as http quality. */
-                for (final int selectedQuality : selectedQualities) {
-                    if (!foundQualities.containsKey(selectedQuality)) {
-                        /* User wants quality that we didn't already found -> If at all, it will only be available via HLS. */
-                        crawlHLS = true;
+                    if (protocol.equalsIgnoreCase("HTTP") || protocol.equalsIgnoreCase("HTTPS")) {
+                        if (foundHD) {
+                            if (StringUtils.isEmpty(URLHTTP720p)) {
+                                URLHTTP720p = url;
+                            }
+                        } else {
+                            if (StringUtils.isEmpty(URLHTTP360p)) {
+                                URLHTTP360p = url;
+                            }
+                        }
+                    } else if (protocol.equalsIgnoreCase("HLS")) {
+                        bestHLSMasterURL = url;
+                    } else {
+                        /* Skip unsupported protocol */
+                        logger.info("Skipping protocol: " + protocol);
+                        continue;
+                    }
+                    if (foundHD) {
                         break;
                     }
                 }
-            }
-            int bestHeight = 0;
-            DownloadLink best = null;
-            if (crawlHLS) {
-                /* Sign HLS master URL */
-                String acl = new Regex(bestHLSMasterURL, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
-                if (acl == null) {
-                    logger.warning("Failed to find acl");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final Map<Integer, DownloadLink> foundQualities = new HashMap<Integer, DownloadLink>();
+                if (URLHTTP360p != null) {
+                    final DownloadLink dlHTTP360p = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), URLHTTP360p, true);
+                    dlHTTP360p.setProperty(PROPERTY_WIDTH, 640);
+                    dlHTTP360p.setProperty(PROPERTY_HEIGHT, 360);
+                    foundQualities.put(360, dlHTTP360p);
                 }
-                acl += "/*";
-                br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
-                final Map<String, Object> signInfoRoot = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                final Map<String, Object> authMap = (Map<String, Object>) signInfoRoot.get("token");
-                String authparams = (String) authMap.get("authparams");
-                if (StringUtils.isEmpty(authparams)) {
-                    logger.warning("Failed to find authparams");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (URLHTTP720p != null) {
+                    final DownloadLink dlHTTP720p = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), URLHTTP720p, true);
+                    dlHTTP720p.setProperty(PROPERTY_WIDTH, 1280);
+                    dlHTTP720p.setProperty(PROPERTY_HEIGHT, 720);
+                    foundQualities.put(720, dlHTTP720p);
                 }
-                authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
-                authparams = URLEncode.encodeURIComponent(authparams);
-                authparams = authparams.replace("*", "%2A");
-                String bestHLSMasterURLFixed = bestHLSMasterURL;
-                // bestHLSMasterURL += "&hdnts=" + authparams;
-                final String param_caption = new Regex(bestHLSMasterURL, "caption=([^\\&]+)").getMatch(0);
-                if (param_caption != null) {
-                    String param_caption_new = param_caption;
-                    param_caption_new = Encoding.htmlDecode(param_caption_new);
-                    param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
-                    param_caption_new = param_caption_new.replace("%3D", "=");
-                    bestHLSMasterURLFixed = bestHLSMasterURLFixed.replace(param_caption, param_caption_new);
-                }
-                final UrlQuery hlsMasterQuery = UrlQuery.parse(bestHLSMasterURLFixed);
-                hlsMasterQuery.add("hdnts", authparams);
-                String bestHLSMasterURLFixedWithoutParams = URLHelper.getUrlWithoutParams(bestHLSMasterURLFixed);
-                br.getPage(bestHLSMasterURLFixedWithoutParams + "?" + hlsMasterQuery.toString());
-                final List<HlsContainer> containers = HlsContainer.getHlsQualities(br);
-                for (final HlsContainer container : containers) {
-                    if (foundQualities.containsKey(container.getHeight())) {
-                        /* Skip already found qualities */
-                        continue;
-                    }
-                    final DownloadLink result = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), container.getDownloadurl(), true);
-                    result.setProperty(PROPERTY_WIDTH, container.getWidth());
-                    result.setProperty(PROPERTY_HEIGHT, container.getHeight());
-                    foundQualities.put(container.getHeight(), result);
-                    if (best == null || container.getHeight() > bestHeight) {
-                        best = result;
-                        bestHeight = container.getHeight();
+                /* Decide whether or not we need to crawl HLS qualities. */
+                boolean crawlHLS;
+                if (mode == QualitySelectionMode.BEST) {
+                    /* Best quality is only possible via HLS. Max quality via http: 720p. */
+                    crawlHLS = true;
+                } else {
+                    crawlHLS = false;
+                    /* Check if user wants to have a quality that isn't already found as http quality. */
+                    for (final int selectedQuality : selectedQualities) {
+                        if (!foundQualities.containsKey(selectedQuality)) {
+                            /* User wants quality that we didn't already found -> If at all, it will only be available via HLS. */
+                            crawlHLS = true;
+                            break;
+                        }
                     }
                 }
-            }
-            final ArrayList<DownloadLink> retChapter = new ArrayList<DownloadLink>();
-            if (mode == QualitySelectionMode.BEST) {
-                retChapter.add(best);
-            } else {
-                /* Add all selected qualities */
-                for (final int selectedQuality : selectedQualities) {
-                    if (foundQualities.containsKey(selectedQuality)) {
-                        retChapter.add(foundQualities.get(selectedQuality));
+                int bestHeight = 0;
+                DownloadLink best = null;
+                if (crawlHLS) {
+                    /* Sign HLS master URL */
+                    String acl = new Regex(bestHLSMasterURL, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
+                    if (acl == null) {
+                        logger.warning("Failed to find acl");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    acl += "/*";
+                    br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
+                    final Map<String, Object> signInfoRoot = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    final Map<String, Object> authMap = (Map<String, Object>) signInfoRoot.get("token");
+                    String authparams = (String) authMap.get("authparams");
+                    if (StringUtils.isEmpty(authparams)) {
+                        logger.warning("Failed to find authparams");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
+                    authparams = URLEncode.encodeURIComponent(authparams);
+                    authparams = authparams.replace("*", "%2A");
+                    String bestHLSMasterURLFixed = bestHLSMasterURL;
+                    // bestHLSMasterURL += "&hdnts=" + authparams;
+                    final String param_caption = new Regex(bestHLSMasterURL, "caption=([^\\&]+)").getMatch(0);
+                    if (param_caption != null) {
+                        String param_caption_new = param_caption;
+                        param_caption_new = Encoding.htmlDecode(param_caption_new);
+                        param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
+                        param_caption_new = param_caption_new.replace("%3D", "=");
+                        bestHLSMasterURLFixed = bestHLSMasterURLFixed.replace(param_caption, param_caption_new);
+                    }
+                    final UrlQuery hlsMasterQuery = UrlQuery.parse(bestHLSMasterURLFixed);
+                    hlsMasterQuery.add("hdnts", authparams);
+                    String bestHLSMasterURLFixedWithoutParams = URLHelper.getUrlWithoutParams(bestHLSMasterURLFixed);
+                    br.getPage(bestHLSMasterURLFixedWithoutParams + "?" + hlsMasterQuery.toString());
+                    final List<HlsContainer> containers = HlsContainer.getHlsQualities(br);
+                    for (final HlsContainer container : containers) {
+                        if (foundQualities.containsKey(container.getHeight())) {
+                            /* Skip already found qualities */
+                            continue;
+                        }
+                        final DownloadLink result = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), container.getDownloadurl(), true);
+                        result.setProperty(PROPERTY_WIDTH, container.getWidth());
+                        result.setProperty(PROPERTY_HEIGHT, container.getHeight());
+                        foundQualities.put(container.getHeight(), result);
+                        if (best == null || container.getHeight() > bestHeight) {
+                            best = result;
+                            bestHeight = container.getHeight();
+                        }
                     }
                 }
-                if (retChapter.isEmpty()) {
-                    /* None of users' selected qualities have been found. */
-                    if (fallbackMode == QualitySelectionFallbackMode.BEST) {
-                        retChapter.add(best);
-                    } else if (fallbackMode == QualitySelectionFallbackMode.ALL) {
-                        retChapter.addAll(foundQualities.values());
-                    } else {
-                        logger.info("None of the user selected qualities have been found and user configured \"Add nothing\" as fallback");
+                final ArrayList<DownloadLink> retChapter = new ArrayList<DownloadLink>();
+                if (mode == QualitySelectionMode.BEST) {
+                    retChapter.add(best);
+                } else {
+                    /* Add all selected qualities */
+                    for (final int selectedQuality : selectedQualities) {
+                        if (foundQualities.containsKey(selectedQuality)) {
+                            retChapter.add(foundQualities.get(selectedQuality));
+                        }
+                    }
+                    if (retChapter.isEmpty()) {
+                        /* None of users' selected qualities have been found. */
+                        if (fallbackMode == QualitySelectionFallbackMode.BEST) {
+                            retChapter.add(best);
+                        } else if (fallbackMode == QualitySelectionFallbackMode.ALL) {
+                            retChapter.addAll(foundQualities.values());
+                        } else {
+                            logger.info("None of the user selected qualities have been found and user configured \"Add nothing\" as fallback");
+                        }
                     }
                 }
-            }
-            /* Set miscellaneous properties */
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(titleBase);
-            if (!StringUtils.isEmpty(description)) {
-                fp.setComment(description);
-            }
-            final SrfChConfig cfg = PluginJsonConfig.get(SrfChConfig.class);
-            if (cfg.isCrawlThumbnail()) {
-                final String thumbnailURL = (String) chapter.get("imageUrl");
-                if (!StringUtils.isEmpty(thumbnailURL)) {
-                    final DownloadLink thumbnail = this.createDownloadlink(thumbnailURL);
-                    final String ext = Plugin.getFileNameExtensionFromURL(thumbnailURL);
-                    if (ext != null) {
-                        thumbnail.setFinalFileName(titleBase + ext);
+                /* Set miscellaneous properties */
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(titleBase);
+                if (!StringUtils.isEmpty(description)) {
+                    fp.setComment(description);
+                }
+                final SrfChConfig cfg = PluginJsonConfig.get(SrfChConfig.class);
+                if (cfg.isCrawlThumbnail()) {
+                    final String thumbnailURL = (String) chapter.get("imageUrl");
+                    if (!StringUtils.isEmpty(thumbnailURL)) {
+                        final DownloadLink thumbnail = this.createDownloadlink(thumbnailURL);
+                        final String ext = Plugin.getFileNameExtensionFromURL(thumbnailURL);
+                        if (ext != null) {
+                            thumbnail.setFinalFileName(titleBase + ext);
+                        }
+                        retChapter.add(thumbnail);
                     }
-                    retChapter.add(thumbnail);
+                }
+                for (final DownloadLink result : retChapter) {
+                    if (result.hasProperty(PROPERTY_HEIGHT)) {
+                        /* Only set filename for video/audio items. */
+                        result.setFinalFileName(titleBase + "_" + result.getStringProperty(PROPERTY_HEIGHT) + videoAudioExt);
+                    }
+                    result.setContentUrl(contentURL);
+                    result.setAvailable(true);
+                    result._setFilePackage(fp);
+                    result.setProperty(PROPERTY_URN, thisURN);
+                }
+                ret.addAll(retChapter);
+            } catch (final Throwable e) {
+                if (numberofGeoBlockedItems > 0) {
+                    /* Failure most likely due to an item being GEO-blocked */
+                    break;
+                } else {
+                    throw e;
                 }
             }
-            for (final DownloadLink result : retChapter) {
-                if (result.hasProperty(PROPERTY_HEIGHT)) {
-                    /* Only set filename for video/audio items. */
-                    result.setFinalFileName(titleBase + "_" + result.getStringProperty(PROPERTY_HEIGHT) + videoAudioExt);
-                }
-                result.setContentUrl(contentURL);
-                result.setAvailable(true);
-                result._setFilePackage(fp);
-                result.setProperty(PROPERTY_URN, thisURN);
-            }
-            ret.addAll(retChapter);
         }
         if (ret.isEmpty() && numberofGeoBlockedItems > 0) {
             throw new DecrypterRetryException(RetryReason.GEO, "Content blocked because: " + lastBlockReason);

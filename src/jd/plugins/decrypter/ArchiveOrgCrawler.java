@@ -71,25 +71,17 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     final Set<String>  dups       = new HashSet<String>();
     private ArchiveOrg hostPlugin = null;
 
-    @Override
-    public void init() {
-        try {
-            this.hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
-        } catch (final Throwable ignore) {
-        }
-    }
-
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
          */
+        if (this.hostPlugin == null) {
+            this.hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
+        }
         final Account account = AccountController.getInstance().getValidAccount("archive.org");
         if (account != null) {
-            if (this.hostPlugin == null) {
-                this.init();
-            }
             hostPlugin.login(account, false);
         }
         URLConnectionAdapter con = null;
@@ -486,7 +478,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final boolean isMetadata = item.contains("<format>Metadata</format>");
             final boolean isArchiveViewSupported = item.matches("(?i)(?s).*<format>\\s*(RAR|ZIP)\\s*</format>.*");
             String pathWithFilename = new Regex(item, "name=\"([^\"]+)").getMatch(0);
-            final String filesizeStr = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
+            final String filesizeBytesStr = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
             final String sha1hash = new Regex(item, "<sha1>([a-f0-9]+)</sha1>").getMatch(0);
             if (pathWithFilename == null) {
                 continue;
@@ -534,10 +526,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             if (dups.add(url)) {
                 final DownloadLink downloadURL = createDownloadlink(url);
-                downloadURL.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                downloadURL.setDownloadSize(SizeFormatter.getSize(filesizeBytesStr));
                 downloadURL.setAvailable(true);
                 downloadURL.setFinalFileName(filename);
-                final String thisPath = new Regex(url, "download/(.+)/[^/]+").getMatch(0);
+                String thisPath = new Regex(url, "download/(.+)/[^/]+").getMatch(0);
+                if (Encoding.isUrlCoded(thisPath)) {
+                    thisPath = Encoding.htmlDecode(thisPath);
+                }
                 downloadURL.setRelativeDownloadFolderPath(thisPath);
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(thisPath);
