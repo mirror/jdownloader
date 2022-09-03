@@ -25,6 +25,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import org.jdownloader.plugins.components.config.XFSConfigVideoFilemoonSx;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -200,6 +201,15 @@ public class FilemoonSx extends XFileSharingProBasic {
             dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
         }
         handleDownload(link, account, dllink, null);
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+        if (br.containsHTML("(?i)<h1>\\s*Page not found|class=\"error e404\"")) {
+            return true;
+        } else {
+            return super.isOffline(link, br, correctedBR);
+        }
     }
 
     @Override
