@@ -18,12 +18,15 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.AccountRequiredException;
@@ -49,7 +52,9 @@ public class MtlAreRg extends PluginForDecrypt {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), true, 3000);
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            Browser.setRequestIntervalLimitGlobal(this.getHost(), true, 2000);
+        }
     }
 
     @Override
@@ -58,10 +63,8 @@ public class MtlAreRg extends PluginForDecrypt {
         br.setCookiesExclusive(false);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(400);
-        if (!getUserLogin(param.getCryptedUrl())) {
-            logger.info("No- or wrong logindata entered!");
-            throw new AccountRequiredException();
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
+        getUserLogin(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<td width='99%' style='word-wrap:break-word;'>\\s*<div>\\s*<img[^>]*/>\\s*\\&nbsp;\\s*<b>\\s*(.*?)\\s*</div>\\s*</td>").getMatch(0);
@@ -96,64 +99,101 @@ public class MtlAreRg extends PluginForDecrypt {
         return ret;
     }
 
-    private boolean getUserLogin(final String url) throws IOException, DecrypterException, PluginException, DecrypterRetryException {
+    private void getUserLogin(final String url) throws IOException, DecrypterException, PluginException, DecrypterRetryException, InterruptedException {
         synchronized (LOCK) {
-            String logincookie = this.getPluginConfig().getStringProperty("masession_id");
+            final String logincookie = this.getPluginConfig().getStringProperty("masession_id");
             if (logincookie != null) {
+                /* Re- use existing session */
                 br.setCookie(this.getHost(), "masession_id", logincookie);
-                br.getPage(url);
+                getPageWithRateLimitHandling(br, br.createGetRequest(url));
                 checkErrors(br);
                 if (this.isLoggedIN(br)) {
                     logger.info("Cookie login successful");
-                    return true;
+                    return;
                 } else {
                     logger.info("Cookie login failed");
-                    this.br.clearAll();
+                    this.br.clearCookies(br.getHost());
                 }
             }
             logger.info("Full login required");
-            String username = this.getPluginConfig().getStringProperty("user", null);
-            String password = this.getPluginConfig().getStringProperty("pass", null);
-            if (username == null || password == null) {
+            String username = this.getPluginConfig().getStringProperty("user");
+            String password = this.getPluginConfig().getStringProperty("pass");
+            if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
                 username = UserIO.getInstance().requestInputDialog("Enter Loginname for metalarea.org :");
-                if (username == null) {
-                    return false;
+                if (StringUtils.isEmpty(username)) {
+                    logger.info("Invalid/no username provided");
+                    throw new AccountRequiredException();
                 }
                 password = UserIO.getInstance().requestInputDialog("Enter password for metalarea.org :");
-                if (password == null) {
-                    return false;
+                if (StringUtils.isEmpty(password)) {
+                    logger.info("Invalid/no password provided");
+                    throw new AccountRequiredException();
                 }
             }
-            br.getPage("https://" + this.getHost() + "/forum/index.php?act=Login");
-            checkErrors(br);
-            br.postPage("/forum/index.php?act=Login&CODE=01", "UserName=" + Encoding.urlEncode(username) + "&PassWord=" + Encoding.urlEncode(password) + "&CookieDate=1");
-            checkErrors(br);
-            logincookie = br.getCookie(br.getHost(), "masession_id", Cookies.NOTDELETEDPATTERN);
-            if (logincookie != null && this.isLoggedIN(br)) {
-                logger.info("Full login successful");
-                this.getPluginConfig().setProperty("user", username);
-                this.getPluginConfig().setProperty("pass", password);
-                this.getPluginConfig().setProperty("masession_id", password);
-                this.getPluginConfig().save();
-                br.getPage(url);
-                return true;
-            } else {
-                /* Clear logindata so that we can ask user again the next time */
-                logger.info("Full login failed");
-                this.getPluginConfig().setProperty("user", Property.NULL);
-                this.getPluginConfig().setProperty("pass", Property.NULL);
-                this.getPluginConfig().setProperty("masession_id", Property.NULL);
-                this.getPluginConfig().save();
-                return false;
-            }
+            performFullLogin(br, username, password);
+            getPageWithRateLimitHandling(br, br.createGetRequest(url));
         }
     }
 
+    private void performFullLogin(final Browser br, final String username, final String password) throws IOException, PluginException, DecrypterRetryException {
+        br.getPage("https://" + this.getHost() + "/forum/index.php?act=Login");
+        checkErrors(br);
+        br.postPage("/forum/index.php?act=Login&CODE=01", "UserName=" + Encoding.urlEncode(username) + "&PassWord=" + Encoding.urlEncode(password) + "&CookieDate=1");
+        checkErrors(br);
+        final String logincookie = br.getCookie(br.getHost(), "masession_id", Cookies.NOTDELETEDPATTERN);
+        if (logincookie != null && this.isLoggedIN(br)) {
+            logger.info("Full login successful");
+            this.getPluginConfig().setProperty("user", username);
+            this.getPluginConfig().setProperty("pass", password);
+            this.getPluginConfig().setProperty("masession_id", password);
+            this.getPluginConfig().save();
+        } else {
+            /* Clear logindata so that we can ask user again the next time */
+            logger.info("Full login failed");
+            this.getPluginConfig().removeProperty("user");
+            this.getPluginConfig().removeProperty("pass");
+            this.getPluginConfig().removeProperty("masession_id");
+            this.getPluginConfig().save();
+            throw new AccountRequiredException();
+        }
+    }
+
+    private void getPageWithRateLimitHandling(final Browser br, final Request req) throws IOException, InterruptedException, PluginException, DecrypterRetryException {
+        int counter = 0;
+        do {
+            counter++;
+            br.getPage(req);
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                break;
+            }
+            if (looksLikeRateLimited(br)) {
+                logger.info("Trying to get around rate-limit attempt: " + counter);
+                br.clearCookies(br.getHost());
+                this.performFullLogin(br, this.getPluginConfig().getStringProperty("user"), this.getPluginConfig().getStringProperty("pass"));
+                Thread.sleep(10000l);
+                continue;
+            } else {
+                if (counter > 1) {
+                    logger.info("Successfully avoided rate-limit in run " + counter);
+                }
+                break;
+            }
+        } while (counter < 5 || !this.isAbort());
+    }
+
     private void checkErrors(final Browser br) throws PluginException, DecrypterRetryException {
-        if (br.getHttpConnection().getResponseCode() == 400) {
+        if (looksLikeRateLimited(br)) {
             throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    private boolean looksLikeRateLimited(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            return true;
+        } else {
+            return false;
         }
     }
 

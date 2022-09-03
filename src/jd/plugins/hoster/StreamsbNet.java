@@ -340,7 +340,11 @@ public class StreamsbNet extends XFileSharingProBasic {
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
-            dllink = brc.getRegex("<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+            dllink = brc.getRegex("(?i)<a href=\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
+                /* 2022-09-03 */
+                dllink = brc.getRegex("(?i)<a href=\"(https?://[^\"]+)\"[^>]*>\\s*Download Video\\s*</a>").getMatch(0);
+            }
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
