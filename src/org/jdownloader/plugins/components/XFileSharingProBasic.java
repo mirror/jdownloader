@@ -1814,7 +1814,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
         }
-        if (!StringUtils.isEmpty(officialVideoDownloadURL) && mode == DownloadMode.ORIGINAL) {
+        if (!StringUtils.isEmpty(officialVideoDownloadURL) && (mode == DownloadMode.ORIGINAL) || StringUtils.isEmpty(dllink)) {
             handleDownload(link, account, officialVideoDownloadURL, null);
         } else {
             /* Fallback, non-video download or user prefers stream download */
@@ -4350,7 +4350,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                         dllink = getDllink(link, account, br, getCorrectBR(br));
                     }
                 }
-                if (!StringUtils.isEmpty(officialVideoDownloadURL) && mode == DownloadMode.ORIGINAL) {
+                if (!StringUtils.isEmpty(officialVideoDownloadURL) && (mode == DownloadMode.ORIGINAL || StringUtils.isEmpty(dllink))) {
                     /* Official video download */
                     handleDownload(link, account, officialVideoDownloadURL, null);
                 } else {
