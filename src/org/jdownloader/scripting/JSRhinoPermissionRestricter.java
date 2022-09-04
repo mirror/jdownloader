@@ -12,7 +12,6 @@ import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.WrapFactory;
-import org.mozilla.javascript.tools.shell.Global;
 
 /**
  * from http://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
@@ -228,16 +227,6 @@ public class JSRhinoPermissionRestricter {
 
     public static final ConcurrentHashMap<Thread, Boolean>           TRUSTED_THREAD   = new ConcurrentHashMap<Thread, Boolean>();
     public static final ConcurrentHashMap<Thread, JSShutterDelegate> THREAD_JSSHUTTER = new ConcurrentHashMap<Thread, JSShutterDelegate>();
-
-    public static Object evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
-        final Thread thread = Thread.currentThread();
-        try {
-            TRUSTED_THREAD.put(thread, true);
-            return cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
-        } finally {
-            TRUSTED_THREAD.remove(thread);
-        }
-    }
 
     public static void init() {
         try {
