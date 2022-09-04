@@ -398,7 +398,7 @@ public class SrfChCrawler extends PluginForDecrypt {
                     result.setProperty(PROPERTY_URN, thisURN);
                 }
                 ret.addAll(retChapter);
-            } catch (final Throwable e) {
+            } catch (final Exception e) {
                 if (numberofGeoBlockedItems > 0) {
                     /* Failure most likely due to an item being GEO-blocked */
                     break;
