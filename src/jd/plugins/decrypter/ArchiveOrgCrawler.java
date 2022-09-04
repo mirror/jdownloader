@@ -77,9 +77,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
          */
-        if (this.hostPlugin == null) {
-            this.hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
-        }
+        this.hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
         final Account account = AccountController.getInstance().getValidAccount("archive.org");
         if (account != null) {
             hostPlugin.login(account, false);
