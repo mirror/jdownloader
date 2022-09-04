@@ -1,7 +1,6 @@
 package org.jdownloader.settings;
 
 public enum MirrorDetectionDecision {
-
     /**
      * checks fileName(needs verified or forced fileName), fileSize(needs verifiedFileSize). fileHash is optional
      */
@@ -17,5 +16,9 @@ public enum MirrorDetectionDecision {
     /**
      * checks fileName
      */
-    FILENAME;
+    FILENAME,
+    /**
+     * disabled
+     */
+    DISABLED
 }

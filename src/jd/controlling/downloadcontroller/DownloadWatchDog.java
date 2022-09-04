@@ -1017,6 +1017,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate, MirrorDetectionDecision mirrorDetectionDecision) {
+        if (MirrorDetectionDecision.DISABLED.equals(mirrorDetectionDecision)) {
+            return false;
+        }
         String cachedLinkMirrorID = linkCandidate.getDefaultPlugin().getMirrorID(linkCandidate);
         String mirrorCandidateMirrorID = mirrorCandidate.getDefaultPlugin().getMirrorID(mirrorCandidate);
         if (cachedLinkMirrorID != null && mirrorCandidateMirrorID != null) {
@@ -1033,6 +1036,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             sameName = cachedLinkCandidateName.equals(mirrorCandidateName);
         }
         switch (mirrorDetectionDecision) {
+        case DISABLED:
+            return false;
         case SAFE: {
             final Boolean sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate, mirrorDetectionDecision);
             if (sameSizeResult != null && Boolean.FALSE.equals(sameSizeResult)) {
@@ -1066,6 +1071,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private Boolean hasSameSize(DownloadLink linkCandidate, DownloadLink mirrorCandidate, MirrorDetectionDecision mirrorDetectionDecision) {
+        if (MirrorDetectionDecision.DISABLED.equals(mirrorDetectionDecision)) {
+            return false;
+        }
         final int fileSizeEquality = config.getMirrorDetectionFileSizeEquality();
         final long verifiedFileSizeA = linkCandidate.getView().getBytesTotalVerified();
         final long verifiedFileSizeB = mirrorCandidate.getView().getBytesTotalVerified();
@@ -1113,6 +1121,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private List<DownloadLink> findDownloadLinkMirrors(final DownloadLink link, final MirrorDetectionDecision mirrorDetectionDecision, final boolean includeDisabledLinks) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (MirrorDetectionDecision.DISABLED.equals(mirrorDetectionDecision)) {
+            return ret;
+        }
         final FilePackage fp = link.getFilePackage();
         final String name = link.getView().getDisplayName();
         fp.getModifyLock().runReadLock(new Runnable() {
@@ -4096,6 +4107,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                     }
                                                     break;
                                                 case FILENAME:
+                                                case DISABLED:
+                                                default:
                                                     // nothing
                                                 }
                                             }
