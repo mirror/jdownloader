@@ -553,11 +553,11 @@ public abstract class Plugin implements ActionListener {
             if (handle.getCloseReason() == CloseReason.OK) {
                 final String password = handle.getPassword();
                 if (StringUtils.isEmpty(password)) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
+                    throw new PluginException(LinkStatus.ERROR_RETRY, _JDT.T.plugins_errors_wrongpassword());
                 }
                 final String username = handle.getUsername();
                 if (StringUtils.isEmpty(username)) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongusername());
+                    throw new PluginException(LinkStatus.ERROR_RETRY, _JDT.T.plugins_errors_wrongusername());
                 }
                 final Type type;
                 if (StringUtils.startsWithCaseInsensitive(link.getPluginPatternMatcher(), "ftp")) {
