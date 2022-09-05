@@ -596,9 +596,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 logger.info("Failed to find fuid in html");
             }
         }
-        String finalFilename = getFileTitle(link);
-        if (!StringUtils.isEmpty(finalFilename)) {
-            link.setFinalFileName(finalFilename + ".mp4");
+        String title = getFileTitle(link);
+        if (!StringUtils.isEmpty(title)) {
+            link.setFinalFileName(title + ".mp4");
         }
         if (this.isPrivateVideoWebsite(this.br)) {
             link.setProperty(PROPERTY_IS_PRIVATE_VIDEO, true);
@@ -639,18 +639,18 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                         logger.info("dllink: " + dllink);
                         /* Save directurl for later usage */
                         link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-                        if (StringUtils.isEmpty(finalFilename)) {
+                        if (StringUtils.isEmpty(title)) {
                             /* Fallback - attempt to find final filename */
                             final String headerFilename = Plugin.getFileNameFromHeader(con);
                             final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
                             if (!StringUtils.isEmpty(headerFilename)) {
                                 logger.info("Using final filename from content-disposition header: " + headerFilename);
-                                finalFilename = headerFilename;
-                                link.setFinalFileName(finalFilename);
+                                title = headerFilename;
+                                link.setFinalFileName(title);
                             } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
                                 logger.info("Using final filename from inside final downloadurl: " + filenameFromFinalDownloadurl);
-                                finalFilename = filenameFromFinalDownloadurl;
-                                link.setFinalFileName(finalFilename);
+                                title = filenameFromFinalDownloadurl;
+                                link.setFinalFileName(title);
                             } else {
                                 logger.warning("Failed to find any final filename so far");
                             }
@@ -835,28 +835,27 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     protected String getFileTitle(final DownloadLink link) {
         final String title_url = getTitleURL(br, link);
-        String title = null;
-        /* Try default traits --> Very unsafe but may sometimes work */
+        String titleFromHtml = null;
+        /* For embed URLs the title might be in a different part of the html -> Check for this first */
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            title = regexEmbedTitleWebsite();
-            title = removeUnwantedURLTitleStuff(title);
+            titleFromHtml = regexEmbedTitleWebsite();
         }
-        if (StringUtils.isEmpty(title)) {
-            title = regexNormalTitleWebsite(br);
-            title = removeUnwantedURLTitleStuff(title);
+        if (StringUtils.isEmpty(titleFromHtml)) {
+            titleFromHtml = regexNormalTitleWebsite(br);
+            titleFromHtml = removeUnwantedURLTitleStuff(titleFromHtml);
         }
-        if (title != null) {
+        if (titleFromHtml != null) {
             /* Remove html crap and spaces at the beginning and end. */
-            title = Encoding.htmlDecode(title);
-            title = title.trim();
-            title = cleanupFilename(br, title);
+            titleFromHtml = Encoding.htmlDecode(titleFromHtml);
+            titleFromHtml = titleFromHtml.trim();
+            titleFromHtml = cleanupFilename(br, titleFromHtml);
         }
-        if (title != null && this.preferTitleHTML()) {
-            return title;
+        if (titleFromHtml != null && this.preferTitleHTML()) {
+            return titleFromHtml;
         } else if (!StringUtils.isEmpty(title_url)) {
             return title_url;
-        } else if (!StringUtils.isEmpty(title)) {
-            return title;
+        } else if (!StringUtils.isEmpty(titleFromHtml)) {
+            return titleFromHtml;
         } else {
             return null;
         }

@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
@@ -26,7 +25,6 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.AccountRequiredException;
@@ -51,15 +49,8 @@ public class MtlAreRg extends PluginForDecrypt {
     }
 
     @Override
-    public void init() {
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            Browser.setRequestIntervalLimitGlobal(this.getHost(), true, 2000);
-        }
-    }
-
-    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(false);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(400);
@@ -105,7 +96,7 @@ public class MtlAreRg extends PluginForDecrypt {
             if (logincookie != null) {
                 /* Re- use existing session */
                 br.setCookie(this.getHost(), "masession_id", logincookie);
-                getPageWithRateLimitHandling(br, br.createGetRequest(url));
+                getPageWithRateLimitHandling(br, url);
                 checkErrors(br);
                 if (this.isLoggedIN(br)) {
                     logger.info("Cookie login successful");
@@ -131,7 +122,7 @@ public class MtlAreRg extends PluginForDecrypt {
                 }
             }
             performFullLogin(br, username, password);
-            getPageWithRateLimitHandling(br, br.createGetRequest(url));
+            getPageWithRateLimitHandling(br, url);
         }
     }
 
@@ -158,19 +149,16 @@ public class MtlAreRg extends PluginForDecrypt {
         }
     }
 
-    private void getPageWithRateLimitHandling(final Browser br, final Request req) throws IOException, InterruptedException, PluginException, DecrypterRetryException {
+    private void getPageWithRateLimitHandling(final Browser br, final String url) throws IOException, InterruptedException, PluginException, DecrypterRetryException {
         int counter = 0;
         do {
             counter++;
-            br.getPage(req);
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                break;
-            }
+            br.getPage(url);
             if (looksLikeRateLimited(br)) {
                 logger.info("Trying to get around rate-limit attempt: " + counter);
                 br.clearCookies(br.getHost());
                 this.performFullLogin(br, this.getPluginConfig().getStringProperty("user"), this.getPluginConfig().getStringProperty("pass"));
-                Thread.sleep(10000l);
+                Thread.sleep(1000l);
                 continue;
             } else {
                 if (counter > 1) {
@@ -208,7 +196,7 @@ public class MtlAreRg extends PluginForDecrypt {
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        /* Try to avoid rate-limit. */
+        /* Allow only one instance to avoid hitting rate-limits even faster */
         return 1;
     }
 }

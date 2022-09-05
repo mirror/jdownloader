@@ -56,4 +56,9 @@ public class MotherpornoCom extends KernelVideoSharingComV2 {
     protected boolean useEmbedWorkaround() {
         return true;
     }
+
+    @Override
+    protected boolean preferTitleHTML() {
+        return true;
+    }
 }
