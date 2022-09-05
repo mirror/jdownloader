@@ -191,14 +191,14 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private String getAndCheckDownloadURL(final DownloadLink link) throws Exception {
-        String ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_LAST);
+        String ret = checkDirecturlFromPropertyAndSetFilesize(link, PROPERTY_DIRECTURL_LAST);
         if (ret == null && PluginJsonConfig.get(this.getConfigInterface()).isPreferHD()) {
-            ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_HD);
+            ret = checkDirecturlFromPropertyAndSetFilesize(link, PROPERTY_DIRECTURL_HD);
         }
         if (ret == null) {
-            ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_LOW);
+            ret = checkDirecturlFromPropertyAndSetFilesize(link, PROPERTY_DIRECTURL_LOW);
             if (ret == null) {
-                ret = checkDirecturlAndSetFilesize(link, PROPERTY_DIRECTURL_OLD);
+                ret = checkDirecturlFromPropertyAndSetFilesize(link, PROPERTY_DIRECTURL_OLD);
             }
         }
         return ret;
@@ -836,7 +836,7 @@ public class FaceBookComVideos extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String checkDirecturlAndSetFilesize(final DownloadLink link, final String propertyName) throws IOException, PluginException {
+    private String checkDirecturlFromPropertyAndSetFilesize(final DownloadLink link, final String propertyName) throws IOException, PluginException {
         final String url = link.getStringProperty(propertyName);
         if (StringUtils.isEmpty(url)) {
             return null;
@@ -930,7 +930,7 @@ public class FaceBookComVideos extends PluginForHost {
                 }
             }
             link.setProperty(PROPERTY_DIRECTURL_LAST, dllink);
-            this.checkDirecturlAndSetFilesize(link, dllink);
+            this.checkDirecturlFromPropertyAndSetFilesize(link, dllink);
         }
         return AvailableStatus.TRUE;
     }

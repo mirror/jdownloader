@@ -152,6 +152,7 @@ public class MtlAreRg extends PluginForDecrypt {
     private void getPageWithRateLimitHandling(final Browser br, final String url) throws IOException, InterruptedException, PluginException, DecrypterRetryException {
         int counter = 0;
         do {
+            /* One attempt should usually be enough. */
             counter++;
             br.getPage(url);
             if (looksLikeRateLimited(br)) {
@@ -166,7 +167,7 @@ public class MtlAreRg extends PluginForDecrypt {
                 }
                 break;
             }
-        } while (counter < 5 || !this.isAbort());
+        } while (counter < 4 || !this.isAbort());
     }
 
     private void checkErrors(final Browser br) throws PluginException, DecrypterRetryException {
