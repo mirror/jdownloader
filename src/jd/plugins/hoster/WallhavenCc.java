@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,6 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WallhavenCc extends PluginForHost {
@@ -60,13 +60,14 @@ public class WallhavenCc extends PluginForHost {
     private final String         TAGS_COMMA_SEPARATED     = "tags_comma_separated";
     private final String         PROPERTY_DIRECTURL       = "directurl";
     private final String         PATTERN_NORMAL           = "https?://[^/]+/w/([a-z0-9]+)";
+    private final String         PATTERN_SHORT            = "https?://whvn\\.cc/([a-z0-9]+)$";
     private final String         PATTERN_DIRECT_FULL      = "https://w\\.[^/]+/full/([^/]+)/wallhaven-([a-z0-9]+)\\.jpg";
     private final String         PATTERN_DIRECT_THUMBNAIL = "https?://th\\.[^/]+/small/([^/]+)/([a-z0-9]+)\\.jpg";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wallhaven.cc" });
+        ret.add(new String[] { "wallhaven.cc" /* , "whvn.cc" do not enable as it might break other pattern */});
         return ret;
     }
 
@@ -83,7 +84,7 @@ public class WallhavenCc extends PluginForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
             final String hostsPatternPart = buildHostsPatternPart(domains);
-            ret.add("https?://(?:www\\.)?" + hostsPatternPart + "/w/[a-z0-9]+|https?://w\\." + hostsPatternPart + "/full/[^/]+/wallhaven-[a-z0-9]+\\.jpg|https?://th\\." + hostsPatternPart + "/small/[^/]+/[a-z0-9]+\\.jpg");
+            ret.add("https?://(?:www\\.)?" + hostsPatternPart + "/w/[a-z0-9]+|https?://whvn\\.cc/[a-z0-9]+$|https?://w\\." + hostsPatternPart + "/full/[^/]+/wallhaven-[a-z0-9]+\\.jpg|https?://th\\." + hostsPatternPart + "/small/[^/]+/[a-z0-9]+\\.jpg");
         }
         return ret.toArray(new String[0]);
     }
@@ -112,6 +113,8 @@ public class WallhavenCc extends PluginForHost {
             return new Regex(link.getPluginPatternMatcher(), PATTERN_DIRECT_FULL).getMatch(1);
         } else if (link.getPluginPatternMatcher().matches(PATTERN_DIRECT_THUMBNAIL)) {
             return new Regex(link.getPluginPatternMatcher(), PATTERN_DIRECT_THUMBNAIL).getMatch(1);
+        } else if (link.getPluginPatternMatcher().matches(PATTERN_SHORT)) {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_SHORT).getMatch(0);
         } else {
             /* Unsupported URL --> This should never happen! */
             return null;
@@ -169,7 +172,7 @@ public class WallhavenCc extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(getNormalContentURL(link));
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>\\s*404\\s*-\\s*Not Found Sorry!\\s*-\\s*wallhaven.cc\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         connectionErrorhandlingResponsecodes(br.getHttpConnection());
