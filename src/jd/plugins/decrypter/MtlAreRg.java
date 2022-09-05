@@ -54,7 +54,7 @@ public class MtlAreRg extends PluginForDecrypt {
         br.setCookiesExclusive(false);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(400);
-        getUserLogin(param.getCryptedUrl());
+        getUserLoginAndAccessTargetURL(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -90,13 +90,13 @@ public class MtlAreRg extends PluginForDecrypt {
         return ret;
     }
 
-    private void getUserLogin(final String url) throws IOException, DecrypterException, PluginException, DecrypterRetryException, InterruptedException {
+    private void getUserLoginAndAccessTargetURL(final String targetURL) throws IOException, DecrypterException, PluginException, DecrypterRetryException, InterruptedException {
         synchronized (LOCK) {
             final String logincookie = this.getPluginConfig().getStringProperty("masession_id");
             if (logincookie != null) {
                 /* Re- use existing session */
                 br.setCookie(this.getHost(), "masession_id", logincookie);
-                getPageWithRateLimitHandling(br, url);
+                getPageWithRateLimitHandling(br, targetURL);
                 checkErrors(br);
                 if (this.isLoggedIN(br)) {
                     logger.info("Cookie login successful");
@@ -122,7 +122,7 @@ public class MtlAreRg extends PluginForDecrypt {
                 }
             }
             performFullLogin(br, username, password);
-            getPageWithRateLimitHandling(br, url);
+            getPageWithRateLimitHandling(br, targetURL);
         }
     }
 
