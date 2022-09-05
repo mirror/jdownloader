@@ -382,6 +382,7 @@ plugins_errors_disconnect=Desconectar?
 plugins_errors_error=Erro:
 plugins_errors_hosteroffline=Servidor offline?
 plugins_errors_hosterproblem=Problema com o servidor?
+plugins_errors_hosterproblem_rate_limit=O limite de taxa do servidor foi atingido
 plugins_errors_nointernetconn=Sem conexão de Internet?
 plugins_errors_proxy_auth=Falha ao Autenticação Proxy
 plugins_errors_proxy_connection=Falha na conexão proxy
