@@ -625,10 +625,10 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                     } else {
                         ext = ".gif";
                     }
-                    if (name != null) {
-                        dl.setName(name + "_" + viewKey + ext);
-                    } else {
+                    if (name == null || StringUtils.containsIgnoreCase(name, "view_video.php")) {
                         dl.setName(viewKey + ext);
+                    } else {
+                        dl.setName(name + "_" + viewKey + ext);
                     }
                     /* Force fast linkcheck */
                     dl.setAvailable(true);
@@ -716,7 +716,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
         PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
         handleErrorsAndCaptcha(this.br, account);
-        if (hasOfflineRemovedVideoText(br) || hasOfflineVideoNotice(br)) {
+        if (PornHubCom.hasOfflineRemovedVideoText(br) || PornHubCom.hasOfflineVideoNotice(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -937,17 +937,17 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     private void checkVideoErrors(final Browser br) throws PluginException, DecrypterRetryException {
         if (br.containsHTML(PornHubCom.html_purchase_only)) {
             throw new AccountRequiredException();
-        } else if (isFlagged(br)) {
+        } else if (PornHubCom.isFlagged(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (isGeoRestricted(br)) {
+        } else if (PornHubCom.isGeoRestricted(br)) {
             throw new DecrypterRetryException(RetryReason.GEO, "(GeoBlocked)url=" + br.getURL());
         } else if (br.containsHTML(PornHubCom.html_privatevideo)) {
             throw new AccountRequiredException();
         } else if (br.containsHTML(PornHubCom.html_premium_only)) {
             throw new AccountRequiredException();
-        } else if (hasOfflineRemovedVideoText(br)) {
+        } else if (PornHubCom.hasOfflineRemovedVideoText(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (hasOfflineVideoNotice(br)) {
+        } else if (PornHubCom.hasOfflineVideoNotice(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isOfflineVideo(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -961,24 +961,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         }
     }
 
-    public static boolean isGeoRestricted(final Browser br) {
-        return br.containsHTML(">\\s*This content is unavailable in your country.?\\s*<");
-    }
-
-    public static boolean isFlagged(final Browser br) {
-        return br.containsHTML(">\\s*Video has been flagged for verification in accordance with our trust and safety policy.?\\s*<");
-    }
-
-    public static boolean hasOfflineRemovedVideoText(final Browser br) {
-        return br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of") || br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>") || br.containsHTML("<span[^>]*>\\s*This video is currently unavailable\\s*</span>");
-    }
-
-    public static boolean hasOfflineVideoNotice(final Browser br) {
-        return br.containsHTML("<div[^>]*class[^>]*video-notice[^>]*>\\s*<p>\\s*<span>\\s*This video has been disabled");
-    }
-
     public static boolean isOfflineVideo(final Browser br) {
-        return (!StringUtils.containsIgnoreCase(br.getURL(), "/embed/") && !br.containsHTML("\\'embedSWF\\'")) || hasOfflineRemovedVideoText(br) || isOfflineGeneral(br);
+        return (!StringUtils.containsIgnoreCase(br.getURL(), "/embed/") && !br.containsHTML("\\'embedSWF\\'")) || PornHubCom.hasOfflineRemovedVideoText(br) || isOfflineGeneral(br);
     }
 
     public static boolean isOfflineGeneral(final Browser br) {

@@ -79,6 +79,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.NoGateWayException;
 import jd.http.ProxySelectorInterface;
+import jd.http.Request;
 import jd.http.StaticProxySelector;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
@@ -194,11 +195,11 @@ import org.jdownloader.updatev2.UpdateHandler;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-                                                  /**
-                                                   * these patterns should split filename and fileextension (extension must include the
-                                                   * point)
-                                                   */
-                                                  // multipart rar archives
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
         Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
         // normal files with extension
         Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
@@ -1311,16 +1312,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1838,6 +1839,39 @@ public abstract class PluginForHost extends Plugin {
     // }
     public char[] getFilenameReplaceMap() {
         return new char[0];
+    }
+
+    protected URLConnectionAdapter checkDirecturlAndSetFilesize(final DownloadLink link, final Browser br, final Request request, final long setSizeLargerThan, final boolean closeConnection) throws IOException, PluginException {
+        if (request == null) {
+            return null;
+        }
+        URLConnectionAdapter con = null;
+        boolean closeFlag = true;
+        try {
+            con = br.openRequestConnection(request);
+            if (this.looksLikeDownloadableContent(con)) {
+                final long completeContentLength = con.getCompleteContentLength();
+                if (completeContentLength > setSizeLargerThan) {
+                    link.setVerifiedFileSize(completeContentLength);
+                }
+                closeFlag = closeConnection;
+                return con;
+            } else {
+                try {
+                    br.followConnection(true);
+                } catch (IOException ignore) {
+                    logger.log(ignore);
+                }
+                return null;
+            }
+        } finally {
+            if (con != null && closeFlag) {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
     }
 
     public String autoFilenameCorrection(HashMap<Object, Object> cache, String originalFilename, DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {

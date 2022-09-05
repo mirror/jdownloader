@@ -105,15 +105,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
@@ -351,17 +351,33 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
+    public static boolean isGeoRestricted(final Browser br) {
+        return br.containsHTML(">\\s*This (?:video|content) is unavailable in your country.?\\s*<");
+    }
+
+    public static boolean isFlagged(final Browser br) {
+        return br.containsHTML(">\\s*Video has been flagged for verification in accordance with our trust and safety policy.?\\s*<");
+    }
+
+    public static boolean hasOfflineRemovedVideoText(final Browser br) {
+        return br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of") || br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>") || br.containsHTML("<span[^>]*>\\s*This video is currently unavailable\\s*</span>");
+    }
+
+    public static boolean hasOfflineVideoNotice(final Browser br) {
+        return br.containsHTML("<div[^>]*class[^>]*video-notice[^>]*>\\s*<p>\\s*<span>\\s*This video has been disabled");
+    }
+
     private void checkAvailability(final DownloadLink link, final Browser br) throws PluginException {
         if (StringUtils.containsIgnoreCase(br.getURL(), "/premium/login")) {
             throw new AccountRequiredException();
-        } else if (br.containsHTML(">\\s*Video has been flagged for verification in accordance with our trust and safety policy.?\\s*<")) {
+        } else if (isFlagged(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been flagged");
-        } else if (br.containsHTML(">\\s*This content is unavailable in your country.?\\s*<")) {
+        } else if (isGeoRestricted(br)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This content is unavailable in your country", 24 * 60 * 60 * 1000l);
-        } else if (br.containsHTML("<span[^>]*>\\s*Video has been removed at the request of")) {
+        } else if (hasOfflineRemovedVideoText(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been removed");
-        } else if (br.containsHTML("<span[^>]*>\\s*This video has been removed\\s*</span>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been removed");
+        } else if (hasOfflineVideoNotice(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been disabled");
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -441,7 +457,7 @@ public class PornHubCom extends PluginForHost {
             if (title == null) {
                 title = br.getRegex("<title\\s*>\\s*(.*?)\\s*(&#124;|\\|)").getMatch(0);
             }
-            if (title == null) {
+            if (title == null || StringUtils.containsIgnoreCase(title, "view_video.php")) {
                 html_filename = viewKey;
             } else {
                 html_filename = title + "_" + viewKey;
