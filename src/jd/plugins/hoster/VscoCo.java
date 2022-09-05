@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.VscoCoCrawler;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VscoCo extends PluginForHost {
@@ -76,7 +76,7 @@ public class VscoCo extends PluginForHost {
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = getMediaID(link);
-        if (linkid != null) {
+        if (linkid != null && (isHLSVideo(link) || link.getStringProperty(PROPERTY_HLS_URL) != null)) {
             return this.getHost() + "://" + "/" + getUsername(link) + "/" + linkid + "/" + getQuality(link);
         } else {
             return super.getLinkID(link);
@@ -195,5 +195,6 @@ public class VscoCo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.removeProperty(PROPERTY_HLS_URL);
     }
 }
