@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,6 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WallhavenCc extends PluginForHost {
@@ -151,7 +151,7 @@ public class WallhavenCc extends PluginForHost {
         br.setAllowedResponseCodes(429);
         this.dllink = getDirecturlFromContentURL(link);
         if (this.dllink != null) {
-            if (this.checkDirecturlAndSetFilesize(link, this.dllink)) {
+            if (checkDirecturlAndSetFilesize(link, br, br.createHeadRequest(dllink), 0, true) != null) {
                 logger.info("Successfully checked availablestatus via directurl from contentURL");
                 link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                 return AvailableStatus.TRUE;
@@ -192,7 +192,7 @@ public class WallhavenCc extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
-            if (!this.checkDirecturlAndSetFilesize(link, this.dllink)) {
+            if (checkDirecturlAndSetFilesize(link, br, br.createHeadRequest(dllink), 0, true) == null) {
                 this.connectionErrorhandling(br.getHttpConnection());
             }
         }
@@ -203,13 +203,14 @@ public class WallhavenCc extends PluginForHost {
         final String url = link.getStringProperty(propertyName);
         if (StringUtils.isEmpty(url)) {
             return null;
-        }
-        if (super.checkDirecturlAndSetFilesize(link, url)) {
-            return url;
         } else {
-            connectionErrorhandling(br.getHttpConnection());
-            link.removeProperty(propertyName);
-            return null;
+            if (checkDirecturlAndSetFilesize(link, br, br.createHeadRequest(url), 0, true) != null) {
+                return url;
+            } else {
+                connectionErrorhandling(br.getHttpConnection());
+                link.removeProperty(propertyName);
+                return null;
+            }
         }
     }
 
