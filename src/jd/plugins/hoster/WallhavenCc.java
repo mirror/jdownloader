@@ -151,7 +151,7 @@ public class WallhavenCc extends PluginForHost {
         br.setAllowedResponseCodes(429);
         this.dllink = getDirecturlFromContentURL(link);
         if (this.dllink != null) {
-            if (checkDirecturlAndSetFilesize(link, br, br.createHeadRequest(dllink), 0, true) != null) {
+            if (checkDownloadableRequest(link, br, br.createHeadRequest(dllink), 0, true) != null) {
                 logger.info("Successfully checked availablestatus via directurl from contentURL");
                 link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                 return AvailableStatus.TRUE;
@@ -192,7 +192,7 @@ public class WallhavenCc extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
-            if (checkDirecturlAndSetFilesize(link, br, br.createHeadRequest(dllink), 0, true) == null) {
+            if (checkDownloadableRequest(link, br, br.createHeadRequest(dllink), 0, true) == null) {
                 this.connectionErrorhandling(br.getHttpConnection());
             }
         }
@@ -204,7 +204,7 @@ public class WallhavenCc extends PluginForHost {
         if (StringUtils.isEmpty(url)) {
             return null;
         } else {
-            if (checkDirecturlAndSetFilesize(link, br, br.createHeadRequest(url), 0, true) != null) {
+            if (checkDownloadableRequest(link, br, br.createHeadRequest(url), 0, true) != null) {
                 return url;
             } else {
                 connectionErrorhandling(br.getHttpConnection());
