@@ -67,7 +67,7 @@ public class WallhavenCc extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wallhaven.cc" /* , "whvn.cc" do not enable as it might break other pattern */});
+        ret.add(new String[] { "wallhaven.cc", "whvn.cc" });
         return ret;
     }
 
