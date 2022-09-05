@@ -33,7 +33,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -520,27 +519,21 @@ public class EHentaiOrg extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, null, true);
-        doFree(link, null);
+        handleDownload(link, null);
     }
 
     private boolean requiresAccount(final String url) {
         return url != null && StringUtils.containsIgnoreCase(url, "/img/kokomade.jpg");
     }
 
-    private void doFree(final DownloadLink link, final Account account) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             this.handleErrorsLastResort(link, account, this.br);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
-        } catch (final BrowserException ebr) {
-            logger.log(ebr);
-            /* Whatever happens - its most likely a server problem for this host! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l, ebr);
-        }
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
         long expectedFilesize = link.getView().getBytesTotal();
         if (expectedFilesize > 1000) {
             /*
@@ -555,6 +548,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
+            final String errorNotEnoughGP = "Downloading original files during peak hours requires GP, and you do not have enough.";
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -563,7 +557,14 @@ public class EHentaiOrg extends antiDDoSForHost {
                 limitReached(account);
             } else if (br.getURL().contains("bounce_login.php")) {
                 /* Account required / re-login required */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Account / Re-login required", 1 * 60 * 60 * 1000l);
+                if (account != null) {
+                    throw new AccountUnavailableException("Account / Re-login required", 1 * 60 * 1000l);
+                } else {
+                    /* This should never happen */
+                    throw new AccountRequiredException();
+                }
+            } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP))) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorNotEnoughGP, 5 * 60 * 1000l);
             } else {
                 this.handleErrorsLastResort(link, account, this.br);
             }
@@ -791,7 +792,7 @@ public class EHentaiOrg extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
         /* No need to login here as we already logged in in availablecheck */
-        doFree(link, account);
+        handleDownload(link, account);
     }
 
     private String getNamePart(DownloadLink downloadLink) throws PluginException {

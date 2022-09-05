@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -69,5 +70,15 @@ public class MrdeepfakesCom extends KernelVideoSharingComV2 {
             return null;
         }
         return this.getProtocol() + host + "/video/" + fuid + "/" + urlSlug;
+    }
+
+    @Override
+    protected boolean isPrivateVideoWebsite(final Browser br) {
+        if (br.containsHTML("(?i)class=\"message\">\\s*This video is a Premium video uploaded by")) {
+            /* 2022-09-05 */
+            return true;
+        } else {
+            return super.isPrivateVideoWebsite(br);
+        }
     }
 }

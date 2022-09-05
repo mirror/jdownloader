@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.HostPlugin;
 
@@ -47,12 +48,12 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/(videos/\\d+/[^/\\?#]+/|embed/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/(videos/(\\d+/)?[^/\\?#]+/|embed/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_SPECIAL       = "https?://[^/]+/videos/videos/(\\d+)/([^/]+)/$";
+    private final String TYPE_SPECIAL       = "https?://[^/]+/videos/videos/((\\d+)/)?([^/]+)/$";
     private final String TYPE_SPECIAL_EMBED = "https?://[^/]+/videos/videos/embed/(\\d+)";
 
     @Override
@@ -74,7 +75,7 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
         if (url == null) {
             return null;
         } else {
-            return new Regex(url, TYPE_SPECIAL).getMatch(1);
+            return new Regex(url, TYPE_SPECIAL).getMatch(2);
         }
     }
 
@@ -84,10 +85,25 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
             return null;
         } else {
             if (url.matches(TYPE_SPECIAL)) {
-                return new Regex(url, TYPE_SPECIAL).getMatch(0);
+                final String fuid = new Regex(url, TYPE_SPECIAL).getMatch(1);
+                if (fuid != null) {
+                    return fuid;
+                } else {
+                    return new Regex(url, TYPE_SPECIAL).getMatch(2);
+                }
             } else {
                 return new Regex(url, TYPE_SPECIAL_EMBED).getMatch(0);
             }
+        }
+    }
+
+    @Override
+    protected boolean isPrivateVideoWebsite(final Browser br) {
+        if (br.containsHTML("(?i)class=\"message\">\\s*Você excedeu o numero admissivel de vizualizacoes")) {
+            /* 2022-09-05 */
+            return true;
+        } else {
+            return super.isPrivateVideoWebsite(br);
         }
     }
 }
