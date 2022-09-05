@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -160,7 +161,7 @@ public class WallhavenCc extends PluginForHost {
                 link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                 return AvailableStatus.TRUE;
             } else {
-                connectionErrorhandlingResponsecodes(br.getHttpConnection());
+                errorHandling(br, br.getHttpConnection());
                 logger.info("Failed to check directurl via directurl from contentURL");
             }
         }
@@ -174,8 +175,9 @@ public class WallhavenCc extends PluginForHost {
         br.getPage(getNormalContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>\\s*404\\s*-\\s*Not Found Sorry!\\s*-\\s*wallhaven.cc\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            errorHandling(br, br.getHttpConnection());
         }
-        connectionErrorhandlingResponsecodes(br.getHttpConnection());
         String tagsCommaSeparated = br.getRegex("name=\"title\" content=\"([^\"]+) \\| \\d+x\\d+ Wallpaper\"").getMatch(0);
         if (tagsCommaSeparated != null) {
             tagsCommaSeparated = Encoding.htmlDecode(tagsCommaSeparated).trim().replace(" ", "");
@@ -201,7 +203,7 @@ public class WallhavenCc extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         } else if (!StringUtils.isEmpty(dllink) && !isDownload && allowCheckFilesizeViaDirecturl) {
             if (checkDownloadableRequest(link, br, br.createHeadRequest(dllink), 0, true) == null) {
-                this.connectionErrorhandling(br.getHttpConnection());
+                errorHandling(br, br.getHttpConnection());
             }
         }
         return AvailableStatus.TRUE;
@@ -215,30 +217,34 @@ public class WallhavenCc extends PluginForHost {
             if (checkDownloadableRequest(link, br, br.createHeadRequest(url), 0, true) != null) {
                 return url;
             } else {
-                connectionErrorhandlingResponsecodes(br.getHttpConnection());
+                errorHandling(br, br.getHttpConnection());
                 link.removeProperty(propertyName);
                 return null;
             }
         }
     }
 
-    private void connectionErrorhandlingResponsecodes(final URLConnectionAdapter con) throws PluginException {
-        if (con == null) {
-            return;
-        }
-        if (con.getResponseCode() == 429) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limited", 30 * 1000l);
+    private void errorHandling(final Browser br, final URLConnectionAdapter con) throws PluginException {
+        if (con != null) {
+            if (con.getResponseCode() == 429) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limited", 30 * 1000l);
+            }
         }
     }
 
     /** Checks for some http responsecodes and throws an exception if given URLConnectionAdapter does not lead to a downloadable file. */
-    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
-        if (con == null) {
-            return;
-        }
-        connectionErrorhandlingResponsecodes(con);
-        if (!this.looksLikeDownloadableContent(con)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
+    private void errorHandling(final Browser br, final DownloadInterface dl) throws PluginException {
+        final URLConnectionAdapter con = dl != null ? dl.getConnection() : null;
+        if (con != null) {
+            if (!this.looksLikeDownloadableContent(con)) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                errorHandling(br, con);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
+            }
         }
     }
 
@@ -250,7 +256,7 @@ public class WallhavenCc extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-            connectionErrorhandling(dl.getConnection());
+            errorHandling(br, dl);
         }
         dl.startDownload();
     }
