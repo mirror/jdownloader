@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,10 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WallhavenCc extends PluginForHost {
@@ -156,7 +157,7 @@ public class WallhavenCc extends PluginForHost {
                 link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                 return AvailableStatus.TRUE;
             } else {
-                connectionErrorhandling(br.getHttpConnection());
+                connectionErrorhandlingResponsecodes(br.getHttpConnection());
                 logger.info("Failed to check directurl via directurl from contentURL");
             }
         }
@@ -191,7 +192,11 @@ public class WallhavenCc extends PluginForHost {
                 }
             }
         }
-        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+        final boolean allowCheckFilesizeViaDirecturl = false;
+        final String filesizeStr = br.getRegex("(?i)<dt>\\s*Size\\s*</dt><dd>(\\d+[^<]+)</dd>").getMatch(0);
+        if (filesizeStr != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+        } else if (!StringUtils.isEmpty(dllink) && !isDownload && allowCheckFilesizeViaDirecturl) {
             if (checkDownloadableRequest(link, br, br.createHeadRequest(dllink), 0, true) == null) {
                 this.connectionErrorhandling(br.getHttpConnection());
             }
@@ -207,7 +212,7 @@ public class WallhavenCc extends PluginForHost {
             if (checkDownloadableRequest(link, br, br.createHeadRequest(url), 0, true) != null) {
                 return url;
             } else {
-                connectionErrorhandling(br.getHttpConnection());
+                connectionErrorhandlingResponsecodes(br.getHttpConnection());
                 link.removeProperty(propertyName);
                 return null;
             }
@@ -223,6 +228,7 @@ public class WallhavenCc extends PluginForHost {
         }
     }
 
+    /** Checks for some http responsecodes and throws an exception if given URLConnectionAdapter does not lead to a downloadable file. */
     private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
         if (con == null) {
             return;
