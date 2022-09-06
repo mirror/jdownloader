@@ -78,7 +78,7 @@ public class PorntrexComCrawler extends PluginForDecrypt {
                 final String url_name = new Regex(url, "([a-z0-9\\-]+)$").getMatch(0);
                 dl.setAvailable(true);
                 if (url_name != null) {
-                    dl.setName(url_name.replace("-", " ") + ".mp4");
+                    dl.setName(url_name.replace("-", " ").trim() + ".mp4");
                 }
                 dl._setFilePackage(fp);
                 distribute(dl);

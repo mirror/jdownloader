@@ -888,7 +888,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (best == null || (ogTitle != null && ogTitle.length() < best.length())) {
             best = ogTitle;
         }
-        final String title = br.getRegex(Pattern.compile("<title>\\s*([^<>\"]*?)(?:\\s+[\\-/]\\s+" + br.getHost() + "\\s*|\\s+[\\-/]\\s+[^\\-/]*)?\\s*</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            /* Remove "mytitle - domain.tld" and similar */
+            title = title.replaceAll("\\s+[\\-/]\\s+" + Pattern.quote(br.getHost()), "");
+        }
         if (best == null || (title != null && title.length() < best.length())) {
             best = title;
         }
