@@ -290,7 +290,7 @@ public class ArchiveOrg extends PluginForHost {
                     /* lendingInfo could have changed in the meantime */
                     final ArchiveOrgLendingInfo lendingInfoForAfterDownload = this.getLendingInfo(link, account);
                     if (lendingInfoForAfterDownload != null) {
-                        lendingInfoForAfterDownload.increaseDownloadedPageCounter();
+                        lendingInfoForAfterDownload.setBookPageDownloadStatus(this.getBookPageIndexNumber(link), true);
                         if (lendingInfoForAfterDownload.looksLikeBookDownloadIsComplete()) {
                             final String bookID = this.getBookID(link);
                             try {
@@ -537,7 +537,6 @@ public class ArchiveOrg extends PluginForHost {
                 logger.warning("WTF book was borrowed but no borrow-cookies are present!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final ArchiveOrgLendingInfo newLendingInfo = new ArchiveOrgLendingInfo(borrowCookies);
             final ArchiveOrgCrawler crawler = (ArchiveOrgCrawler) this.getNewPluginForDecryptInstance(this.getHost());
             final String bookURL = ArchiveOrgCrawler.generateBookContentURL(bookID);
             br.getPage(bookURL);
@@ -553,13 +552,19 @@ public class ArchiveOrg extends PluginForHost {
                 }
                 pageURLs.add(result.getPluginPatternMatcher());
             }
-            newLendingInfo.setPageURLs(pageURLs);
-            /* Keep track of download progress! */
-            final ArchiveOrgLendingInfo oldLendingInfo = this.getLendingInfo(bookID, account);
-            if (oldLendingInfo != null && oldLendingInfo.getNumberofSuccessfullyDownloadedPages() > 0) {
-                newLendingInfo.setNumberofSuccessfullyDownloadedPages(oldLendingInfo.getNumberofSuccessfullyDownloadedPages());
+            /* Keep track of download progress even if book needs to be lend again in the middle of downloading! */
+            final ArchiveOrgLendingInfo existingLendingInfo = this.getLendingInfo(bookID, account);
+            if (existingLendingInfo != null) {
+                logger.info("Updated existing ArchiveOrgLendingInfo");
+                existingLendingInfo.updateTimestamp();
+                existingLendingInfo.setCookies(borrowCookies);
+                existingLendingInfo.updateOrAddBookPages(pageURLs);
+            } else {
+                logger.info("Added new ArchiveOrgLendingInfo");
+                final ArchiveOrgLendingInfo newLendingInfo = new ArchiveOrgLendingInfo(borrowCookies);
+                newLendingInfo.setPageURLs(pageURLs);
+                bookBorrowSessions.put(getLendingInfoKey(bookID, account), newLendingInfo);
             }
-            bookBorrowSessions.put(getLendingInfoKey(bookID, account), newLendingInfo);
         }
     }
 
@@ -658,9 +663,7 @@ public class ArchiveOrg extends PluginForHost {
                 synchronized (bookBorrowSessions) {
                     final ArchiveOrgLendingInfo lendingInfo = this.getLendingInfo(link, account);
                     if (lendingInfo != null) {
-                        if (lendingInfo.getNumberofSuccessfullyDownloadedPages() > 0) {
-                            lendingInfo.setNumberofSuccessfullyDownloadedPages(lendingInfo.getNumberofSuccessfullyDownloadedPages() - 1);
-                        }
+                        lendingInfo.setBookPageDownloadStatus(this.getBookPageIndexNumber(link), false);
                     }
                 }
             }
