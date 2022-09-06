@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,11 +36,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WallhavenCc extends PluginForHost {
@@ -50,7 +50,11 @@ public class WallhavenCc extends PluginForHost {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), true, 500);
+        for (final String[] domainList : getPluginDomains()) {
+            for (final String domain : domainList) {
+                Browser.setRequestIntervalLimitGlobal(domain, true, 500);
+            }
+        }
     }
 
     /* Connection stuff */
