@@ -106,4 +106,14 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     public void setMaxConcurrentInstances(int maxConcurrentInstances) {
         this.maxConcurrentInstances = Math.max(1, maxConcurrentInstances);
     }
+
+    @Override
+    public PluginForDecrypt getPrototype(PluginClassLoaderChild classLoader, boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException {
+        return getPrototype(classLoader);
+    }
+
+    @Override
+    public PluginForDecrypt newInstance(PluginClassLoaderChild classLoader, boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException {
+        return newInstance(classLoader);
+    }
 }

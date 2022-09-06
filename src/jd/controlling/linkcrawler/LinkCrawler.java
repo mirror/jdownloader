@@ -1543,10 +1543,10 @@ public class LinkCrawler {
     public boolean canHandle(final LazyPlugin<? extends Plugin> lazyPlugin, final String url, final CrawledLink link) {
         try {
             if (lazyPlugin.canHandle(url)) {
-                Plugin plugin = lazyPlugin.getPrototype(getPluginClassLoaderChild());
+                Plugin plugin = lazyPlugin.getPrototype(getPluginClassLoaderChild(),false);
                 if (plugin != null && Plugin.implementsCanHandleString(plugin)) {
                     /* TODO: store implementsCanHandleString within LazyPlugin */
-                    plugin = lazyPlugin.newInstance(getPluginClassLoaderChild());
+                    plugin = lazyPlugin.newInstance(getPluginClassLoaderChild(),false);
                 }
                 if (plugin != null) {
                     /* now we run the plugin and let it find some links */

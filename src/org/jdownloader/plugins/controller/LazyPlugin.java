@@ -281,9 +281,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         return false;
     }
 
-    public T getPrototype(PluginClassLoaderChild classLoader, final boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException {
-        return getPrototype(classLoader);
-    }
+    public abstract T getPrototype(PluginClassLoaderChild classLoader, final boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException ;
 
     public synchronized T getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         if (classLoader != null && classLoader != getClassLoader(false)) {
@@ -307,9 +305,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         return prototypeInstance != null && prototypeInstance.get() == pluginInstance;
     }
 
-    public T newInstance(PluginClassLoaderChild classLoader, final boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException {
-        return newInstance(classLoader);
-    }
+    public abstract T newInstance(PluginClassLoaderChild classLoader, final boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException;
 
     public T newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         T ret = null;
