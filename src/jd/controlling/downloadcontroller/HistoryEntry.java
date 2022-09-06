@@ -5,6 +5,7 @@ import java.lang.ref.WeakReference;
 import javax.swing.Icon;
 
 import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.NoProxySelector;
 import jd.controlling.proxy.SingleDirectGatewaySelector;
@@ -133,8 +134,9 @@ public class HistoryEntry {
 
     public static HistoryEntry create(final DownloadLinkCandidate candidate) {
         final HistoryEntry ret = new HistoryEntry(candidate);
-        collectInfo(candidate.getCachedAccount().getAccount(), ret);
-        ret.accountType = candidate.getCachedAccount().getType();
+        final CachedAccount cachedAccount = candidate.getCachedAccount();
+        collectInfo(cachedAccount != null ? cachedAccount.getAccount() : null, ret);
+        ret.accountType = cachedAccount != null ? cachedAccount.getType() : ACCOUNTTYPE.NONE;
         final AbstractProxySelectorImpl proxySel = candidate.getProxySelector();
         final SingleDownloadController controller = candidate.getLink().getDownloadLinkController();
         if (controller != null) {

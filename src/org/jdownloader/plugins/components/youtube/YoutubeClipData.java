@@ -159,6 +159,7 @@ public class YoutubeClipData {
         setValue(dest, YoutubeHelper.YT_USER_NAME_ALTERNATIVE, user_alternative);
         if (bestVideoItag != null) {
             setValue(dest, YoutubeHelper.YT_BEST_VIDEO, bestVideoItag.getBaseVariant().getiTagVideo().name());
+            setValue(dest, YoutubeHelper.YT_BEST_VIDEO_HEIGHT, String.valueOf(bestVideoItag.getVideoHeight()));
         }
         setValue(dest, YoutubeHelper.YT_DATE, datePublished);
         setValue(dest, YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);

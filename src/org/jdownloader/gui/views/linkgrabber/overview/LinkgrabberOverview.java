@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.linkgrabber.overview;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -20,7 +19,6 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.interfaces.View;
 
-import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -35,25 +33,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawlerNumbers> implements GenericConfigEventListener<Boolean>, LinkCollectorListener, GUIListener {
-
-    private static final AtomicBoolean INCLUDE_DISABLED = new AtomicBoolean(false) {
-                                                            {
-                                                                final AtomicBoolean variable = this;
-                                                                CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-                                                                    @Override
-                                                                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                        variable.set(Boolean.TRUE.equals(newValue));
-                                                                    }
-
-                                                                    @Override
-                                                                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                                                                    }
-                                                                });
-                                                                variable.set(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled());
-                                                            }
-                                                        };
-
     private final class UnknownCountEntry extends DataEntry<AggregatedCrawlerNumbers> {
         private UnknownCountEntry(String label) {
             super(label);
@@ -181,7 +160,7 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
         @Override
         public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-            final boolean includeDisabled = INCLUDE_DISABLED.get();
+            final boolean includeDisabled = CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS.isEnabled();
             if (total != null) {
                 setTotal(total.getTotalBytesString(includeDisabled));
             }
@@ -227,27 +206,21 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
      *
      */
     private static final long           serialVersionUID = -195024600818162517L;
-
     private final ListSelectionListener selectionListener;
     private final TableModelListener    tableListener;
 
     public LinkgrabberOverview(final LinkGrabberTable table) {
         super(table.getModel());
-
         CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
-
         LinkCollector.getInstance().getEventsender().addListener(this, true);
         tableModel.addTableModelListener(tableListener = new TableModelListener() {
-
             @Override
             public void tableChanged(TableModelEvent e) {
                 slowDelayer.run();
             }
         });
-
         // new Timer(1000, this).start();
         table.getSelectionModel().addListSelectionListener(selectionListener = new ListSelectionListener() {
-
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (e == null || e.getValueIsAdjusting() || tableModel.isTableSelectionClearing()) {
@@ -256,9 +229,7 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
                 onConfigValueModified(null, null);
             }
         });
-
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
             public void run() {
                 visible.set(JDGui.getInstance().isCurrentPanel(Panels.LINKGRABBER));
                 slowDelayer.run();
@@ -269,17 +240,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
     public void removeListeners() {
         super.removeListeners();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS.getEventSender().removeListener(LinkgrabberOverview.this);
-
                 CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
                 LinkCollector.getInstance().getEventsender().removeListener(LinkgrabberOverview.this);
                 tableModel.removeTableModelListener(tableListener);
                 tableModel.getTable().getSelectionModel().removeListSelectionListener(selectionListener);
-
             }
         };
     }
@@ -358,16 +325,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
     @Override
     protected List<DataEntry<AggregatedCrawlerNumbers>> createDataEntries() {
-
         DataEntry<AggregatedCrawlerNumbers> packageCount = new PackagesEntry();
         DataEntry<AggregatedCrawlerNumbers> size = new BytesTotalEntry(_GUI.T.DownloadOverview_DownloadOverview_size());
-
         DataEntry<AggregatedCrawlerNumbers> linkCount = new LinksCountEntry(_GUI.T.DownloadOverview_DownloadOverview_links());
         DataEntry<AggregatedCrawlerNumbers> hosterCount = new HostCountEntry(_GUI.T.DownloadOverview_DownloadOverview_hoster());
         DataEntry<AggregatedCrawlerNumbers> onlineCount = new OnlineCountEntry(_GUI.T.DownloadOverview_DownloadOverview_online());
         DataEntry<AggregatedCrawlerNumbers> offlineCount = new OfflineCountEntry(_GUI.T.DownloadOverview_DownloadOverview_offline());
         DataEntry<AggregatedCrawlerNumbers> unknownCount = new UnknownCountEntry(_GUI.T.DownloadOverview_DownloadOverview_unknown());
-
         ArrayList<DataEntry<AggregatedCrawlerNumbers>> entries = new ArrayList<DataEntry<AggregatedCrawlerNumbers>>();
         entries.add(packageCount);
         entries.add(linkCount);
@@ -376,7 +340,6 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
         entries.add(hosterCount);
         entries.add(offlineCount);
         entries.add(unknownCount);
-
         return entries;
     }
 
@@ -402,5 +365,4 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
     @Override
     public void onLinkCrawlerFinished() {
     }
-
 }

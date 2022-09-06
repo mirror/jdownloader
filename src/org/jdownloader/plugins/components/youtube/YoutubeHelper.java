@@ -36,6 +36,23 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -98,23 +115,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -173,7 +173,7 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
+    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -396,6 +396,21 @@ public class YoutubeHelper {
                     return ((VideoInterface) variant).getVideoHeight() + "";
                 }
                 return "";
+            }
+        });
+        REPLACER.add(new YoutubeReplacer("HEIGHT_BEST") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_best_height();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_BEST_VIDEO_HEIGHT, "");
             }
         });
         REPLACER.add(new YoutubeReplacer("WIDTH", "W") {
@@ -623,7 +638,7 @@ public class YoutubeHelper {
                 }
             }
         });
-        REPLACER.add(new YoutubeReplacer("VIDEO_CODEC") {
+        REPLACER.add(new YoutubeReplacer("VIDEO_CODEC", "CODEC_VIDEO") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_videoCodec();
@@ -667,7 +682,7 @@ public class YoutubeHelper {
                 return "";
             }
         });
-        REPLACER.add(new YoutubeReplacer("BESTRESOLUTION") {
+        REPLACER.add(new YoutubeReplacer("BESTRESOLUTION", "RESOLUTION_BEST") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_resolution_best();
@@ -680,7 +695,7 @@ public class YoutubeHelper {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 // date
-                String var = link.getStringProperty(YoutubeHelper.YT_BEST_VIDEO, "");
+                final String var = link.getStringProperty(YoutubeHelper.YT_BEST_VIDEO, "");
                 if (var == null) {
                     return "";
                 }
@@ -692,7 +707,7 @@ public class YoutubeHelper {
                 }
             }
         });
-        REPLACER.add(new YoutubeReplacer("AUDIO_CODEC") {
+        REPLACER.add(new YoutubeReplacer("AUDIO_CODEC", "CODEC_AUDIO") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_audioCodec();
@@ -814,33 +829,33 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String  YT_TITLE                         = "YT_TITLE";
-    public static final String  YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
-    public static final String  YT_CATEGORY                      = "YT_CATEGORY";
-    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
-    public static final String  YT_ID                            = "YT_ID";
-    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String  YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
-    public static final String  YT_DATE                          = "YT_DATE";
-    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String  YT_VARIANT                       = "YT_VARIANT";
+    public static final String                YT_TITLE                         = "YT_TITLE";
+    public static final String                YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
+    public static final String                YT_CATEGORY                      = "YT_CATEGORY";
+    public static final String                YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
+    public static final String                YT_ID                            = "YT_ID";
+    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String                YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
+    public static final String                YT_DATE                          = "YT_DATE";
+    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String                YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -2954,6 +2969,7 @@ public class YoutubeHelper {
     @Deprecated
     public static final String YT_SUBTITLE_CODE_LIST      = "YT_SUBTITLE_CODE_LIST";
     public static final String YT_BEST_VIDEO              = "YT_BEST_VIDEO";
+    public static final String YT_BEST_VIDEO_HEIGHT       = "YT_BEST_VIDEO_HEIGHT";
     public static final String YT_DESCRIPTION             = "YT_DESCRIPTION";
     public static final String YT_DESCRIPTION_ALTERNATIVE = "YT_DESCRIPTION_ALTERNATIVE";
     // public static final String YT_VARIANT_INFO = "YT_VARIANT_INFO";

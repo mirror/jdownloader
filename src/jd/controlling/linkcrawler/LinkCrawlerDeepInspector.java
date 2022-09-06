@@ -2,14 +2,14 @@ package jd.controlling.linkcrawler;
 
 import java.util.List;
 
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 
 public abstract class LinkCrawlerDeepInspector {
     /**
@@ -26,7 +26,8 @@ public abstract class LinkCrawlerDeepInspector {
             final boolean hasContentLength = StringUtils.isNotEmpty(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH));
             final boolean allowsByteRanges = StringUtils.contains(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES), "bytes");
             final String eTag = urlConnection.getHeaderField(HTTPConstants.HEADER_ETAG);
-            final boolean hasStrongEtag = StringUtils.isNotEmpty(eTag) && !eTag.matches("(?i)^\\s*W/.*");
+            final boolean hasEtag = StringUtils.isNotEmpty(eTag);
+            final boolean hasStrongEtag = hasEtag && !eTag.matches("(?i)^\\s*W/.*");
             final String filePathName = new Regex(urlConnection.getURL().getPath(), ".*?/([^/]+)$").getMatch(0);
             final long sizeDownloadableContent;
             if (StringUtils.endsWithCaseInsensitive(filePathName, ".epub")) {
@@ -70,7 +71,18 @@ public abstract class LinkCrawlerDeepInspector {
                 return true;
             } else if (completeContentLength > sizeDownloadableContent && (allowsByteRanges || (urlConnection.getResponseCode() == 206 && urlConnection.getRange() != null))) {
                 return true;
-            } else if (StringUtils.endsWithCaseInsensitive(filePathName, ".epub") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > sizeDownloadableContent)) {
+            } else if (filePathName != null && filePathName.matches("(?i).+\\.epub") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > sizeDownloadableContent)) {
+                return true;
+            } else if (filePathName != null && filePathName.matches("(?i).+\\.srt") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > 512 || hasEtag)) {
+                /*
+                 * Accept-Ranges: bytes
+                 *
+                 * Content-Type: text/plain
+                 *
+                 * ETag: "11968........"
+                 *
+                 * Content-Length: 28...
+                 */
                 return true;
             }
         }

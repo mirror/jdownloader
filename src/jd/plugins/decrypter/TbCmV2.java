@@ -582,10 +582,11 @@ public class TbCmV2 extends PluginForDecrypt {
                     final VariantInfo vi = it.next();
                     if (vi.getVariant() instanceof VideoVariant) {
                         final VideoVariant videoVariant = (VideoVariant) vi.getVariant();
+                        if (bestVideoResolution == null || bestVideoResolution.getVideoHeight() < videoVariant.getVideoHeight()) {
+                            bestVideoResolution = videoVariant;
+                        }
                         if (videoVariant.getVideoHeight() > maxVideoResolution.getHeight()) {
                             it.remove();
-                        } else if (bestVideoResolution == null || bestVideoResolution.getVideoHeight() < videoVariant.getVideoHeight()) {
-                            bestVideoResolution = videoVariant;
                         }
                     }
                 }

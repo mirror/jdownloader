@@ -23,7 +23,8 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledPackageView extends ChildrenView<CrawledPackage, CrawledLink> {
     private static class LinkInfo {
-        private long bytesTotal = -1;
+        private long    bytesTotal = -1;
+        private boolean enabled    = false;
     }
 
     protected volatile long                fileSize                       = -1;
@@ -96,7 +97,11 @@ public class CrawledPackageView extends ChildrenView<CrawledPackage, CrawledLink
             commonSourceUrl += "[...]";
         }
         long size = -1;
+        boolean atLeastOneEnabled = tmp.newEnabled;
         for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
+            if (atLeastOneEnabled == true && linkInfo.enabled == false) {
+                continue;
+            }
             if (linkInfo.bytesTotal != -1) {
                 if (size == -1) {
                     size = 0;
@@ -151,6 +156,9 @@ public class CrawledPackageView extends ChildrenView<CrawledPackage, CrawledLink
             tmp.linkInfos.put(name, existing);
         } else if (linkSize > existing.bytesTotal) {
             existing.bytesTotal = linkSize;
+        }
+        if (link.isEnabled()) {
+            existing.enabled = true;
         }
     }
 
