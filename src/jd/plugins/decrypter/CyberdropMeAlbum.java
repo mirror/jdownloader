@@ -33,6 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 
 import org.appwork.storage.JSonStorage;
@@ -41,6 +42,9 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -52,7 +56,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "cyberdrop.me" });
+        ret.add(new String[] { "cyberdrop.me", "cyberdrop.to" });
         ret.add(new String[] { "bunkr.is" });// same template/system?
         return ret;
     }
@@ -84,8 +88,9 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
     private static final String TYPE_ALBUM   = "https?://[^/]+/a/([A-Za-z0-9]+)";
     private static final String TYPE_VIDEO   = "https?://stream(\\d+)\\.[^/]+/v/(.+\\.(?:mp4|m4v))";
     private static final String TYPE_VIDEO_2 = "https?://cdn(\\d+)\\.[^/]+/(.+\\.(?:mp4|m4v))";
+    private PluginForHost       plugin       = null;
 
-    private DownloadLink add(List<DownloadLink> decryptedLinks, Set<String> dups, String directurl, final String filename, final String filesizeBytes, final String filesize) {
+    private DownloadLink add(List<DownloadLink> decryptedLinks, Set<String> dups, String directurl, final String filename, final String filesizeBytes, final String filesize) throws Exception {
         if (dups == null || dups.add(directurl)) {
             directurl = correctDirecturl(directurl);
             final DownloadLink dl = this.createDownloadlink(directurl);
@@ -94,6 +99,19 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             if (getHost().equals("bunkr.is")) {
                 dl.setProperty(DirectHTTP.FORCE_NOCHUNKS, true);
             }
+            if (plugin == null) {
+                try {
+                    final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
+                    if (lazyHostPlugin == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    plugin = lazyHostPlugin.getPrototype(null, false);
+                } catch (UpdateRequiredClassNotFoundException e) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+                }
+            }
+            // direct assign the dedicated hoster plugin because it does not have any URL regex
+            dl.setDefaultPlugin(plugin);
             dl.setAvailable(true);
             if (filename != null) {
                 dl.setFinalFileName(filename);

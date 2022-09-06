@@ -1036,38 +1036,45 @@ public class YoutubeHelper {
                 function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)").getMatch(0);
                 cache.put("n_function", function);
             }
+            final String resultKey = "n_result_" + vid.videoID;
+            final String cachedResult = cache.get(resultKey);
             if (function != null) {
-                final JSShutterDelegate jsShutter = new JSShutterDelegate() {
-                    @Override
-                    public boolean isClassVisibleToScript(boolean trusted, String className) {
-                        if ("org.mozilla.javascript.JavaScriptException".equals(className)) {
-                            return true;
+                if (cachedResult != null) {
+                    ret = cachedResult;
+                } else {
+                    final JSShutterDelegate jsShutter = new JSShutterDelegate() {
+                        @Override
+                        public boolean isClassVisibleToScript(boolean trusted, String className) {
+                            if ("org.mozilla.javascript.JavaScriptException".equals(className)) {
+                                return true;
+                            }
+                            return trusted;
                         }
-                        return trusted;
-                    }
-                };
-                try {
-                    JSRhinoPermissionRestricter.THREAD_JSSHUTTER.put(Thread.currentThread(), jsShutter);
-                    final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
-                    final ScriptEngine engine = manager.getEngineByName("javascript");
-                    final String js = "var calculate" + function + " var result=calculate(\"" + value + "\")";
-                    engine.eval(js);
-                    final String result = StringUtils.valueOfOrNull(engine.get("result"));
-                    if (result != null) {
-                        ret = result;
-                        if (result.startsWith("enhanced_except")) {
-                            throw new Exception("Invalid result:" + result);
+                    };
+                    try {
+                        JSRhinoPermissionRestricter.THREAD_JSSHUTTER.put(Thread.currentThread(), jsShutter);
+                        final ScriptEngineManager manager = org.jdownloader.scripting.JavaScriptEngineFactory.getScriptEngineManager(this);
+                        final ScriptEngine engine = manager.getEngineByName("javascript");
+                        final String js = "var calculate" + function + " var result=calculate(\"" + value + "\")";
+                        engine.eval(js);
+                        final String result = StringUtils.valueOfOrNull(engine.get("result"));
+                        if (result != null) {
+                            ret = result;
+                            if (result.startsWith("enhanced_except")) {
+                                throw new Exception("Invalid result:" + result);
+                            }
+                        } else {
+                            throw new Exception();
                         }
-                    } else {
-                        throw new Exception();
+                    } catch (Exception e) {
+                        logger.log(e);
+                    } finally {
+                        JSRhinoPermissionRestricter.THREAD_JSSHUTTER.remove(Thread.currentThread());
                     }
-                } catch (Exception e) {
-                    logger.log(e);
-                } finally {
-                    JSRhinoPermissionRestricter.THREAD_JSSHUTTER.remove(Thread.currentThread());
+                    cache.put(resultKey, ret);
                 }
             }
-            logger.info("nsig(" + (function != null) + "):" + value + "->" + ret);
+            logger.info("nsig(" + (function != null) + "):" + value + "->" + ret + "(cached:" + (cachedResult != null) + ")");
         }
         return ret;
     }

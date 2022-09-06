@@ -22,18 +22,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -54,6 +42,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.ArchiveOrgCrawler;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:[\\w\\.]+)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -299,8 +298,8 @@ public class ArchiveOrg extends PluginForHost {
                                 query.add("action", "return_loan");
                                 query.add("identifier", bookID);
                                 br.postPage("https://" + this.getHost() + "/services/loans/loan", query);
-                                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                                if ((Boolean) entries.get("success") == Boolean.TRUE) {
+                                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                                if (Boolean.TRUE.equals(entries.get("success"))) {
                                     logger.info("Successfully returned book " + bookID);
                                 } else {
                                     logger.info("Failed to return book " + bookID + " json response: " + br.getRequest().getHtmlCode());
@@ -479,8 +478,7 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /**
-     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br>
-     * It is typically valid for one hour.
+     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br> It is typically valid for one hour.
      */
     private void borrowBook(final Browser br, final Account account, final String bookID, final boolean skipAllExceptLastStep) throws Exception {
         if (account == null) {
@@ -499,10 +497,10 @@ public class ArchiveOrg extends PluginForHost {
             if (!skipAllExceptLastStep) {
                 query.add("action", "grant_access");
                 br.postPage(urlBase + "/services/loans/loan/searchInside.php", query);
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 query.addAndReplace("action", "browse_book");
                 br.postPage("/services/loans/loan/", query);
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 if (br.getHttpConnection().getResponseCode() == 400) {
                     /*
                      * Happens if you try to borrow a book that can't be borrowed or if you try to borrow a book while too many (2022-08-31:
@@ -515,7 +513,7 @@ public class ArchiveOrg extends PluginForHost {
             /* This should set a cookie called "br-load-<bookID>" */
             query.addAndReplace("action", "create_token");
             br.postPage(urlBase + "/services/loans/loan/", query);
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             final String borrowToken = (String) entries.get("token");
             if (StringUtils.isEmpty(borrowToken)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure #2");

@@ -1,15 +1,16 @@
 package org.jdownloader.plugins.components.archiveorg;
 
 import java.util.ArrayList;
-
-import org.appwork.utils.Time;
+import java.util.List;
 
 import jd.http.Cookies;
 
+import org.appwork.utils.Time;
+
 public class ArchiveOrgLendingInfo {
-    private Cookies             cookies   = null;
-    private Long                timestamp = null;
-    private ArrayList<BookPage> bookPages = new ArrayList<BookPage>();
+    private Cookies              cookies   = null;
+    private Long                 timestamp = null;
+    private final List<BookPage> bookPages = new ArrayList<BookPage>();
 
     public ArchiveOrgLendingInfo(final Cookies cookies) {
         this.cookies = cookies;
@@ -29,7 +30,7 @@ public class ArchiveOrgLendingInfo {
     }
 
     /** Returns whether or not this session is considered valid. */
-    public boolean isValid() {
+    public synchronized boolean isValid() {
         if (this.timestamp == null) {
             return false;
         } else if (Time.systemIndependentCurrentJVMTimeMillis() - this.timestamp.longValue() < 60 * 60 * 1000) {
@@ -40,7 +41,7 @@ public class ArchiveOrgLendingInfo {
     }
 
     /** If this returns null, loan is allowed immediately. */
-    public Long getTimeUntilNextLoanAllowed() {
+    public synchronized Long getTimeUntilNextLoanAllowed() {
         if (this.timestamp == null) {
             return null;
         } else {
@@ -56,7 +57,7 @@ public class ArchiveOrgLendingInfo {
     }
 
     /** Returns true if this session has been newly added within the last X minutes. */
-    public boolean hasJustBeenLoaned() {
+    public synchronized boolean hasJustBeenLoaned() {
         if (getTimeUntilNextLoanAllowed() == null) {
             return false;
         } else {
@@ -64,14 +65,14 @@ public class ArchiveOrgLendingInfo {
         }
     }
 
-    public void setPageURLs(final ArrayList<String> urls) {
+    public synchronized void setPageURLs(final List<String> urls) {
         this.bookPages.clear();
         for (final String url : urls) {
             this.bookPages.add(new BookPage(url));
         }
     }
 
-    public void updateOrAddBookPages(final ArrayList<String> urls) {
+    public synchronized void updateOrAddBookPages(final List<String> urls) {
         if (urls.size() == this.bookPages.size()) {
             int index = 0;
             for (final String url : urls) {
@@ -85,7 +86,7 @@ public class ArchiveOrgLendingInfo {
     }
 
     /** Returns URL to desired pageIndexNumber. */
-    public String getPageURL(final int pageIndexNumber) {
+    public synchronized String getPageURL(final int pageIndexNumber) {
         final BookPage page = getBookPage(pageIndexNumber);
         if (page != null) {
             return page.getUrl();
@@ -94,7 +95,7 @@ public class ArchiveOrgLendingInfo {
         }
     }
 
-    public BookPage getBookPage(final int pageIndexNumber) {
+    public synchronized BookPage getBookPage(final int pageIndexNumber) {
         if (pageIndexNumber > -1 && pageIndexNumber < this.bookPages.size()) {
             return this.bookPages.get(pageIndexNumber);
         } else {
@@ -102,14 +103,14 @@ public class ArchiveOrgLendingInfo {
         }
     }
 
-    public void setBookPageDownloadStatus(final int pageIndexNumber, final boolean downloaded) {
+    public synchronized void setBookPageDownloadStatus(final int pageIndexNumber, final boolean downloaded) {
         final BookPage page = getBookPage(pageIndexNumber);
         if (page != null) {
             page.setDownloaded(downloaded);
         }
     }
 
-    public boolean looksLikeBookDownloadIsComplete() {
+    public synchronized boolean looksLikeBookDownloadIsComplete() {
         for (final BookPage page : this.bookPages) {
             if (!page.isDownloaded()) {
                 /* At least one page has not been downloaded --> Download of book is not complete. */
