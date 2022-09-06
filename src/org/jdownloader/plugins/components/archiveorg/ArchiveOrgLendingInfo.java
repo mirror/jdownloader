@@ -7,18 +7,25 @@ import org.appwork.utils.Time;
 import jd.http.Cookies;
 
 public class ArchiveOrgLendingInfo {
-    private Cookies           cookies                             = null;
-    private Long              timestamp                           = null;
-    private ArrayList<String> pageURLs                            = new ArrayList<String>();
-    private int               numberofSuccessfullyDownloadedPages = 0;
+    private Cookies             cookies   = null;
+    private Long                timestamp = null;
+    private ArrayList<BookPage> bookPages = new ArrayList<BookPage>();
 
     public ArchiveOrgLendingInfo(final Cookies cookies) {
         this.cookies = cookies;
+        this.updateTimestamp();
+    }
+
+    public void updateTimestamp() {
         this.timestamp = Time.systemIndependentCurrentJVMTimeMillis();
     }
 
     public Cookies getCookies() {
         return this.cookies;
+    }
+
+    public void setCookies(final Cookies cookies) {
+        this.cookies = cookies;
     }
 
     /** Returns whether or not this session is considered valid. */
@@ -58,37 +65,83 @@ public class ArchiveOrgLendingInfo {
     }
 
     public void setPageURLs(final ArrayList<String> urls) {
-        this.pageURLs.clear();
-        this.pageURLs.addAll(urls);
+        this.bookPages.clear();
+        for (final String url : urls) {
+            this.bookPages.add(new BookPage(url));
+        }
+    }
+
+    public void updateOrAddBookPages(final ArrayList<String> urls) {
+        if (urls.size() == this.bookPages.size()) {
+            int index = 0;
+            for (final String url : urls) {
+                final BookPage existingBookPage = this.bookPages.get(index);
+                existingBookPage.setUrl(url);
+                index++;
+            }
+        } else {
+            this.setPageURLs(urls);
+        }
     }
 
     /** Returns URL to desired pageIndexNumber. */
     public String getPageURL(final int pageIndexNumber) {
-        if (pageIndexNumber > -1 && pageIndexNumber < this.pageURLs.size()) {
-            return this.pageURLs.get(pageIndexNumber);
+        final BookPage page = getBookPage(pageIndexNumber);
+        if (page != null) {
+            return page.getUrl();
         } else {
             return null;
         }
     }
 
-    /** Increases downloaded page counter. */
-    public void increaseDownloadedPageCounter() {
-        this.numberofSuccessfullyDownloadedPages += 1;
+    public BookPage getBookPage(final int pageIndexNumber) {
+        if (pageIndexNumber > -1 && pageIndexNumber < this.bookPages.size()) {
+            return this.bookPages.get(pageIndexNumber);
+        } else {
+            return null;
+        }
     }
 
-    public void setNumberofSuccessfullyDownloadedPages(final int num) {
-        this.numberofSuccessfullyDownloadedPages = num;
-    }
-
-    public int getNumberofSuccessfullyDownloadedPages() {
-        return this.numberofSuccessfullyDownloadedPages;
+    public void setBookPageDownloadStatus(final int pageIndexNumber, final boolean downloaded) {
+        final BookPage page = getBookPage(pageIndexNumber);
+        if (page != null) {
+            page.setDownloaded(downloaded);
+        }
     }
 
     public boolean looksLikeBookDownloadIsComplete() {
-        if (this.numberofSuccessfullyDownloadedPages >= this.pageURLs.size()) {
-            return true;
-        } else {
-            return false;
+        for (final BookPage page : this.bookPages) {
+            if (!page.isDownloaded()) {
+                /* At least one page has not been downloaded --> Download of book is not complete. */
+                return false;
+            }
         }
+        /* All pages have been downloaded --> Download of book is complete */
+        return true;
+    }
+}
+
+class BookPage {
+    private String  url          = null;
+    private boolean isDownloaded = false;
+
+    public BookPage(final String url) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setDownloaded(final boolean downloaded) {
+        this.isDownloaded = downloaded;
+    }
+
+    public boolean isDownloaded() {
+        return this.isDownloaded;
     }
 }
