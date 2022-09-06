@@ -1030,7 +1030,7 @@ public abstract class Plugin implements ActionListener {
     protected <T> T getNewPluginInstance(final LazyPlugin<?> lazyPlugin) throws PluginException {
         if (lazyPlugin != null) {
             try {
-                final Plugin plugin = lazyPlugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+                final Plugin plugin = lazyPlugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild(), false);
                 pluginInstances.add(0, plugin);
                 plugin.setLogger(getLogger());
                 plugin.setBrowser(getBrowser());
