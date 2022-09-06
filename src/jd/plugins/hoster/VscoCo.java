@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.VscoCoCrawler;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VscoCo extends PluginForHost {
@@ -79,6 +79,10 @@ public class VscoCo extends PluginForHost {
         if (linkid != null && (isHLSVideo(link) || link.getStringProperty(PROPERTY_HLS_URL) != null)) {
             return this.getHost() + "://" + "/" + getUsername(link) + "/" + linkid + "/" + getQuality(link);
         } else {
+            /*
+             * Do not return special linkID for older http videos and images as we rely purely on the http links for dupechecking. Also for
+             * "backwards compatibility" see https://board.jdownloader.org/showthread.php?p=509192#post509192
+             */
             return super.getLinkID(link);
         }
     }
