@@ -25,7 +25,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -48,7 +47,7 @@ public class PostimagesOrg extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "postimages.org", "postimg.cc" });
+        ret.add(new String[] { "postimages.org", "postimg.cc", "postlmg.cc" });
         return ret;
     }
 
@@ -93,8 +92,13 @@ public class PostimagesOrg extends PluginForHost {
             link.setName(getFID(link) + ".jpg");
         }
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(405);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 405) {
+            /* E.g. https://postimages.org/1 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"imagename\">([^<>\"]+)</").getMatch(0);
@@ -111,17 +115,17 @@ public class PostimagesOrg extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
+        if (filename == null && filesize == null && regexDllink(br) == null) {
+            /* Assume that we are on a non-picture page such as https://postimages.org/faq or http://postimages.org/websearch */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        String dllink = checkDirectLink(link, "directlink");
-        if (dllink == null) {
-            /* 'Download original' URL */
-            dllink = br.getRegex("(https?://[^<>\"]+\\?dl=1)\"").getMatch(0);
-        }
+        final String dllink = regexDllink(br);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -139,36 +143,11 @@ public class PostimagesOrg extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty("directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
+    private String regexDllink(final Browser br) {
+        return br.getRegex("(https?://[^<>\"]+\\?dl=1)\"").getMatch(0);
     }
 
     @Override

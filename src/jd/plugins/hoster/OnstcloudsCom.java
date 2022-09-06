@@ -161,13 +161,16 @@ public class OnstcloudsCom extends PluginForHost {
             // if (br.toString().equals("false")) {
             // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             // }
-            ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + internalFileID);
+            ajax.postPage("/ajax.php", "action=load_down_addr1&action2=gethtml&file_id=" + internalFileID);
             String dllink = ajax.getRegex("a href=\"([^\"]*cd\\.php[^\"]+)").getMatch(0);
             if (dllink == null) {
                 dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
             }
             if (dllink == null) {
                 dllink = ajax.getRegex("true\\|(https?[^<>\"]+)").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = ajax.getRegex("(vip\\.php[^<>\"\\']+)").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

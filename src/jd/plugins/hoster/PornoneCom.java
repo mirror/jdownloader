@@ -17,8 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.PornoneComConfig;
+import org.jdownloader.plugins.components.config.PornoneComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,12 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.PornoneComConfig;
-import org.jdownloader.plugins.components.config.PornoneComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornone.com" }, urls = { "https?://(?:www\\.)?(?:vporn|pornone)\\.com/.*?/(\\d+)/?" })
 public class PornoneCom extends PluginForHost {
@@ -70,16 +71,6 @@ public class PornoneCom extends PluginForHost {
         return "https://pornone.com/terms/";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().contains("/embed/")) {
-            link.setUrlDownload("https://" + this.getHost() + "/mature/x/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
-        }
-        if (!link.getDownloadURL().endsWith("/")) {
-            link.setUrlDownload(link.getDownloadURL() + "/");
-        }
-    }
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -103,55 +94,56 @@ public class PornoneCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            logger.info("Account available");
-            try {
-                this.login(aa, false);
-            } catch (final Throwable e) {
-                logger.warning("Login failed:");
-                e.printStackTrace();
-            }
-        }
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, AccountController.getInstance().getValidAccount(this.getHost()));
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            /* Set fallback-filename */
+            link.setName(fid + ".mp4");
+        }
+        this.setBrowserExclusive();
+        if (account != null) {
+            logger.info("Account available");
+            this.login(account, false);
+        }
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        if (link.getPluginPatternMatcher().matches("https?://[^/]+/embed/\\d+/?")) {
+            /* Access modified URL else we won't find a tile-title */
+            br.getPage("https://" + Browser.getHost(link.getPluginPatternMatcher()) + "/mature/x/" + fid);
+        } else {
+            br.getPage(link.getPluginPatternMatcher());
+        }
         if (!br.getURL().contains(fid) || br.containsHTML("This video (is|has been) deleted") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("videoname = '([^']*?)'").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) - (Vporn Video|vPorn.com)</title>").getMatch(0);
+        String title = br.getRegex("videoname = '([^']*?)'").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>([^<>\"]*?) - (Vporn Video|vPorn.com)</title>").getMatch(0);
         }
-        if (filename == null) {
-            /* Fallback */
-            filename = fid;
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim() + ".mp4";
+            link.setFinalFileName(title);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim() + ".mp4";
-        link.setFinalFileName(filename);
         br.setFollowRedirects(true);
         int foundlinks = 0;
-        boolean failed = true;
         URLConnectionAdapter con = null;
+        String dlurl = null;
         /* videoUrlHD2 = usually only available via account, downloadUrl = Only available via account also == videoUrlLow(2) */
         final String[] quals = { "videoUrlHD2", "videoUrlMedium2", "videoUrlLow2", "videoUrlHD", "videoUrlMedium", "videoUrlLow", "downloadUrl" };
         for (final String qual : quals) {
-            dllink = br.getRegex("flashvars\\." + qual + "\\s*=\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (dllink != null) {
+            dlurl = br.getRegex("flashvars\\." + qual + "\\s*=\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dlurl != null) {
                 foundlinks++;
-                dllink = Encoding.htmlDecode(dllink);
+                dllink = Encoding.htmlDecode(dlurl);
                 try {
-                    con = br.openHeadConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
-                        failed = false;
-                        link.setDownloadSize(con.getLongContentLength());
+                    con = br.openHeadConnection(dlurl);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        this.dllink = dlurl;
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                         break;
                     }
                 } finally {
@@ -166,26 +158,26 @@ public class PornoneCom extends PluginForHost {
         if (foundlinks == 0) { // 2020-06-12
             if (preferredQuality != null) {
                 logger.info("Trying to find user selected quality: " + preferredQuality);
-                dllink = br.getRegex("src=\"(https://[^<>\"]+\\.mp4)\"[^>]+label=\"" + preferredQuality + "\"").getMatch(0);
-                if (dllink != null) {
+                dlurl = br.getRegex("src=\"(https://[^<>\"]+\\.mp4)\"[^>]+label=\"" + preferredQuality + "\"").getMatch(0);
+                if (dlurl != null) {
                     logger.info("Successfully found user selected quality");
                 } else {
                     logger.info("Failed to find user selected quality");
                 }
             }
             /* Grab ANY- or the BEST quality. */
-            if (dllink == null) {
-                dllink = br.getRegex("<source src=\"(http[^\"]+)\"").getMatch(0);
+            if (dlurl == null) {
+                dlurl = br.getRegex("<source src=\"(http[^\"]+)\"").getMatch(0);
             }
-            logger.info("dllink: " + dllink);
-            if (dllink != null) {
+            logger.info("dlurl: " + dlurl);
+            if (dlurl != null) {
                 foundlinks++;
-                dllink = Encoding.htmlDecode(dllink);
+                dlurl = Encoding.htmlDecode(dlurl);
                 try {
-                    con = br.openHeadConnection(dllink);
-                    if (!con.getContentType().contains("html")) {
-                        failed = false;
-                        link.setDownloadSize(con.getLongContentLength());
+                    con = br.openHeadConnection(dlurl);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        this.dllink = dlurl;
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                         return AvailableStatus.TRUE;
                     }
                 } finally {
@@ -199,34 +191,36 @@ public class PornoneCom extends PluginForHost {
         /* js cars equals "" or just a number --> Video is not even playable via browser */
         if (foundlinks == 0 && br.containsHTML("flashvars\\.videoUrlLow\\s*=\\s*\"\"") || br.containsHTML("<source src=\"\"") || !br.containsHTML("<source src=")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (foundlinks == 0) {
+        } else if (foundlinks == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* No working downloadlink available --> */
-        if (failed) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        doFree(link);
+        handleDownload(link, null);
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink link) throws Exception {
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account);
+        if (StringUtils.isEmpty(this.dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume failed --> Retrying from zero");
                 link.setChunksProgress(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
         }
         dl.startDownload();
     }
@@ -272,15 +266,12 @@ public class PornoneCom extends PluginForHost {
         account.setType(AccountType.FREE);
         /* No captchas can happen */
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        /* We're already logged in! */
-        doFree(link);
+        handleDownload(link, account);
     }
 
     private String getPreferredStreamQuality() {

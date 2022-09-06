@@ -68,4 +68,9 @@ public class PorntrexCom extends KernelVideoSharingComV2 {
         }
         return this.getProtocol() + "www." + host + "/video/" + fuid + "/" + urlSlug;
     }
+
+    @Override
+    protected boolean preferTitleHTML() {
+        return true;
+    }
 }
