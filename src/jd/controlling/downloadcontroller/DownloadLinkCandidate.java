@@ -39,10 +39,6 @@ public class DownloadLinkCandidate {
         this(link, forced, null, null, false);
     }
 
-    public DownloadLinkCandidate(DownloadLinkCandidate candidate, CachedAccount cachedAccount) {
-        this(candidate.getLink(), candidate.isForced(), cachedAccount, null, false);
-    }
-
     public DownloadLinkCandidate(DownloadLinkCandidate candidate, CachedAccount cachedAccount, boolean customizedAccount) {
         this(candidate.getLink(), candidate.isForced(), cachedAccount, null, customizedAccount);
     }

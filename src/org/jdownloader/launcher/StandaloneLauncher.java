@@ -84,7 +84,13 @@ public class StandaloneLauncher {
 
     public static void main(String[] args) throws Exception {
         LOGGER = LogController.getInstance().getLogger(StandaloneLauncher.class.getName());
-        Application.printSystemProperties(LOGGER);
+        try {
+            /* blacklist github.com/jaymoulin/docker-jdownloader and github.com/antlafarge/jdownloader env variables */
+            Application.printSystemProperties(LOGGER, Arrays.asList(new String[] { "env_MYJD_USER", "env_MYJD_PASSWORD", "env_JD_PASSWORD", "env_JD_EMAIL" }));
+        } catch (Throwable e) {
+            /* update compatibility */
+            Application.printSystemProperties(LOGGER);
+        }
         LOGGER.info("Args: " + Arrays.toString(args));
         long t = System.currentTimeMillis();
         final ParameterParser pp = RestartController.getInstance().getParameterParser(args);

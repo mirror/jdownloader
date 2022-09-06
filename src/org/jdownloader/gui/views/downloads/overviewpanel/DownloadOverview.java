@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.downloads.overviewpanel;
 import java.awt.event.HierarchyListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Box;
 import javax.swing.JSeparator;
@@ -43,25 +42,6 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> implements DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
-
-    private static final AtomicBoolean INCLUDE_DISABLED = new AtomicBoolean(false) {
-                                                            {
-                                                                final AtomicBoolean variable = this;
-                                                                CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-                                                                    @Override
-                                                                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                        variable.set(Boolean.TRUE.equals(newValue));
-                                                                    }
-
-                                                                    @Override
-                                                                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                                                                    }
-                                                                });
-                                                                variable.set(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled());
-                                                            }
-                                                        };
-
     private final class FailedEntry extends DataEntry<AggregatedNumbers> {
         private FailedEntry(String label) {
             super(label);
@@ -69,7 +49,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-            final boolean includeDisabled = INCLUDE_DISABLED.get();
+            final boolean includeDisabled = isIncludeDisabled();
             if (total != null) {
                 setTotal(total.getFailedString(includeDisabled));
             }
@@ -87,6 +67,10 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         }
     }
 
+    private boolean isIncludeDisabled() {
+        return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled();
+    }
+
     private final class SkippedEntry extends DataEntry<AggregatedNumbers> {
         private SkippedEntry(String label) {
             super(label);
@@ -94,7 +78,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-            final boolean includeDisabled = INCLUDE_DISABLED.get();
+            final boolean includeDisabled = isIncludeDisabled();
             if (total != null) {
                 setTotal(total.getSkippedString(includeDisabled));
             }
@@ -119,7 +103,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-            final boolean includeDisabled = INCLUDE_DISABLED.get();
+            final boolean includeDisabled = isIncludeDisabled();
             if (total != null) {
                 setTotal(total.getFinishedString(includeDisabled));
             }
@@ -264,7 +248,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-            final boolean includeDisabled = INCLUDE_DISABLED.get();
+            final boolean includeDisabled = isIncludeDisabled();
             if (total != null) {
                 setTotal(total.getLoadedBytesString(includeDisabled));
             }
@@ -289,7 +273,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-            final boolean includeDisabled = INCLUDE_DISABLED.get();
+            final boolean includeDisabled = isIncludeDisabled();
             if (total != null) {
                 setTotal(total.getTotalBytesString(includeDisabled));
             }
@@ -335,7 +319,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
      *
      */
     private static final long                   serialVersionUID = 7849517111823717677L;
-
     private ListSelectionListener               listSelection;
     private TableModelListener                  tableListener;
     private StateEventListener                  stateListener;
@@ -347,11 +330,8 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
     public DownloadOverview(DownloadsTable table) {
         super(table.getModel());
-
         // new line
-
         // DownloadWatchDog.getInstance().getActiveDownloads(), DownloadWatchDog.getInstance().getDownloadSpeedManager().connections()
-
         CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(this, true);
         final MigPanel settings = new MigPanel("ins 2 0 0 0 ,wrap 3", "[][fill][fill]", "[]2[]");
         SwingUtils.setOpaque(settings, false);
@@ -361,7 +341,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         settings.add(new ParallelDownloadsPerHostEditor(true));
         settings.add(new SpeedlimitEditor(true));
         CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().addListener(settingsListener = new GenericConfigEventListener<Boolean>() {
-
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
@@ -373,20 +352,16 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         });
         settings.setVisible(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.isEnabled());
         CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
-
         add(Box.createHorizontalGlue());
-
         add(settings, "hidemode 3");
         DownloadController.getInstance().addListener(this, true);
         tableModel.addTableModelListener(tableListener = new TableModelListener() {
-
             @Override
             public void tableChanged(TableModelEvent e) {
                 slowDelayer.run();
             }
         });
         DownloadWatchDog.getInstance().getStateMachine().addListener(stateListener = new StateEventListener() {
-
             @Override
             public void onStateUpdate(StateEvent event) {
             }
@@ -394,7 +369,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
             @Override
             public void onStateChange(final StateEvent event) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         if (event.getNewState() == DownloadWatchDog.RUNNING_STATE || event.getNewState() == DownloadWatchDog.PAUSE_STATE) {
@@ -406,7 +380,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
                 };
             }
         });
-
         tableModel.getTable().getSelectionModel().addListSelectionListener(listSelection = new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -416,7 +389,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
                 onConfigValueModified(null, null);
             }
         });
-
     }
 
     protected List<DataEntry<AggregatedNumbers>> createDataEntries() {
@@ -424,18 +396,13 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         DataEntry<AggregatedNumbers> size = new BytesTotalEntry(_GUI.T.DownloadOverview_DownloadOverview_size());
         DataEntry<AggregatedNumbers> bytesLoaded = new BytesLoadedEntry(_GUI.T.DownloadOverview_DownloadOverview_loaded());
         DataEntry<AggregatedNumbers> runningDownloads = new DownloadsEntry(_GUI.T.DownloadOverview_DownloadOverview_running_downloads());
-
         DataEntry<AggregatedNumbers> linkCount = new LinksCountEntry(_GUI.T.DownloadOverview_DownloadOverview_links());
-
         DataEntry<AggregatedNumbers> speed = new SpeedEntry(_GUI.T.DownloadOverview_DownloadOverview_speed());
         DataEntry<AggregatedNumbers> eta = new ETAEntry(_GUI.T.DownloadOverview_DownloadOverview_eta());
-
         DataEntry<AggregatedNumbers> connections = new ConnectionsEntry(_GUI.T.DownloadOverview_DownloadOverview_connections());
-
         DataEntry<AggregatedNumbers> finishedDownloads = new FinishedEntry(_GUI.T.DownloadOverview_DownloadOverview_finished_downloads());
         DataEntry<AggregatedNumbers> skippedDownloads = new SkippedEntry(_GUI.T.DownloadOverview_DownloadOverview_skipped_downloads());
         DataEntry<AggregatedNumbers> failedDownloads = new FailedEntry(_GUI.T.DownloadOverview_DownloadOverview_failed_downloads());
-
         ArrayList<DataEntry<AggregatedNumbers>> entries = new ArrayList<DataEntry<AggregatedNumbers>>();
         entries.add(packageCount);
         entries.add(linkCount);
@@ -454,7 +421,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     public void removeListeners() {
         super.removeListeners();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().removeListener(settingsListener);
@@ -473,7 +439,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     //
     //
     // }
-
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
     }
