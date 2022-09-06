@@ -556,8 +556,11 @@ public class ArchiveOrg extends PluginForHost {
             final ArchiveOrgLendingInfo existingLendingInfo = this.getLendingInfo(bookID, account);
             if (existingLendingInfo != null) {
                 logger.info("Updated existing ArchiveOrgLendingInfo");
+                /* Update timestamp so we know when book was borrowed last time */
                 existingLendingInfo.updateTimestamp();
+                /* Set new borrow-cookies */
                 existingLendingInfo.setCookies(borrowCookies);
+                /* Update page URLKs although they should not have changed. */
                 existingLendingInfo.updateOrAddBookPages(pageURLs);
             } else {
                 logger.info("Added new ArchiveOrgLendingInfo");
