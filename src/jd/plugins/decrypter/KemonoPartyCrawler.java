@@ -20,9 +20,17 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig;
+import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -31,10 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -189,6 +193,17 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             /* E.g. redirect to main page of user because single post does not exist */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (PluginJsonConfig.get(getConfigInterface()).isCrawlHttpLinks()) {
+            final String postContent = br.getRegex("<div class=\"post__content\">([^<]+)</div>").getMatch(0);
+            if (postContent != null) {
+                final String[] urls = HTMLParser.getHttpLinks(postContent, br.getURL());
+                if (urls != null && urls.length > 0) {
+                    for (final String url : urls) {
+                        ret.add(this.createDownloadlink(url));
+                    }
+                }
+            }
+        }
         final String postTitle = br.getRegex("class=\"post__title\">\\s*<span>([^<]+)</span>").getMatch(0);
         String published = br.getRegex("\"post__published\"[^>]*>\\s*<time[^>]*class\\s*=\\s*\"timestamp[^>]*datetime\\s*=\\s*\"\\s*([0-9\\-: ]+)").getMatch(0);
         if (published == null) {
@@ -234,7 +249,16 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        // avoid DDOS-GUARD
+        /* Try to avoid DDOS-GUARD */
         return 1;
+    }
+
+    @Override
+    public Class<? extends KemonoPartyConfig> getConfigInterface() {
+        if ("kemono.party".equalsIgnoreCase(getHost())) {
+            return KemonoPartyConfig.class;
+        } else {
+            return KemonoPartyConfigCoomerParty.class;
+        }
     }
 }
