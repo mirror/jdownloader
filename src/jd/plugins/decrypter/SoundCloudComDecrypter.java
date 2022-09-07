@@ -152,32 +152,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         } else {
             /* Single track */
-            resolve(this.br, param.getCryptedUrl());
-            final String usernameURL = new Regex(param.getCryptedUrl(), TYPE_SINGLE_TRACK).getMatch(0);
-            final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("soundcloud", "soundclouddecrypted"));
-            final Map<String, Object> track = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final Map<String, Object> user = (Map<String, Object>) track.get("user");
-            final String username = (String) user.get("username");
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(getFormattedPackagename(usernameURL, username, null, track.get("created_at").toString()));
-            fp.setIgnoreVarious(true);
-            parseFileInfo(dl, track);
-            dl._setFilePackage(fp);
-            addLink(dl);
-            try {
-                if (decryptPurchaseURL) {
-                    crawlPurchaseURL(track);
-                }
-                if (decrypt500Thumb) {
-                    get500Thumbnail(dl, track);
-                }
-                if (decryptOriginalThumb) {
-                    getOriginalThumbnail(dl, track);
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                logger.info("Failed to get thumbnail/purchase_url, adding song link only");
-            }
+            crawlSingleTrack(param);
         }
         return this.decryptedLinks;
     }
@@ -202,34 +177,39 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             } else {
                 param.setCryptedUrl(newurl);
             }
-        } else if (TYPE_API_TRACK.matcher(url).find()) {
-            final UrlQuery query = new UrlQuery();
-            query.add("format", "json");
-            query.add("client_id", SoundcloudCom.getClientId(br));
-            final String secret_token = new UrlQuery().parse(url).get("secret_token");
-            if (!StringUtils.isEmpty(secret_token)) {
-                query.add("secret_token", secret_token);
-            }
-            br.getPage(url + "?" + query.toString());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> api_data = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            String newurl = (String) api_data.get("permalink_url");
-            if (newurl == null) {
-                newurl = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)\"").getMatch(0);
-                /* Maybe we got XML instead of json */
-                if (newurl == null) {
-                    newurl = br.getRegex("<permalink\\-url>(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)</permalink\\-url>").getMatch(0);
-                }
-            }
-            if (StringUtils.isEmpty(newurl)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            param.setCryptedUrl(newurl);
         } else if (url.matches(subtype_mobile_facebook_share)) {
             final String urlDecoded = Encoding.htmlDecode(url);
             param.setCryptedUrl("https://soundcloud.com/" + new Regex(urlDecoded, "soundcloud\\.com/([A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)").getMatch(0));
+        }
+    }
+
+    private void crawlSingleTrack(final CryptedLink param) throws Exception {
+        resolve(this.br, param.getCryptedUrl());
+        final Map<String, Object> track = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String permalink_url = track.get("permalink_url").toString();
+        final DownloadLink dl = createDownloadlink(permalink_url.replace("soundcloud", "soundclouddecrypted"));
+        final Map<String, Object> user = (Map<String, Object>) track.get("user");
+        final String usernameSlug = user.get("permalink").toString();
+        final String username = user.get("username").toString();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(getFormattedPackagename(usernameSlug, username, null, track.get("created_at").toString()));
+        fp.setIgnoreVarious(true);
+        parseFileInfo(dl, track);
+        dl._setFilePackage(fp);
+        addLink(dl);
+        try {
+            if (decryptPurchaseURL) {
+                crawlPurchaseURL(track);
+            }
+            if (decrypt500Thumb) {
+                get500Thumbnail(dl, track);
+            }
+            if (decryptOriginalThumb) {
+                getOriginalThumbnail(dl, track);
+            }
+        } catch (final Exception e) {
+            logger.log(e);
+            logger.info("Failed to get thumbnail/purchase_url, adding song link only");
         }
     }
 
@@ -679,66 +659,42 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private DownloadLink get500Thumbnail(final DownloadLink audiolink, final Map<String, Object> source) throws ParseException {
-        DownloadLink thumb = null;
-        if (decrypt500Thumb) {
-            try {
-                String artworkurl = (String) source.get("artwork_url");
-                if (!StringUtils.isEmpty(artworkurl)) {
-                    final Map<String, Object> user = (Map<String, Object>) source.get("user");
-                    artworkurl = artworkurl.replace("-large.jpg", "-t500x500.jpg");
-                    /* TODO: Simplity this property handling and remove duplicated code. Use public property fields in host plugin. */
-                    thumb = createDownloadlink("directhttp://" + artworkurl);
-                    thumb.setProperty("originaldate", audiolink.getStringProperty("originaldate"));
-                    thumb.setProperty("plainfilename", audiolink.getStringProperty("plainfilename") + "_500x500");
-                    thumb.setProperty("linkid", audiolink.getStringProperty("linkid"));
-                    thumb.setProperty("channel", audiolink.getStringProperty("channel"));
-                    thumb.setProperty("type", "jpg");
-                    thumb.setProperty("plain_url_username", user.get("permalink").toString());
-                    final String formattedFilename = SoundcloudCom.getFormattedFilename(thumb);
-                    thumb.setFinalFileName(formattedFilename);
-                    thumb.setAvailable(true);
-                    if (audiolink.getFilePackage() != null) {
-                        thumb._setFilePackage(audiolink.getFilePackage());
-                    }
-                    addLink(thumb);
-                }
-            } catch (final ParseException e) {
-                logger.warning("Failed to find 500x500 thumbnail...");
-            }
-        }
-        return thumb;
+    private DownloadLink get500Thumbnail(final DownloadLink audiolink, final Map<String, Object> track) throws ParseException {
+        return getThumbnail(audiolink, track, "-t500x500.jpg");
     }
 
-    private DownloadLink getOriginalThumbnail(final DownloadLink audiolink, final Map<String, Object> source) throws ParseException {
-        DownloadLink thumb = null;
+    private DownloadLink getOriginalThumbnail(final DownloadLink audiolink, final Map<String, Object> track) throws ParseException {
+        return getThumbnail(audiolink, track, "-original.jpg");
+    }
+
+    private DownloadLink getThumbnail(final DownloadLink audiolink, final Map<String, Object> track, final String urlReplaceStr) throws ParseException {
         if (decryptOriginalThumb) {
-            try {
-                String artworkurl = (String) source.get("artwork_url");
-                if (!StringUtils.isEmpty(artworkurl)) {
-                    final Map<String, Object> user = (Map<String, Object>) source.get("user");
-                    artworkurl = artworkurl.replace("-large.jpg", "-original.jpg");
-                    thumb = createDownloadlink("directhttp://" + artworkurl);
-                    /* TODO: Simplity this property handling and remove duplicated code. Use public property fields in host plugin. */
-                    thumb.setProperty("originaldate", audiolink.getStringProperty("originaldate"));
-                    thumb.setProperty("plainfilename", audiolink.getStringProperty("plainfilename") + "_original");
-                    thumb.setProperty("linkid", audiolink.getStringProperty("linkid"));
-                    thumb.setProperty("channel", audiolink.getStringProperty("channel"));
-                    thumb.setProperty("type", "jpg");
-                    thumb.setProperty("plain_url_username", user.get("permalink").toString());
-                    final String formattedFilename = SoundcloudCom.getFormattedFilename(thumb);
-                    thumb.setFinalFileName(formattedFilename);
-                    thumb.setAvailable(true);
-                    if (audiolink.getFilePackage() != null) {
-                        thumb._setFilePackage(audiolink.getFilePackage());
-                    }
-                    addLink(thumb);
+            /* Not all tracks have artwork available. */
+            String artworkurl = (String) track.get("artwork_url");
+            if (!StringUtils.isEmpty(artworkurl)) {
+                if (urlReplaceStr != null) {
+                    artworkurl = artworkurl.replaceFirst("-large\\.jpg", urlReplaceStr);
                 }
-            } catch (final ParseException e) {
-                logger.warning("Failed to find original thumbnail...");
+                final DownloadLink thumb = createDownloadlink(artworkurl);
+                thumb.setProperties(audiolink.getProperties());
+                if (urlReplaceStr != null) {
+                    final String thumbnailSizeHintForFilename = new Regex(urlReplaceStr, "-([A-Za-z0-9]+)\\.jpg$").getMatch(0);
+                    if (thumbnailSizeHintForFilename != null) {
+                        thumb.setProperty(SoundcloudCom.PROPERTY_title, audiolink.getStringProperty(SoundcloudCom.PROPERTY_title) + "_" + thumbnailSizeHintForFilename);
+                    }
+                }
+                thumb.setProperty("type", "jpg");
+                final String formattedFilename = SoundcloudCom.getFormattedFilename(thumb);
+                thumb.setFinalFileName(formattedFilename);
+                thumb.setAvailable(true);
+                if (audiolink.getFilePackage() != null) {
+                    thumb._setFilePackage(audiolink.getFilePackage());
+                }
+                addLink(thumb);
+                return thumb;
             }
         }
-        return thumb;
+        return null;
     }
 
     private void crawlPurchaseURL(final Map<String, Object> track) throws ParseException {

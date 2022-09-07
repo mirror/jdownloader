@@ -22,6 +22,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -51,23 +68,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 @PluginDependencies(dependencies = { InstaGramComDecrypter.class })
@@ -247,7 +247,7 @@ public class InstaGramCom extends PluginForHost {
                     dllink = this.checkLinkAndSetFilesize(link, this.dllink);
                     if (this.dllink == null) {
                         /* This should never happen */
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl: New directurl is invalid too");
                     }
                 }
             }
@@ -339,8 +339,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
-     * grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br>
+     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
      *
      * @throws Exception
      */
