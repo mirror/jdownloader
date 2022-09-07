@@ -382,6 +382,7 @@ plugins_errors_disconnect=断开连接吗?
 plugins_errors_error=错误:
 plugins_errors_hosteroffline=主机服务供应商离线?
 plugins_errors_hosterproblem=主机服务供应商问题?
+plugins_errors_hosterproblem_rate_limit=已达到托管主机问题速率限制
 plugins_errors_nointernetconn=无互联网连接?
 plugins_errors_proxy_auth=代理登陆失败
 plugins_errors_proxy_connection=代理连接失败
