@@ -19,9 +19,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -145,23 +150,38 @@ public class OnstcloudsCom extends PluginForHost {
             // }
             // }
             final String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
-            if (internalFileID == null) {
+            final String action0 = br.getRegex("action=(pc_\\d+)").getMatch(0);
+            if (internalFileID == null || action0 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Browser ajax = this.br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            /** 2021-04-12: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
-            // br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
-            // final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            // final int waitSeconds = ((Number) entries.get("")).intValue();
-            // this.sleep(waitSeconds * 1001l, link);
-            // br.getPage("https://" + this.br.getHost() + "/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");
-            // final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
-            // br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
-            // if (br.toString().equals("false")) {
-            // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            // }
-            ajax.postPage("/ajax.php", "action=load_down_addr1&action2=gethtml&file_id=" + internalFileID);
+            final UrlQuery query = new UrlQuery();
+            query.add("action", action0);
+            query.add("file_id", internalFileID);
+            query.add("ms", new Random().nextInt(100) + "*" + new Random().nextInt(100));
+            /* Screen resolution */
+            query.add("sc", new Random().nextInt(1000) + "*" + new Random().nextInt(1000));
+            ajax.postPage("/ajax.php", query);
+            br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
+            /* 2022-09-07: Waittime is skippable */
+            final boolean skipWaittime = true;
+            if (!skipWaittime) {
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final int waitSeconds = ((Number) entries.get("waittime")).intValue();
+                if (waitSeconds > 180) {
+                    /* Prefer reconnect to reset this time back to default (30). */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
+                }
+                this.sleep(waitSeconds * 1001l, link);
+            }
+            final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
+            br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
+            if (br.toString().equals("false")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            // ajax.postPage("/ajax.php", "action=load_down_addr1&action2=gethtml&file_id=" + internalFileID);
+            ajax.postPage("/ajax.php", "action=load_down_addr2&file_id=" + internalFileID);
             String dllink = ajax.getRegex("a href=\"([^\"]*cd\\.php[^\"]+)").getMatch(0);
             if (dllink == null) {
                 dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
@@ -226,6 +246,8 @@ public class OnstcloudsCom extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            this.dl = null;
+            link.removeProperty(directlinkproperty);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();

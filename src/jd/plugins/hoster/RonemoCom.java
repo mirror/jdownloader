@@ -94,12 +94,10 @@ public class RonemoCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("meta name=\"twitter:title\" content=\"([^\"]+)\"").getMatch(0);
-        if (filename == null) {
-            /* 2022-01-24: Lazy check */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setFinalFileName(filename + ".mp4");
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
