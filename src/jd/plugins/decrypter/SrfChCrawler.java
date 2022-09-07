@@ -38,6 +38,8 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -93,6 +95,7 @@ public class SrfChCrawler extends PluginForDecrypt {
     public static final String PROPERTY_WIDTH  = "width";
     public static final String PROPERTY_HEIGHT = "height";
     public static final String PROPERTY_URN    = "urn";
+    public static final String IS_AUDIO        = "is_audio";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final SrfChConfig cfg = PluginJsonConfig.get(SrfChConfig.class);
@@ -107,6 +110,23 @@ public class SrfChCrawler extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(new int[] { 410 });
+        final GetRequest getRequest = br.createGetRequest(param.getCryptedUrl());
+        URLConnectionAdapter con = null;
+        try {
+            con = this.br.openRequestConnection(getRequest);
+            if (this.looksLikeDownloadableContent(con)) {
+                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
+                ret.add(direct);
+                return ret;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable ignore) {
+            }
+        }
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -118,11 +138,11 @@ public class SrfChCrawler extends PluginForDecrypt {
             final Map<String, Object> show = (Map<String, Object>) initialData.get("show");
             final Map<String, Object> videoDetail = (Map<String, Object>) initialData.get("videoDetail");
             if (videoDetail != null) {
-                return this.crawlVideo(videoDetail.get("urn").toString(), mode, qualitySelectionFallbackMode);
+                return this.crawlMedia(videoDetail.get("urn").toString(), mode, qualitySelectionFallbackMode);
             } else if (show != null) {
                 /* Crawl latest episode of tv-series-overview */
                 final Map<String, Object> latestMedia = (Map<String, Object>) show.get("latestMedia");
-                return this.crawlVideo(latestMedia.get("urn").toString(), mode, qualitySelectionFallbackMode);
+                return this.crawlMedia(latestMedia.get("urn").toString(), mode, qualitySelectionFallbackMode);
             } else {
                 /* Unsupported content */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -140,7 +160,7 @@ public class SrfChCrawler extends PluginForDecrypt {
             int progress = 1;
             for (final String urn : urnsWithoutDuplicates) {
                 logger.info("Crawling embedded media " + progress + "/" + urnsWithoutDuplicates.size());
-                final ArrayList<DownloadLink> results = this.crawlVideo(urn, mode, qualitySelectionFallbackMode);
+                final ArrayList<DownloadLink> results = this.crawlMedia(urn, mode, qualitySelectionFallbackMode);
                 this.distribute(results);
                 ret.addAll(results);
                 progress++;
@@ -174,10 +194,10 @@ public class SrfChCrawler extends PluginForDecrypt {
     }
 
     private String toSlug(final String str) {
-        return str.toLowerCase(Locale.ENGLISH).replaceAll("[^a-z]", "-");
+        return str.toLowerCase(Locale.ENGLISH).replaceAll("[^a-z0-9]", "-");
     }
 
-    private ArrayList<DownloadLink> crawlVideo(final String urn, final QualitySelectionMode mode, final QualitySelectionFallbackMode fallbackMode) throws Exception {
+    private ArrayList<DownloadLink> crawlMedia(final String urn, final QualitySelectionMode mode, final QualitySelectionFallbackMode fallbackMode) throws Exception {
         if (StringUtils.isEmpty(urn)) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -205,14 +225,15 @@ public class SrfChCrawler extends PluginForDecrypt {
             final String title = chapter.get("title").toString();
             final String dateFormatted = new Regex(chapter.get("date"), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             final String thisURN = chapter.get("urn").toString(); // should be == urn
-            final String videoAudioExt;
+            final String mediaExt;
             final String mediaType = (String) chapter.get("mediaType");
             final String contentURL;
-            if (mediaType.equalsIgnoreCase("AUDIO")) {
-                videoAudioExt = ".mp3";
-                contentURL = "https://www." + this.getHost() + "/audio/tv/" + toSlug(showTitle) + "/video/" + toSlug(title) + "?urn=" + thisURN;
+            final boolean isAudio = mediaType.equalsIgnoreCase("AUDIO");
+            if (isAudio) {
+                mediaExt = ".mp3";
+                contentURL = "https://www." + this.getHost() + "/play/tv/" + toSlug(showTitle) + "/video/" + toSlug(title) + "?urn=" + thisURN;
             } else if (mediaType.equalsIgnoreCase("VIDEO")) {
-                videoAudioExt = ".mp4";
+                mediaExt = ".mp4";
                 contentURL = "https://www." + this.getHost() + "/play/tv/" + toSlug(showTitle) + "/video/" + toSlug(title) + "?urn=" + thisURN;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported mediaType:" + mediaType);
@@ -273,17 +294,26 @@ public class SrfChCrawler extends PluginForDecrypt {
                     final DownloadLink dlHTTP360p = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), URLHTTP360p, true);
                     dlHTTP360p.setProperty(PROPERTY_WIDTH, 640);
                     dlHTTP360p.setProperty(PROPERTY_HEIGHT, 360);
+                    if (isAudio) {
+                        dlHTTP360p.setProperty(IS_AUDIO, true);
+                    }
                     foundQualities.put(360, dlHTTP360p);
                 }
                 if (URLHTTP720p != null) {
                     final DownloadLink dlHTTP720p = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), URLHTTP720p, true);
                     dlHTTP720p.setProperty(PROPERTY_WIDTH, 1280);
                     dlHTTP720p.setProperty(PROPERTY_HEIGHT, 720);
+                    if (isAudio) {
+                        dlHTTP720p.setProperty(IS_AUDIO, true);
+                    }
                     foundQualities.put(720, dlHTTP720p);
                 }
                 /* Decide whether or not we need to crawl HLS qualities. */
                 boolean crawlHLS;
-                if (mode == QualitySelectionMode.BEST) {
+                if (isAudio) {
+                    /* No HLS available for audio files */
+                    crawlHLS = false;
+                } else if (mode == QualitySelectionMode.BEST) {
                     /* Best quality is only possible via HLS. Max quality via http: 720p. */
                     crawlHLS = true;
                 } else {
@@ -375,11 +405,12 @@ public class SrfChCrawler extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(description)) {
                     fp.setComment(description);
                 }
+                final int numberofReturnedMediaItems = retChapter.size();
                 final SrfChConfig cfg = PluginJsonConfig.get(SrfChConfig.class);
                 if (cfg.isCrawlThumbnail()) {
                     final String thumbnailURL = (String) chapter.get("imageUrl");
                     if (!StringUtils.isEmpty(thumbnailURL)) {
-                        final DownloadLink thumbnail = this.createDownloadlink(thumbnailURL);
+                        final DownloadLink thumbnail = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), thumbnailURL, true);
                         final String ext = Plugin.getFileNameExtensionFromURL(thumbnailURL);
                         if (ext != null) {
                             thumbnail.setFinalFileName(titleBase + ext);
@@ -389,8 +420,17 @@ public class SrfChCrawler extends PluginForDecrypt {
                 }
                 for (final DownloadLink result : retChapter) {
                     if (result.hasProperty(PROPERTY_HEIGHT)) {
-                        /* Only set filename for video/audio items. */
-                        result.setFinalFileName(titleBase + "_" + result.getStringProperty(PROPERTY_HEIGHT) + videoAudioExt);
+                        /* Only set filename for video/audio items as for thumbnails name is already set. */
+                        if (result.hasProperty(IS_AUDIO) && numberofReturnedMediaItems == 1) {
+                            /*
+                             * Special case: Podcast with only one available quality --> Do not include any quality identifier in filename
+                             * especially as we only know the width of video items but do not have any information about audio items at this
+                             * stage.
+                             */
+                            result.setFinalFileName(titleBase + mediaExt);
+                        } else {
+                            result.setFinalFileName(titleBase + "_" + result.getStringProperty(PROPERTY_HEIGHT) + mediaExt);
+                        }
                     }
                     result.setContentUrl(contentURL);
                     result.setAvailable(true);

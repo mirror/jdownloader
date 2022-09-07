@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -144,6 +145,17 @@ public class SrfCh extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                    /* Audio URLs sometimes end with .jpg but redirect to .png files. */
+                    final String finalFilename = link.getFinalFileName();
+                    if (finalFilename != null) {
+                        final String extensionByMinetype = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                        if (extensionByMinetype != null) {
+                            final String filenameWithCorrectedExtension = this.correctOrApplyFileNameExtension(finalFilename, "." + extensionByMinetype);
+                            if (!filenameWithCorrectedExtension.equals(finalFilename)) {
+                                link.setFinalFileName(filenameWithCorrectedExtension);
+                            }
+                        }
+                    }
                 } finally {
                     try {
                         con.disconnect();
@@ -167,7 +179,7 @@ public class SrfCh extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Video broken?");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Media broken?");
             }
         }
     }
