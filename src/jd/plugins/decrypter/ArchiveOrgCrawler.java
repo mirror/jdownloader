@@ -24,6 +24,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,17 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ArchiveOrg;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
@@ -77,7 +77,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
          * 2020-08-26: Login might sometimes be required for book downloads.
          */
         this.hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
-        final Account account = AccountController.getInstance().getValidAccount("archive.org");
+        final Account account = AccountController.getInstance().getValidAccount(hostPlugin.getHost());
         if (account != null) {
             hostPlugin.login(account, false);
         }
@@ -97,7 +97,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 final String host = Browser.getHost(con.getURL(), true);
                 if (!isArchiveContent && (this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org"))) {
                     // final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
-                    final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", param.getCryptedUrl(), true);
+                    final DownloadLink dl = new DownloadLink(hostPlugin, null, hostPlugin.getHost(), param.getCryptedUrl(), true);
                     if (this.looksLikeDownloadableContent(con)) {
                         if (con.getCompleteContentLength() > 0) {
                             dl.setVerifiedFileSize(con.getCompleteContentLength());
@@ -138,12 +138,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /*
-         * Preview (= images of book pages) of books may be available along official download --> Only crawl book preview if no official
-         * download is possible.
-         */
         final boolean isBookPreviewAvailable = getBookReaderURL(br) != null;
         if (isBookPreviewAvailable) {
+            /* Book is officially downloadable and loose book pages are also available -> Process as wished by the user-preferences. */
             final boolean isOfficiallyDownloadable = br.containsHTML("class=\"download-button\"") && !br.containsHTML("class=\"download-lending-message\"");
             final BookCrawlMode mode = PluginJsonConfig.get(ArchiveOrgConfig.class).getBookCrawlMode();
             if (isOfficiallyDownloadable) {
@@ -155,6 +152,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     ret.addAll(crawlBook(br, param, account));
                     return ret;
                 } else {
+                    /* Only loose book pages can be crawled. */
                     return crawlBook(br, param, account);
                 }
             } else {
@@ -176,11 +174,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             logger.info("Maybe invalid link or nothing there to download: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isFileCrawlerCrawlOnlyOriginalVersions();
         final String subfolderPathURLEncoded = new Regex(param.getCryptedUrl(), "https?://[^/]+/download/(.*?)/?$").getMatch(0);
         final String subfolderPathURLDecoded = Encoding.urlDecode(subfolderPathURLEncoded, false);
-        // final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
-        final String fpName = subfolderPathURLDecoded;
         String html = br.toString().replaceAll("(\\(\\s*<a.*?</a>\\s*\\))", "");
         final String[] htmls = new Regex(html, "<tr >(.*?)</tr>").getColumn(0);
         Browser xmlRoot = br;
@@ -206,6 +201,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             return ret;
         } else {
             /* Old/harder way */
+            final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isFileCrawlerCrawlOnlyOriginalVersions();
             for (final String htmlsnippet : htmls) {
                 String name = new Regex(htmlsnippet, "<a href=\"([^<>\"]+)\"").getMatch(0);
                 final String[] rows = new Regex(htmlsnippet, "<td>(.*?)</td>").getColumn(0);
@@ -213,7 +209,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     /* Skip invalid items */
                     continue;
                 }
-                String filesize = rows[rows.length - 1];
+                final String sizeBytesStr1 = rows[rows.length - 1];
                 if (StringUtils.endsWithCaseInsensitive(name, "_files.xml") || StringUtils.endsWithCaseInsensitive(name, "_meta.sqlite") || StringUtils.endsWithCaseInsensitive(name, "_meta.xml") || StringUtils.endsWithCaseInsensitive(name, "_reviews.xml")) {
                     /* Skip invalid content */
                     continue;
@@ -223,16 +219,15 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                         continue;
                     }
                 }
-                if (filesize.equals("-")) {
-                    /* Folder --> Goes back into decrypter */
+                if (sizeBytesStr1.equals("-")) {
+                    /* Folder --> Goes back into crawled */
                     final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPathURLEncoded + "/" + name);
                     ret.add(fina);
                 } else {
                     /* File */
-                    filesize += "b";
                     final String filename = Encoding.urlDecode(name, false);
                     final DownloadLink fina = createDownloadlink("https://archive.org/download/" + subfolderPathURLEncoded + "/" + name);
-                    fina.setDownloadSize(SizeFormatter.getSize(filesize));
+                    fina.setDownloadSize(Long.parseLong(sizeBytesStr1));
                     fina.setAvailable(true);
                     fina.setFinalFileName(filename);
                     if (xmlSource != null) {
@@ -240,19 +235,18 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                         if (sha1 != null) {
                             fina.setSha1Hash(sha1);
                         }
-                        final String size = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<size>(\\d+)</size>").getMatch(0);
-                        if (size != null) {
-                            fina.setVerifiedFileSize(Long.parseLong(size));
+                        final String sizeBytesStr2 = new Regex(xmlSource, "<file name=\"" + Pattern.quote(filename) + "\".*?<size>(\\d+)</size>").getMatch(0);
+                        if (sizeBytesStr2 != null) {
+                            fina.setVerifiedFileSize(Long.parseLong(sizeBytesStr2));
                         }
                     }
                     fina.setRelativeDownloadFolderPath(subfolderPathURLDecoded);
                     ret.add(fina);
                 }
             }
-            /* 2020-03-04: Setting packagenames makes no sense anymore as packages will get split by subfolderpath. */
             final FilePackage fp = FilePackage.getInstance();
-            if (fpName != null) {
-                fp.setName(fpName);
+            if (subfolderPathURLDecoded != null) {
+                fp.setName(subfolderPathURLDecoded);
                 fp.addLinks(ret);
             }
         }
@@ -306,19 +300,19 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String archiveName = new Regex(br.getURL(), ".*/([^/]+)$").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(archiveName));
+        fp.setName(Encoding.htmlDecode(archiveName).trim());
         final String[] htmls = br.getRegex("<tr><td>(.*?)</tr>").getColumn(0);
         for (final String html : htmls) {
             String url = new Regex(html, "(/download/[^\"\\']+)").getMatch(0);
-            final String filesizeStr = new Regex(html, "id=\"size\">(\\d+)").getMatch(0);
+            final String filesizeBztesStr = new Regex(html, "id=\"size\">(\\d+)").getMatch(0);
             if (StringUtils.isEmpty(url)) {
                 /* Skip invalid items */
                 continue;
             }
             url = "https://archive.org" + url;
             final DownloadLink dl = this.createDownloadlink(url);
-            if (filesizeStr != null) {
-                dl.setDownloadSize(Long.parseLong(filesizeStr));
+            if (filesizeBztesStr != null) {
+                dl.setDownloadSize(Long.parseLong(filesizeBztesStr));
             }
             dl.setAvailable(true);
             dl._setFilePackage(fp);
@@ -346,10 +340,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) root.get("data");
         final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
-        // final Map<String, Object> lendingStatus = (Map<String, Object>) data.get("lendingStatus");
-        // if ((Boolean) lendingStatus.get("user_at_max_loans")) {
-        // // TODO: Maybe throw exception if this happens
-        // }
+        // final Map<String, Object> lendingStatus = (Map<String, Object>) lendingInfo.get("lendingStatus");
         final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
         final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
         if (daysLeftOnLoan > 0) {
@@ -421,8 +412,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
-                 * Mark pages that are not viewable in browser as offline. </br> If we have borrowed this book, this field will not exist at
-                 * all.
+                 * Mark pages that are not viewable in browser as offline. </br>
+                 * If we have borrowed this book, this field will not exist at all.
                  */
                 final Object viewable = bookpage.get("viewable");
                 if (!Boolean.FALSE.equals(viewable)) {
@@ -519,7 +510,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             if (dups.add(url)) {
                 final DownloadLink downloadURL = createDownloadlink(url);
-                downloadURL.setDownloadSize(SizeFormatter.getSize(filesizeBytesStr));
+                downloadURL.setVerifiedFileSize(SizeFormatter.getSize(filesizeBytesStr));
                 downloadURL.setAvailable(true);
                 downloadURL.setFinalFileName(filename);
                 String thisPath = new Regex(url, "download/(.+)/[^/]+").getMatch(0);
