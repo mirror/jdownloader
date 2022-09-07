@@ -75,7 +75,6 @@ public abstract class K2SApi extends PluginForHost {
     protected String                       directlinkproperty;
     protected int                          chunks;
     protected boolean                      resumes;
-    protected boolean                      isFree;
     private final String                   lng                   = getLanguage();
     private final String                   AUTHTOKEN             = "auth_token";
     private int                            authTokenFail         = 0;
@@ -582,7 +581,19 @@ public abstract class K2SApi extends PluginForHost {
         return ai;
     }
 
-    abstract protected void setAccountLimits(final Account account);
+    protected void setAccountLimits(Account account) {
+        final int max;
+        switch (account.getType()) {
+        case PREMIUM:
+            max = 20;
+            break;
+        default:
+            max = 1;
+            break;
+        }
+        this.getMaxPrem().set(max);
+        account.setMaxSimultanDownloads(max);
+    }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
@@ -637,6 +648,7 @@ public abstract class K2SApi extends PluginForHost {
         logger.info("Trying to generate new directurl");
         // if above has failed, dllink will be null
         boolean freeAccountReconnectWorkaround = false;
+        final boolean isFree = account == null || account.getType() == AccountType.FREE;
         if (inValidate(dllink)) {
             if ("premium".equalsIgnoreCase(link.getStringProperty("access", null)) && isFree) {
                 // download not possible
@@ -731,8 +743,7 @@ public abstract class K2SApi extends PluginForHost {
                     try {
                         handleFreeDownloadKey(link, account, br, null, fuid, free_download_key);
                         chunks = 1;
-                        isFree = true;
-                    } catch (AccountUnavailableException e) {
+                    } catch (final AccountUnavailableException e) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_ONLY, e);
                     }
                 }
@@ -835,7 +846,7 @@ public abstract class K2SApi extends PluginForHost {
         final String filename = (String) entries.get("name");
         // final String access = (String)entries.get("access");
         final boolean isDeleted = ((Boolean) entries.get("isDeleted")).booleanValue();
-        final boolean isAvailableForFree = ((Boolean) entries.get("isAvailableForFree")).booleanValue();
+        // final boolean isAvailableForFree = ((Boolean) entries.get("isAvailableForFree")).booleanValue();
         // final boolean hasAbuse = ((Boolean) entries.get("hasAbuse")).booleanValue();
         final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         // final List<Object> ressourcelist = (List<Object>) entries.get("");
@@ -1777,15 +1788,15 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private static Object                CTRLLOCK                     = new Object();
-    protected static AtomicInteger       maxPrem                      = new AtomicInteger(1);
-    protected static AtomicInteger       maxFree                      = new AtomicInteger(1);
+    private static Object                     CTRLLOCK                     = new Object();
+    private static Map<String, AtomicInteger> maxPremMap                   = new HashMap<String, AtomicInteger>();
+    private static Map<String, AtomicInteger> maxFreeMap                   = new HashMap<String, AtomicInteger>();
     /**
      * Connection Management<br />
      * <b>NOTE:</b> CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]<br />
      * <b>@Override</b> when incorrect
      **/
-    protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    protected static final AtomicInteger      totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -1800,12 +1811,56 @@ public abstract class K2SApi extends PluginForHost {
      *            (+1|-1)
      * @author raztoki
      */
-    private boolean                      downloadFlag                 = false;
-    private static AtomicInteger         freeSlotsInUse               = new AtomicInteger(0);
-    private static AtomicInteger         premSlotsInUse               = new AtomicInteger(0);
+    private boolean                           downloadFlag                 = false;
+    private static Map<String, AtomicInteger> freeSlotsInUseMap            = new HashMap<String, AtomicInteger>();
+    private static Map<String, AtomicInteger> premSlotsInUseMap            = new HashMap<String, AtomicInteger>();
+
+    protected AtomicInteger getPremiumSlotsInUse() {
+        synchronized (premSlotsInUseMap) {
+            AtomicInteger ret = premSlotsInUseMap.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(0);
+                premSlotsInUseMap.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
+    protected AtomicInteger getFreeSlotsInUse() {
+        synchronized (freeSlotsInUseMap) {
+            AtomicInteger ret = freeSlotsInUseMap.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(0);
+                freeSlotsInUseMap.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
+    protected AtomicInteger getMaxPrem() {
+        synchronized (maxPremMap) {
+            AtomicInteger ret = maxPremMap.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(1);
+                maxPremMap.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
+    protected AtomicInteger getMaxFree() {
+        synchronized (maxFreeMap) {
+            AtomicInteger ret = maxFreeMap.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(1);
+                maxFreeMap.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
 
     protected void controlSlot(final int num, final Account account) {
-        if (isFree) {
+        if (account == null || account.getType() == AccountType.FREE) {
             synchronized (freeDownloadHandling) {
                 final AbstractProxySelectorImpl proxySelector = getDownloadLink().getDownloadLinkController().getProxySelector();
                 AtomicLong[] store = freeDownloadHandling.get(proxySelector);
@@ -1822,6 +1877,10 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         synchronized (CTRLLOCK) {
+            final AtomicInteger premSlotsInUse = getPremiumSlotsInUse();
+            final AtomicInteger freeSlotsInUse = getFreeSlotsInUse();
+            final AtomicInteger maxPrem = getMaxPrem();
+            final AtomicInteger maxFree = getMaxFree();
             if (num == 1) {
                 if (downloadFlag == false) {
                     if (account == null) {
@@ -1868,8 +1927,8 @@ public abstract class K2SApi extends PluginForHost {
     private final long                                                    nextFreeDownloadSlotInterval = 2 * 60 * 60 * 1000l;
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account, AbstractProxySelectorImpl proxy) {
-        if (isFreeAccount(account)) {
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account, final AbstractProxySelectorImpl proxy) {
+        if (isNoAccountOrFreeAccount(account)) {
             final AtomicLong[] store;
             synchronized (freeDownloadHandling) {
                 store = freeDownloadHandling.get(proxy);
@@ -1884,14 +1943,24 @@ public abstract class K2SApi extends PluginForHost {
         return super.getMaxSimultanDownload(link, account, proxy);
     }
 
-    protected final boolean isFreeAccount(Account account) {
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return this.getMaxPrem().get();
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return this.getMaxFree().get();
+    }
+
+    protected final boolean isNoAccountOrFreeAccount(Account account) {
         return account == null || Account.AccountType.FREE.equals(account.getType());
     }
 
     @Override
     public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {
         if (downloadProxySelector == candidateProxySelector) {
-            if (isFreeAccount(downloadAccount) && isFreeAccount(candidateAccount)) {
+            if (isNoAccountOrFreeAccount(downloadAccount) && isNoAccountOrFreeAccount(candidateAccount)) {
                 return true;
             }
         }

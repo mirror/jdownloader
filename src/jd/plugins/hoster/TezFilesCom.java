@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -23,9 +26,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:tezfiles\\.com|publish2\\.me)/(?:f(?:ile)?|preview)/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class TezFilesCom extends K2SApi {
@@ -55,51 +55,23 @@ public class TezFilesCom extends K2SApi {
                 // free account
                 chunks = 1;
                 resumes = true;
-                isFree = true;
             } else {
                 // premium account
                 chunks = 0;
                 resumes = true;
-                isFree = false;
             }
-            logger.finer("setConstants = " + account.getUser() + " @ Account Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
+            logger.finer("setConstants = " + account.getUser() + " @ Account Download :: Type = " + account.getType() + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         } else {
             // free non account
             chunks = 1;
             resumes = true;
-            isFree = true;
-            logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
+            logger.finer("setConstants = Guest Download :: upperChunks = " + chunks + ", Resumes = " + resumes);
         }
     }
 
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "tezfiles.com", "publish2.me" };
-    }
-
-    @Override
-    protected void setAccountLimits(Account account) {
-        final int max;
-        switch (account.getType()) {
-        case PREMIUM:
-            max = 20;
-            break;
-        default:
-            max = 1;
-            break;
-        }
-        maxPrem.set(max);
-        account.setMaxSimultanDownloads(max);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
     }
 
     @Override

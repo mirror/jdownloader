@@ -175,9 +175,18 @@ public class OnstcloudsCom extends PluginForHost {
                 }
                 this.sleep(waitSeconds * 1001l, link);
             }
-            final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
-            br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
-            if (br.toString().equals("false")) {
+            boolean solvedCaptcha = false;
+            for (int counter = 0; counter <= 3; counter++) {
+                final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
+                br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
+                if (br.toString().equals("true")) {
+                    solvedCaptcha = true;
+                    break;
+                } else {
+                    logger.info("Wrong captcha");
+                }
+            }
+            if (!solvedCaptcha) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             // ajax.postPage("/ajax.php", "action=load_down_addr1&action2=gethtml&file_id=" + internalFileID);
