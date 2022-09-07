@@ -15,14 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
 
 /**
  *
@@ -59,46 +59,18 @@ public class FileBoomMe extends K2SApi {
                 // free account
                 chunks = 1;
                 resumes = true;
-                isFree = true;
             } else {
                 // premium account
                 chunks = 0;
                 resumes = true;
-                isFree = false;
             }
-            logger.finer("setConstants = " + account.getUser() + " @ Account Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
+            logger.finer("setConstants = " + account.getUser() + " @ Account Download :: Type = " + account.getType() + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         } else {
             // free non account
             chunks = 1;
             resumes = true;
-            isFree = true;
-            logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
+            logger.finer("setConstants = Guest Download :: upperChunks = " + chunks + ", Resumes = " + resumes);
         }
-    }
-
-    @Override
-    protected void setAccountLimits(Account account) {
-        final int max;
-        switch (account.getType()) {
-        case PREMIUM:
-            max = 20;
-            break;
-        default:
-            max = 1;
-            break;
-        }
-        maxPrem.set(max);
-        account.setMaxSimultanDownloads(max);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
     }
 
     @Override
