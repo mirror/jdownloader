@@ -304,15 +304,15 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String[] htmls = br.getRegex("<tr><td>(.*?)</tr>").getColumn(0);
         for (final String html : htmls) {
             String url = new Regex(html, "(/download/[^\"\\']+)").getMatch(0);
-            final String filesizeBztesStr = new Regex(html, "id=\"size\">(\\d+)").getMatch(0);
+            final String filesizeBytesStr = new Regex(html, "id=\"size\">(\\d+)").getMatch(0);
             if (StringUtils.isEmpty(url)) {
                 /* Skip invalid items */
                 continue;
             }
             url = "https://archive.org" + url;
             final DownloadLink dl = this.createDownloadlink(url);
-            if (filesizeBztesStr != null) {
-                dl.setDownloadSize(Long.parseLong(filesizeBztesStr));
+            if (filesizeBytesStr != null) {
+                dl.setDownloadSize(Long.parseLong(filesizeBytesStr));
             }
             dl.setAvailable(true);
             dl._setFilePackage(fp);
