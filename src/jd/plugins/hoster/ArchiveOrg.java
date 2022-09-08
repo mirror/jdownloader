@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.translate._GUI;
@@ -84,6 +85,7 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_IS_LENDING_REQUIRED                    = "is_lending_required";
     public static final String                            PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_free_downloadable_book_preview_page";
     public static final String                            PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP            = "is_borrowed_until_timestamp";
+    private final String                                  PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED = "timestamp_borrow_limit_reached";
     private static HashMap<String, ArchiveOrgLendingInfo> bookBorrowSessions                              = new HashMap<String, ArchiveOrgLendingInfo>();
 
     @Override
@@ -348,15 +350,15 @@ public class ArchiveOrg extends PluginForHost {
 
     private String getDirectURL(final DownloadLink link, final Account account) throws Exception {
         if (this.isBook(link)) {
-            if (this.requiresAccount(link) && account == null) {
-                throw new AccountRequiredException();
-            }
             String directurl = null;
             if (this.isFreeDownloadableBookPreviewPage(link)) {
                 /* Directurl can be downloaded without the need of an account and special cookies. */
                 directurl = link.getPluginPatternMatcher();
             } else {
                 /* Account + cookies require and the book has to be borrowed to download this page. */
+                if (account == null) {
+                    throw new AccountRequiredException();
+                }
                 final String bookID = this.getBookID(link);
                 ArchiveOrgLendingInfo lendingInfo = this.getLendingInfo(bookID, account);
                 if (lendingInfo != null) {
@@ -503,6 +505,12 @@ public class ArchiveOrg extends PluginForHost {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Check for reached limit so we don't waste more http requests when we know that this limit has been reached. */
+        final long timestampBorrowLimitReached = account.getLongProperty(PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED, 0);
+        final long timePassedSinceLimitReached = Time.systemIndependentCurrentJVMTimeMillis() - timestampBorrowLimitReached;
+        if (timePassedSinceLimitReached < 1 * 60 * 60 * 1000l) {
+            this.exceptionReachedAccountBorrowLimit();
+        }
         synchronized (bookBorrowSessions) {
             final UrlQuery query = new UrlQuery();
             query.add("identifier", Encoding.urlEncode(bookID));
@@ -520,14 +528,18 @@ public class ArchiveOrg extends PluginForHost {
                     final String error = (String) entries.get("error");
                     if (StringUtils.equalsIgnoreCase(error, "This book is not available to borrow at this time. Please try again later.")) {
                         /**
-                         * Most likely happens if you try to borrow a book that can't be borrowed or if you try to borrow a book while too
-                         * many (2022-08-31: max 10) books per hour have already been borrowed with the current account. </br>
-                         * While it is not technically correct to throw a PluginException with LinkStatus
-                         * ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, it is the right thing to wait and try again later so for now we will just
-                         * assume that if a user downloads books from this website and reaches this limit, he will most likely only download
-                         * books and no other items.
+                         * Happens if you try to borrow a book that can't be borrowed or if you try to borrow a book while too many
+                         * (2022-08-31: max 10) books per hour have already been borrowed with the current account. </br>
+                         * With setting this timestamp we can ensure not to waste more http requests on trying to borrow books but simply
+                         * set error status on all future links [for the next 60 minutes].
                          */
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "User reached max borrowed books at the same time or: " + error);
+                        account.setProperty(PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED, Time.systemIndependentCurrentJVMTimeMillis());
+                        /*
+                         * Remove session of book associated with current book page [if present] so that there will be no further download
+                         * attempts and all pages will run into this error directly.
+                         */
+                        bookBorrowSessions.remove(getLendingInfoKey(bookID, account));
+                        exceptionReachedAccountBorrowLimit();
                     } else {
                         // throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure: " + error);
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Book borrow failure: " + error);
@@ -594,6 +606,10 @@ public class ArchiveOrg extends PluginForHost {
         }
     }
 
+    private void exceptionReachedAccountBorrowLimit() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max borrow limit with this account: Refresh account and stop/start downloads to retry immediately", 5 * 60 * 1000l);
+    }
+
     public ArchiveOrgLendingInfo getLendingInfo(final DownloadLink link, final Account account) {
         return getLendingInfo(this.getBookID(link), account);
     }
@@ -639,6 +655,7 @@ public class ArchiveOrg extends PluginForHost {
         /* This host does not provide any kind of paid accounts. */
         account.setType(AccountType.FREE);
         cleanupBorrowSessionMap();
+        account.removeProperty(PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED);
         return ai;
     }
 
