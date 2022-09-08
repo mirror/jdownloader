@@ -84,7 +84,7 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
                         return;
                     }
                     getPage("https://" + this.getHost() + "/");
-                    if (isLoggedIN()) {
+                    if (isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
@@ -116,7 +116,7 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(token));
                 }
                 this.submitForm(loginform);
-                if (!isLoggedIN()) {
+                if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
