@@ -22,23 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -68,6 +51,22 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 @PluginDependencies(dependencies = { InstaGramComDecrypter.class })
@@ -111,7 +110,9 @@ public class InstaGramCom extends PluginForHost {
     public static Browser prepBRAltAPI(final Browser br) {
         /* https://github.com/qsniyg/maxurl/blob/master/userscript.user.js */
         br.getHeaders().put("User-Agent", "Instagram 146.0.0.27.125 Android (23/6.0.1; 640dpi; 1440x2560; samsung; SM-G930F; herolte; samsungexynos8890; en_US)");
-        br.setAllowedResponseCodes(new int[] { 429 });
+        // 429 == too many requests, we need to rate limit requests.
+        // 400 , {"message":"Media not found or unavailable","status":"fail"}
+        br.setAllowedResponseCodes(new int[] { 400, 429 });
         return br;
     }
 
@@ -339,8 +340,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br>
-     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
+     * grab best quality but keep effects/filters.
      *
      * @throws Exception
      */
@@ -369,24 +370,10 @@ public class InstaGramCom extends PluginForHost {
         final Browser brc = br.cloneBrowser();
         prepBRAltAPI(brc);
         getPageAltAPI(account, brc, ALT_API_BASE + "/media/" + imageid + "/info/");
-        /* Offline errorhandling */
-        if (brc.getHttpConnection().getResponseCode() != 200) {
-            /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
-            /* E.g. {"message": "Media not found or unavailable", "status": "fail"} */
-            if (brc.getHttpConnection().getResponseCode() == 403) {
-                /*
-                 * {"message":"login_required","error_title":"Du wurdest abgemeldet","error_body":"Bitte melde dich wieder an."
-                 * ,"logout_reason":8,"status":"fail"}
-                 */
-                this.errorSessionExpired(account);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
         /*
          * New URL should be the BEST quality (resolution).
          */
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
         final Map<String, Object> mediaItem = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
         final String downloadurl = getBestQualityURLAltAPI(mediaItem);
         link.setProperty(PROPERTY_has_tried_to_crawl_original_url, true);
@@ -417,13 +404,13 @@ public class InstaGramCom extends PluginForHost {
              * {"message":"login_required","error_title":"Du wurdest abgemeldet","error_body":"Bitte melde dich wieder an."
              * ,"logout_reason":8,"status":"fail"}
              */
-            throw new AccountInvalidException();
+            errorSessionExpired(account);
         } else if (br.getHttpConnection().getResponseCode() == 429) {
             if (account != null) {
                 /* Account should always be given */
                 throw new AccountUnavailableException("Rate-Limit reached", 5 * 60 * 1000);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached");
             }
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -532,18 +519,18 @@ public class InstaGramCom extends PluginForHost {
         return true;
     }
 
-    public static void checkErrors(final Browser br) throws PluginException {
+    public static void checkErrors(Plugin plugin, final Browser br) throws PluginException {
         /* Old trait */
         // if (br.getURL().matches("https?://[^/]+/accounts/login/\\?next=.*")) {
         /* New trait 2020-11-26 */
         if (br.getURL() != null && br.getURL().matches("https?://[^/]+/accounts/login.*")) {
             throw new AccountRequiredException();
         } else if (br.getURL() != null && br.getURL().matches("https?://[^/]+/challenge/.*")) {
-            handleLoginChallenge(br);
+            handleLoginChallenge(plugin, br);
         } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection() != null && (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 429)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limit reached!");
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limit reached!");
         }
     }
 
@@ -691,7 +678,7 @@ public class InstaGramCom extends PluginForHost {
                 final String enc_password = "#PWD_INSTAGRAM_BROWSER:0:" + System.currentTimeMillis() + ":" + account.getPass();
                 post.setPostDataString("username=" + Encoding.urlEncode(account.getUser()) + "&enc_password=" + Encoding.urlEncode(enc_password) + "&queryParams=%7B%7D");
                 br.getPage(post);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 if (entries.get("status").toString().equals("fail")) {
                     /* 2021-07-13: 2FA login required --> Not implemented so far */
                     final Boolean two_factor_required = (Boolean) entries.get("two_factor_required");
@@ -737,7 +724,7 @@ public class InstaGramCom extends PluginForHost {
                     login2.put("verification_method", "1");
                     // login2.put("queryParams", Encoding.urlEncode("TODO"));
                     br.submitForm(login2);
-                    final Map<String, Object> login2Response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> login2Response = restoreFromString(br.toString(), TypeRef.MAP);
                     if (!login2Response.get("status").equals("success")) {
                         throw new AccountInvalidException("2-factor-authentication failed");
                     }
@@ -819,8 +806,10 @@ public class InstaGramCom extends PluginForHost {
         return null;
     }
 
-    private void errorSessionExpired(final Account account) throws AccountInvalidException, AccountUnavailableException {
-        if (account.loadUserCookies() != null) {
+    private static void errorSessionExpired(final Account account) throws AccountInvalidException, AccountUnavailableException {
+        if (account == null) {
+            throw new AccountInvalidException();
+        } else if (account.loadUserCookies() != null) {
             if (account.hasEverBeenValid()) {
                 throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
             } else {
@@ -856,10 +845,10 @@ public class InstaGramCom extends PluginForHost {
     }
 
     @Deprecated
-    public static void handleLoginChallenge(final Browser br) throws AccountUnavailableException {
+    public static void handleLoginChallenge(Plugin plugin, final Browser br) throws AccountUnavailableException {
         final String json = br.getRegex("window._sharedData = (\\{.*?\\})</script>").getMatch(0);
         if (json != null) {
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> entries = plugin.restoreFromString(json, TypeRef.MAP);
             final String possibleErrormessage = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/Challenge/{0}/extraData/content/{0}/title");
             if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /* 2020-10-07: Unfinished code */
