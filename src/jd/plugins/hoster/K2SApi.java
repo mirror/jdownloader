@@ -21,19 +21,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -61,6 +48,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -404,12 +404,12 @@ public abstract class K2SApi extends PluginForHost {
                         postPageRaw(br, "/getfilesinfo", "{\"ids\":[" + sb.toString() + "]}", null);
                     } catch (final PluginException e) {
                         if (br.getHttpConnection().getResponseCode() == 400) {
-                            final Map<String, Object> root = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                            final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
-                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
+                                 * fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -421,7 +421,7 @@ public abstract class K2SApi extends PluginForHost {
                         }
                         throw e;
                     }
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
                     for (final DownloadLink dl : links) {
                         final String fuid = getFUID(dl);
@@ -527,7 +527,7 @@ public abstract class K2SApi extends PluginForHost {
         /* required to get overrides to work */
         prepAPI(br);
         postPageRaw(br, "/accountinfo", "{\"auth_token\":\"" + getAuthToken(account, null) + "\"}", account, null);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Number available_traffic = (Number) entries.get("available_traffic");
         /*
          * 2019-11-26: Expired premium accounts will have their old expire-date given thus we'll have to check for that before setting
@@ -675,7 +675,7 @@ public abstract class K2SApi extends PluginForHost {
                 }
                 final String custom_referer = getCustomReferer(link);
                 postPageRaw(this.br, "/requestcaptcha", "", account, link);
-                final Map<String, Object> requestcaptcha = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> requestcaptcha = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String challenge = (String) requestcaptcha.get("challenge");
                 String captcha_url = (String) requestcaptcha.get("captcha_url");
                 // Dependency
@@ -710,7 +710,7 @@ public abstract class K2SApi extends PluginForHost {
                     logger.info("Using Referer value: NONE given");
                 }
                 postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account, link);
-                final Map<String, Object> geturl = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> geturl = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String free_download_key = (String) geturl.get("free_download_key");
                 if (inValidate(free_download_key)) {
                     final String url = (String) geturl.get("url");
@@ -969,7 +969,7 @@ public abstract class K2SApi extends PluginForHost {
                     final String newArg;
                     if (CAPTCHA.REQUESTCAPTCHA.equals(loginCaptcha)) {
                         postPageRaw(cbr, "/requestcaptcha", "", account, link);
-                        final Map<String, Object> requestcaptcha = JSonStorage.restoreFromString(cbr.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                        final Map<String, Object> requestcaptcha = restoreFromString(cbr.getRequest().getHtmlCode(), TypeRef.MAP);
                         final String challenge = (String) requestcaptcha.get("challenge");
                         String captcha_url = (String) requestcaptcha.get("captcha_url");
                         if (captcha_url.startsWith("https://")) {
@@ -1007,7 +1007,7 @@ public abstract class K2SApi extends PluginForHost {
                         newArg = tmp;
                     } else if (CAPTCHA.REQUESTRECAPTCHA.equals(loginCaptcha)) {
                         postPageRaw(cbr, "/requestrecaptcha", "", account, link);
-                        final Map<String, Object> requestcaptcha = JSonStorage.restoreFromString(cbr.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                        final Map<String, Object> requestcaptcha = restoreFromString(cbr.getRequest().getHtmlCode(), TypeRef.MAP);
                         final String challenge = (String) requestcaptcha.get("challenge");
                         String captcha_url = (String) requestcaptcha.get("captcha_url");
                         // Dependency

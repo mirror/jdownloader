@@ -130,16 +130,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
         };
     }
 
-    public static class NotNullCustomGetter extends AbstractCustomValueGetter<String> {
-        @Override
-        public String getValue(KeyHandler<String> keyHandler, String value) {
-            if (StringUtils.isEmpty(value)) {
-                value = keyHandler.getDefaultValue();
-            }
-            return value;
-        }
-    }
-
     public static class QualitySortIdentifierOrderAudioBitrate extends AbstractEnumOrderFixList {
         public QualitySortIdentifierOrderAudioBitrate() {
             super(AudioBitrate.class);
@@ -187,7 +177,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultStringValue(value = "*VIDEO_NAME* (*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
-    @CustomValueGetter(NotNullCustomGetter.class)
+    @DefaultOnNull
     String getAudioFilenamePattern();
 
     @AboutConfig
@@ -259,7 +249,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     List<YoutubeVariantCollection> getCollections();
 
     @AboutConfig
-    @CustomValueGetter(NotNullCustomGetter.class)
+    @DefaultOnNull
     @DefaultStringValue("*VIDEO_NAME* (*QUALITY*).*EXT*")
     String getDescriptionFilenamePattern();
 
@@ -284,7 +274,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @Deprecated
     String getFilenamePattern();
 
-    @CustomValueGetter(NotNullCustomGetter.class)
+    @DefaultOnNull
     @AboutConfig
     @DefaultStringValue("*VIDEO_NAME* (*QUALITY*).*EXT*")
     String getImageFilenamePattern();
@@ -304,7 +294,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     public void setSubtitleVariantMode(YoutubeConfig.SubtitleVariantMode mode);
 
     @AboutConfig
-    @CustomValueGetter(NotNullCustomGetter.class)
+    @DefaultOnNull
     @DefaultStringValue("*VIDEO_NAME*")
     String getPackagePattern();
 
@@ -351,7 +341,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     String[] getQualitySortIdentifierOrderVideoFramerate();
 
     @AboutConfig
-    @CustomValueGetter(NotNullCustomGetter.class)
+    @DefaultOnNull
     @DefaultStringValue("*VIDEO_NAME* (*LNG[DISPLAY]*).*EXT*")
     String getSubtitleFilenamePattern();
 
@@ -359,21 +349,21 @@ public interface YoutubeConfig extends PluginConfigInterface {
     ArrayList<String> getSubtitleWhiteList();
 
     @AboutConfig
-    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**AUDIO_BITRATE**AUDIO_CODEC**DEMUX**SPATIAL*")
-    @CustomValueGetter(NotNullCustomGetter.class)
-    @DefaultStringValue("*CONTAINER* *AUDIO_BITRATE* *SPATIAL* kbit/s")
+    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER*,*AUDIO_BITRATE*,*AUDIO_CODEC*,*DEMUX*,*SPATIAL*")
+    @DefaultOnNull
+    @DefaultStringValue("*AUDIO_BITRATE* *SPATIAL* kbit/s.*CONTAINER*")
     @RequiresRestart("A JDownloader Restart is Required")
     String getVariantNamePatternAudio();
 
     @AboutConfig
-    @DefaultStringValue("*3D* *360* *HEIGHT*p *FPS*fps *CONTAINER* - Video *AUDIO_CODEC* - Audio")
+    @DefaultStringValue("*3D* *360* *HEIGHT*p *FPS*fps - *VIDEO_CODEC*-Video & *AUDIO_CODEC*-Audio.*CONTAINER*")
     @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER**HEIGHT**FPS**AUDIO_CODEC**3D**AUDIO_BITRATE**SPATIAL*")
-    @CustomValueGetter(NotNullCustomGetter.class)
+    @DescriptionForConfigEntry("ID Pattern for dupe filtering. Tags: *CONTAINER*,*HEIGHT*,*FPS*,*AUDIO_CODEC*,*VIDEO_CODEC*,*3D*,*AUDIO_BITRATE*,*SPATIAL*")
+    @DefaultOnNull
     String getVariantNamePatternVideo();
 
     @AboutConfig
-    @CustomValueGetter(NotNullCustomGetter.class)
+    @DefaultOnNull
     @DefaultStringValue("*3D* *360* *VIDEO_NAME* (*H*p_*FPS*fps_*VIDEO_CODEC*-*AUDIO_BITRATE*kbit_*AUDIO_CODEC*).*EXT*")
     String getVideoFilenamePattern();
 
