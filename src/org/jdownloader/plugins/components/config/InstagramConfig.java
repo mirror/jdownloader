@@ -4,6 +4,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultOnNull;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -300,6 +301,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @DefaultEnumValue("DEFAULT_QUALITY")
     @Order(50)
     @DescriptionForConfigEntry("Select media quality download mode.\r\nOriginal quality = bigger filesize, without image-effects, works only when an account is available.")
+    @DefaultOnNull
     MediaQualityDownloadMode getMediaQualityDownloadMode();
 
     void setMediaQualityDownloadMode(final MediaQualityDownloadMode mediaQualityDownloadMode);
