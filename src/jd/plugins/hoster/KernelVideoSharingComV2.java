@@ -1088,9 +1088,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 this.submitForm(loginform);
-                // postPage(br.getURL(), "remember_me=1&action=login&email_link=http%3A%2F%2Fwww." + this.getHost() +
-                // "%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" +
-                // Encoding.urlEncode(account.getPass()));
                 if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
