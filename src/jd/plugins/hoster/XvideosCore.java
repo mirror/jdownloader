@@ -430,6 +430,11 @@ public abstract class XvideosCore extends PluginForHost {
                     logger.info("Failed to find HLS qualities!");
                 }
             }
+            /**
+             * 2022-09-08: Looks like HLS is available up to 1080p while official downloads are only available for up to 360p (?). </br>
+             * Tested with a free xvideos.com account. </br>
+             * If official download was >= HLS/stream download it would make sense to prefer this over stream download.
+             */
             if (videoURL == null && account != null) {
                 /* When logged-in, official downloadlinks can be available */
                 logger.info("Looking for official download ...");
