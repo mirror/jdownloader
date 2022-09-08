@@ -421,7 +421,9 @@ public class VimeoCom extends PluginForHost {
             } else {
                 final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url);
                 if (unlistedHash != null) {
-                    if (url.matches("^https?://player\\.vimeo.com/video/.+")) {
+                    if (url.matches("(?i).*(\\?|&)portfolio_id=\\d+.*")) {
+                        return VIMEO_URL_TYPE.RAW;
+                    } else if (url.matches("^https?://player\\.vimeo.com/video/.+")) {
                         return VIMEO_URL_TYPE.PLAYER_UNLISTED;
                     } else {
                         return VIMEO_URL_TYPE.UNLISTED;
@@ -1135,12 +1137,13 @@ public class VimeoCom extends PluginForHost {
             final List<Object> official_downloads_all = new ArrayList<Object>();
             if (json != null) {
                 final Map<String, Object> jsonMap = JavaScriptEngineFactory.jsonToJavaMap(json);
-                final List<Map<String, Object>> files = (List<Map<String, Object>>) jsonMap.get("files");// streams, api.vimeo.com
-                final List<Map<String, Object>> downloads = (List<Map<String, Object>>) jsonMap.get("download");// downloads, api.vimeo.com
+                final List<Map<String, Object>> files = (List<Map<String, Object>>) jsonMap.get("files");
+                final boolean hasDownload = jsonMap.containsKey("download");
+                final List<Map<String, Object>> downloads = hasDownload ? (List<Map<String, Object>>) jsonMap.get("download") : null;
                 if (downloads != null && downloads.size() > 0) {
                     entries = jsonMap;
                     official_downloads_all.addAll(downloads);
-                } else if (files != null && files.size() > 0) {
+                } else if (files != null && files.size() > 0 || !hasDownload) {
                     // no downloads available
                     return ret;
                 }

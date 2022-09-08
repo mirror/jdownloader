@@ -19,11 +19,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.appwork.utils.formatter.HexFormatter;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
@@ -33,7 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://vimeopro.com/[^/]+/[^/]+(/video/\\d+)?" })
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeopro.com" }, urls = { "https?://vimeopro.com/[^/]+/[^/]+(/video/\\d+)?" })
 public class VimeoProComDecrypter extends PluginForDecrypt {
     public VimeoProComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,27 +49,45 @@ public class VimeoProComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         final String videoID = new Regex(param.getCryptedUrl(), pattern).getMatch(0);
-        final String iframe = br.getRegex("<iframe\\s*src\\s*=\\s*\"((?:https:)?//player\\.vimeo\\.com/video/\\d+[^\"]*)\"").getMatch(0);
-        if (iframe == null) {
+        String playerURL = br.getRegex("<iframe\\s*src\\s*=\\s*\"((?:https:)?//player\\.vimeo\\.com/video/\\d+[^\"]*)\"").getMatch(0);
+        if (playerURL == null && videoID != null) {
+            playerURL = br.getRegex("((?:https:)?//player\\.vimeo\\.com/video/" + Pattern.quote(videoID) + "[^\"]*)\"").getMatch(0);
+            playerURL = Encoding.htmlOnlyDecode(playerURL);
+        }
+        if (playerURL == null) {
             final String otherIframe = br.getRegex("<iframe\\s*src\\s*=\\s*\"([^\"]+)\"").getMatch(0);
             if (otherIframe != null) {
                 /**
-                 * 2022-06-23 e.g. https://vimeopro.com/user111222222/online-exercise-classes </br>
-                 * 2nd example: https://vimeopro.com/cwdc/bla-training/video/69901718
+                 * 2022-06-23 e.g. https://vimeopro.com/user111222222/online-exercise-classes </br> 2nd example:
+                 * https://vimeopro.com/cwdc/bla-training/video/69901718
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\\{VIMEO_URL\\}/log_in")) {
-                /* E.g. age restricted */
-                throw new AccountRequiredException();
+                if (videoID == null) {
+                    /* E.g. age restricted */
+                    throw new AccountRequiredException();
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         if (videoID != null) {
-            final String url = br.getURL(iframe).toString() + "#forced_referer=" + HexFormatter.byteArrayToHex(param.getCryptedUrl().getBytes("UTF-8"));
+            final String portfolio_id = br.getRegex("portfolio_id\\s*=\\s*(\\d+)").getMatch(0);
+            String url = br.getURL(playerURL).toString();
+            if (!StringUtils.containsIgnoreCase(url, "portfolio_id")) {
+                if (portfolio_id == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    url = url + "&portfolio_id=" + portfolio_id;
+                }
+            }
+            url = url + "#forced_referer=" + HexFormatter.byteArrayToHex(param.getCryptedUrl().getBytes("UTF-8"));
             decryptedLinks.add(createDownloadlink(url));
         } else {
-            final String portfolio_id = new Regex(iframe, "portfolio_id=(\\d+)").getMatch(0);
+            final String portfolio_id = new Regex(playerURL, "portfolio_id\\s*=\\s*(\\d+)").getMatch(0);
+            if (portfolio_id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final Set<String> videoIDs = new HashSet<String>();
             int page = 0;
             boolean nextPage = true;

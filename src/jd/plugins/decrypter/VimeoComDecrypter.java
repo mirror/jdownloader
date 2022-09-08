@@ -802,7 +802,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                  * Both APIs we use as fallback to find additional information can only be used to display public content - it will not help
                  * us if the user has e.g. added a private/password protected video.
                  */
-                final boolean isPublicContent = VIMEO_URL_TYPE.NORMAL.equals(urlType) || VIMEO_URL_TYPE.RAW.equals(urlType);
+                final boolean isPublicContent = (VIMEO_URL_TYPE.NORMAL.equals(urlType) || VIMEO_URL_TYPE.RAW.equals(urlType)) && unlistedHash == null;
                 try {
                     if (tryAlternativeMetaInfos && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent && reviewHash == null) {
                         final Browser brc = br.cloneBrowser();
