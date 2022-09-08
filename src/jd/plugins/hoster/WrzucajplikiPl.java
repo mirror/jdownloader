@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -30,8 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WrzucajplikiPl extends XFileSharingProBasic {
     public WrzucajplikiPl(final PluginWrapper wrapper) {
@@ -42,7 +42,8 @@ public class WrzucajplikiPl extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-09-09: Untested because they do not allow any free downloads and a premium account for testing was not available! <br />
+     * limit-info: 2019-09-09: Untested because they do not allow any free downloads and a premium account for testing was not available!
+     * <br />
      * captchatype-info: 2019-09-09: Untested because they do not allow any free downloads! null<br />
      * other:<br />
      */
@@ -84,13 +85,13 @@ public class WrzucajplikiPl extends XFileSharingProBasic {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 
@@ -106,12 +107,12 @@ public class WrzucajplikiPl extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return -1;
     }
 
     @Override

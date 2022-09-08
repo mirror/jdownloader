@@ -20,13 +20,20 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
     public MulherespeladasvipCom(final PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://mulherespeladasvip.com/");
     }
 
     public static List<String[]> getPluginDomains() {
@@ -100,10 +107,60 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
     @Override
     protected boolean isPrivateVideoWebsite(final Browser br) {
         if (br.containsHTML("(?i)class=\"message\">\\s*Você excedeu o numero admissivel de vizualizacoes")) {
-            /* 2022-09-05 */
+            /* 2022-09-05: Video reached max number of views and can only be downloaded via account? */
+            return true;
+        } else if (br.containsHTML("(?i)class=\"message\">\\s*So os usuarios registados no sitio podem ter acesso aos videos")) {
+            /* 2022-09-08: Video is only available for registered users */
             return true;
         } else {
             return super.isPrivateVideoWebsite(br);
+        }
+    }
+
+    @Override
+    protected void login(final Account account, final boolean validateCookies) throws Exception {
+        synchronized (account) {
+            try {
+                br.setCookiesExclusive(true);
+                prepBR(this.br);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!validateCookies) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
+                    getPage(getProtocol() + this.getHost() + "/");
+                    if (isLoggedIN(br)) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
+                    }
+                }
+                /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
+                logger.info("Performing full login");
+                getPage(getProtocol() + this.getHost() + "/videos/login/");
+                final Form loginform = br.getFormbyActionRegex(".*/login.*");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("remember_me", "1");
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                this.submitForm(loginform);
+                if (!isLoggedIN(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
         }
     }
 }

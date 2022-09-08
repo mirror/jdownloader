@@ -54,6 +54,8 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -1060,7 +1062,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                         return;
                     }
                     getPage(getProtocol() + "www." + this.getHost() + "/");
-                    if (isLoggedIN()) {
+                    if (isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
@@ -1073,11 +1075,23 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 logger.info("Performing full login");
                 getPage(getProtocol() + "www." + this.getHost() + "/login/");
                 /*
-                 * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
-                 * premium accounts available at all.
+                 * 2017-01-21: This request will usually return a json with some information about the account.
                  */
-                postPage("/login/", "remember_me=1&action=login&email_link=http%3A%2F%2Fwww." + this.getHost() + "%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedIN()) {
+                Form loginform = br.getFormbyActionRegex(".*login.*");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform -> Using hardcoded loginform");
+                    loginform = new Form();
+                    loginform.setMethod(MethodType.POST);
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("remember_me", "1");
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                this.submitForm(loginform);
+                // postPage(br.getURL(), "remember_me=1&action=login&email_link=http%3A%2F%2Fwww." + this.getHost() +
+                // "%2Femail%2F&format=json&mode=async&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" +
+                // Encoding.urlEncode(account.getPass()));
+                if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -1088,10 +1102,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 throw e;
             }
         }
-    }
-
-    protected boolean isLoggedIN() {
-        return isLoggedIN(br);
     }
 
     protected boolean isLoggedIN(final Browser br) {
