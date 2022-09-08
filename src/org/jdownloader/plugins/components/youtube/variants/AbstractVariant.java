@@ -41,16 +41,15 @@ public abstract class AbstractVariant<Data extends AbstractGenericVariantInfo> i
         if (!(o instanceof AbstractVariant)) {
             return -1;
         }
-        AbstractVariant o1 = this;
-        AbstractVariant o2 = (AbstractVariant) o;
-        int ret = 0;
-        for (QualitySortIdentifier q : YT_STATICS.SORTIDS) {
-            ret = q.compare(o1, o2);
+        final AbstractVariant o1 = this;
+        final AbstractVariant o2 = (AbstractVariant) o;
+        for (final QualitySortIdentifier q : YT_STATICS.SORTIDS) {
+            final int ret = q.compare(o1, o2);
             if (ret != 0) {
                 return ret;
             }
         }
-        return ret;
+        return 0;
     }
 
     public static AbstractVariant get(final String ytv) {

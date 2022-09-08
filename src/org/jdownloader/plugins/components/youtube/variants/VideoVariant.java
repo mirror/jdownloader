@@ -53,12 +53,54 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     private static final Icon   VIDEO           = new AbstractIcon(IconKey.ICON_VIDEO, 16);
     private static final String TYPE_ID_PATTERN = PluginJsonConfig.get(YoutubeConfig.class).getVariantNamePatternVideo();
 
+    @Override
+    public String _getName(Object caller) {
+        String id = TYPE_ID_PATTERN;
+        id = id.replace("*CONTAINER*", getBaseVariant().getContainer().name() + "");
+        id = id.replace("*HEIGHT*", getVideoHeight() + "");
+        id = id.replace("*FPS*", getVideoFrameRate() + "");
+        id = id.replace("*AUDIO_CODEC*", getAudioCodec().getLabel() + "");
+        id = id.replace("*VIDEO_CODEC*", getVideoCodec() + "");
+        id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
+        switch (getProjection()) {
+        case SPHERICAL:
+            id = id.replace("*360*", "[360°]");
+            id = id.replace("*3D*", "");
+            break;
+        case ANAGLYPH_3D:
+            id = id.replace("*3D*", "[3D]");
+            id = id.replace("*360*", "");
+            break;
+        case SPHERICAL_3D:
+            id = id.replace("*3D*", "[3D]");
+            id = id.replace("*360*", "[360°]");
+            break;
+        default:
+        case NORMAL:
+            id = id.replace("*360*", "");
+            id = id.replace("*3D*", "");
+            break;
+        }
+        switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
+        case AAC_SPATIAL:
+        case VORBIS_SPATIAL:
+        case OPUS_SPATIAL:
+            id = id.replace("*SPATIAL*", _JDT.T.YOUTUBE_surround());
+            break;
+        default:
+            id = id.replace("*SPATIAL*", "");
+        }
+        id = id.trim().replace(" - ", "-").replaceAll("[ ]+", " ");
+        return id.trim();
+    }
+
     public String getTypeId() {
         String id = TYPE_ID_PATTERN;
         id = id.replace("*CONTAINER*", getBaseVariant().getContainer().name() + "");
         id = id.replace("*HEIGHT*", getVideoHeight() + "");
         id = id.replace("*FPS*", getVideoFrameRate() + "");
         id = id.replace("*AUDIO_CODEC*", getAudioCodec() + "");
+        id = id.replace("*VIDEO_CODEC*", getVideoCodec() + "");
         id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
         switch (getProjection()) {
         case SPHERICAL:
@@ -151,46 +193,6 @@ public class VideoVariant extends AbstractVariant<GenericVideoInfo> implements V
     @Override
     public String getStandardGroupingID() {
         return getGroup().name() + "_" + getProjection().name();
-    }
-
-    @Override
-    public String _getName(Object caller) {
-        String id = TYPE_ID_PATTERN;
-        id = id.replace("*CONTAINER*", getBaseVariant().getContainer().name() + "");
-        id = id.replace("*HEIGHT*", getVideoHeight() + "");
-        id = id.replace("*FPS*", getVideoFrameRate() + "");
-        id = id.replace("*AUDIO_CODEC*", getAudioCodec().getLabel() + "");
-        id = id.replace("*AUDIO_BITRATE*", getAudioBitrate().getKbit() + "");
-        switch (getProjection()) {
-        case SPHERICAL:
-            id = id.replace("*360*", "[360°]");
-            id = id.replace("*3D*", "");
-            break;
-        case ANAGLYPH_3D:
-            id = id.replace("*3D*", "[3D]");
-            id = id.replace("*360*", "");
-            break;
-        case SPHERICAL_3D:
-            id = id.replace("*3D*", "[3D]");
-            id = id.replace("*360*", "[360°]");
-            break;
-        default:
-        case NORMAL:
-            id = id.replace("*360*", "");
-            id = id.replace("*3D*", "");
-            break;
-        }
-        switch (getiTagAudioOrVideoItagEquivalent().getAudioCodec()) {
-        case AAC_SPATIAL:
-        case VORBIS_SPATIAL:
-        case OPUS_SPATIAL:
-            id = id.replace("*SPATIAL*", _JDT.T.YOUTUBE_surround());
-            break;
-        default:
-            id = id.replace("*SPATIAL*", "");
-        }
-        id = id.trim().replace(" - ", "-").replaceAll("[ ]+", " ");
-        return id.trim();
     }
 
     @Override

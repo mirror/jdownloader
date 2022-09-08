@@ -1373,7 +1373,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setLivePlugin(PluginForHost plugin) {
-        final PluginForHost oldLivePlugin = liveplugin;
+        final PluginForHost oldLivePlugin = getLivePlugin();
         this.liveplugin = plugin;
         if (plugin != null) {
             plugin.setDownloadLink(this);
@@ -1950,8 +1950,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public String getServiceHost(final boolean includeSubdomain) {
-        if (defaultplugin != null) {
-            final String ret = defaultplugin.getHost(this, null, includeSubdomain);
+        final PluginForHost defaultPlugin = getDefaultPlugin();
+        if (defaultPlugin != null) {
+            final String ret = defaultPlugin.getHost(this, null, includeSubdomain);
             if (ret != null) {
                 return ret;
             }

@@ -54,7 +54,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.plugins.hoster.DirectHTTP;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -1395,8 +1394,8 @@ public class LinkCrawler {
                                     }
                                 } else {
                                     // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
-                                    // relative
-                                    // path.
+                                    // relative path.
+                                    boolean isDeepDecrypt = source.isCrawlDeep() || (matchingRule != null && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(matchingRule.getRule()));
                                     final Request request = br.getRequest();
                                     final String brURL;
                                     if (request.getAuthentication() == null) {
@@ -1404,7 +1403,7 @@ public class LinkCrawler {
                                     } else {
                                         brURL = request.getAuthentication().getURLWithUserInfo(request.getURL());
                                     }
-                                    final List<CrawledLink> possibleCryptedLinks = find(generation, source, brURL, null, false, false);
+                                    List<CrawledLink> possibleCryptedLinks = find(generation, source, brURL, null, false, false);
                                     if (possibleCryptedLinks != null) {
                                         final boolean singleDest = possibleCryptedLinks.size() == 1;
                                         for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
@@ -1419,7 +1418,7 @@ public class LinkCrawler {
                                         final CrawledLink deepLink;
                                         if (possibleCryptedLinks.size() == 1) {
                                             deepLink = possibleCryptedLinks.get(0);
-                                        } else if (source.isCrawlDeep() || (matchingRule != null && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(matchingRule.getRule()))) {
+                                        } else if (isDeepDecrypt) {
                                             CrawledLink deep = null;
                                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
                                                 if (StringUtils.equalsIgnoreCase(possibleCryptedLink.getURL(), source.getURL())) {
@@ -1434,7 +1433,9 @@ public class LinkCrawler {
                                         if (deepLink != null) {
                                             final String finalBaseUrl = new Regex(brURL, "(https?://.*?)(\\?|$)").getMatch(0);
                                             final String crawlContent;
+                                            final boolean deepPatternContent;
                                             if (matchingRule != null && matchingRule._getDeepPattern() != null) {
+                                                deepPatternContent = true;
                                                 final String[][] matches = new Regex(request.getHtmlCode(), matchingRule._getDeepPattern()).getMatches();
                                                 if (matches != null) {
                                                     final HashSet<String> dups = new HashSet<String>();
@@ -1460,9 +1461,10 @@ public class LinkCrawler {
                                                     }
                                                     crawlContent = sb.toString();
                                                 } else {
-                                                    crawlContent = "";
+                                                    crawlContent = null;
                                                 }
                                             } else {
+                                                deepPatternContent = false;
                                                 crawlContent = request.getHtmlCode();
                                             }
                                             if (matchingRule != null && matchingRule._getPasswordPattern() != null) {
@@ -1489,29 +1491,42 @@ public class LinkCrawler {
                                                     }
                                                 }
                                             }
-                                            /* first check if the url itself can be handled */
-                                            deepLink.setUnknownHandler(new UnknownCrawledLinkHandler() {
-                                                @Override
-                                                public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
-                                                    /* unhandled url, lets parse the content on it */
-                                                    final List<CrawledLink> possibleCryptedLinks2 = lc.find(generation, source, crawlContent, finalBaseUrl, false, false);
-                                                    if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
-                                                        final boolean singleDest = possibleCryptedLinks2.size() == 1;
-                                                        for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
-                                                            forwardCrawledLinkInfos(deeperSource, possibleCryptedLink, lm, sourceURLs, singleDest);
-                                                            PackageInfo dpi = possibleCryptedLink.getDesiredPackageInfo();
-                                                            if (dpi == null) {
-                                                                dpi = new PackageInfo();
-                                                            }
-                                                            dpi.setName(finalPackageName);
-                                                            possibleCryptedLink.setDesiredPackageInfo(dpi);
+                                            if (crawlContent != null) {
+                                                final List<CrawledLink> possibleDeepCryptedLinks = find(generation, source, crawlContent, finalBaseUrl, false, false);
+                                                if (possibleDeepCryptedLinks != null && possibleDeepCryptedLinks.size() > 0) {
+                                                    final boolean singleDeepCryptedDest = possibleDeepCryptedLinks.size() == 1;
+                                                    for (final CrawledLink possibleDeepCryptedLink : possibleDeepCryptedLinks) {
+                                                        forwardCrawledLinkInfos(deeperSource, possibleDeepCryptedLink, lm, sourceURLs, singleDeepCryptedDest);
+                                                        PackageInfo dpi = possibleDeepCryptedLink.getDesiredPackageInfo();
+                                                        if (dpi == null) {
+                                                            dpi = new PackageInfo();
                                                         }
-                                                        lc.crawl(generation, possibleCryptedLinks2);
+                                                        dpi.setName(finalPackageName);
+                                                        possibleDeepCryptedLink.setDesiredPackageInfo(dpi);
+                                                    }
+                                                    if (deepPatternContent && StringUtils.startsWithCaseInsensitive(source.getURL(), deepLink.getURL())) {
+                                                        /*
+                                                         * deepLink is our source and a matching deepPattern, crawl the links directly and
+                                                         * don't wait for UnknownCrawledLinkHandler
+                                                         */
+                                                        possibleCryptedLinks = null;
+                                                        crawl(generation, possibleDeepCryptedLinks);
+                                                    } else {
+                                                        /* first check if the url itself can be handled */
+                                                        deepLink.setUnknownHandler(new UnknownCrawledLinkHandler() {
+                                                            @Override
+                                                            public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                                                                /* unhandled url, lets parse the content on it */
+                                                                lc.crawl(generation, possibleDeepCryptedLinks);
+                                                            }
+                                                        });
                                                     }
                                                 }
-                                            });
+                                            }
                                         }
-                                        crawl(generation, possibleCryptedLinks);
+                                        if (possibleCryptedLinks != null) {
+                                            crawl(generation, possibleCryptedLinks);
+                                        }
                                     }
                                 }
                             }
@@ -1543,17 +1558,8 @@ public class LinkCrawler {
     public boolean canHandle(final LazyPlugin<? extends Plugin> lazyPlugin, final String url, final CrawledLink link) {
         try {
             if (lazyPlugin.canHandle(url)) {
-                Plugin plugin = lazyPlugin.getPrototype(getPluginClassLoaderChild(),false);
-                if (plugin != null && Plugin.implementsCanHandleString(plugin)) {
-                    /* TODO: store implementsCanHandleString within LazyPlugin */
-                    plugin = lazyPlugin.newInstance(getPluginClassLoaderChild(),false);
-                }
-                if (plugin != null) {
-                    /* now we run the plugin and let it find some links */
-                    return plugin.canHandle(url);
-                } else {
-                    throw new WTFException("Plugin not available:" + lazyPlugin);
-                }
+                final Plugin plugin = lazyPlugin.getPrototype(getPluginClassLoaderChild(), false);
+                return plugin != null && plugin.canHandle(url);
             }
         } catch (Throwable e) {
             LogController.CL().log(e);

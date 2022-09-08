@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,6 +31,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WallhavenCc extends PluginForHost {
@@ -52,15 +52,17 @@ public class WallhavenCc extends PluginForHost {
     public void init() {
         for (final String[] domainList : getPluginDomains()) {
             for (final String domain : domainList) {
-                Browser.setRequestIntervalLimitGlobal(domain, true, 500);
+                Browser.setRequestIntervalLimitGlobal(domain, true, 300);
             }
         }
+        // download domain
+        Browser.setRequestIntervalLimitGlobal("w.wallhaven.cc", true, 500);
     }
 
     /* Connection stuff */
     private static final boolean free_resume              = false;
     private static final int     free_maxchunks           = 1;
-    private static final int     free_maxdownloads        = 2;
+    private static final int     free_maxdownloads        = 10;
     private String               dllink                   = null;
     private final String         TAGS_COMMA_SEPARATED     = "tags_comma_separated";
     private final String         PROPERTY_DIRECTURL       = "directurl";

@@ -157,7 +157,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                         throw new SolverException("Failed:Timeout");
                     }
                     Thread.sleep(1000);
-                    job.getLogger().info("deathbycaptcha.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                    job.getLogger().info("deathbycaptcha.com NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
                     br.getPage("http://api.dbcapi.me/api/captcha/" + uploadStatus.getCaptcha());
                     status = JSonStorage.restoreFromString(br.toString(), DBCUploadResponse.TYPE);
                 }

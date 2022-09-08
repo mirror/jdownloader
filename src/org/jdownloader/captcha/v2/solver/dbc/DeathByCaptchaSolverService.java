@@ -37,6 +37,7 @@ import org.jdownloader.settings.staticreferences.CFG_DBC;
 public class DeathByCaptchaSolverService extends AbstractSolverService implements ServicePanelExtender {
     private DeathByCaptchaSettings config;
     private DeathByCaptchaSolver   solver;
+    private final DomainInfo       info = DomainInfo.getInstance("deathbycaptcha.com");
 
     public DeathByCaptchaSolverService() {
         config = JsonConfig.create(DeathByCaptchaSettings.class);
@@ -109,7 +110,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
 
             @Override
             public String getTitle() {
-                return "deathbycaptcha.eu";
+                return info.getDomain();
             }
         };
         return ret;
@@ -136,7 +137,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
             services.add(new ServiceCollection<DeathByCaptchaSolver>() {
                 @Override
                 public Icon getIcon() {
-                    return DomainInfo.getInstance("deathbycaptcha.eu").getFavIcon();
+                    return info;
                 }
 
                 @Override
@@ -151,7 +152,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
 
                 @Override
                 protected String getName() {
-                    return "deathbycaptcha.eu";
+                    return info.getDomain();
                 }
 
                 @Override

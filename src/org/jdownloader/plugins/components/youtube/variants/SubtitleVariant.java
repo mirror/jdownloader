@@ -27,12 +27,10 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     public SubtitleVariant(YoutubeSubtitleStorable si) {
         this();
         setGenericInfo(si);
-
     }
 
     public SubtitleVariant() {
         super(VariantBase.SUBTITLES);
-
     }
 
     @Override
@@ -91,7 +89,6 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
             }
             sb.append(_GUI.T.lit_speedtotext());
         }
-
         if (sb.length() == 0) {
             return _GUI.T.YoutubeDash_getName_subtitles_(getGenericInfo()._getLocale() == null ? getGenericInfo().getLanguage() : getGenericInfo()._getLocale().getDisplayName());
         } else {
@@ -112,12 +109,11 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     // }
     @Override
     public int compareTo(Object o) {
-
-        AbstractVariant o1 = this;
-        AbstractVariant o2 = (AbstractVariant) o;
-        int ret = 0;
-
-        if (o1 instanceof SubtitleVariant && o2 instanceof SubtitleVariant) {
+        if (!(o instanceof SubtitleVariant)) {
+            return super.compareTo(o);
+        } else {
+            final AbstractVariant o1 = this;
+            final AbstractVariant o2 = (AbstractVariant) o;
             Integer pref1 = YT_STATICS.SUBTITLE_PREFERRENCE_MAP.get(((SubtitleVariant) o1).getLanguageCode());
             Integer pref2 = YT_STATICS.SUBTITLE_PREFERRENCE_MAP.get(((SubtitleVariant) o2).getLanguageCode());
             if (pref1 == null) {
@@ -126,27 +122,18 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
             if (pref2 == null) {
                 pref2 = Integer.MAX_VALUE;
             }
-            ret = CompareUtils.compare(pref2, pref1);
-
+            int ret = CompareUtils.compare(pref1, pref2);
             if (ret == 0) {
-
                 ret = CompareUtils.compare(((SubtitleVariant) o1).getGenericInfo()._isSpeechToText(), ((SubtitleVariant) o2).getGenericInfo()._isSpeechToText());
-
+                if (ret == 0) {
+                    ret = CompareUtils.compare(((SubtitleVariant) o1).getGenericInfo()._isTranslated(), ((SubtitleVariant) o2).getGenericInfo()._isTranslated());
+                    if (ret == 0) {
+                        ret = CompareUtils.compare(((SubtitleVariant) o1).getDisplayLanguage(), ((SubtitleVariant) o2).getDisplayLanguage());
+                    }
+                }
             }
-            if (ret == 0) {
-
-                ret = CompareUtils.compare(((SubtitleVariant) o1).getGenericInfo()._isTranslated(), ((SubtitleVariant) o2).getGenericInfo()._isTranslated());
-
-            }
-
-            if (ret == 0) {
-                ret = CompareUtils.compare(((SubtitleVariant) o2).getDisplayLanguage(), ((SubtitleVariant) o1).getDisplayLanguage());
-            }
-
             return ret;
-
         }
-        return -1;
     }
 
     public String getDisplayLanguage() {
@@ -161,11 +148,9 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
     @Override
     public String getTypeId() {
         return _getUniqueId();
-
     }
 
     public String getLanguageCode() {
         return getGenericInfo()._getLocale().getLanguage();
     }
-
 }

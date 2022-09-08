@@ -13,13 +13,13 @@ import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
 public interface DeathByCaptchaSettings extends ChallengeSolverConfig {
     @AboutConfig
-    @DescriptionForConfigEntry("Your deathbycaptcha.eu Username")
+    @DescriptionForConfigEntry("Your deathbycaptcha.com Username")
     String getUserName();
 
     void setUserName(String jser);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Your deathbycaptcha.eu Password")
+    @DescriptionForConfigEntry("Your deathbycaptcha.com Password")
     String getPassword();
 
     void setPassword(String jser);

@@ -22,12 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -41,6 +35,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OnstcloudsCom extends PluginForHost {
@@ -57,8 +56,13 @@ public class OnstcloudsCom extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "onstclouds.com", "kufile.net" });
+        ret.add(new String[] { "kufile.net", "onstclouds.com" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -167,7 +171,7 @@ public class OnstcloudsCom extends PluginForHost {
             /* 2022-09-07: Waittime is skippable */
             final boolean skipWaittime = true;
             if (!skipWaittime) {
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final int waitSeconds = ((Number) entries.get("waittime")).intValue();
                 if (waitSeconds > 180) {
                     /* Prefer reconnect to reset this time back to default (30). */
@@ -255,13 +259,13 @@ public class OnstcloudsCom extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
-            this.dl = null;
             link.removeProperty(directlinkproperty);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
             } catch (Throwable ignore) {
             }
+            this.dl = null;
             return false;
         }
     }
