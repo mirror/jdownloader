@@ -339,6 +339,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) root.get("data");
+        final Map<String, Object> metadata = (Map<String, Object>) data.get("metadata");
+        final String description = (String) metadata.get("description");
         final Map<String, Object> lendingInfo = (Map<String, Object>) data.get("lendingInfo");
         // final Map<String, Object> lendingStatus = (Map<String, Object>) lendingInfo.get("lendingStatus");
         final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
@@ -380,6 +382,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String bookDisplayMode = new Regex(bookAjaxURL, "/mode/([^/]+)").getMatch(0);
         final List<Object> imagesO = (List<Object>) brOptions.get("data");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        int imagecount = -1;
+        try {
+            imagecount = Integer.parseInt(metadata.get("imagecount").toString());
+        } catch (final Exception ignore) {
+        }
+        final int padLength = StringUtils.getPadLength(imagecount);
+        int internalPageIndex = 0;
         for (final Object imageO : imagesO) {
             /*
              * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page -->
@@ -388,20 +397,22 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final List<Object> pagesO = (List<Object>) imageO;
             for (final Object pageO : pagesO) {
                 final Map<String, Object> bookpage = (Map<String, Object>) pageO;
-                final int pageIndex = ((Number) bookpage.get("leafNum")).intValue();
+                /* When this starts at 0 this means the book has a cover else this will start at 1 -> No cover. */
+                final int archiveOrgPageIndex = ((Number) bookpage.get("leafNum")).intValue();
                 final String url = bookpage.get("uri").toString();
                 final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", url, true);
                 String contentURL = contentURLFormat;
-                if (pageIndex > 1) {
-                    contentURL += String.format(pageFormat, pageIndex + 1);
+                if (archiveOrgPageIndex > 1) {
+                    contentURL += String.format(pageFormat, archiveOrgPageIndex + 1);
                 }
                 if (bookDisplayMode != null) {
                     contentURL += "/mode/" + bookDisplayMode;
                 }
                 dl.setContentUrl(contentURL);
-                dl.setFinalFileName(pageIndex + "_" + title + ".jpg");
+                dl.setFinalFileName(StringUtils.formatByPadLength(padLength, archiveOrgPageIndex) + "_" + title + ".jpg");
                 dl.setProperty(ArchiveOrg.PROPERTY_BOOK_ID, bookID);
-                dl.setProperty(ArchiveOrg.PROPERTY_BOOK_PAGE, pageIndex);
+                dl.setProperty(ArchiveOrg.PROPERTY_BOOK_PAGE, archiveOrgPageIndex);
+                dl.setProperty(ArchiveOrg.PROPERTY_BOOK_PAGE_INTERNAL_INDEX, internalPageIndex);
                 if (isMultiVolumeBook) {
                     dl.setProperty(ArchiveOrg.PROPERTY_BOOK_SUB_PREFIX, subPrefix);
                 }
@@ -416,21 +427,22 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                  * If we have borrowed this book, this field will not exist at all.
                  */
                 final Object viewable = bookpage.get("viewable");
-                if (!Boolean.FALSE.equals(viewable)) {
-                    dl.setAvailable(true);
-                    if (account == null || loanedSecondsLeft == 0) {
-                        dl.setProperty(ArchiveOrg.PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
-                    }
-                } else {
+                if (Boolean.FALSE.equals(viewable)) {
                     /* Only downloadable with account */
-                    if (PluginJsonConfig.get(ArchiveOrgConfig.class).isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable()) {
+                    if (PluginJsonConfig.get(ArchiveOrgConfig.class).isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable() && account == null) {
                         dl.setAvailable(false);
                     } else {
                         /* Always mark all pages as online. Non-viewable pages can only be downloaded when an account is present. */
                         dl.setAvailable(true);
                     }
+                } else {
+                    dl.setAvailable(true);
+                    if (account == null || loanedSecondsLeft == 0) {
+                        dl.setProperty(ArchiveOrg.PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
+                    }
                 }
                 ret.add(dl);
+                internalPageIndex++;
             }
         }
         if (account != null) {
@@ -438,6 +450,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
+        }
         fp.addLinks(ret);
         return ret;
     }

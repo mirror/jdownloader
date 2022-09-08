@@ -81,7 +81,10 @@ public class ArchiveOrg extends PluginForHost {
     private final String                                  PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN             = "download_serverside_broken";
     public static final String                            PROPERTY_BOOK_ID                                = "book_id";
     public static final String                            PROPERTY_BOOK_SUB_PREFIX                        = "book_sub_prefix";
+    /* Book page by number by archive.org. Can satart at 0 or 1. Do not use as a real page index! */
     public static final String                            PROPERTY_BOOK_PAGE                              = "book_page";
+    /* Real page index */
+    public static final String                            PROPERTY_BOOK_PAGE_INTERNAL_INDEX               = "book_page_internal_index";
     public static final String                            PROPERTY_IS_LENDING_REQUIRED                    = "is_lending_required";
     public static final String                            PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_free_downloadable_book_preview_page";
     public static final String                            PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP            = "is_borrowed_until_timestamp";
@@ -175,17 +178,23 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     private int getBookPageIndexNumber(final DownloadLink link) {
-        final int storedBookPage = link.getIntegerProperty(PROPERTY_BOOK_PAGE, -1);
-        if (storedBookPage != -1) {
-            return storedBookPage;
+        final int internalBookPageIndex = link.getIntegerProperty(PROPERTY_BOOK_PAGE_INTERNAL_INDEX, -1);
+        if (internalBookPageIndex != -1) {
+            return internalBookPageIndex;
         } else {
-            /* Legacy handling for older items */
-            final String pageStr = new Regex(link.getContentUrl(), ".*/page/n?(\\d+)").getMatch(0);
-            if (pageStr != null) {
-                return Integer.parseInt(pageStr) - 1;
+            /* All of this is legacy. TODO: Remove in 01-2023 */
+            final int archiveOrgBookPageNumber = link.getIntegerProperty(PROPERTY_BOOK_PAGE, -1);
+            if (archiveOrgBookPageNumber != -1) {
+                return archiveOrgBookPageNumber;
             } else {
-                /* Fallback: This should never happen */
-                return 1;
+                /* Legacy handling for older items */
+                final String pageStr = new Regex(link.getContentUrl(), ".*/page/n?(\\d+)").getMatch(0);
+                if (pageStr != null) {
+                    return Integer.parseInt(pageStr) - 1;
+                } else {
+                    /* Fallback: This should never happen */
+                    return 1;
+                }
             }
         }
     }
