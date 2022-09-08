@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -127,7 +128,7 @@ public class ImxTo extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        getAndSetFilename(link);
+        getAndSetFileInfo(link);
         /* Find- and set directurl so we can save time and requests on downloadstart. */
         final String dllink = findDownloadurl(this.br);
         if (dllink != null) {
@@ -136,14 +137,20 @@ public class ImxTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void getAndSetFilename(final DownloadLink link) {
+    private void getAndSetFileInfo(final DownloadLink link) {
         String filename = br.getRegex("<title>\\s*IMX\\.to\\s*/\\s*([^<>\"]+)\\s*</title>").getMatch(0);
         if (filename != null) {
-            final String existingExt = getFileNameExtensionFromString(filename);
-            if (existingExt == null) {
-                filename += ".jpg";
-            }
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            filename = Encoding.htmlDecode(filename).trim();
+            filename = this.correctOrApplyFileNameExtension(filename, ".jpg");
+            link.setFinalFileName(filename);
+        }
+        final String filesize = br.getRegex("(?i)FILESIZE\\s*<span[^>]*>([^<]+)</span>").getMatch(0);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        final String md5hash = br.getRegex("(?i)HASH\\s*<span[^>]*>([^<]+)</span>").getMatch(0);
+        if (md5hash != null) {
+            link.setMD5Hash(md5hash);
         }
     }
 
@@ -156,7 +163,7 @@ public class ImxTo extends PluginForHost {
             if (continueForm != null) {
                 logger.info("Sending imgContinue Form...");
                 br.submitForm(continueForm);
-                getAndSetFilename(link);
+                getAndSetFileInfo(link);
             }
             final String dllink = findDownloadurl(this.br);
             if (StringUtils.isEmpty(dllink)) {
