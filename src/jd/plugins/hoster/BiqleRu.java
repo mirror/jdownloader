@@ -73,7 +73,7 @@ public class BiqleRu extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
-                brc.getHeaders().put("Range", "bytes=0 -");
+                brc.getHeaders().put(OPEN_RANGE_REQUEST);
                 con = brc.openHeadConnection(dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
                     con.disconnect();

@@ -121,7 +121,7 @@ public class PornTubeClubCom extends antiDDoSForHost {
             br.getHeaders().put("accept-encoding", "identity;q=1, *;q=0");
             br.getHeaders().put("accept", "*/*");
             br.getHeaders().put("accept-language", "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7");
-            br.getHeaders().put("range", "bytes=0 -");
+            br.getHeaders().put(OPEN_RANGE_REQUEST);
             try {
                 // con = br.openHeadConnection(dllink);
                 /* 2019-02-21: Try GetConnection RE SVN ticket 86649 */

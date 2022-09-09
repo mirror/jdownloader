@@ -109,7 +109,7 @@ public class CollectionofbestpornCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            br2.getHeaders().put("Range", "bytes=0 -");
+            br2.getHeaders().put(OPEN_RANGE_REQUEST);
             try {
                 con = openConnection(br2, dllink);
             } catch (final BrowserException e) {

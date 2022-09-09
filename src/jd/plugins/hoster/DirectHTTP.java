@@ -543,7 +543,7 @@ public class DirectHTTP extends antiDDoSForHost {
             if (downloadLink.getProperty("streamMod") != null || optionSet.contains("streamMod")) {
                 if (!optionSet.contains("avoidOpenRange")) {
                     rangeHeader = true;
-                    br.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
+                    br.getHeaders().put(OPEN_RANGE_REQUEST);
                 }
             }
             if (downloadLink.getStringProperty("post", null) != null) {

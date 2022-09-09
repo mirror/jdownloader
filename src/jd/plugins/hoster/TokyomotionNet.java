@@ -137,7 +137,7 @@ public class TokyomotionNet extends PluginForHost {
                 brc.setFollowRedirects(true);
                 // X-Mod-H264-Streaming
                 brc.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity;q=1, *;q=0");
-                brc.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0 -");
+                brc.getHeaders().put(OPEN_RANGE_REQUEST);
                 con = brc.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {

@@ -152,7 +152,7 @@ public class HearthisAt extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 /* required */
-                br2.getHeaders().put("Range", "bytes=0 -");
+                br2.getHeaders().put(OPEN_RANGE_REQUEST);
                 /* Do NOT use HEAD request here! */
                 con = br2.openGetConnection(dllink);
                 if (looksLikeDownloadableContent(con)) {

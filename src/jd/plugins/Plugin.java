@@ -79,6 +79,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -112,6 +113,7 @@ import org.jdownloader.translate._JDT;
  * Alle Plugins verfügen über einen Event Mechanismus
  */
 public abstract class Plugin implements ActionListener {
+    public static final HTTPHeader             OPEN_RANGE_REQUEST  = new HTTPHeader(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
     public static final String                 HTTP_LINKS_HOST     = "http links";
     public static final String                 DIRECT_HTTP_HOST    = "DirectHTTP";
     public static final String                 FTP_HOST            = "ftp";
