@@ -1225,9 +1225,9 @@ public class HLSDownloader extends DownloadInterface {
                                         requestLogger.info("Resume(" + retry + "): " + fileBytesMap.toString());
                                         final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
                                         final long startByteRange = byteRange != null ? byteRange[1] : 0;
-                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + startByteRange + unMarkedAreas.get(0)[0] + " - " + startByteRange + unMarkedAreas.get(0)[1]);
+                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + startByteRange + unMarkedAreas.get(0)[0] + "-" + startByteRange + unMarkedAreas.get(0)[1]);
                                     } else if (byteRange != null) {
-                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + " - " + (byteRange[1] + byteRange[0] - 1));
+                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + "-" + (byteRange[1] + byteRange[0] - 1));
                                     } else if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                                         getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0 -");
                                     }
