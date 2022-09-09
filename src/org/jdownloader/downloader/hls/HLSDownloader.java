@@ -1229,7 +1229,7 @@ public class HLSDownloader extends DownloadInterface {
                                     } else if (byteRange != null) {
                                         getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + "-" + (byteRange[1] + byteRange[0] - 1));
                                     } else if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0 -");
+                                        getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
                                     }
                                     URLConnectionAdapter connection = null;
                                     boolean closeConnection = true;
