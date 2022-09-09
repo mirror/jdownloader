@@ -122,7 +122,7 @@ public class NonktubeCom extends PluginForHost {
             try {
                 try {
                     HeadRequest headRequest = new HeadRequest(dllink);
-                    headRequest.getHeaders().put("Range", "bytes=0 -");
+                    headRequest.getHeaders().put(OPEN_RANGE_REQUEST);
                     con = br.openRequestConnection(headRequest);
                 } catch (final BrowserException e) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
