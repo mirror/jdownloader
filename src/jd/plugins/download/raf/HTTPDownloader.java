@@ -627,7 +627,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
             final String requestContentRange = connection.getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE);
             final long[] requestedRange = parseRequestRange(requestContentRange);
             final String responseContentEncoding = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
-            final String responseAcceptRanges = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH);
+            final String responseAcceptRanges = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
             final long[] responseContentRange = connection.getRange();
             if (connection.getHeaderField("Cf-Bgj") != null) {
                 logger.info("Cloudflare Image Compression detected!");
