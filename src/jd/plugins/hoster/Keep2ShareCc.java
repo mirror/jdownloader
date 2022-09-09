@@ -15,8 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -24,6 +24,9 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "k2s.cc" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:keep2share|k2s|k2share|keep2s|keep2)\\.cc/(?:file|preview)/(?:info/)?([a-z0-9_\\-]+)(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class Keep2ShareCc extends K2SApi {
@@ -38,6 +41,13 @@ public class Keep2ShareCc extends K2SApi {
     public String[] siteSupportedNames() {
         // keep2.cc no dns
         return new String[] { "k2s.cc", "keep2share.cc", "keep2s.cc", "k2share.cc", "keep2share.com", "keep2share" };
+    }
+
+    private static Map<String, Object> HOST_MAP = new HashMap<String, Object>();
+
+    @Override
+    protected Map<String, Object> getHostMap() {
+        return HOST_MAP;
     }
 
     @Override

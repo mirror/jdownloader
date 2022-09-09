@@ -15,8 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -26,6 +26,9 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:tezfiles\\.com|publish2\\.me)/(?:f(?:ile)?|preview)/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class TezFilesCom extends K2SApi {
@@ -45,6 +48,13 @@ public class TezFilesCom extends K2SApi {
     @Override
     protected String getInternalAPIDomain() {
         return "tezfiles.com";
+    }
+
+    private static Map<String, Object> HOST_MAP = new HashMap<String, Object>();
+
+    @Override
+    protected Map<String, Object> getHostMap() {
+        return HOST_MAP;
     }
 
     @Override
