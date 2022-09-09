@@ -65,7 +65,7 @@ public class ChunkRange {
             if (to == null || to < 0 || openEnd) {
                 return "bytes=" + from + " -";
             } else {
-                return "bytes=" + from + " - " + to;
+                return "bytes=" + from + "-" + to;
             }
         }
     }

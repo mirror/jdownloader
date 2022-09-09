@@ -659,7 +659,7 @@ public abstract class AbstractFFmpegBinary {
                             if (fileBytesMap.getFinalSize() > 0) {
                                 logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
                                 final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
-                                getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + " - " + unMarkedAreas.get(0)[1]);
+                                getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + "-" + unMarkedAreas.get(0)[1]);
                             }
                             URLConnectionAdapter connection = null;
                             try {
