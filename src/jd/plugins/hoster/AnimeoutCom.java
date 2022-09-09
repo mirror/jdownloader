@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -35,9 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AnimeoutCom extends PluginForHost {
@@ -96,10 +96,10 @@ public class AnimeoutCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
-        link.setName(url_filename);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            login(aa);
+        link.setName(Encoding.htmlDecode(url_filename));
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            login(account);
             dllink = link.getDownloadURL();
         } else {
             br.getPage(link.getDownloadURL());
@@ -119,7 +119,7 @@ public class AnimeoutCom extends PluginForHost {
             con = brc.openHeadConnection(dllink);
             if (looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 link.setFinalFileName(getFileNameFromHeader(con));
             } else if (con.getResponseCode() == 404) {
@@ -142,13 +142,13 @@ public class AnimeoutCom extends PluginForHost {
         doFree(downloadLink);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    private void doFree(final DownloadLink link) throws Exception, PluginException {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, MAXCHUNKS);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -171,7 +171,7 @@ public class AnimeoutCom extends PluginForHost {
         return MAXDOWNLOADS;
     }
 
-    private boolean isLoggedinHTML(Browser br) {
+    private boolean isLoggedinHTML(final Browser br) {
         return br.containsHTML(">\\s*You are Logged In");
     }
 
@@ -223,8 +223,6 @@ public class AnimeoutCom extends PluginForHost {
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 
