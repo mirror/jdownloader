@@ -44,9 +44,14 @@ public class UpvidBiz extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        /* 2021-05-05: Main domain = upvid.co, download domain = upvid.biz */
-        ret.add(new String[] { "upvid.biz", "upvid.co", "upvid.cloud" });
+        ret.add(new String[] { "upvid.cloud", "upvid.biz", "upvid.co" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-09-09: Main domain has changed from upvid.biz to upvid.cloud */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -105,5 +110,14 @@ public class UpvidBiz extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /**
+         * 2022-09-09: Disabled because website is using a strange redirect handling for another domain and altAvailablecheck is not really
+         * needed for this host as they're using the version which does not return the filesize.
+         */
+        return false;
     }
 }

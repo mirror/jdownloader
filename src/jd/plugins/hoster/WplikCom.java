@@ -65,13 +65,13 @@ public class WplikCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return false;
+            return true;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return false;
+            return true;
         }
     }
 
@@ -86,6 +86,7 @@ public class WplikCom extends XFileSharingProBasic {
             return 1;
         } else {
             /* Free(anonymous) and unknown account type */
+            /* 2022-09-09: Multiple chunks are allowed but they will globally speed-limit so it's no advantage. */
             return 1;
         }
     }
