@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
@@ -327,7 +328,7 @@ public class OldRAFDownload extends DownloadInterface {
             /* Workaround for server responses != 206 */
             if (this.downloadable.isServerComaptibleForByteRangeRequest()) {
                 rangeRequested = true;
-                request.getHeaders().put("Range", "bytes=" + (0) + " -");
+                request.getHeaders().put("Range", "bytes=" + (0) + "-");
             }
         } else {
             /* we request multiple ranges */
@@ -344,10 +345,11 @@ public class OldRAFDownload extends DownloadInterface {
             }
             throw new IllegalStateException("HTTP/1.1 416 Requested Range Not Satisfiable");
         } else if (request.getHttpConnection().getRange() == null) {
+            final String responseAcceptRanges = request.getHttpConnection().getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
             if (openRangeRequested && rangeRequested == false) {
                 logger.warning("FirstRange was openRange without any RangeRequest!");
-            } else if (openRangeRequested && rangeRequested && downloadable.isServerComaptibleForByteRangeRequest()) {
-                logger.info("FirstRange was openRange but no range response!");
+            } else if (openRangeRequested && rangeRequested && "bytes".equalsIgnoreCase(responseAcceptRanges)) {
+                logger.info("FirstRange was openRange but no range response but range accepted!");
             } else {
                 logger.warning("No Chunkload");
                 setChunkNum(1);
