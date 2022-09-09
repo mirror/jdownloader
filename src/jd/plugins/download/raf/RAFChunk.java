@@ -172,14 +172,14 @@ public class RAFChunk extends Thread {
             try {
                 if (connection.getRequestMethod() == RequestMethod.POST) {
                     if (StringUtils.isEmpty(end)) {
-                        connection.getRequest().getHeaders().put("Range", "bytes=" + start + " -");
+                        connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-");
                     } else {
                         connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
                     }
                     con = br.openRequestConnection(connection.getRequest());
                 } else {
                     if (StringUtils.isEmpty(end)) {
-                        br.getHeaders().put("Range", "bytes=" + start + " -");
+                        br.getHeaders().put("Range", "bytes=" + start + "-");
                     } else {
                         br.getHeaders().put("Range", "bytes=" + start + "-" + end);
                     }
