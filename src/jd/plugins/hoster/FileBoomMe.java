@@ -15,14 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
 
 /**
  *
@@ -33,6 +36,13 @@ import jd.plugins.HostPlugin;
 public class FileBoomMe extends K2SApi {
     public FileBoomMe(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private static Map<String, Object> HOST_MAP = new HashMap<String, Object>();
+
+    @Override
+    protected Map<String, Object> getHostMap() {
+        return HOST_MAP;
     }
 
     @Override

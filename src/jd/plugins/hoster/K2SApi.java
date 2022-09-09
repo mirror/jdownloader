@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,19 +21,6 @@ import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -61,6 +49,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -406,8 +407,8 @@ public abstract class K2SApi extends PluginForHost {
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
-                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
+                                 * fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -576,7 +577,6 @@ public abstract class K2SApi extends PluginForHost {
             max = 1;
             break;
         }
-        this.getMaxPrem().set(max);
         account.setMaxSimultanDownloads(max);
     }
 
@@ -647,13 +647,13 @@ public abstract class K2SApi extends PluginForHost {
                     // free non account, and free account download method.
                     currentIP.set(this.getIP());
                     if (account == null) {
-                        synchronized (blockedIPsHostMap) {
+                        final Map<String, Long> blockedIPsMap = this.getBlockedIPsMap();
+                        synchronized (blockedIPsMap) {
                             /* Load list of saved IPs + timestamp of last download */
-                            final Map<String, Long> blockedIPsMap = this.getBlockedIPsMap();
                             try {
                                 final Map<String, Long> lastdownloadmap = (Map<String, Long>) this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
                                 if (lastdownloadmap != null && blockedIPsMap.isEmpty()) {
-                                    blockedIPsHostMap.put(getHost(), lastdownloadmap);
+                                    blockedIPsMap.putAll(lastdownloadmap);
                                 }
                             } catch (final Exception ignore) {
                             }
@@ -1770,15 +1770,13 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private static Object                         CTRLLOCK                     = new Object();
-    private static Map<String, AtomicInteger>     maxPremMap                   = new HashMap<String, AtomicInteger>();
-    private static Map<String, AtomicInteger>     maxFreeMap                   = new HashMap<String, AtomicInteger>();
+    private static Object                CTRLLOCK                     = new Object();
     /**
      * Connection Management<br />
      * <b>NOTE:</b> CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]<br />
      * <b>@Override</b> when incorrect
      **/
-    protected static final AtomicInteger          totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -1793,63 +1791,28 @@ public abstract class K2SApi extends PluginForHost {
      *            (+1|-1)
      * @author raztoki
      */
-    private boolean                               downloadFlag                 = false;
-    private static Map<String, AtomicInteger>     freeSlotsInUseMap            = new HashMap<String, AtomicInteger>();
-    private static Map<String, AtomicInteger>     premSlotsInUseMap            = new HashMap<String, AtomicInteger>();
-    private static Map<String, Map<String, Long>> blockedIPsHostMap            = new HashMap<String, Map<String, Long>>();
+    private boolean                      downloadFlag                 = false;
 
-    private AtomicInteger getPremiumSlotsInUse() {
-        synchronized (premSlotsInUseMap) {
-            AtomicInteger ret = premSlotsInUseMap.get(getHost());
-            if (ret == null) {
-                ret = new AtomicInteger(0);
-                premSlotsInUseMap.put(getHost(), ret);
-            }
-            return ret;
-        }
-    }
+    protected abstract Map<String, Object> getHostMap();
 
-    private AtomicInteger getFreeSlotsInUse() {
-        synchronized (freeSlotsInUseMap) {
-            AtomicInteger ret = freeSlotsInUseMap.get(getHost());
+    protected <T> T getHostMapEntry(final String key, Type T, T defaultValue) {
+        final Map<String, Object> map = getHostMap();
+        synchronized (map) {
+            Object ret = map.get(key);
             if (ret == null) {
-                ret = new AtomicInteger(0);
-                freeSlotsInUseMap.put(getHost(), ret);
+                ret = defaultValue;
+                map.put(key, ret);
             }
-            return ret;
-        }
-    }
-
-    private AtomicInteger getMaxPrem() {
-        synchronized (maxPremMap) {
-            AtomicInteger ret = maxPremMap.get(getHost());
-            if (ret == null) {
-                ret = new AtomicInteger(1);
-                maxPremMap.put(getHost(), ret);
-            }
-            return ret;
-        }
-    }
-
-    private AtomicInteger getMaxFree() {
-        synchronized (maxFreeMap) {
-            AtomicInteger ret = maxFreeMap.get(getHost());
-            if (ret == null) {
-                ret = new AtomicInteger(1);
-                maxFreeMap.put(getHost(), ret);
-            }
-            return ret;
+            return (T) ret;
         }
     }
 
     private Map<String, Long> getBlockedIPsMap() {
-        synchronized (blockedIPsHostMap) {
-            return blockedIPsHostMap.getOrDefault(getHost(), new HashMap<String, Long>());
-        }
+        return getHostMapEntry("blockedIPsHostMap", HashMap.class, new HashMap<String, Long>());
     }
 
     private void controlSlot(final int num, final Account account) {
-        if (account == null || account.getType() == AccountType.FREE) {
+        if (isNoAccountOrFreeAccount(account)) {
             synchronized (freeDownloadHandling) {
                 final AbstractProxySelectorImpl proxySelector = getDownloadLink().getDownloadLinkController().getProxySelector();
                 AtomicLong[] store = freeDownloadHandling.get(proxySelector);
@@ -1866,49 +1829,31 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         synchronized (CTRLLOCK) {
-            final AtomicInteger premSlotsInUse = getPremiumSlotsInUse();
-            final AtomicInteger freeSlotsInUse = getFreeSlotsInUse();
-            final AtomicInteger maxPrem = getMaxPrem();
-            final AtomicInteger maxFree = getMaxFree();
+            final boolean useAccountMaps = account != null && !isNoAccountOrFreeAccount(account);
+            final String slotID = useAccountMaps ? account.getUser() : "FREE";
+            final AtomicInteger slotsInUse = useAccountMaps ? getAccountSlotsInUse(account) : getFreeSlotsInUse();
+            final AtomicInteger maxSlots = useAccountMaps ? getHostMaxAccount(account) : getHostMaxFree();
             if (num == 1) {
                 if (downloadFlag == false) {
-                    if (account == null) {
-                        freeSlotsInUse.incrementAndGet();
-                    } else {
-                        premSlotsInUse.incrementAndGet();
-                    }
+                    slotsInUse.incrementAndGet();
                     downloadFlag = true;
                 } else {
                     return;
                 }
             } else {
                 if (downloadFlag) {
-                    if (account == null) {
-                        freeSlotsInUse.decrementAndGet();
-                    } else {
-                        premSlotsInUse.decrementAndGet();
-                    }
+                    slotsInUse.decrementAndGet();
                     downloadFlag = false;
                 } else {
-                    if (account == null) {
-                        final int was = maxFree.get();
-                        maxFree.set(Math.max(1, was - 1));
-                        logger.info("maxFree(Penalty) was=" + was + "|now = " + maxFree.get());
-                    } else {
-                        final int was = maxPrem.get();
-                        maxPrem.set(Math.max(1, was - 1));
-                        logger.info("maxPrem(Penalty) was=" + was + "|now = " + maxPrem.get());
-                    }
+                    final int was = maxSlots.get();
+                    maxSlots.set(Math.max(1, was - 1));
+                    logger.info(slotID + ":maxSlots(Penalty) was=" + was + "|now = " + maxSlots.get());
                     return;
                 }
             }
-            if (account == null) {
-                final int was = maxFree.getAndSet(Math.min(freeSlotsInUse.get() + 1, totalMaxSimultanFreeDownload.get()));
-                logger.info("maxFree(Slot) was=" + was + "|now = " + maxFree.get());
-            } else {
-                final int was = maxPrem.getAndSet(Math.min(premSlotsInUse.get() + 1, account.getIntegerProperty("totalMaxSim", 20)));
-                logger.info("maxPrem(Slot) was=" + was + "|now = " + maxPrem.get());
-            }
+            final int maxSlotsPossible = useAccountMaps ? totalMaxSimultanFreeDownload.get() : Math.max(1, account.getMaxSimultanDownloads());
+            final int was = maxSlots.getAndSet(Math.min(slotsInUse.get() + 1, maxSlotsPossible));
+            logger.info(slotID + ":maxSlots(Slot) was=" + was + "|now = " + maxSlots.get() + "|max=" + maxSlotsPossible);
         }
     }
 
@@ -1932,14 +1877,25 @@ public abstract class K2SApi extends PluginForHost {
         return super.getMaxSimultanDownload(link, account, proxy);
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return this.getMaxPrem().get();
+    protected AtomicInteger getAccountSlotsInUse(final Account account) {
+        return getHostMapEntry("accountSlotsInUse_" + account.getId(), AtomicInteger.class, new AtomicInteger(0));
+    }
+
+    protected AtomicInteger getFreeSlotsInUse() {
+        return getHostMapEntry("freeSlotsInUse", AtomicInteger.class, new AtomicInteger(0));
+    }
+
+    protected AtomicInteger getHostMaxAccount(final Account account) {
+        return getHostMapEntry("maxAccount_" + account.getId(), AtomicInteger.class, new AtomicInteger(1));
+    }
+
+    protected AtomicInteger getHostMaxFree() {
+        return getHostMapEntry("maxFree", AtomicInteger.class, new AtomicInteger(1));
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxFree().get();
+        return this.getHostMaxFree().get();
     }
 
     protected final boolean isNoAccountOrFreeAccount(Account account) {
@@ -2032,6 +1988,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private long getPluginSavedLastDownloadTimestamp() {
+        final Map<String, Long> blockedIPsHostMap = getBlockedIPsMap();
         synchronized (blockedIPsHostMap) {
             final Map<String, Long> blockedIPsMap = this.getBlockedIPsMap();
             final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
