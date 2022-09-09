@@ -377,6 +377,10 @@ public class DirectHTTP extends antiDDoSForHost {
         } else {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", Property.NULL);
         }
+        if (optionSet.contains("avoidOpenRange")) {
+            logger.info("Avoid open range workaround!");
+            downloadLink.setProperty("ServerComaptibleForByteRangeRequest", Property.NULL);
+        }
         long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
         if (downloadLink.getProperty(BYPASS_CLOUDFLARE_BGJ) != null) {
             logger.info("Apply Cloudflare BGJ bypass");
@@ -537,8 +541,10 @@ public class DirectHTTP extends antiDDoSForHost {
         try {
             String downloadURL = getDownloadURL(downloadLink);
             if (downloadLink.getProperty("streamMod") != null || optionSet.contains("streamMod")) {
-                rangeHeader = true;
-                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
+                if (!optionSet.contains("avoidOpenRange")) {
+                    rangeHeader = true;
+                    br.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
+                }
             }
             if (downloadLink.getStringProperty("post", null) != null) {
                 urlConnection = openAntiDDoSRequestConnection(br, br.createPostRequest(downloadURL, downloadLink.getStringProperty("post", null)));
@@ -772,6 +778,11 @@ public class DirectHTTP extends antiDDoSForHost {
                 logger.info("looksLikeDownloadableContent result(" + retry + ",1):" + looksLikeDownloadableContent(urlConnection));
                 if (isCustomOffline(urlConnection)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String server = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_SERVER);
+                if (server != null && server.matches("(?i).*Apache/2.2.22.*")) {
+                    /* server has issues with open end range requests */
+                    optionSet.add("avoidOpenRange");
                 }
                 if (retryConnection(downloadLink, urlConnection) || (StringUtils.contains(urlConnection.getContentType(), "image") && (urlConnection.getLongContentLength() < 1024) || StringUtils.containsIgnoreCase(getFileNameFromHeader(urlConnection), "expired"))) {
                     if (downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null || RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
