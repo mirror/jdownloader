@@ -327,7 +327,7 @@ public class OldRAFDownload extends DownloadInterface {
             /* Workaround for server responses != 206 */
             if (this.downloadable.isServerComaptibleForByteRangeRequest()) {
                 rangeRequested = true;
-                request.getHeaders().put("Range", "bytes=" + (0) + "-");
+                request.getHeaders().put("Range", "bytes=" + (0) + " -");
             }
         } else {
             /* we request multiple ranges */
@@ -346,6 +346,8 @@ public class OldRAFDownload extends DownloadInterface {
         } else if (request.getHttpConnection().getRange() == null) {
             if (openRangeRequested && rangeRequested == false) {
                 logger.warning("FirstRange was openRange without any RangeRequest!");
+            } else if (openRangeRequested && rangeRequested && downloadable.isServerComaptibleForByteRangeRequest()) {
+                logger.info("FirstRange was openRange but no range response!");
             } else {
                 logger.warning("No Chunkload");
                 setChunkNum(1);
