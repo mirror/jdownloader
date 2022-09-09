@@ -12,14 +12,12 @@ import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
-
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class NewPackageDialog extends AbstractDialog<Object> {
-
     private SelectionInfo<?, ?> selection;
     private ExtTextField        tf;
     private FolderChooser       fc;
@@ -31,12 +29,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     }
 
     protected int getPreferredWidth() {
-
         return Math.min(Math.max(tf.getPreferredSize().width, fc.getPreferredSize().width) * 2, getDialog().getParent().getWidth());
-    }
-
-    protected void initFocus(final JComponent focus) {
-
     }
 
     private String getNewName() {
@@ -51,6 +44,11 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     }
 
     @Override
+    protected void initFocus(JComponent focus) {
+        super.initFocus(tf);
+    }
+
+    @Override
     protected Object createReturnValue() {
         return null;
     }
@@ -58,23 +56,17 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
         MigPanel p = new MigPanel("ins 0,wrap 2", "[][grow,fill]", "[]");
-
         p.add(new JLabel(_GUI.T.NewPackageDialog_layoutDialogContent_newname_()));
         tf = new ExtTextField();
-
         tf.setText(getNewName());
         p.add(tf);
-
         p.add(new JLabel(_GUI.T.NewPackageDialog_layoutDialogContent_saveto()));
         fc = new FolderChooser();
-
         File path = null;
         if (StringUtils.isNotEmpty(preSet)) {
             fc.setText(preSet);
         } else {
-
             path = LinkTreeUtils.getRawDownloadDirectory(selection.getFirstPackage());
-
             if (path != null) {
                 fc.setText(path.getAbsolutePath());
             }
@@ -86,7 +78,6 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     @Override
     protected void packed() {
         tf.addFocusListener(new FocusListener() {
-
             @Override
             public void focusLost(FocusEvent e) {
             }
@@ -96,7 +87,6 @@ public class NewPackageDialog extends AbstractDialog<Object> {
                 tf.selectAll();
             }
         });
-
         this.tf.requestFocusInWindow();
         this.tf.selectAll();
     }

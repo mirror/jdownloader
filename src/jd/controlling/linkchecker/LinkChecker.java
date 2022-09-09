@@ -362,7 +362,8 @@ public class LinkChecker<E extends CheckableLink> {
                                             this.plugin = first.getDefaultPlugin().getLazyP().newInstance(cl);
                                             this.plugin.setLogger(logger = LogController.getFastPluginLogger(plugin.getHost() + "_" + plugin.getLazyP().getClassName()));
                                             ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
-                                            this.plugin.setBrowser(new Browser());
+                                            final Browser br = plugin.createNewBrowserInstance();
+                                            this.plugin.setBrowser(br);
                                             this.plugin.init();
                                         } catch (final Throwable e) {
                                             LogController.CL().log(e);
@@ -559,7 +560,8 @@ public class LinkChecker<E extends CheckableLink> {
         AvailableStatus availableStatus = null;
         try {
             logger.clear();
-            plgToUse.setBrowser(new Browser());
+            final Browser br = plgToUse.createNewBrowserInstance();
+            plgToUse.setBrowser(br);
             plgToUse.reset();
             logger.info("Check FileInformation: " + link.getPluginPatternMatcher());
             plgToUse.setDownloadLink(link);

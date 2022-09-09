@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,6 +35,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TnaFlixCom extends PluginForHost {
@@ -321,7 +320,7 @@ public class TnaFlixCom extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         Browser brc = br.cloneBrowser();
-        brc.getHeaders().put("Range", "bytes=0-");
+        brc.getHeaders().put("Range", "bytes=0 -");
         final URLConnectionAdapter con = brc.openHeadConnection(dllink);
         final long fileSize = con.getCompleteContentLength();
         con.disconnect();

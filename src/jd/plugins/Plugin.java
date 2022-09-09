@@ -146,6 +146,10 @@ public abstract class Plugin implements ActionListener {
         return pattern.toString();
     }
 
+    public Browser createNewBrowserInstance() {
+        return new Browser();
+    }
+
     protected String getMappedHost(List<String[]> pluginDomains, String host) {
         for (final String[] domains : pluginDomains) {
             for (final String domain : domains) {

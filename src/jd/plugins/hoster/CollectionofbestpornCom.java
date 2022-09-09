@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -32,6 +29,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "collectionofbestporn.com" }, urls = { "https?://(www\\.)?collectionofbestporn\\.com/video/[a-z0-9\\-]+\\.html" })
 public class CollectionofbestpornCom extends PluginForHost {
@@ -110,7 +109,7 @@ public class CollectionofbestpornCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            br2.getHeaders().put("Range", "bytes=" + 0 + "-");
+            br2.getHeaders().put("Range", "bytes=0 -");
             try {
                 con = openConnection(br2, dllink);
             } catch (final BrowserException e) {

@@ -16,9 +16,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -47,7 +47,6 @@ public class FunimationCom extends PluginForDecrypt {
         // Attempt to login
         this.setBrowserExclusive();
         loadPlugin();
-        ((jd.plugins.hoster.FunimationCom) plugin).setBrowser(br);
         final Account account = AccountController.getInstance().getValidAccount(plugin);
         if (account != null) {
             ((jd.plugins.hoster.FunimationCom) plugin).login(account, false);
@@ -202,12 +201,9 @@ public class FunimationCom extends PluginForDecrypt {
 
     private PluginForHost plugin = null;
 
-    public void loadPlugin() {
+    public void loadPlugin() throws PluginException {
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("funimation.com");
-            if (plugin == null) {
-                throw new IllegalStateException("funimation.com hoster plugin not found!");
-            }
+            plugin = getNewPluginForHostInstance("funimation.com");
         }
     }
 

@@ -164,7 +164,7 @@ public class MySpassDe extends PluginForHost {
         }
         /* 2017-02-04: Without the Range Header we'll be limited to ~100 KB/s */
         link.setProperty("ServerComaptibleForByteRangeRequest", true);
-        br.getHeaders().put("Range", "bytes=" + 0 + "-");
+        br.getHeaders().put("Range", "bytes=0 -");
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);

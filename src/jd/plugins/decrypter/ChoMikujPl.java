@@ -22,13 +22,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -48,7 +44,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "https?://((?:www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" })
 public class ChoMikujPl extends PluginForDecrypt {
@@ -253,8 +251,8 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     /**
-     * Returns DownloadLink if single downloadable file is available according to html code in given browser instance. </br>
-     * This can be used to determine if the current page is a folder or a single file.
+     * Returns DownloadLink if single downloadable file is available according to html code in given browser instance. </br> This can be
+     * used to determine if the current page is a folder or a single file.
      */
     private DownloadLink crawlSingleFile(final Browser br) {
         final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
@@ -497,10 +495,9 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     /**
-     * Handles all kind of folder-passwords. </br>
-     * Important: Folders can have special "user login folder password" protection AND simple "folder password" protections. </br>
-     * Subfolders may require different passwords than root folders so even though we store working passwords and retry them, users will be
-     * asked for passwords countless times when adding big folders!
+     * Handles all kind of folder-passwords. </br> Important: Folders can have special "user login folder password" protection AND simple
+     * "folder password" protections. </br> Subfolders may require different passwords than root folders so even though we store working
+     * passwords and retry them, users will be asked for passwords countless times when adding big folders!
      */
     public void passwordHandling(final Object param) throws Exception {
         synchronized (LOCK) {
@@ -701,16 +698,13 @@ public class ChoMikujPl extends PluginForDecrypt {
 
     private void submitForm(final Browser br, final Form form) throws Exception {
         loadPlugin();
-        ((jd.plugins.hoster.ChoMikujPl) plugin).setBrowser(br);
+        plugin.setBrowser(br);
         ((jd.plugins.hoster.ChoMikujPl) plugin).submitForm(form);
     }
 
-    public void loadPlugin() {
+    public void loadPlugin() throws PluginException {
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("chomikuj.pl");
-            if (plugin == null) {
-                throw new IllegalStateException(getHost() + " hoster plugin not found!");
-            }
+            plugin = getNewPluginForHostInstance("chomikuj.pl");
         }
     }
 
