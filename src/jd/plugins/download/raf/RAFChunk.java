@@ -9,16 +9,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.download.Downloadable;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.ReusableByteArrayOutputStream;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
@@ -27,6 +22,12 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
+
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.download.Downloadable;
 
 public class RAFChunk extends Thread {
     private static final String             UNEXPECTED_RANGE_HEADER_FORMAT         = "Unexpected Range Header Format";
@@ -170,10 +171,18 @@ public class RAFChunk extends Thread {
             boolean returnConnection = false;
             try {
                 if (connection.getRequestMethod() == RequestMethod.POST) {
-                    connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
+                    if (StringUtils.isEmpty(end)) {
+                        connection.getRequest().getHeaders().put("Range", "bytes=" + start + " -");
+                    } else {
+                        connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
+                    }
                     con = br.openRequestConnection(connection.getRequest());
                 } else {
-                    br.getHeaders().put("Range", "bytes=" + start + "-" + end);
+                    if (StringUtils.isEmpty(end)) {
+                        br.getHeaders().put("Range", "bytes=" + start + " -");
+                    } else {
+                        br.getHeaders().put("Range", "bytes=" + start + "-" + end);
+                    }
                     con = br.openGetConnection(connection.getURL() + "");
                 }
                 if (!con.isOK()) {
