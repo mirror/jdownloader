@@ -49,6 +49,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.FilePackageView;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
@@ -291,8 +292,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         return plugin;
     }
 
-    private Browser getPluginBrowser() {
-        return new Browser();
+    private Browser getPluginBrowser(final Plugin plugin) {
+        return plugin.createNewBrowserInstance();
     }
 
     protected void invalidateLastChallengeResponse(LogSource logger, PluginForHost plugin) {
@@ -325,7 +326,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 PluginClassLoader.setThreadPluginClassLoaderChild(defaultCL, defaultCL);
                 // this.setContextClassLoader(defaultCL);
                 linkPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(defaultCL);
-                linkPlugin.setBrowser(getPluginBrowser());
+                final Browser br = getPluginBrowser(linkPlugin);
+                linkPlugin.setBrowser(br);
                 linkPlugin.setLogger(downloadLogger);
                 linkPlugin.setDownloadLink(downloadLink);
                 linkPlugin.init();
@@ -379,7 +381,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             PluginClassLoader.setThreadPluginClassLoaderChild(handleCL, handleCL);
             // this.setContextClassLoader(handleCL);
             handlePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(handleCL);
-            handlePlugin.setBrowser(getPluginBrowser());
+            final Browser br = getPluginBrowser(handlePlugin);
+            handlePlugin.setBrowser(br);
             handlePlugin.setLogger(downloadLogger);
             handlePlugin.setDownloadLink(downloadLink);
             handlePlugin.init();

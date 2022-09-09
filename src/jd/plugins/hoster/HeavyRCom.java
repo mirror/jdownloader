@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "https?://(?:www\\.)?heavy\\-r\\.com/video/\\d+(?:/[^/]*/?)?" })
 public class HeavyRCom extends antiDDoSForHost {
-
     public HeavyRCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +38,6 @@ public class HeavyRCom extends antiDDoSForHost {
     private static final String NICE_HOST         = "reavy-r.com";
     private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|-)", "");
     private static final String NORESUME          = NICE_HOSTproperty + "NORESUME";
-
     private String              dllink            = null;
 
     @Override
@@ -88,7 +85,7 @@ public class HeavyRCom extends antiDDoSForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            br2.getHeaders().put("Range", "bytes=" + 0 + "-");
+            br2.getHeaders().put("Range", "bytes=0 -");
             con = openConnection(br2, dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());

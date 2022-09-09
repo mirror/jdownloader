@@ -38,7 +38,6 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -60,6 +59,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -437,17 +437,8 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         return connect();
     }
 
-    protected long[] parseRange(String bytes) {
-        final String from = new Regex(bytes, "bytes\\s*=\\s*(\\d*)-").getMatch(0);
-        final String to = new Regex(bytes, "bytes\\s*=\\s*.*?-\\s*(\\d*)").getMatch(0);
-        final long[] ret = new long[] { -1l, -1l };
-        if (StringUtils.isNotEmpty(from)) {
-            ret[0] = Long.parseLong(from);
-        }
-        if (StringUtils.isNotEmpty(to)) {
-            ret[1] = Long.parseLong(to);
-        }
-        return ret;
+    protected long[] parseRequestRange(String bytes) {
+        return HTTPConnectionUtils.parseRequestRange(bytes);
     }
 
     /**
@@ -634,7 +625,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
             downloadable.updateFinalFileName();
             final long contentLength = getCompleteContentLength(connection, true);
             final String requestContentRange = connection.getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE);
-            final long[] requestedRange = parseRange(requestContentRange);
+            final long[] requestedRange = parseRequestRange(requestContentRange);
             final String responseContentEncoding = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
             final String responseAcceptRanges = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH);
             final long[] responseContentRange = connection.getRange();
@@ -851,7 +842,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                     }
                 }
                 final String range = connection.getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE);
-                long[] parsedRange = parseRange(range);
+                long[] parsedRange = parseRequestRange(range);
                 if ((range == null || (parsedRange[0] == 0 && parsedRange[1] < 0)) && connection.getLongContentLength() >= 0 && connection.isOK()) {
                     /* we have no range request/complete file request and connection is okay, so we can use the content-length */
                     return connection.getLongContentLength();

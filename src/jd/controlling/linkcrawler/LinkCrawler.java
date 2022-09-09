@@ -2696,7 +2696,8 @@ public class LinkCrawler {
                             lct.setVerbose(true);
                             lct.setDebug(true);
                         }
-                        wplg.setBrowser(new Browser());
+                        final Browser br = wplg.createNewBrowserInstance();
+                        wplg.setBrowser(br);
                         wplg.setLogger(logger);
                         wplg.init();
                         String url = possibleCryptedLink.getURL();
@@ -3369,7 +3370,8 @@ public class LinkCrawler {
                     return;
                 }
                 final AtomicReference<LinkCrawler> nextLinkCrawler = new AtomicReference<LinkCrawler>(this);
-                wplg.setBrowser(new Browser());
+                final Browser br = wplg.createNewBrowserInstance();
+                wplg.setBrowser(br);
                 LogInterface oldLogger = null;
                 boolean oldVerbose = false;
                 boolean oldDebug = false;

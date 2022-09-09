@@ -19,6 +19,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.resources.AWUTheme;
@@ -45,11 +50,6 @@ import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
-
 public abstract class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
         LIB,
@@ -64,7 +64,6 @@ public abstract class AbstractFFmpegBinary {
         WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
         DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
         HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
-
         private final Pattern  pattern;
         private final FLAGTYPE type;
 
@@ -660,7 +659,7 @@ public abstract class AbstractFFmpegBinary {
                             if (fileBytesMap.getFinalSize() > 0) {
                                 logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
                                 final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
-                                getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + "-" + unMarkedAreas.get(0)[1]);
+                                getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + " - " + unMarkedAreas.get(0)[1]);
                             }
                             URLConnectionAdapter connection = null;
                             try {
