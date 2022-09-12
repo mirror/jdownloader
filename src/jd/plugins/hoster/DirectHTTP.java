@@ -77,12 +77,14 @@ import org.jdownloader.auth.Login;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
-"https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
+        "https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
 public class DirectHTTP extends antiDDoSForHost {
     public static final String  ENDINGS                  = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
     public static final String  NORESUME                 = "nochunkload";
@@ -120,6 +122,28 @@ public class DirectHTTP extends antiDDoSForHost {
             preProcessDirectHTTP(ret.get(0), data);
         }
         return ret;
+    }
+
+    @Override
+    public PluginForHost assignPlugin(PluginFinder pluginFinder, DownloadLink link) {
+        if (pluginFinder != null && DirectHTTP.class.equals(getClass()) && getHost().equals(link.getHost())) {
+            try {
+                final List<LazyHostPlugin> assignPlugins = pluginFinder.listAssignPlugins();
+                for (final LazyHostPlugin lazyAssignPlugin : assignPlugins) {
+                    try {
+                        PluginForHost assignPlugin = pluginFinder.getPlugin(lazyAssignPlugin);
+                        if ((assignPlugin = assignPlugin.assignPlugin(pluginFinder, link)) != null) {
+                            return assignPlugin;
+                        }
+                    } catch (final Throwable e) {
+                        pluginFinder.getLogger().log(e);
+                    }
+                }
+            } catch (final Throwable e) {
+                pluginFinder.getLogger().log(e);
+            }
+        }
+        return super.assignPlugin(pluginFinder, link);
     }
 
     private void preProcessDirectHTTP(final DownloadLink downloadLink, final String data) {
@@ -387,7 +411,9 @@ public class DirectHTTP extends antiDDoSForHost {
             resume = false;
             chunks = 1;
         }
-        logger.info("ServerComaptibleForByteRangeRequest:" + downloadLink.getProperty("ServerComaptibleForByteRangeRequest"));
+        resume = isResumable(downloadLink, optionSet, resume);
+        chunks = getMaxChunks(downloadLink, optionSet, chunks);
+        logger.info("Resumable:" + resume + "|MaxChunks:" + chunks + "|ServerComaptibleForByteRangeRequest:" + downloadLink.getProperty("ServerComaptibleForByteRangeRequest"));
         boolean instantRetryFlag = true;
         instantRetry: while (instantRetryFlag) {
             instantRetryFlag = false;
@@ -501,6 +527,14 @@ public class DirectHTTP extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    protected int getMaxChunks(DownloadLink downloadLink, Set<String> optionSet, int chunks) {
+        return chunks;
+    }
+
+    protected boolean isResumable(DownloadLink downloadLink, Set<String> optionSet, boolean resume) {
+        return resume;
     }
 
     private String customDownloadURL = null;

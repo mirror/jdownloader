@@ -31,6 +31,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "LinkCrawlerRetry" }, urls = { "" })
 public class LinkCrawlerRetry extends PluginForHost {
@@ -53,12 +54,13 @@ public class LinkCrawlerRetry extends PluginForHost {
     }
 
     @Override
-    public boolean assignPlugin(DownloadLink link) {
-        if (super.assignPlugin(link)) {
+    public PluginForHost assignPlugin(PluginFinder pluginFinder, final DownloadLink link) {
+        final PluginForHost ret = super.assignPlugin(pluginFinder, link);
+        if (ret != null) {
             link.setAvailableStatus(AvailableStatus.UNCHECKED);
-            return true;
+            return ret;
         } else {
-            return false;
+            return null;
         }
     }
 

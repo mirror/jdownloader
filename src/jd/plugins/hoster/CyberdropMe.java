@@ -2,6 +2,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -9,9 +10,11 @@ import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
+import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -46,8 +49,52 @@ public class CyberdropMe extends DirectHTTP {
     }
 
     @Override
+    protected int getMaxChunks(DownloadLink downloadLink, Set<String> optionSet, int chunks) {
+        if ("bunkr.is".equals(getHost()) && chunks != 1) {
+            return -3;
+        } else {
+            return chunks;
+        }
+    }
+
+    @Override
+    protected int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if ("bunkr.is".equals(getHost())) {
+            return 1;
+        } else {
+            return super.getMaxSimultanDownload(link, account);
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        if ("bunkr.is".equals(getHost())) {
+            return 1;
+        } else {
+            return super.getMaxSimultanFreeDownloadNum();
+        }
+    }
+
+    @Override
+    public PluginForHost assignPlugin(PluginFinder pluginFinder, DownloadLink link) {
+        if (pluginFinder != null && CyberdropMe.class.equals(getClass()) && !getHost().equals(link.getHost())) {
+            if (false && link.getPluginPatternMatcher().matches(CyberdropMeAlbum.TYPE_CDN) || link.getPluginPatternMatcher().matches(CyberdropMeAlbum.TYPE_STREAM)) {
+                return super.assignPlugin(pluginFinder, link);
+            } else {
+                return null;
+            }
+        } else {
+            return super.assignPlugin(pluginFinder, link);
+        }
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[0];
+        if ("bunkr.is".equals(getHost())) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.ASSIGN_PLUGIN };
+        } else {
+            return new LazyPlugin.FEATURE[0];
+        }
     }
 
     @Override

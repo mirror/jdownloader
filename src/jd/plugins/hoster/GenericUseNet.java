@@ -67,7 +67,7 @@ public class GenericUseNet extends UseNet {
     public void handleFree(DownloadLink link) throws Exception {
         if ("genericusenet".equals(link.getHost())) {
             final LazyHostPlugin usenetPlugin = HostPluginController.getInstance().get("usenet");
-            usenetPlugin.getPrototype(null).assignPlugin(link);
+            usenetPlugin.getPrototype(null).assignPlugin(null, link);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -78,7 +78,7 @@ public class GenericUseNet extends UseNet {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         if ("genericusenet".equals(link.getHost())) {
             final LazyHostPlugin usenetPlugin = HostPluginController.getInstance().get("usenet");
-            usenetPlugin.getPrototype(null).assignPlugin(link);
+            usenetPlugin.getPrototype(null).assignPlugin(null, link);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

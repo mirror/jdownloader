@@ -612,7 +612,10 @@ public abstract class Plugin implements ActionListener {
             final Matcher matcher = getMatcher();
             synchronized (matcher) {
                 try {
-                    return matcher.reset(data).find();
+                    if (matcher.reset(data).find()) {
+                        final int matchLength = matcher.end() - matcher.start();
+                        return matchLength > 0;
+                    }
                 } finally {
                     matcher.reset("");
                 }

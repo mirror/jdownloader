@@ -1,51 +1,51 @@
 package org.jdownloader.settings.advanced;
 
-import java.io.File;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.Application;
-import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
 
 public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable implements Storable {
     public AdvancedConfigAPIEntry(AdvancedConfigEntry entry, boolean returnDescription, boolean addValue, boolean defaultValues) {
-        KeyHandler<?> kh = entry.getKeyHandler();
-        if (returnDescription && StringUtils.isNotEmpty(entry.getDescription())) {
+        final KeyHandler<?> kh = entry.getKeyHandler();
+        if (returnDescription && entry.hasDescription() && StringUtils.isNotEmpty(entry.getDescription())) {
             setDocs(entry.getDescription());
         }
         setType(kh.getTypeString());
         final String configInterfaceName = kh.getStorageHandler().getConfigInterface().getName();
         setInterfaceName(configInterfaceName);
         setKey(createKey(kh));
+        final AbstractType abstractType;
         try {
-            AbstractType abstractType = AbstractType.valueOf(kh.getAbstractType().name());
+            abstractType = AbstractType.valueOf(kh.getAbstractType().name());
             setAbstractType(abstractType);
         } catch (Exception e) {
             throw new WTFException(e);
         }
-        final File expectedPath = Application.getResource("cfg/" + configInterfaceName);
-        String storage = null;
-        final File storagePath = kh.getStorageHandler().getPath();
-        if (storagePath != null && !expectedPath.equals(storagePath)) {
-            storage = Files.getRelativePath(Application.getTemp().getParentFile(), storagePath);
-            if (StringUtils.isEmpty(storage)) {
-                storage = storagePath.getAbsolutePath();
-            }
-        }
+        final String storage = kh.getStorageHandler().getStorageID();
         if (storage != null) {
             setStorage(storage);
         }
-        Object value = kh.getValue();
         if (addValue) {
-            setValue(value);
+            final Object value = kh.getValue();
+            if (value != null && AbstractType.OBJECT.equals(abstractType)) {
+                // TODO: dirty workaround for Map in webinterface (eg waitformap)
+                setValue(JSonStorage.toString(value));
+            } else {
+                setValue(value);
+            }
         }
         if (defaultValues) {
-            Object def = entry.getDefault();
-            setDefaultValue(def);
+            final Object defValue = entry.getDefault();
+            if (defValue != null && AbstractType.OBJECT.equals(abstractType)) {
+                // TODO: dirty workaround for Map in webinterface (eg waitformap)
+                setDefaultValue(JSonStorage.toString(defValue));
+            } else {
+                setDefaultValue(defValue);
+            }
         }
     }
 
@@ -55,8 +55,9 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
             return getterName.substring(2);
         } else if (getterName.startsWith("get")) {
             return getterName.substring(3);
+        } else {
+            return getterName;
         }
-        return getterName;
     }
 
     @AllowNonStorableObjects

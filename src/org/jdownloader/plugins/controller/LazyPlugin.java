@@ -143,6 +143,17 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             public String getTooltip() {
                 return "INTERNAL";
             }
+        },
+        ASSIGN_PLUGIN {
+            @Override
+            public String getLabel() {
+                return "ASSIGN_PLUGIN";
+            }
+
+            @Override
+            public String getTooltip() {
+                return "ASSIGN_PLUGIN";
+            }
         };
         public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());
 
@@ -272,7 +283,10 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             final Matcher matcher = getMatcher();
             synchronized (matcher) {
                 try {
-                    return matcher.reset(url).find();
+                    if (matcher.reset(url).find()) {
+                        final int matchLength = matcher.end() - matcher.start();
+                        return matchLength > 0;
+                    }
                 } finally {
                     matcher.reset("");
                 }
@@ -281,7 +295,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         return false;
     }
 
-    public abstract T getPrototype(PluginClassLoaderChild classLoader, final boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException ;
+    public abstract T getPrototype(PluginClassLoaderChild classLoader, final boolean fallBackPlugin) throws UpdateRequiredClassNotFoundException;
 
     public synchronized T getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         if (classLoader != null && classLoader != getClassLoader(false)) {

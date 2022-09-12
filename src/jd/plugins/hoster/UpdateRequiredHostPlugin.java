@@ -11,6 +11,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 /**
  * This plugin only serves as a FallBack in case another plugin could not be initiated
@@ -67,12 +68,13 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
     }
 
     @Override
-    public boolean assignPlugin(DownloadLink link) {
+    public PluginForHost assignPlugin(PluginFinder pluginFinder, final DownloadLink link) {
         if (link != null) {
             link.setDefaultPlugin(this);
-            return true;
+            return this;
+        } else {
+            return null;
         }
-        return false;
     }
 
     @Override
@@ -80,8 +82,9 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
         if (account != null) {
             account.setPlugin(this);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
