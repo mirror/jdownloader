@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -39,10 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.XHamsterCom;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterGallery extends PluginForDecrypt {
@@ -118,9 +118,7 @@ public class XHamsterGallery extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        /* Force English language */
-        final String replaceStr = new Regex(param.getCryptedUrl(), "(https?://(?:www\\.)?[^/]+/)").getMatch(0);
-        param.setCryptedUrl(param.getCryptedUrl().replace(replaceStr, "https://xhamster.com/"));
+        param.setCryptedUrl(XHamsterCom.getCorrectedURL(param.getCryptedUrl()));
         br.addAllowedResponseCodes(410);
         br.addAllowedResponseCodes(423);
         br.addAllowedResponseCodes(452);

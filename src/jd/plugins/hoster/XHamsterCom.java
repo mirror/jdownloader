@@ -81,7 +81,7 @@ public class XHamsterCom extends PluginForHost {
         return ret;
     }
 
-    private static String[] getDeadDomains() {
+    public static String[] getDeadDomains() {
         /* Add dead domains here so plugin can correct domain in added URL if it is a dead domain. */
         return new String[] {};
     }
@@ -180,33 +180,40 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
-    private static final String TYPE_MOBILE    = "(?i).+m\\.xhamster\\.+";
-    private static final String TYPE_EMBED     = "(?i)^https?://[^/]+/(?:x?embed\\.php\\?video=|embed/)([A-Za-z0-9\\-]+)";
+    public static final String  TYPE_MOBILE    = "(?i).+m\\.xhamster\\.+";
+    public static final String  TYPE_EMBED     = "(?i)^https?://[^/]+/(?:x?embed\\.php\\?video=|embed/)([A-Za-z0-9\\-]+)";
     private static final String TYPE_PREMIUM   = ".+(xhamsterpremium\\.com|faphouse\\.com).+";
     private static final String NORESUME       = "NORESUME";
     private static Object       ctrlLock       = new Object();
     private final String        recaptchav2    = "<div class=\"text\">In order to watch this video please prove you are a human\\.\\s*<br> Click on checkbox\\.</div>";
     private String              dllink         = null;
     private String              vq             = null;
-    private static final String DOMAIN_CURRENT = "xhamster.com";
+    public static final String  DOMAIN_CURRENT = "xhamster.com";
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(getCorrectedURL(link.getPluginPatternMatcher()));
     }
 
-    private String getCorrectedURL(String url) {
-        url = url.replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://");
-        if (url.matches(TYPE_MOBILE) || url.matches(TYPE_EMBED)) {
-            url = "https://xhamster.com/videos/" + new Regex(url, TYPE_EMBED).getMatch(0);
-        } else {
-            final String thisdomain = new Regex(url, "https?://(?:www\\.)?([^/]+)/.+").getMatch(0);
-            for (final String deadDomain : getDeadDomains()) {
-                if (StringUtils.equalsIgnoreCase(deadDomain, thisdomain)) {
-                    url = url.replaceFirst(Pattern.quote(thisdomain), DOMAIN_CURRENT);
-                    break;
-                }
+    public static String getCorrectedURL(String url) {
+        /*
+         * Remove language-subdomain to enforce original/English language else xhamster may auto-translate video-titles based on that
+         * subdomain.
+         */
+        url = url.replaceFirst("://(www\\.)?([a-z]{2}\\.)?", "://");
+        final String domainFromURL = Browser.getHost(url, true);
+        String newDomain = domainFromURL;
+        for (final String deadDomain : getDeadDomains()) {
+            if (StringUtils.equalsIgnoreCase(domainFromURL, deadDomain)) {
+                newDomain = DOMAIN_CURRENT;
+                break;
             }
+        }
+        if (url.matches(TYPE_MOBILE) || url.matches(TYPE_EMBED)) {
+            url = "https://" + newDomain + "/videos/" + new Regex(url, TYPE_EMBED).getMatch(0);
+        } else {
+            /* Change domain if needed */
+            url = url.replaceFirst(Pattern.quote(domainFromURL), newDomain);
         }
         return url;
     }
@@ -368,7 +375,7 @@ public class XHamsterCom extends PluginForHost {
                     return AvailableStatus.TRUE;
                 } else if (br.containsHTML("<title>Page was deleted</title>")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (isPasswordProtected()) {
+                } else if (isPasswordProtected(br)) {
                     return AvailableStatus.TRUE;
                 } else {
                     String exactErrorMessage = br.getRegex("class=\"item-status not-found\">\\s*<i class=\"xh-icon smile-sad cobalt\"></i>\\s*<div class=\"status-text\">([^<>]+)</div>").getMatch(0);
@@ -438,7 +445,7 @@ public class XHamsterCom extends PluginForHost {
                 if (onlyfor != null) {
                     link.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
                     return AvailableStatus.TRUE;
-                } else if (isPasswordProtected()) {
+                } else if (isPasswordProtected(br)) {
                     return AvailableStatus.TRUE;
                 }
                 if (link.getFinalFileName() == null || dllink == null) {
@@ -490,7 +497,7 @@ public class XHamsterCom extends PluginForHost {
         return friendsname;
     }
 
-    private boolean isPasswordProtected() {
+    private boolean isPasswordProtected(final Browser br) {
         return br.containsHTML("class=\"video\\-password\\-block\"");
     }
 
@@ -823,7 +830,7 @@ public class XHamsterCom extends PluginForHost {
             final String onlyfor = videoOnlyForFriendsOf();
             if (onlyfor != null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } else if (isPasswordProtected()) {
+            } else if (isPasswordProtected(br)) {
                 final boolean passwordHandlingBroken = true;
                 if (passwordHandlingBroken) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password-protected handling broken svn.jdownloader.org/issues/88690");
@@ -860,7 +867,7 @@ public class XHamsterCom extends PluginForHost {
                 } else {
                     /* Old way */
                     br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
-                    if (isPasswordProtected()) {
+                    if (isPasswordProtected(br)) {
                         link.setDownloadPassword(null);
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                     }

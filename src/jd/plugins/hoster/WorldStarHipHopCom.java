@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -62,7 +64,8 @@ public class WorldStarHipHopCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+            /* Dummy pattern as crawler-plugin decides which links are handled by this hosterplugin. */
+            ret.add("");
         }
         return ret.toArray(new String[0]);
     }
@@ -85,11 +88,20 @@ public class WorldStarHipHopCom extends PluginForHost {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = null;
-        if (br.containsHTML("<title>Video: No Video </title>") || !this.canHandle(br.getURL())) {
+        return requestFileInformation(link, br);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Browser br) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {
+        String filename = null;
+        if (br.containsHTML("(?i)<title>\\s*Video: No Video\\s*</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {
             link.setName(new Regex(link.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0));
             link.getLinkStatus().setStatusText("Video temporarily unavailable");
             return AvailableStatus.TRUE;
@@ -98,11 +110,8 @@ public class WorldStarHipHopCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)( | Video )?</title>").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) {
-            filename = Encoding.htmlDecode(filename.trim());
+            filename = Encoding.htmlDecode(filename).trim();
             link.getLinkStatus().setStatusText("This video is blocked in your country");
             link.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
@@ -113,39 +122,36 @@ public class WorldStarHipHopCom extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex("v=(https?://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
                 if (dllink == null) {
-                    getURLUniversal();
+                    dllink = getURLUniversal(br);
                 }
             }
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!StringUtils.isEmpty(filename)) {
+            filename = Encoding.htmlDecode(filename).trim();
+            filename = encodeUnicode(filename);
+            link.setFinalFileName(filename + ".mp4");
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
-        String ext = ".mp4";
-        if (!dllink.endsWith(".mp4")) {
-            ext = ".flv";
-        }
-        link.setFinalFileName(filename + ext);
-        br.getHeaders().put("Referer", "http://hw-static.worldstarhiphop.com/videos/wplayer/NAPP3e.swf");
-        dllink = dllink.replace(" ", "");
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
+        if (!StringUtils.isEmpty(dllink)) {
+            br.getHeaders().put("Referer", "http://hw-static.worldstarhiphop.com/videos/wplayer/NAPP3e.swf");
+            dllink = dllink.replace(" ", "");
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br2.openGetConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -183,11 +189,12 @@ public class WorldStarHipHopCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void getURLUniversal() {
-        dllink = br.getRegex("addVariable\\(\"file\",\"(https?://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(https?://hw\\-videos\\.worldstarhiphop\\.com/u/vid/.*?)\"").getMatch(0);
+    private String getURLUniversal(final Browser br) {
+        String directurl = br.getRegex("addVariable\\(\"file\",\"(https?://.*?)\"").getMatch(0);
+        if (directurl == null) {
+            directurl = br.getRegex("\"(https?://hw\\-videos\\.worldstarhiphop\\.com/u/vid/.*?)\"").getMatch(0);
         }
+        return directurl;
     }
 
     @Override

@@ -10,9 +10,23 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 
 public interface XvideosComConfigCore extends PluginConfigInterface {
+    final String                    text_EnableFastLinkcheckForHostPlugin = "Enable fast linkcheck for host plugin? If enabled, filesize won't be displayed until download is started!";
+    final String                    text_PreferHLSStreamDownload          = "Prefer HLS download?";
+    public static final TRANSLATION TRANSLATION                           = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getEnableFastLinkcheckForHostPlugin_label() {
+            return text_EnableFastLinkcheckForHostPlugin;
+        }
+
+        public String getPreferHLSStreamDownload_label() {
+            return text_PreferHLSStreamDownload;
+        }
+    }
+
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Enable fast linkcheck for host plugin? If enabled, filesize won't be displayed until download is started!")
+    @DescriptionForConfigEntry(text_EnableFastLinkcheckForHostPlugin)
     @Order(15)
     boolean isEnableFastLinkcheckForHostPlugin();
 
@@ -21,7 +35,7 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @TakeValueFromSubconfig("Prefer HLS")
-    @DescriptionForConfigEntry("Prefer HLS download?")
+    @DescriptionForConfigEntry(text_PreferHLSStreamDownload)
     @Order(30)
     boolean isPreferHLSStreamDownload();
 
