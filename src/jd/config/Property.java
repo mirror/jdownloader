@@ -227,9 +227,9 @@ public class Property implements Serializable {
             } else {
                 final String stringValue = String.valueOf(value);
                 if (stringValue != null) {
-                    if ("true".equalsIgnoreCase(stringValue)) {
+                    if ("true".equalsIgnoreCase(stringValue) || "1".equals(stringValue)) {
                         return true;
-                    } else if ("false".equalsIgnoreCase(stringValue)) {
+                    } else if ("false".equalsIgnoreCase(stringValue) || "0".equals(stringValue)) {
                         return false;
                     } else {
                         return stringValue.length() > 0;
