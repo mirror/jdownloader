@@ -23,9 +23,11 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MediafilesCc extends YetiShareCore {
@@ -56,16 +58,17 @@ public class MediafilesCc extends YetiShareCore {
     }
 
     @Override
-    public boolean assignPlugin(DownloadLink link) {
-        final boolean correctDownloadLink = !StringUtils.equals(link.getHost(), getHost());
-        if (super.assignPlugin(link)) {
+    public PluginForHost assignPlugin(PluginFinder pluginFinder, final DownloadLink link) {
+        final PluginForHost ret = super.assignPlugin(pluginFinder, link);
+        if (ret != null) {
+            final boolean correctDownloadLink = !StringUtils.equals(link.getHost(), getHost());
             if (correctDownloadLink) {
                 // old domains are no longer working
                 correctDownloadLink(link);
             }
-            return true;
+            return ret;
         } else {
-            return false;
+            return null;
         }
     }
 
