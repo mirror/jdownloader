@@ -120,7 +120,7 @@ public class WorldStarHipHopCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename.trim());
+        filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
         String ext = ".mp4";
         if (!dllink.endsWith(".mp4")) {

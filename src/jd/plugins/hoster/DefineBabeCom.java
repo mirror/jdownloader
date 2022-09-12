@@ -57,7 +57,7 @@ public class DefineBabeCom extends PluginForHost {
     public DefineBabeCom(PluginWrapper wrapper) {
         super(wrapper);
         /* Don't overload the server. */
-        this.setStartIntervall(3 * 1000l);
+        this.setStartIntervall(5 * 1000l);
     }
 
     @Override
