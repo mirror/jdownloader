@@ -12,6 +12,10 @@ import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 public interface XvideosComConfigCore extends PluginConfigInterface {
     final String                    text_EnableFastLinkcheckForHostPlugin = "Enable fast linkcheck for host plugin? If enabled, filesize won't be displayed until download is started!";
     final String                    text_PreferHLSStreamDownload          = "Prefer HLS download?";
+    final String                    text_TryToRecognizeLimit              = "Try to recognize limit?";
+    final String                    text_PreferredHLSQuality              = "Select preferred HLS download quality. If your preferred HLS quality is not found, best quality will be downloaded instead.";
+    final String                    text_PreferredHTTPQuality             = "Select preferred HTTP download quality. If your preferred HTTP quality is not found, best quality will be downloaded instead.";
+    final String                    text_PreferredOfficialDownloadQuality = "Select preferred official download quality ('download' button). If your preferred quality is not found, best quality will be downloaded instead.";
     public static final TRANSLATION TRANSLATION                           = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -21,6 +25,22 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
 
         public String getPreferHLSStreamDownload_label() {
             return text_PreferHLSStreamDownload;
+        }
+
+        public String getPreferredHLSQuality_label() {
+            return text_PreferredHLSQuality;
+        }
+
+        public String getPreferredHTTPQuality_label() {
+            return text_PreferredHTTPQuality;
+        }
+
+        public String getPreferredOfficialDownloadQuality_label() {
+            return text_PreferredOfficialDownloadQuality;
+        }
+
+        public String getTryToRecognizeLimit_label() {
+            return text_TryToRecognizeLimit;
         }
     }
 
@@ -118,7 +138,7 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("Q2160P")
-    @DescriptionForConfigEntry("Select preferred HLS download quality. If your preferred HLS quality is not found, best quality will be downloaded instead.")
+    @DescriptionForConfigEntry(text_PreferredHLSQuality)
     @Order(100)
     PreferredHLSQuality getPreferredHLSQuality();
 
@@ -126,7 +146,7 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("HIGH")
-    @DescriptionForConfigEntry("Select preferred HTTP download quality. If your preferred HTTP quality is not found, best quality will be downloaded instead.")
+    @DescriptionForConfigEntry(text_PreferredHTTPQuality)
     @Order(120)
     PreferredHTTPQuality getPreferredHTTPQuality();
 
@@ -134,7 +154,7 @@ public interface XvideosComConfigCore extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("Q2160P")
-    @DescriptionForConfigEntry("Select preferred official download quality ('download' button). If your preferred quality is not found, best quality will be downloaded instead.")
+    @DescriptionForConfigEntry(text_PreferredOfficialDownloadQuality)
     @Order(130)
     PreferredOfficialDownloadQuality getPreferredOfficialDownloadQuality();
 
