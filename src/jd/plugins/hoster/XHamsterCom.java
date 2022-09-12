@@ -81,6 +81,11 @@ public class XHamsterCom extends PluginForHost {
         return ret;
     }
 
+    private static String[] getDeadDomains() {
+        /* Add dead domains here so plugin can correct domain in added URL if it is a dead domain. */
+        return new String[] {};
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -187,13 +192,23 @@ public class XHamsterCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getPluginPatternMatcher().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
-        if (link.getPluginPatternMatcher().matches(TYPE_MOBILE) || link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
-            link.setUrlDownload("https://xhamster.com/videos/" + new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0));
+        link.setUrlDownload(getCorrectedURL(link.getPluginPatternMatcher()));
+    }
+
+    private String getCorrectedURL(String url) {
+        url = url.replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://");
+        if (url.matches(TYPE_MOBILE) || url.matches(TYPE_EMBED)) {
+            url = "https://xhamster.com/videos/" + new Regex(url, TYPE_EMBED).getMatch(0);
         } else {
-            final String thisdomain = new Regex(link.getPluginPatternMatcher(), "https?://(?:www\\.)?([^/]+)/.+").getMatch(0);
-            link.getPluginPatternMatcher().replaceFirst(org.appwork.utils.Regex.escape(thisdomain), DOMAIN_CURRENT);
+            final String thisdomain = new Regex(url, "https?://(?:www\\.)?([^/]+)/.+").getMatch(0);
+            for (final String deadDomain : getDeadDomains()) {
+                if (StringUtils.equalsIgnoreCase(deadDomain, thisdomain)) {
+                    url = url.replaceFirst(Pattern.quote(thisdomain), DOMAIN_CURRENT);
+                    break;
+                }
+            }
         }
+        return url;
     }
 
     @Override
@@ -308,6 +323,19 @@ public class XHamsterCom extends PluginForHost {
                 login(account, false);
             }
             br.getPage(link.getPluginPatternMatcher());
+            /* Check for self-embed */
+            final String selfEmbeddedURL = br.getRegex("<iframe[^>]*src=\"(https?://xh\\.video/(?:e|p|v)/" + getFID(link) + ")\"[^>]*></iframe>").getMatch(0);
+            if (selfEmbeddedURL != null) {
+                /* 2022-09-12: xhamster.one sometimes shows a different page and self-embeds */
+                logger.info("Found self-embed: " + selfEmbeddedURL);
+                br.getPage(selfEmbeddedURL);
+                /* Now this may have sent us to an embed URL --> Fix that */
+                final String urlCorrected = getCorrectedURL(br.getURL());
+                if (!StringUtils.equalsIgnoreCase(br.getURL(), urlCorrected)) {
+                    logger.info("Corrected URL: Old: " + br.getURL() + " | New: " + urlCorrected);
+                    br.getPage(urlCorrected);
+                }
+            }
             /* Set some Packagizer properties */
             final String username = br.getRegex("class=\"entity-author-container__name\"[^>]*href=\"https?://[^/]+/users/([^<>\"]+)\"").getMatch(0);
             final String datePublished = br.getRegex("\"datePublished\":\"(\\d{4}-\\d{2}-\\d{2})\"").getMatch(0);

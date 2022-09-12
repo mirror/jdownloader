@@ -103,7 +103,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
      * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br>
      * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
      */
-    private static final String   type_normal_without_fuid  = "^https?://[^/]+/(?:videos?/)?([^/\\?#]+)(?:/?|\\.html)$";
+    private static final String   type_normal_without_fuid  = "^https?://[^/]+/(?:videos?/)?([^/\\?#]*?)(?:/?|\\.html)$";
     private static final String   type_mobile               = "^https?://m\\.([^/]+/(videos?/)?\\d+/[^/\\?#]+/$)";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} (excluding
