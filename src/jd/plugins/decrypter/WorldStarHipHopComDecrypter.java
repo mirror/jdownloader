@@ -121,8 +121,11 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
+        final WorldStarHipHopCom hosterPlugin = (WorldStarHipHopCom) this.getNewPluginForHostInstance(this.getHost());
         // Probably no external video but a selfhosted one, pass it over to the hoster plugin
-        final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
+        final DownloadLink dl = new DownloadLink(hosterPlugin, this.getHost(), br.getURL());
+        hosterPlugin.requestFileInformation(dl, br);
+        dl.setAvailable(true);
         decryptedLinks.add(dl);
         return decryptedLinks;
     }
