@@ -148,6 +148,7 @@ import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorab
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
@@ -187,10 +188,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     @Override
-    public boolean assignPlugin(DownloadLink link) {
-        final boolean ret = super.assignPlugin(link);
+    public PluginForHost assignPlugin(PluginFinder pluginFinder, final DownloadLink link) {
+        final PluginForHost ret = super.assignPlugin(pluginFinder, link);
         final long convertTimestamp = 1650639863343l;
-        if (ret && (link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) != 3)) {
+        if (ret != null && (link.getCreated() < convertTimestamp && link.getLongProperty("assignPlugin", -1l) != 3)) {
             try {
                 final AbstractVariant variant = getVariant(link, false);
                 if (variant != null && !(variant instanceof SubtitleVariant)) {

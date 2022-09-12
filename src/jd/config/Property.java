@@ -222,6 +222,8 @@ public class Property implements Serializable {
             final Object value = getProperty(key, def);
             if (value instanceof Boolean) {
                 return (Boolean) value;
+            } else if (value == null) {
+                return def;
             } else {
                 final String stringValue = String.valueOf(value);
                 if (stringValue != null) {

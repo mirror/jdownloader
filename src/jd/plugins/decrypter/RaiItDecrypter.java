@@ -270,14 +270,14 @@ public class RaiItDecrypter extends PluginForDecrypt {
             filename += " - " + episodeTitle;
         }
         /* Add series information if available */
-        if (seasonnumber != null && seasonnumber.matches("\\d+") || episodenumber != null && episodenumber.matches("\\d+")) {
+        if ((seasonnumber != null && seasonnumber.matches("\\d+")) || (episodenumber != null && episodenumber.matches("\\d+"))) {
             /* 2018-07-19: Also add series information if only seasonnumber or only episodenumber is available. */
             String seriesString = "";
             final DecimalFormat df = new DecimalFormat("00");
-            if (seasonnumber != null) {
+            if (seasonnumber != null && seasonnumber.matches("\\d+")) {
                 seriesString += "S" + df.format(Integer.parseInt(seasonnumber));
             }
-            if (episodenumber != null) {
+            if (episodenumber != null && episodenumber.matches("\\d+")) {
                 seriesString += "E" + df.format(Integer.parseInt(episodenumber));
             }
             filename += seriesString + "_";

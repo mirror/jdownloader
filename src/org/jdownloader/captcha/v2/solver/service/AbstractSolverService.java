@@ -18,9 +18,7 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.SolverService;
 
 public abstract class AbstractSolverService implements SolverService {
-
     public AbstractSolverService() {
-
     }
 
     private List<ChallengeSolver<?>> solverList = new ArrayList<ChallengeSolver<?>>();
@@ -47,8 +45,9 @@ public abstract class AbstractSolverService implements SolverService {
         if (map != null) {
             final Integer obj = map.get(solverID);
             return obj == null ? 0 : Math.max(0, obj.intValue());
+        } else {
+            return 0;
         }
-        return 0;
     }
 
     @Override
@@ -93,12 +92,10 @@ public abstract class AbstractSolverService implements SolverService {
     protected void initServicePanel(final KeyHandler... handlers) {
         if (!org.appwork.utils.Application.isHeadless()) {
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
                 @SuppressWarnings("unchecked")
                 public void run() {
                     for (KeyHandler k : handlers) {
                         k.getEventSender().addListener(new GenericConfigEventListener<Object>() {
-
                             @Override
                             public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
                             }
