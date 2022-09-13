@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +54,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.RaiTv;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RaiItDecrypter extends PluginForDecrypt {
     public RaiItDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,6 +64,34 @@ public class RaiItDecrypter extends PluginForDecrypt {
     private static final String TYPE_RAIPLAY_PROGRAMMI = "https?://[^/]+/programmi/([^/]+).*";
     // private static final String TYPE_RAIPLAY_IT = "https?://.+raiplay\\.it/.+";
     private static final String TYPE_CONTENTITEM       = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "rai.it", "raiplay.it", "rai.tv", "rainews.it" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[a-z0-9\\-\\.]+\\.)?" + buildHostsPatternPart(domains) + "/.+");
+        }
+        return ret.toArray(new String[0]);
+    }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.br.setFollowRedirects(true);
@@ -317,7 +346,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
         date = this.br.getRegex("content=\"(\\d{4}\\-\\d{2}\\-\\d{2}) \\d{2}:\\d{2}:\\d{2}\" property=\"gen\\-date\"").getMatch(0);
         if (date == null) {
             /* 2020-02-18: New */
-            date = this.br.getRegex("<meta property=\"data\" content=\"(\\d{2}-\\d{2}-\\d{4})\"").getMatch(0);
+            date = this.br.getRegex("<meta property=\"date\" content=\"(\\d{2}-\\d{2}-\\d{4})\"").getMatch(0);
+        }
+        if (date == null) {
+            /* 2022-09-13: New */
+            date = this.br.getRegex("name=\"item-date\" content=\"(\\d{2}/\\d{2}/\\d{4})\"").getMatch(0);
         }
         /* 2017-05-02: Avoid the same string multiple times in filenames. */
         final String name_show = this.br.getRegex("<meta property=\"nomeProgramma\" content=\"([^<>\"]+)\"/>").getMatch(0);
@@ -332,6 +365,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         if (dllink == null) {
             String jsonUrl = br.getRegex("data-video-json=\"(/video/[-\\/A-Za-z0-9]+\\.json)\"").getMatch(0);
             if (jsonUrl == null) {
+                /* Unsupported content like some list of multiple embedded videos, a livestream or no video content at all. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             jsonUrl = br.getURL(jsonUrl).toString();
@@ -444,7 +478,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         date_formatted = RaiTv.formatDate(date);
         title = Encoding.htmlDecode(title);
-        title = date_formatted + "_raitv_" + title;
+        if (date_formatted != null) {
+            title = date_formatted + "_raitv_" + title;
+        }
         /* Add series information if available */
         if (seasonnumber != null || episodenumber != null) {
             /* 2018-07-19: Also add series information if only seasonnumber or only episodenumber is available. */
@@ -522,23 +558,30 @@ public class RaiItDecrypter extends PluginForDecrypt {
             logger.info("Changing HDS --> HLS");
             dllink = hdsconvert.getMatch(0).replace("/z/", "/i/") + "/index_1_av.m3u8";
         }
+        final String middleBitrate = brc.getRegex("<bitrate>(\\d+)</bitrate>").getMatch(0);
         final String[] staticBitrateList = new String[] { "10000", "5000", "3600", "3200", "2400", "1800", "1200", "700", "400", "250" };
         if (dllink.contains(".m3u8")) {
             // https?:\/\/[^\/]+\/i\/VOD\/(teche_root\/YT_ITALIA_TECHE_HD\/[0-9]*_)([0-9,]+)\.mp4(?:.csmil)?\/index_[0-9]+_av.m3u8\?null=[0-9]+&id=[A-Za-z0-9]+%3d%3d&hdntl=exp=[0-9]+~acl=%2f\*~data=hdntl~hmac=[A-Za-z0-9]+
             final String httpBitratesCommaSeparated = new Regex(dllink, ",(\\d{3,}[0-9,]*)").getMatch(0);
-            if (httpBitratesCommaSeparated != null) {
+            if (httpBitratesCommaSeparated != null || (middleBitrate != null && dllink.contains(middleBitrate))) {
                 /*
                  * Prefer HTTP URLs over HLS URLs as HLS will be split audio/video which we do not yet support.
                  */
-                final String[] bitrateList = httpBitratesCommaSeparated.split(",");
+                final ArrayList<String> supportedHTTPBitrates = new ArrayList<String>();
+                if (httpBitratesCommaSeparated != null) {
+                    final String[] bitrateList = httpBitratesCommaSeparated.split(",");
+                    supportedHTTPBitrates.addAll(Arrays.asList(bitrateList));
+                } else {
+                    supportedHTTPBitrates.add(middleBitrate);
+                }
                 logger.info("Converting HLS -> HTTP URLs");
-                for (final String availableBitrate : bitrateList) {
+                for (final String availableBitrate : supportedHTTPBitrates) {
                     // final String directlink_http = String.format("http://creativemedia3.rai.it/%s%s.mp4", http_url_part, bitrate);
                     /* 2021-03-11 */
                     final String directlink_http = relinkerURLWithoutParams + "?cont=" + cont + "&overrideUserAgentRule=mp4-" + availableBitrate;
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink_http);
                     dl.setAvailable(true);
-                    dl.setFinalFileName(title + "_" + availableBitrate + "." + extension);
+                    dl.setFinalFileName(title + "_" + availableBitrate + extension);
                     dl._setFilePackage(fp);
                     if (description != null) {
                         dl.setComment(description);
@@ -574,7 +617,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 for (final String staticBitrate : staticBitrateList) {
                     final String directlink = dllink.replace("_1800.mp4", "_" + staticBitrate + ".mp4");
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink);
-                    dl.setFinalFileName(title + "_" + staticBitrate + "." + extension);
+                    dl.setFinalFileName(title + "_" + staticBitrate + extension);
                     dl._setFilePackage(fp);
                     if (description != null) {
                         dl.setComment(description);
@@ -584,7 +627,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             } else {
                 /* Only one quality available. */
                 final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
-                dl.setFinalFileName(title + "." + extension);
+                dl.setFinalFileName(title + extension);
                 dl._setFilePackage(fp);
                 if (description != null) {
                     dl.setComment(description);
