@@ -141,7 +141,11 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             /** up4cash.com links */
             "up4cash.com",
             /** 2022-08-09: ier.ai links */
-            "ier.ai" };
+            "ier.ai",
+            /** best-cpm links */
+            "best-cpm.com",
+            /** link-yz links */
+            "link-yz.com" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */
