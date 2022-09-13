@@ -23,6 +23,7 @@ import java.util.Date;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(?:www\\.)?n\\-tv\\.de/mediathek/(?:videos|sendungen)/([^/]+/[^/]+)\\.html" })
 public class NtvDe extends PluginForHost {
@@ -45,12 +47,16 @@ public class NtvDe extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final String linkid = getFID(link);
         if (linkid != null) {
-            return linkid;
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     private static final String host_hls = "http://video.n-tv.de";
@@ -62,44 +68,80 @@ public class NtvDe extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /*
+         * 2022-09-13: Some URLs redirect to tvnow.de which is using DRM for all of their content e.g.
+         * https://www.n-tv.de/mediathek/sendungen/RTLplus/Queen-Elizabeth-Eine-Familiengeschichte-article20787496.html
+         */
+        final boolean looksLikeDRMProtected = br.containsHTML("sec-mediathek_sendungen_tvnow") && getStreamURL(br) == null;
         final String date = br.getRegex("publishedDateAsUnixTimeStamp:\\s*?\"(\\d+)\"").getMatch(0);
-        String title = br.getRegex("headline:\\s*?\"([^\"]+)\"").getMatch(0);
-        if (title == null) {
-            title = this.getLinkID(link);
+        String title = br.getRegex("headline:\\s*\"(.*?)\",\\s").getMatch(0);
+        if (title != null) {
+            title = Encoding.unicodeDecode(title);
+            title = PluginJSonUtils.unescape(title);
+            title = title.trim();
+            title = encodeUnicode(title);
+            String filename = "";
+            if (date != null) {
+                filename = formatDate(date) + "_";
+            }
+            filename += "_n-tv_" + title + ".mp4";
+            if (looksLikeDRMProtected) {
+                filename = "[DRM]" + filename;
+                link.setFinalFileName(filename);
+            } else {
+                /*
+                 * Example normal non-DRM clip:
+                 * https://www.n-tv.de/mediathek/videos/politik/Schande-Moskauer-verurteilen-Krieg-ploetzlich-offen-article23584866.html
+                 */
+                link.setFinalFileName(filename);
+            }
         }
-        title = Encoding.unicodeDecode(title);
-        title = title.replace("\\", "");
-        title = Encoding.htmlDecode(title).trim();
-        title = encodeUnicode(title);
-        String filename = "";
-        if (date != null) {
-            filename = formatDate(date) + "_";
+        if (looksLikeDRMProtected) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        filename += "_n-tv_" + title + ".mp4";
-        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        final String progressive = br.getRegex("progressive\\s*?:\\s*?\"(https?[^\"]+)\"").getMatch(0);
-        if (progressive != null) {
-            /* 2019-01-30: New */
-            final String filter = new Regex(progressive, "(\\?filter=.+)").getMatch(0);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final String streamURL = getStreamURL(br);
+        if (streamURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (streamURL.contains(".m3u8")) {
+            /* HLS */
+            /* Access index */
+            br.getPage(org.appwork.utils.net.URLHelper.parseLocation(new URL(host_hls), streamURL));
+            /* Grab highest quality possible - always located at the beginning of the index file (for this host). */
+            final String best = br.getRegex("([^<>\"/\r\n\t]+\\.m3u8)\n").getMatch(0);
+            if (best == null) {
+                logger.warning("Failed to find HLS quality");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String url = host_hls + "/apple/" + best;
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, this.br, url);
+            dl.startDownload();
+        } else {
+            /* http stream */
+            final String filter = new Regex(streamURL, "(\\?filter=.+)").getMatch(0);
             final String url;
             if (filter != null) {
-                url = progressive.replace(filter, "");
+                url = streamURL.replace(filter, "");
             } else {
-                url = progressive;
+                url = streamURL;
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -115,24 +157,16 @@ public class NtvDe extends PluginForHost {
                 }
             }
             dl.startDownload();
-        } else {
-            final String m3u8 = br.getRegex("videoM3u8:[\t\n\r ]*?\"(/apple/[^<>\"/]+\\.m3u8)\"").getMatch(0);
-            if (m3u8 == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Access index */
-            br.getPage(org.appwork.utils.net.URLHelper.parseLocation(new URL(host_hls), m3u8));
-            /* Grab highest quality possible - always located at the beginning of the index file (for this host). */
-            final String best = br.getRegex("([^<>\"/\r\n\t]+\\.m3u8)\n").getMatch(0);
-            if (best == null) {
-                logger.warning("Failed to find HLS quality");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String url = host_hls + "/apple/" + best;
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, this.br, url);
-            dl.startDownload();
         }
+    }
+
+    private String getStreamURL(final Browser br) {
+        final String progressive = br.getRegex("progressive\\s*?:\\s*?\"(https?[^\"]+)\"").getMatch(0);
+        if (progressive != null) {
+            return progressive;
+        }
+        final String m3u8 = br.getRegex("videoM3u8\\s*:\\s*\"(/apple/[^<>\"/]+\\.m3u8)\"").getMatch(0);
+        return m3u8;
     }
 
     public String formatDate(final String input) {

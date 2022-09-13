@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,11 +36,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -132,30 +132,34 @@ public class OuoIo extends antiDDoSForDecrypt {
             captchaForm.put("s_width", Integer.toString(new Random().nextInt(1000)));
             captchaForm.put("s_height", Integer.toString(new Random().nextInt(1000)));
         }
-        if (false) {
+        final boolean skipCaptcha = false;
+        if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br) && !skipCaptcha) {
             // 2020-30-08 - captcha not required/verified :)
-            final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
-                @Override
-                public TYPE getType() {
-                    // parser fails to auto detect reCaptcha type due to js
-                    return TYPE.INVISIBLE;
-                }
-            };
+            final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br);
             if (helper.getSiteKey() != null) {
                 final String recaptchaV2Response = helper.getToken();
-                // captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                captchaForm.put("x-token", Encoding.urlEncode(recaptchaV2Response));
+                /* 2022-09-13 */
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                // captchaForm.put("x-token", Encoding.urlEncode(recaptchaV2Response));
             }
         }
+        this.submitForm(captchaForm);
         br.setFollowRedirects(false);
-        br.submitForm(captchaForm);
-        String finalLink = handleRedirect(br);
-        if (finalLink != null) {
-            ret.add(createDownloadlink(finalLink));
+        String finallink = handleRedirect(br);
+        if (finallink != null) {
+            ret.add(createDownloadlink(finallink));
         }
-        finalLink = getFinalLink(br);
-        if (!StringUtils.isEmpty(finalLink)) {
-            ret.add(createDownloadlink(finalLink));
+        // can be another form after captcha - 20170326
+        final Form f = br.getForm(0);
+        if (f != null && f.containsHTML("(?i)>\\s*Get Link\\s*<")) {
+            br.setFollowRedirects(false);
+            submitForm(f);
+            finallink = br.getRedirectLocation();
+        } else {
+            finallink = br.getRegex("\"\\s*([^\r\n]+)\\s*\"\\s+id=\"btn-main\"").getMatch(0);
+        }
+        if (!StringUtils.isEmpty(finallink)) {
+            ret.add(createDownloadlink(finallink));
         }
         if (ret.size() > 0) {
             return ret;
@@ -176,20 +180,6 @@ public class OuoIo extends antiDDoSForDecrypt {
                 br.followRedirect(false);
             }
         }
-    }
-
-    private String getFinalLink(Browser br) throws Exception {
-        final String finallink;
-        // can be another form after captcha - 20170326
-        final Form f = br.getForm(0);
-        if (f != null && f.containsHTML(">\\s*Get Link\\s*<")) {
-            br.setFollowRedirects(false);
-            submitForm(f);
-            finallink = br.getRedirectLocation();
-        } else {
-            finallink = br.getRegex("\"\\s*([^\r\n]+)\\s*\"\\s+id=\"btn-main\"").getMatch(0);
-        }
-        return finallink;
     }
 
     private void set(final String link) {
