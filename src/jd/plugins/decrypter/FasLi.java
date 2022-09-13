@@ -16,33 +16,75 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fas.li" }, urls = { "https?://(?:www\\.)?(?:fas\\.li|likn\\.xyz|sloomp\\.space)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FasLi extends antiDDoSForDecrypt {
     public FasLi(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "fas.li", "likn.xyz", "sloomp.space" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z0-9]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        /* Fix added URL if it contains dead domain. */
+        String urlToAccess = param.getCryptedUrl();
+        final String domainInAddedURL = Browser.getHost(urlToAccess);
+        final String[] deadDomains = new String[] { "likn.xyz", "sloomp.space" };
+        for (final String deadDomain : deadDomains) {
+            if (StringUtils.equalsIgnoreCase(domainInAddedURL, deadDomain)) {
+                urlToAccess = urlToAccess.replaceFirst(Pattern.quote(domainInAddedURL), this.getHost());
+                break;
+            }
+        }
+        getPage(urlToAccess);
         /* 2019-10-30: Most URLs will show up as online at first - status is only visible after captcha. */
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Form continueForm = br.getFormbyProperty("id", "skip-form");
         if (continueForm == null) {
@@ -50,6 +92,12 @@ public class FasLi extends antiDDoSForDecrypt {
         }
         if (continueForm == null) {
             logger.info("Failed to find captchaform");
+            /* 2022-09-13: Check for redirects to their own dead domains. */
+            for (final String deadDomain : deadDomains) {
+                if (br.containsHTML(Pattern.quote(deadDomain)) || br.getHost().equals(deadDomain)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
             return null;
         }
         /* 2021-01-18: Captcha not required anymore? */
@@ -71,8 +119,7 @@ public class FasLi extends antiDDoSForDecrypt {
                  * class="img-responsive" alt="">
                  */
                 logger.info("Failed to find continueForm");
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             submitForm(continueForm);
             finallink = br.getRedirectLocation();
@@ -81,11 +128,10 @@ public class FasLi extends antiDDoSForDecrypt {
                 return null;
             } else if (this.canHandle(finallink) && finallink.matches(".+/deleted$")) {
                 /* 2021-01-18 */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }
