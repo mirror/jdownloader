@@ -17,12 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -104,5 +107,24 @@ public class DropmyfilesCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfoWebsite(account);
+        /* 2022-09-13: Special expiredate handling */
+        if (account.getType() == AccountType.FREE) {
+            this.getPage("/?op=my_account");
+            final String expireDateSpecialStr = br.getRegex("(?i)Premium expiration\\s*</td>\\s*<td>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})</td>").getMatch(0);
+            if (expireDateSpecialStr != null) {
+                final long currentTime = br.getCurrentServerTime(System.currentTimeMillis());
+                final long expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireDateSpecialStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                if (expire_milliseconds_from_expiredate > currentTime) {
+                    ai.setValidUntil(expire_milliseconds_from_expiredate);
+                    setAccountLimitsByType(account, AccountType.PREMIUM);
+                }
+            }
+        }
+        return ai;
     }
 }

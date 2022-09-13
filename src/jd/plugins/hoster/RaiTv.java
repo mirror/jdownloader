@@ -15,12 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,12 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://rai_host_plugin_notneeded_at_the_moment" })
 public class RaiTv extends PluginForHost {
@@ -219,26 +217,6 @@ public class RaiTv extends PluginForHost {
         // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:67.0) Gecko/20100101 Firefox/67.0");
         // User-Agent MUST NOT never change across the requests
         return br;
-    }
-
-    public static String getDllink(final Browser br) {
-        String dllink = br.getRegex("<url type=\"content\"><!\\[CDATA\\[([a-zA-Z:\\/0-9\\-\\._,\\?\\&\\=~\\*]+)\\]\\]>").getMatch(0);
-        if (dllink != null && dllink.startsWith("mms://")) {
-            /* Convert mms to http */
-            dllink = dllink.replace("mms://", "http://");
-        }
-        return dllink;
-    }
-
-    public static String getContFromRelinkerUrl(final String relinker) throws MalformedURLException {
-        return UrlQuery.parse(relinker).get("cont");
-    }
-
-    public static boolean dllinkIsDownloadable(final String dllink) {
-        if (dllink == null || !dllink.startsWith("http")) {
-            return false;
-        }
-        return true;
     }
 
     public static String formatDate(final String input) {
