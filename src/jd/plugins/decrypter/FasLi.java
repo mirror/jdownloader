@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -74,12 +73,11 @@ public class FasLi extends antiDDoSForDecrypt {
         /* Fix added URL if it contains dead domain. */
         String urlToAccess = param.getCryptedUrl();
         final String domainInAddedURL = Browser.getHost(urlToAccess);
-        final String[] deadDomains = new String[] { "likn.xyz", "sloomp.space" };
-        for (final String deadDomain : deadDomains) {
-            if (StringUtils.equalsIgnoreCase(domainInAddedURL, deadDomain)) {
-                urlToAccess = urlToAccess.replaceFirst(Pattern.quote(domainInAddedURL), this.getHost());
-                break;
-            }
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("likn.xyz");
+        deadDomains.add("sloomp.space");
+        if (deadDomains.contains(domainInAddedURL)) {
+            urlToAccess = urlToAccess.replaceFirst(Pattern.quote(domainInAddedURL), this.getHost());
         }
         getPage(urlToAccess);
         /* 2019-10-30: Most URLs will show up as online at first - status is only visible after captcha. */
