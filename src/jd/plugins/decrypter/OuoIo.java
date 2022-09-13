@@ -132,15 +132,28 @@ public class OuoIo extends antiDDoSForDecrypt {
             captchaForm.put("s_width", Integer.toString(new Random().nextInt(1000)));
             captchaForm.put("s_height", Integer.toString(new Random().nextInt(1000)));
         }
-        final boolean skipCaptcha = false;
-        if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br) && !skipCaptcha) {
-            // 2020-30-08 - captcha not required/verified :)
+        final boolean skipCaptcha = true;
+        if (br.getHost().equals("cpmlink.net") && CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
             final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br);
             if (helper.getSiteKey() != null) {
                 final String recaptchaV2Response = helper.getToken();
                 /* 2022-09-13 */
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 // captchaForm.put("x-token", Encoding.urlEncode(recaptchaV2Response));
+            }
+        } else if (!skipCaptcha) {
+            // 2020-30-08 - captcha not required/verified :)
+            final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+                @Override
+                public TYPE getType() {
+                    // parser fails to auto detect reCaptcha type due to js
+                    return TYPE.INVISIBLE;
+                }
+            };
+            if (helper.getSiteKey() != null) {
+                final String recaptchaV2Response = helper.getToken();
+                /* 2022-09-13: ouo.io */
+                captchaForm.put("x-token", Encoding.urlEncode(recaptchaV2Response));
             }
         }
         this.submitForm(captchaForm);
