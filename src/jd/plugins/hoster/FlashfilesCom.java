@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,11 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -107,6 +107,9 @@ public class FlashfilesCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -119,12 +122,9 @@ public class FlashfilesCom extends PluginForHost {
         }
         String filename = br.getRegex(">\\s*FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
         final String filesize = br.getRegex(">\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = this.getFID(link);
-            link.setName(filename);
-        } else {
+        if (!StringUtils.isEmpty(filename)) {
             // Content-Disposition header not always correct filename
-            filename = Encoding.htmlDecode(filename.trim());
+            filename = Encoding.htmlDecode(filename).trim();
             link.setFinalFileName(filename);
         }
         if (!StringUtils.isEmpty(filesize)) {
@@ -367,13 +367,11 @@ public class FlashfilesCom extends PluginForHost {
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
             ai.setTrafficLeft(0);
         } else {
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            ai.setStatus("Premium User");
             ai.setUnlimitedTraffic();
         }
         return ai;

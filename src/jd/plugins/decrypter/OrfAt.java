@@ -1,6 +1,5 @@
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,17 +40,17 @@ public class OrfAt extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
-    private final String                         TYPE_OLD      = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                         TYPE_ARTICLE  = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                         TYPE_NEW      = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                         TYPE_PODCAST  = "https?://radiothek\\.orf\\.at/podcasts/([a-z0-9]+)/([a-z0-9\\-]+)(/([a-z0-9\\-]+))?";
-    private final String                         API_BASE      = "https://audioapi.orf.at";
+    private final String                                      TYPE_OLD      = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      TYPE_ARTICLE  = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      TYPE_NEW      = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      TYPE_PODCAST  = "https?://radiothek\\.orf\\.at/podcasts/([a-z0-9]+)/([a-z0-9\\-]+)(/([a-z0-9\\-]+))?";
+    private final String                                      API_BASE      = "https://audioapi.orf.at";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
-    private static LinkedHashMap<String, String> CHANNEL_CACHE = new LinkedHashMap<String, String>() {
-                                                                   protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                                                                       return size() > 50;
-                                                                   };
-                                                               };
+    private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE = new LinkedHashMap<String, Map<String, Object>>() {
+                                                                                protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
+                                                                                    return size() > 50;
+                                                                                };
+                                                                            };
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -172,7 +171,7 @@ public class OrfAt extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlBroadcasts(final CryptedLink param) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlBroadcasts(final CryptedLink param) throws Exception {
         final String broadCastID;
         final String broadCastKey;
         final String domainID;
@@ -192,11 +191,16 @@ public class OrfAt extends PluginForDecrypt {
         synchronized (CHANNEL_CACHE) {
             /* 2021-03-31 */
             if (!CHANNEL_CACHE.containsKey(domainID)) {
-                br.getPage("https://radiothek.orf.at/js/app.6e8eab89.js");
-                final String[][] shortnameToChannelNames = br.getRegex("/([^/]+)/json/" + Regex.escape("4.0/broadcast{/programKey}{/broadcastDay}\")}") + ".*?,channel:\"([^\"]+)\"").getMatches();
-                for (final String[] channelInfo : shortnameToChannelNames) {
-                    CHANNEL_CACHE.put(channelInfo[0], channelInfo[1]);
-                }
+                br.getPage("https://assets.orf.at/vue-storyserver/radiothek-item-player/js/app.js");
+                final String channelInfoJs = br.getRegex("stations:(\\{.*?\\}\\}\\})\\},F=function").getMatch(0);
+                final Map<String, Map<String, Object>> channelInfo = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(channelInfoJs);
+                CHANNEL_CACHE.clear();
+                CHANNEL_CACHE.putAll(channelInfo);
+                // final String[][] shortnameToChannelNames = br.getRegex("/([^/]+)/json/" +
+                // Regex.escape("4.0/broadcast{/programKey}{/broadcastDay}\")}") + ".*?,channel:\"([^\"]+)\"").getMatches();
+                // for (final String[] channelInfo : shortnameToChannelNames) {
+                // CHANNEL_CACHE.put(channelInfo[0], channelInfo[1]);
+                // }
                 if (!CHANNEL_CACHE.containsKey(domainID)) {
                     /* Most likely invalid domainID. */
                     logger.info("Failed to find channel for: " + domainID);
@@ -204,7 +208,8 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
         }
-        final String channel = CHANNEL_CACHE.get(domainID);
+        final Map<String, Object> channelInfo = CHANNEL_CACHE.get(domainID);
+        final Map<String, Object> loopstream = (Map<String, Object>) channelInfo.get("loopstream");
         br.setAllowedResponseCodes(410);
         br.getPage(API_BASE + "/" + domainID + "/api/json/current/broadcast/" + broadCastID + "/" + broadCastKey + "?_s=" + System.currentTimeMillis());
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -233,7 +238,7 @@ public class OrfAt extends PluginForDecrypt {
             final long startOffset = ((Number) stream.get("startOffset")).longValue();
             final long endOffset = ((Number) stream.get("endOffset")).longValue();
             final long offset = startOffset - endOffset;
-            final DownloadLink link = createDownloadlink("directhttp://https://loopstream01.apa.at/?channel=" + channel + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + offset + "&offsetende=" + offsetende);
+            final DownloadLink link = createDownloadlink("directhttp://https://" + loopstream.get("host") + "/?channel=" + loopstream.get("channel") + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + offset + "&offsetende=" + offsetende);
             if (streams.size() > 1) {
                 link.setFinalFileName(title + "_" + broadCastDay + "_" + String.format(Locale.US, "%0" + padLength + "d", (++index)) + ".mp3");
             } else {
