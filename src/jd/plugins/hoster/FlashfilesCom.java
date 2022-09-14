@@ -23,6 +23,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FlashfilesComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -82,14 +84,13 @@ public class FlashfilesCom extends PluginForHost {
     /* Connection stuff */
     private final boolean FREE_RESUME                  = false;
     private final int     FREE_MAXCHUNKS               = 1;
-    private final int     FREE_MAXDOWNLOADS            = 1;
     private final boolean ACCOUNT_FREE_RESUME          = false;
     private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     /* 2020-09-21: Chunkload & resume impossible in premium mode (wtf?) */
     private final boolean ACCOUNT_PREMIUM_RESUME       = false;
     private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -115,14 +116,16 @@ public class FlashfilesCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         final String fid = this.getFID(link);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.containsHTML("role=\"tabpanel\"|name=\"hash\"")) {
             /* 2020-06-02: Not a file e.g.: https://flash-files.com/faq */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(">\\s*FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
-        final String filesize = br.getRegex(">\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("(?i)>\\s*FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
+        final String filesize = br.getRegex("(?i)>\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
         if (!StringUtils.isEmpty(filename)) {
             // Content-Disposition header not always correct filename
             filename = Encoding.htmlDecode(filename).trim();
@@ -176,7 +179,7 @@ public class FlashfilesCom extends PluginForHost {
             final String waitSecondsStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
             final int waitSeconds = Integer.parseInt(waitSecondsStr);
             if (waitSeconds > 600) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Math.max(2100, waitSeconds) * 1001l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
             }
         }
         if (con.getResponseCode() == 500) {
@@ -192,9 +195,9 @@ public class FlashfilesCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String waitSecondsStr = br.getRegex("counter\\s*=\\s*(\\d+);").getMatch(0);
         final int waitSeconds = Integer.parseInt(waitSecondsStr);
-        /* 2020-02-13: Normal waittime is 30 seconds, if waittime > 10 Minutes reconnect */
+        /* 2020-02-13: Normal waittime is 30 seconds, if waittime > 10 Minutes reconnect to get new IP to circumvent limit. */
         if (waitSeconds > 600) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Math.max(2100, waitSeconds) * 1001l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
         }
         // cat/mouse?
         Form downloadFileForm = br.getFormbyActionRegex(".*?download(file)?\\.php");
@@ -237,24 +240,21 @@ public class FlashfilesCom extends PluginForHost {
      * Handles pre download (pre-captcha) waittime.
      */
     protected void waitTime(final DownloadLink link, final long timeBefore, final String waitStr) throws PluginException {
+        if (waitStr == null || !waitStr.matches("\\d+")) {
+            return;
+        }
         final int extraWaitSeconds = 1;
-        int wait;
-        if (waitStr != null && waitStr.matches("\\d+")) {
-            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
-            logger.info("Found waittime, parsing waittime: " + waitStr);
-            wait = Integer.parseInt(waitStr);
-            /*
-             * Check how much time has passed during eventual captcha event before this function has been called and see how much time is
-             * left to wait.
-             */
-            if (passedTime > 0) {
-                /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
-                logger.info("Total passed time during captcha: " + passedTime);
-                wait -= passedTime;
-            }
-        } else {
-            /* No waittime at all */
-            wait = 0;
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
+        logger.info("Found waittime, parsing waittime: " + waitStr);
+        int wait = Integer.parseInt(waitStr);
+        /*
+         * Check how much time has passed during eventual captcha event before this function has been called and see how much time is left
+         * to wait.
+         */
+        if (passedTime > 0) {
+            /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
+            logger.info("Total passed time during captcha: " + passedTime);
+            wait -= passedTime;
         }
         if (wait > 0) {
             logger.info("Waiting final waittime: " + wait);
@@ -297,7 +297,7 @@ public class FlashfilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return PluginJsonConfig.get(FlashfilesComConfig.class).getMaxSimultaneousFreeDownloads();
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -358,7 +358,7 @@ public class FlashfilesCom extends PluginForHost {
         String expire = br.getRegex("Expires On\\s*:[^<>\"]*(\\d{4}\\-\\d{2}\\-\\d{2}[^<>\"]*\\d{2}:\\d{2}:\\d{2})[^<>\"]*UTC").getMatch(0);
         if (expire != null) {
             if (Encoding.isHtmlEntityCoded(expire)) {
-                expire = Encoding.htmlDecode(expire);
+                expire = Encoding.htmlDecode(expire).trim();
             }
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
         }
@@ -452,6 +452,8 @@ public class FlashfilesCom extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            this.dl = null;
+            link.removeProperty(directurlproperty);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
@@ -478,6 +480,11 @@ public class FlashfilesCom extends PluginForHost {
             /* Premium accounts do not have captchas */
             return false;
         }
+    }
+
+    @Override
+    public Class<? extends FlashfilesComConfig> getConfigInterface() {
+        return FlashfilesComConfig.class;
     }
 
     @Override
