@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
@@ -64,6 +63,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
     private static final String TYPE_RAIPLAY_PROGRAMMI = "https?://[^/]+/programmi/([^/]+).*";
     // private static final String TYPE_RAIPLAY_IT = "https?://.+raiplay\\.it/.+";
     private static final String TYPE_CONTENTITEM       = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
+    private final String        PROPERTY_TITLE         = "title";
+    private final String        PROPERTY_DATE          = "date";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -93,20 +94,19 @@ public class RaiItDecrypter extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         this.br.setFollowRedirects(true);
         br.setLoadLimit(this.br.getLoadLimit() * 3);
         if (param.getCryptedUrl().matches(TYPE_DAY)) {
             return crawlWholeDay(param);
         } else if (param.getCryptedUrl().matches(TYPE_RAIPLAY_PROGRAMMI)) {
             return crawlProgrammi(param);
+        } else if (param.getCryptedUrl().matches("(?i)https?://[^/]+/relinker/relinkerServlet\\.htm\\?cont=.+")) {
+            return this.crawlRelinker(param, param.getCryptedUrl(), null, null, null);
+        } else if (param.getCryptedUrl().matches("(?i).+\\.json$")) {
+            return this.crawlSingleVideoNew(param.getCryptedUrl(), param);
         } else {
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !true) {
-                return this.crawlSingleVideoNew(param);
-            } else {
-                return crawlSingleVideo(param);
-            }
-            // return crawlSingleVideo(param);
+            return crawlGeneric(param);
         }
     }
 
@@ -279,7 +279,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Map<String, Object> trackInfo = (Map<String, Object>) entries.get("track_info");
         final Map<String, Object> showInfo = (Map<String, Object>) entries.get("program_info");
@@ -310,13 +309,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        crawlRelinker(param, ret, relinker_url, filename, fp, description);
-        return ret;
+        return crawlRelinker(param, relinker_url, filename, fp, description);
     }
 
-    private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws DecrypterException, Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl();
+    /** Handles single videos, playlists any anything else you throw at it. */
+    private ArrayList<DownloadLink> crawlGeneric(final CryptedLink param) throws DecrypterException, Exception {
         String dllink = null;
         String title = null;
         String date = null;
@@ -324,9 +321,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
         String description = null;
         String seasonnumber = null;
         String episodenumber = null;
-        this.br.getPage(parameter);
+        this.br.getPage(param.getCryptedUrl());
         final String jsredirect = this.br.getRegex("document\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
-        if (jsredirect != null && jsredirect.length() >= parameter.length()) {
+        if (jsredirect != null && jsredirect.length() >= param.getCryptedUrl().length()) {
             this.br.getPage(jsredirect.trim());
         }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -336,8 +333,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
         /* E.g. http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem-70996227-7fec-4be9-bc49-ba0a8104305a.html */
         dllink = this.br.getRegex("var\\s*videoURL\\s*=\\s*\"((?:https?:)?//[^<>\"]+)\"").getMatch(0);
         String content_id_from_url = null;
-        if (parameter.matches(TYPE_CONTENTITEM)) {
-            content_id_from_url = new Regex(parameter, "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
+        if (param.getCryptedUrl().matches(TYPE_CONTENTITEM)) {
+            content_id_from_url = new Regex(param.getCryptedUrl(), "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
         }
         title = this.br.getRegex("property=\"og:title\" content=\"([^<>\"]+) \\- video \\- RaiPlay\"").getMatch(0);
         if (title == null) {
@@ -368,6 +365,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 /* Unsupported content like some list of multiple embedded videos, a livestream or no video content at all. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* Get absolute URL. */
             jsonUrl = br.getURL(jsonUrl).toString();
             return this.crawlSingleVideoNew(jsonUrl, param);
         }
@@ -473,9 +471,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 extension = "mp4";
             }
         }
-        if (title == null) {
-            title = content_id_from_url;
-        }
         date_formatted = RaiTv.formatDate(date);
         title = Encoding.htmlDecode(title);
         if (date_formatted != null) {
@@ -497,8 +492,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         title = encodeUnicode(title);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        crawlRelinker(param, ret, dllink, title, fp, description);
-        return ret;
+        return crawlRelinker(param, dllink, title, fp, description);
     }
 
     /* http://stackoverflow.com/questions/767759/occurrences-of-substring-in-a-string */
@@ -512,11 +506,19 @@ public class RaiItDecrypter extends PluginForDecrypt {
         return count;
     }
 
-    private void crawlRelinker(final CryptedLink param, final ArrayList<DownloadLink> ret, final String relinker_url, final String title, final FilePackage fp, final String description) throws Exception {
+    private ArrayList<DownloadLink> crawlRelinker(final CryptedLink param, final String relinker_url, String title, final FilePackage fp, final String description) throws Exception {
         final String cont = UrlQuery.parse(relinker_url).get("cont");
         if (cont == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // final DownloadLink propertyDonator = param.getDownloadLink();
+        // if (propertyDonator != null) {
+        // }
+        if (title == null) {
+            /* Last chance fallback */
+            title = cont;
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Drop previous Headers & Cookies */
         final Browser brc = RaiTv.prepVideoBrowser(new Browser());
         /**
@@ -542,6 +544,12 @@ public class RaiItDecrypter extends PluginForDecrypt {
             /* Offline/Geo-Blocked */
             /* XML response with e.g. this (and some more): <url>http://download.rai.it/video_no_available.mp4</url> */
             throw new DecrypterRetryException(RetryReason.GEO);
+        } else if (brc.getRequest().getHtmlCode().length() <= 100) {
+            /*
+             * E.g. old/DRM protected/Microsoft Silverlight/WMV files:
+             * https://www.rai.it/dl/RaiTV/programmi/media/ContentItem-70996227-7fec-4be9-bc49-ba0a8104305a.html
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String dllink = brc.getRegex("<url type=\"content\"><!\\[CDATA\\[([a-zA-Z:\\/0-9\\-\\._,\\?\\&\\=~\\*]+)\\]\\]>").getMatch(0);
         if (dllink != null && dllink.startsWith("mms://")) {
@@ -635,6 +643,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 ret.add(dl);
             }
         }
+        return ret;
     }
 
     private String convertInputDateToJsonDateFormat(final String input) {

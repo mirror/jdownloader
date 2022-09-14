@@ -108,6 +108,7 @@ public class FlashfilesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
+            /* Set fallback-filename */
             link.setName(this.getFID(link));
         }
         this.setBrowserExclusive();
