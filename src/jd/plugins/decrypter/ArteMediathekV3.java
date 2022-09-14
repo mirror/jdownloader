@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -143,8 +144,16 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final List<Map<String, Object>> programs = (List<Map<String, Object>>) entries.get("programs");
+        PluginException lastException = null;
         for (final Map<String, Object> program : programs) {
-            ret.addAll(this.crawlProgram(param, program));
+            try {
+                ret.addAll(this.crawlProgram(param, program));
+            } catch (final PluginException ex) {
+                lastException = ex;
+            }
+        }
+        if (ret.isEmpty() && lastException != null) {
+            throw lastException;
         }
         return ret;
     }
@@ -166,17 +175,23 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlProgram(final CryptedLink param, final Map<String, Object> program) throws IOException, PluginException {
+        final Map<String, Object> availability = (Map<String, Object>) program.get("availability");
+        final Object broadcastBegin = availability.get("broadcastBegin");
+        if (broadcastBegin == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Map<String, Object> vid = (Map<String, Object>) program.get("mainVideo");
         return crawlVideo(param, vid);
     }
 
     private ArrayList<DownloadLink> crawlVideo(final CryptedLink param, final Map<String, Object> vid) throws IOException, PluginException {
-        final String kindLabel = vid.get("kindLabel").toString();
-        if (kindLabel.equals("LIVE")) {
-            logger.info("Livestreams are not supported");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!kindLabel.equals("PROGRAMM")) {
-            logger.info("Unknown kindLabel: " + kindLabel);
+        final String kind = vid.get("kind").toString();
+        if (!kind.matches("(PROGRAMM|SHOW)")) {
+            logger.info("Unknown kindLabel: " + kind);
+            if (kind.equals("LIVE")) {
+                logger.info("Livestreams are not supported");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         final ArteTv hosterplugin = (ArteTv) this.getNewPluginForHostInstance(this.getHost());
         final String videoID = vid.get("programId").toString();
@@ -274,6 +289,20 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             /* Language by URL */
             selectedLanguages.add(langFromURL);
         }
+        final HashSet<Language> existingLanguages = new HashSet<Language>();
+        boolean containsUnknownLanguage = false;
+        /* Look ahead and collect existing languages */
+        for (final List<Map<String, Object>> videoStreamsByLanguage : languagePacks.values()) {
+            for (final Map<String, Object> videoStream : videoStreamsByLanguage) {
+                final String audioCode = videoStream.get("audioCode").toString();
+                final VersionInfo versionInfo = parseVersionInfo(audioCode);
+                if (versionInfo.getAudioLanguage() == Language.OTHER) {
+                    containsUnknownLanguage = true;
+                } else {
+                    existingLanguages.add(versionInfo.getAudioLanguage());
+                }
+            }
+        }
         final QualitySelectionFallbackMode qualitySelectionFallbackMode = cfg.getQualitySelectionFallbackMode();
         /*
          * Now filter by language, user selected qualities and so on. User can e.g. select multiple languages and best video quality of each
@@ -346,30 +375,37 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                  * Skip subtitled versions if not wished by user. This needs to happen before BEST selection otherwise subtitled versions
                  * would still be incorperated in BEST selection which would be wrong.
                  */
-                if (versionInfo.hasAnySubtitle()) {
-                    if (versionInfo.hasSubtitleAudioDescription() && !cfg.isCrawlSubtitledBurnedInVersionsAudioDescription()) {
-                        continue;
-                    } else if (versionInfo.hasSubtitleFull() && !cfg.isCrawlSubtitledBurnedInVersionsFull()) {
-                        continue;
-                    } else if (versionInfo.hasSubtitlePartial() && !cfg.isCrawlSubtitledBurnedInVersionsPartial()) {
-                        continue;
-                    } else if (versionInfo.hasSubtitleForHearingImpaired() && !cfg.isCrawlSubtitledBurnedInVersionsHearingImpaired()) {
-                        continue;
+                if (videoStreamsByLanguage.size() > 1) {
+                    /* Only even allow to skip items if there are more than two versions */
+                    if (versionInfo.hasAnySubtitle()) {
+                        if (versionInfo.hasSubtitleAudioDescription() && !cfg.isCrawlSubtitledBurnedInVersionsAudioDescription()) {
+                            continue;
+                        } else if (versionInfo.hasSubtitleFull() && !cfg.isCrawlSubtitledBurnedInVersionsFull()) {
+                            continue;
+                        } else if (versionInfo.hasSubtitlePartial() && !cfg.isCrawlSubtitledBurnedInVersionsPartial()) {
+                            continue;
+                        } else if (versionInfo.hasSubtitleForHearingImpaired() && !cfg.isCrawlSubtitledBurnedInVersionsHearingImpaired()) {
+                            continue;
+                        }
                     }
-                }
-                if (cfg.getLanguageSelectionMode() == LanguageSelectionMode.ALL_SELECTED) {
-                    /* Allow only selected languages, skip the rest */
-                    if (!selectedLanguages.contains(versionInfo.getAudioLanguage())) {
-                        /* Skip unwanted languages */
-                        logger.info("Skipping videoStreamId: " + videoStreamId);
-                        continue;
-                    }
-                } else {
-                    /* Allow only language by URL and original version, skip the rest */
-                    if (versionInfo.getAudioLanguage() != langFromURL && !versionInfo.isOriginalVersion()) {
-                        /* Skip unwanted languages */
-                        logger.info("Skipping videoStreamId: " + videoStreamId);
-                        continue;
+                    if (cfg.getLanguageSelectionMode() == LanguageSelectionMode.ALL_SELECTED) {
+                        /* Allow only selected languages, skip the rest */
+                        if (!selectedLanguages.contains(versionInfo.getAudioLanguage())) {
+                            /* Skip unwanted languages */
+                            logger.info("Skipping videoStreamId because of unselected language: " + videoStreamId);
+                            continue;
+                        }
+                    } else {
+                        /* Allow only language by URL and original version, skip the rest */
+                        if (existingLanguages.size() > 1 && versionInfo.getAudioLanguage() != langFromURL) {
+                            /* Multiple languages available --> Allow "stupid" filtering by language / skip unwanted languages */
+                            logger.info("Skipping videoStreamId because of unselected language: " + videoStreamId);
+                            continue;
+                        } else if (versionInfo.getAudioLanguage() != langFromURL && !versionInfo.isOriginalVersion()) {
+                            /* Skip unwanted languages */
+                            logger.info("Skipping videoStreamId: " + videoStreamId);
+                            continue;
+                        }
                     }
                 }
                 /* Collect best quality (regardless of user preferred video resolution config) */

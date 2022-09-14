@@ -156,11 +156,11 @@ public class FreeM3DownloadNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("(?i)<p>Name\\s*:([^<>\"]+)</p>").getMatch(0);
-        final String filesize;
+        final String filesizeStr;
         if (getPreferFlac(link)) {
-            filesize = br.getRegex("(?i)>\\s*FLAC \\((\\d+(\\.\\d{1,2})? [^<]*)\\)\\s*<").getMatch(0);
+            filesizeStr = br.getRegex("(?i)>\\s*FLAC \\((\\d+(\\.\\d{1,2})? [^<]*)\\)\\s*<").getMatch(0);
         } else {
-            filesize = br.getRegex("(?i)>\\s*MP3 \\((\\d+(\\.\\d{1,2})? [^<]*)\\)\\s*<").getMatch(0);
+            filesizeStr = br.getRegex("(?i)>\\s*MP3 \\((\\d+(\\.\\d{1,2})? [^<]*)\\)\\s*<").getMatch(0);
         }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
@@ -172,8 +172,8 @@ public class FreeM3DownloadNet extends PluginForHost {
             }
             link.setFinalFileName(filename + ext);
         }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesizeStr != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
         return AvailableStatus.TRUE;
     }
