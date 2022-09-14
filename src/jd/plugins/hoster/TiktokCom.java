@@ -598,7 +598,6 @@ public class TiktokCom extends PluginForHost {
         final UrlQuery query = getAPIQuery();
         final String contentID = getContentID(link);
         query.add("aweme_id", contentID);
-        accessAPI(br, "/feed", query);
         accessAPI(br, "/aweme/detail", query);
         Map<String, Object> entries = null;
         Map<String, Object> aweme_detail = null;
@@ -609,8 +608,9 @@ public class TiktokCom extends PluginForHost {
             /* Fallback */
             logger.info("Trying API /feed fallback");
             /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
-            this.br = prepBRAPI(new Browser());
-            // br.clearAll();
+            prepBRAPI(br);
+            /* Make sure that the next request will not contain a Referer header otherwise we'll get a blank page! */
+            br.setCurrentURL("");
             accessAPI(br, "/feed", query);
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final List<Map<String, Object>> aweme_list = (List<Map<String, Object>>) entries.get("aweme_list");
