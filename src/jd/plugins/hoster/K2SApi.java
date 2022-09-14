@@ -22,6 +22,19 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -49,19 +62,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -407,8 +407,8 @@ public abstract class K2SApi extends PluginForHost {
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
-                                 * fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
+                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -489,9 +489,9 @@ public abstract class K2SApi extends PluginForHost {
                                 dl.setProperty("access", access);
                                 if (dl.getComment() == null) {
                                     if ("premium".equalsIgnoreCase(access)) {
-                                        dl.setComment(getErrorMessage(7));
+                                        dl.setComment(getErrorMessageForUser(7));
                                     } else if ("private".equalsIgnoreCase(access)) {
-                                        dl.setComment(getErrorMessage(8));
+                                        dl.setComment(getErrorMessageForUser(8));
                                     }
                                 }
                             }
@@ -499,7 +499,7 @@ public abstract class K2SApi extends PluginForHost {
                                 /* This should never happen */
                                 dl.setAvailable(false);
                                 if (dl.getComment() == null) {
-                                    dl.setComment(getErrorMessage(23));
+                                    dl.setComment(getErrorMessageForUser(23));
                                 }
                             }
                         }
@@ -637,9 +637,9 @@ public abstract class K2SApi extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             if ("premium".equalsIgnoreCase(link.getStringProperty("access")) && isFree) {
                 // download not possible
-                premiumDownloadRestriction(getErrorMessage(3));
+                premiumDownloadRestriction(getErrorMessageForUser(3));
             } else if ("private".equalsIgnoreCase(link.getStringProperty("access")) && isFree) {
-                privateDownloadRestriction(getErrorMessage(8));
+                privateDownloadRestriction(getErrorMessageForUser(8));
             }
             if (isFree) {
                 freeAccountReconnectWorkaround = PluginJsonConfig.get(this.getConfigInterface()).isEnableReconnectWorkaround();
@@ -1212,11 +1212,11 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected void handleErrors(final Account account, final DownloadLink downloadLink, final Browser ibr) throws PluginException {
-        handleErrors(account, downloadLink, ibr, ibr.toString(), false);
+    protected void handleErrors(final Account account, final DownloadLink link, final Browser ibr) throws PluginException {
+        handleErrors(account, link, ibr, ibr.toString(), false);
     }
 
-    protected void handleErrors(final Account account, final DownloadLink downloadLink, final Browser br, final String brString, final boolean subErrors) throws PluginException {
+    protected void handleErrors(final Account account, final DownloadLink link, final Browser br, final String brString, final boolean subErrors) throws PluginException {
         if (br != null && br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 400) {
             /* 2019-07-17: This may happen after any request even if the request itself is done right. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
@@ -1239,10 +1239,11 @@ public abstract class K2SApi extends PluginForHost {
         if (!StringUtils.isEmpty(errCode) && errCode.matches("\\d+")) {
             final int err = Integer.parseInt(errCode);
             final String subErrs = PluginJSonUtils.getJsonArray(brString, "errors");
-            String msg = getErrorMessage(err);
+            final String serversideErrormessage = PluginJSonUtils.getJson(br, "message");
+            String msg = getErrorMessageForUser(err);
             if (StringUtils.isEmpty(msg)) {
                 /* No language String available for errormessage? Fallback to provided errormessage */
-                msg = PluginJSonUtils.getJson(br, "message");
+                msg = serversideErrormessage;
             }
             try {
                 switch (err) {
@@ -1257,10 +1258,9 @@ public abstract class K2SApi extends PluginForHost {
                     // assume all types
                     if (account == null) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg);
+                    } else if (serversideErrormessage != null && serversideErrormessage.matches("(?i)Traffic limit exceed(ed)?")) {
+                        throw new AccountUnavailableException(msg, 15 * 60 * 1000l);
                     } else {
-                        final AccountInfo ai = new AccountInfo();
-                        ai.setTrafficLeft(0);
-                        account.setAccountInfo(ai);
                         throw new PluginException(LinkStatus.ERROR_RETRY, msg);
                     }
                 case 3:
@@ -1312,7 +1312,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     // sub error, pass it back into itself.
                     if (subErrs != null) {
-                        handleErrors(account, downloadLink, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
+                        handleErrors(account, link, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     } else {
                         throw new AccountRequiredException();
                     }
@@ -1334,7 +1334,7 @@ public abstract class K2SApi extends PluginForHost {
                     // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
                     if (subErrs != null) {
-                        handleErrors(account, downloadLink, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
+                        handleErrors(account, link, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     }
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
@@ -1419,7 +1419,7 @@ public abstract class K2SApi extends PluginForHost {
      * @param code
      * @return
      */
-    private String getErrorMessage(final int code) {
+    private String getErrorMessageForUser(final int code) {
         String msg = null;
         if ("de".equalsIgnoreCase(lng)) {
             if (code == 1) {
