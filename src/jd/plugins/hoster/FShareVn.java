@@ -161,7 +161,12 @@ public class FShareVn extends PluginForHost {
                 br.setFollowRedirects(follows_redirects);
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("content=\"Error 404\"|<title>Not Found - Fshare<|<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<|>\\s*Your requested file does not existed\\.\\s*<|>The file has been deleted by the user\\.<")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("content=\"Error 404\"|<title>Not Found - Fshare<|<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<|>\\s*Your requested file does not existed\\.\\s*<|>The file has been deleted by the user\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("/images/Filenotfound")) {
+            /* 2022-09-14 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("file\" title=\"(.*?)\">").getMatch(0);
@@ -186,15 +191,14 @@ public class FShareVn extends PluginForHost {
         if (isPasswordProtected) {
             link.setPasswordProtected(true);
         } else {
-            /*  */
+            link.setPasswordProtected(false);
             if (filename != null) {
                 /* Server sometimes sends bad filenames */
-                link.setFinalFileName(Encoding.htmlDecode(filename));
+                link.setFinalFileName(Encoding.htmlDecode(filename).trim());
             }
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
-            link.setPasswordProtected(false);
         }
         return AvailableStatus.TRUE;
     }
