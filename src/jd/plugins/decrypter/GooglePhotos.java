@@ -37,17 +37,15 @@ public class GooglePhotos extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final boolean fastlinkcheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.GooglePhotos.FAST_LINKCHECK, true);
         // use english not german!
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album is empty<")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex urlinfo = new Regex(br.getURL(), "/share/([A-Za-z0-9\\-_]+)\\?key=([A-Za-z0-9\\-_]+)");
         final String idMAIN = urlinfo.getMatch(0);
@@ -56,12 +54,14 @@ public class GooglePhotos extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String[] ids = br.getRegex("\\[\"([A-Za-z0-9\\-_]{22,})\",\\[\"https").getColumn(0);
-        String fpName = br.getRegex("<title>(?:Shared album\\s*-\\s*)?[A-Za-z0-9 ]+ – ([^<>\"]+)\\s*-\\s*Google (?:Ph|F)otos</title>").getMatch(0);
+        String fpName = br.getRegex("(?i)<title>(?:Shared album\\s*-\\s*)?[A-Za-z0-9 ]+ – ([^<>\"]+)\\s*-\\s*Google (?:Ph|F)otos</title>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+        }
         if (fpName == null) {
             fpName = idMAIN;
         }
         if (ids == null || ids.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String idSINGLE : ids) {
@@ -73,11 +73,11 @@ public class GooglePhotos extends PluginForDecrypt {
             if (fastlinkcheck) {
                 dl.setAvailable(true);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        fp.addLinks(ret);
+        return ret;
     }
 }
