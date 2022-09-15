@@ -35,6 +35,14 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.UploadedNetConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.crypt.Base64;
@@ -62,14 +70,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.UploadedNetConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" })
 public class Uploadedto extends PluginForHost {
     // DEV NOTES:
@@ -87,11 +87,9 @@ public class Uploadedto extends PluginForHost {
     private char[]                         FILENAMEREPLACES                          = new char[] { ' ', '_', '[', ']' };
     /* Reconnect-workaround-related */
     private static final long              FREE_RECONNECTWAIT                        = 3 * 60 * 60 * 1000L;
-    private String                         PROPERTY_LASTIP                           = "UPLOADEDNET_PROPERTY_LASTIP";
     private static final String            PROPERTY_NOAPI                            = "NOAPI";
-    private static final String            PROPERTY_LASTDOWNLOAD                     = "uploadednet_lastdownload_timestamp";
+    private static final String            PROPERTY_last_blockedIPsMap               = "uploadednet_last_blockedIPsMap";
     private Pattern                        IPREGEX                                   = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                                    = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                                 = new AtomicReference<String>();
     private static Map<String, Long>       blockedIPsMap                             = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                                  = new Object();
@@ -734,13 +732,13 @@ public class Uploadedto extends PluginForHost {
     }
 
     @SuppressWarnings({ "deprecation", "unchecked" })
-    public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void doFree(final DownloadLink link, final Account account) throws Exception {
         currentIP.set(this.getIP());
         if (account == null) {
             logger.info("Free, WEB download method in use!");
             synchronized (CTRLLOCK) {
                 /* Load list of saved IPs + timestamp of last download */
-                final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+                final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_last_blockedIPsMap);
                 if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
                     blockedIPsMap = (Map<String, Long>) lastdownloadmap;
                 }
@@ -754,14 +752,12 @@ public class Uploadedto extends PluginForHost {
             showFreeDialog(getHost());
         }
         workAroundTimeOut(br);
-        String id = getID(downloadLink);
+        String id = getID(link);
         br.setFollowRedirects(false);
         prepBrowser();
         /**
          * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting when a limit is reached
          */
-        long lastdownload = 0;
-        long passedTimeSinceLastDl = 0;
         logger.info("New Download: currentIP = " + currentIP.get());
         /**
          * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
@@ -772,24 +768,24 @@ public class Uploadedto extends PluginForHost {
              * tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download
              * using the same free accounts after performing a reconnect!
              */
-            lastdownload = getPluginSavedLastDownloadTimestamp();
-            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+            final long lastdownload_free = getPluginSavedLastDownloadTimestamp();
+            final long passedTimeSinceLastFreeDownload = System.currentTimeMillis() - lastdownload_free;
+            if (passedTimeSinceLastFreeDownload < FREE_RECONNECTWAIT) {
                 logger.info("Experimental handling active --> There still seems to be a waittime on the current IP --> ERROR_IP_BLOCKED");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastFreeDownload);
             }
         }
         if (account != null && PluginJsonConfig.get(UploadedNetConfig.class).isEnableReconnectWorkaroundAccount()) {
             /* User has no limit on his IP in general --> Check if the current account has a limit. */
-            lastdownload = account.getLongProperty(PROPERTY_LASTDOWNLOAD, 0);
-            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+            final long lastdownload_account = account.getLongProperty(PROPERTY_last_blockedIPsMap, 0);
+            final long passedTimeSinceLastFreeAccountDownload = System.currentTimeMillis() - lastdownload_account;
+            if (passedTimeSinceLastFreeAccountDownload < FREE_RECONNECTWAIT) {
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                  */
                 /* IP was changed - now we only have to switch to the next account! */
-                logger.info("IP has changed -> Disabling current free account to try to use the next free account or free unregistered mode");
-                throw new AccountUnavailableException("Free limit reached", 3 * 60 * 60 * 1000l);
+                logger.info("IP has not changed and limit is still active -> Disabling current free account to try to use the next free account or free unregistered mode");
+                throw new AccountUnavailableException("Free limit reached", FREE_RECONNECTWAIT - passedTimeSinceLastFreeAccountDownload);
             }
         }
         final String addedDownloadlink = baseURL + "file/" + id;
@@ -808,16 +804,16 @@ public class Uploadedto extends PluginForHost {
             String passCode = null;
             if (br.containsHTML("<h2>Authentification</h2>")) {
                 logger.info("Password protected link");
-                passCode = getPassword(downloadLink);
+                passCode = getPassword(link);
                 if (passCode == null || passCode.equals("")) {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
                 }
                 postPage(br, br.getURL(), "pw=" + Encoding.urlEncode(passCode));
                 if (br.containsHTML("<h2>Authentification</h2>")) {
-                    downloadLink.setProperty("pass", null);
+                    link.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
                 }
-                downloadLink.setProperty("pass", passCode);
+                link.setProperty("pass", passCode);
             }
             // free account might not have captcha...
             if (dllink == null) {
@@ -839,7 +835,7 @@ public class Uploadedto extends PluginForHost {
                 wait = Integer.parseInt(waitTime);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            postPage(br, baseURL + "io/ticket/slot/" + getID(downloadLink), "");
+            postPage(br, baseURL + "io/ticket/slot/" + getID(link), "");
             if (!br.containsHTML("\\{succ:true\\}")) {
                 if (br.containsHTML("File not found")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -855,9 +851,9 @@ public class Uploadedto extends PluginForHost {
                 }
                 final int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
                 if (i == 0 && passedTime < wait) {
-                    sleep((wait - passedTime) * 1001l, downloadLink);
+                    sleep((wait - passedTime) * 1001l, link);
                 }
-                postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "g-recaptcha-response=" + recaptchaV2Response);
+                postPage(br, baseURL + "io/ticket/captcha/" + getID(link), "g-recaptcha-response=" + recaptchaV2Response);
                 if (br.containsHTML("\"err\":\"captcha\"")) {
                     continue;
                 }
@@ -884,15 +880,14 @@ public class Uploadedto extends PluginForHost {
         /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
         synchronized (CTRLLOCK) {
             if (account != null) {
-                account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
+                account.setProperty(PROPERTY_last_blockedIPsMap, System.currentTimeMillis());
             } else {
                 blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
-                getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+                getPluginConfig().setProperty(PROPERTY_last_blockedIPsMap, blockedIPsMap);
             }
-            setIP(downloadLink, account);
         }
-        dllink = modifySSLDownloadURL(downloadLink, account, dllink);
-        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dllink = modifySSLDownloadURL(link, account, dllink);
+        dl = BrowserAdapter.openDownload(br, link, dllink, false, 1);
         try {
             /* remove next major update */
             /* workaround for broken timeout in 0.9xx public */
@@ -918,11 +913,11 @@ public class Uploadedto extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (downloadLink.getBooleanProperty(UPLOADED_FINAL_FILENAME, false) == false) {
+        if (link.getBooleanProperty(UPLOADED_FINAL_FILENAME, false) == false) {
             final String contentDisposition = Plugin.getFileNameFromDispositionHeader(dl.getConnection());
             if (StringUtils.isNotEmpty(contentDisposition)) {
-                downloadLink.setFinalFileName(fixEncoding(downloadLink.getName(), contentDisposition));
-                downloadLink.setProperty(UPLOADED_FINAL_FILENAME, true);
+                link.setFinalFileName(fixEncoding(link.getName(), contentDisposition));
+                link.setProperty(UPLOADED_FINAL_FILENAME, true);
             }
         }
         /* Are multiple free downloads allowed? */
@@ -997,7 +992,7 @@ public class Uploadedto extends PluginForHost {
                 freeDownloadlimitReached(null);
             } else {
                 logger.info("Limit reached, disabling free account to use the next one!");
-                account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
+                account.setProperty(PROPERTY_last_blockedIPsMap, System.currentTimeMillis());
                 throw new AccountUnavailableException(3 * 60 * 60 * 1000l);
             }
         }
@@ -1784,47 +1779,6 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return currentIP;
-    }
-
-    @SuppressWarnings("deprecation")
-    private boolean setIP(final DownloadLink link, final Account account) throws PluginException {
-        synchronized (IPCHECK) {
-            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (ipChanged(link) == false) {
-                // Static IP or failure to reconnect! We don't change lastIP
-                logger.warning("Your IP hasn't changed since last download");
-                return false;
-            } else {
-                String lastIP = currentIP.get();
-                link.setProperty(PROPERTY_LASTIP, lastIP);
-                Uploadedto.lastIP.set(lastIP);
-                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
-                logger.info("LastIP = " + lastIP);
-                return true;
-            }
-        }
-    }
-
-    private boolean ipChanged(final DownloadLink link) throws PluginException {
-        String currIP = null;
-        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
-            currIP = currentIP.get();
-        } else {
-            currIP = getIP();
-        }
-        if (currIP == null) {
-            return false;
-        }
-        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
-        if (lastIP == null) {
-            lastIP = Uploadedto.lastIP.get();
-        }
-        if (lastIP == null) {
-            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
-        }
-        return !currIP.equals(lastIP);
     }
 
     private void freeDownloadlimitReached(final String message) throws PluginException {

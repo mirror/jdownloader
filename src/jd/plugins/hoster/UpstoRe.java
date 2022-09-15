@@ -101,12 +101,10 @@ public class UpstoRe extends antiDDoSForHost {
     private final String                   INVALIDLINKS                  = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
     private static String[]                IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private Pattern                        IPREGEX                       = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                        = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                     = new AtomicReference<String>();
     private static Map<String, Long>       blockedIPsMap                 = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                      = new Object();
-    private String                         PROPERTY_LASTIP               = "UPSTORE_PROPERTY_LASTIP";
-    private static final String            PROPERTY_LASTDOWNLOAD         = "UPSTORE_lastdownload_timestamp";
+    private static final String            PROPERTY_last_blockedIPsMap   = "UPSTORE_last_blockedIPsMap";
     /* Don't touch the following! */
     private static final AtomicInteger     freeRunning                   = new AtomicInteger(0);
 
@@ -202,7 +200,7 @@ public class UpstoRe extends antiDDoSForHost {
             currentIP.set(this.getIP());
             synchronized (CTRLLOCK) {
                 /* Load list of saved IPs + timestamp of last download */
-                final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+                final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_last_blockedIPsMap);
                 if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
                     blockedIPsMap = (Map<String, Long>) lastdownloadmap;
                 }
@@ -241,8 +239,8 @@ public class UpstoRe extends antiDDoSForHost {
                  * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
                  * download using the same free accounts after performing a reconnect!
                  */
-                long lastdownload = getPluginSavedLastDownloadTimestamp();
-                long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                final long lastdownload = getPluginSavedLastDownloadTimestamp();
+                final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
                 if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                 }
@@ -667,29 +665,7 @@ public class UpstoRe extends antiDDoSForHost {
                 timestamp_download_started = System.currentTimeMillis();
             }
             blockedIPsMap.put(currentIP.get(), timestamp_download_started);
-            setIP(dl, null);
-            getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private boolean setIP(final DownloadLink link, final Account account) throws Exception {
-        synchronized (IPCHECK) {
-            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (ipChanged(link) == false) {
-                // Static IP or failure to reconnect! We don't change lastIP
-                logger.warning("Your IP hasn't changed since last download");
-                return false;
-            } else {
-                String lastIP = currentIP.get();
-                link.setProperty(PROPERTY_LASTIP, lastIP);
-                UpstoRe.lastIP.set(lastIP);
-                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
-                logger.info("LastIP = " + lastIP);
-                return true;
-            }
+            getPluginConfig().setProperty(PROPERTY_last_blockedIPsMap, blockedIPsMap);
         }
     }
 
@@ -711,26 +687,6 @@ public class UpstoRe extends antiDDoSForHost {
             }
         }
         return lastdownload;
-    }
-
-    private boolean ipChanged(final DownloadLink link) throws Exception {
-        String currIP = null;
-        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
-            currIP = currentIP.get();
-        } else {
-            currIP = getIP();
-        }
-        if (currIP == null) {
-            return false;
-        }
-        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
-        if (lastIP == null) {
-            lastIP = UpstoRe.lastIP.get();
-        }
-        if (lastIP == null) {
-            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
-        }
-        return !currIP.equals(lastIP);
     }
 
     private String getIP() throws Exception {

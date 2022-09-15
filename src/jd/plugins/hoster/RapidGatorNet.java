@@ -24,12 +24,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -104,41 +105,40 @@ public class RapidGatorNet extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
-    private static final String            PREMIUMONLYTEXT                            = "(?is)This file can be downloaded by premium only\\s*</div>";
+    private static final String      PREMIUMONLYTEXT                            = "(?is)This file can be downloaded by premium only\\s*</div>";
     /*
      * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
      * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
      * Free/Expired premium account tries to download via API.
      */
-    private final boolean                  API_TRUST_404_FILE_OFFLINE                 = false;
+    private final boolean            API_TRUST_404_FILE_OFFLINE                 = false;
     /* Old V1 endpoint */
     // private final String API_BASEv1 = "https://rapidgator.net/api/";
     /* https://rapidgator.net/article/api/index */
     // private final String API_BASEv2 = "https://rapidgator.net/api/v2/";
     /* Enforce new session once current one is older than X minutes. 0 or -1 = never refresh session_id unless it is detected as invalid. */
-    private final long                     API_SESSION_ID_REFRESH_TIMEOUT_MINUTES     = 45;
+    private final long               API_SESSION_ID_REFRESH_TIMEOUT_MINUTES     = 45;
     /*
      * 2020-01-07: Use 120 minutes for the website login for now. Consider disabling this on negative feedback as frequent website logins
      * may lead to login-captchas!
      */
-    private final long                     WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 1;
-    private final String[]                 IPCHECK                                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static AtomicLong              timeBefore                                 = new AtomicLong(0);
-    private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP            = "rapidgatornet_lastdownload_timestamp";
-    private static final String            PROPERTY_sessionid                         = "session_id";
-    private static final String            PROPERTY_timestamp_session_create_api      = "session_create";
-    private static final String            PROPERTY_timestamp_session_create_website  = "session_create_website";
-    private final String                   LASTIP                                     = "LASTIP";
-    private final String                   HOTLINK                                    = "HOTLINK";
-    private static AtomicReference<String> lastIP                                     = new AtomicReference<String>();
-    private final Pattern                  IPREGEX                                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private final long               WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 1;
+    private final String[]           IPCHECK                                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static Object            CTRLLOCK                                   = new Object();
+    private static Map<String, Long> blockedIPsMap                              = new HashMap<String, Long>();
+    private static final String      PROPERTY_LAST_BLOCKED_IPS_MAP              = "rapidgatornet__last_blockedIPsMap";
+    private static final String      PROPERTY_sessionid                         = "session_id";
+    private static final String      PROPERTY_timestamp_session_create_api      = "session_create";
+    private static final String      PROPERTY_timestamp_session_create_website  = "session_create_website";
+    private final String             HOTLINK                                    = "HOTLINK";
+    private final Pattern            IPREGEX                                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     /* 2019-12-12: Lowered from 2 to 1 hour */
-    private static final long              FREE_RECONNECTWAIT_GENERAL                 = 1 * 60 * 60 * 1001L;
-    private static final long              FREE_RECONNECTWAIT_DAILYLIMIT              = 3 * 60 * 60 * 1000L;
-    private static final long              FREE_RECONNECTWAIT_OTHERS                  = 30 * 60 * 1000L;
-    private static final long              FREE_CAPTCHA_EXPIRE_TIME                   = 105 * 1000L;
+    private static final long        FREE_RECONNECTWAIT_GENERAL                 = 1 * 60 * 60 * 1001L;
+    private static final long        FREE_RECONNECTWAIT_DAILYLIMIT              = 3 * 60 * 60 * 1000L;
+    private static final long        FREE_RECONNECTWAIT_OTHERS                  = 30 * 60 * 1000L;
+    private static final long        FREE_CAPTCHA_EXPIRE_TIME                   = 105 * 1000L;
     // CONTENT-DISPOSITION header is missing encoding
-    private final boolean                  FIX_FILENAMES                              = true;
+    private final boolean            FIX_FILENAMES                              = true;
 
     @Override
     public String getAGBLink() {
@@ -381,7 +381,8 @@ public class RapidGatorNet extends antiDDoSForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        final String currentIP = getIP();
+        final boolean useExperimentalHandling = PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling();
+        final String currentIP = useExperimentalHandling ? getIP() : null;
         String finalDownloadURL = null;
         if (!StringUtils.isEmpty(hotLinkURL)) {
             logger.info("Seems to be a hotlink file:" + hotLinkURL);
@@ -389,19 +390,20 @@ public class RapidGatorNet extends antiDDoSForHost {
         } else {
             finalDownloadURL = checkDirectLink(link, account);
             if (StringUtils.isEmpty(finalDownloadURL)) {
-                final boolean useExperimentalHandling = PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling();
                 if (useExperimentalHandling) {
-                    logger.info("New Download: currentIP = " + currentIP);
-                    if (ipChanged(currentIP, link) == false) {
-                        long lastdownload_timestamp = timeBefore.get();
-                        if (lastdownload_timestamp == 0) {
-                            lastdownload_timestamp = getPluginSavedLastDownloadTimestamp();
+                    logger.info("New Download with reconnectWorkaround: currentIP = " + currentIP);
+                    synchronized (CTRLLOCK) {
+                        /* Load list of saved IPs + timestamp of last download */
+                        final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LAST_BLOCKED_IPS_MAP);
+                        if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
+                            blockedIPsMap = (Map<String, Long>) lastdownloadmap;
                         }
-                        final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload_timestamp;
-                        logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
-                        if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download sessions", FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
-                        }
+                    }
+                    final long lastdownload_timestamp = getPluginSavedLastDownloadTimestamp(currentIP);
+                    final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload_timestamp;
+                    logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
+                    if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download sessions", FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
                     }
                 }
                 if (br.containsHTML(RapidGatorNet.PREMIUMONLYTEXT)) {
@@ -658,14 +660,29 @@ public class RapidGatorNet extends antiDDoSForHost {
             dl.startDownload();
         } finally {
             /* Save timestamp after download - does not matter whether it was finished or stopped by the user! */
-            RapidGatorNet.timeBefore.set(System.currentTimeMillis());
-            this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
-            try {
-                setIP(currentIP, link);
-            } catch (final Throwable e) {
-                logger.log(e);
+            blockedIPsMap.put(currentIP, System.currentTimeMillis());
+            this.getPluginConfig().setProperty(PROPERTY_LAST_BLOCKED_IPS_MAP, blockedIPsMap);
+        }
+    }
+
+    private long getPluginSavedLastDownloadTimestamp(final String currentIP) {
+        long lastdownload = 0;
+        synchronized (blockedIPsMap) {
+            final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Long> ipentry = it.next();
+                final String ip = ipentry.getKey();
+                final long timestamp = ipentry.getValue();
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT_GENERAL) {
+                    /* Remove old entries */
+                    it.remove();
+                }
+                if (ip.equals(currentIP)) {
+                    lastdownload = timestamp;
+                }
             }
         }
+        return lastdownload;
     }
 
     protected static String getDirectlinkProperty(final Account account) {
@@ -1653,46 +1670,6 @@ public class RapidGatorNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return currentIP;
-    }
-
-    private boolean ipChanged(final String IP, final DownloadLink link) throws PluginException {
-        String currentIP = null;
-        if (IP != null && new Regex(IP, IPREGEX).matches()) {
-            currentIP = IP;
-        } else {
-            currentIP = getIP();
-        }
-        if (currentIP == null) {
-            return false;
-        }
-        String lastIP = link.getStringProperty(LASTIP, null);
-        if (lastIP == null) {
-            lastIP = RapidGatorNet.lastIP.get();
-        }
-        return !currentIP.equals(lastIP);
-    }
-
-    private boolean setIP(final String IP, final DownloadLink link) throws PluginException {
-        synchronized (IPCHECK) {
-            if (IP != null && !new Regex(IP, IPREGEX).matches()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (ipChanged(IP, link) == false) {
-                // Static IP or failure to reconnect! We don't change lastIP
-                logger.warning("Your IP hasn't changed since last download");
-                return false;
-            } else {
-                final String lastIP = IP;
-                link.setProperty(LASTIP, lastIP);
-                RapidGatorNet.lastIP.set(lastIP);
-                logger.info("LastIP = " + lastIP);
-                return true;
-            }
-        }
-    }
-
-    private long getPluginSavedLastDownloadTimestamp() {
-        return getPluginConfig().getLongProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, 0);
     }
 
     @Override
