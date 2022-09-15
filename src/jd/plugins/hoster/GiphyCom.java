@@ -23,7 +23,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -48,6 +47,8 @@ public class GiphyCom extends PluginForHost {
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private boolean              server_issues     = false;
+    private final String         PATTERN_NORMAL    = "https?://[^/]+/gifs/([A-Za-z0-9\\-]+-)?([A-Za-z0-9]+)";
+    private final String         PATTERN_DIRECT    = "https?://media\\d*\\.giphy\\.com/media/([A-Za-z0-9]+)";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -68,7 +69,7 @@ public class GiphyCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.|media\\d+\\.)?" + buildHostsPatternPart(domains) + "/(gifs/(([A-Za-z0-9\\-]+)-)?([A-Za-z0-9]+)|media/([A-Za-z0-9])+)");
+            ret.add("https?://(?:www\\.|media\\d*\\.)?" + buildHostsPatternPart(domains) + "/(gifs/([A-Za-z0-9\\-]+-)?[A-Za-z0-9]+|media/[A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -89,11 +90,13 @@ public class GiphyCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String fid = new Regex(link.getPluginPatternMatcher(), "/gifs/(?:[A-Za-z0-9\\-]+-)?([A-Za-z0-9]+)").getMatch(0);
-        if (fid == null) {
-            fid = new Regex(link.getPluginPatternMatcher(), "/media/([A-Za-z0-9]+)").getMatch(0);
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(PATTERN_DIRECT)) {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_DIRECT).getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL).getMatch(0);
         }
-        return fid;
     }
 
     @Override
@@ -101,17 +104,18 @@ public class GiphyCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         if (link.getPluginPatternMatcher().matches("(?i).*/media/.+")) {
             // rewrite direct/media urls to normal url format
-            br.getPage("https://giphy.com/gifs/" + fid);
-            if (br.getURL().contains(fid)) {
-                link.setPluginPatternMatcher(br.getURL());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("https://" + this.getHost() + "/gifs/" + fid);
+            if (!br.getURL().contains(fid) || !this.canHandle(br.getURL())) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            link.setPluginPatternMatcher(br.getURL());
         }
-        String filename = null;
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        String title = null;
         dllink = null;
         server_issues = false;
         final boolean useOembedAPI = true;
@@ -122,10 +126,9 @@ public class GiphyCom extends PluginForHost {
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             this.dllink = (String) entries.get("url");
-            final String title = (String) entries.get("title");
-            if (title != null) {
-                filename = title.replaceAll("(\\s*-\\s*Find\\s*&\\s*Share\\s*on\\s*GIPHY)", "");
-                filename = filename + getFileNameExtensionFromURL(dllink, ".gif");
+            final String titleTmp = (String) entries.get("title");
+            if (!StringUtils.isEmpty(titleTmp)) {
+                title = titleTmp.replaceAll("(\\s*-\\s*Find\\s*&\\s*Share\\s*on\\s*GIPHY)", "");
             }
         } else {
             br.getPage(link.getPluginPatternMatcher());
@@ -134,15 +137,9 @@ public class GiphyCom extends PluginForHost {
             }
             dllink = br.getRegex("property=\"og:image\" content=\"(https://[^\"]+)").getMatch(0);
         }
-        if (filename == null) {
-            filename = new Regex(link.getPluginPatternMatcher(), "/gifs/([A-Za-z0-9\\-]+)-").getMatch(0);
-            if (filename == null) {
-                filename = fid;
-            }
-            filename = filename.replace("-", " ");
+        if (title != null) {
+            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ".gif"));
         }
-        filename = filename + ".gif";
-        link.setFinalFileName(filename);
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
