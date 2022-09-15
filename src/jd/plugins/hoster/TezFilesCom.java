@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -26,9 +29,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:tezfiles\\.com|publish2\\.me)/(?:f(?:ile)?|preview)/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class TezFilesCom extends K2SApi {
@@ -85,9 +85,10 @@ public class TezFilesCom extends K2SApi {
     }
 
     @Override
-    protected void handleErrors(Account account, DownloadLink downloadLink, Browser br, String brString, boolean subErrors) throws PluginException {
+    protected void handleErrorsAPI(Account account, DownloadLink downloadLink, Browser br, String brString, boolean subErrors) throws PluginException {
+        // 2022-09-15: TODO: Remove this ??!
         try {
-            super.handleErrors(account, downloadLink, br, brString, subErrors);
+            super.handleErrorsAPI(account, downloadLink, br, brString, subErrors);
         } catch (AccountRequiredException e) {
             if (account != null && downloadLink != null) {
                 throw e;
