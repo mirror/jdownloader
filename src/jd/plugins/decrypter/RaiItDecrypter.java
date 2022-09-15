@@ -63,13 +63,14 @@ public class RaiItDecrypter extends PluginForDecrypt {
     private static final String TYPE_RAIPLAY_PROGRAMMI = "https?://[^/]+/programmi/([^/]+).*";
     // private static final String TYPE_RAIPLAY_IT = "https?://.+raiplay\\.it/.+";
     private static final String TYPE_CONTENTITEM       = ".+/dl/[^<>\"]+/ContentItem\\-[a-f0-9\\-]+\\.html$";
-    private final String        PROPERTY_TITLE         = "title";
-    private final String        PROPERTY_DATE          = "date";
+    // private final String PROPERTY_TITLE = "title";
+    // private final String PROPERTY_TITLE_SHOW = "title_show";
+    // private final String PROPERTY_DATE = "date";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rai.it", "raiplay.it", "rai.tv", "rainews.it" });
+        ret.add(new String[] { "rai.it", "raiplay.it", "rai.tv", "rainews.it", "raiplaysound.it" });
         return ret;
     }
 
@@ -210,7 +211,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /** Crawls list of URLs which lead to single videos. */
+    /** Crawl all episodes of a series. */
     private ArrayList<DownloadLink> crawlProgrammi(final CryptedLink param) throws Exception {
         final String showNameURL = new Regex(param.getCryptedUrl(), TYPE_RAIPLAY_PROGRAMMI).getMatch(0);
         if (showNameURL == null) {
@@ -229,19 +230,16 @@ public class RaiItDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage("/programmi/" + showNameURL + "/" + var1 + "/" + var2 + "/episodes.json");
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final List<Object> seasonsO = (List<Object>) entries.get("seasons");
-        for (final Object seasonO : seasonsO) {
-            entries = (Map<String, Object>) seasonO;
-            final List<Object> categoriesO = (List<Object>) entries.get("episodes");
-            for (final Object categoryO : categoriesO) {
-                entries = (Map<String, Object>) categoryO;
-                final List<Object> itemsO = (List<Object>) entries.get("cards");
-                for (final Object cardO : itemsO) {
-                    entries = (Map<String, Object>) cardO;
-                    final String type = (String) entries.get("type");
-                    final boolean isLive = ((Boolean) entries.get("is_live")).booleanValue();
-                    String contentURL = (String) entries.get("weblink");
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Map<String, Object>> seasons = (List<Map<String, Object>>) entries.get("seasons");
+        for (final Map<String, Object> season : seasons) {
+            final List<Map<String, Object>> episodes = (List<Map<String, Object>>) season.get("episodes");
+            for (final Map<String, Object> episode : episodes) {
+                final List<Map<String, Object>> cards = (List<Map<String, Object>>) episode.get("cards");
+                for (final Map<String, Object> card : cards) {
+                    final String type = (String) card.get("type");
+                    final boolean isLive = ((Boolean) card.get("is_live")).booleanValue();
+                    String contentURL = (String) card.get("weblink");
                     if (!type.equalsIgnoreCase("RaiPlay Video Item") || isLive || StringUtils.isEmpty(contentURL)) {
                         /* Skip iunsupported items */
                         continue;
@@ -283,14 +281,20 @@ public class RaiItDecrypter extends PluginForDecrypt {
         final Map<String, Object> trackInfo = (Map<String, Object>) entries.get("track_info");
         final Map<String, Object> showInfo = (Map<String, Object>) entries.get("program_info");
         String title = (String) entries.get("name");
-        final String showTitle = (String) showInfo.get("name");
+        final String showTitle = showInfo != null ? (String) showInfo.get("name") : null;
         String episodeTitle = (String) entries.get("episode_title");
         String date_formatted = (String) trackInfo.get("date");
         String description = (String) entries.get("description");
         String seasonnumber = (String) entries.get("season");
         String episodenumber = (String) entries.get("episode");
-        final String relinker_url = (String) JavaScriptEngineFactory.walkJson(entries, "video/content_url");
-        String filename = date_formatted + "_raitv_" + showTitle;
+        String relinker_url = (String) JavaScriptEngineFactory.walkJson(entries, "video/content_url");
+        if (StringUtils.isEmpty(relinker_url)) {
+            relinker_url = (String) JavaScriptEngineFactory.walkJson(entries, "audio/url");
+        }
+        String filename = date_formatted + "_raitv";
+        if (!StringUtils.isEmpty(showTitle)) {
+            filename += "_" + showTitle;
+        }
         if (!StringUtils.isEmpty(episodeTitle)) {
             filename += " - " + episodeTitle;
         }
@@ -361,6 +365,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
         if (dllink == null) {
             String jsonUrl = br.getRegex("data-video-json=\"(/video/[-\\/A-Za-z0-9]+\\.json)\"").getMatch(0);
+            if (jsonUrl == null) {
+                jsonUrl = br.getRegex("(" + Pattern.quote(br._getURL().getPath().replace(".html", ".json")) + ")").getMatch(0);
+            }
             if (jsonUrl == null) {
                 /* Unsupported content like some list of multiple embedded videos, a livestream or no video content at all. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -551,6 +558,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        // final String ext = brc.getRegex("<ct>([A-Za-z0-9]+)</ct>").getMatch(0);
         String dllink = brc.getRegex("<url type=\"content\"><!\\[CDATA\\[([a-zA-Z:\\/0-9\\-\\._,\\?\\&\\=~\\*]+)\\]\\]>").getMatch(0);
         if (dllink != null && dllink.startsWith("mms://")) {
             /* Convert mms to http */
@@ -559,8 +567,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
         if (dllink == null || !dllink.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        logger.info("found m3u8: " + dllink);
-        final String extension = ".mp4";
         final Regex hdsconvert = new Regex(dllink, "(https?://[^/]+/z/podcastcdn/.+\\.csmil)/manifest\\.f4m");
         if (hdsconvert.matches()) {
             logger.info("Changing HDS --> HLS");
@@ -589,7 +595,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     final String directlink_http = relinkerURLWithoutParams + "?cont=" + cont + "&overrideUserAgentRule=mp4-" + availableBitrate;
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink_http);
                     dl.setAvailable(true);
-                    dl.setFinalFileName(title + "_" + availableBitrate + extension);
+                    dl.setFinalFileName(title + "_" + availableBitrate + ".mp4");
                     dl._setFilePackage(fp);
                     if (description != null) {
                         dl.setComment(description);
@@ -625,7 +631,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 for (final String staticBitrate : staticBitrateList) {
                     final String directlink = dllink.replace("_1800.mp4", "_" + staticBitrate + ".mp4");
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink);
-                    dl.setFinalFileName(title + "_" + staticBitrate + extension);
+                    dl.setFinalFileName(title + "_" + staticBitrate + ".mp4");
                     dl._setFilePackage(fp);
                     if (description != null) {
                         dl.setComment(description);
@@ -633,9 +639,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     ret.add(dl);
                 }
             } else {
-                /* Only one quality available. */
+                /* Only one quality available. Mostly relevant for single mp3 files. */
                 final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
-                dl.setFinalFileName(title + extension);
+                if (dllink.toLowerCase(Locale.ENGLISH).contains(".mp3")) {
+                    dl.setFinalFileName(title + ".mp3");
+                } else {
+                    dl.setFinalFileName(title + ".mp4");
+                }
                 dl._setFilePackage(fp);
                 if (description != null) {
                     dl.setComment(description);

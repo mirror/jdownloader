@@ -1042,6 +1042,11 @@ public class ProLeechLink extends antiDDoSForHost {
             final Number errorcode = (Number) entries.get("error");
             final String message = (String) entries.get("message");
             if (errorcode != null && message != null) {
+                /* 2022-09-15: Possible not explicitely implemented error(s): */
+                /*
+                 * {"error":9,"message":"Your file is big! (12.0 MB). You do not have traffic- bandwidth limit 10.0 GB :)\r\n\t\t\t\t Time
+                 * Left To Reset Your Bandwith For This Host: 9 Hours 11 Minutes 33 Seconds"}
+                 */
                 switch (errorcode.intValue()) {
                 case 0:
                     /* No error */
