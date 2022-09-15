@@ -806,19 +806,19 @@ public abstract class K2SApi extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = this.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String filename = (String) entries.get("name");
         // final String access = (String)entries.get("access");
         final boolean isDeleted = ((Boolean) entries.get("isDeleted")).booleanValue();
         // final boolean isAvailableForFree = ((Boolean) entries.get("isAvailableForFree")).booleanValue();
         // final boolean hasAbuse = ((Boolean) entries.get("hasAbuse")).booleanValue();
-        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        final Object filesizeO = entries.get("size");
         // final List<Object> ressourcelist = (List<Object>) entries.get("");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
-        if (filesize > 0) {
-            link.setDownloadSize(filesize);
+        if (filesizeO != null) {
+            link.setDownloadSize(Long.parseLong(filesizeO.toString()));
         }
         if (isDeleted) {
             /* Files can get deleted and filename & filesize information may still be available! */
@@ -1165,7 +1165,7 @@ public abstract class K2SApi extends PluginForHost {
                 // we don't want to pollute this.br
                 final Browser auth = prepBrowser(new Browser());
                 postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass() + "") + "\"}", account, link);
-                final Map<String, Object> loginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+                final Map<String, Object> loginResponse = this.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 currentAuthToken = (String) loginResponse.get("auth_token");
                 if (StringUtils.isEmpty(currentAuthToken)) {
                     /* This should never happen */
