@@ -28,6 +28,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,9 +43,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
@@ -207,7 +207,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
             if (account != null) {
                 throw new AccountUnavailableException("You have reached the daily download limit", FREE_RECONNECTWAIT_DEFAULT);
             } else {
-                this.setDownloadStarted(link, FREE_RECONNECTWAIT_DEFAULT);
+                this.setDownloadStarted(link, false);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached the daily download limit", FREE_RECONNECTWAIT_DEFAULT);
             }
         } else if (new Regex(correctedBR, "We have detected an unusual activity from multiple IPs using your account|Your account has been temporarily suspended|Please check your email and follow the link that has been sent to you to reactivate").matches()) {
@@ -241,15 +241,15 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     // return "/profile";
     // }
     @Override
-    protected String getDllink(final DownloadLink downloadLink, final Account account, final Browser br, final String src) {
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, final String src) {
         /* 2019-08-21: Special */
-        final String dllink = super.getDllink(downloadLink, account, br, src);
-        if (dllink != null) {
+        final String dllink = super.getDllink(link, account, br, src);
+        if (!StringUtils.isEmpty(dllink)) {
             /*
              * 2019-08-21: This is kind of a workaround: If we found a downloadlink we will soon start the download --> Save timestamp so
              * our special reconnect handling knows that the limit is reached now and user will not have to solve extra captchas!
              */
-            setDownloadStarted(downloadLink, 0);
+            setDownloadStarted(link, true);
         }
         return dllink;
     }
@@ -297,66 +297,27 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     private static String[]                IPCHECK                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private final String                   EXPERIMENTALHANDLING       = "EXPERIMENTALHANDLING";
     private Pattern                        IPREGEX                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                     = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                  = new AtomicReference<String>();
     private static Map<String, Long>       blockedIPsMap              = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                   = new Object();
-    private String                         PROPERTY_LASTIP            = "NOVAFILE_PROPERTY_LASTIP";
     private static final String            PROPERTY_LASTDOWNLOAD      = "NOVAFILE_lastdownload_timestamp";
 
     @SuppressWarnings("deprecation")
-    private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) {
+    private void setDownloadStarted(final DownloadLink dl, final boolean startedNow) {
         synchronized (CTRLLOCK) {
             try {
                 final String currentIP = NovaFileCom.currentIP.get();
                 if (currentIP != null) {
-                    final long timestamp_download_started;
-                    if (remaining_reconnect_wait > 0) {
-                        /*
-                         * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the
-                         * timestamp. Add 1 minute to make sure that we wait long enough!
-                         */
-                        long timePassed = FREE_RECONNECTWAIT_DEFAULT - remaining_reconnect_wait;
-                        /* Errorhandling for invalid values */
-                        if (timePassed < 0) {
-                            timePassed = 0;
-                        }
-                        timestamp_download_started = System.currentTimeMillis() - timePassed;
+                    if (startedNow) {
+                        blockedIPsMap.put(currentIP, System.currentTimeMillis());
                     } else {
-                        /*
-                         * Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download
-                         * just now.
-                         */
-                        timestamp_download_started = System.currentTimeMillis();
+                        blockedIPsMap.put(currentIP, System.currentTimeMillis() - (FREE_RECONNECTWAIT_DEFAULT + 30000));
                     }
-                    blockedIPsMap.put(currentIP, timestamp_download_started);
                     getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
                 }
-                setIP(dl, null);
-            } catch (final Throwable e) {
+            } catch (final Exception ignore) {
                 logger.warning("Error happened while trying to save download_started_timestamp");
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private boolean setIP(final DownloadLink link, final Account account) throws Exception {
-        synchronized (IPCHECK) {
-            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (ipChanged(link) == false) {
-                // Static IP or failure to reconnect! We don't change lastIP
-                logger.warning("Your IP hasn't changed since last download");
-                return false;
-            } else {
-                String lastIP = currentIP.get();
-                link.setProperty(PROPERTY_LASTIP, lastIP);
-                NovaFileCom.lastIP.set(lastIP);
-                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
-                logger.info("LastIP = " + lastIP);
-                return true;
+                ignore.printStackTrace();
             }
         }
     }
@@ -379,26 +340,6 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
             }
         }
         return lastdownload;
-    }
-
-    private boolean ipChanged(final DownloadLink link) throws Exception {
-        String currIP = null;
-        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
-            currIP = currentIP.get();
-        } else {
-            currIP = getIP();
-        }
-        if (currIP == null) {
-            return false;
-        }
-        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
-        if (lastIP == null) {
-            lastIP = NovaFileCom.lastIP.get();
-        }
-        if (lastIP == null) {
-            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
-        }
-        return !currIP.equals(lastIP);
     }
 
     private String getIP() throws Exception {
