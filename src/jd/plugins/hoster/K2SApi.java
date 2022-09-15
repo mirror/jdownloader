@@ -1165,7 +1165,7 @@ public abstract class K2SApi extends PluginForHost {
                 // we don't want to pollute this.br
                 final Browser auth = prepBrowser(new Browser());
                 postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass() + "") + "\"}", account, link);
-                final Map<String, Object> loginResponse = JSonStorage.restoreFromString(auth.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> loginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
                 currentAuthToken = (String) loginResponse.get("auth_token");
                 if (StringUtils.isEmpty(currentAuthToken)) {
                     /* This should never happen */
@@ -1197,14 +1197,13 @@ public abstract class K2SApi extends PluginForHost {
         // return;
         // }
         try {
-            // final Object entriesO = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
             final Object entriesO = JSonStorage.restoreFromString(brString, TypeRef.OBJECT);
             final Map<String, Object> entries;
             if (entriesO instanceof List) {
                 final List<Map<String, Object>> subErrorsList = (List<Map<String, Object>>) entriesO;
                 entries = subErrorsList.get(0);
             } else {
-                entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entriesO;
             }
             /* E.g. {"message":"Invalid login or password","status":"error","code":406,"errorCode":70} */
             Number errCode = (Number) entries.get("errorCode");
