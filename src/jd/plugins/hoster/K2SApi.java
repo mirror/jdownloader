@@ -72,23 +72,21 @@ import jd.plugins.download.DownloadInterface;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class K2SApi extends PluginForHost {
-    private String                         authToken;
-    protected String                       directlinkproperty;
-    protected int                          chunks;
-    protected boolean                      resumes;
-    private final String                   lng                   = getLanguage();
-    private final String                   AUTHTOKEN             = "auth_token";
-    private int                            authTokenFail         = 0;
-    private int                            loginCaptchaFail      = -1;
+    private String         authToken;
+    protected String       directlinkproperty;
+    protected int          chunks;
+    protected boolean      resumes;
+    private final String   lng                   = getLanguage();
+    private final String   AUTHTOKEN             = "auth_token";
+    private int            authTokenFail         = 0;
+    private int            loginCaptchaFail      = -1;
     /* Reconnect workaround settings */
-    private final Pattern                  IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP             = new AtomicReference<String>();
-    private final String                   PROPERTY_LASTIP       = "K2S_PROPERTY_LASTIP";
-    private final String                   PROPERTY_FILE_ID      = "fileID";
-    private final String                   PROPERTY_LASTDOWNLOAD = "_lastdownload_timestamp";
-    private final long                     FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
-    private final String[]                 IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private final Pattern  IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private final String   PROPERTY_FILE_ID      = "fileID";
+    private final String   PROPERTY_LASTDOWNLOAD = "_lastdownload_timestamp";
+    private final String   PROPERTY_ACCESS       = "access";
+    private final long     FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
+    private final String[] IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);
@@ -323,11 +321,6 @@ public abstract class K2SApi extends PluginForHost {
                 }
             }
         }
-        /*
-         * 2020-05-05: Set user defined value as some hosts may allow more than 1 simultaneous download according to user:
-         * https://board.jdownloader.org/showpost.php?p=463892&postcount=5
-         */
-        totalMaxSimultanFreeDownload.set(PluginJsonConfig.get(this.getConfigInterface()).getMaxSimultaneousFreeDownloads());
     }
 
     protected Browser prepBrowser(final Browser br) {
@@ -486,7 +479,7 @@ public abstract class K2SApi extends PluginForHost {
                                 // public = everyone users
                                 // premium = restricted to premium
                                 // private = owner only..
-                                dl.setProperty("access", access);
+                                dl.setProperty(PROPERTY_ACCESS, access);
                                 if (dl.getComment() == null) {
                                     if ("premium".equalsIgnoreCase(access)) {
                                         dl.setComment(getErrorMessageForUser(7));
@@ -633,23 +626,25 @@ public abstract class K2SApi extends PluginForHost {
         logger.info("Trying to generate new directurl");
         // if above has failed, dllink will be null
         boolean freeAccountReconnectWorkaround = false;
-        final boolean isFree = account == null || account.getType() == AccountType.FREE;
+        final boolean isFree = this.isNoAccountOrFreeAccount(account);
         if (StringUtils.isEmpty(dllink)) {
-            if ("premium".equalsIgnoreCase(link.getStringProperty("access")) && isFree) {
+            if ("premium".equalsIgnoreCase(link.getStringProperty(PROPERTY_ACCESS)) && isFree) {
                 // download not possible
                 premiumDownloadRestriction(getErrorMessageForUser(3));
-            } else if ("private".equalsIgnoreCase(link.getStringProperty("access")) && isFree) {
+            } else if ("private".equalsIgnoreCase(link.getStringProperty(PROPERTY_ACCESS)) && isFree) {
                 privateDownloadRestriction(getErrorMessageForUser(8));
             }
             if (isFree) {
-                freeAccountReconnectWorkaround = PluginJsonConfig.get(this.getConfigInterface()).isEnableReconnectWorkaround();
-                if (freeAccountReconnectWorkaround) {
-                    // free non account, and free account download method.
-                    currentIP.set(this.getIP());
+                if (PluginJsonConfig.get(this.getConfigInterface()).isEnableReconnectWorkaround()) {
+                    freeAccountReconnectWorkaround = true;
+                    /**
+                     * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+                     */
+                    this.setCurrentIP(this.getIP());
                     if (account == null) {
                         final Map<String, Long> blockedIPsMap = this.getBlockedIPsMap();
                         synchronized (blockedIPsMap) {
-                            /* Load list of saved IPs + timestamp of last download */
+                            /* Load list of saved IPs + timestamp of last download and add it to our main map */
                             try {
                                 final Map<String, Long> lastdownloadmap = (Map<String, Long>) this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
                                 if (lastdownloadmap != null && blockedIPsMap.isEmpty()) {
@@ -659,10 +654,7 @@ public abstract class K2SApi extends PluginForHost {
                             }
                         }
                     }
-                    /**
-                     * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
-                     */
-                    logger.info("New Download: currentIP = " + currentIP.get());
+                    logger.info("New Download: currentIP = " + this.getCurrentIP());
                     /*
                      * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts
                      * if he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
@@ -671,7 +663,7 @@ public abstract class K2SApi extends PluginForHost {
                     final long lastdownload = getPluginSavedLastDownloadTimestamp();
                     final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
                     if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
-                        logger.info("Experimental handling active --> There still seems to be a waittime on the current IP --> ERROR_IP_BLOCKED");
+                        logger.info("Experimental handling active --> There still seems to be a waittime on the current IP --> ERROR_IP_BLOCKED to prevent unnecessary captcha");
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                     }
                 }
@@ -686,9 +678,7 @@ public abstract class K2SApi extends PluginForHost {
                     this.handleErrors(account, link, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (captcha_url.startsWith("https://")) {
-                    logger.info("download-captcha_url is already https");
-                } else {
+                if (!captcha_url.startsWith("https://")) {
                     /*
                      * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989 and
                      * 2020-04-23: board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
@@ -711,7 +701,7 @@ public abstract class K2SApi extends PluginForHost {
                 } else {
                     logger.info("Using Referer value: NONE given");
                 }
-                postPageRaw(this.br, "/geturl", JSonStorage.toString(getURL), account, link);
+                postPageRaw(this.br, "/geturl", JSonStorage.serializeToJson(getURL), account, link);
                 final Map<String, Object> geturl = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String free_download_key = (String) geturl.get("free_download_key");
                 if (StringUtils.isEmpty(free_download_key)) {
@@ -742,16 +732,15 @@ public abstract class K2SApi extends PluginForHost {
             if (StringUtils.isEmpty(dllink)) {
                 this.handleErrors(account, link, this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                logger.info("dllink = " + dllink);
             }
+            logger.info("dllink = " + dllink);
             /*
              * E.g. free = 51200, with correct Referer = 204800 --> Normal free speed: 30-50 KB/s | Free Speed with special Referer: 150-200
              * KB/s
              */
-            final String rate_limit = new Regex(dllink, "rate_limit=(\\d+)").getMatch(0);
-            if (rate_limit != null) {
-                logger.info("Current speedlimit: " + rate_limit);
+            final String rate_limitStr = new Regex(dllink, "rate_limit=(\\d+)").getMatch(0);
+            if (rate_limitStr != null) {
+                logger.info("Current speedlimit according to final downloadurl: " + rate_limitStr);
             }
             if (freeAccountReconnectWorkaround) {
                 /*
@@ -765,10 +754,9 @@ public abstract class K2SApi extends PluginForHost {
                     } else {
                         /* Solely IP based limitation */
                         final Map<String, Long> blockedIPsMap = this.getBlockedIPsMap();
-                        blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+                        blockedIPsMap.put(this.getCurrentIP(), System.currentTimeMillis());
                         getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
                     }
-                    setIP(link, account);
                 }
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
@@ -795,6 +783,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected void handleFreeDownloadKey(final DownloadLink link, final Account account, final Browser br, Map<String, Object> request, final String fuid, final String free_download_key) throws Exception {
+        /* {"status":"success","code":200,"message":"Captcha accepted, please wait","free_download_key":"homeHash","time_wait":30} */
         final String wait_seconds_str = PluginJSonUtils.getJsonValue(br, "time_wait");
         if (wait_seconds_str == null || !wait_seconds_str.matches("\\d+") || free_download_key == null) {
             this.handleErrors(account, link, this.br);
@@ -824,7 +813,7 @@ public abstract class K2SApi extends PluginForHost {
             request.put("free_download_key", free_download_key);
             request.remove("captcha_challenge");
             request.remove("captcha_response");
-            postPageRaw(br, "/geturl", JSonStorage.toString(request), account, link);
+            postPageRaw(br, "/geturl", JSonStorage.serializeToJson(request), account, link);
         }
     }
 
@@ -1770,13 +1759,8 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private static Object                CTRLLOCK                     = new Object();
-    /**
-     * Connection Management<br />
-     * <b>NOTE:</b> CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]<br />
-     * <b>@Override</b> when incorrect
-     **/
-    protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static Object CTRLLOCK = new Object();
+
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
@@ -1791,8 +1775,6 @@ public abstract class K2SApi extends PluginForHost {
      *            (+1|-1)
      * @author raztoki
      */
-    private boolean                      downloadFlag                 = false;
-
     protected abstract Map<String, Object> getHostMap();
 
     protected <T> T getHostMapEntry(final String key, Type T, T defaultValue) {
@@ -1829,31 +1811,18 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         synchronized (CTRLLOCK) {
-            final boolean useAccountMaps = account != null && !isNoAccountOrFreeAccount(account);
-            final String slotID = useAccountMaps ? account.getUser() : "FREE";
+            final boolean useAccountMaps = account != null;
+            final String slotID = useAccountMaps ? "Account:" + account.getUser() : "FREE";
             final AtomicInteger slotsInUse = useAccountMaps ? getAccountSlotsInUse(account) : getFreeSlotsInUse();
+            /* Slots will be either decreased or increased by one */
             final AtomicInteger maxSlots = useAccountMaps ? getHostMaxAccount(account) : getHostMaxFree();
-            if (num == 1) {
-                if (downloadFlag == false) {
-                    slotsInUse.incrementAndGet();
-                    downloadFlag = true;
-                } else {
-                    return;
-                }
-            } else {
-                if (downloadFlag) {
-                    slotsInUse.decrementAndGet();
-                    downloadFlag = false;
-                } else {
-                    final int was = maxSlots.get();
-                    maxSlots.set(Math.max(1, was - 1));
-                    logger.info(slotID + ":maxSlots(Penalty) was=" + was + "|now = " + maxSlots.get());
-                    return;
-                }
-            }
-            final int maxSlotsPossible = useAccountMaps ? totalMaxSimultanFreeDownload.get() : Math.max(1, account.getMaxSimultanDownloads());
-            final int was = maxSlots.getAndSet(Math.min(slotsInUse.get() + 1, maxSlotsPossible));
-            logger.info(slotID + ":maxSlots(Slot) was=" + was + "|now = " + maxSlots.get() + "|max=" + maxSlotsPossible);
+            final int slotsInUseOld = slotsInUse.get();
+            final int slotsInUseNew = slotsInUseOld + num;
+            slotsInUse.set(slotsInUseNew);
+            /* Decrease/increase max simultaneous downloads/"slots". */
+            final int maxSlotsPossible = useAccountMaps ? Math.max(1, account.getMaxSimultanDownloads()) : PluginJsonConfig.get(this.getConfigInterface()).getMaxSimultaneousFreeDownloads();
+            maxSlots.getAndSet(Math.min(slotsInUse.get() + 1, maxSlotsPossible));
+            logger.info(slotID + ":maxSlotsUsed was=" + slotsInUseOld + "|now = " + slotsInUseNew + "|max=" + maxSlots.get());
         }
     }
 
@@ -1862,6 +1831,9 @@ public abstract class K2SApi extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account, final AbstractProxySelectorImpl proxy) {
+        /*
+         * TODO: Always use getHostMaxAccount(account) for accounts (no matter which type) and getHostMaxFree for non account downloads(?)
+         */
         if (isNoAccountOrFreeAccount(account)) {
             final AtomicLong[] store;
             synchronized (freeDownloadHandling) {
@@ -1875,6 +1847,14 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         return super.getMaxSimultanDownload(link, account, proxy);
+    }
+
+    protected String getCurrentIP() {
+        return getHostMapEntry("currentIP", AtomicReference.class, new AtomicReference<String>(null)).get();
+    }
+
+    protected void setCurrentIP(final String ip) {
+        getHostMap().put("currentIP", new AtomicReference<String>(ip));
     }
 
     protected AtomicInteger getAccountSlotsInUse(final Account account) {
@@ -1898,8 +1878,12 @@ public abstract class K2SApi extends PluginForHost {
         return this.getHostMaxFree().get();
     }
 
-    protected final boolean isNoAccountOrFreeAccount(Account account) {
-        return account == null || Account.AccountType.FREE.equals(account.getType());
+    protected final boolean isNoAccountOrFreeAccount(final Account account) {
+        if (account == null || Account.AccountType.FREE.equals(account.getType())) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -1949,44 +1933,6 @@ public abstract class K2SApi extends PluginForHost {
         return currentIP;
     }
 
-    @SuppressWarnings("deprecation")
-    private boolean setIP(final DownloadLink link, final Account account) throws Exception {
-        synchronized (IPCHECK) {
-            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (ipChanged(link) == false) {
-                // Static IP or failure to reconnect! We don't change lastIP
-                logger.warning("Your IP hasn't changed since last download");
-                return false;
-            } else {
-                String lastIP = currentIP.get();
-                link.setProperty(PROPERTY_LASTIP, lastIP);
-                K2SApi.lastIP.set(lastIP);
-                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
-                logger.info("LastIP = " + lastIP);
-                return true;
-            }
-        }
-    }
-
-    private boolean ipChanged(final DownloadLink link) throws Exception {
-        String currIP = null;
-        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
-            currIP = currentIP.get();
-        } else {
-            currIP = getIP();
-        }
-        if (currIP == null) {
-            return false;
-        }
-        String lastIP = link.getStringProperty(PROPERTY_LASTIP, K2SApi.lastIP.get());
-        if (lastIP == null) {
-            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP);
-        }
-        return !currIP.equals(lastIP);
-    }
-
     private long getPluginSavedLastDownloadTimestamp() {
         final Map<String, Long> blockedIPsHostMap = getBlockedIPsMap();
         synchronized (blockedIPsHostMap) {
@@ -2000,7 +1946,7 @@ public abstract class K2SApi extends PluginForHost {
                     /* Remove old entries */
                     it.remove();
                 }
-                if (ip.equals(currentIP.get())) {
+                if (ip.equals(this.getCurrentIP())) {
                     return timestamp;
                 }
             }
@@ -2168,9 +2114,10 @@ public abstract class K2SApi extends PluginForHost {
         if (acc == null || acc.getType() == AccountType.FREE) {
             /* No account or free account, yes we can expect captcha */
             return true;
+        } else {
+            /* Only sometimes required during login */
+            return false;
         }
-        /* Only sometimes required during login */
-        return false;
     }
 
     /**

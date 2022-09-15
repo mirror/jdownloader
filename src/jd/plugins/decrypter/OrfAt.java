@@ -20,6 +20,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -29,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "https?://[a-z0-9]+\\.orf\\.at/(?:player|programm)/\\d+/[a-zA-Z0-9]+|https?://[a-z0-9]+\\.orf\\.at/artikel/\\d+/[a-zA-Z0-9]+|https?://radiothek\\.orf\\.at/(podcasts/[a-z0-9]+/[a-z0-9\\-]+(/[a-z0-9\\-]+)?|[a-z0-9]+/\\d+/[a-zA-Z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OrfAt extends PluginForDecrypt {
     public OrfAt(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,26 +41,62 @@ public class OrfAt extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
-    private final String                                      TYPE_OLD      = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      TYPE_ARTICLE  = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      TYPE_NEW      = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      TYPE_PODCAST  = "https?://radiothek\\.orf\\.at/podcasts/([a-z0-9]+)/([a-z0-9\\-]+)(/([a-z0-9\\-]+))?";
-    private final String                                      API_BASE      = "https://audioapi.orf.at";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "orf.at" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String pattern = "https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(";
+            pattern += "(?:player|programm)/\\d+/[a-zA-Z0-9]+";
+            pattern += "|artikel/\\d+/[a-zA-Z0-9]+";
+            pattern += "|(podcasts?/[a-z0-9]+/[a-z0-9\\-]+(/[a-z0-9\\-]+)?|[a-z0-9]+/\\d+/[a-zA-Z0-9]+)";
+            pattern += ")";
+            ret.add(pattern);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private final String                                      PATTERN_BROADCAST_OLD = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      PATTERN_BROADCAST_NEW = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      PATTERN_ARTICLE       = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      PATTERN_PODCAST       = "https?://[^/]+/podcasts?/([a-z0-9]+)/([a-z0-9\\-]+)(/([a-z0-9\\-]+))?";
+    private final String                                      API_BASE              = "https://audioapi.orf.at";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
-    private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE = new LinkedHashMap<String, Map<String, Object>>() {
-                                                                                protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
-                                                                                    return size() > 50;
-                                                                                };
-                                                                            };
+    private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE         = new LinkedHashMap<String, Map<String, Object>>() {
+                                                                                        protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
+                                                                                            return size() > 50;
+                                                                                        };
+                                                                                    };
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        if (param.getCryptedUrl().matches(TYPE_ARTICLE)) {
+        if (param.getCryptedUrl().matches(PATTERN_ARTICLE)) {
             return this.crawlArticle(param);
-        } else if (param.getCryptedUrl().matches(TYPE_PODCAST)) {
+        } else if (param.getCryptedUrl().matches(PATTERN_PODCAST)) {
             return this.crawlPodcasts(param);
-        } else {
+        } else if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD) || param.getCryptedUrl().matches(PATTERN_BROADCAST_NEW)) {
             return crawlBroadcasts(param);
+        } else {
+            /* Unsupported URL -> Developer mistake */
+            return null;
         }
     }
 
@@ -67,7 +104,7 @@ public class OrfAt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String title = br.getRegex("\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
@@ -87,7 +124,9 @@ public class OrfAt extends PluginForDecrypt {
                     name = title + "-" + name;
                     fp.add(link);
                 }
-                link.setFinalFileName(name);
+                if (name != null) {
+                    link.setFinalFileName(name);
+                }
                 link.setProperty(DirectHTTP.FIXNAME, name);
                 link.setProperty(DirectHTTP.PROPERTY_REQUEST_TYPE, "GET");
                 ret.add(link);
@@ -97,8 +136,9 @@ public class OrfAt extends PluginForDecrypt {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
+    /** Crawls all episodes of a podcast or only a specific episode. */
     private ArrayList<DownloadLink> crawlPodcasts(final CryptedLink param) throws Exception {
-        final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_PODCAST);
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), PATTERN_PODCAST);
         final String channelSlug = urlinfo.getMatch(0);
         final String podcastSeriesSlug = urlinfo.getMatch(1);
         final String podcastEpisodeTitleSlug = urlinfo.getMatch(3); // optional
@@ -106,7 +146,8 @@ public class OrfAt extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(API_BASE + "/radiothek/podcast/" + channelSlug + "/" + podcastSeriesSlug + ".json?_o=radiothek.orf.at");
+        final String hostFromURL = Browser.getHost(param.getCryptedUrl(), true);
+        br.getPage(API_BASE + "/radiothek/podcast/" + channelSlug + "/" + podcastSeriesSlug + ".json?_o=" + hostFromURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* This should never happen but for sure users could modify added URLs and render them invalid. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -175,14 +216,14 @@ public class OrfAt extends PluginForDecrypt {
         final String broadCastID;
         final String broadCastKey;
         final String domainID;
-        if (param.getCryptedUrl().matches(TYPE_OLD)) {
-            broadCastID = new Regex(param.getCryptedUrl(), TYPE_OLD).getMatch(2);
-            broadCastKey = new Regex(param.getCryptedUrl(), TYPE_OLD).getMatch(1);
-            domainID = new Regex(param.getCryptedUrl(), TYPE_OLD).getMatch(0);
+        if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD)) {
+            broadCastID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(2);
+            broadCastKey = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(1);
+            domainID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(0);
         } else {
-            broadCastID = new Regex(param.getCryptedUrl(), TYPE_NEW).getMatch(2);
-            broadCastKey = new Regex(param.getCryptedUrl(), TYPE_NEW).getMatch(1);
-            domainID = new Regex(param.getCryptedUrl(), TYPE_NEW).getMatch(0);
+            broadCastID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(2);
+            broadCastKey = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(1);
+            domainID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(0);
         }
         if (broadCastID == null || broadCastKey == null || domainID == null) {
             /* Developer mistake */
