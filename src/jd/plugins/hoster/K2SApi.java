@@ -529,7 +529,7 @@ public abstract class K2SApi extends PluginForHost {
         final Object account_expiresO = entries.get("account_expires");
         long account_expires_timestamp = 0;
         if (account_expiresO instanceof Number) {
-            account_expires_timestamp = ((Number) account_expiresO).longValue();
+            account_expires_timestamp = ((Number) account_expiresO).longValue() * 1000;
         }
         if (account_expires_timestamp < System.currentTimeMillis()) {
             /* 2019-11-26: Free Accounts are supposed to get 100 KB/s downloadspeed but at least via API this did not work for me. */
