@@ -34,11 +34,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "welt.de" }, urls = { "https?://(?:www\\.)?welt\\.de/mediathek/.*?/(?:video|sendung)\\d+/[A-Za-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "welt.de" }, urls = { "https?://(?:www\\.)?welt\\.de/.*?/(?:video|sendung)\\d+/[A-Za-z0-9\\-]+\\.html" })
 public class WeltDeMediathek extends PluginForHost {
     public WeltDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,11 +74,11 @@ public class WeltDeMediathek extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_title = new Regex(link.getDownloadURL(), "/mediathek/(.+)\\.html").getMatch(0);
+        final String url_title = new Regex(link.getDownloadURL(), ".+/(.+)\\.html").getMatch(0);
         final String json_source_videourl = this.br.getRegex("\"page\"\\s*?:\\s*?(\\{.*?\\}),\\s+").getMatch(0);
         /* Tags: schema.org */
         final String json_source_videoinfo = this.br.getRegex("<script[^>]*?type=\"application/ld\\+json[^>]*?\">(.*?)</script>").getMatch(0);
-        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videoinfo);
+        Map<String, Object> entries = restoreFromString(json_source_videoinfo, TypeRef.MAP);
         String filename = "";
         String title = (String) entries.get("headline");
         final String description = (String) entries.get("description");
@@ -98,10 +99,11 @@ public class WeltDeMediathek extends PluginForHost {
         filename = encodeUnicode(filename);
         /* Find downloadlink */
         try {
-            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source_videourl);
+            entries = JavaScriptEngineFactory.jsonToJavaMap(json_source_videourl);
             dllink = (String) JavaScriptEngineFactory.walkJson(entries, "content/media/{0}/file");
             if (dllink == null) {
-                dllink = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(2000|1500|1000|200)\\.mp4)").getMatch(0);
+                String mp4[] = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(\\d{3,4})\\.mp4)").getColumn(0);
+                dllink = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(4800|2400|2000|1500|1000|700|200)\\.mp4)").getMatch(0);
             }
             String m3u8 = br.getRegex("(https?://[^\"]*?([A-Za-z0-9_\\-]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8)").getMatch(0);
             if (m3u8 == null && StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
