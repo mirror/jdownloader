@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -160,16 +161,85 @@ public class ImageFap extends PluginForHost {
         return "http://imagefap.com/faq.php";
     }
 
-    private String getGalleryName(final DownloadLink dl) {
-        String galleryName = dl.getStringProperty("galleryname");
+    public static String getGalleryName(final Browser br, final DownloadLink dl, boolean isImageLink) {
+        String galleryName = dl != null ? dl.getStringProperty("galleryname", null) : null;
         if (galleryName == null) {
-            // galleryName = br.getRegex("<font face=verdana size=3>([^<>\"]*?)<BR>").getMatch(0);
-            galleryName = br.getRegex("<font[^<>]*?itemprop=\"name\"[^<>]*?>([^<>]+)<").getMatch(0);
-            if (galleryName == null) {
-                galleryName = br.getRegex("<title>.*? in gallery ([^<>\"]*?) \\(Picture \\d+\\) uploaded by").getMatch(0);
+            if (isImageLink) {
+                galleryName = br.getRegex("Gallery:\\s*</td>\\s*<td[^>]*\\s*><a[^>]*gid=\\d+\"[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+            } else {
+                galleryName = br.getRegex("<font[^<>]*?itemprop=\"name\"[^<>]*?>([^<>]+)<").getMatch(0);
+                if (galleryName == null) {
+                    galleryName = br.getRegex("<title>.*? in gallery ([^<>\"]*?) \\(Picture \\d+\\) uploaded by").getMatch(0);
+                    if (galleryName == null) {
+                        galleryName = br.getRegex("<title>\\s*Porn pics of\\s*(.*?)\\s*\\(Page 1\\)\\s*</title>").getMatch(0);
+                        if (galleryName == null) {
+                            galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
+                            if (galleryName == null) {
+                                galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
+                                if (galleryName == null) {
+                                    galleryName = br.getRegex("<font[^<>]*?itemprop=\"name\"[^<>]*?>([^<>]+)<").getMatch(0);
+                                    if (galleryName == null) {
+                                        galleryName = br.getRegex("<title>\\s*(.*?)\\s*(Porn Pics (&amp;|&) Porn GIFs)?\\s*</title>").getMatch(0);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         return galleryName;
+    }
+
+    public static String getGalleryID(final Browser br, final DownloadLink dl, boolean isImageLink) {
+        String ret = dl != null ? dl.getStringProperty("galleryID", null) : null;
+        if (ret == null) {
+            if (isImageLink) {
+                ret = br.getRegex("Gallery:\\s*</td>\\s*<td[^>]*\\s*><a[^>]*gid=(\\d+)\"[^>]*>").getMatch(0);
+            }
+        }
+        return ret;
+    }
+
+    public static String getOrderID(final Browser br, final DownloadLink dl, boolean isImageLink) {
+        String ret = dl != null ? dl.getStringProperty("orderid", null) : null;
+        if (ret == null) {
+            if (isImageLink) {
+                final String current = br.getRegex("_start_img\\s*=\\s*(\\d+)").getMatch(0);
+                if (current != null) {
+                    // final String max = br.getRegex("_pics\\s*=\\s*(\\d+)").getMatch(0);
+                    DecimalFormat df = new DecimalFormat("0000");
+                    ret = df.format(Integer.parseInt(current) + 1);
+                }
+            }
+        }
+        return ret;
+    }
+
+    public static String getUserName(final Browser br, final DownloadLink dl, boolean isImageLink) {
+        String username = dl != null ? dl.getStringProperty("directusername", null) : null;
+        if (username == null) {
+            username = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
+            if (username == null) {
+                username = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
+                if (username == null) {
+                    username = br.getRegex("<td class=\"mnu0\"><a href=\"https?://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
+                    if (username == null) {
+                        username = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
+                        if (username == null) {
+                            username = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
+                            if (username == null) {
+                                username = br.getRegex("Uploaded by ([^<>\"]+)</font>").getMatch(0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (username == null) {
+            username = "Anonymous";
+        }
+        return username;
     }
 
     @Override
@@ -222,30 +292,30 @@ public class ImageFap extends PluginForHost {
                 link.setProperty("original_filename", pictureTitle);
                 link.removeProperty("incomplete_filename");
             }
-            String galleryName = getGalleryName(link);
-            String username = link.getStringProperty("directusername");
-            if (username == null) {
-                username = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
-                if (username == null) {
-                    username = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
-                    if (username == null) {
-                        username = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
-                        if (username == null) {
-                            username = br.getRegex("Uploaded by ([^<>\"]+)</font>").getMatch(0);
-                        }
-                    }
-                }
+            String galleryName = ImageFap.getGalleryName(br, link, true);
+            String username = ImageFap.getUserName(br, link, true);
+            final String orderID = getOrderID(br, link, true);
+            if (orderID != null && !link.hasProperty("orderid")) {
+                link.setProperty("orderid", orderID);
+            }
+            final String galleryID = getGalleryID(br, link, true);
+            if (galleryID != null && !link.hasProperty("galleryID")) {
+                link.setProperty("galleryID", galleryID);
             }
             if (StringUtils.isEmpty(galleryName) || StringUtils.isEmpty(pictureTitle)) {
                 logger.info("Possibly missing data: galleryName: " + galleryName + " picture_name: " + pictureTitle);
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            galleryName = Encoding.htmlDecode(galleryName).trim();
-            if (username != null) {
-                username = username.trim();
+            if (galleryName != null && !link.hasProperty("galleryname")) {
+                galleryName = Encoding.htmlDecode(galleryName);
+                galleryName = galleryName.trim();
+                link.setProperty("galleryname", galleryName);
             }
-            link.setProperty("galleryname", galleryName);
-            link.setProperty("directusername", username);
+            if (username != null && !link.hasProperty("directusername")) {
+                username = Encoding.htmlDecode(username);
+                username = username.trim();
+                link.setProperty("directusername", username);
+            }
             link.setFinalFileName(getFormattedFilename(link));
             /* Only set filepackage if not set yet */
             try {
@@ -426,7 +496,7 @@ public class ImageFap extends PluginForHost {
             br.getPage(request);
             if (br.getHttpConnection().getResponseCode() == 429) {
                 /*
-                 * 
+                 *
                  * 100 requests per 1 min 200 requests per 5 min 1000 requests per 1 hour
                  */
                 /* 2020-09-22: Most likely they will allow a retry after one hour. */
@@ -530,19 +600,19 @@ public class ImageFap extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
-                                                      put("LABEL_FILENAME", "Define custom filename for pictures:");
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'\r\n*photoID* = id of the image\r\n*galleryID* = id of the gallery");
-                                                  }
-                                              };
+        {
+            put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
+            put("LABEL_FILENAME", "Define custom filename for pictures:");
+            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'\r\n*photoID* = id of the image\r\n*galleryID* = id of the gallery");
+        }
+    };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
-                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'\r\n*photoID* = id des Bildes\r\n*galleryID* = id der Gallery");
-                                                  }
-                                              };
+        {
+            put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
+            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
+            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'\r\n*photoID* = id des Bildes\r\n*galleryID* = id der Gallery");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
