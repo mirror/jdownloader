@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +33,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.ImageFap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(?:www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class MgfpCm extends PluginForDecrypt {
@@ -202,30 +203,11 @@ public class MgfpCm extends PluginForDecrypt {
             }
             // First find all the information we need (name of the gallery, name of
             // the galleries author)
-            String galleryName = br.getRegex("<title>\\s*Porn pics of\\s*(.*?)\\s*\\(Page 1\\)\\s*</title>").getMatch(0);
+            String galleryName = ImageFap.getGalleryName(br, null, false);
             if (galleryName == null) {
-                galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
-                if (galleryName == null) {
-                    galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
-                    if (galleryName == null) {
-                        galleryName = br.getRegex("<font[^<>]*?itemprop=\"name\"[^<>]*?>([^<>]+)<").getMatch(0);
-                        if (galleryName == null) {
-                            galleryName = br.getRegex("<title>\\s*(.*?)\\s*(Porn Pics (&amp;|&) Porn GIFs)?\\s*</title>").getMatch(0);
-                            if (galleryName == null) {
-                                logger.warning("Gallery name could not be found!");
-                                throw new DecrypterException("Decrypter broken for link: " + parameter);
-                            }
-                        }
-                    }
-                }
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
-            String authorsName = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
-            if (authorsName == null) {
-                authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"https?://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
-                if (authorsName == null) {
-                    authorsName = "Anonymous";
-                }
-            }
+            String authorsName = ImageFap.getUserName(br, null, false);
             galleryName = Encoding.htmlDecode(galleryName.trim());
             authorsName = Encoding.htmlDecode(authorsName.trim());
             /**

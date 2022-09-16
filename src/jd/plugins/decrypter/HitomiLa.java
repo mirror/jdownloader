@@ -299,6 +299,8 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 jsContext.setOptimizationLevel(-1);
                 final Method jsStringPad = HitomiLa.class.getMethod("jsStringPad", new Class[] { String.class });
                 engine.put("jsStringPad", new FunctionObject("jsStringPad", jsStringPad, jsContext.initStandardObjects()));
+                engine.eval("var navigator={};");
+                engine.eval("navigator[\"userAgent\"] = \"test\";");
                 engine.eval(js);
                 final String gg = fetchGG(br);
                 engine.eval(gg);
