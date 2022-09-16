@@ -18,23 +18,19 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+
 import jd.PluginWrapper;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "k2s.cc" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:keep2share|k2s|k2share|keep2s|keep2)\\.cc/(?:file|preview)/(?:info/)?([a-z0-9_\\-]+)(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class Keep2ShareCc extends K2SApi {
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    public final String MAINTLD = "k2s.cc";
 
     // private final String DOMAINS_HTTP = "(https?://((www|new)\\.)?" + DOMAINS_PLAIN + ")";
     @Override
@@ -79,34 +75,7 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     protected String getInternalAPIDomain() {
-        return MAINTLD;
-    }
-
-    /**
-     * easiest way to set variables, without the need for multiple declared references
-     *
-     * @param account
-     */
-    @Override
-    protected void setConstants(final Account account) {
-        super.setConstants(account);
-        if (account != null) {
-            if (account.getType() == AccountType.FREE) {
-                // free account
-                chunks = 1;
-                resumes = true;
-            } else {
-                // premium account
-                chunks = -10;
-                resumes = true;
-            }
-            logger.finer("setConstants = " + account.getUser() + " @ Account Download :: Type = " + account.getType() + ", upperChunks = " + chunks + ", Resumes = " + resumes);
-        } else {
-            // free non account
-            chunks = 1;
-            resumes = true;
-            logger.finer("setConstants = Guest Download :: upperChunks = " + chunks + ", Resumes = " + resumes);
-        }
+        return "k2s.cc";
     }
 
     @Override

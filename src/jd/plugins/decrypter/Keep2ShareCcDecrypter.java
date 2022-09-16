@@ -16,10 +16,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,10 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
@@ -74,8 +74,8 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* 2020-05-13: Use the keep2share plugin for all */
         final PluginForHost plugin = getNewPluginForHostInstance("k2s.cc");
         final String fuid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
@@ -87,32 +87,33 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             /* 2020-07-21: Thumbnail to video / single file --> Goes into host plugin */
             final String url = "https://" + this.getHost() + "/file/" + fuid;
             final DownloadLink dl = this.createDownloadlink(url);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         br = ((jd.plugins.hoster.Keep2ShareCc) plugin).newWebBrowser(true);
         // set cross browser support
         ((jd.plugins.hoster.K2SApi) plugin).setBrowser(br);
-        ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "https://" + this.getHost() + "/api/v2/getfilesinfo", "{\"ids\":[\"" + fuid + "\"]}", null);
-        Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final HashMap<String, Object> postdataGetfilesinfo = new HashMap<String, Object>();
+        postdataGetfilesinfo.put("ids", Arrays.asList(new String[] { fuid }));
+        Map<String, Object> response = ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "https://" + this.getHost() + "/api/v2/getfilesinfo", postdataGetfilesinfo, null);
         if (!"success".equals(response.get("status"))) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean folderHandling = false;
         FilePackage fp = null;
         final List<Map<String, Object>> files = (List<Map<String, Object>>) response.get("files");
         if (files.size() == 0) {
             logger.info("Empty object");
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (files != null) {
             for (Map<String, Object> file : files) {
                 final String id = (String) file.get("id");
                 final Boolean isAvailable = (Boolean) file.get("is_available");
                 if (Boolean.FALSE.equals(isAvailable)) {
-                    decryptedLinks.add(createOfflinelink("https://" + this.getHost() + "/file/" + id));
+                    final DownloadLink offline = this.createDownloadlink("https://" + this.getHost() + "/file/" + id);
+                    offline.setAvailable(false);
+                    ret.add(offline);
                     continue;
                 }
                 final String name = (String) file.get("name");
@@ -131,7 +132,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     link.setHashInfo(HashInfo.parse(md5));
                     link.setAvailable(Boolean.TRUE.equals(isAvailable));
                     link.setProperty("access", access);
-                    decryptedLinks.add(link);
+                    ret.add(link);
                 } else if (StringUtils.equals(id, fuid)) {
                     fp = FilePackage.getInstance();
                     if (StringUtils.isNotEmpty(name)) {
@@ -147,13 +148,17 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             final int limit = 50;
             int offset = 0;
             do {
-                ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "/getfilestatus", "{\"id\":\"" + fuid + "\",\"limit\":" + limit + ",\"offset\":" + offset + "}", null);
-                response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                logger.info("Crawling folder offset: " + offset);
+                final HashMap<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
+                postdataGetfilestatus.put("id", fuid);
+                postdataGetfilestatus.put("limit", limit);
+                postdataGetfilestatus.put("offset", offset);
+                response = ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
                 final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("files");
                 if (items.size() == 0) {
-                    if (decryptedLinks.size() == 0) {
+                    if (ret.size() == 0) {
                         logger.info("Empty folder");
-                        decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     break;
                 }
@@ -179,10 +184,14 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                             }
                             link.setHashInfo(HashInfo.parse(md5));
                             link.setAvailable(Boolean.TRUE.equals(isAvailable));
-                            decryptedLinks.add(link);
+                            ret.add(link);
+                            if (fp != null) {
+                                link._setFilePackage(fp);
+                            }
+                            distribute(link);
                         } else {
                             final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/folder/" + id);
-                            decryptedLinks.add(link);
+                            ret.add(link);
                         }
                     }
                 } else {
@@ -195,8 +204,8 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             } while (!this.isAbort());
         }
         if (fp != null) {
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

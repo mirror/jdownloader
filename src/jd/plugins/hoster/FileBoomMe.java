@@ -18,14 +18,12 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
+
+import jd.PluginWrapper;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 
 /**
  *
@@ -59,28 +57,6 @@ public class FileBoomMe extends K2SApi {
     @Override
     protected String getInternalAPIDomain() {
         return "fboom.me";
-    }
-
-    @Override
-    protected void setConstants(final Account account) {
-        super.setConstants(account);
-        if (account != null) {
-            if (account.getType() == AccountType.FREE) {
-                // free account
-                chunks = 1;
-                resumes = true;
-            } else {
-                // premium account
-                chunks = 0;
-                resumes = true;
-            }
-            logger.finer("setConstants = " + account.getUser() + " @ Account Download :: Type = " + account.getType() + ", upperChunks = " + chunks + ", Resumes = " + resumes);
-        } else {
-            // free non account
-            chunks = 1;
-            resumes = true;
-            logger.finer("setConstants = Guest Download :: upperChunks = " + chunks + ", Resumes = " + resumes);
-        }
     }
 
     @Override
