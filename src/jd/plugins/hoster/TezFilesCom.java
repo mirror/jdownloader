@@ -22,13 +22,8 @@ import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:tezfiles\\.com|publish2\\.me)/(?:f(?:ile)?|preview)/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class TezFilesCom extends K2SApi {
@@ -58,42 +53,8 @@ public class TezFilesCom extends K2SApi {
     }
 
     @Override
-    protected void setConstants(final Account account) {
-        super.setConstants(account);
-        if (account != null) {
-            if (account.getType() == AccountType.FREE) {
-                // free account
-                chunks = 1;
-                resumes = true;
-            } else {
-                // premium account
-                chunks = 0;
-                resumes = true;
-            }
-            logger.finer("setConstants = " + account.getUser() + " @ Account Download :: Type = " + account.getType() + ", upperChunks = " + chunks + ", Resumes = " + resumes);
-        } else {
-            // free non account
-            chunks = 1;
-            resumes = true;
-            logger.finer("setConstants = Guest Download :: upperChunks = " + chunks + ", Resumes = " + resumes);
-        }
-    }
-
-    @Override
     public String[] siteSupportedNames() {
         return new String[] { "tezfiles.com", "publish2.me" };
-    }
-
-    @Override
-    protected void handleErrorsAPI(Account account, DownloadLink downloadLink, Browser br, String brString, boolean subErrors) throws PluginException {
-        // 2022-09-15: TODO: Remove this ??!
-        try {
-            super.handleErrorsAPI(account, downloadLink, br, brString, subErrors);
-        } catch (AccountRequiredException e) {
-            if (account != null && downloadLink != null) {
-                throw e;
-            }
-        }
     }
 
     @Override

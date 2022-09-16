@@ -60,13 +60,6 @@ public interface Keep2shareConfig extends PluginConfigInterface {
 
     void setForceCustomReferer(boolean b);
 
-    // @AboutConfig
-    // @DefaultBooleanValue(true)
-    // @Order(30)
-    // @TakeValueFromSubconfig("SSL_CONNECTION_2")
-    // boolean isEnableSSL();
-    //
-    // void setEnableSSL(boolean b);
     @AboutConfig
     @DefaultIntValue(1)
     @SpinnerValidator(min = 1, max = 20, step = 1)

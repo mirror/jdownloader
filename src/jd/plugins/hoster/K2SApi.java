@@ -24,10 +24,8 @@ import javax.script.ScriptEngineManager;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -71,18 +69,14 @@ import jd.plugins.download.DownloadInterface;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class K2SApi extends PluginForHost {
-    protected int          chunks;
-    protected boolean      resumes;
     private final String   lng                        = getLanguage();
     private final String   PROPERTY_ACCOUNT_AUTHTOKEN = "auth_token";
-    private int            authTokenFail              = 0;
-    private int            loginCaptchaFail           = -1;
     /* Reconnect workaround settings */
     private final Pattern  IPREGEX                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private final String   PROPERTY_FILE_ID           = "fileID";
     private final String   PROPERTY_LASTDOWNLOAD      = "_lastdownload_timestamp";
     private final String   PROPERTY_ACCESS            = "access";
-    private final long     FREE_RECONNECTWAIT         = 1 * 60 * 60 * 1000L;
+    private final long     FREE_RECONNECTWAIT_MILLIS  = 1 * 60 * 60 * 1000L;
     private final String[] IPCHECK                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public K2SApi(PluginWrapper wrapper) {
@@ -99,6 +93,22 @@ public abstract class K2SApi extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         /* Respect users protocol choosing. */
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("^https?://", getProtocol()));
+    }
+
+    protected int getMaxChunks(final Account account) {
+        if (account == null || account.getType() == AccountType.FREE) {
+            /* Free Account and no account */
+            return 1;
+        } else {
+            /* Premium account */
+            return -10;
+        }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        /* 2022-09-16: Resume is always allowed */
+        return true;
     }
 
     @Override
@@ -164,7 +174,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     @Override
-    public void resetLink(DownloadLink downloadLink) {
+    public void resetLink(DownloadLink link) {
     }
 
     protected boolean isValidDownloadConnection(final URLConnectionAdapter con) {
@@ -224,9 +234,8 @@ public abstract class K2SApi extends PluginForHost {
      * @return
      */
     protected boolean userPrefersHTTPS() {
-        // 23.08.2021, SSL is enforced
+        // 2021-08-23: SSL is enforced
         return true;
-        // return PluginJsonConfig.get(this.getConfigInterface()).isEnableSSL();
     }
 
     protected boolean isUseAPIDefaultEnabled() {
@@ -240,7 +249,6 @@ public abstract class K2SApi extends PluginForHost {
      * @return
      */
     protected boolean useAPI() {
-        // return getPluginConfig().getBooleanProperty("USE_API_2019_11_15", isUseAPIDefaultEnabled());
         /* 2020-05-09: Website mode not supported anymore. */
         return true;
     }
@@ -260,6 +268,7 @@ public abstract class K2SApi extends PluginForHost {
         return (isSecure() ? "https://" : "http://");
     }
 
+    /** Returns whether or not https is to be used. */
     protected boolean isSecure() {
         if (enforcesHTTPS()) {
             return true;
@@ -343,14 +352,6 @@ public abstract class K2SApi extends PluginForHost {
         return br;
     }
 
-    /**
-     * easiest way to set variables, without the need for multiple declared references
-     *
-     * @param account
-     */
-    protected void setConstants(final Account account) {
-    }
-
     protected String getLinkIDDomain() {
         return getHost();
     }
@@ -363,7 +364,7 @@ public abstract class K2SApi extends PluginForHost {
             int index = 0;
             while (true) {
                 links.clear();
-                final StringBuilder sb = new StringBuilder();
+                final ArrayList<String> fileIDs = new ArrayList<String>();
                 while (true) {
                     if (links.size() == 100 || index == urls.length) {
                         break;
@@ -371,16 +372,98 @@ public abstract class K2SApi extends PluginForHost {
                         final DownloadLink dl = urls[index];
                         final String fuid = getFUID(dl);
                         links.add(dl);
-                        if (sb.length() > 0) {
-                            sb.append(",");
-                        }
-                        sb.append("\"" + fuid + "\"");
+                        fileIDs.add(fuid);
                         index++;
                     }
                 }
                 try {
                     try {
-                        postPageRaw(br, "/getfilesinfo", "{\"ids\":[" + sb.toString() + "]}", null);
+                        final HashMap<String, Object> postdata = new HashMap<String, Object>();
+                        postdata.put("ids", fileIDs);
+                        final Map<String, Object> entries = postPageRaw(br, "/getfilesinfo", postdata, null);
+                        final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
+                        for (final DownloadLink dl : links) {
+                            final String fuid = getFUID(dl);
+                            Map<String, Object> fileInfo = null;
+                            for (final Map<String, Object> fileInfoTmp : files) {
+                                /*
+                                 * Every link has this id but can have an unlimited number of "requested_id" values pointing to the same
+                                 * content.
+                                 */
+                                final String id = fileInfoTmp.get("id").toString();
+                                final String requested_id = (String) fileInfoTmp.get("requested_id");
+                                if (id.equals(fuid)) {
+                                    fileInfo = fileInfoTmp;
+                                    break;
+                                } else if (StringUtils.equals(requested_id, fuid)) {
+                                    /* For links with two/old/special fileIDs. */
+                                    fileInfo = fileInfoTmp;
+                                    break;
+                                }
+                            }
+                            if (fileInfo == null) {
+                                /* ID was not in result --> Probably ID has invalid format --> It's also definitely offline! */
+                                dl.setAvailable(false);
+                            } else {
+                                final String id = (String) fileInfo.get("id");
+                                if (!StringUtils.equals(fuid, id)) {
+                                    /* Save internal ID as we use this for dupe-checking. */
+                                    dl.setProperty(PROPERTY_FILE_ID, id);
+                                }
+                                if (((Boolean) fileInfo.get("is_available")) == Boolean.TRUE) {
+                                    dl.setAvailable(true);
+                                } else {
+                                    dl.setAvailable(false);
+                                }
+                                String name = (String) fileInfo.get("name");
+                                if (name != null && name.matches(".*=(\\?|_)utf-8(\\?|_).+")) {
+                                    // workaround for rfc2047 support
+                                    try {
+                                        final CharSequence fixed = new RFC2047().decode(name, true);
+                                        if (fixed != null && fixed != name) {
+                                            name = fixed.toString();
+                                        }
+                                    } catch (IOException e) {
+                                        logger.log(e);
+                                    }
+                                }
+                                final Object sizeO = fileInfo.get("size");
+                                final String md5 = (String) fileInfo.get("md5");// only available for file owner
+                                final String access = (String) fileInfo.get("access");
+                                if (!StringUtils.isEmpty(name)) {
+                                    dl.setFinalFileName(name);
+                                } else if (!dl.isNameSet()) {
+                                    dl.setName(getFallbackFilename(dl));
+                                }
+                                if (sizeO instanceof Number) {
+                                    dl.setVerifiedFileSize(((Number) sizeO).longValue());
+                                }
+                                if (!StringUtils.isEmpty(md5)) {
+                                    dl.setMD5Hash(md5);
+                                }
+                                if (!StringUtils.isEmpty(access)) {
+                                    // access: ['public', 'private', 'premium']
+                                    // public = everyone users
+                                    // premium = restricted to premium
+                                    // private = owner only..
+                                    dl.setProperty(PROPERTY_ACCESS, access);
+                                    if (dl.getComment() == null) {
+                                        if ("premium".equalsIgnoreCase(access)) {
+                                            dl.setComment(getErrorMessageForUser(7));
+                                        } else if ("private".equalsIgnoreCase(access)) {
+                                            dl.setComment(getErrorMessageForUser(8));
+                                        }
+                                    }
+                                }
+                                if ((Boolean) fileInfo.get("is_folder") == Boolean.TRUE) {
+                                    /* This should never happen */
+                                    dl.setAvailable(false);
+                                    if (dl.getComment() == null) {
+                                        dl.setComment(getErrorMessageForUser(23));
+                                    }
+                                }
+                            }
+                        }
                     } catch (final PluginException e) {
                         if (br.getHttpConnection().getResponseCode() == 400) {
                             final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -399,90 +482,6 @@ public abstract class K2SApi extends PluginForHost {
                             }
                         }
                         throw e;
-                    }
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                    final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
-                    for (final DownloadLink dl : links) {
-                        final String fuid = getFUID(dl);
-                        Map<String, Object> fileInfo = null;
-                        for (final Map<String, Object> fileInfoTmp : files) {
-                            /*
-                             * Every link has this id but can have an unlimited number of "requested_id" values pointing to the same
-                             * content.
-                             */
-                            final String id = fileInfoTmp.get("id").toString();
-                            final String requested_id = (String) fileInfoTmp.get("requested_id");
-                            if (id.equals(fuid)) {
-                                fileInfo = fileInfoTmp;
-                                break;
-                            } else if (StringUtils.equals(requested_id, fuid)) {
-                                /* For links with two/old/special fileIDs. */
-                                fileInfo = fileInfoTmp;
-                                break;
-                            }
-                        }
-                        if (fileInfo == null) {
-                            /* ID was not in result --> Probably ID has invalid format --> It's also definitely offline! */
-                            dl.setAvailable(false);
-                        } else {
-                            final String id = (String) fileInfo.get("id");
-                            if (!StringUtils.equals(fuid, id)) {
-                                /* Save internal ID as we use this for dupe-checking. */
-                                dl.setProperty(PROPERTY_FILE_ID, id);
-                            }
-                            if (((Boolean) fileInfo.get("is_available")) == Boolean.TRUE) {
-                                dl.setAvailable(true);
-                            } else {
-                                dl.setAvailable(false);
-                            }
-                            String name = (String) fileInfo.get("name");
-                            if (name != null && name.matches(".*=(\\?|_)utf-8(\\?|_).+")) {
-                                // workaround for rfc2047 support
-                                try {
-                                    final CharSequence fixed = new RFC2047().decode(name, true);
-                                    if (fixed != null && fixed != name) {
-                                        name = fixed.toString();
-                                    }
-                                } catch (IOException e) {
-                                    logger.log(e);
-                                }
-                            }
-                            final Object sizeO = fileInfo.get("size");
-                            final String md5 = (String) fileInfo.get("md5");// only available for file owner
-                            final String access = (String) fileInfo.get("access");
-                            if (!StringUtils.isEmpty(name)) {
-                                dl.setFinalFileName(name);
-                            } else if (!dl.isNameSet()) {
-                                dl.setName(getFallbackFilename(dl));
-                            }
-                            if (sizeO instanceof Number) {
-                                dl.setVerifiedFileSize(((Number) sizeO).longValue());
-                            }
-                            if (!StringUtils.isEmpty(md5)) {
-                                dl.setMD5Hash(md5);
-                            }
-                            if (!StringUtils.isEmpty(access)) {
-                                // access: ['public', 'private', 'premium']
-                                // public = everyone users
-                                // premium = restricted to premium
-                                // private = owner only..
-                                dl.setProperty(PROPERTY_ACCESS, access);
-                                if (dl.getComment() == null) {
-                                    if ("premium".equalsIgnoreCase(access)) {
-                                        dl.setComment(getErrorMessageForUser(7));
-                                    } else if ("private".equalsIgnoreCase(access)) {
-                                        dl.setComment(getErrorMessageForUser(8));
-                                    }
-                                }
-                            }
-                            if ((Boolean) fileInfo.get("is_folder") == Boolean.TRUE) {
-                                /* This should never happen */
-                                dl.setAvailable(false);
-                                if (dl.getComment() == null) {
-                                    dl.setComment(getErrorMessageForUser(23));
-                                }
-                            }
-                        }
                     }
                 } finally {
                     if (index == urls.length) {
@@ -505,8 +504,10 @@ public abstract class K2SApi extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         /* required to get overrides to work */
         prepAPI(br);
-        postPageRaw(br, "/accountinfo", "{\"auth_token\":\"" + getAuthToken(account, null) + "\"}", account, null);
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String auth_token = getAuthToken(account, null);
+        final HashMap<String, Object> postdata = new HashMap<String, Object>();
+        postdata.put("auth_token", auth_token);
+        final Map<String, Object> entries = postPageRaw(br, "/accountinfo", postdata, account, null);
         final Number available_traffic = (Number) entries.get("available_traffic");
         /*
          * 2019-11-26: Expired premium accounts will have their old expire-date given thus we'll have to check for that before setting
@@ -575,8 +576,7 @@ public abstract class K2SApi extends PluginForHost {
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         logger.info(getRevisionInfo());
-        // linkcheck
-        this.setConstants(account);
+        /* Check link */
         reqFileInformation(link);
         final String fuid = getFUID(link);
         String dllink = this.getStoredDirecturl(link, account);
@@ -586,7 +586,7 @@ public abstract class K2SApi extends PluginForHost {
         if (!StringUtils.isEmpty(dllink)) {
             final Browser obr = br.cloneBrowser();
             logger.info("Reusing cached finallink!");
-            this.dl = new jd.plugins.BrowserAdapter().openDownload(obr, link, dllink, resumes, chunks);
+            this.dl = new jd.plugins.BrowserAdapter().openDownload(obr, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
             if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
@@ -606,7 +606,6 @@ public abstract class K2SApi extends PluginForHost {
                 this.dl = null;
             }
         }
-        boolean freeAccountReconnectWorkaround = false;
         final boolean isFree = this.isNoAccountOrFreeAccount(account);
         /* if above has failed, dllink will be null */
         if (StringUtils.isEmpty(dllink)) {
@@ -619,7 +618,6 @@ public abstract class K2SApi extends PluginForHost {
             }
             String currentIP = null;
             if (isFree && PluginJsonConfig.get(this.getConfigInterface()).isEnableReconnectWorkaround()) {
-                freeAccountReconnectWorkaround = true;
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                  */
@@ -629,9 +627,9 @@ public abstract class K2SApi extends PluginForHost {
                 if (account != null) {
                     final long lastdownloadFreeAccountTimestampMillis = account.getLongProperty(PROPERTY_LASTDOWNLOAD, 0);
                     final long passedTimeMillisSinceLastFreeAccountDownload = System.currentTimeMillis() - lastdownloadFreeAccountTimestampMillis;
-                    if (passedTimeMillisSinceLastFreeAccountDownload < FREE_RECONNECTWAIT) {
+                    if (passedTimeMillisSinceLastFreeAccountDownload < FREE_RECONNECTWAIT_MILLIS) {
                         logger.info("Experimental handling active --> There still seems to be a waittime on the current account --> ERROR_IP_BLOCKED to prevent unnecessary captcha");
-                        throw new AccountUnavailableException(downloadlimitText, FREE_RECONNECTWAIT - passedTimeMillisSinceLastFreeAccountDownload);
+                        throw new AccountUnavailableException(downloadlimitText, FREE_RECONNECTWAIT_MILLIS - passedTimeMillisSinceLastFreeAccountDownload);
                     }
                 }
                 final Map<String, Long> blockedIPsMap = this.getBlockedIPsMap();
@@ -652,9 +650,9 @@ public abstract class K2SApi extends PluginForHost {
                  */
                 final long lastdownload = getPluginSavedLastDownloadTimestamp(currentIP);
                 final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_MILLIS) {
                     logger.info("Experimental handling active --> There still seems to be a waittime on the current IP --> ERROR_IP_BLOCKED to prevent unnecessary captcha");
-                    final long thisWait = FREE_RECONNECTWAIT - passedTimeSinceLastDl;
+                    final long thisWait = FREE_RECONNECTWAIT_MILLIS - passedTimeSinceLastDl;
                     if (account != null) {
                         throw new AccountUnavailableException(downloadlimitText, thisWait);
                     } else {
@@ -665,8 +663,7 @@ public abstract class K2SApi extends PluginForHost {
             final Map<String, Object> getURL = new HashMap<String, Object>();
             getURL.put("file_id", fuid);
             if (isFree) {
-                postPageRaw(this.br, "/requestcaptcha", "", account, link);
-                final Map<String, Object> requestcaptcha = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> requestcaptcha = postPageRaw(this.br, "/requestcaptcha", new HashMap<String, Object>(), account, link);
                 final String challenge = (String) requestcaptcha.get("challenge");
                 String captcha_url = (String) requestcaptcha.get("captcha_url");
                 // Dependency
@@ -702,13 +699,12 @@ public abstract class K2SApi extends PluginForHost {
                 /* Premium + free Account */
                 getURL.put("auth_token", getAuthToken(account, link));
             }
-            postPageRaw(this.br, "/geturl", JSonStorage.serializeToJson(getURL), account, link);
-            this.handleErrorsAPI(account, link, this.br);
-            Map<String, Object> geturlResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            Map<String, Object> geturlResponse = postPageRaw(this.br, "/geturl", getURL, account, link);
             final String free_download_key = (String) geturlResponse.get("free_download_key");
+            boolean resumable = this.isResumeable(link, account);
+            int maxChunks = this.getMaxChunks(account);
             if (!StringUtils.isEmpty(free_download_key)) {
                 /* Free and free-account download */
-                // TODO: Auto apply free limits whenever we jump into this handling
                 /*
                  * {"status":"success","code":200,"message":"Captcha accepted, please wait","free_download_key":"homeHash","time_wait":30}
                  */
@@ -722,24 +718,32 @@ public abstract class K2SApi extends PluginForHost {
                  * 2020-02-18: Add 2 extra seconds else this might happen after sending captcha answer:
                  * {"status":"success","code":200,"message" :"Captcha accepted, please wait","free_download_key":"CENSORED","time_wait":1}
                  */
-                final int wait_seconds = time_wait.intValue() + 2;
+                final int wait_seconds = time_wait.intValue();
+                final long waitMillis = (wait_seconds + 2) * 1000l;
                 if (wait_seconds > 180) {
+                    if (waitMillis <= FREE_RECONNECTWAIT_MILLIS) {
+                        final long waittimeStartedBeforeMillis = FREE_RECONNECTWAIT_MILLIS - waitMillis;
+                        final long timestampWaittimeStarted = System.currentTimeMillis() - waittimeStartedBeforeMillis;
+                        this.saveFreeLimit(account, currentIP, timestampWaittimeStarted);
+                    }
                     if (account != null) {
                         /*
                          * 2020-05-11: Account traffic will be reset after reconnect too but without reconnect, user will have to wait that
                          * time until he can start new DLs with a free account!
                          */
-                        throw new AccountUnavailableException("Downloadlimit reached", wait_seconds * 1000l);
+                        throw new AccountUnavailableException("Downloadlimit reached", waitMillis);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait_seconds * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitMillis);
                     }
                 }
-                sleep(wait_seconds * 1000l, link);
+                sleep(waitMillis, link);
                 getURL.put("free_download_key", free_download_key);
                 getURL.remove("captcha_challenge");
                 getURL.remove("captcha_response");
-                postPageRaw(this.br, "/geturl", JSonStorage.serializeToJson(getURL), account, link);
-                geturlResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                geturlResponse = postPageRaw(this.br, "/geturl", getURL, account, link);
+                /* Captcha required -> Free limits apply! */
+                resumable = this.isResumeable(link, null);
+                maxChunks = this.getMaxChunks(null);
             }
             dllink = (String) geturlResponse.get("url");
             if (StringUtils.isEmpty(dllink)) {
@@ -756,28 +760,8 @@ public abstract class K2SApi extends PluginForHost {
                 /* 0 = unlimited/premium */
                 logger.info("Current speedlimit according to final downloadurl: " + rate_limitStr);
             }
-            if (freeAccountReconnectWorkaround) {
-                /*
-                 * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime
-                 * later!
-                 */
-                synchronized (CTRLLOCK) {
-                    if (account != null) {
-                        /* Account based limitation */
-                        account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
-                    }
-                    if (currentIP != null) {
-                        /*
-                         * IP based limitation | Also relevant if user e.g. downloads via free account -> Limit will be on that account +
-                         * also on anonymous download via same IP.
-                         */
-                        final Map<String, Long> blockedIPsMap = this.getBlockedIPsMap();
-                        blockedIPsMap.put(currentIP, System.currentTimeMillis());
-                        getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
-                    }
-                }
-            }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+            this.saveFreeLimit(account, currentIP, System.currentTimeMillis());
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxChunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
@@ -797,6 +781,24 @@ public abstract class K2SApi extends PluginForHost {
         } finally {
             // remove download slot
             controlSlot(-1, account);
+        }
+    }
+
+    private void saveFreeLimit(final Account account, final String currentIP, final long timestampLimitActivated) {
+        synchronized (CTRLLOCK) {
+            if (account != null) {
+                /* Account based limitation */
+                account.setProperty(PROPERTY_LASTDOWNLOAD, timestampLimitActivated);
+            }
+            if (currentIP != null) {
+                /*
+                 * IP based limitation | Also relevant if user e.g. downloads via free account -> Limit will be on that account + also on
+                 * anonymous download via same IP.
+                 */
+                final Map<String, Long> blockedIPsMap = this.getBlockedIPsMap();
+                blockedIPsMap.put(currentIP, timestampLimitActivated);
+                getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+            }
         }
     }
 
@@ -910,8 +912,12 @@ public abstract class K2SApi extends PluginForHost {
 
     protected static Object REQUESTLOCK = new Object();
 
-    public void postPageRaw(final Browser ibr, String url, final String arg, final Account account) throws Exception {
-        postPageRaw(ibr, url, arg, account, null);
+    public Map<String, Object> postPageRaw(final Browser ibr, String url, final Map<String, Object> postdata, final Account account) throws Exception {
+        return postPageRaw(ibr, url, postdata, account, null, 0);
+    }
+
+    public Map<String, Object> postPageRaw(final Browser ibr, String url, final Map<String, Object> postdata, final Account account, final DownloadLink link) throws Exception {
+        return postPageRaw(ibr, url, postdata, account, null, 0);
     }
 
     /**
@@ -924,29 +930,38 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      * @throws Exception
      */
-    public void postPageRaw(final Browser ibr, String url, final String arg, final Account account, final DownloadLink link) throws Exception {
+    public Map<String, Object> postPageRaw(final Browser ibr, String url, final Map<String, Object> postdata, final Account account, final DownloadLink link, int attempt) throws Exception {
         URLConnectionAdapter con = null;
         synchronized (REQUESTLOCK) {
             try {
                 if (!StringUtils.startsWithCaseInsensitive(url, "http")) {
                     url = getApiUrl() + url;
                 }
-                con = ibr.openPostConnection(url, arg);
+                con = ibr.openPostConnection(url, JSonStorage.serializeToJson(postdata));
                 readConnection(con, ibr);
                 antiDDoS(ibr);
-                // only do captcha stuff on the login page.
-                final CAPTCHA loginCaptcha;
-                if (url.endsWith("/login") && (loginCaptcha = loginRequiresCaptcha(ibr)) != null) {
-                    loginCaptchaFail++;
-                    if (loginCaptchaFail > 1) {
+                /* Only handle captchas on login page. */
+                CAPTCHA loginCaptcha = null;
+                final String status = PluginJSonUtils.getJsonValue(ibr, "status");
+                final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
+                CAPTCHA captcha = null;
+                if ("error".equalsIgnoreCase(status) && ("30".equalsIgnoreCase(errorCode))) {
+                    captcha = CAPTCHA.REQUESTCAPTCHA;
+                } else if ("error".equalsIgnoreCase(status) && ("33".equalsIgnoreCase(errorCode))) {
+                    captcha = CAPTCHA.REQUESTRECAPTCHA;
+                }
+                if (url.endsWith("/login") && captcha != null) {
+                    logger.info("Login captcha attempt: " + attempt);
+                    if (attempt >= 1) {
+                        /*
+                         * Allow max 1 captcha attempt. Usually they're requesting reCaptcha so user should be able to solve it in one go.
+                         */
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     // we can assume that the previous user:pass is wrong, prompt user for new one!
                     final Browser cbr = new Browser();
-                    final String newArg;
                     if (CAPTCHA.REQUESTCAPTCHA.equals(loginCaptcha)) {
-                        postPageRaw(cbr, "/requestcaptcha", "", account, link);
-                        final Map<String, Object> requestcaptcha = restoreFromString(cbr.getRequest().getHtmlCode(), TypeRef.MAP);
+                        final Map<String, Object> requestcaptcha = postPageRaw(cbr, "/requestcaptcha", new HashMap<String, Object>(), account, link);
                         final String challenge = (String) requestcaptcha.get("challenge");
                         String captcha_url = (String) requestcaptcha.get("captcha_url");
                         if (captcha_url.startsWith("https://")) {
@@ -959,7 +974,6 @@ public abstract class K2SApi extends PluginForHost {
                             logger.info("login-captcha_url is not https --> Changing it to https");
                             captcha_url = captcha_url.replace("http://", "https://");
                         }
-                        // Dependency
                         if (StringUtils.isEmpty(challenge)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         } else if (StringUtils.isEmpty(captcha_url)) {
@@ -972,30 +986,18 @@ public abstract class K2SApi extends PluginForHost {
                             // captcha can't be blank! Why we don't return null I don't know!
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        String tmp = arg;
-                        if (!tmp.contains("captcha_challenge")) {
-                            tmp = arg.replaceFirst("\\}$", "") + ",\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}";
-                        } else {
-                            final String jchallenge = PluginJSonUtils.getJsonValue(tmp, "captcha_challenge");
-                            final String jresponse = PluginJSonUtils.getJsonValue(tmp, "captcha_response");
-                            tmp = tmp.replace(jchallenge, challenge);
-                            tmp = tmp.replace(jresponse, JSonUtils.escape(code));
-                        }
-                        newArg = tmp;
+                        postdata.put("captcha_challenge", challenge);
+                        postdata.put("captcha_response", code);
                     } else if (CAPTCHA.REQUESTRECAPTCHA.equals(loginCaptcha)) {
-                        postPageRaw(cbr, "/requestrecaptcha", "", account, link);
-                        final Map<String, Object> requestcaptcha = restoreFromString(cbr.getRequest().getHtmlCode(), TypeRef.MAP);
+                        final Map<String, Object> requestcaptcha = postPageRaw(cbr, "/requestrecaptcha", new HashMap<String, Object>(), account, link);
                         final String challenge = (String) requestcaptcha.get("challenge");
                         String captcha_url = (String) requestcaptcha.get("captcha_url");
-                        // Dependency
                         if (StringUtils.isEmpty(challenge)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         } else if (StringUtils.isEmpty(captcha_url) || !captcha_url.startsWith("http")) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        if (captcha_url.startsWith("https://")) {
-                            logger.info("login-captcha_url is already https");
-                        } else {
+                        if (!captcha_url.startsWith("https://")) {
                             /*
                              * 2020-02-03: Possible workaround for this issue: board.jdownloader.org/showthread.php?t=82989 and 2020-04-23:
                              * board.jdownloader.org/showthread.php?t=83927
@@ -1003,64 +1005,25 @@ public abstract class K2SApi extends PluginForHost {
                             logger.info("login-captcha_url is not https --> Changing it to https");
                             captcha_url = captcha_url.replace("http://", "https://");
                         }
-                        if (false) {
-                            // returns wrong sitekey, not matching for api domain
-                            postPageRaw(cbr, "/reCaptcha?id=" + URLEncode.encodeURIComponent(challenge), "", account, link);
-                        } else {
-                            cbr.getPage(captcha_url);
+                        cbr.getPage(captcha_url);
+                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr);
+                        final String recaptchaV2Response = rc2.getToken();
+                        if (recaptchaV2Response == null) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        final boolean dummyLink = getDownloadLink() == null;
-                        try {
-                            if (dummyLink) {
-                                setDownloadLink(new DownloadLink(null, "Account", getInternalAPIDomain(), cbr.getURL(), true));
-                            }
-                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr);
-                            final String recaptchaV2Response = rc2.getToken();
-                            if (recaptchaV2Response == null) {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            }
-                            String tmp = arg;
-                            if (!tmp.contains("re_captcha_challenge")) {
-                                tmp = arg.replaceFirst("\\}$", "") + ",\"re_captcha_challenge\":\"" + challenge + "\",\"re_captcha_response\":\"" + JSonUtils.escape(recaptchaV2Response) + "\"}";
-                            } else {
-                                final String jchallenge = PluginJSonUtils.getJsonValue(tmp, "re_captcha_challenge");
-                                final String jresponse = PluginJSonUtils.getJsonValue(tmp, "re_captcha_response");
-                                tmp = tmp.replace(jchallenge, challenge);
-                                tmp = tmp.replace(jresponse, JSonUtils.escape(recaptchaV2Response));
-                            }
-                            newArg = tmp;
-                        } finally {
-                            if (dummyLink) {
-                                setDownloadLink(null);
-                            }
-                        }
+                        postdata.put("re_captcha_challenge", challenge);
+                        postdata.put("re_captcha_response", recaptchaV2Response);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + loginCaptcha);
                     }
-                    postPageRaw(ibr, url, newArg, account, link);
-                    return;
+                    attempt++;
+                    return postPageRaw(ibr, url, postdata, account, link, attempt);
+                } else {
+                    return handleErrorsAPI(account, link, ibr);
                 }
-                if (sessionTokenInvalid(account, ibr)) {
-                    // we retry once after failure!
-                    if (authTokenFail > 1) {
-                        // not sure what todo here.. not really plugin defect
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                    // lets retry
-                    // The arg contains auth_key, we need to update the original request with new auth_token
-                    if (arg.contains("\"auth_token\"")) {
-                        logger.info("retry with new auth_token");
-                        final String r = arg.replace(PluginJSonUtils.getJsonValue(arg, "auth_token"), getAuthToken(account, link));
-                        // re-enter using new auth_token
-                        postPageRaw(ibr, url, r, account, link);
-                        // error handling has been done by above re-entry
-                        return;
-                    }
-                }
-                // we want to process handleErrors after each request. Lets hope centralised approach isn't used against us.
-                handleErrorsAPI(account, link, ibr);
             } finally {
                 try {
+                    // TODO: Maybe not do this?
                     con.disconnect();
                 } catch (Throwable e) {
                 }
@@ -1132,31 +1095,6 @@ public abstract class K2SApi extends PluginForHost {
         REQUESTRECAPTCHA
     }
 
-    private CAPTCHA loginRequiresCaptcha(final Browser ibr) throws PluginException {
-        final String status = PluginJSonUtils.getJsonValue(ibr, "status");
-        final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
-        if ("error".equalsIgnoreCase(status) && ("30".equalsIgnoreCase(errorCode))) {
-            return CAPTCHA.REQUESTCAPTCHA;
-        } else if ("error".equalsIgnoreCase(status) && ("33".equalsIgnoreCase(errorCode))) {
-            return CAPTCHA.REQUESTRECAPTCHA;
-        } else {
-            return null;
-        }
-    }
-
-    private boolean sessionTokenInvalid(final Account account, final Browser ibr) throws PluginException {
-        final String status = PluginJSonUtils.getJsonValue(ibr, "status");
-        final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
-        if ("error".equalsIgnoreCase(status) && ("10".equalsIgnoreCase(errorCode) || "11".equalsIgnoreCase(errorCode) || "75".equalsIgnoreCase(errorCode))) {
-            // expired sessionToken
-            dumpAuthToken(account);
-            authTokenFail++;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     protected String getAuthToken(final Account account, final DownloadLink link) throws Exception {
         synchronized (account) {
             String currentAuthToken = account.getStringProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
@@ -1164,13 +1102,15 @@ public abstract class K2SApi extends PluginForHost {
                 logger.info("fetch new token");
                 // we don't want to pollute this.br
                 final Browser auth = prepBrowser(new Browser());
-                postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass() + "") + "\"}", account, link);
-                final Map<String, Object> loginResponse = this.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final HashMap<String, Object> loginJson = new HashMap<String, Object>();
+                loginJson.put("username", account.getUser());
+                loginJson.put("password", account.getPass());
+                final Map<String, Object> loginResponse = postPageRaw(auth, "/login", loginJson, account, link);
                 currentAuthToken = (String) loginResponse.get("auth_token");
                 if (StringUtils.isEmpty(currentAuthToken)) {
                     /* This should never happen */
                     account.removeProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                    throw new AccountInvalidException("Fatal: Token missing");
                 } else {
                     logger.info("new auth_token: " + currentAuthToken);
                     account.setProperty(PROPERTY_ACCOUNT_AUTHTOKEN, currentAuthToken);
@@ -1180,11 +1120,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected void handleErrorsAPI(final Account account, final DownloadLink link, final Browser ibr) throws PluginException {
-        handleErrorsAPI(account, link, ibr, ibr.toString(), false);
-    }
-
-    protected void handleErrorsAPI(final Account account, final DownloadLink link, final Browser br, final String brString, final boolean isSubErrors) throws PluginException {
+    protected Map<String, Object> handleErrorsAPI(final Account account, final DownloadLink link, final Browser br) throws PluginException {
         if (br != null && br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 400) {
             /* 2019-07-17: This may happen after any request even if the request itself is done right. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
@@ -1192,32 +1128,43 @@ public abstract class K2SApi extends PluginForHost {
             /* 2019-07-23: This may happen after any request e.g. after '/requestcaptcha' RE log 4772186935451 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 429 - too many requests", 3 * 60 * 1000l);
         }
-        // if ("success".equalsIgnoreCase(PluginJSonUtils.getJsonValue(brString, "status")) &&
-        // "200".equalsIgnoreCase(PluginJSonUtils.getJsonValue(brString, "code")) && !subErrors) {
-        // return;
-        // }
         try {
-            final Object entriesO = JSonStorage.restoreFromString(brString, TypeRef.OBJECT);
-            final Map<String, Object> entries;
-            if (entriesO instanceof List) {
-                final List<Map<String, Object>> subErrorsList = (List<Map<String, Object>>) entriesO;
-                entries = subErrorsList.get(0);
-            } else {
-                entries = (Map<String, Object>) entriesO;
-            }
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             /* E.g. {"message":"Invalid login or password","status":"error","code":406,"errorCode":70} */
+            final String status = (String) entries.get("status");
             Number errCode = (Number) entries.get("errorCode");
-            if (errCode == null && isSubErrors) {
+            // if (errCode == null && isSubErrors) {
+            // // subErrors
+            // errCode = (Number) entries.get("code");
+            // }
+            if (errCode == null) {
                 // subErrors
                 errCode = (Number) entries.get("code");
             }
             if (errCode == null) {
                 /* No errors */
-                return;
+                return entries;
             }
-            final int err = errCode.intValue();
+            int err = errCode.intValue();
+            if (err == 200 && StringUtils.equalsIgnoreCase(status, "success")) {
+                /*
+                 * No error e.g.
+                 * {"status":"success","code":200,"challenge":"blabla","captcha_url":"http://k2s.cc/api/v2/reCaptcha.html?id=blabla"}
+                 */
+                return entries;
+            }
+            String serversideErrormessage = (String) entries.get("message");
+            String timeRemaining = null;
             final List<Map<String, Object>> subErrorsList = (List<Map<String, Object>>) entries.get("errors");
-            final String serversideErrormessage = (String) entries.get("message");
+            if (err == 22 || err == 42) {
+                if (subErrorsList != null && !subErrorsList.isEmpty()) {
+                    final Map<String, Object> subError0 = subErrorsList.get(0);
+                    err = ((Number) subError0.get("code")).intValue();
+                    /* Can be missing -> null */
+                    serversideErrormessage = (String) subError0.get("message");
+                    timeRemaining = (String) subError0.get("timeRemaining");
+                }
+            }
             String msgForUser = getErrorMessageForUser(err);
             if (StringUtils.isEmpty(msgForUser)) {
                 /* No language String available for errormessage? Fallback to provided errormessage */
@@ -1254,9 +1201,8 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not
                     // available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // think timeRemaining is in seconds
-                    String time = PluginJSonUtils.getJsonValue(brString, "timeRemaining");
-                    if (!StringUtils.isEmpty(time) && time.matches("[\\d\\.]+")) {
-                        time = time.substring(0, time.indexOf("."));
+                    if (!StringUtils.isEmpty(timeRemaining) && timeRemaining.matches("[\\d\\.]+")) {
+                        final String time = timeRemaining.substring(0, timeRemaining.indexOf("."));
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msgForUser, Integer.parseInt(time) * 1000);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msgForUser, 15 * 60 * 1000);
@@ -1271,6 +1217,8 @@ public abstract class K2SApi extends PluginForHost {
                     // PRIVATE_ONLY = 8; //'This is private file',
                     privateDownloadRestriction(msgForUser);
                 case 10:
+                    // Bad/invalid token? {"message":"You are not authorized for this action","status":"error","code":403,"errorCode":10}
+                    throw new AccountInvalidException(msgForUser);
                 case 11:
                 case 42:
                     /* 2020-11-26: E.g. "File is available for premium users only" AFTER captcha in free mode. */
@@ -1287,11 +1235,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     // sub error, pass it back into itself.
-                    if (subErrorsList != null) {
-                        handleErrorsAPI(account, link, br, JSonStorage.serializeToJson(subErrorsList), true);
-                    } else {
-                        throw new AccountRequiredException();
-                    }
+                    throw new AccountRequiredException();
                 case 75:
                     // ERROR_YOU_ARE_NEED_AUTHORIZED = 10;
                     // ERROR_AUTHORIZATION_EXPIRED = 11;
@@ -1299,7 +1243,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"This token not allow access from this IP address","status":"error","code":403,"errorCode":75}
                     // this should never happen, as its handled within postPage and auth_token should be valid for download
                     dumpAuthToken(account);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new AccountUnavailableException(msgForUser, 1 * 60 * 1000l);
                 case 20:
                     // ERROR_FILE_NOT_FOUND = 20;
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msgForUser);
@@ -1309,9 +1253,6 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download is not
                     // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
-                    if (subErrorsList != null) {
-                        handleErrorsAPI(account, link, br, JSonStorage.serializeToJson(subErrorsList), true);
-                    }
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
                     /* 2020-01-29: {"status":"error","code":406,"message":"File is blocked","errorCode":22} */
@@ -1322,15 +1263,14 @@ public abstract class K2SApi extends PluginForHost {
                 case 33:
                     // CAPTCHA.REQUESTRECAPTCHA
                 case 30:
-                    // CAPTCHA.REQUESTCAPTCHA
                     // ERROR_CAPTCHA_REQUIRED = 30;
-                    // this shouldn't happen in dl method.. beware website can contain captcha onlogin, api not of yet.
-                    if (account != null) {
+                    // this shouldn't happen in dl method.. beware website can contain captcha on login, api not of yet.
+                    if (link == null && account != null) {
                         // {"message":"You need send request for free download with captcha
                         // fields","status":"error","code":406,"errorCode":30}
                         // false positive for invalid auth_token (work around)! dump cookies and retry
                         dumpAuthToken(account);
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                        throw new AccountUnavailableException(msgForUser, 1 * 60 * 1000l);
                     }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 case 31:
@@ -1345,17 +1285,16 @@ public abstract class K2SApi extends PluginForHost {
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
                     // ERROR_ACCOUNT_BANNED = 72;
                     dumpAuthToken(account);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msgForUser, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException(msgForUser);
                 case 71:
                     // ERROR_LOGIN_ATTEMPTS_EXCEEDED = 71;
-                    // This is actually a IP restriction!
+                    // This is actually an IP restriction!
                     // 30min wait time.... since wait time isn't respected (throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, time)),
                     // we need to set value like this and then throw temp disable.
                     // new one
                     // {"message":"Login attempt was exceed, please wait or verify your request via captcha
                     // challenge","status":"error","code":406,"errorCode":71}
-                    // ^^^ OLD they now switched to 30
-                    throw new AccountUnavailableException("\r\n" + msgForUser, 31 * 60 * 1000l);
+                    throw new AccountUnavailableException(msgForUser, 31 * 60 * 1000l);
                 case 73:
                     // ERROR_NO_ALLOW_ACCESS_FROM_NETWORK = 73;
                     if (account != null) {
@@ -1641,11 +1580,11 @@ public abstract class K2SApi extends PluginForHost {
      * @throws PluginException
      */
     public void premiumDownloadRestriction(final String msg) throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException(msg);
     }
 
     /**
-     * Only the owner of the file can download!
+     * Execute this for files which can only be downloaded by the owner.
      *
      * @param msg
      * @throws PluginException
@@ -1663,6 +1602,7 @@ public abstract class K2SApi extends PluginForHost {
             final String currentToken = account.getStringProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
             if (currentToken != null) {
                 logger.info("dumpAuthToken:" + currentToken);
+                account.removeProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
             } else {
                 logger.warning("No token there to be dumped");
             }
@@ -1670,14 +1610,14 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected void handleGeneralServerErrors(final Browser br, final DownloadInterface dl, final Account account, final DownloadLink link) throws PluginException {
-        if (br.containsHTML("You exceeded your Premium \\d+ GB daily limit, try to download tomorrow")) {
+        if (br.containsHTML("(?i)You exceeded your Premium \\d+ GB daily limit, try to download tomorrow")) {
             if (account != null) {
                 throw new AccountUnavailableException("You exceeded your Premium daily limit, try to download tomorrow", 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now";
+        final String alreadyDownloading = "Your current tariff? doesn't allow to download more files then you are downloading now";
         if (br.containsHTML(alreadyDownloading)) {
             // most likely transparent proxy/carrier NAT/multiple WAN IPs
             // HTTP/1.1 504 Gateway Time-out
@@ -1709,7 +1649,7 @@ public abstract class K2SApi extends PluginForHost {
             // Www-Authenticate: Swift realm="AUTH_system"
             link.removeProperty(this.getDirectLinkProperty(account));
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (dl.getConnection().getResponseCode() == 404 || br.containsHTML(">Not Found<")) {
+        } else if (dl.getConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
@@ -1921,7 +1861,7 @@ public abstract class K2SApi extends PluginForHost {
                 final Entry<String, Long> ipentry = it.next();
                 final String ip = ipentry.getKey();
                 final long timestamp = ipentry.getValue();
-                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT_MILLIS) {
                     /* Remove old entries */
                     it.remove();
                 }
