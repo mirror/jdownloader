@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -109,9 +110,10 @@ public class HuabanCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // br.setCurrentURL("");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -126,16 +128,17 @@ public class HuabanCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
+        final String dllink = getStoredDirecturl(link, property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
-                final Browser br2 = br.cloneBrowser();
+                final Browser br2 = new Browser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    return null;
-                } else {
+                if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
+                } else {
+                    return null;
                 }
             } catch (final Exception e) {
                 return null;
@@ -149,11 +152,21 @@ public class HuabanCom extends PluginForHost {
         return null;
     }
 
+    private String getStoredDirecturl(final DownloadLink link, final String property) {
+        String url = link.getStringProperty(property);
+        if (url != null) {
+            /* 2022-09-16: Fix old stored URLs from up to rev 45207 */
+            url = url.replaceFirst("https?://img\\.hb\\.aicdn\\.com/", "https://hbimg.huaban.com/");
+            return url;
+        }
+        return null;
+    }
+
     public static String getDirectlinkFromJson(final Map<String, Object> entries) {
         String directlink = null;
         final String key = (String) JavaScriptEngineFactory.walkJson(entries, "file/key");
         if (key != null) {
-            directlink = "http://img.hb.aicdn.com/" + key;
+            directlink = "https://hbimg.huaban.com/" + key;
         }
         return directlink;
     }
