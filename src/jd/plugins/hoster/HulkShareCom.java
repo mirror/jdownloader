@@ -27,6 +27,11 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,11 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "https?://(www\\.)?(hulksharedecrypted\\.com/playlistsong/\\d+|(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12})" })
 public class HulkShareCom extends PluginForHost {
@@ -86,6 +86,7 @@ public class HulkShareCom extends PluginForHost {
         correctDownloadLink(link);
         br.setCookie(COOKIE_HOST, "lang", "english");
         if (link.getBooleanProperty("fileoffline")) {
+            /* Permanently offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Convert playlist-songs to real single links
@@ -101,34 +102,27 @@ public class HulkShareCom extends PluginForHost {
             }
             link.setUrlDownload("http://www.hulkshare.com/" + realID);
         }
-        br.getPage(link.getDownloadURL());
-        final String redirect = br.getRedirectLocation();
-        // Handling for direct links
-        if (redirect != null) {
-            if (redirect.contains("hulkshare.com/404.php")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(link.getDownloadURL().replaceFirst("http://", "https://"));
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+                link.setFinalFileName(getFileNameFromHeader(con));
+                link.setProperty("freelink", con.getURL().toString());
+                return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
             }
-            br.setFollowRedirects(true);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
+        } finally {
             try {
-                con = br2.openGetConnection(redirect);
-                if (this.looksLikeDownloadableContent(con)) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                    link.setFinalFileName(getFileNameFromHeader(con));
-                    link.setProperty("freelink", redirect);
-                    return AvailableStatus.TRUE;
-                } else {
-                    br.getPage(redirect);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
+                con.disconnect();
+            } catch (Throwable e) {
             }
+        }
+        if (br.getURL().contains("hulkshare.com/404.php")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("You have reached the download\\-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");

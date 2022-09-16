@@ -1156,7 +1156,8 @@ public abstract class K2SApi extends PluginForHost {
             String serversideErrormessage = (String) entries.get("message");
             String timeRemaining = null;
             final List<Map<String, Object>> subErrorsList = (List<Map<String, Object>>) entries.get("errors");
-            if (err == 22 || err == 42) {
+            /* For some errors, we prefer to handle the subError(s) TODO: Remove/simplify this. */
+            if (err == 21 || err == 22 || err == 42) {
                 if (subErrorsList != null && !subErrorsList.isEmpty()) {
                     final Map<String, Object> subError0 = subErrorsList.get(0);
                     err = ((Number) subError0.get("code")).intValue();
@@ -1211,7 +1212,10 @@ public abstract class K2SApi extends PluginForHost {
                     // DOWNLOAD_FREE_THREAD_COUNT_TO_MANY = 6; "Free account does not allow to download more than one file at the same time"
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msgForUser);
                 case 9:
-                    /* {"code":9,"message":"This download available only for store subscribers"} */
+                    /*
+                     * {"status":"error","code":406,"message":"Download is not available","errorCode":21,"errors":[{"code":9,
+                     * "message":"This download available only for store subscribers"}]}
+                     */
                     throw new AccountRequiredException();
                 case 8:
                     // PRIVATE_ONLY = 8; //'This is private file',
