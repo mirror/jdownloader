@@ -140,10 +140,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * For links matching pattern {@link #TYPE_HASHTAG} --> This will be set on created DownloadLink objects as a (packagizer-) property.
      */
     private static LinkedHashMap<String, String> ID_TO_USERNAME        = new LinkedHashMap<String, String>() {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > 100;
-        };
-    };
+                                                                           protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                               return size() > 100;
+                                                                           };
+                                                                       };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -640,6 +640,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (userSelectedCrawlTypes == 0) {
             logger.info("User has disabled all profile crawler functionality");
             return decryptedLinks;
+        } else {
+            logger.info("crawlUser=crawlStory:" + crawlStory + "|crawlStoryHighlights:" + crawlStoryHighlights + "|crawlProfilePosts:" + crawlProfilePosts + "|crawlProfilePicture:" + crawlProfilePicture);
         }
         /* Now do the actual crawling. */
         if (crawlStory) {
@@ -931,6 +933,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 hasCrawledProfilePicture = true;
             }
             if (!crawlPosts) {
+                logger.info("Stopping because: do not crawl posts");
                 /* Do not crawl posts */
                 break;
             }

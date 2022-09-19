@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,11 +33,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.BdsmlrCom;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { BdsmlrCom.class })
 public class BdsmlrComCrawler extends PluginForDecrypt {
     public BdsmlrComCrawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -219,34 +222,44 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             if (postURL == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Regex direct;
+            final Regex matches;
             /* Video posts will also contain URLs to video-thumbnails so let's make sure we only grab exactly what we want. */
             if ("pubvideo".equalsIgnoreCase(type)) {
-                direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/videos/(\\d{4})/(\\d{2})[^\"\\']+\\.mp4)(?:\"|\\')");
+                matches = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/videos/(\\d{4})/(\\d{2})[^\"\\']+\\.mp4)(?:\"|\\')");
             } else {
-                direct = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/photos/(\\d{4})/(\\d{2})[^\"\\']+\\.[a-zA-Z0-9]{2,5})(?:\"|\\')");
+                matches = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/photos/(\\d{4})/(\\d{2})[^\"\\']+\\.[a-zA-Z0-9]{2,5})(?:\"|\\')");
             }
-            if (!direct.matches()) {
+            if (!matches.matches()) {
                 logger.warning("Failed to find any media for post: " + postURL + " type:" + type);
                 continue;
             }
-            final String directurl = direct.getMatch(0);
-            final String year = direct.getMatch(1);
-            final String month = direct.getMatch(2);
-            final DownloadLink dl = this.createDownloadlink(directurl);
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                dl.setContentUrl(directurl);
-            } else {
-                dl.setContentUrl(postURL);
+            final String[][] directs = matches.getMatches();
+            final HashSet<String> dups = new HashSet<String>();
+            for (final String direct[] : directs) {
+                final String directurl = direct[0];
+                if (dups.add(directurl)) {
+                    final String year = direct[1];
+                    final String month = direct[2];
+                    final DownloadLink dl = this.createDownloadlink(directurl);
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        dl.setContentUrl(directurl);
+                    } else {
+                        dl.setContentUrl(postURL);
+                    }
+                    if (dups.size() > 1) {
+                        dl.setFinalFileName(username + "_" + year + "_" + month + "_" + postID + "_" + dups.size() + Plugin.getFileNameExtensionFromURL(directurl));
+                    } else {
+                        dl.setFinalFileName(username + "_" + year + "_" + month + "_" + postID + Plugin.getFileNameExtensionFromURL(directurl));
+                    }
+                    if (fp != null) {
+                        dl._setFilePackage(fp);
+                    }
+                    dl.setAvailable(true);
+                    dl.setProperty(PROPERTY_POST_ID, postID);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
             }
-            dl.setFinalFileName(username + "_" + year + "_" + month + "_" + postID + Plugin.getFileNameExtensionFromURL(directurl));
-            if (fp != null) {
-                dl._setFilePackage(fp);
-            }
-            dl.setAvailable(true);
-            dl.setProperty(PROPERTY_POST_ID, postID);
-            decryptedLinks.add(dl);
-            distribute(dl);
         }
         lastNumberofPosts = posts.length;
         return decryptedLinks;
