@@ -35,14 +35,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.UploadedNetConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.crypt.Base64;
@@ -69,6 +61,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.UploadedNetConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" })
 public class Uploadedto extends PluginForHost {
@@ -748,9 +748,6 @@ public class Uploadedto extends PluginForHost {
             logger.info("Free account, WEB download method in use!");
         }
         String baseURL = getProtocol() + "uploaded.net/";
-        if (checkShowFreeDialog(getHost())) {
-            showFreeDialog(getHost());
-        }
         workAroundTimeOut(br);
         String id = getID(link);
         br.setFollowRedirects(false);
@@ -844,7 +841,14 @@ public class Uploadedto extends PluginForHost {
             }
             final long timebefore = System.currentTimeMillis();
             for (int i = 0; i <= 15; i++) {
-                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey);
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey) {
+                    @Override
+                    protected String getSiteUrl() {
+                        // download URLs are auto redirected to http, avoid TOO_MANY_REDIRECTS browser issue
+                        final String ret = super.getSiteUrl();
+                        return ret != null ? ret.replaceFirst("https://", "http://") : ret;
+                    }
+                };
                 final String recaptchaV2Response = rc2.getToken();
                 if (recaptchaV2Response == null) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);

@@ -63,11 +63,11 @@ public class BdsmlrCom extends PluginForHost {
     }
 
     public static String[] getAnnotationUrls() {
-        // final List<String> ret = new ArrayList<String>();
-        // for (final String[] domains : getPluginDomains()) {
-        // ret.add("");
-        // }
-        return new String[] { "" };
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domain : getPluginDomains()) {
+            ret.add("");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */

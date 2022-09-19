@@ -25,6 +25,7 @@ import jd.plugins.HostPlugin;
 public class JavbangersCom extends KernelVideoSharingComV2 {
     public JavbangersCom(final PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium("https://www.javbangers.com/");
     }
 
     public static List<String[]> getPluginDomains() {

@@ -37,6 +37,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "welt.de" }, urls = { "https?://(?:www\\.)?welt\\.de/.*?/(?:video|sendung)\\d+/[A-Za-z0-9\\-]+\\.html" })
@@ -75,7 +77,6 @@ public class WeltDeMediathek extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_title = new Regex(link.getDownloadURL(), ".+/(.+)\\.html").getMatch(0);
-        final String json_source_videourl = this.br.getRegex("\"page\"\\s*?:\\s*?(\\{.*?\\}),\\s+").getMatch(0);
         /* Tags: schema.org */
         final String json_source_videoinfo = this.br.getRegex("<script[^>]*?type=\"application/ld\\+json[^>]*?\">(.*?)</script>").getMatch(0);
         Map<String, Object> entries = restoreFromString(json_source_videoinfo, TypeRef.MAP);
@@ -99,46 +100,54 @@ public class WeltDeMediathek extends PluginForHost {
         filename = encodeUnicode(filename);
         /* Find downloadlink */
         try {
-            entries = JavaScriptEngineFactory.jsonToJavaMap(json_source_videourl);
-            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "content/media/{0}/file");
+            final String mp4[] = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(\\d{3,4})\\.mp4)").getColumn(0);
+            int best = -1;
+            for (String url : mp4) {
+                final String bitrateString = new Regex(url, "_(\\d{3,4})\\.mp4$").getMatch(0);
+                final int bitrate = Integer.parseInt(bitrateString);
+                if (best == -1 || bitrate > best) {
+                    best = bitrate;
+                    dllink = url;
+                }
+            }
             if (dllink == null) {
-                String mp4[] = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(\\d{3,4})\\.mp4)").getColumn(0);
                 dllink = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(4800|2400|2000|1500|1000|700|200)\\.mp4)").getMatch(0);
             }
-            String m3u8 = br.getRegex("(https?://[^\"]*?([A-Za-z0-9_\\-]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8)").getMatch(0);
-            if (m3u8 == null && StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
-                m3u8 = dllink;
-                dllink = null;
+            if (dllink == null) {
+                final String m3u8ToMp4 = br.getRegex("(https?://[^\"]*?([A-Za-z0-9_\\-]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8)").getMatch(0);
+                if (m3u8ToMp4 != null) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(m3u8ToMp4);
+                    /* Convert hls --> http (sometimes required) */
+                    final Regex hlsregex = new Regex(m3u8ToMp4, "https?://.*?/(?:i/)?(.*?)/([A-Za-z0-9_\\-]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8");
+                    /* Usually both IDs are the same */
+                    final String id1 = hlsregex.getMatch(0);
+                    final String id2 = hlsregex.getMatch(1);
+                    /* Bitrates from lowest to highest. */
+                    final String[] bitrates = hlsregex.getMatch(2).split(",");
+                    int highest = -1;
+                    for (String bitrate : bitrates) {
+                        if (highest == -1 || Integer.parseInt(bitrate) > highest) {
+                            highest = Integer.parseInt(bitrate);
+                        }
+                    }
+                    if (id1 != null && id2 != null && highest > 0) {
+                        if (dllink != null) {
+                            dllink = String.format("https://" + new URL(dllink).getHost() + "/%s/%s%s.mp4", id1, id2, highest);
+                        } else {
+                            dllink = String.format("https://weltn24sfthumb-a.akamaihd.net/%s/%s%s.mp4", id1, id2, highest);
+                        }
+                    }
+                }
             }
-            if (m3u8 != null) {
-                final Browser brc = br.cloneBrowser();
-                brc.getPage(m3u8);
-                /* Convert hls --> http (sometimes required) */
-                final Regex hlsregex = new Regex(m3u8, "https?://.*?/(?:i/)?(.*?)/([A-Za-z0-9_\\-]+_),([0-9,]+)\\.mp4\\.csmil/master\\.m3u8");
-                /* Usually both IDs are the same */
-                final String id1 = hlsregex.getMatch(0);
-                final String id2 = hlsregex.getMatch(1);
-                /* Bitrates from lowest to highest. */
-                final String[] bitrates = hlsregex.getMatch(2).split(",");
-                int highest = -1;
-                for (String bitrate : bitrates) {
-                    if (highest == -1 || Integer.parseInt(bitrate) > highest) {
-                        highest = Integer.parseInt(bitrate);
-                    }
-                }
-                if (id1 != null && id2 != null && highest > 0) {
-                    if (dllink != null) {
-                        dllink = String.format("https://" + new URL(dllink).getHost() + "/%s/%s%s.mp4", id1, id2, highest);
-                    } else {
-                        dllink = String.format("https://weltn24sfthumb-a.akamaihd.net/%s/%s%s.mp4", id1, id2, highest);
-                    }
-                }
+            if (dllink == null) {
+                dllink = br.getRegex("\"src\"\\s*:\\s*\"(https?://[^\"]*?master\\.m3u8)\"").getMatch(0);
             }
         } catch (final Throwable e) {
             getLogger().log(e);
         }
         final String ext;
-        if (dllink != null && !dllink.equals("")) {
+        if (StringUtils.isNotEmpty(dllink) && !StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
         } else {
             ext = default_extension;
@@ -149,7 +158,7 @@ public class WeltDeMediathek extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        if (dllink != null && dllink.startsWith("http")) {
+        if (StringUtils.isNotEmpty(dllink) && !StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
@@ -190,19 +199,29 @@ public class WeltDeMediathek extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
+        if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br.cloneBrowser(), dllink));
+            if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String dllink = hlsbest.getDownloadurl();
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, dllink);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl.startDownload();

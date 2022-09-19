@@ -22,13 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,6 +42,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/watch/(?:sm|so|nm)?(\\d+)" })
 public class NicoVideoJp extends PluginForHost {
@@ -239,7 +239,6 @@ public class NicoVideoJp extends PluginForHost {
         // URLEncode.decodeURIComponent(delivery.get("trackingId").toString()));
         /* Without this "heartbeat", our HLS stream would be invalid after ~120 seconds. */
         final HeartbeatThread heartbeat = new HeartbeatThread(br.cloneBrowser(), apiURL, session, response);
-        heartbeat.setDaemon(true);
         heartbeat.start();
         try {
             final boolean isHLS = true;
@@ -270,16 +269,18 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     class HeartbeatThread extends Thread {
-        Browser             br       = null;
-        String              apiURL   = null;
-        Map<String, Object> session  = null;
-        Map<String, Object> response = null;
+        final Browser             br;
+        final String              apiURL;
+        final Map<String, Object> session;
+        final Map<String, Object> response;
+        volatile boolean          runFlag = true;
 
         HeartbeatThread(final Browser br, final String apiURL, final Map<String, Object> session, final Map<String, Object> response) {
             this.br = br;
             this.apiURL = apiURL;
             this.session = session;
             this.response = response;
+            setDaemon(true);
         }
 
         public void run() {
@@ -293,7 +294,7 @@ public class NicoVideoJp extends PluginForHost {
             }
             final String json = JSonStorage.serializeToJson(response.get("data"));
             heatbeat.setPostDataString(json);
-            while (true) {
+            while (runFlag) {
                 try {
                     /* Typically wait 40 seconds */
                     sleep(heartbeatIntervalMillis);
@@ -303,6 +304,12 @@ public class NicoVideoJp extends PluginForHost {
                     break;
                 }
             }
+        }
+
+        @Override
+        public void interrupt() {
+            runFlag = false;
+            super.interrupt();
         }
     }
 

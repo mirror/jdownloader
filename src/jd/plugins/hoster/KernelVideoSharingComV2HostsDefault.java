@@ -159,6 +159,15 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
     }
 
     @Override
+    protected boolean preferTitleHTML() {
+        if ("bigwank.com".equals(getHost())) {
+            return true;
+        } else {
+            return super.preferTitleHTML();
+        }
+    }
+
+    @Override
     public String[] siteSupportedNames() {
         return buildSupportedNames(getPluginDomains());
     }
