@@ -19,7 +19,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Cookies;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -31,7 +30,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -117,8 +115,8 @@ public class FlimmitCom extends PluginForHost {
                         logger.info("Trust cookies without login");
                         return;
                     } else {
-                        br.getPage(getInternalBaseURL() + "account");
-                        if (this.isLoggedIN(br)) {
+                        br.getPage(getInternalBaseURL() + "dynamically/me/user-subscriptions/active");
+                        if (br.getHttpConnection().getResponseCode() == 200 && br.getCookie(getInternalBaseURL(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) != null) {
                             logger.info("Cookie login successful");
                             account.saveCookies(br.getCookies(br.getHost()), "");
                             return;
@@ -128,20 +126,27 @@ public class FlimmitCom extends PluginForHost {
                         }
                     }
                 }
-                logger.info("Performing full login");
+                final String user = account.getUser();
+                if (StringUtils.isEmpty(user) || !user.matches(".+@.+\\..+")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.getPage(getInternalBaseURL() + "de/login");
-                final String responseString = br.postPageRaw("/de/dynamically/user/login", String.format("{\"email\":\"%s\",\"password\":\"%s\",\"_csrf_token\":null}", account.getUser(), account.getPass()));
-                final Map<String, Object> response = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
+                final String responseString = br.postPageRaw("/de/dynamically/user/login", String.format("{\"email\":\"%s\",\"password\":\"%s\",\"_csrf_token\":null}", user, account.getPass()));
+                final Map<String, Object> response = restoreFromString(responseString, TypeRef.MAP);
                 if ("failure".equals(response.get("status"))) {
                     /* E.g. bad response: {"status":"failure","message":"Email oder Passwort ist nicht korrekt","extraData":[]} */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, StringUtils.valueOfOrNull(response.get("message")), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    br.getPage("/account");
-                    if (!isLoggedIN(br)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
+                    br.getPage("/dynamically/me/user-subscriptions/active");
+                    if (br.getHttpConnection().getResponseCode() == 200 && br.getCookie(getInternalBaseURL(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) != null) {
                         /* E.g. good response: */
                         account.saveCookies(br.getCookies(br.getHost()), "");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
             } catch (final PluginException e) {
@@ -153,36 +158,47 @@ public class FlimmitCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN(Browser br) {
-        return br != null && br.containsHTML("/logout") && !StringUtils.containsIgnoreCase(br.getURL(), "/login");
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        if (!account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (account) {
+            try {
+                login(account, true);
+                /* All accounts are "premium" - users have to buy the movies to get the links they can add to JD. */
+                if (br.getRequest() == null || !StringUtils.endsWithCaseInsensitive(br.getURL(), "user-subscriptions/active")) {
+                    br.getPage(getInternalBaseURL() + "dynamically/me/user-subscriptions/active");
+                    if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
             }
         }
-        /* All accounts are "premium" - users have to buy the movies to get the links they can add to JD. */
-        br.getPage("/dynamically/me/user-subscriptions/active");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Object dataO = entries.get("data");
         if (dataO != null) {
             entries = (Map<String, Object>) dataO;
-            String expireDateStr = (String) entries.get("next_payment_date");
-            if (!StringUtils.isEmpty(expireDateStr)) {
-                account.setType(AccountType.PREMIUM);
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
-                ai.setUnlimitedTraffic();
-            } else {
+            final String next_payment_date = (String) entries.get("next_payment_date");
+            final String valid_until = (String) entries.get("valid_until");
+            ai.setValidUntil(0);
+            if (ai.isExpired() && !StringUtils.isEmpty(valid_until)) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(valid_until, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
+            }
+            if (ai.isExpired() && !StringUtils.isEmpty(next_payment_date)) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(next_payment_date, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
+            }
+            if (ai.isExpired()) {
+                ai.setValidUntil(-1);
                 account.setType(AccountType.FREE);
                 /* Free accounts cannot download/stream anything. */
                 ai.setTrafficLeft(0);
+            } else {
+                account.setType(AccountType.PREMIUM);
+                ai.setUnlimitedTraffic();
             }
         } else {
             account.setType(AccountType.FREE);

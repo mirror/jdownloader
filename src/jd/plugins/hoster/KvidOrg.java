@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -31,16 +30,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kvid.org" }, urls = { "http://(www\\.)?kvid\\.org/(?:watch|embed|v2/vid)\\-[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kvid.org" }, urls = { "https?://(www\\.)?kvid\\.org/(?:watch|embed|v2/vid)\\-[A-Za-z0-9]+" })
 public class KvidOrg extends PluginForHost {
     public KvidOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -74,7 +73,7 @@ public class KvidOrg extends PluginForHost {
         }
         dllink = br.getRegex("document\\.write\\(\\'([^<>\"]*?)\\'\\);").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("file: \"([^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("file\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || dllink == null) {
             logger.info("filename: " + filename + ", dllink: " + dllink);
@@ -82,7 +81,7 @@ public class KvidOrg extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         if (downloadLink.getDownloadURL().contains("/watch")) {
-            dllink = "http://www.kvid.org/stream/" + dllink;
+            dllink = "https://www.kvid.org/stream/" + dllink;
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
@@ -93,12 +92,13 @@ public class KvidOrg extends PluginForHost {
         }
         downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -121,63 +121,24 @@ public class KvidOrg extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

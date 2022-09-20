@@ -697,7 +697,7 @@ public class TurbobitCore extends antiDDoSForHost {
     protected void handlePremiumCaptcha(final Browser br, final DownloadLink link, final Account account) throws Exception {
         Form premiumCaptchaForm = null;
         for (final Form form : br.getForms()) {
-            if (form.hasInputFieldByName("captcha_type") && form.hasInputFieldByName("check")) {
+            if ((form.containsHTML("(?i)>\\s*Please enter captcha to continue\\s*<") || form.hasInputFieldByName("captcha_type") || form.hasInputFieldByName("g-captcha-index")) && form.hasInputFieldByName("check")) {
                 premiumCaptchaForm = form;
                 break;
             }
