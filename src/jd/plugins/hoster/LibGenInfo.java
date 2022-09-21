@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,8 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LibGenInfo extends PluginForHost {
@@ -125,9 +125,15 @@ public class LibGenInfo extends PluginForHost {
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(link.getPluginPatternMatcher());
+                con = br.openGetConnection(link.getPluginPatternMatcher());
                 if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    br.followConnection();
+                    /* Either redirect to supported pattern such as "/ads.php..." or offline. */
+                    if (!this.canHandle(br.getURL())) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        parseFileInfo(link, this.br);
+                    }
                 } else {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -178,17 +184,13 @@ public class LibGenInfo extends PluginForHost {
         }
     }
 
-    private String getBracketResult(final String key) {
-        final String result = br.getRegex(key + "\\s*=\\s*\\{(.*?)\\},?[\r\n]+").getMatch(0);
-        return result;
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         final String dllink;
-        if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
-            dllink = link.getPluginPatternMatcher();
+        if (this.looksLikeDownloadableContent(br.getHttpConnection())) {
+            /* Direct-URL */
+            dllink = br.getURL();
         } else {
             /* Access TYPE_ADS URL if that hasn't already happened. */
             if (br.getURL() == null || !br.getURL().matches(TYPE_ADS)) {
