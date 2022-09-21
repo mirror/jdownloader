@@ -163,7 +163,11 @@ public class IndiShareMe extends XFileSharingProBasic {
 
     @Override
     public Form findFormDownload1Free(final Browser br) throws Exception {
-        final String specialAction = br.getRegex("<a href=\"(https?://techmyntra\\.net/[a-z0-9]{12})\"").getMatch(0);
+        String specialAction = br.getRegex("<a href=\"(https?://techmyntra\\.net/[a-z0-9]{12})\"").getMatch(0);
+        if (specialAction == null) {
+            /* 2022-09-21 */
+            specialAction = br.getRegex("<a href=\"https?://href\\.li/\\?(https?://techmyntra\\.net/[^\"]+)\"").getMatch(0);
+        }
         if (!workaround2Done && specialAction != null) {
             /* 2021-11-19: Redirect to fake blog containing download2 Form. */
             final Form form = new Form();

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -58,15 +59,6 @@ public class ShareplaceOrg extends PluginForHost {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if (host == null || host.equalsIgnoreCase("shareplace.com")) {
-            return this.getHost();
-        } else {
-            return super.rewriteHost(host);
-        }
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
@@ -97,6 +89,9 @@ public class ShareplaceOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         setBrowserExclusive();
         prepBR(this.br);
         br.setFollowRedirects(true);
@@ -114,31 +109,21 @@ public class ShareplaceOrg extends PluginForHost {
         }
         String filename = new Regex(correctedBR, "Filename:</font></b>(.*?)<b><br>").getMatch(0);
         String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
-        if (inValidate(filename)) {
+        if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         if (filesize == null) {
             filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
         }
-        if (!inValidate(filename)) {
+        if (!StringUtils.isEmpty(filename)) {
             /* Let's check if we can trust the results ... */
-            filename = Encoding.htmlDecode(filename.trim());
+            filename = Encoding.htmlDecode(filename).trim();
             link.setFinalFileName(filename);
-        } else if (!link.isNameSet()) {
-            link.setName(this.getFID(link));
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         }
         return AvailableStatus.TRUE;
-    }
-
-    private boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("") || s.toLowerCase().contains("jdownloader")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -195,7 +180,6 @@ public class ShareplaceOrg extends PluginForHost {
         dl.startDownload();
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
         return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
