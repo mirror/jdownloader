@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,6 +31,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -132,7 +132,7 @@ public class OuoIo extends antiDDoSForDecrypt {
             captchaForm.put("s_width", Integer.toString(new Random().nextInt(1000)));
             captchaForm.put("s_height", Integer.toString(new Random().nextInt(1000)));
         }
-        final boolean skipCaptcha = true;
+        final boolean skipCaptcha = true;// can be skipped for ouo.io
         if (br.getHost().equals("cpmlink.net") && CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
             final CaptchaHelperCrawlerPluginRecaptchaV2 helper = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br);
             if (helper.getSiteKey() != null) {
