@@ -846,7 +846,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Deprecated
     public static void handleLoginChallenge(Plugin plugin, final Browser br) throws AccountUnavailableException {
-        final String json = br.getRegex("window._sharedData = (\\{.*?\\})</script>").getMatch(0);
+        final String json = br.getRegex("window._sharedData\\s*=\\s*(\\{.*?\\});?\\s*</script>").getMatch(0);
         if (json != null) {
             Map<String, Object> entries = plugin.restoreFromString(json, TypeRef.MAP);
             final String possibleErrormessage = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/Challenge/{0}/extraData/content/{0}/title");
