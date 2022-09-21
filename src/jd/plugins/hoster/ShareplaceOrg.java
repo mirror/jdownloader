@@ -19,18 +19,22 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.YetiShareCore;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -40,38 +44,58 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.org" }, urls = { "https?://[\\w\\.]*?shareplace\\.(?:com|org)/\\?(?:d=)?([\\w]+)(/.*?)?" })
-public class ShareplaceOrg extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class ShareplaceOrg extends YetiShareCore {
     public ShareplaceOrg(final PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium(getPurchasePremiumURL());
     }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "shareplace.org", "shareplace.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            /* Pattern for new/current URLs */
+            String regex = "https?://(?:www\\.)?" + YetiShareCore.buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart();
+            /* Pattern for old URLs */
+            regex += "|https?://(?:www\\.)?" + YetiShareCore.buildHostsPatternPart(domains) + "/\\?(?:d=)?([\\w]+)(/.*?)?";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private final String PATTERN_OLD = "https?://[^/]+/\\?(?:d=)?([\\w]+)(/.*?)?";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // they are switching to .org as main domain
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("\\.com", ".org"));
-        link.setUrlDownload(link.getPluginPatternMatcher().replaceFirst("Download", ""));
+        super.correctDownloadLink(link);
+        if (isOldURL(link.getPluginPatternMatcher())) {
+            link.setUrlDownload(link.getPluginPatternMatcher().replaceFirst("Download", ""));
+        }
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://shareplace.org/rules.php";
+    protected ArrayList<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("shareplace.com");
+        return deadDomains;
     }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 10;
-    }
-
-    private Browser prepBR(final Browser br) {
-        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(true);
-        return br;
-    }
-
-    private static final String html_captcha = "/captcha\\.php";
-    private String              correctedBR  = null;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -88,12 +112,39 @@ public class ShareplaceOrg extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public boolean requires_WWW() {
+        return false;
+    }
+
+    private boolean isOldURL(final String url) {
+        if (url != null && url.matches(PATTERN_OLD)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isOldURL(final DownloadLink link) {
+        return isOldURL(link.getPluginPatternMatcher());
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (isOldURL(link)) {
+            return requestFileInformationOLD(link);
+        } else {
+            return super.requestFileInformation(link);
+        }
+    }
+
+    public AvailableStatus requestFileInformationOLD(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
             link.setName(this.getFID(link));
         }
         setBrowserExclusive();
-        prepBR(this.br);
+        prepBrowserWebsite(this.br);
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+        br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         if (!this.br.getURL().contains(this.getFID(link))) {
@@ -102,9 +153,10 @@ public class ShareplaceOrg extends PluginForHost {
         }
         final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
         if (iframe != null) {
-            br.getPage(iframe);
+            getPage(iframe);
         }
-        if (new Regex(correctedBR, "Your requested file is not found").matches() || !br.containsHTML("Filename:<")) {
+        final String correctedBR = correctHTML_OLD(this.br);
+        if (new Regex(correctedBR, "(?i)Your requested file is not found").matches() || !br.containsHTML("(?i)Filename\\s*:\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = new Regex(correctedBR, "Filename:</font></b>(.*?)<b><br>").getMatch(0);
@@ -128,14 +180,27 @@ public class ShareplaceOrg extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        doFree(link);
+        if (isOldURL(link)) {
+            handleFreeOLD(link);
+        } else {
+            super.handleFree(link);
+        }
     }
 
-    private void doFree(final DownloadLink link) throws Exception {
-        String dllink = null;
-        final boolean checkDirecturlCandidates = true;
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        if (isOldURL(link)) {
+            /* Old website version version didn't have any (premium) accounts. */
+            handleFreeOLD(link);
+        } else {
+            super.handleFree(link);
+        }
+    }
+
+    private void handleFreeOLD(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         /* 2016-08-23: Added captcha implementation */
+        final String html_captcha = "/captcha\\.php";
         if (this.br.containsHTML(html_captcha)) {
             final String code = this.getCaptchaCode("mhfstandard", "/captcha.php?rand=" + System.currentTimeMillis(), link);
             this.br.postPage(this.br.getURL(), "captchacode=" + Encoding.urlEncode(code));
@@ -145,11 +210,13 @@ public class ShareplaceOrg extends PluginForHost {
             /* 2020-12-17: Pre-download wiattime can be skipped */
             // this.sleep(15 * 1001l, link);
         }
+        String dllink = null;
+        final boolean checkDirecturlCandidates = true;
         for (final String[] s : br.getRegex("<script language=\"Javascript\">(.*?)</script>").getMatches()) {
             if (!new Regex(s[0], "(vvvvvvvvv|teletubbies|zzipitime)").matches()) {
                 continue;
             }
-            dllink = rhino(link, s[0], checkDirecturlCandidates);
+            dllink = rhinoOLD(link, s[0], checkDirecturlCandidates);
             if (dllink != null) {
                 break;
             }
@@ -196,7 +263,7 @@ public class ShareplaceOrg extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private String rhino(final DownloadLink link, final String s, final boolean checkResult) throws Exception {
+    private String rhinoOLD(final DownloadLink link, final String s, final boolean checkResult) throws Exception {
         final String cleanup = new Regex(s, "(var.*?)var zzipitime").getMatch(0);
         final String[] vars = new Regex(s, "<a href=\"[a-z0-9 \\+]*'\\s*\\+\\s*(.*?)\\s*\\+\\s*'\"").getColumn(0);
         Exception lastException = null;
@@ -256,14 +323,9 @@ public class ShareplaceOrg extends PluginForHost {
         return null;
     }
 
-    private void getPage(final String url) throws IOException, NumberFormatException, PluginException {
-        br.getPage(url);
-        correctBR();
-    }
-
     /* Removes HTML code which could break the plugin */
-    private void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
+    private String correctHTML_OLD(final Browser br) throws NumberFormatException, PluginException {
+        String correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
         // remove custom rules first!!! As html can change because of generic cleanup rules.
         /* generic cleanup */
@@ -278,5 +340,47 @@ public class ShareplaceOrg extends PluginForHost {
                 }
             }
         }
+        return correctedBR;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return true;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return true;
+        }
+    }
+
+    public int getMaxChunks(final Account account) {
+        if (account != null && account.getType() == AccountType.FREE) {
+            /* Free Account */
+            return -2;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* Premium account */
+            return -2;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return -2;
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    public int getMaxSimultaneousFreeAccountDownloads() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
     }
 }
