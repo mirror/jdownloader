@@ -130,6 +130,14 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
+     * Override this and add dead domains so upper handling can auto update added URLs and change domain if it contains a dead domain. This
+     * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
+     */
+    protected ArrayList<String> getDeadDomains() {
+        return null;
+    }
+
+    /**
      * For sites which use this script: http://www.yetishare.com/<br />
      * YetiShareCore Version 2.0.1.0-psp<br />
      * mods: see overridden functions in host plugins<br />
@@ -183,34 +191,40 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        if (link != null && link.getPluginPatternMatcher() != null) {
-            try {
-                final URL url = new URL(link.getPluginPatternMatcher());
-                final String urlHost = getCorrectHost(link, url);
-                final String protocolCorrected;
-                if (supports_https()) {
-                    protocolCorrected = "https://";
-                } else {
-                    protocolCorrected = "http://";
-                }
-                final String pluginHost = this.getHost();
-                String hostCorrected;
-                if (StringUtils.equalsIgnoreCase(urlHost, pluginHost)) {
-                    /* E.g. down.example.com -> down.example.com */
-                    hostCorrected = urlHost;
-                } else {
-                    /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
-                    hostCorrected = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
-                }
-                final String subDomain = Browser.getSubdomain(new URL("http://" + hostCorrected), true);
-                if (requires_WWW() && subDomain == null) {
-                    // only append www when no other subDomain is set
-                    hostCorrected = "www." + hostCorrected;
-                }
-                link.setPluginPatternMatcher(protocolCorrected + hostCorrected + url.getPath());
-            } catch (final MalformedURLException e) {
-                LogController.getRebirthLogger(logger).log(e);
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return;
+        }
+        try {
+            final URL url = new URL(link.getPluginPatternMatcher());
+            final String urlHost = getCorrectHost(link, url);
+            final ArrayList<String> deadDomains = this.getDeadDomains();
+            if (deadDomains == null || !deadDomains.contains(urlHost)) {
+                /* Only correct domains if we know they're dead. */
+                return;
             }
+            final String protocolCorrected;
+            if (supports_https()) {
+                protocolCorrected = "https://";
+            } else {
+                protocolCorrected = "http://";
+            }
+            final String pluginHost = this.getHost();
+            String hostCorrected;
+            if (StringUtils.equalsIgnoreCase(urlHost, pluginHost)) {
+                /* E.g. down.example.com -> down.example.com */
+                hostCorrected = urlHost;
+            } else {
+                /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
+                hostCorrected = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
+            }
+            final String subDomain = Browser.getSubdomain(new URL("http://" + hostCorrected), true);
+            if (requires_WWW() && subDomain == null) {
+                // only append www when no other subDomain is set
+                hostCorrected = "www." + hostCorrected;
+            }
+            link.setPluginPatternMatcher(protocolCorrected + hostCorrected + url.getPath());
+        } catch (final MalformedURLException e) {
+            LogController.getRebirthLogger(logger).log(e);
         }
     }
 
