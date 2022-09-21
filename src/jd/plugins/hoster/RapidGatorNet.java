@@ -33,22 +33,6 @@ import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -69,6 +53,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends antiDDoSForHost {
@@ -147,7 +147,8 @@ public class RapidGatorNet extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
+        final String fid = getFID(link);
+        link.setPluginPatternMatcher("https://rapidgator.net/file/" + fid);
     }
 
     protected String getAPIBase() {
@@ -1542,6 +1543,11 @@ public class RapidGatorNet extends antiDDoSForHost {
         for (int i = 0; i <= repeat; i++) {
             br.setFollowRedirects(false);
             getPage(br, link.getPluginPatternMatcher());
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null && canHandle(redirect)) {
+                // eg rg.to -> rapidgator.net
+                getPage(br, redirect);
+            }
             logged_in = this.isLoggedINWebsite(br);
             if (!logged_in && !validated_cookies && i + 1 != repeat) {
                 // lets login fully again, as hoster as removed premium cookie for some unknown reason...

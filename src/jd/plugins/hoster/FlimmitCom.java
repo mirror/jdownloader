@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -101,6 +102,16 @@ public class FlimmitCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
+    private boolean isValidUserSubscriptionsResponse(Browser br) throws Exception {
+        if (br.getHttpConnection().getResponseCode() == 200 && br.getCookie(getInternalBaseURL(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) != null) {
+            final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
+            if ("success".equals(response.get("status")) && response.containsKey("data")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -116,7 +127,7 @@ public class FlimmitCom extends PluginForHost {
                         return;
                     } else {
                         br.getPage(getInternalBaseURL() + "dynamically/me/user-subscriptions/active");
-                        if (br.getHttpConnection().getResponseCode() == 200 && br.getCookie(getInternalBaseURL(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) != null) {
+                        if (isValidUserSubscriptionsResponse(br)) {
                             logger.info("Cookie login successful");
                             account.saveCookies(br.getCookies(br.getHost()), "");
                             return;
@@ -142,7 +153,7 @@ public class FlimmitCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, StringUtils.valueOfOrNull(response.get("message")), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     br.getPage("/dynamically/me/user-subscriptions/active");
-                    if (br.getHttpConnection().getResponseCode() == 200 && br.getCookie(getInternalBaseURL(), "PHPSESSID", Cookies.NOTDELETEDPATTERN) != null) {
+                    if (isValidUserSubscriptionsResponse(br)) {
                         /* E.g. good response: */
                         account.saveCookies(br.getCookies(br.getHost()), "");
                     } else {
@@ -167,7 +178,7 @@ public class FlimmitCom extends PluginForHost {
                 /* All accounts are "premium" - users have to buy the movies to get the links they can add to JD. */
                 if (br.getRequest() == null || !StringUtils.endsWithCaseInsensitive(br.getURL(), "user-subscriptions/active")) {
                     br.getPage(getInternalBaseURL() + "dynamically/me/user-subscriptions/active");
-                    if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
+                    if (!isValidUserSubscriptionsResponse(br)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
@@ -182,13 +193,14 @@ public class FlimmitCom extends PluginForHost {
         final Object dataO = entries.get("data");
         if (dataO != null) {
             entries = (Map<String, Object>) dataO;
-            final String next_payment_date = (String) entries.get("next_payment_date");
             final String valid_until = (String) entries.get("valid_until");
             ai.setValidUntil(0);
             if (ai.isExpired() && !StringUtils.isEmpty(valid_until)) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(valid_until, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
             }
-            if (ai.isExpired() && !StringUtils.isEmpty(next_payment_date)) {
+            final String next_payment_date = (String) entries.get("next_payment_date");
+            final Object autorenewal_active = entries.get("autorenewal_active");
+            if (ai.isExpired() && !StringUtils.isEmpty(next_payment_date) && Boolean.TRUE.equals(autorenewal_active)) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(next_payment_date, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
             }
             if (ai.isExpired()) {
