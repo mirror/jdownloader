@@ -34,7 +34,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -44,19 +43,15 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.GenericM3u8;
 
-/**
- *
- * @author raztoki
- *
- */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://flimmit\\.at/([a-z0-9\\-]+)/assets/(\\d+)" })
-public class FlimmitCom extends PluginForDecrypt {
-    public FlimmitCom(PluginWrapper wrapper) {
+public class FlimmitComCrawler extends PluginForDecrypt {
+    public FlimmitComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -64,7 +59,7 @@ public class FlimmitCom extends PluginForDecrypt {
     private static final String PROPERTY_COLLECTION_TITLE = "collectionTitle";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String urlSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
@@ -108,11 +103,11 @@ public class FlimmitCom extends PluginForDecrypt {
                     if (title != null) {
                         video.setProperty(PROPERTY_COLLECTION_TITLE, Encoding.htmlDecode(title).trim());
                     }
-                    decryptedLinks.add(video);
+                    ret.add(video);
                 }
             }
-            logger.info("Found " + decryptedLinks.size() + " episodes");
-            return decryptedLinks;
+            logger.info("Found " + ret.size() + " episodes");
+            return ret;
         } else if (errorO != null) {
             if (br.containsHTML("(?i)Sie ein laufendes Abo") || br.containsHTML("\"code\"\\s*:\\s*1006")) {
                 /* active subscription required */
@@ -123,8 +118,11 @@ public class FlimmitCom extends PluginForDecrypt {
             }
         }
         /* Process video object */
-        final String m3u = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/hls");
-        final String videoTitle = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/title");
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final Map<String, Object> config = (Map<String, Object>) data.get("config");
+        final Map<String, Object> modules = (Map<String, Object>) data.get("modules");
+        final String m3u = (String) config.get("hls");
+        final String videoTitle = (String) JavaScriptEngineFactory.walkJson(modules, "titles/title");
         String seriesTitle = null;
         String seasonNumberStr = null;
         String episodeNumberStr = null;
@@ -154,7 +152,7 @@ public class FlimmitCom extends PluginForDecrypt {
                 }
             }
         }
-        episodeNumberStr = new Regex(videoTitle, "Folge (\\d+)").getMatch(0);
+        episodeNumberStr = new Regex(videoTitle, "(?i)Folge (\\d+)").getMatch(0);
         if (seasonNumberStr != null && episodeNumberStr != null) {
             final DecimalFormat df = new DecimalFormat("00");
             seasonInfoFormatted = "S" + df.format(Integer.parseInt(seasonNumberStr));
@@ -198,7 +196,8 @@ public class FlimmitCom extends PluginForDecrypt {
         // plugin can later refresh urls or change quality
         final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
         final ArrayList<HlsContainer> selectedQualities = new ArrayList<HlsContainer>();
-        if (PluginJsonConfig.get(FlimmitComConfig.class).isPreferBest()) {
+        final FlimmitComConfig cfg = PluginJsonConfig.get(FlimmitComConfig.class);
+        if (cfg.isPreferBest()) {
             selectedQualities.add(HlsContainer.findBestVideoByBandwidth(qualities));
         } else {
             selectedQualities.addAll(qualities);
@@ -206,11 +205,52 @@ public class FlimmitCom extends PluginForDecrypt {
         for (final HlsContainer quality : selectedQualities) {
             final DownloadLink dl = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(quality.getDownloadurl()));
             dl.setFinalFileName(baseFilename + "_" + quality.getResolution() + "_" + quality.getBandwidth() + ".mp4");
-            dl.setAvailable(true);
-            dl._setFilePackage(fp);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        return decryptedLinks;
+        if (cfg.isCrawlSubtitle()) {
+            final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) modules.get("subtitles");
+            if (subtitles != null && !subtitles.isEmpty()) {
+                final String subtitleExt = ".vtt";
+                final boolean addedMultipleVideoQualities = ret.size() > 1;
+                final String filenameOfLastVideoResult = ret.get(0).getFinalFileName();
+                final String titleOfLastVideoResult = filenameOfLastVideoResult.substring(0, filenameOfLastVideoResult.lastIndexOf("."));
+                for (final Map<String, Object> subtitleInfo : subtitles) {
+                    final DownloadLink subtitle = this.createDownloadlink("directhttp://" + subtitleInfo.get("url").toString());
+                    if (subtitles.size() == 1 && !addedMultipleVideoQualities) {
+                        subtitle.setFinalFileName(titleOfLastVideoResult + subtitleExt);
+                    } else {
+                        /* Multiple video qualities and/or subtitles will be returned -> Use individual filenames */
+                        subtitle.setFinalFileName(titleOfLastVideoResult + "_" + subtitleInfo.get("lang") + subtitleExt);
+                    }
+                    ret.add(subtitle);
+                }
+            }
+        }
+        if (cfg.isCrawlPoster()) {
+            /*
+             * Download poster of series/movie. For series this will return the same item for each video item resulting in only one result
+             * per series/movie.
+             */
+            final String posterURL = (String) entries.get("imageSource");
+            if (!StringUtils.isEmpty(posterURL)) {
+                final DownloadLink poster = this.createDownloadlink(posterURL);
+                final String ext = Plugin.getFileNameExtensionFromString(posterURL);
+                if (ext != null) {
+                    if (!StringUtils.isEmpty(seriesTitle)) {
+                        poster.setFinalFileName(seriesTitle + ext);
+                    } else {
+                        /* Probably we have a movie */
+                        poster.setFinalFileName(videoTitle + ext);
+                    }
+                }
+                ret.add(poster);
+            }
+        }
+        for (final DownloadLink result : ret) {
+            result.setAvailable(true);
+            result._setFilePackage(fp);
+        }
+        return ret;
     }
 
     public void login() throws Exception {
