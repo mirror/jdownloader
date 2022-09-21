@@ -23,6 +23,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -40,22 +56,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -157,7 +157,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             final String error = getError(br);
             if (error != null) {
                 if (StringUtils.containsIgnoreCase(error, "Account has exceeded the daily quota")) {
-                    dailyLimitReached(account);
+                    dailyLimitReached(null, account);
                 } else {
                     /* Permanently disable account --> Should not happen often. */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -273,11 +273,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
-    private void dailyLimitReached(final Account account) throws PluginException {
-        final String host = br.getRegex("(?i)You have exceeded the daily ([a-z0-9\\-\\.]+) Download quota \\(").getMatch(0);
-        if (host != null) {
+    private void dailyLimitReached(final DownloadLink link, final Account account) throws PluginException {
+        if (link != null) {
             /* Daily specific host downloadlimit reached --> Disable host for some time */
-            mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, "Daily limit '" + host + "'reached for this host");
+            mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, "Reached daily limit for this host");
         } else {
             /* Daily total downloadlimit for account is reached */
             logger.info("Daily limit reached");
@@ -350,7 +349,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
                 br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
                 final Map<String, Object> data = restoreFromString(br.toString(), TypeRef.HASHMAP);
-                this.handleErrors(this.getDownloadLink(), account);
+                this.handleErrors(link, account);
                 if (data.get("return") == null) {
                     logger.warning("Bad cache state/answer");
                     break;
@@ -362,7 +361,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     // cache finished, lets go to download part
                     return;
                 } else {
-                    this.getDownloadLink().addPluginProgress(waitProgress);
+                    link.addPluginProgress(waitProgress);
                     waitProgress.updateValues(currentProgress.intValue(), 100);
                     for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
                         if (isAbort()) {
@@ -378,7 +377,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             }
         } finally {
-            this.getDownloadLink().removePluginProgress(waitProgress);
+            link.removePluginProgress(waitProgress);
         }
         mhm.handleErrorGeneric(account, link, "Cache handling timeout", 10);
     }
@@ -467,7 +466,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     link.setFinalFileName(existingName);
                 }
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 this.handleDownloadErrors(link, account);
                 try {
@@ -525,8 +524,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     /**
-     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br> It should be
-     * minimum of 5 minutes and above!
+     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br>
+     * It should be minimum of 5 minutes and above!
      *
      * @throws InterruptedException
      */
@@ -555,7 +554,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Moving to new server", 5 * 60 * 1000l);
         } else if (dlResponseCode == 509) {
             /* out of traffic should not retry! throw exception on first response! */
-            dailyLimitReached(account);
+            dailyLimitReached(link, account);
         } else if (dlResponseCode == 429) {
             // what does ' max connection limit' error mean??, for user to that given hoster??, or user to that linksnappy finallink
             // server?? or linksnappy global (across all finallink servers) connections
@@ -614,11 +613,11 @@ public class LinkSnappyCom extends antiDDoSForHost {
         if (err != null) {
             if (new Regex(err, "(?i)No server available for this filehost, Please retry after few minutes").matches()) {
                 // if no server available for the filehost
-                mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "hoster offline");
+                mhm.putError(account, link, 5 * 60 * 1000l, "hoster offline");
             } else if (new Regex(err, "(?i)Couldn't (re-)?start download in system").matches()) {
                 mhm.handleErrorGeneric(account, link, "Can't start cache. Possibly daily limit reached", 50);
             } else if (new Regex(err, "(?i)You have reached max download request").matches()) {
-                mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Too many requests. Please wait 5 minutes");
+                mhm.putError(account, link, 5 * 60 * 1000l, "Too many requests. Please wait 5 minutes");
             } else if (new Regex(err, "(?i)You have reached max download limit of").matches()) {
                 try {
                     account.getAccountInfo().setTrafficLeft(0);
@@ -627,7 +626,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 throw new AccountUnavailableException("\r\nLimit Reached. Please purchase elite membership!", 1 * 60 * 1000);
             } else if (new Regex(err, "(?i)Invalid .*? link\\. Cannot find Filename").matches()) {
                 logger.info("Error: Disabling current host");
-                mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Multihoster issue");
+                mhm.putError(account, link, 5 * 60 * 1000l, "Multihoster issue");
             } else if (new Regex(err, "(?i)Invalid file URL format\\.").matches()) {
                 /*
                  * Update by Bilal Ghouri: Should not disable support for the entire host for this error. it means the host is online but
@@ -658,7 +657,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 throw new AccountUnavailableException("Daily downloadlimit reached", 10 * 60 * 1000l);
             } else {
                 logger.warning("Possible unknown API error occured: " + err);
-                if (this.getDownloadLink() == null) {
+                if (link == null) {
                     throw new AccountUnavailableException(err, 10 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, err, 5 * 60 * 1000l);
