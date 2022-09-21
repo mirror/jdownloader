@@ -27,7 +27,9 @@ public class RewriteMegaConz extends PluginForDecrypt {
         final String parts[] = new Regex(parameter.getCryptedUrl(), "(file|folder)/([a-zA-Z0-9]+)(?:#|%23)([a-zA-Z0-9_,\\-%]{16,})(/(folder|file)/([a-zA-Z0-9]+))?").getRow(0);
         final DownloadLink link;
         if (StringUtils.equals("file", parts[0])) {
-            link = createDownloadlink("https://mega.nz/#!" + parts[1] + "!" + parts[2]);
+            final String publicFileID = parts[1];
+            final String publicFileKey = parts[2].substring(0, 43);
+            link = createDownloadlink("https://mega.nz/#!" + publicFileID + "!" + publicFileKey);
         } else if (StringUtils.equals("folder", parts[0])) {
             if (parts.length == 6 && StringUtils.isNotEmpty(parts[5])) {
                 if (StringUtils.equals("file", parts[4])) {

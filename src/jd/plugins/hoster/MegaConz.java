@@ -1480,7 +1480,12 @@ public class MegaConz extends PluginForHost {
         if (ret != null && ret.contains("%20")) {
             ret = ret.replace("%20", "");
         }
-        return ret;
+        if (ret != null) {
+            // fileKey is 43 base64 chars
+            return ret.substring(0, 43);
+        } else {
+            return ret;
+        }
     }
 
     private String getNodeFileID(DownloadLink link) {

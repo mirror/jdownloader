@@ -289,7 +289,11 @@ public class RapidGatorNet extends antiDDoSForHost {
             br.getHeaders().put("Referer", custom_referer);
         }
         getPage(link.getPluginPatternMatcher());
-        final String redirect = br.getRedirectLocation();
+        String redirect = br.getRedirectLocation();
+        if (redirect != null && canHandle(redirect)) {
+            getPage(redirect);
+            redirect = br.getRedirectLocation();
+        }
         if (redirect != null) {
             br.setFollowRedirects(true);
             if (redirect.matches(".*?\\?r=download/index&session_id=[A-Za-z0-9]+")) {
