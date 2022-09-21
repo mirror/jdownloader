@@ -452,26 +452,27 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      * TODO: 2021-11-19: Clean this up - it is a mess!
      */
     public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
-        if (supports_availablecheck_over_info_page(link)) {
-            if (this.isNewYetiShareVersion(null)) {
-                /*
-                 * 2021-11-19: YetiShare sometimes have a bug where it URL-encodes "_20" to "%20" but at this place this bug does not occur
-                 * --> Prefer to get filename from here.
-                 */
-                final String betterFilename = br.getRegex("(?i)>\\s*File Page Link\\s*</span>\\s*<pre>https?://[^/]+/[A-Za-z0-9]+/([^<]+)</pre>").getMatch(0);
-                if (betterFilename != null) {
-                    fileInfo[0] = betterFilename;
-                }
-                /** 2021-01-07: Traits for the new style YetiShare layout --> See {@link #isNewYetiShareVersion()} */
-                /* 2020-10-12: Special */
-                final String betterFilesize = br.getRegex("Filesize\\s*:\\s*</span>\\s*<span>([^<>\"]+)<").getMatch(0);
-                if (!StringUtils.isEmpty(betterFilesize)) {
-                    fileInfo[1] = betterFilesize;
-                }
-                if (betterFilename != null && betterFilesize != null) {
-                    return fileInfo;
-                }
+        /* New YetiShare versions are using the same layout for "/<fuid>" and "/<fuid>~i" pages. */
+        if (this.isNewYetiShareVersion(null) || supports_availablecheck_over_info_page(link)) {
+            /*
+             * 2021-11-19: YetiShare sometimes have a bug where it URL-encodes "_20" to "%20" but at this place this bug does not occur -->
+             * Prefer to get filename from here.
+             */
+            final String betterFilename = br.getRegex("(?i)>\\s*File Page Link\\s*</span>\\s*<pre>https?://[^/]+/[A-Za-z0-9]+/([^<]+)</pre>").getMatch(0);
+            if (betterFilename != null) {
+                fileInfo[0] = betterFilename;
             }
+            /** 2021-01-07: Traits for the new style YetiShare layout --> See {@link #isNewYetiShareVersion()} */
+            /* 2020-10-12: Special */
+            final String betterFilesize = br.getRegex("Filesize\\s*:\\s*</span>\\s*<span>([^<>\"]+)<").getMatch(0);
+            if (!StringUtils.isEmpty(betterFilesize)) {
+                fileInfo[1] = betterFilesize;
+            }
+            if (betterFilename != null && betterFilesize != null) {
+                return fileInfo;
+            }
+        }
+        if (supports_availablecheck_over_info_page(link)) {
             final List<String> fileNameCandidates = new ArrayList<String>();
             /* Add pre given candidate */
             if (!StringUtils.isEmpty(fileInfo[0])) {
