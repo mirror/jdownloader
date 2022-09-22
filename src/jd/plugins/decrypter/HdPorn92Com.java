@@ -23,9 +23,11 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdporn92.com" }, urls = { "https?://(?:www\\.)?hdporn92\\.com/[A-Za-z0-9\\-]+/?" })
 public class HdPorn92Com extends antiDDoSForDecrypt {
@@ -56,14 +58,19 @@ public class HdPorn92Com extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         getPage(param.getCryptedUrl());
+        String encodedTitle = br.getRegex("<meta[^>]+property\\s*=\\s*\"og:title\"[^>]+content\\s*=\\s*\"([^\"]*)").getMatch(0);
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlOnlyDecode(encodedTitle));
         String[] additionalServers = br.getRegex("<a\\s+class=\"button\"[^>]+href=\"([^\"]*)\"[^>]+>.*?Server \\d+").getColumn(0);
         if (additionalServers != null) {
             for (String server : additionalServers) {
                 decryptedLinks.add(createDownloadlink(server));
             }
         }
-        String url = br.getRegex("<meta[^>]+itemprop=\"embedURL\"[^>]+content=\"([^\"]*)").getMatch(0);
+        String url = br.getRegex("<meta[^>]+itemprop\\s*=\\s*\"embedURL\"[^>]+content\\s*=\\s*\"([^\"]*)").getMatch(0);
         decryptedLinks.add(createDownloadlink(url));
+        fp.addLinks(decryptedLinks);
+        fp.setAllowInheritance(true);
         return decryptedLinks;
     }
 }
