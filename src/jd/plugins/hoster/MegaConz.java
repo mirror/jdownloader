@@ -471,7 +471,7 @@ public class MegaConz extends PluginForHost {
                 if (requestResponseString.matches("^\\s*-?\\d+\\s*$")) {
                     errorCode = Integer.parseInt(requestResponseString);
                 } else if (requestResponseString.matches("^\\s*\\[.*")) {
-                    final List<Object> requestResponse = JSonStorage.restoreFromString(requestResponseString, TypeRef.LIST);
+                    final List<Object> requestResponse = restoreFromString(requestResponseString, TypeRef.LIST);
                     if (requestResponse != null && requestResponse.size() == 1) {
                         final Object responseObject = requestResponse.get(0);
                         if (responseObject instanceof Map) {
@@ -1160,7 +1160,7 @@ public class MegaConz extends PluginForHost {
             /* verify if the keyString is correct */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            return JSonStorage.restoreFromString(ret, TypeRef.HASHMAP);
+            return restoreFromString(ret, TypeRef.MAP);
         }
     }
 
