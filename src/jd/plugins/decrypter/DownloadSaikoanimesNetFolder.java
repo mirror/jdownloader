@@ -79,7 +79,8 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
             final UrlQuery query = new UrlQuery();
             query.add("withEntries", "true");
             query.add("page", Integer.toString(page));
-            br.getPage("https://" + this.getHost() + "/secure/drive/shareable-links/" + folderID + "?" + query.toString());
+            query.add("order", "updated_at:desc");
+            br.getPage("https://" + this.getHost() + "/api/v1/shareable-links/" + folderID + "?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -100,7 +101,7 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
             }
             /* TODO: Find out what happens when this == false */
             // final boolean allowDownload = ((Boolean)linkInfo.get("allow_download")).booleanValue();
-            final int linkID = ((Number) linkInfo.get("id")).intValue();
+            final int fileID = ((Number) linkInfo.get("id")).intValue();
             List<Map<String, Object>> ressourcelist = null;
             if (((Number) folderChildren.get("total")).intValue() > 0) {
                 /* Add all items of a folder */
@@ -129,7 +130,8 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
                     final String filename = (String) file.get("name");
                     // final String url = (String) entries.get("url");
                     final long filesize = ((Number) file.get("file_size")).longValue();
-                    final DownloadLink dl = this.createDownloadlink("directhttp://https://" + this.getHost() + "/secure/uploads/download?hashes=" + hash + "&shareable_link=" + linkID);
+                    final String url = file.get("url").toString();
+                    final DownloadLink dl = this.createDownloadlink("directhttp://https://" + this.getHost() + "/" + url + "?shareable_link=" + fileID + "&password=null&thumbnail=");
                     dl.setFinalFileName(filename);
                     dl.setVerifiedFileSize(filesize);
                     dl.setAvailable(true);
