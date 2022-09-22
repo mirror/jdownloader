@@ -38,8 +38,9 @@ public enum DONATE_EVENT {
                 // Corona
                 return false;
             } else if (year == 2022) {
-                // Corona?
-                return false;
+                if ((month == Calendar.SEPTEMBER && day >= 17) || (month == Calendar.OCTOBER && day <= 3)) {
+                    return true;
+                }
             }
             return false;
         }
