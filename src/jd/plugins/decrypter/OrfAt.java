@@ -1,5 +1,7 @@
 package jd.plugins.decrypter;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -78,6 +80,7 @@ public class OrfAt extends PluginForDecrypt {
     private final String                                      PATTERN_BROADCAST_NEW = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
     private final String                                      PATTERN_ARTICLE       = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
     private final String                                      PATTERN_PODCAST       = "https?://[^/]+/podcasts?/([a-z0-9]+)/([a-z0-9\\-]+)(/([a-z0-9\\-]+))?";
+    private final String                                      PATTERN_COLLECTION    = "https?://[^/]+/collection/(\\d+)(/([a-z0-9\\-]+))?";
     private final String                                      API_BASE              = "https://audioapi.orf.at";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE         = new LinkedHashMap<String, Map<String, Object>>() {
@@ -85,6 +88,16 @@ public class OrfAt extends PluginForDecrypt {
                                                                                             return size() > 50;
                                                                                         };
                                                                                     };
+
+    protected DownloadLink createPodcastDownloadlink(final String directurl) throws MalformedURLException {
+        final DownloadLink link = createDownloadlink(directurl, true);
+        final UrlQuery query = UrlQuery.parse(directurl);
+        final String md5Hash = query.get("etag");
+        if (md5Hash != null) {
+            link.setMD5Hash(md5Hash);
+        }
+        return link;
+    }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -94,6 +107,8 @@ public class OrfAt extends PluginForDecrypt {
             return this.crawlPodcasts(param);
         } else if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD) || param.getCryptedUrl().matches(PATTERN_BROADCAST_NEW)) {
             return crawlBroadcasts(param);
+        } else if (param.getCryptedUrl().matches(PATTERN_COLLECTION)) {
+            return this.crawlCollection(param);
         } else {
             /* Unsupported URL -> Developer mistake */
             return null;
@@ -147,21 +162,26 @@ public class OrfAt extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String hostFromURL = Browser.getHost(param.getCryptedUrl(), true);
+        /**
+         * 2022-09-22: New endpoint: https://audioapi.orf.at/radiothek/api/2.0/podcast/fm4/fm4-science-busters/raketenschaf?_o=sound.orf.at
+         * </br>
+         * (Old one is still working!)
+         */
         br.getPage(API_BASE + "/radiothek/podcast/" + channelSlug + "/" + podcastSeriesSlug + ".json?_o=" + hostFromURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* This should never happen but for sure users could modify added URLs and render them invalid. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-        final String author = data.get("author").toString();
-        final String podcastTitle = data.get("title").toString();
+        final Map<String, Object> podcast = (Map<String, Object>) entries.get("data");
+        final String author = podcast.get("author").toString();
+        final String podcastTitle = podcast.get("title").toString();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(author + " - " + podcastTitle);
-        fp.setComment(data.get("description").toString());
+        fp.setComment(podcast.get("description").toString());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         boolean foundSpecificEpisode = false;
-        final List<Map<String, Object>> episodes = (List<Map<String, Object>>) data.get("episodes");
+        final List<Map<String, Object>> episodes = (List<Map<String, Object>>) podcast.get("episodes");
         for (final Map<String, Object> episode : episodes) {
             String directurl = null;
             final List<Map<String, Object>> enclosures = (List<Map<String, Object>>) episode.get("enclosures");
@@ -171,21 +191,16 @@ public class OrfAt extends PluginForDecrypt {
                     break;
                 }
             }
-            if (directurl == null) {
+            if (StringUtils.isEmpty(directurl)) {
                 /* Most likely unsupported streaming type */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String slug = episode.get("slug").toString();
-            final UrlQuery query = UrlQuery.parse(directurl);
-            final String md5Hash = query.get("etag");
-            final DownloadLink link = this.createDownloadlink(directurl);
+            final DownloadLink link = createPodcastDownloadlink(directurl);
             final String filename = new SimpleDateFormat("yyyy-MM-dd").format(new Date(((Number) episode.get("published")).longValue())) + "_" + author + " - " + episode.get("title").toString() + ".mp3";
             link.setFinalFileName(filename);
             link.setProperty(DirectHTTP.FIXNAME, filename);
             link.setContentUrl(episode.get("link").toString());
-            if (md5Hash != null) {
-                link.setMD5Hash(md5Hash);
-            }
             final String description = (String) episode.get("description");
             if (!StringUtils.isEmpty(description)) {
                 link.setComment(description);
@@ -290,6 +305,82 @@ public class OrfAt extends PluginForDecrypt {
             link.setLinkID(domainID + ".orf.at://" + broadCastID + "/" + broadCastKey + "/" + index);
             ret.add(link);
             fp.add(link);
+        }
+        return ret;
+    }
+
+    /** Crawls all items of a collection. A collection can contain single episode of various podcasts. */
+    private ArrayList<DownloadLink> crawlCollection(final CryptedLink param) throws IOException, PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String collectionID = new Regex(param.getCryptedUrl(), PATTERN_COLLECTION).getMatch(0);
+        if (collectionID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("https://collector.orf.at/api/frontend/collections/" + collectionID + "?_o=sound.orf.at");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> payload = (Map<String, Object>) entries.get("payload");
+        final Map<String, Object> content = (Map<String, Object>) payload.get("content");
+        final String collectionTitle = content.get("title").toString();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(collectionTitle);
+        final List<Map<String, Object>> items = (List<Map<String, Object>>) content.get("items");
+        int progress = 0;
+        /* TODO: Add support for crawling single collection items */
+        for (final Map<String, Object> item : items) {
+            progress++;
+            final String collectionItemID = item.get("id").toString();
+            final Map<String, Object> target = (Map<String, Object>) item.get("target");
+            final String targetType = target.get("type").toString();
+            if (!targetType.equalsIgnoreCase("podcast-episode")) {
+                /* TODO: Maybe add support for some other types such as "broadcastitem". */
+                logger.info("Skipping unsupported targetType: " + targetType);
+                continue;
+            }
+            final Map<String, Object> params = (Map<String, Object>) target.get("params");
+            final String guid = params.get("guid").toString();
+            logger.info("Crawling collection item " + progress + "/" + items.size() + " ID: " + collectionItemID + " GUID: " + guid);
+            br.getPage("https://audioapi.orf.at/radiothek/api/2.0/episode/" + guid + "?_o=sound.orf.at");
+            final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> episode = (Map<String, Object>) resp.get("payload");
+            final Map<String, Object> podcast = (Map<String, Object>) episode.get("podcast");
+            final String author = podcast.get("author").toString();
+            /* TODO: Improve filenames */
+            final String podcastTitle = podcast.get("title").toString();
+            String directurl = null;
+            final List<Map<String, Object>> enclosures = (List<Map<String, Object>>) episode.get("enclosures");
+            for (final Map<String, Object> enclosure : enclosures) {
+                if (enclosure.get("type").toString().equals("audio/mpeg")) {
+                    directurl = enclosure.get("url").toString();
+                    break;
+                }
+            }
+            if (StringUtils.isEmpty(directurl)) {
+                /* Most likely unsupported streaming type */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // final String slug = episode.get("slug").toString();
+            final DownloadLink link = createPodcastDownloadlink(directurl);
+            link.setContentUrl("https://sound.orf.at/collection/" + collectionID + "/" + collectionItemID);
+            final String dateStr = episode.get("published").toString();
+            final String dateFormatted = new Regex(dateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            final String filename = dateFormatted + "_" + author + " - " + podcastTitle + " - " + episode.get("title").toString() + ".mp3";
+            link.setFinalFileName(filename);
+            link.setProperty(DirectHTTP.FIXNAME, filename);
+            final String description = (String) episode.get("description");
+            if (!StringUtils.isEmpty(description)) {
+                link.setComment(description);
+            }
+            link.setAvailable(true);
+            link._setFilePackage(fp);
+            ret.add(link);
+        }
+        if (ret.isEmpty()) {
+            /* Rare case */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return ret;
     }
