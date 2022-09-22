@@ -1,17 +1,19 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forum.xda-developers.com" }, urls = { "https?://forum\\.xda-developers\\.com/devdb/project/dl/\\?id=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forum.xda-developers.com" }, urls = { "https?://forum\\.xda-developers\\.com/devdb/project/dl/\\?id=(\\d+)" })
 public class ForumXDADevelopersCom extends antiDDoSForHost {
     public ForumXDADevelopersCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -23,13 +25,32 @@ public class ForumXDADevelopersCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         br.setFollowRedirects(true);
         br.addAllowedResponseCodes(403);// rate limiting
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download/Rate limit reached", 10 * 60 * 1000l);
-        } else if (br.containsHTML("This download file is not currently available")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)This download file is not currently available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("Filename\\s*:\\s*</label>\\s*<div>\\s*(.*?)\\s*</div>").getMatch(0);
@@ -50,12 +71,16 @@ public class ForumXDADevelopersCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         this.br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher() + "&task=get", true, 1);
-        if (!dl.getConnection().isOK() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
-            br.followConnection(true);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (canHandle(br.getURL()) || dl.getConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download/Rate limit reached", 10 * 60 * 1000l);
             } else {
