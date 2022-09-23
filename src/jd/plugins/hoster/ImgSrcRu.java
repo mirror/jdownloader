@@ -23,6 +23,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,10 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -88,6 +88,7 @@ public class ImgSrcRu extends PluginForHost {
         prepBr.getHeaders().put("User-Agent", userAgent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.setCookie(this.getHost(), "iamlegal", "yeah");
+        prepBr.setCookie(this.getHost(), "over18", "yeah"); // 2022-09-24
         prepBr.setCookie(this.getHost(), "lang", "en");
         prepBr.setCookie(this.getHost(), "per_page", "48");
         return prepBr;

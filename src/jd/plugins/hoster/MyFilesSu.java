@@ -78,12 +78,6 @@ public class MyFilesSu extends PluginForHost {
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(500);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!this.br.containsHTML("FileProperties")) {
-            /* User added a non-file-url. */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         final String md5 = this.br.getRegex("Контрольная сумма файла[^:]*?:\\s*?([A-Fa-f0-9]+)").getMatch(0);
         String filename = br.getRegex("<h2 itemprop=\"name\" class=\"breakword\">([^<>\"]+)</h2>").getMatch(0);
         String filesize = br.getRegex("Размер файла\\s*?:\\s*?(\\d+,\\d{1,2} [^<>\"\\']+)").getMatch(0);
@@ -103,7 +97,13 @@ public class MyFilesSu extends PluginForHost {
         if (md5 != null) {
             link.setMD5Hash(md5);
         }
-        if (br.containsHTML("Файл был удалён")) {
+        /* File information can be available even for offline files so first look for file info, then check for offline status. */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.containsHTML("FileProperties")) {
+            /* User added a non-file-url. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Файл был удалён")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;

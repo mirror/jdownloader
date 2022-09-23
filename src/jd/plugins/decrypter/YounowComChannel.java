@@ -22,9 +22,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -33,8 +34,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younow\\.com/[^/]+(?:/\\d+)?" })
 public class YounowComChannel extends PluginForDecrypt {
     public YounowComChannel(PluginWrapper wrapper) {
@@ -42,16 +41,17 @@ public class YounowComChannel extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String username = new Regex(parameter, "younow\\.com/([^/]+)").getMatch(0);
-        String fpName = null;
-        if (parameter.matches("https?://(?:www\\.)?younow\\.com/[^/]+/\\d+")) {
-            decryptedLinks.add(this.createDownloadlink(parameter.replace("younow.com/", "younowdecrypted.com/")));
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String username = new Regex(param.getCryptedUrl(), "younow\\.com/([^/]+)").getMatch(0);
+        if (param.getCryptedUrl().matches("https?://(?:www\\.)?younow\\.com/[^/]+/\\d+")) {
+            /* Single link that goes into hosterplugin */
+            ret.add(this.createDownloadlink(param.getCryptedUrl().replace("younow.com/", "younowdecrypted.com/")));
         } else {
-            fpName = username;
-            br.getPage(parameter);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(username);
+            fp.addLinks(ret);
+            br.getPage(param.getCryptedUrl());
             br.getPage("https://api.younow.com/php/api/broadcast/info/user=" + username + "/curId=0");
             int addedlinks = 0;
             int addedlinks_temp = 0;
@@ -63,7 +63,7 @@ public class YounowComChannel extends PluginForDecrypt {
             String timestampValue = "0";
             if (inValidate(userid)) {
                 /* Probably that user does not exist */
-                return decryptedLinks;
+                return ret;
             }
             final ArrayList<String> dupecheck = new ArrayList<String>();
             boolean done = false;
@@ -71,7 +71,7 @@ public class YounowComChannel extends PluginForDecrypt {
             long lastDateUploaded = 0;
             do {
                 if (this.isAbort()) {
-                    return decryptedLinks;
+                    return ret;
                 }
                 addedlinks_temp = 0;
                 if (addedlinks > 0) {
@@ -113,6 +113,9 @@ public class YounowComChannel extends PluginForDecrypt {
                     }
                     dupecheck.add(Long.toString(broadcastID));
                     final DownloadLink dl = this.createDownloadlink("https://www.younowdecrypted.com/" + username + "/" + broadcastID);
+                    dl.setContainerUrl(param.getCryptedUrl());
+                    /* There are no individual links to open specific videos in browser. */
+                    dl.setContentUrl(param.getCryptedUrl());
                     String temp_filename;
                     if (!inValidate(broadcasttitle)) {
                         /* We might not be able to easily get this information later --> Save it on our DownloadLink */
@@ -128,20 +131,16 @@ public class YounowComChannel extends PluginForDecrypt {
                     temp_filename = encodeUnicode(temp_filename) + ".mp4";
                     dl.setName(temp_filename);
                     dl.setAvailable(true);
-                    decryptedLinks.add(dl);
+                    dl._setFilePackage(fp);
+                    ret.add(dl);
                     distribute(dl);
                 }
             } while (addedlinks_temp >= 1 && !done);
-            if (decryptedLinks.isEmpty() && !hasMore) {
+            if (ret.isEmpty() && !hasMore) {
                 logger.info("Channel is empty / does not contain any recorded and downloadable content");
             }
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
+        return ret;
     }
 
     /**
