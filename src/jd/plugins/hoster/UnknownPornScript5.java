@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,6 +28,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:www\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:\\w+\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
 public class UnknownPornScript5 extends PluginForHost {
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
@@ -150,25 +150,17 @@ public class UnknownPornScript5 extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        link.setName(filename + default_Extension);
+        link.setFinalFileName(filename + default_Extension);
         getDllink();
-        logger.info("dllink: " + dllink);
-        if (dllink.contains(".m3u8")) { // bigcamtube.com
-            filename = filename.trim();
-            link.setFinalFileName(filename + ".mp4");
-            br.getPage(dllink);
-            // Get file size with checkFFProbe and StreamInfo fails with HTTP error 501 Not Implemented
-            return AvailableStatus.TRUE;
-        }
-        String ext = default_Extension;
         if (!inValidateDllink(dllink)) {
-            filename = filename.trim();
-            ext = getFileNameExtensionFromString(dllink);
-            if (ext == null || ext.length() > 5) {
-                ext = default_Extension;
+            logger.info("dllink: " + dllink);
+            if (dllink.contains(".m3u8")) { // bigcamtube.com
+                br.getPage(dllink);
+                // Get file size with checkFFProbe and StreamInfo fails with HTTP error 501 Not Implemented
+                return AvailableStatus.TRUE;
             }
-            /* Set final filename! */
-            link.setFinalFileName(filename + ext);
+        }
+        if (!inValidateDllink(dllink)) {
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
@@ -189,8 +181,6 @@ public class UnknownPornScript5 extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-        } else {
-            link.setName(filename + ext);
         }
         return AvailableStatus.TRUE;
     }
@@ -212,7 +202,7 @@ public class UnknownPornScript5 extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("<(?:source|video)[^<>]*? src=(?:'|\")([^<>'\"]+)(?:'|\")").getMatch(0);
         }
-        if (jwplayer_source == null && dllink == null) {
+        if (jwplayer_source == null && dllink == null && !requiresAccount(br)) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
              *
@@ -270,11 +260,21 @@ public class UnknownPornScript5 extends PluginForHost {
         return false;
     }
 
+    private boolean requiresAccount(final Browser br) {
+        if (br.containsHTML("(?i)>\\s*To watch this video please")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         setConstants(null);
         requestFileInformation(link);
-        if (inValidateDllink(dllink)) {
+        if (requiresAccount(br)) {
+            throw new AccountRequiredException();
+        } else if (inValidateDllink(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
