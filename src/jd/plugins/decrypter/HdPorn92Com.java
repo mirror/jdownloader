@@ -61,7 +61,13 @@ public class HdPorn92Com extends antiDDoSForDecrypt {
         String encodedTitle = br.getRegex("<meta[^>]+property\\s*=\\s*\"og:title\"[^>]+content\\s*=\\s*\"([^\"]*)").getMatch(0);
         FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlOnlyDecode(encodedTitle));
-        String[] additionalServers = br.getRegex("<a\\s+class=\"button\"[^>]+href=\"([^\"]*)\"[^>]+>.*?Server \\d+").getColumn(0);
+        String[] additionalServers = br.getRegex("<a\\s+class=\"button\"[^>]+href\\s*=\\s*\"([^\"]*)\"[^>]+>.*?Server \\d+").getColumn(0);
+        if (additionalServers != null) {
+            for (String server : additionalServers) {
+                decryptedLinks.add(createDownloadlink(server));
+            }
+        }
+        additionalServers = br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]*)\"[^>]+rel\\s*=\\s*\"noopener\"").getColumn(0);
         if (additionalServers != null) {
             for (String server : additionalServers) {
                 decryptedLinks.add(createDownloadlink(server));
