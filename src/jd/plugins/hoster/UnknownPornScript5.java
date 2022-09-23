@@ -16,18 +16,28 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -37,10 +47,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:\\w+\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:www\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:www\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:\\w+\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:\\w+\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
 public class UnknownPornScript5 extends PluginForHost {
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www." + this.getHost() + "/registration/");
     }
 
     @Override
@@ -63,27 +74,23 @@ public class UnknownPornScript5 extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.boyfriendtv.com/tos.html";
+        return "https://www." + this.getHost() + "/tos.html";
     }
 
-    private void setConstants(final Account account) {
-        if (account == null) {
-            resumes = true;
-            chunks = 0;
-        }
-    }
-
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        dllink = null;
-        final String host = link.getHost();
-        br = new Browser();
+        return requestFileInformation(link, AccountController.getInstance().getValidAccount(this.getHost()));
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         br.setAllowedResponseCodes(new int[] { 410 });
         br.setFollowRedirects(true);
         if (link.getDownloadURL().contains("bigcamtube.com")) {
             br.setCookie("www.bigcamtube.com", "age_verify", "1");
             br.addAllowedResponseCodes(500);
+        }
+        if (account != null) {
+            this.login(account, false);
         }
         br.getPage(link.getDownloadURL());
         if (br.getHost().equals("bigcamtube.com") && br.toString().length() <= 100) {
@@ -137,7 +144,7 @@ public class UnknownPornScript5 extends PluginForHost {
         }
         /* Make it look nicer! */
         url_filename = url_filename.replace("-", " ");
-        String filename = regexStandardTitleWithHost(host);
+        String filename = regexStandardTitleWithHost(this.getHost());
         if (filename == null) {
             /* Works e.g. for: boyfriendtv.com, ashemaletube.com, pornoxo.com */
             filename = br.getRegex("<div id=\"maincolumn2\">\\s*?<h1>([^<>]*?)</h1>").getMatch(0);
@@ -270,8 +277,11 @@ public class UnknownPornScript5 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        setConstants(null);
-        requestFileInformation(link);
+        handleDownload(link, null);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account);
         if (requiresAccount(br)) {
             throw new AccountRequiredException();
         } else if (inValidateDllink(dllink)) {
@@ -316,6 +326,94 @@ public class UnknownPornScript5 extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force) {
+                        /* Don't validate cookies */
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin(br)) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/login.php");
+                final Form loginform = br.getFormbyProperty("name", "loginForm");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("rememberMe", "1");
+                final Request req = br.createFormRequest(loginform);
+                req.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                br.getPage(req);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                if ((Boolean) entries.get("SUCCESS") != Boolean.TRUE) {
+                    throw new AccountInvalidException();
+                }
+                /* Double-check */
+                br.getPage(entries.get("URL").toString());
+                if (!isLoggedin(br)) {
+                    throw new AccountInvalidException();
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        return false;
     }
 
     private String regexStandardTitleWithHost(final String host) {

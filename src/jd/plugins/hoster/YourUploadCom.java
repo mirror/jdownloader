@@ -109,11 +109,15 @@ public class YourUploadCom extends antiDDoSForHost {
                     /* 2020-11-23 */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                } else {
+                if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                final String etagHeader = con.getHeaderField("ETag");
+                if (etagHeader != null && etagHeader.equalsIgnoreCase("W/\"3208b07-17e68b9dcf7\"")) {
+                    /* 2022-09-24: Big bucks bunny demo video */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                link.setVerifiedFileSize(con.getCompleteContentLength());
                 return AvailableStatus.TRUE;
             } catch (final BrowserException eb) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

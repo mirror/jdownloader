@@ -398,13 +398,10 @@ public class ImgSrcRu extends PluginForDecrypt {
             }
             try {
                 getPage(br, url);
-                if (br.containsHTML(">\\s*Adult content warning") && br.containsHTML(">\\s*You are about to enter")) {
-                    final String enter = br.getRegex("(/main/warn[^\"']*over18[^\"']*)").getMatch(-1);
-                    if (enter != null) {
-                        getPage(br, enter);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                /* Adult content confirmation */
+                final String over18 = br.getRegex("(/main/warn[^\"']*over18[^\"']*)").getMatch(-1);
+                if (over18 != null) {
+                    getPage(br, over18);
                 } else if (br.containsHTML(">\\s*This album has not been checked by the moderators yet\\.|<u>\\s*Proceed at your own risk\\s*</u>")) {
                     // /main/passcheck.php?ad=\d+ links can not br.getURL + "?warned=yeah"
                     // lets look for the link

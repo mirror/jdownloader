@@ -19,6 +19,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,12 +35,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yiffyfur.tube" }, urls = { "https?://(?:www\\.)?yiffyfur\\.tube/video/(\\d+)/([A-Za-z0-9\\-]+)" })
 public class YiffyfurTube extends antiDDoSForHost {
@@ -189,6 +189,16 @@ public class YiffyfurTube extends antiDDoSForHost {
             /* Final fallback */
             dllink = br.getRegex("\\s+var iphoneVideoSource = \\'(http[^<>\"\\']+\\.mp4)\\';").getMatch(0);
         }
+        if (StringUtils.isEmpty(dllink)) {
+            /* 2022-09-24 */
+            final String[] quals = new String[] { "HD", "SD" };
+            for (final String qual : quals) {
+                this.dllink = br.getRegex("source src=\"([^\"]+)\" type='video/mp4' label='" + qual).getMatch(0);
+                if (this.dllink != null) {
+                    break;
+                }
+            }
+        }
         if (StringUtils.isEmpty(this.dllink)) {
             /* 2021-01-18 */
             this.dllink = "https://www.yiffyfur.tube/static/webseed/" + this.getFID(link) + ".mp4";
@@ -203,7 +213,7 @@ public class YiffyfurTube extends antiDDoSForHost {
                 if (!looksLikeDownloadableContent(con)) {
                     server_issues = true;
                 } else if (con.getCompleteContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
