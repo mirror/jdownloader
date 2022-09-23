@@ -69,6 +69,7 @@ public class OrfAt extends PluginForDecrypt {
             String pattern = "https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(";
             pattern += "(?:player|programm)/\\d+/[a-zA-Z0-9]+";
             pattern += "|artikel/\\d+/[a-zA-Z0-9]+";
+            pattern += "|.*collection/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
             pattern += "|(podcasts?/[a-z0-9]+/[a-z0-9\\-]+(/[a-z0-9\\-]+)?|[a-z0-9]+/\\d+/[a-zA-Z0-9]+)";
             pattern += ")";
             ret.add(pattern);
@@ -80,7 +81,7 @@ public class OrfAt extends PluginForDecrypt {
     private final String                                      PATTERN_BROADCAST_NEW = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
     private final String                                      PATTERN_ARTICLE       = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
     private final String                                      PATTERN_PODCAST       = "https?://[^/]+/podcasts?/([a-z0-9]+)/([a-z0-9\\-]+)(/([a-z0-9\\-]+))?";
-    private final String                                      PATTERN_COLLECTION    = "https?://[^/]+/collection/(\\d+)(/([a-z0-9\\-]+))?";
+    private final String                                      PATTERN_COLLECTION    = "^https?://.*/collection/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
     private final String                                      API_BASE              = "https://audioapi.orf.at";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE         = new LinkedHashMap<String, Map<String, Object>>() {
@@ -106,7 +107,7 @@ public class OrfAt extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(PATTERN_PODCAST)) {
             return this.crawlPodcasts(param);
         } else if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD) || param.getCryptedUrl().matches(PATTERN_BROADCAST_NEW)) {
-            return crawlBroadcasts(param);
+            return crawlBroadcasts_OLD(param);
         } else if (param.getCryptedUrl().matches(PATTERN_COLLECTION)) {
             return this.crawlCollection(param);
         } else {
@@ -227,7 +228,9 @@ public class OrfAt extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlBroadcasts(final CryptedLink param) throws Exception {
+    /** 2022-09-23: Still working but deprecated because using the new API call, this is much easier. */
+    @Deprecated
+    private ArrayList<DownloadLink> crawlBroadcasts_OLD(final CryptedLink param) throws Exception {
         final String broadCastID;
         final String broadCastKey;
         final String domainID;
@@ -312,11 +315,13 @@ public class OrfAt extends PluginForDecrypt {
     /** Crawls all items of a collection. A collection can contain single episode of various podcasts. */
     private ArrayList<DownloadLink> crawlCollection(final CryptedLink param) throws IOException, PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String collectionID = new Regex(param.getCryptedUrl(), PATTERN_COLLECTION).getMatch(0);
-        if (collectionID == null) {
+        final Regex collectionPatternRegex = new Regex(param.getCryptedUrl(), PATTERN_COLLECTION);
+        if (!collectionPatternRegex.matches()) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String collectionID = collectionPatternRegex.getMatch(0);
+        final String collectionTargetItemID = collectionPatternRegex.getMatch(2);
         br.getPage("https://collector.orf.at/api/frontend/collections/" + collectionID + "?_o=sound.orf.at");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -325,63 +330,201 @@ public class OrfAt extends PluginForDecrypt {
         final Map<String, Object> payload = (Map<String, Object>) entries.get("payload");
         final Map<String, Object> content = (Map<String, Object>) payload.get("content");
         final String collectionTitle = content.get("title").toString();
+        final String collectionDescription = (String) content.get("description");
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(collectionTitle);
+        if (!StringUtils.isEmpty(collectionDescription)) {
+            fp.setComment(collectionDescription);
+        }
         final List<Map<String, Object>> items = (List<Map<String, Object>>) content.get("items");
+        final ArrayList<Map<String, Object>> itemsToCrawl = new ArrayList<Map<String, Object>>();
+        /*
+         * 2022-09-23: Disabled because collection URLs will always contain the id to a single item. By default browser will redirect to the
+         * id of the first item so let's always crawl all items for now.
+         */
+        final boolean crawlOnlySpecificItemIfGivenInURL = false;
+        for (final Map<String, Object> item : items) {
+            final String collectionItemID = item.get("id").toString();
+            if (collectionTargetItemID == null || crawlOnlySpecificItemIfGivenInURL == false) {
+                /* Crawl all items */
+                itemsToCrawl.add(item);
+            } else if (collectionTargetItemID.equals(collectionItemID)) {
+                /* Only crawl this one specific item */
+                itemsToCrawl.clear();
+                itemsToCrawl.add(item);
+                break;
+            }
+        }
         int progress = 0;
         /* TODO: Add support for crawling single collection items */
-        for (final Map<String, Object> item : items) {
+        int numberofOfflineItems = 0;
+        for (final Map<String, Object> item : itemsToCrawl) {
             progress++;
             final String collectionItemID = item.get("id").toString();
+            logger.info("Crawling collection item " + progress + "/" + items.size() + " ID: " + collectionItemID);
             final Map<String, Object> target = (Map<String, Object>) item.get("target");
-            final String targetType = target.get("type").toString();
-            if (!targetType.equalsIgnoreCase("podcast-episode")) {
-                /* TODO: Maybe add support for some other types such as "broadcastitem". */
-                logger.info("Skipping unsupported targetType: " + targetType);
+            if ((Boolean) target.get("isGone")) {
+                /* This should never happen?! */
+                numberofOfflineItems++;
                 continue;
             }
+            final String collectionItemContentURL = "https://sound.orf.at/collection/" + collectionID + "/" + collectionItemID;
+            final String targetType = target.get("type").toString();
             final Map<String, Object> params = (Map<String, Object>) target.get("params");
-            final String guid = params.get("guid").toString();
-            logger.info("Crawling collection item " + progress + "/" + items.size() + " ID: " + collectionItemID + " GUID: " + guid);
-            br.getPage("https://audioapi.orf.at/radiothek/api/2.0/episode/" + guid + "?_o=sound.orf.at");
-            final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
-            final Map<String, Object> episode = (Map<String, Object>) resp.get("payload");
-            final Map<String, Object> podcast = (Map<String, Object>) episode.get("podcast");
-            final String author = podcast.get("author").toString();
-            /* TODO: Improve filenames */
-            final String podcastTitle = podcast.get("title").toString();
-            String directurl = null;
-            final List<Map<String, Object>> enclosures = (List<Map<String, Object>>) episode.get("enclosures");
-            for (final Map<String, Object> enclosure : enclosures) {
-                if (enclosure.get("type").toString().equals("audio/mpeg")) {
-                    directurl = enclosure.get("url").toString();
-                    break;
-                }
-            }
-            if (StringUtils.isEmpty(directurl)) {
-                /* Most likely unsupported streaming type */
+            final ArrayList<DownloadLink> thisresults = new ArrayList<DownloadLink>();
+            if (targetType.equalsIgnoreCase("podcast-episode")) {
+                final DownloadLink broadcast = crawlPodcastEpisodeByGUID(params.get("guid").toString());
+                thisresults.add(broadcast);
+            } else if (targetType.equalsIgnoreCase("broadcastitem")) {
+                final DownloadLink podcast = this.crawlBroadcastItem(params.get("station").toString(), params.get("id").toString());
+                thisresults.add(podcast);
+            } else if (targetType.equalsIgnoreCase("broadcast")) {
+                thisresults.addAll(this.crawlBroadcast(params.get("station").toString(), params.get("id").toString()));
+            } else {
+                logger.warning("Unsupported targetType " + targetType + " for collection item: " + collectionItemContentURL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // final String slug = episode.get("slug").toString();
-            final DownloadLink link = createPodcastDownloadlink(directurl);
-            link.setContentUrl("https://sound.orf.at/collection/" + collectionID + "/" + collectionItemID);
-            final String dateStr = episode.get("published").toString();
-            final String dateFormatted = new Regex(dateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-            final String filename = dateFormatted + "_" + author + " - " + podcastTitle + " - " + episode.get("title").toString() + ".mp3";
-            link.setFinalFileName(filename);
-            link.setProperty(DirectHTTP.FIXNAME, filename);
-            final String description = (String) episode.get("description");
-            if (!StringUtils.isEmpty(description)) {
-                link.setComment(description);
+            /*
+             * Item can be linked directly or as part of a collection. In this case we want to present it to the user as part of a
+             * collection as this is what he will get via browser too.
+             */
+            for (final DownloadLink thisresult : thisresults) {
+                thisresult.setContentUrl(collectionItemContentURL);
+                thisresult.setAvailable(true);
+                thisresult._setFilePackage(fp);
+                distribute(thisresult);
+                ret.add(thisresult);
             }
-            link.setAvailable(true);
-            link._setFilePackage(fp);
-            ret.add(link);
         }
         if (ret.isEmpty()) {
-            /* Rare case */
+            /* Rare case: All items are offline? */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (numberofOfflineItems > 0) {
+            logger.info("Skippen offline items: " + numberofOfflineItems);
+        }
         return ret;
+    }
+
+    private DownloadLink crawlPodcastEpisodeByGUID(final String podcastGUID) throws IOException, PluginException {
+        br.getPage("https://audioapi.orf.at/radiothek/api/2.0/episode/" + podcastGUID + "?_o=sound.orf.at");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> payload = (Map<String, Object>) resp.get("payload");
+        final Map<String, Object> podcast = (Map<String, Object>) payload.get("podcast");
+        final String author = podcast.get("author").toString();
+        final String podcastEpisodeTitle = podcast.get("title").toString();
+        String directurl = null;
+        final List<Map<String, Object>> enclosures = (List<Map<String, Object>>) payload.get("enclosures");
+        for (final Map<String, Object> enclosure : enclosures) {
+            if (enclosure.get("type").toString().equals("audio/mpeg")) {
+                directurl = enclosure.get("url").toString();
+                break;
+            }
+        }
+        if (StringUtils.isEmpty(directurl)) {
+            /* Most likely unsupported streaming type */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // final String slug = episode.get("slug").toString();
+        final DownloadLink link = createPodcastDownloadlink(directurl);
+        final String dateStr = payload.get("published").toString();
+        final String dateFormatted = new Regex(dateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        final String filename = dateFormatted + "_" + author + " - " + podcastEpisodeTitle + " - " + payload.get("title").toString() + ".mp3";
+        link.setFinalFileName(filename);
+        link.setProperty(DirectHTTP.FIXNAME, filename);
+        final String description = (String) payload.get("description");
+        if (!StringUtils.isEmpty(description)) {
+            link.setComment(description);
+        }
+        link.setDownloadSize(calculateFilesize(((Number) payload.get("duration")).longValue()));
+        link.setAvailable(true);
+        return link;
+    }
+
+    private DownloadLink crawlBroadcastItem(final String radioStation, final String broadcastID) throws IOException, PluginException {
+        if (radioStation == null || broadcastID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("https://audioapi.orf.at/" + radioStation + "/api/json/5.0/broadcastitem/" + broadcastID + "?_o=sound.orf.at");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> payload = (Map<String, Object>) resp.get("payload");
+        final Map<String, Object> broadcast = (Map<String, Object>) payload.get("broadcast");
+        final ArrayList<Map<String, Object>> streams = new ArrayList<Map<String, Object>>();
+        streams.add((Map<String, Object>) payload.get("stream"));
+        final ArrayList<DownloadLink> results = crawlProcessBroadcastItems(broadcast, streams);
+        return results.get(0);
+    }
+
+    private ArrayList<DownloadLink> crawlBroadcast(final String radioStation, final String broadcastID) throws IOException, PluginException {
+        if (radioStation == null || broadcastID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("https://audioapi.orf.at/" + radioStation + "/api/json/5.0/broadcast/" + broadcastID + "?_o=sound.orf.at");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> broadcast = (Map<String, Object>) resp.get("payload");
+        return crawlProcessBroadcastItems(broadcast, (List<Map<String, Object>>) broadcast.get("streams"));
+    }
+
+    private ArrayList<DownloadLink> crawlProcessBroadcastItems(final Map<String, Object> broadcast, final List<Map<String, Object>> streams) throws IOException, PluginException {
+        final String broadcastTitle = broadcast.get("title").toString();
+        final String broadcastSubtitle = (String) broadcast.get("subtitle");
+        final String broadcastDescription = (String) broadcast.get("description");
+        final String broadcastStartDate = broadcast.get("start").toString();
+        final String broadcastStartDateFormatted = new Regex(broadcastStartDate, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        final String station = broadcast.get("station").toString();
+        final FilePackage fp = FilePackage.getInstance();
+        String packagenameBase = broadcastStartDateFormatted + "_" + station + " - " + broadcastTitle;
+        if (!StringUtils.isEmpty(broadcastSubtitle)) {
+            packagenameBase += " - " + broadcastSubtitle;
+        }
+        fp.setName(packagenameBase);
+        if (!StringUtils.isEmpty(broadcastDescription)) {
+            fp.setComment(broadcastDescription);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final int padLength = StringUtils.getPadLength(streams.size());
+        int position = 1;
+        for (final Map<String, Object> stream : streams) {
+            final String streamStartDate = stream.get("start").toString();
+            final String streamStartDateFormatted = new Regex(streamStartDate, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            String filenameBase = streamStartDateFormatted + "_" + station + " - " + broadcastTitle;
+            if (!StringUtils.isEmpty(broadcastSubtitle)) {
+                filenameBase += " - " + broadcastSubtitle;
+            }
+            if (streams.size() > 1) {
+                filenameBase += " " + StringUtils.formatByPadLength(padLength, position);
+            }
+            filenameBase += ".mp3";
+            final Map<String, Object> urls = (Map<String, Object>) stream.get("urls");
+            // final String originalFilename = stream.get("loopStreamId").toString();
+            String downloadurl = urls.get("progressive").toString();
+            /* Remove placeholders inside URL which we're not filling in. */
+            downloadurl = downloadurl.replaceAll("\\{\\&[^\\}]+\\}", "");
+            final DownloadLink link = this.createDownloadlink("directhttp://" + downloadurl);
+            link.setFinalFileName(filenameBase);
+            link.setProperty(DirectHTTP.FIXNAME, filenameBase);
+            link.setDownloadSize(calculateFilesize(((Number) stream.get("duration")).longValue()));
+            link.setAvailable(true);
+            ret.add(link);
+            position++;
+        }
+        return ret;
+    }
+
+    /** Calculates filesizes on the assumption that audio is delivered with quality 192kb/s. */
+    private long calculateFilesize(final long durationMilliseconds) {
+        final long durationSeconds = durationMilliseconds / 1000;
+        return (durationSeconds * 192 * 1024) / 8;
     }
 }
