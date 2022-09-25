@@ -1857,7 +1857,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         int selectedQualityIndex = 0;
         for (int currentQualityIndex = 0; currentQualityIndex < videoQualityHTMLs.length; currentQualityIndex++) {
             final String videoQualityHTML = videoQualityHTMLs[currentQualityIndex];
-            final String filesizeStrTmp = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))").getMatch(0);
+            final String filesizeStrTmp = new Regex(videoQualityHTML, "(([0-9\\.]+)\\s*(KB|MB|GB|TB))", 0).getMatch(0);
             // final String vid = videoinfo.getMatch(0);
             final Regex videoinfo = new Regex(videoQualityHTML, "download_video\\('([a-z0-9]+)','([^<>\"\\']*)','([^<>\"\\']*)'");
             // final String vid = videoinfo.getMatch(0);
