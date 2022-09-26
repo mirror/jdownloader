@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -70,7 +69,7 @@ public class OrfAt extends PluginForDecrypt {
             pattern += "(?:player|programm)/\\d+/[a-zA-Z0-9]+";
             pattern += "|artikel/\\d+/[a-zA-Z0-9]+";
             pattern += "|.*collection/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
-            pattern += "|(podcasts?/[a-z0-9]+/[a-z0-9\\-]+(/[a-z0-9\\-]+)?|[a-z0-9]+/\\d+/[a-zA-Z0-9]+)";
+            pattern += "|(podcasts?/[a-z0-9]+/[a-z0-9\\-]+(/[A-Za-z0-9\\-]+)?|[a-z0-9]+/\\d+/[a-zA-Z0-9]+)";
             pattern += ")";
             ret.add(pattern);
         }
@@ -80,8 +79,8 @@ public class OrfAt extends PluginForDecrypt {
     private final String                                      PATTERN_BROADCAST_OLD = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
     private final String                                      PATTERN_BROADCAST_NEW = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
     private final String                                      PATTERN_ARTICLE       = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      PATTERN_PODCAST       = "https?://[^/]+/podcasts?/([a-z0-9]+)/([a-z0-9\\-]+)(/([a-z0-9\\-]+))?";
-    private final String                                      PATTERN_COLLECTION    = "^https?://.*/collection/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
+    private final String                                      PATTERN_PODCAST       = "https?://[^/]+/podcasts?/([a-z0-9]+)/([A-Za-z0-9\\-]+)(/([a-z0-9\\-]+))?";
+    private final String                                      PATTERN_COLLECTION    = "^(https?://.*(?:/collection|podcast/highlights))/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
     private final String                                      API_BASE              = "https://audioapi.orf.at";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE         = new LinkedHashMap<String, Map<String, Object>>() {
@@ -90,8 +89,9 @@ public class OrfAt extends PluginForDecrypt {
                                                                                         };
                                                                                     };
 
+    /** Wrapper for podcast URLs containing md5 file-hashes inside URL. */
     protected DownloadLink createPodcastDownloadlink(final String directurl) throws MalformedURLException {
-        final DownloadLink link = createDownloadlink(directurl, true);
+        final DownloadLink link = this.createDownloadlink(directurl, true);
         final UrlQuery query = UrlQuery.parse(directurl);
         final String md5Hash = query.get("etag");
         if (md5Hash != null) {
@@ -101,15 +101,22 @@ public class OrfAt extends PluginForDecrypt {
     }
 
     @Override
+    protected DownloadLink createDownloadlink(final String directurl) {
+        final DownloadLink link = super.createDownloadlink(directurl);
+        link.setProperty(DirectHTTP.PROPERTY_REQUEST_TYPE, "GET");
+        return link;
+    }
+
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         if (param.getCryptedUrl().matches(PATTERN_ARTICLE)) {
             return this.crawlArticle(param);
-        } else if (param.getCryptedUrl().matches(PATTERN_PODCAST)) {
-            return this.crawlPodcasts(param);
-        } else if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD) || param.getCryptedUrl().matches(PATTERN_BROADCAST_NEW)) {
-            return crawlBroadcasts_OLD(param);
         } else if (param.getCryptedUrl().matches(PATTERN_COLLECTION)) {
             return this.crawlCollection(param);
+        } else if (param.getCryptedUrl().matches(PATTERN_PODCAST)) {
+            return this.crawlPodcast(param);
+        } else if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD) || param.getCryptedUrl().matches(PATTERN_BROADCAST_NEW)) {
+            return crawlProgramm(param);
         } else {
             /* Unsupported URL -> Developer mistake */
             return null;
@@ -144,7 +151,6 @@ public class OrfAt extends PluginForDecrypt {
                     link.setFinalFileName(name);
                 }
                 link.setProperty(DirectHTTP.FIXNAME, name);
-                link.setProperty(DirectHTTP.PROPERTY_REQUEST_TYPE, "GET");
                 ret.add(link);
             }
             return ret;
@@ -153,7 +159,7 @@ public class OrfAt extends PluginForDecrypt {
     }
 
     /** Crawls all episodes of a podcast or only a specific episode. */
-    private ArrayList<DownloadLink> crawlPodcasts(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlPodcast(final CryptedLink param) throws Exception {
         final Regex urlinfo = new Regex(param.getCryptedUrl(), PATTERN_PODCAST);
         final String channelSlug = urlinfo.getMatch(0);
         final String podcastSeriesSlug = urlinfo.getMatch(1);
@@ -174,6 +180,8 @@ public class OrfAt extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final String podcastGroup = entries.get("group").toString();
+        final String podcastSlug = entries.get("slug").toString();
         final Map<String, Object> podcast = (Map<String, Object>) entries.get("data");
         final String author = podcast.get("author").toString();
         final String podcastTitle = podcast.get("title").toString();
@@ -196,19 +204,25 @@ public class OrfAt extends PluginForDecrypt {
                 /* Most likely unsupported streaming type */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String slug = episode.get("slug").toString();
+            final String episodeSlug = episode.get("slug").toString();
             final DownloadLink link = createPodcastDownloadlink(directurl);
             final String filename = new SimpleDateFormat("yyyy-MM-dd").format(new Date(((Number) episode.get("published")).longValue())) + "_" + author + " - " + episode.get("title").toString() + ".mp3";
             link.setFinalFileName(filename);
             link.setProperty(DirectHTTP.FIXNAME, filename);
-            link.setContentUrl(episode.get("link").toString());
+            final String contentURL = (String) episode.get("link");
+            if (!StringUtils.isEmpty(contentURL)) {
+                link.setContentUrl(contentURL);
+            } else {
+                /* E.g. https://sound.orf.at/podcast/tv/report-werkstatt */
+                link.setContentUrl("https://" + hostFromURL + "/podcast/" + podcastGroup + "/" + podcastSlug + "/" + episodeSlug);
+            }
             final String description = (String) episode.get("description");
             if (!StringUtils.isEmpty(description)) {
                 link.setComment(description);
             }
             link.setAvailable(true);
             link._setFilePackage(fp);
-            if (podcastEpisodeTitleSlug != null && slug.equals(podcastEpisodeTitleSlug)) {
+            if (podcastEpisodeTitleSlug != null && episodeSlug.equals(podcastEpisodeTitleSlug)) {
                 /* User added link to single episode and we found it --> Clear previous findings and only return that single episode. */
                 ret.clear();
                 ret.add(link);
@@ -228,9 +242,7 @@ public class OrfAt extends PluginForDecrypt {
         return ret;
     }
 
-    /** 2022-09-23: Still working but deprecated because using the new API call, this is much easier. */
-    @Deprecated
-    private ArrayList<DownloadLink> crawlBroadcasts_OLD(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlProgramm(final CryptedLink param) throws Exception {
         final String broadCastID;
         final String broadCastKey;
         final String domainID;
@@ -251,7 +263,7 @@ public class OrfAt extends PluginForDecrypt {
             /* 2021-03-31 */
             if (!CHANNEL_CACHE.containsKey(domainID)) {
                 br.getPage("https://assets.orf.at/vue-storyserver/radiothek-item-player/js/app.js");
-                final String channelInfoJs = br.getRegex("stations:(\\{.*?\\}\\}\\})\\},F=function").getMatch(0);
+                final String channelInfoJs = br.getRegex("stations:(\\{.*?\\}\\}\\})\\},").getMatch(0);
                 final Map<String, Map<String, Object>> channelInfo = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(channelInfoJs);
                 CHANNEL_CACHE.clear();
                 CHANNEL_CACHE.putAll(channelInfo);
@@ -272,42 +284,57 @@ public class OrfAt extends PluginForDecrypt {
         br.setAllowedResponseCodes(410);
         br.getPage(API_BASE + "/" + domainID + "/api/json/current/broadcast/" + broadCastID + "/" + broadCastKey + "?_s=" + System.currentTimeMillis());
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (br.getHttpConnection().getResponseCode() == 410 || "Broadcast is no longer available".equals(response.get("message"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String broadCastDay = response.get("broadcastDay").toString();
+        final String broadcastDescription = (String) response.get("description");
+        final String broadcastStartISO = response.get("startISO").toString();
+        final String broadcastDateFormatted = new Regex(broadcastStartISO, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        // final String broadCastDay = response.get("broadcastDay").toString();
         final String title = (String) response.get("title");
-        /* TODO: What are the other items there for? */
-        // final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
+        final String programTitle = (String) response.get("programTitle");
         final List<Map<String, Object>> streams = (List<Map<String, Object>>) response.get("streams");
+        String titleBase = response.get("station").toString();
+        if (!StringUtils.isEmpty(programTitle)) {
+            titleBase += " - " + programTitle + " - " + title;
+        } else {
+            titleBase += " - " + title;
+        }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title + "_" + broadCastDay);
-        int index = 0;
+        fp.setCleanupPackageName(false);
+        fp.setName(broadcastDateFormatted + "_" + titleBase);
+        if (!StringUtils.isEmpty(broadcastDescription)) {
+            fp.setComment(broadcastDescription);
+        }
+        int position = 1;
         final String userid = UUID.randomUUID().toString();
         final int padLength = StringUtils.getPadLength(streams.size());
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final Map<String, Object> stream : streams) {
             final String loopStreamId = (String) stream.get("loopStreamId");
             if (loopStreamId == null) {
                 continue;
             }
-            final long startTime = ((Number) stream.get("start")).longValue();
-            final long endTime = ((Number) stream.get("end")).longValue();
-            final long offsetende = endTime - startTime;
+            final String startISO = stream.get("startISO").toString();
+            final String dateFormatted = new Regex(startISO, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            final long startTimestamp = ((Number) stream.get("start")).longValue();
+            final long endTimestamp = ((Number) stream.get("end")).longValue();
+            final long runtimeMilliseconds = endTimestamp - startTimestamp;
             final long startOffset = ((Number) stream.get("startOffset")).longValue();
             final long endOffset = ((Number) stream.get("endOffset")).longValue();
             final long offset = startOffset - endOffset;
-            final DownloadLink link = createDownloadlink("directhttp://https://" + loopstream.get("host") + "/?channel=" + loopstream.get("channel") + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + offset + "&offsetende=" + offsetende);
+            final DownloadLink link = createDownloadlink("directhttp://https://" + loopstream.get("host") + "/?channel=" + loopstream.get("channel") + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + offset + "&offsetende=" + runtimeMilliseconds);
             if (streams.size() > 1) {
-                link.setFinalFileName(title + "_" + broadCastDay + "_" + String.format(Locale.US, "%0" + padLength + "d", (++index)) + ".mp3");
+                link.setFinalFileName(dateFormatted + "_" + titleBase + "_" + StringUtils.formatByPadLength(padLength, position) + ".mp3");
             } else {
-                link.setFinalFileName(title + "_" + broadCastDay + ".mp3");
+                link.setFinalFileName(dateFormatted + "_" + titleBase + ".mp3");
             }
-            link.setProperty("requestType", "GET");
+            link.setDownloadSize(this.calculateFilesize(runtimeMilliseconds));
             link.setAvailable(true);
-            link.setLinkID(domainID + ".orf.at://" + broadCastID + "/" + broadCastKey + "/" + index);
+            link.setLinkID(domainID + ".orf.at://" + broadCastID + "/" + broadCastKey + "/" + position);
             ret.add(link);
             fp.add(link);
+            position++;
         }
         return ret;
     }
@@ -320,8 +347,9 @@ public class OrfAt extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String collectionID = collectionPatternRegex.getMatch(0);
-        final String collectionTargetItemID = collectionPatternRegex.getMatch(2);
+        final String baseURL = collectionPatternRegex.getMatch(0);
+        final String collectionID = collectionPatternRegex.getMatch(1);
+        final String collectionTargetItemID = collectionPatternRegex.getMatch(3);
         br.getPage("https://collector.orf.at/api/frontend/collections/" + collectionID + "?_o=sound.orf.at");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -368,10 +396,14 @@ public class OrfAt extends PluginForDecrypt {
                 numberofOfflineItems++;
                 continue;
             }
-            final String collectionItemContentURL = "https://sound.orf.at/collection/" + collectionID + "/" + collectionItemID;
+            final String collectionItemContentURL = baseURL + "/" + collectionID + "/" + collectionItemID;
             final String targetType = target.get("type").toString();
             final Map<String, Object> params = (Map<String, Object>) target.get("params");
             final ArrayList<DownloadLink> thisresults = new ArrayList<DownloadLink>();
+            /*
+             * If offline exception happens for one item here this seems to mean that the whole collection is offline. Website will then
+             * simply redirect to a random other collection.
+             */
             if (targetType.equalsIgnoreCase("podcast-episode")) {
                 final DownloadLink broadcast = crawlPodcastEpisodeByGUID(params.get("guid").toString());
                 thisresults.add(broadcast);
@@ -478,16 +510,14 @@ public class OrfAt extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlProcessBroadcastItems(final Map<String, Object> broadcast, final List<Map<String, Object>> streams) throws IOException, PluginException {
         final String broadcastTitle = broadcast.get("title").toString();
-        final String broadcastSubtitle = (String) broadcast.get("subtitle");
+        // final String broadcastSubtitle = (String) broadcast.get("subtitle");
         final String broadcastDescription = (String) broadcast.get("description");
         final String broadcastStartDate = broadcast.get("start").toString();
         final String broadcastStartDateFormatted = new Regex(broadcastStartDate, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         final String station = broadcast.get("station").toString();
+        final String titleBase = station + " - " + broadcastTitle;
         final FilePackage fp = FilePackage.getInstance();
-        String packagenameBase = broadcastStartDateFormatted + "_" + station + " - " + broadcastTitle;
-        if (!StringUtils.isEmpty(broadcastSubtitle)) {
-            packagenameBase += " - " + broadcastSubtitle;
-        }
+        final String packagenameBase = broadcastStartDateFormatted + "_" + titleBase;
         fp.setName(packagenameBase);
         if (!StringUtils.isEmpty(broadcastDescription)) {
             fp.setComment(broadcastDescription);
@@ -498,10 +528,7 @@ public class OrfAt extends PluginForDecrypt {
         for (final Map<String, Object> stream : streams) {
             final String streamStartDate = stream.get("start").toString();
             final String streamStartDateFormatted = new Regex(streamStartDate, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-            String filenameBase = streamStartDateFormatted + "_" + station + " - " + broadcastTitle;
-            if (!StringUtils.isEmpty(broadcastSubtitle)) {
-                filenameBase += " - " + broadcastSubtitle;
-            }
+            String filenameBase = streamStartDateFormatted + "_" + titleBase;
             if (streams.size() > 1) {
                 filenameBase += " " + StringUtils.formatByPadLength(padLength, position);
             }
