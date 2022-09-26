@@ -23,7 +23,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -71,23 +70,10 @@ public class F95zoneTo extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
+            /* Do not return any regular expression as this is just a dummy plugin used to provide login functionality. */
             ret.add("");
         }
         return ret.toArray(new String[0]);
-    }
-
-    @Override
-    public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
-        if (linkid != null) {
-            return this.getHost() + "://" + linkid;
-        } else {
-            return super.getLinkID(link);
-        }
-    }
-
-    private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
