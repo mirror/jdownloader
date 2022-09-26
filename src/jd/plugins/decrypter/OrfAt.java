@@ -384,7 +384,6 @@ public class OrfAt extends PluginForDecrypt {
             }
         }
         int progress = 0;
-        /* TODO: Add support for crawling single collection items */
         int numberofOfflineItems = 0;
         for (final Map<String, Object> item : itemsToCrawl) {
             progress++;

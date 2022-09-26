@@ -90,7 +90,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
 
     /** Does parsing only, without any HTTP requests! */
     protected ArrayList<DownloadLink> parseHTTPDirectory(final CryptedLink param, final Browser br) throws IOException, PluginException {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String path = this.getCurrentDirectoryPath(br);
         /* Path should always be given! */
         if (path == null) {
@@ -108,23 +108,23 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
                 final DownloadLink downloadLink = parseEntry(DirectoryListingMode.NGINX, br, finfo);
                 downloadLink.setRelativeDownloadFolderPath(path);
                 downloadLink._setFilePackage(fp);
-                decryptedLinks.add(downloadLink);
+                ret.add(downloadLink);
             }
         } else {
             /* Apache default http dir index */
             filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">[^<]*</a>\\s*</td><td align=\"right\">\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}\\s*</td><td align=\"right\">[ ]*(\\d+(\\.\\d)?[A-Z]?|-)[ ]*</td>").getMatches();
             if (filesAndFolders.length == 0) {
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + path, "EMPTY_FOLDER " + path));
-                return decryptedLinks;
+                ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + path, "EMPTY_FOLDER " + path));
+                return ret;
             }
             for (final String[] finfo : filesAndFolders) {
                 final DownloadLink downloadLink = parseEntry(DirectoryListingMode.APACHE, br, finfo);
                 downloadLink.setRelativeDownloadFolderPath(path);
                 downloadLink._setFilePackage(fp);
-                decryptedLinks.add(downloadLink);
+                ret.add(downloadLink);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     protected DownloadLink parseEntry(final DirectoryListingMode directoryListing, final Browser br, final String finfo[]) throws PluginException, IOException {

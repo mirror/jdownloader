@@ -3,8 +3,6 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -31,6 +29,8 @@ import org.jdownloader.gui.translate._GUI;
 
 import com.sun.jna.platform.win32.KnownFolders;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
         @Override
@@ -47,20 +47,25 @@ public interface GeneralSettings extends ConfigInterface {
             } else if (CrossSystem.isLinux()) {
                 try {
                     /**
-                     * 2021-10-06: Comment by pspzockerscene </br> Try to find a nice default download folder for Synology. </br> Main issue
-                     * here: The Synology DSM system does not have any kind of base download folder which is visible to the user. The
-                     * folders below are only trail and error/assumptions. </br>
+                     * 2021-10-06: Comment by pspzockerscene </br>
+                     * Try to find a nice default download folder for Synology. </br>
+                     * Main issue here: The Synology DSM system does not have any kind of base download folder which is visible to the user.
+                     * The folders below are only trail and error/assumptions. </br>
                      *
                      * \@download = old temp download directory of "DownloadStation" Synology application RE:
-                     * https://www.synology-forum.de/threads/wo-ist-der-temporaere-speicherort.50969/ </br> DownloadStation never created
-                     * any user visible download folders but instead upon first start it asks the user to choose a default download folder.
-                     * </br> public = No idea what folder that should be. </br> Folders which are definitely always accessible/visible to
-                     * the Synology users are e.g. paths to reemovable media such as: </br> /volumeUSB1/usbshare or /volumeUSB2/usbshare
-                     * </br> --> Just keep in mind that using those might be a bad idea too because typically users use the Synology USB
-                     * port for small USB stick or backup HDDs so they do not expect an application to just writefiles on them. </br>
+                     * https://www.synology-forum.de/threads/wo-ist-der-temporaere-speicherort.50969/ </br>
+                     * DownloadStation never created any user visible download folders but instead upon first start it asks the user to
+                     * choose a default download folder. </br>
+                     * public = No idea what folder that should be. </br>
+                     * Folders which are definitely always accessible/visible to the Synology users are e.g. paths to reemovable media such
+                     * as: </br>
+                     * /volumeUSB1/usbshare or /volumeUSB2/usbshare </br>
+                     * --> Just keep in mind that using those might be a bad idea too because typically users use the Synology USB port for
+                     * small USB stick or backup HDDs so they do not expect an application to just writefiles on them. </br>
                      * Ultimately the best solution would be to have a path selector built in myjdownloader which is simply limited to all
-                     * the folders that the user can see -> Problem solved. </br> Conclusion: It is not possible to get a good default
-                     * download folder for Synology users! The code below is not really helpful.
+                     * the folders that the user can see -> Problem solved. </br>
+                     * Conclusion: It is not possible to get a good default download folder for Synology users! The code below is not really
+                     * helpful.
                      */
                     final HardwareTypeInterface hardwareType = HardwareType.getHardware();
                     if (hardwareType != null && HardwareTypeInterface.ID.SYNOLOGY.equals(hardwareType.getHardwareType())) {
@@ -201,7 +206,7 @@ public interface GeneralSettings extends ConfigInterface {
     void setAutoMaxDownloadsSpeedLimitMaxDownloads(int maxDownloads);
 
     @AboutConfig
-    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, minimum delay to wait after last started download. unit is milliseconds")
+    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, minimum delay to wait after last started download. Unit is milliseconds.")
     @DefaultIntValue(10000)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getAutoMaxDownloadsSpeedLimitMinDelay();
@@ -210,12 +215,12 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultLongValue(30 * 60 * 1000l)
-    @DescriptionForConfigEntry("Waittime in ms if a Download Temp Unavailable Failed")
+    @DescriptionForConfigEntry("Waittime in ms if a download temp unavailable failed")
     long getDownloadTempUnavailableRetryWaittime();
 
     @AboutConfig
     @DefaultLongValue(60 * 60 * 1000l)
-    @DescriptionForConfigEntry("Waittime in ms if a Download Host Unavailable Failed")
+    @DescriptionForConfigEntry("Waittime in ms if a download host unavailable failed")
     long getDownloadHostUnavailableRetryWaittime();
 
     public void setDownloadHostUnavailableRetryWaittime(long r);

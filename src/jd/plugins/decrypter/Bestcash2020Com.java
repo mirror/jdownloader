@@ -32,15 +32,26 @@ public class Bestcash2020Com extends MightyScriptAdLinkFly {
     private String refererHost = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br.setFollowRedirects(false);
-        br.getPage(param.getCryptedUrl());
-        refererHost = br.getRequest().getLocation();
+        final boolean followRedirectsOld = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            br.getPage(param.getCryptedUrl());
+            refererHost = br.getRequest().getLocation();
+        } finally {
+            br.setFollowRedirects(followRedirectsOld);
+        }
         return super.decryptIt(param, progress);
     }
 
     @Override
     protected String getSpecialReferer() {
         /* Pre-set Referer to skip multiple ad pages e.g. bestcash2020.com -> e3raftech.online -> bestcash2020.com */
-        return refererHost;
+        final boolean returnStaticReferer = true;
+        if (returnStaticReferer) {
+            /* 2022-09-26 */
+            return "https://ta.ta2deem7arbya.com/";
+        } else {
+            return refererHost;
+        }
     }
 }
