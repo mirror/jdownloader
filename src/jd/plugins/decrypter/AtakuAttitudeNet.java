@@ -24,6 +24,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -70,7 +72,19 @@ public class AtakuAttitudeNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        final GetRequest getRequest = br.createGetRequest(param.getCryptedUrl());
+        final URLConnectionAdapter con = this.br.openRequestConnection(br.createGetRequest(param.getCryptedUrl()));
+        try {
+            if (this.looksLikeDownloadableContent(con)) {
+                final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
+                ret.add(direct);
+                return ret;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            con.disconnect();
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

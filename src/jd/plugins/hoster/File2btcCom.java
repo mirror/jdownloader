@@ -69,7 +69,7 @@ public class File2btcCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file.([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file\\.([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -82,7 +82,7 @@ public class File2btcCom extends PluginForHost {
     private final int     ACCOUNT_FREE_MAXCHUNKS       = -4;
     private final int     ACCOUNT_FREE_MAXDOWNLOADS    = -1;
     private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -4;
     private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     @Override
@@ -108,12 +108,21 @@ public class File2btcCom extends PluginForHost {
         } else if (br.getRequest().getHtmlCode().equalsIgnoreCase("File Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<]+)</title>").getMatch(0);
-        final String filesize = br.getRegex("(?i)>\\s*Size:\\s*<b>([^<]+)</b>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String originalFilename = br.getRegex("<font size='3' color='grey'>([^<]+)</font><br>").getMatch(0);
+        if (!StringUtils.isEmpty(originalFilename)) {
+            link.setName(Encoding.htmlDecode(originalFilename).trim());
+        } else {
+            String filetitle = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            if (!StringUtils.isEmpty(filetitle)) {
+                filetitle = Encoding.htmlDecode(filetitle.trim());
+                /* Add missing file-extension for videos if needed. */
+                if (br.containsHTML("type=\"video/mp4\"")) {
+                    filetitle = this.correctOrApplyFileNameExtension(filetitle, ".mp4");
+                }
+                link.setName(filetitle);
+            }
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        final String filesize = br.getRegex("(?i)>\\s*Size:\\s*<b>([^<]+)</b>").getMatch(0);
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -255,22 +264,25 @@ public class File2btcCom extends PluginForHost {
         ai.setTrafficMax(SizeFormatter.getSize(trafficMax));
         ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(trafficUsed));
         /* 2022-09-26: Premium accounts are not yet supported */
-        if (true) {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
-        } else {
-            account.setType(AccountType.PREMIUM);
+        final boolean isPremium = br.containsHTML("(?i)Account Type\\s*:\\s*<br>\\s*<font[^>]+>\\s*<font[^>]*><b>Premium");
+        if (isPremium) {
+            final String expireStr = br.getRegex("(?i)Premium Expires:\\s*<br>\\s*<font[^>]*>\\s*([^<]*?)\\s*</font>").getMatch(0);
+            if (StringUtils.equalsIgnoreCase(expireStr, "Lifetime")) {
+                account.setType(AccountType.LIFETIME);
+            } else {
+                account.setType(AccountType.PREMIUM);
+            }
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         }
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (account.getType() == AccountType.PREMIUM) {
+        if (account.getType() == AccountType.PREMIUM || account.getType() == AccountType.LIFETIME) {
             handleDownload(link, account, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
         } else {
             handleDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
