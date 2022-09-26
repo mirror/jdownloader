@@ -40,6 +40,7 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
+import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -64,7 +65,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.ClearableLogInterface;
 import org.appwork.utils.logging2.ClosableLogInterface;
 import org.appwork.utils.logging2.LogInterface;
@@ -1176,20 +1176,36 @@ public class LinkCrawler {
         if (contentLength > 0) {
             link.setVerifiedFileSize(contentLength);
         }
-        final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
-        if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
-            link.setFinalFileName(dispositionHeader.getFilename());
-            if (dispositionHeader.getEncoding() == null) {
-                try {
-                    link.setFinalFileName(URLEncode.decodeURIComponent(dispositionHeader.getFilename(), "UTF-8", true));
-                } catch (final IllegalArgumentException ignore) {
-                } catch (final UnsupportedEncodingException ignore) {
+        {
+            String fileName = null;
+            final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
+            if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
+                fileName = dispositionHeader.getFilename();
+                if (dispositionHeader.getEncoding() == null) {
+                    try {
+                        fileName = SimpleFTP.BestEncodingGuessingURLDecode(dispositionHeader.getFilename());
+                    } catch (final IllegalArgumentException ignore) {
+                    } catch (final UnsupportedEncodingException ignore) {
+                    } catch (final IOException ignore) {
+                    }
                 }
             }
-        } else {
-            final String urlFileName = Plugin.getFileNameFromURL(request.getURL());
-            if (StringUtils.isNotEmpty(urlFileName)) {
-                link.setName(urlFileName);
+            if (StringUtils.isEmpty(fileName)) {
+                fileName = Plugin.extractFileNameFromURL(con.getRequest().getUrl());
+                if (StringUtils.isEmpty(fileName)) {
+                    fileName = link.getName();
+                }
+            }
+            if (fileName != null) {
+                if (fileName.indexOf(".") < 0) {
+                    final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                    if (ext != null) {
+                        fileName = fileName + "." + ext;
+                    }
+                }
+                link.setFinalFileName(fileName);
+                /* save filename in property so we can restore in reset case */
+                link.setProperty("fixName", fileName);
             }
         }
         link.setAvailable(true);
@@ -2299,7 +2315,7 @@ public class LinkCrawler {
                                 } else {
                                     dummyURL = new URL(maybeURL);
                                 }
-                                if (dummyURL != null && dummyURL.getHost() != null && dummyURL.getHost().contains(".")) {
+                                if (dummyURL != null && dummyURL.getHost() != null && dummyURL.getHost().contains(".") && StringUtils.isAllNotEmpty(dummyURL.getPath(), dummyURL.getQuery())) {
                                     possibleEmbeddedLinks.add(dummyURL.toString());
                                 }
                             } catch (final MalformedURLException e) {

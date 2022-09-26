@@ -130,7 +130,11 @@ public class BookFiOrg extends antiDDoSForHost {
         if (br.getURL().contains("redirectUrl")) {
             /* Redirect to other domain based on GEO-location/IP */
             logger.info("Redirect to another domain required");
-            final String redirect = br.getRegex("location\\.href = '//' \\+ domain \\+ '(/book/[^\\']+)'").getMatch(0);
+            String redirect = br.getRegex("location\\.href = '//' \\+ domain \\+ '(/book/[^\\']+)'").getMatch(0);
+            if (redirect == null) {
+                final String url = br._getURL().toString();
+                redirect = new Regex(url, "(/book/.+)").getMatch(0);
+            }
             final String allDomainsJs = br.getRegex("const domains = (\\[[^\\]]+\\]);").getMatch(0);
             if (redirect == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -162,7 +166,10 @@ public class BookFiOrg extends antiDDoSForHost {
             getPage("/" + bookid);
         }
         /* Try to make this work language independant because website language is determined by domain and/or IP! */
-        final String filesizeStr = br.getRegex("(?i)class=\"glyphicon glyphicon-download-alt\"[^>]*></span>\\s*[^\\(]+\\s*\\([a-z0-9]+,\\s*(\\d+[^<>\"\\'\\)]+)\\)").getMatch(0);
+        String filesizeStr = br.getRegex("(?i)class=\"glyphicon glyphicon-download-alt\"[^>]*></span>\\s*[^\\(]+\\s*\\([a-z0-9]+,\\s*(\\d+[^<>\"\\'\\)]+)\\)").getMatch(0);
+        if (filesizeStr == null) {
+            filesizeStr = br.getRegex("(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space))").getMatch(0);
+        }
         if (filesizeStr != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
