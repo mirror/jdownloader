@@ -193,7 +193,7 @@ public interface GeneralSettings extends ConfigInterface {
     final static int HARD_MAX_DOWNLOADS = SOFT_MAX_DOWNLOADS * 2;
 
     @AboutConfig
-    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, if >0, JD will auto start max x downloads. unit is milliseconds")
+    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, if >0, JD will auto start max x downloads.")
     @DefaultIntValue(5)
     @SpinnerValidator(min = 0, max = HARD_MAX_DOWNLOADS)
     int getAutoMaxDownloadsSpeedLimitMaxDownloads();
@@ -201,7 +201,7 @@ public interface GeneralSettings extends ConfigInterface {
     void setAutoMaxDownloadsSpeedLimitMaxDownloads(int maxDownloads);
 
     @AboutConfig
-    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, minimum delay to wait after last started download")
+    @DescriptionForConfigEntry("see AutoMaxDownloadsSpeedLimit, minimum delay to wait after last started download. unit is milliseconds")
     @DefaultIntValue(10000)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getAutoMaxDownloadsSpeedLimitMinDelay();
