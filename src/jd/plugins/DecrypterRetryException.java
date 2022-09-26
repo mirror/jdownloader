@@ -5,6 +5,7 @@ import org.jdownloader.translate._JDT;
 public class DecrypterRetryException extends Exception {
     public static enum RetryReason {
         CAPTCHA(_JDT.T.decrypter_wrongcaptcha()),
+        EMPTY_FOLDER(_JDT.T.decrypter_empty_folder()),
         NO_ACCOUNT(_JDT.T.decrypter_invalidaccount()),
         FILE_NOT_FOUND(_JDT.T.decrypter_contentoffline()),
         PLUGIN_DEFECT(_JDT.T.decrypter_plugindefect()),
@@ -51,13 +52,13 @@ public class DecrypterRetryException extends Exception {
         this(reason, customName, null);
     }
 
-    public DecrypterRetryException(RetryReason reason, final String customName, final String customComment) {
+    public DecrypterRetryException(final RetryReason reason, final String customName, final String customComment) {
         this.reason = reason;
         this.customName = customName;
         this.customComment = customComment;
     }
 
-    public DecrypterRetryException(RetryReason reason, final String customName, final String customComment, Throwable cause) {
+    public DecrypterRetryException(final RetryReason reason, final String customName, final String customComment, Throwable cause) {
         super(cause);
         this.reason = reason;
         this.customName = customName;

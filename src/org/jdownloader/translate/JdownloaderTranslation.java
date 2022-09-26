@@ -158,6 +158,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Wrong captcha code" })
     String decrypter_wrongcaptcha();
 
+    @Default(lngs = { "en" }, values = { "Empty folder" })
+    String decrypter_empty_folder();
+
     @Default(lngs = { "en" }, values = { "Not available for current IP" })
     String decrypter_unavailable_ip();
 
