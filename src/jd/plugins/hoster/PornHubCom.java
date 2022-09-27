@@ -36,28 +36,12 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -82,6 +66,23 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
@@ -408,6 +409,7 @@ public class PornHubCom extends PluginForHost {
          * upper handling is using!
          */
         dlUrl = null;
+        boolean cachedURLFlag = false;
         if (link.getPluginPatternMatcher().matches(type_photo)) {
             final String linkHost = Browser.getHost(link.getPluginPatternMatcher());
             /* Offline links should also have nice filenames */
@@ -496,6 +498,7 @@ public class PornHubCom extends PluginForHost {
             link.setName(viewKey + ".mp4");
             html_filename = link.getStringProperty("decryptedfilename", null);
             dlUrl = link.getStringProperty(PROPERT_DIRECTLINK, null);
+            cachedURLFlag = true;
             if (dlUrl == null || html_filename == null) {
                 /* This should never happen as every url goes into the decrypter first! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -530,7 +533,7 @@ public class PornHubCom extends PluginForHost {
             link.setFinalFileName(html_filename);
         }
         if (!StringUtils.isEmpty(this.dlUrl)) {
-            if (!verifyFinalURL(link, format, this.dlUrl)) {
+            if (!verifyFinalURL(link, format, this.dlUrl, cachedURLFlag)) {
                 if (!isVideo) {
                     /* We cannot refresh directurls of e.g. photo content - final downloadurls should be static --> WTF */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
@@ -554,7 +557,7 @@ public class PornHubCom extends PluginForHost {
                 } else {
                     /* Last chance */
                     logger.warning("Check fresh directurl:" + format + "/" + quality + "/" + dlUrl);
-                    if (!verifyFinalURL(link, format, this.dlUrl)) {
+                    if (!verifyFinalURL(link, format, this.dlUrl, false)) {
                         logger.info("Fresh directurl did not lead to downloadable content");
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
                     } else {
@@ -566,64 +569,90 @@ public class PornHubCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public boolean verifyFinalURL(final DownloadLink link, final String format, final String url) throws Exception {
-        if (StringUtils.equalsIgnoreCase("hls", format)) {
-            final Browser hlsCheck = br.cloneBrowser();
-            hlsCheck.setFollowRedirects(true);
-            hlsCheck.setAllowedResponseCodes(new int[] { -1 });
-            hlsCheck.getPage(url);
-            if (hlsCheck.getHttpConnection().getResponseCode() != 200) {
-                /* Directurl needs to be refreshed */
-                return false;
-            } else if (!LinkCrawlerDeepInspector.looksLikeMpegURL(hlsCheck.getHttpConnection())) {
-                /* Obligatory seconds check. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(hlsCheck.cloneBrowser());
-                if (hlsContainers == null || hlsContainers.size() != 1) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    final List<M3U8Playlist> m3u8list = hlsContainers.get(0).getM3U8(hlsCheck);
-                    final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), m3u8list);
-                    final long estimatedSize = downloader.getEstimatedSize();
-                    if (estimatedSize > 0) {
-                        link.setDownloadSize(estimatedSize);
-                    }
-                    link.setProperty(PROPERT_DIRECTLINK, url);
-                    return true;
-                }
-            }
-        } else {
-            final Browser urlCheck = br.cloneBrowser();
-            urlCheck.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = urlCheck.openHeadConnection(dlUrl);
-                if (urlCheck.getHttpConnection().getResponseCode() != 200) {
-                    try {
-                        urlCheck.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+    public boolean verifyFinalURL(final DownloadLink link, final String format, final String url, final boolean cachedURLFlag) throws Exception {
+        try {
+            if (StringUtils.equalsIgnoreCase("hls", format)) {
+                final Browser hlsCheck = br.cloneBrowser();
+                hlsCheck.setFollowRedirects(true);
+                hlsCheck.setAllowedResponseCodes(new int[] { -1 });
+                hlsCheck.getPage(url);
+                if (hlsCheck.getHttpConnection().getResponseCode() != 200) {
+                    /* Directurl needs to be refreshed */
                     return false;
-                } else if (StringUtils.containsIgnoreCase(urlCheck.getHttpConnection().getContentType(), "text")) {
-                    try {
-                        urlCheck.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                } else if (!LinkCrawlerDeepInspector.looksLikeMpegURL(hlsCheck.getHttpConnection())) {
+                    /* Obligatory seconds check. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    if (con.getLongContentLength() > 0) {
-                        link.setDownloadSize(con.getLongContentLength());
+                    final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(hlsCheck.cloneBrowser());
+                    if (hlsContainers == null || hlsContainers.size() != 1) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        URLConnectionAdapter con = null;
+                        try {
+                            final List<M3U8Playlist> m3u8list = hlsContainers.get(0).getM3U8(hlsCheck);
+                            final Browser segmentCheck = br.cloneBrowser();
+                            segmentCheck.setFollowRedirects(true);
+                            con = (Thread.currentThread() instanceof SingleDownloadController) ? segmentCheck.openGetConnection(m3u8list.get(0).getSegment(0).getUrl()) : null;
+                            if (con == null || looksLikeDownloadableContent(con)) {
+                                final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), m3u8list);
+                                final long estimatedSize = downloader.getEstimatedSize();
+                                if (estimatedSize > 0) {
+                                    link.setDownloadSize(estimatedSize);
+                                }
+                                link.setProperty(PROPERT_DIRECTLINK, url);
+                                return true;
+                            } else {
+                                segmentCheck.followConnection(true);
+                            }
+                        } catch (IOException e) {
+                            logger.log(e);
+                        } finally {
+                            if (con != null) {
+                                con.disconnect();
+                            }
+                        }
+                        return false;
                     }
-                    link.setProperty(PROPERT_DIRECTLINK, url);
-                    return true;
                 }
-            } finally {
-                if (con != null) {
-                    con.disconnect();
+            } else {
+                final Browser urlCheck = br.cloneBrowser();
+                urlCheck.setFollowRedirects(true);
+                URLConnectionAdapter con = null;
+                try {
+                    con = urlCheck.openHeadConnection(dlUrl);
+                    if (urlCheck.getHttpConnection().getResponseCode() != 200) {
+                        try {
+                            urlCheck.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
+                        return false;
+                    } else if (StringUtils.containsIgnoreCase(urlCheck.getHttpConnection().getContentType(), "text")) {
+                        try {
+                            urlCheck.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        if (con.getLongContentLength() > 0) {
+                            link.setDownloadSize(con.getLongContentLength());
+                        }
+                        link.setProperty(PROPERT_DIRECTLINK, url);
+                        return true;
+                    }
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 }
+            }
+        } catch (PluginException e) {
+            if (cachedURLFlag) {
+                logger.log(e);
+                return false;
+            } else {
+                throw e;
             }
         }
     }
@@ -1146,8 +1175,8 @@ public class PornHubCom extends PluginForHost {
                     if (premiumExpired && !isPremiumDomain(br.getHost())) {
                         /**
                          * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url
-                         * which redirects us to the pornhub free mainpage and sets the cookies. </br>
-                         * 2022-06-27: Old code but let's leave it in for now as we can't know if it is still needed.
+                         * which redirects us to the pornhub free mainpage and sets the cookies. </br> 2022-06-27: Old code but let's leave
+                         * it in for now as we can't know if it is still needed.
                          */
                         logger.info("Expired premium --> Free account (?)");
                         final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
@@ -1186,8 +1215,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     /**
-     * Checks login and sets account-type. </br>
-     * Expects browser instance to be logged in already (cookies need to be there).
+     * Checks login and sets account-type. </br> Expects browser instance to be logged in already (cookies need to be there).
      *
      * @throws Exception
      */

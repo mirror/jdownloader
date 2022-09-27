@@ -29,6 +29,8 @@ import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -461,6 +463,8 @@ public class MegaConz extends PluginForDecrypt {
          *
          * k = node key
          */
+        boolean hasFileNodes = false;
+        boolean hasFolderNodes = false;
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
         for (final Map<String, Object> folderNode : folderNodes) {
             if (isAbort()) {
@@ -469,12 +473,14 @@ public class MegaConz extends PluginForDecrypt {
             final String nodeID = toString(folderNode.get("h"));
             final String nodeParentID = toString(folderNode.get("p"));
             if (folderNode.containsKey("nodeDirectory")) {
+                hasFolderNodes = true;
                 final String nodeName = toString(folderNode.get("nodeName"));
                 final MegaFolder fo = new MegaFolder(nodeID);
                 fo.parent = nodeParentID;
                 fo.name = nodeName;
                 folders.put(nodeID, fo);
             } else {
+                hasFileNodes = true;
                 final Long nodeSize = (Long) toObject(folderNode.get("nodeSize"));
                 final MegaFolder folder = folders.get(nodeParentID);
                 if (StringUtils.isNotEmpty(preferredNodeID)) {
@@ -568,8 +574,12 @@ public class MegaConz extends PluginForDecrypt {
                 }
             }
         }
-        if (!isAbort() && decryptedLinks.size() == 0 && StringUtils.isNotEmpty(preferredNodeID)) {
-            logger.info("Preferred NodeID NOT found:" + preferredNodeID);
+        if (!isAbort() && decryptedLinks.size() == 0) {
+            if (!hasFileNodes) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+            } else if (StringUtils.isNotEmpty(preferredNodeID)) {
+                logger.info("Preferred NodeID NOT found:" + preferredNodeID);
+            }
         }
         return decryptedLinks;
     }

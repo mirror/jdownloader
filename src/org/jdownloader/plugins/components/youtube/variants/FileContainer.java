@@ -10,16 +10,16 @@ public enum FileContainer implements LabelInterface, TooltipInterface {
     // order is important!
     // videos
     MP4("mp4", "MP4 Video"),
+    MKV("mkv", "Matroška MKV Video"),
     WEBM("webm", "Google WebM Video"),
     FLV("flv", "Flash FLV Video"),
     THREEGP("3gp", "3GP Video"),
-    MKV("mkv", "Matroška MKV Video"),
     // / audio
-    MP3("mp3", "MP3 Audio"),
     M4A("m4a", "M4A Audio"),
     AAC("aac", "AAC Audio"),
-    OGG("ogg", "Vorbis Audio"),
     OPUS("opus", "Opus Audio"),
+    OGG("ogg", "Vorbis Audio"),
+    MP3("mp3", "MP3 Audio"),
     // rest
     JPG("jpg", "JPEG Image"),
     SRT("srt", "Subtitle"),
