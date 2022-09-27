@@ -371,8 +371,8 @@ public abstract class PluginForDecrypt extends Plugin {
                     }
                 }
                 final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), retryException.getReason().getExplanation(this) + "!" + name, plugin.getHost(), link.getURL(), true);
-                if (StringUtils.isNotEmpty(retryException.getCustomComment())) {
-                    ret.setComment(retryException.getCustomComment());
+                if (StringUtils.isNotEmpty(retryException.getComment())) {
+                    ret.setComment(retryException.getComment());
                 }
                 if (DecrypterRetryException.RetryReason.FILE_NOT_FOUND.equals(retryException.getReason())) {
                     ret.setAvailable(false);

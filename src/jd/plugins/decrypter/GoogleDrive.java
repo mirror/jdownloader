@@ -151,7 +151,7 @@ public class GoogleDrive extends PluginForDecrypt {
             if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_OFFLINE) {
                 ret.add(this.createOfflinelink(param.getCryptedUrl(), "OFFLINE_FOLDER " + gde.getOfflineTitle(), "This folder is offline."));
             } else if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_EMPTY) {
-                ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + gde.getOfflineTitle(), "This folder is empty."));
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, gde.getOfflineTitle());
             } else if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_EMPTY_OR_PRIVATE_OR_SHORTCUT) {
                 final DownloadLink offlineFolder = this.createOfflinelink(param.getCryptedUrl());
                 offlineFolder.setFinalFileName(gde.getOfflineTitle());
@@ -248,7 +248,7 @@ public class GoogleDrive extends PluginForDecrypt {
             if (!entries.containsKey("files") || ((List<Object>) entries.get("files")).size() == 0) {
                 final String offlineFolderTitle;
                 if (!StringUtils.isEmpty(subfolderPath)) {
-                    offlineFolderTitle = subfolderPath + " " + folderID;
+                    offlineFolderTitle = folderID + "_" + subfolderPath;
                 } else {
                     offlineFolderTitle = folderID;
                 }
@@ -364,9 +364,9 @@ public class GoogleDrive extends PluginForDecrypt {
             folderID = newFolderID;
         }
         String subfolderPath = this.getAdoptedCloudFolderStructure();
-        final String offlineOrEmptyFolderTitle;
+        String offlineOrEmptyFolderTitle;
         if (!StringUtils.isEmpty(subfolderPath)) {
-            offlineOrEmptyFolderTitle = subfolderPath + " " + folderID;
+            offlineOrEmptyFolderTitle = folderID + "_" + subfolderPath;
         } else {
             offlineOrEmptyFolderTitle = folderID;
         }
@@ -390,6 +390,12 @@ public class GoogleDrive extends PluginForDecrypt {
                 currentFolderTitle = Encoding.htmlDecode(currentFolderTitle.trim()).trim();
             }
         }
+        /* Update this to get more meaningful titles for empty/offline folders */
+        if (!StringUtils.isEmpty(subfolderPath) && !StringUtils.isEmpty(currentFolderTitle)) {
+            offlineOrEmptyFolderTitle = folderID + "_" + subfolderPath + "/" + currentFolderTitle;
+        } else if (currentFolderTitle != null) {
+            offlineOrEmptyFolderTitle = folderID + "_" + currentFolderTitle;
+        }
         // old type
         String json_src = br.getRegex("window\\['_DRIVE_ivd'\\]\\s*=\\s*'\\[(.*?)';").getMatch(0);
         // new type 20170709-raz
@@ -404,11 +410,10 @@ public class GoogleDrive extends PluginForDecrypt {
         final String key;
         final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
         logger.info("Keys:" + Arrays.asList(keys));
-        if (keys != null && keys.length == 2) {
-            key = keys[0] + keys[1];
-        } else {
+        if (keys == null || keys.length != 2) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        key = keys[0] + keys[1];
         logger.info("Using key: " + key);
         // final String eof = br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
         final String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_\\-]{10,30})\",null,null").getMatch(0);
@@ -528,6 +533,7 @@ public class GoogleDrive extends PluginForDecrypt {
             fp = FilePackage.getInstance();
             fp.setName(subfolder);
         } else if (currentFolderTitle != null) {
+            /* Fallback */
             fp = FilePackage.getInstance();
             fp.setName(currentFolderTitle);
         }

@@ -74,6 +74,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Check Plugin Settings" })
     String decrypter_pluginsettings();
 
+    @Default(lngs = { "en" }, values = { "Check the settings of this plugin it looks like you've configured it in a way that this crawler is unable to return any results." })
+    String decrypter_pluginsettings_comment();
+
     @Default(lngs = { "en" }, values = { "Could not delete existing part file" })
     String system_download_errors_couldnotdelete();
 
@@ -161,11 +164,20 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Empty folder" })
     String decrypter_empty_folder();
 
+    @Default(lngs = { "en" }, values = { "This folder is empty." })
+    String decrypter_empty_folder_comment();
+
     @Default(lngs = { "en" }, values = { "Not available for current IP" })
     String decrypter_unavailable_ip();
 
+    @Default(lngs = { "en" }, values = { "A limit on your current IP address makes crawling this item impossible. Change your IP address or try again later." })
+    String decrypter_unavailable_ip_comment();
+
     @Default(lngs = { "en" }, values = { "Not available for current geolocation" })
     String decrypter_unavailable_geo();
+
+    @Default(lngs = { "en" }, values = { "Not available for current geolocation. Change your IP to be able to crawl this content." })
+    String decrypter_unavailable_geo_comment();
 
     @Default(lngs = { "en" }, values = { "Server does not support chunkload" })
     String download_error_message_rangeheaders();

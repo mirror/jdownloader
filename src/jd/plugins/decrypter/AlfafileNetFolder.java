@@ -24,6 +24,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -83,7 +85,7 @@ public class AlfafileNetFolder extends PluginForDecrypt {
         }
         if (ret.isEmpty()) {
             /* Empty folder */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
