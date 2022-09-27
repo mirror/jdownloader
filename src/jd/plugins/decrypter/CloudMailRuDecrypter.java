@@ -26,11 +26,12 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -67,25 +68,36 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             subfolder = "";
         }
         String id;
+        String dummyFilenameForEmptyFolders;
         if (parameter.matches(TYPE_APIV2)) {
             id = new Regex(parameter, "([A-Z0-9]{32})$").getMatch(0);
+            if (StringUtils.isEmpty(subfolder)) {
+                dummyFilenameForEmptyFolders = id;
+            } else {
+                dummyFilenameForEmptyFolders = id + "_" + subfolder;
+            }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(CloudMailRu.API_BASE + "/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
             /* Offline|Empty folder */
-            if (br.containsHTML("\"status\":400|\"count\":\\{\"folders\":0,\"files\":0\\}")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+            if (br.containsHTML("\"status\":400")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("\"count\":\\{\"folders\":0,\"files\":0\\}")) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, dummyFilenameForEmptyFolders);
             }
         } else {
             id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
+            if (StringUtils.isEmpty(subfolder)) {
+                dummyFilenameForEmptyFolders = id;
+            } else {
+                dummyFilenameForEmptyFolders = id + "_" + subfolder;
+            }
             br.getPage(CloudMailRu.API_BASE + "/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=0&api=2&build=" + BUILD);
-            String nfolders = PluginJSonUtils.getJsonValue(br.toString(), "folders");
-            String nfiles = PluginJSonUtils.getJsonValue(br.toString(), "files");
-            String limit = nfolders + nfiles;
+            final String nfolders = PluginJSonUtils.getJsonValue(br.toString(), "folders");
+            final String nfiles = PluginJSonUtils.getJsonValue(br.toString(), "files");
+            final String limit = nfolders + nfiles;
             br.getPage(CloudMailRu.API_BASE + "/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=" + limit + "&api=2&build=" + BUILD);
             if (br.containsHTML("\"status\":(400|404)") || br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         // main.setProperty("plain_request_id", id);
@@ -99,11 +111,11 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         final String title_of_current_folder = (String) entries.get("name");
         if (!StringUtils.isEmpty(title_of_current_folder) && StringUtils.isEmpty(subfolder)) {
             subfolder = title_of_current_folder;
+            dummyFilenameForEmptyFolders = id + "_" + subfolder;
         }
         final List<Object> ressourcelist = (List<Object>) entries.get("list");
         if (ressourcelist.size() == 0) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subfolder, "This folder is empty."));
-            return decryptedLinks;
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, dummyFilenameForEmptyFolders);
         }
         FilePackage fp = null;
         /* "/" is most likely a single file inside a (theoretical) folder [root] -> Do not assign packagenames in this case! */

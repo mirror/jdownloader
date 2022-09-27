@@ -84,7 +84,6 @@ public class AlfafileNetFolder extends PluginForDecrypt {
             }
         }
         if (ret.isEmpty()) {
-            /* Empty folder */
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         if (fpName != null) {

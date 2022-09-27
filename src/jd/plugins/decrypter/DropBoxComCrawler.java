@@ -114,7 +114,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlViaAPI(final CryptedLink param) throws Exception {
         final String parameter = correctAddedURL(param.toString());
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /*
          * We cannot use the following request because we do not have the folderID at this stage:
          * https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_folder_metadata
@@ -195,8 +195,8 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             } else {
                 logger.info("Decryption failed because: " + error_summary);
             }
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter));
+            return ret;
         }
         String cursor = null;
         boolean has_more = false;
@@ -341,7 +341,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
             }
             if (has_more && !StringUtils.isEmpty(cursor)) {
@@ -356,18 +356,17 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 br.postPageRaw(DropboxCom.API_BASE + "/files/list_folder/continue", "{\"cursor\":\"" + cursor + "\"}");
             }
         } while (has_more && !StringUtils.isEmpty(cursor) && !this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlViaWebsite(final CryptedLink param) throws Exception {
         DropboxCom.prepBrWebsite(br);
         /* Website may return hige amounts of json/html */
         br.setLoadLimit(br.getLoadLimit() * 4);
-        final boolean enforceCrawlSubfoldersByProperty = param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_CRAWL_SUBFOLDERS);
-        final boolean askIfSubfoldersShouldbeCrawled = PluginJsonConfig.get(DropBoxConfig.class).isAskIfSubfoldersShouldBeCrawled();
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String correctedURL = correctAddedURL(param.toString());
         if (!correctedURL.equals(param.getCryptedUrl())) {
+            logger.info("Changed added URL! Old: " + param.getCryptedUrl() + " | New: " + correctedURL);
             param.setCryptedUrl(correctedURL);
         }
         if (param.getCryptedUrl().matches(DropboxCom.TYPE_SC_GALLERY)) {
@@ -400,9 +399,9 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     if (fp != null) {
                         dl._setFilePackage(fp);
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
-            } catch (final Throwable e) {
+            } catch (final Exception e) {
                 /* Fallback - add .zip containing all elements of that gallery! This should never happen! */
                 final DownloadLink dl = this.createSingleFileDownloadLink(param.getCryptedUrl());
                 if (currentGalleryName != null) {
@@ -410,17 +409,19 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 } else {
                     dl.setFinalFileName("Gallery - " + new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0) + ".zip");
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
-            return decryptedLinks;
+            return ret;
         }
         /*
          * 2019-09-24: isSingleFile may sometimes be wrong but if our URL contains 'crawl_subfolders=' we know it has been added via crawler
          * and it is definitely a folder and not a file!
          */
+        final boolean enforceCrawlSubfoldersByProperty = param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_CRAWL_SUBFOLDERS);
+        final boolean askIfSubfoldersShouldbeCrawled = PluginJsonConfig.get(DropBoxConfig.class).isAskIfSubfoldersShouldBeCrawled();
         if (DropboxCom.isSingleFile(param.getCryptedUrl()) && !enforceCrawlSubfoldersByProperty) {
-            decryptedLinks.add(createSingleFileDownloadLink(param.getCryptedUrl()));
-            return decryptedLinks;
+            ret.add(createSingleFileDownloadLink(param.getCryptedUrl()));
+            return ret;
         }
         br.setFollowRedirects(false);
         br.getPage(param.getCryptedUrl());
@@ -428,16 +429,16 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 429) {
             logger.info("URL's downloads are disabled due to it generating too much traffic");
             final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("dropbox.com/", "dropboxdecrypted.com/"));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         } else if (br.getHttpConnection().getResponseCode() == 460) {
             logger.info("Restricted Content: This file is no longer available. For additional information contact Dropbox Support.");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 509) {
             /* Temporarily unavailable link --> Rare case */
             final DownloadLink dl = createDownloadlink(param.getCryptedUrl().replace("dropbox.com/", "dropboxdecrypted.com/"));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         } else if (br.getRedirectLocation() != null && (param.getCryptedUrl().matches(TYPE_REDIRECT) || param.getCryptedUrl().matches(TYPE_SHORT))) {
             final String redirect = br.getRedirectLocation();
             if (!redirect.matches(TYPES_NORMAL)) {
@@ -445,11 +446,10 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             param.setCryptedUrl(redirect);
-        }
-        br.followRedirect(true);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("sharing/error_shmodel|class=\"not-found\">")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("sharing/error_shmodel|class=\"not-found\">")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.followRedirect(true);
         String passCode = param.getDecrypterPassword();
         String password_cookie = null;
         if (DropboxCom.isPasswordProtectedWebsite(br)) {
@@ -498,9 +498,19 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         /* Contains information about current folder but not about subfolders and/or files! */
         final String current_folder_json_source = br.getRegex("InitReact\\.mountComponent\\(mod, *(\\{[^\\n\\r]*?folderSharedLinkInfo[^\\n\\r]*?\\})\\);\\s+").getMatch(0);
         String currentRootFolderName = null;
+        String link_key = null;
+        String secure_hash = null;
+        String link_type = null;
+        String rlkey = null;
         if (current_folder_json_source != null) {
             final Map<String, Object> folderInfo = JavaScriptEngineFactory.jsonToJavaMap(current_folder_json_source);
-            currentRootFolderName = (String) JavaScriptEngineFactory.walkJson(folderInfo, "props/folderSharedLinkInfo/displayName");
+            final Map<String, Object> props = (Map<String, Object>) folderInfo.get("props");
+            final Map<String, Object> folderShareToken = (Map<String, Object>) props.get("folderShareToken");
+            link_key = (String) folderShareToken.get("linkKey");
+            secure_hash = (String) folderShareToken.get("secureHash");
+            link_type = (String) folderShareToken.get("linkType");
+            rlkey = (String) folderShareToken.get("rlkey");
+            currentRootFolderName = (String) JavaScriptEngineFactory.walkJson(props, "folderSharedLinkInfo/displayName");
             if (!StringUtils.isEmpty(currentRootFolderName)) {
                 if (StringUtils.isEmpty(subFolderPath)) {
                     subFolderPath = currentRootFolderName;
@@ -509,31 +519,41 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(subFolderPath);
-        final String userReadableFolderName;
-        if (!StringUtils.isEmpty(currentRootFolderName)) {
-            userReadableFolderName = currentRootFolderName;
-        } else {
-            userReadableFolderName = "Unknown folder name";
-        }
         int current_page_numberof_items;
         int page_num = 0;
         String next_request_voucher = null;
         int website_max_items_per_page = 30;
-        final String rlkey = UrlQuery.parse(param.getCryptedUrl()).get("rlkey");
-        final Regex urlinfo0 = new Regex(param.getCryptedUrl(), "https://[^/]+/scl/([^/]+)/([^/]+)/([^/]+)");
-        final String link_key;
-        final String secure_hash;
-        final String link_type;
-        if (urlinfo0.matches()) {
-            link_type = "c";
-            link_key = urlinfo0.getMatch(1);
-            secure_hash = urlinfo0.getMatch(2);
+        if (StringUtils.isEmpty(rlkey)) {
+            rlkey = UrlQuery.parse(param.getCryptedUrl()).get("rlkey");
+        }
+        final Regex urlinfoTypeC = new Regex(param.getCryptedUrl(), "https://[^/]+/scl/([^/]+)/([^/]+)/([^/]+)");
+        if (urlinfoTypeC.matches()) {
+            if (StringUtils.isEmpty(link_type)) {
+                link_type = "c";
+            }
+            if (StringUtils.isEmpty(link_key)) {
+                link_key = urlinfoTypeC.getMatch(1);
+            }
+            if (StringUtils.isEmpty(secure_hash)) {
+                secure_hash = urlinfoTypeC.getMatch(2);
+            }
         } else {
+            /* Typically dropbox.com/sh/bla/bla(?params...)? */
             link_type = "s";
-            final Regex urlinfo = new Regex(param.getCryptedUrl(), "https?://[^/]+/([^/]+)/([^/]+)/([^/]+)");
-            // final String link_type_url = urlinfo.getMatch(0);
-            link_key = urlinfo.getMatch(1);
-            secure_hash = urlinfo.getMatch(2);
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), "https?://[^/]+/([^/]+)/([^/]+)/([\\w\\-]+).*");
+            if (StringUtils.isEmpty(link_key)) {
+                link_key = urlinfo.getMatch(1);
+            }
+            if (StringUtils.isEmpty(secure_hash)) {
+                secure_hash = urlinfo.getMatch(2);
+            }
+        }
+        final String folderidString = link_type + "_" + link_key + "_" + secure_hash;
+        final String dummyFilenameForErrors;
+        if (!StringUtils.isEmpty(currentRootFolderName) && !StringUtils.isEmpty(subFolderPath)) {
+            dummyFilenameForErrors = folderidString + "_" + currentRootFolderName;
+        } else {
+            dummyFilenameForErrors = folderidString;
         }
         final String cookie_t = br.getCookie(getHost(), "t", Cookies.NOTDELETEDPATTERN);
         do {
@@ -550,12 +570,12 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 }
             }
             if (json_source == null || page != page_start) {
-                if (cookie_t == null || link_key == null || secure_hash == null) {
-                    if (decryptedLinks.isEmpty()) {
+                if (link_type == null || cookie_t == null || link_key == null || secure_hash == null) {
+                    if (ret.isEmpty()) {
                         /* Assume that folder is offline */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
-                        logger.warning("Failed to find more content");
+                        logger.warning("Stopping because: Failed to find more content");
                         break;
                     }
                 } else if (StringUtils.isEmpty(next_request_voucher) && page_num > page_start) {
@@ -626,6 +646,15 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     ressourcelist_files.add(folderRessource);
                 }
             }
+            if (ressourcelist_files.isEmpty() && ressourcelist_folders.isEmpty()) {
+                if (ret.isEmpty()) {
+                    /* Looks like folder is empty */
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, dummyFilenameForErrors);
+                } else {
+                    logger.info("Stopping because: Current page does not contain any items");
+                    break;
+                }
+            }
             // final boolean isSingleFileInsideFolder = ressourcelist_files != null && ressourcelist_files.size() == 1 &&
             // (ressourcelist_folders == null || ressourcelist_folders.size() == 0);
             if (enforceCrawlSubfoldersByProperty) {
@@ -634,7 +663,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 crawlSubfolders = true;
             } else if (askIfSubfoldersShouldbeCrawled && ressourcelist_folders.size() > 0 && !askedUserIfHeWantsSubfolders) {
                 /*
-                 * Only ask user if we actually have subfolders that can be decrypted AND if we have not asked him already for this folder
+                 * Only ask user if there are actually subfolders that can be crawled AND if we haven't asked him already for this folder
                  * AND if subfolders exist in this folder!
                  */
                 final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, param.getCryptedUrl(), "For this URL JDownloader can crawl only the files inside the current folder or crawl subfolders as well. What would you like to do?", null, "Add files of current folder AND subfolders?", "Add only files of current folder?") {
@@ -659,7 +688,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 askedUserIfHeWantsSubfolders = true;
                 if (!crawlSubfolders && ressourcelist_files.isEmpty()) {
                     logger.info("User doesn't want subfolders but only subfolders are available!");
-                    throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "SUBFOLDER_CRAWL_DESELECTED_BUT_ONLY_SUBFOLDERS_AVAILABLE_" + userReadableFolderName, "You deselected subfolder crawling but this folder contains only subfolders and no single files!", null);
+                    throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "SUBFOLDER_CRAWL_DESELECTED_BUT_ONLY_SUBFOLDERS_AVAILABLE_" + dummyFilenameForErrors, "You deselected subfolder crawling but this folder contains only subfolders and no single files!");
                 }
             }
             if (!ressourcelist_files.isEmpty()) {
@@ -683,7 +712,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     dl.setProperty(DropboxCom.PROPERTY_IS_SINGLE_FILE, true);
                     dl.setRelativeDownloadFolderPath(subFolderPath);
                     dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
             }
@@ -695,12 +724,12 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                         if (dl == null) {
                             continue;
                         }
-                        final String name = (String) folder.get("filename");
+                        final String foldername = (String) folder.get("filename");
                         /* Store next path as property so we can keep track of the full path. */
-                        final String currentPath = subFolderPath + "/" + name;
+                        final String currentPath = subFolderPath + "/" + foldername;
                         dl.setRelativeDownloadFolderPath(currentPath);
                         dl.setProperty(PROPERTY_CRAWL_SUBFOLDERS, true);
-                        decryptedLinks.add(dl);
+                        ret.add(dl);
                         distribute(dl);
                     }
                 }
@@ -712,9 +741,10 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Failed to find next_request_voucher");
                 break;
             }
+            /* Continue to next page */
             page++;
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 
     private DownloadLink crawlFolderItem(final Map<String, Object> entries) {
