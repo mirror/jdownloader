@@ -25,9 +25,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,6 +48,7 @@ import jd.plugins.download.DownloadInterface;
 public class WallhavenCc extends PluginForHost {
     public WallhavenCc(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://wallhaven.cc/join");
     }
 
     @Override
@@ -131,7 +138,8 @@ public class WallhavenCc extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account, false);
     }
 
     private String getDirecturlFromContentURL(final DownloadLink link) {
@@ -154,11 +162,14 @@ public class WallhavenCc extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Set fallback filename */
             link.setName(fid + ".jpg");
+        }
+        if (account != null) {
+            this.login(account, false);
         }
         br.setAllowedResponseCodes(429);
         this.dllink = getDirecturlFromContentURL(link);
@@ -177,7 +188,6 @@ public class WallhavenCc extends PluginForHost {
             logger.info("Successfully checked availablestatus via directurl");
             return AvailableStatus.TRUE;
         }
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(getNormalContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>\\s*404\\s*-\\s*Not Found Sorry!\\s*-\\s*wallhaven.cc\\s*<")) {
@@ -257,11 +267,20 @@ public class WallhavenCc extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        handleDownload(link, null);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (!attemptStoredDownloadurlDownload(link)) {
-            requestFileInformation(link, true);
+            requestFileInformation(link, account, true);
             if (br.getHttpConnection().getResponseCode() == 403) {
                 /* Account required to view adult content. */
-                throw new AccountRequiredException();
+                if (account == null) {
+                    throw new AccountRequiredException();
+                } else {
+                    logger.warning("Account available and still no permissions to view (NSFW) content -> This should never happen!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             } else if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -300,6 +319,78 @@ public class WallhavenCc extends PluginForHost {
                 this.dl = null;
             }
         }
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force) {
+                        /* Don't validate cookies */
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin(br)) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/login");
+                final Form loginform = br.getFormbyActionRegex(".*auth/login.*");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (!isLoggedin(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("auth/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.getPage(link.getPluginPatternMatcher());
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        return false;
     }
 
     @Override
