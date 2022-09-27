@@ -26,13 +26,14 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "files.fm" }, urls = { "https?://(?:\\w+\\.)?files\\.fm/u/[a-z0-9]+" })
 public class FilesFmFolder extends PluginForDecrypt {
@@ -40,30 +41,25 @@ public class FilesFmFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForHost hostplg = JDUtilities.getPluginForHost(this.getHost());
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final PluginForHost hostplg = this.getNewPluginForHostInstance(this.getHost());
         /* 2016-03-10: They enforce https */
-        final String parameter = param.toString().replace("http://", "https://");
-        final String folderID = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        final String folderID = new Regex(param.getCryptedUrl(), "([a-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
         br.getPage("https://files.fm/u/" + folderID + "?view=gallery&items_only=true&index=0&count=10000");
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This link does not contain any files|These files are deleted by the owner<|The expiry date of these files is over<|class=\"deleted_wrapper\"")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("id=\"ist_no_files_message\"")) {
             /* 2017-01-30: Empty folder */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
         } else if (br.containsHTML("list_private_upload_msg")) {
             /* 2020-06-25: Private file which only the owner can access */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("name=\"upl_passw\"")) {
             /* 2017-01-30: Password protected */
             logger.info("Password protected urls are not yet supported");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = null;
         String[] folders = br.getRegex("files\\.fm/u/([a-z0-9]+)").getColumn(0);
@@ -73,21 +69,20 @@ public class FilesFmFolder extends PluginForDecrypt {
                 continue;
             }
             final String contentUrl = br.getURL("/u/" + folderIDTmp).toString();
-            decryptedLinks.add(createDownloadlink(contentUrl));
+            ret.add(createDownloadlink(contentUrl));
         }
         String[] links = br.getRegex("id=\"report_[^\"]+\".*?class=\"OrderID\"").getColumn(-1);
         if (links == null || links.length == 0) {
             if (folders != null && folders.length > 0) {
-                return decryptedLinks;
+                return ret;
             }
         }
         if (links == null || links.length == 0) {
-            if (new Regex(br.getURL(), hostplg.getSupportedLinks()).matches()) {
+            if (hostplg.canHandle(br.getURL())) {
                 /* Folder redirected to single file-link */
-                decryptedLinks.add(this.createDownloadlink(br.getURL()));
-                return decryptedLinks;
+                ret.add(this.createDownloadlink(br.getURL()));
+                return ret;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (final String singleLink : links) {
@@ -108,20 +103,20 @@ public class FilesFmFolder extends PluginForDecrypt {
             }
             final String contentUrl = Request.getLocation("/down.php?i=" + fileid + "&n=" + filename, br.getRequest());
             final DownloadLink dl = createDownloadlink(contentUrl);
-            dl.setProperty("mainlink", parameter);
+            dl.setProperty("mainlink", param.getCryptedUrl());
             dl.setContentUrl(contentUrl);
             dl.setLinkID(fileid);
             dl.setAvailable(true);
             dl.setName(Encoding.htmlDecode(filename));
             dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
             dl.setProperty("originalname", filename);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

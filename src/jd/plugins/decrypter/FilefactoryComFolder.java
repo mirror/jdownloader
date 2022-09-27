@@ -27,6 +27,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -68,24 +70,25 @@ public class FilefactoryComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         if (param.getCryptedUrl().matches(".+/share/fi.+")) {
             /* 2019-08-17: New type of folder which contains all fileIDs inside URL */
             final String[] fileIDs = new Regex(param.getCryptedUrl(), "fi:([a-z0-9]+)").getColumn(0);
             for (final String fileid : fileIDs) {
                 final String url = "http://www." + this.getHost() + "/file/" + fileid;
-                decryptedLinks.add(this.createDownloadlink(url));
+                ret.add(this.createDownloadlink(url));
             }
         } else {
             br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
             br.getPage(param.getCryptedUrl() + "/?sort=filename&order=ASC&show=100&page=1");
             /* Error handling */
             if (br.getHttpConnection().getResponseCode() == 404) {
+                /* Offline folder */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("No Files found in this folder")) {
+            } else if (br.containsHTML("(?i)No Files found in this folder")) {
                 /* Empty folder */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
             }
             final String fpName = br.getRegex("<h1>Files in <span>(.*?)</span>").getMatch(0);
             int maxPage = 1;
@@ -97,15 +100,15 @@ public class FilefactoryComFolder extends PluginForDecrypt {
                 if (i > 1) {
                     br.getPage(param.getCryptedUrl() + "/?sort=filename&order=ASC&show=100&page=" + i);
                 }
-                add(decryptedLinks);
+                add(ret);
             }
             if (!StringUtils.isEmpty(fpName)) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
+                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.addLinks(ret);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private void add(final ArrayList<DownloadLink> declinks) {

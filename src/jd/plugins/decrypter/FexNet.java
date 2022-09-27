@@ -19,22 +19,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FexNet extends PluginForDecrypt {
@@ -70,9 +72,8 @@ public class FexNet extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String subfolderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(2);
         Map<String, Object> entries = null;
@@ -127,8 +128,7 @@ public class FexNet extends PluginForDecrypt {
             br.getPage(url + "?" + query.toString());
             /* 2021-01-14: E.g. {"code":2414,"status":400} */
             if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getResponseCode() == 401) {
                 /* 2021-01-14: E.g. {"code":2426,"status":401} */
                 logger.info("Folder is password protected");
@@ -192,7 +192,7 @@ public class FexNet extends PluginForDecrypt {
                         if (passCode != null) {
                             link.setDownloadPassword(passCode);
                         }
-                        decryptedLinks.add(link);
+                        ret.add(link);
                         distribute(link);
                     } else {
                         /* Single file */
@@ -221,7 +221,7 @@ public class FexNet extends PluginForDecrypt {
                         if (passCode != null) {
                             link.setDownloadPassword(passCode);
                         }
-                        decryptedLinks.add(link);
+                        ret.add(link);
                         distribute(link);
                     }
                 }
@@ -233,10 +233,13 @@ public class FexNet extends PluginForDecrypt {
             }
             page++;
         } while (!this.isAbort());
-        if (decryptedLinks.isEmpty()) {
-            decryptedLinks.add(this.createOfflinelink(parameter, "Empty folder: " + folderID, "Empty folder: " + folderID));
-            return decryptedLinks;
+        if (ret.isEmpty()) {
+            if (!StringUtils.isEmpty(subfolderPath)) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID + "_" + subfolderPath);
+            } else {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
+            }
         }
-        return decryptedLinks;
+        return ret;
     }
 }

@@ -27,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doci.pl" }, urls = { "https?://(?:www\\.)?doci\\.pl/[^\\?\\&]+" })
@@ -35,63 +37,58 @@ public class DociPl extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String host_plugin_string = "docidecrypted://";
         jd.plugins.hoster.DociPl.prepBR(this.br);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         if (jd.plugins.hoster.DociPl.isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<title>([^<>\"]+)(?:\\- Doci\\.pl)?</title>").getMatch(0);
         final String docid = jd.plugins.hoster.DociPl.getDocumentID(this.br);
         if (docid != null) {
             /* The current url is a single file ... */
-            final DownloadLink dl = this.createDownloadlink(parameter.replaceAll("https?://", host_plugin_string));
+            final DownloadLink dl = this.createDownloadlink(param.getCryptedUrl().replaceAll("https?://", host_plugin_string));
             jd.plugins.hoster.DociPl.setDownloadlinkInformation(this.br, dl);
             dl.setAvailable(true);
             dl.setLinkID(docid);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         /* Crawl subfolders */
         final String[] folders = br.getRegex("<article\\s*class\\s*=\\s*\"elem\"\\s*>\\s*<header>\\s*<img[^<>]*?dir[^<>]*?>\\s*<p[^<>]*?>\\s*<a href=\"(/[^<>\"]+)\"").getColumn(0);
         for (final String singleLink : folders) {
             final String url = br.getURL(singleLink).toString();
-            decryptedLinks.add(createDownloadlink(url));
+            ret.add(createDownloadlink(url));
         }
         /* Crawl files */
         final String[][] files = br.getRegex("class=\"text\\-ellipsis elipsis\\-file\"[^>]*?><a href=\"(/[^<>\"]+)\"\\s*>\\s*(.*?)\\s*<.*?Rozmiar\\s*:\\s*([0-9\\.]+\\s*[GKM]*B)").getMatches();
         if (files == null || files.length == 0) {
             if (folders != null && folders.length > 0) {
-                return decryptedLinks;
+                return ret;
             }
             logger.info("Failed to find any downloadable content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         for (final String singleLink[] : files) {
             String filename = singleLink[1];
-            if (!filename.endsWith(".pdf")) {
-                filename += ".pdf";
-            }
+            filename = this.correctOrApplyFileNameExtension(filename, ".pdf");
             final String url = br.getURL(singleLink[0]).toString().replaceFirst("https?://", Matcher.quoteReplacement(host_plugin_string));
             final DownloadLink link = createDownloadlink(url);
             link.setAvailable(true);
             link.setName(filename);
             link.setDownloadSize(SizeFormatter.getSize(singleLink[2]));
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        if (decryptedLinks.size() == 0 && !isAbort()) {
+        if (ret.size() == 0 && !isAbort()) {
             logger.info("Possible empty folder");
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

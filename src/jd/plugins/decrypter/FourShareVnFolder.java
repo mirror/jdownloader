@@ -27,9 +27,13 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/(?:d|dlist)/[a-f0-9]{16}" })
@@ -38,16 +42,20 @@ public class FourShareVnFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("up.4share.vn/", "4share.vn/");
         br.setConnectTimeout(2 * 60 * 1000);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if ((br.containsHTML(">\\s*Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("File suspended:") || br.containsHTML(">\\s*Empty folder") || br.containsHTML(">\\s*ErrorWeb: Not found folder") || !this.br.getURL().matches(".+[a-f0-9]{16}$")) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+        if (br.containsHTML(">\\s*Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("File suspended:") || br.containsHTML(">\\s*ErrorWeb: Not found folder")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*Empty folder")) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+        } else if (!this.canHandle(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fpName = br.getRegex("<b>Thư mục:\\s*(.*?)\\s*</b>").getMatch(0);
         final String[] filter = br.getRegex("<tr>\\s*<td>.*?</td></tr>").getColumn(-1);
@@ -97,17 +105,17 @@ public class FourShareVnFolder extends PluginForDecrypt {
                 if (folder_path != null) {
                     dl.setRelativeDownloadFolderPath(folder_path);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
-        if (decryptedLinks.isEmpty()) {
+        if (ret.isEmpty()) {
             // fail over
             final String[] links = br.getRegex("(?:https?://(?:up\\.)?4share\\.vn)?/(?:d/[a-f0-9]{16}|f/[a-f0-9]{16}/[^<>\"]{1,})").getColumn(-1);
             if (links == null || links.length == 0) {
                 if (br.containsHTML("get_link_file_list_in_folder")) {
                     logger.info("Seems like we have an empty folder: " + parameter);
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    ret.add(this.createOfflinelink(parameter));
+                    return ret;
                 }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -118,16 +126,16 @@ public class FourShareVnFolder extends PluginForDecrypt {
                 if (fid != null) {
                     final DownloadLink dll = createDownloadlink(dl);
                     dll.setLinkID(fid);
-                    decryptedLinks.add(dll);
+                    ret.add(dll);
                 }
             }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /* NO OVERRIDE!! */
