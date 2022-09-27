@@ -210,29 +210,29 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final boolean useOldPOSTRequest) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         final boolean isParameterFile = !param.getCryptedUrl().endsWith("/");
-        String subFolder = getAdoptedCloudFolderStructure();
+        String subFolderPath = getAdoptedCloudFolderStructure();
         /*
          * If the user imports a link just by itself should it also be placed into the correct package. We can determine this via url
          * structure, else base folder with files wont be packaged together just based on filename....
          */
-        if (subFolder == null) {
+        if (subFolderPath == null) {
             final Regex typicalUrlStructure = new Regex(param.getCryptedUrl(), "https?://[^/]+/0:(/.*)");
             if (typicalUrlStructure.matches()) {
                 /*
                  * Set correct (root) folder structure e.g. https://subdomain.example.site/0:/subfolder1/subfolder2 --> Path:
                  * /subfolder1/subfolder2 /subfolder1/subfolder2
                  */
-                subFolder = Encoding.urlDecode(typicalUrlStructure.getMatch(0), false);
+                subFolderPath = Encoding.urlDecode(typicalUrlStructure.getMatch(0), false);
             } else {
                 final String[] split = param.getCryptedUrl().split("/");
-                subFolder = Encoding.urlDecode(split[split.length - (isParameterFile ? 2 : 1)], false);
+                subFolderPath = Encoding.urlDecode(split[split.length - (isParameterFile ? 2 : 1)], false);
             }
-            fp.setName(subFolder.replaceAll("(^/)|(/$)", ""));
+            fp.setName(subFolderPath.replaceAll("(^/)|(/$)", ""));
         } else {
-            final String fpName = subFolder.substring(subFolder.lastIndexOf("/") + 1);
+            final String fpName = subFolderPath.substring(subFolderPath.lastIndexOf("/") + 1);
             fp.setName(fpName.replaceAll("(^/)|(/$)", ""));
         }
         final String baseUrl;
@@ -255,6 +255,14 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
             if (filesArray != null) {
                 /* Multiple files */
                 ressourcelist = (List<Object>) filesArray;
+                if (ressourcelist.isEmpty()) {
+                    if (ret.isEmpty()) {
+                        throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, subFolderPath);
+                    } else {
+                        logger.info("Stopping because: Current page doesn't contain any items");
+                        break;
+                    }
+                }
             } else {
                 /* Probably single file */
                 ressourcelist = new ArrayList<Object>();
@@ -280,7 +288,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 final DownloadLink dl;
                 if (type.endsWith(".folder")) {
                     dl = this.createDownloadlink(url);
-                    final String thisfolder = subFolder + "/" + name;
+                    final String thisfolder = subFolderPath + "/" + name;
                     dl.setRelativeDownloadFolderPath(thisfolder);
                     /* Save this so we need less requests for the next subfolder levels... */
                     if (useOldPOSTRequest) {
@@ -293,13 +301,13 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                     if (filesize > 0) {
                         dl.setVerifiedFileSize(filesize);
                     }
-                    if (StringUtils.isNotEmpty(subFolder)) {
-                        dl.setRelativeDownloadFolderPath(subFolder);
+                    if (StringUtils.isNotEmpty(subFolderPath)) {
+                        dl.setRelativeDownloadFolderPath(subFolderPath);
                     }
                     dl.setLinkID(getLinkidFromURL(dl.getPluginPatternMatcher()));
                 }
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
             }
             if (this.isAbort()) {
@@ -317,14 +325,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 }
             }
         } while (true);
-        /*
-         * Add dummy URLs for empty folders which will also contain the full path so users know that these are empty and did not just get
-         * skipped by our crawler!
-         */
-        if (decryptedLinks.isEmpty()) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subFolder, "This folder is empty: " + subFolder));
-        }
-        return decryptedLinks;
+        return ret;
     }
 
     /** Returns String that can be used an unique ID based on given URL. */

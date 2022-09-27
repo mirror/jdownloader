@@ -21,24 +21,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.UrlProtection;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.IcedriveNet;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.UrlProtection;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IcedriveNetFolder extends PluginForDecrypt {
@@ -74,15 +77,18 @@ public class IcedriveNetFolder extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> crawlFolder(CryptedLink param, Browser br, final String name, final String folderID) throws Exception {
+    public ArrayList<DownloadLink> crawlFolder(final CryptedLink param, Browser br, String name, final String folderID) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (isAbort()) {
             return ret;
         }
+        if (!StringUtils.isEmpty(name)) {
+            name = Encoding.htmlDecode(name).trim();
+        }
         final Browser brc = br.cloneBrowser();
         /* Folder */
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        brc.getPage("https://icedrive.net/API/Internal/V1/?request=collection&type=public&folderId=" + URLEncode.encodeURIComponent(folderID) + "&sess=1");
+        brc.getPage("https://" + this.getHost() + "/API/Internal/V1/?request=collection&type=public&folderId=" + URLEncode.encodeURIComponent(folderID) + "&sess=1");
         final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         if ((Boolean) root.get("error") == Boolean.TRUE) {
             /* Assume that content is offline */
@@ -91,12 +97,16 @@ public class IcedriveNetFolder extends PluginForDecrypt {
         final int numberofFiles = ((Number) root.get("results")).intValue();
         if (numberofFiles <= 0) {
             /* Empty folder */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!StringUtils.isEmpty(name)) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID + "_" + name);
+            } else {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
+            }
         }
         final FilePackage fp;
-        if (name != null) {
+        if (!StringUtils.isEmpty(name)) {
             fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(name).trim());
+            fp.setName(name);
         } else {
             fp = null;
         }
@@ -140,7 +150,7 @@ public class IcedriveNetFolder extends PluginForDecrypt {
         return ret;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
@@ -151,7 +161,7 @@ public class IcedriveNetFolder extends PluginForDecrypt {
         final String folderID = br.getRegex("downloadFolderZip\\((.*?)\\)").getMatch(0);
         final String fileID = br.getRegex("previewItem\\('(.*?)'").getMatch(0);
         /* Name of current/root folder */
-        String name = br.getRegex(">\\s*Filename\\s*</p>\\s*<p\\s*class\\s*=\\s*\"value\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
+        final String name = br.getRegex(">\\s*Filename\\s*</p>\\s*<p\\s*class\\s*=\\s*\"value\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
         final String type = br.getRegex(">\\s*Type\\s*</p>\\s*<p\\s*class\\s*=\\s*\"value\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
         final String size = br.getRegex(">\\s*Size\\s*</p>\\s*<p\\s*class\\s*=\\s*\"value\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
         if (fileID == null && folderID == null) {
@@ -160,6 +170,7 @@ public class IcedriveNetFolder extends PluginForDecrypt {
         }
         if ("Folder".equals(type) || folderID != null) {
             if (folderID == null || !"Folder".equals(type)) {
+                /* Unsupported type. This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             return crawlFolder(param, br, name, folderID);

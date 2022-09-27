@@ -80,7 +80,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         final PluginForHost plugin = getNewPluginForHostInstance("k2s.cc");
         final String fuid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (fuid == null) {
-            /* This should never happen */
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (param.getCryptedUrl().matches("https?://[^/]+/thumbnail/.*")) {

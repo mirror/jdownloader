@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -40,6 +39,8 @@ import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -131,8 +132,11 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setCookie(new URL(param.getCryptedUrl()).getHost(), "lang", "english");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final PluginForHost hostPlg = this.getNewPluginForHostInstance(this.getHost());
+        if (hostPlg instanceof XFileSharingProBasic) {
+            ((XFileSharingProBasic) hostPlg).prepBrowser(br, this.getHost());
+        }
         br.setFollowRedirects(true);
         int loginCheckCounter = 0;
         final int maxLoginCheck = 1;
@@ -143,8 +147,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 getPage(param.getCryptedUrl());
                 if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist|No such folder")) {
                     logger.info("Incorrect URL, Invalid user or empty folder");
-                    decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (br.containsHTML(">\\s*?Guest access not possible")) {
                     /* 2019-08-13: Rare special case E.g. easybytez.com */
                     if (loggedIN) {
@@ -152,7 +155,6 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                         throw new AccountRequiredException("Folder not accessible with this account");
                     }
                     logger.info("Cannot access folder without login --> Trying to login and retry");
-                    final PluginForHost hostPlg = this.getNewPluginForHostInstance(this.getHost());
                     if (!(hostPlg instanceof XFileSharingProBasic)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -188,13 +190,13 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         int page = 1;
         do {
             logger.info("Crawling page: " + page);
-            lastArraySize = decryptedLinks.size();
-            final boolean foundNewItems = parsePage(decryptedLinks, dupes, fp, param);
+            lastArraySize = ret.size();
+            final boolean foundNewItems = parsePage(ret, dupes, fp, param);
             if (!foundNewItems) {
                 /* Fail-safe */
                 logger.info("Stopping because failed to find new items on current page");
                 break;
-            } else if (decryptedLinks.size() < lastArraySize) {
+            } else if (ret.size() < lastArraySize) {
                 logger.info("Stopping because: Failed to find any items on current page");
                 break;
             }
@@ -206,18 +208,17 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             } else {
                 /* Loggers are different depending on whether we know the total number of expected items or not. */
                 if (totalNumberofFiles == -1) {
-                    logger.info("Found " + decryptedLinks.size() + " items");
+                    logger.info("Found " + ret.size() + " items");
                 } else {
-                    logger.info("Found " + decryptedLinks.size() + " / " + this.totalNumberofFiles + " items");
+                    logger.info("Found " + ret.size() + " / " + this.totalNumberofFiles + " items");
                 }
                 /* Now continue to crawl next page */
             }
         } while (!this.isAbort());
-        if (decryptedLinks.isEmpty()) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + br._getURL().getPath(), "This folder is empty."));
-            return decryptedLinks;
+        if (ret.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, br._getURL().getPath());
         }
-        return decryptedLinks;
+        return ret;
     }
 
     protected String getPackagename(final CryptedLink param, final Browser br) {

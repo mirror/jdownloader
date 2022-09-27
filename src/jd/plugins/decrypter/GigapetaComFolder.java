@@ -26,6 +26,8 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -67,17 +69,25 @@ public class GigapetaComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "lang", "en");
         br.getPage(param.getCryptedUrl());
+        String folderName = br.getRegex("id=\"content\"><h1>([^<]+)</h1>").getMatch(0);
+        if (folderName != null) {
+            folderName = Encoding.htmlDecode(folderName).trim();
+        }
         // br.getPage("/?lang=en");//sets lang cookie
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*You haven\\&#96;t uploaded any file")) {
             /* Empty folder */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (folderName != null) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderName);
+            } else {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+            }
         } else if (br.containsHTML("(?i)>\\s*Folder not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -100,7 +110,6 @@ public class GigapetaComFolder extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String fpName = br.getRegex("id=\"content\"><h1>([^<]+)</h1>").getMatch(0);
         final String[] urls = br.getRegex("(/dl/[a-f0-9]{10,})").getColumn(0);
         if (urls == null || urls.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -110,14 +119,14 @@ public class GigapetaComFolder extends PluginForDecrypt {
             if (passCode != null) {
                 link.setDownloadPassword(passCode);
             }
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        if (fpName != null) {
+        if (folderName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.addLinks(decryptedLinks);
+            fp.setName(folderName);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private Form getFolderpwForm(final Browser br) {
