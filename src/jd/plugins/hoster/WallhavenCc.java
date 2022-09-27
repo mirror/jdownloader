@@ -270,6 +270,11 @@ public class WallhavenCc extends PluginForHost {
         handleDownload(link, null);
     }
 
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDownload(link, account);
+    }
+
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (!attemptStoredDownloadurlDownload(link)) {
             requestFileInformation(link, account, true);
@@ -379,13 +384,6 @@ public class WallhavenCc extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         return ai;
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.getPage(link.getPluginPatternMatcher());
     }
 
     @Override
