@@ -30,6 +30,8 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -100,12 +102,12 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean folderHandling = false;
-        FilePackage fp = null;
         final List<Map<String, Object>> files = (List<Map<String, Object>>) response.get("files");
-        if (files.size() == 0) {
+        if (files.isEmpty()) {
             logger.info("Empty object");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        FilePackage fp = null;
         if (files != null) {
             for (Map<String, Object> file : files) {
                 final String id = (String) file.get("id");
@@ -114,32 +116,32 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     final DownloadLink offline = this.createDownloadlink("https://" + this.getHost() + "/file/" + id);
                     offline.setAvailable(false);
                     ret.add(offline);
-                    continue;
-                }
-                final String name = (String) file.get("name");
-                final String size = StringUtils.valueOfOrNull(file.get("size"));
-                final String md5 = (String) file.get("md5");
-                final String access = (String) file.get("access");
-                final Boolean isFolder = (Boolean) file.get("is_folder");
-                if (Boolean.FALSE.equals(isFolder)) {
-                    final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/file/" + id);
-                    if (StringUtils.isNotEmpty(name)) {
-                        link.setName(name);
+                } else {
+                    final String name = (String) file.get("name");
+                    final String size = StringUtils.valueOfOrNull(file.get("size"));
+                    final String md5 = (String) file.get("md5");
+                    final String access = (String) file.get("access");
+                    final Boolean isFolder = (Boolean) file.get("is_folder");
+                    if (Boolean.FALSE.equals(isFolder)) {
+                        final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/file/" + id);
+                        if (StringUtils.isNotEmpty(name)) {
+                            link.setName(name);
+                        }
+                        if (StringUtils.isNotEmpty(size)) {
+                            link.setVerifiedFileSize(Long.parseLong(size));
+                        }
+                        link.setHashInfo(HashInfo.parse(md5));
+                        link.setAvailable(Boolean.TRUE.equals(isAvailable));
+                        link.setProperty("access", access);
+                        ret.add(link);
+                    } else if (StringUtils.equals(id, fuid)) {
+                        fp = FilePackage.getInstance();
+                        if (StringUtils.isNotEmpty(name)) {
+                            fp.setName(name);
+                        }
+                        folderHandling = true;
+                        break;
                     }
-                    if (StringUtils.isNotEmpty(size)) {
-                        link.setVerifiedFileSize(Long.parseLong(size));
-                    }
-                    link.setHashInfo(HashInfo.parse(md5));
-                    link.setAvailable(Boolean.TRUE.equals(isAvailable));
-                    link.setProperty("access", access);
-                    ret.add(link);
-                } else if (StringUtils.equals(id, fuid)) {
-                    fp = FilePackage.getInstance();
-                    if (StringUtils.isNotEmpty(name)) {
-                        fp.setName(name);
-                    }
-                    folderHandling = true;
-                    break;
                 }
             }
         }
@@ -155,12 +157,17 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 postdataGetfilestatus.put("offset", offset);
                 response = ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
                 final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("files");
-                if (items.size() == 0) {
-                    if (ret.size() == 0) {
-                        logger.info("Empty folder");
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (items.isEmpty()) {
+                    if (ret.isEmpty()) {
+                        if (fp != null) {
+                            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, fuid + "_" + fp.getName());
+                        } else {
+                            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, fuid);
+                        }
+                    } else {
+                        logger.info("Stopping because: Failed to find any items on current page");
+                        break;
                     }
-                    break;
                 }
                 boolean next = false;
                 if (items != null && items.size() > 0) {
