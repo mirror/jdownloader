@@ -3,9 +3,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -169,28 +167,28 @@ public class OrfAt extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String hostFromURL = Browser.getHost(param.getCryptedUrl(), true);
-        /**
-         * 2022-09-22: New endpoint: https://audioapi.orf.at/radiothek/api/2.0/podcast/fm4/fm4-science-busters/raketenschaf?_o=sound.orf.at
-         * </br>
-         * (Old one is still working!)
-         */
-        br.getPage(API_BASE + "/radiothek/podcast/" + channelSlug + "/" + podcastSeriesSlug + ".json?_o=" + hostFromURL);
+        /* Old API call: (2022-09-27: Still working) */
+        // br.getPage(API_BASE + "/radiothek/podcast/" + channelSlug + "/" + podcastSeriesSlug + ".json?_o=" + hostFromURL);
+        br.getPage(API_BASE + "/radiothek/api/2.0/podcast/" + channelSlug + "/" + podcastSeriesSlug + "?episodes&_o=sound.orf.at");
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* This should never happen but for sure users could modify added URLs and render them invalid. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String podcastGroup = entries.get("group").toString();
-        final String podcastSlug = entries.get("slug").toString();
-        final Map<String, Object> podcast = (Map<String, Object>) entries.get("data");
-        final String author = podcast.get("author").toString();
-        final String podcastTitle = podcast.get("title").toString();
+        final Map<String, Object> payload = (Map<String, Object>) entries.get("payload");
+        final String station = payload.get("station").toString();
+        final String podcastSlug = payload.get("slug").toString();
+        final String podcastDescription = (String) payload.get("description");
+        final String author = payload.get("author").toString();
+        final String podcastTitle = payload.get("title").toString();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(author + " - " + podcastTitle);
-        fp.setComment(podcast.get("description").toString());
+        if (!StringUtils.isEmpty(podcastDescription)) {
+            fp.setComment(podcastDescription);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         boolean foundSpecificEpisode = false;
-        final List<Map<String, Object>> episodes = (List<Map<String, Object>>) podcast.get("episodes");
+        final List<Map<String, Object>> episodes = (List<Map<String, Object>>) payload.get("episodes");
         for (final Map<String, Object> episode : episodes) {
             String directurl = null;
             final List<Map<String, Object>> enclosures = (List<Map<String, Object>>) episode.get("enclosures");
@@ -206,15 +204,17 @@ public class OrfAt extends PluginForDecrypt {
             }
             final String episodeSlug = episode.get("slug").toString();
             final DownloadLink link = createPodcastDownloadlink(directurl);
-            final String filename = new SimpleDateFormat("yyyy-MM-dd").format(new Date(((Number) episode.get("published")).longValue())) + "_" + author + " - " + episode.get("title").toString() + ".mp3";
+            final String episodeDateStr = episode.get("published").toString();
+            final String dateFormatted = new Regex(episodeDateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            final String filename = dateFormatted + "_" + author + " - " + episode.get("title").toString() + ".mp3";
             link.setFinalFileName(filename);
             link.setProperty(DirectHTTP.FIXNAME, filename);
-            final String contentURL = (String) episode.get("link");
+            final String contentURL = (String) JavaScriptEngineFactory.walkJson(episode, "link/url");
             if (!StringUtils.isEmpty(contentURL)) {
                 link.setContentUrl(contentURL);
             } else {
-                /* E.g. https://sound.orf.at/podcast/tv/report-werkstatt */
-                link.setContentUrl("https://" + hostFromURL + "/podcast/" + podcastGroup + "/" + podcastSlug + "/" + episodeSlug);
+                /* ContentURLs are not always given in json e.g. https://sound.orf.at/podcast/tv/report-werkstatt */
+                link.setContentUrl("https://sound.orf.at/podcast/" + station + "/" + podcastSlug + "/" + episodeSlug);
             }
             final String description = (String) episode.get("description");
             if (!StringUtils.isEmpty(description)) {
@@ -438,7 +438,7 @@ public class OrfAt extends PluginForDecrypt {
     }
 
     private DownloadLink crawlPodcastEpisodeByGUID(final String podcastGUID) throws IOException, PluginException {
-        br.getPage("https://audioapi.orf.at/radiothek/api/2.0/episode/" + podcastGUID + "?_o=sound.orf.at");
+        br.getPage(API_BASE + "/radiothek/api/2.0/episode/" + podcastGUID + "?_o=sound.orf.at");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -480,7 +480,7 @@ public class OrfAt extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("https://audioapi.orf.at/" + radioStation + "/api/json/5.0/broadcastitem/" + broadcastID + "?_o=sound.orf.at");
+        br.getPage(API_BASE + "/" + radioStation + "/api/json/5.0/broadcastitem/" + broadcastID + "?_o=sound.orf.at");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -498,7 +498,7 @@ public class OrfAt extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("https://audioapi.orf.at/" + radioStation + "/api/json/5.0/broadcast/" + broadcastID + "?_o=sound.orf.at");
+        br.getPage(API_BASE + "/" + radioStation + "/api/json/5.0/broadcast/" + broadcastID + "?_o=sound.orf.at");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

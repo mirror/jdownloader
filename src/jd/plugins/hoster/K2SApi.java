@@ -933,100 +933,92 @@ public abstract class K2SApi extends PluginForHost {
     public Map<String, Object> postPageRaw(final Browser ibr, String url, final Map<String, Object> postdata, final Account account, final DownloadLink link, int attempt) throws Exception {
         URLConnectionAdapter con = null;
         synchronized (REQUESTLOCK) {
-            try {
-                if (!StringUtils.startsWithCaseInsensitive(url, "http")) {
-                    url = getApiUrl() + url;
+            if (!StringUtils.startsWithCaseInsensitive(url, "http")) {
+                url = getApiUrl() + url;
+            }
+            con = ibr.openPostConnection(url, JSonStorage.serializeToJson(postdata));
+            readConnection(con, ibr);
+            antiDDoS(ibr);
+            /* Only handle captchas on login page. */
+            CAPTCHA loginCaptcha = null;
+            final String status = PluginJSonUtils.getJsonValue(ibr, "status");
+            if ("error".equalsIgnoreCase(status) && ibr.containsHTML("\"errorCode\":30")) {
+                /* Simple image captcha */
+                loginCaptcha = CAPTCHA.REQUESTCAPTCHA;
+            } else if ("error".equalsIgnoreCase(status) && ibr.containsHTML("\"errorCode\":33")) {
+                /* reCaptcha */
+                loginCaptcha = CAPTCHA.REQUESTRECAPTCHA;
+            }
+            if (url.endsWith("/login") && loginCaptcha != null) {
+                logger.info("Login captcha attempt: " + attempt);
+                if (attempt >= 1) {
+                    /*
+                     * Allow max 1 captcha attempt. Usually they're requesting reCaptcha so user should be able to solve it in one go.
+                     */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                con = ibr.openPostConnection(url, JSonStorage.serializeToJson(postdata));
-                readConnection(con, ibr);
-                antiDDoS(ibr);
-                /* Only handle captchas on login page. */
-                CAPTCHA loginCaptcha = null;
-                final String status = PluginJSonUtils.getJsonValue(ibr, "status");
-                final String errorCode = PluginJSonUtils.getJsonValue(ibr, "errorCode");
-                CAPTCHA captcha = null;
-                if ("error".equalsIgnoreCase(status) && ("30".equalsIgnoreCase(errorCode))) {
-                    captcha = CAPTCHA.REQUESTCAPTCHA;
-                } else if ("error".equalsIgnoreCase(status) && ("33".equalsIgnoreCase(errorCode))) {
-                    captcha = CAPTCHA.REQUESTRECAPTCHA;
-                }
-                if (url.endsWith("/login") && captcha != null) {
-                    logger.info("Login captcha attempt: " + attempt);
-                    if (attempt >= 1) {
+                // we can assume that the previous user:pass is wrong, prompt user for new one!
+                final Browser cbr = new Browser();
+                if (CAPTCHA.REQUESTCAPTCHA.equals(loginCaptcha)) {
+                    final Map<String, Object> requestcaptcha = postPageRaw(cbr, "/requestcaptcha", new HashMap<String, Object>(), account, link);
+                    final String challenge = (String) requestcaptcha.get("challenge");
+                    String captcha_url = (String) requestcaptcha.get("captcha_url");
+                    if (captcha_url.startsWith("https://")) {
+                        logger.info("login-captcha_url is already https");
+                    } else {
                         /*
-                         * Allow max 1 captcha attempt. Usually they're requesting reCaptcha so user should be able to solve it in one go.
+                         * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989 and
+                         * 2020-04-23: board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
                          */
+                        logger.info("login-captcha_url is not https --> Changing it to https");
+                        captcha_url = captcha_url.replace("http://", "https://");
+                    }
+                    if (StringUtils.isEmpty(challenge)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if (StringUtils.isEmpty(captcha_url)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    // final dummy
+                    final DownloadLink dummyLink = new DownloadLink(null, "Account", getInternalAPIDomain(), "https://" + getInternalAPIDomain(), true);
+                    final String code = getCaptchaCode(captcha_url, dummyLink);
+                    if (StringUtils.isEmpty(code)) {
+                        // captcha can't be blank! Why we don't return null I don't know!
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    // we can assume that the previous user:pass is wrong, prompt user for new one!
-                    final Browser cbr = new Browser();
-                    if (CAPTCHA.REQUESTCAPTCHA.equals(loginCaptcha)) {
-                        final Map<String, Object> requestcaptcha = postPageRaw(cbr, "/requestcaptcha", new HashMap<String, Object>(), account, link);
-                        final String challenge = (String) requestcaptcha.get("challenge");
-                        String captcha_url = (String) requestcaptcha.get("captcha_url");
-                        if (captcha_url.startsWith("https://")) {
-                            logger.info("login-captcha_url is already https");
-                        } else {
-                            /*
-                             * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989
-                             * and 2020-04-23: board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
-                             */
-                            logger.info("login-captcha_url is not https --> Changing it to https");
-                            captcha_url = captcha_url.replace("http://", "https://");
-                        }
-                        if (StringUtils.isEmpty(challenge)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else if (StringUtils.isEmpty(captcha_url)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        // final dummy
-                        final DownloadLink dummyLink = new DownloadLink(null, "Account", getInternalAPIDomain(), "https://" + getInternalAPIDomain(), true);
-                        final String code = getCaptchaCode(captcha_url, dummyLink);
-                        if (StringUtils.isEmpty(code)) {
-                            // captcha can't be blank! Why we don't return null I don't know!
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        postdata.put("captcha_challenge", challenge);
-                        postdata.put("captcha_response", code);
-                    } else if (CAPTCHA.REQUESTRECAPTCHA.equals(loginCaptcha)) {
-                        final Map<String, Object> requestcaptcha = postPageRaw(cbr, "/requestrecaptcha", new HashMap<String, Object>(), account, link);
-                        final String challenge = (String) requestcaptcha.get("challenge");
-                        String captcha_url = (String) requestcaptcha.get("captcha_url");
-                        if (StringUtils.isEmpty(challenge)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else if (StringUtils.isEmpty(captcha_url) || !captcha_url.startsWith("http")) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        if (!captcha_url.startsWith("https://")) {
-                            /*
-                             * 2020-02-03: Possible workaround for this issue: board.jdownloader.org/showthread.php?t=82989 and 2020-04-23:
-                             * board.jdownloader.org/showthread.php?t=83927
-                             */
-                            logger.info("login-captcha_url is not https --> Changing it to https");
-                            captcha_url = captcha_url.replace("http://", "https://");
-                        }
-                        cbr.getPage(captcha_url);
-                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr);
-                        final String recaptchaV2Response = rc2.getToken();
-                        if (recaptchaV2Response == null) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        postdata.put("re_captcha_challenge", challenge);
-                        postdata.put("re_captcha_response", recaptchaV2Response);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + loginCaptcha);
+                    postdata.put("captcha_challenge", challenge);
+                    postdata.put("captcha_response", code);
+                } else if (CAPTCHA.REQUESTRECAPTCHA.equals(loginCaptcha)) {
+                    final Map<String, Object> requestcaptcha = postPageRaw(cbr, "/requestrecaptcha", new HashMap<String, Object>(), account, link);
+                    final String challenge = (String) requestcaptcha.get("challenge");
+                    String captcha_url = (String) requestcaptcha.get("captcha_url");
+                    if (StringUtils.isEmpty(challenge)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if (StringUtils.isEmpty(captcha_url) || !captcha_url.startsWith("http")) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    attempt++;
-                    return postPageRaw(ibr, url, postdata, account, link, attempt);
+                    if (!captcha_url.startsWith("https://")) {
+                        /*
+                         * 2020-02-03: Possible workaround for this issue: board.jdownloader.org/showthread.php?t=82989 and 2020-04-23:
+                         * board.jdownloader.org/showthread.php?t=83927
+                         */
+                        logger.info("login-captcha_url is not https --> Changing it to https");
+                        captcha_url = captcha_url.replace("http://", "https://");
+                    }
+                    cbr.getPage(captcha_url);
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, cbr);
+                    final String recaptchaV2Response = rc2.getToken();
+                    if (recaptchaV2Response == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    postdata.put("re_captcha_challenge", challenge);
+                    postdata.put("re_captcha_response", recaptchaV2Response);
                 } else {
-                    return handleErrorsAPI(account, link, ibr);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + loginCaptcha);
                 }
-            } finally {
-                try {
-                    // TODO: Maybe not do this?
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
+                attempt++;
+                return postPageRaw(ibr, url, postdata, account, link, attempt);
+            } else {
+                return handleErrorsAPI(account, link, ibr);
             }
         }
     }
