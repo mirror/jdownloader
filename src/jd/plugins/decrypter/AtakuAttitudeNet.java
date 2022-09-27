@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
@@ -34,6 +30,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AtakuAttitudeNet extends PluginForDecrypt {
@@ -137,6 +137,7 @@ public class AtakuAttitudeNet extends PluginForDecrypt {
             final String downloadIDFormatted = StringUtils.formatByPadLength(padLength, Integer.parseInt(downloadID));
             final String url = br.getURL(getDirectDownloadurl(contentID, downloadID)).toString();
             final DownloadLink video = this.createDownloadlink("directhttp://" + url);
+            video.setChunks(5);// max chunks by default
             /* Try to set temporary filename. Mimic original filenames as close as possible as we cannot know them in beforehand. */
             if (filenameBase != null) {
                 if (fpName != null) {

@@ -9,15 +9,14 @@ import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 public enum VideoCodec implements LabelInterface, TooltipInterface {
     // Order is default quality sort order
     H264("AVC H.264", "H264"),
-    VP9_BETTER_PROFILE_1("Google VP9 Medium Quality Profile", "VP9 MQ"),
+    AV1("AOMedia Video 1", "AV1"),
     VP9_BETTER_PROFILE_2("Google VP9 High Quality Profile", "VP9 HQ"),
+    VP9_BETTER_PROFILE_1("Google VP9 Medium Quality Profile", "VP9 MQ"),
+    VP9_HDR("Google VP9 HDR", "VP9 HDR"),
     VP9("Google VP9", "VP9"),
     VP9_WORSE_PROFILE_1("Google VP9 Low Quality Profile", "VP9 LQ"),
-    H263("AVC H.263", "H263"),
     VP8("Google VP8", "VP8"),
-    VP9_HDR("Google VP9 HDR", "VP9 HDR"),
-    // last because still very CPU intensive
-    AV1("AOMedia Video 1", "AV1");
+    H263("AVC H.263", "H263");
     private String label;
     private String labelLong;
 
