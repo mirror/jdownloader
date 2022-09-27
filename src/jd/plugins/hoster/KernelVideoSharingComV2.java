@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -144,7 +145,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (host == null || fuid == null || urlSlug == null) {
             return null;
         }
-        return this.getProtocol() + "www." + host + "/videos/" + fuid + "/" + urlSlug + "/";
+        final String wwwPrefix = (this.isRequiresWWW() && !host.toLowerCase(Locale.ENGLISH).startsWith("www.")) ? "www." : "";
+        return this.getProtocol() + wwwPrefix + host + "/videos/" + fuid + "/" + urlSlug + "/";
     }
 
     /**
@@ -168,7 +170,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (host == null || fuid == null || urlSlug == null) {
             return null;
         }
-        return this.getProtocol() + "www." + host + "/" + fuid + "/" + urlSlug + "/";
+        final String wwwPrefix = (this.isRequiresWWW() && !host.toLowerCase(Locale.ENGLISH).startsWith("www.")) ? "www." : "";
+        return this.getProtocol() + wwwPrefix + host + "/" + fuid + "/" + urlSlug + "/";
     }
 
     /**
@@ -192,7 +195,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (host == null || fuid == null || urlSlug == null) {
             return null;
         }
-        return this.getProtocol() + "www." + host + "/videos/" + urlSlug + "/";
+        final String wwwPrefix = (this.isRequiresWWW() && !host.toLowerCase(Locale.ENGLISH).startsWith("www.")) ? "www." : "";
+        return this.getProtocol() + wwwPrefix + host + "/videos/" + urlSlug + "/";
     }
 
     /**
@@ -214,7 +218,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (host == null || fuid == null || urlSlug == null) {
             return null;
         }
-        return this.getProtocol() + "www." + host + "/videos/" + urlSlug + "-" + fuid;
+        final String wwwPrefix = (this.isRequiresWWW() && !host.toLowerCase(Locale.ENGLISH).startsWith("www.")) ? "www." : "";
+        return this.getProtocol() + wwwPrefix + host + "/videos/" + urlSlug + "-" + fuid;
     }
 
     /**
@@ -237,7 +242,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (host == null || urlSlug == null) {
             return null;
         }
-        return this.getProtocol() + "www." + host + "/" + urlSlug + "/";
+        final String wwwPrefix = (this.isRequiresWWW() && !host.toLowerCase(Locale.ENGLISH).startsWith("www.")) ? "www." : "";
+        return this.getProtocol() + wwwPrefix + host + "/" + urlSlug + "/";
     }
 
     /**
@@ -260,7 +266,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (host == null || fuid == null) {
             return null;
         }
-        return this.getProtocol() + host + "/" + fuid + "/";
+        final String wwwPrefix = (this.isRequiresWWW() && !host.toLowerCase(Locale.ENGLISH).startsWith("www.")) ? "www." : "";
+        return this.getProtocol() + wwwPrefix + host + "/" + fuid + "/";
     }
 
     /**
