@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -34,6 +35,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -567,6 +569,9 @@ public class DirectHTTP extends antiDDoSForHost {
         return prepareConnection(br, downloadLink, 1, this.preferHeadRequest, optionSet == null ? new HashSet<String>() : optionSet);
     }
 
+    private final String SESSION_TRUST_HEAD    = "SESSION_TRUST_HEAD";
+    private final String SESSION_AUTHORIZATION = "SESSION_AUTHORIZATION";
+
     private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink, final int round, boolean preferHeadRequest, Set<String> optionSet) throws Exception {
         URLConnectionAdapter urlConnection = null;
         br.setRequest(null);
@@ -586,10 +591,11 @@ public class DirectHTTP extends antiDDoSForHost {
                 Request request = null;
                 try {
                     final String requestType = downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null);
+                    final boolean trustHeadRequest = Boolean.TRUE.equals(getSessionValue(downloadLink, SESSION_TRUST_HEAD, Boolean.class, true));
                     if ("GET".equals(requestType)) {
                         // PROPERTY_REQUEST_TYPE is set to GET
                         urlConnection = openAntiDDoSRequestConnection(br, request = br.createGetRequest(downloadURL));
-                    } else if (isTrustHeadRequest(downloadLink, true) && (preferHeadRequest || "HEAD".equals(requestType))) {
+                    } else if (trustHeadRequest && (preferHeadRequest || "HEAD".equals(requestType))) {
                         // PROPERTY_REQUEST_TYPE is set to HEAD or preferHeadRequest
                         urlConnection = openAntiDDoSRequestConnection(br, request = br.createHeadRequest(downloadURL));
                     } else {
@@ -615,7 +621,7 @@ public class DirectHTTP extends antiDDoSForHost {
                              */
                             followURLConnection(br, urlConnection);
                             return prepareConnection(br, downloadLink, round + 1, false, optionSet);
-                        } else if (urlConnection.getResponseCode() != 401 && urlConnection.getResponseCode() >= 300) {
+                        } else if ((urlConnection.getResponseCode() != 401 && urlConnection.getResponseCode() != 429) && urlConnection.getResponseCode() >= 300) {
                             // no head support?
                             followURLConnection(br, urlConnection);
                             return prepareConnection(br, downloadLink, round + 1, false, optionSet);
@@ -628,7 +634,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         try {
                             urlConnection = openAntiDDoSRequestConnection(br, br.createGetRequest(downloadURL));
                             downloadLink.setProperty(PROPERTY_REQUEST_TYPE, "GET");
-                            setTrustHeadRequest(downloadLink, false);
+                            putSessionValue(downloadLink, SESSION_TRUST_HEAD, Boolean.FALSE);
                         } catch (IOException e2) {
                             followURLConnection(br, urlConnection);
                             if (StringUtils.startsWithCaseInsensitive(downloadURL, "http://")) {
@@ -730,10 +736,36 @@ public class DirectHTTP extends antiDDoSForHost {
         return optionSet;
     }
 
+    protected URLConnectionAdapter handleRateLimit(final DownloadLink downloadLink, Set<String> optionSet, Browser br, URLConnectionAdapter urlConnection) throws Exception {
+        if (urlConnection.getResponseCode() == 429) {
+            followURLConnection(br, urlConnection);
+            final String waitSecondsStr = br.getRequest().getResponseHeader("Retry-After");
+            final int waitSeconds = Math.max(1, waitSecondsStr != null && waitSecondsStr.matches("^\\s*\\d+\\s*$") ? Integer.parseInt(waitSecondsStr.trim()) : -1);
+            final String host = getHost(downloadLink, null, true);
+            final int requestInterval = Math.min(waitSeconds * 1000, 3000) + 1000;
+            logger.info("Auto set session requestInterval:" + host + "->" + requestInterval);
+            Browser.setRequestIntervalLimitGlobal(host, true, requestInterval);
+            if (waitSeconds < 5 || ((Thread.currentThread() instanceof SingleDownloadController) && waitSeconds < 60)) {
+                sleep(waitSeconds * 1000l, downloadLink);
+                urlConnection = this.prepareConnection(this.br, downloadLink, optionSet);
+            }
+            if (urlConnection.getResponseCode() == 429) {
+                followURLConnection(br, urlConnection);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 429 rate limit reached", 5 * 60 * 1000l);
+            }
+        }
+        return urlConnection;
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry, Set<String> optionSet) throws Exception {
         if (retry == 0) {
             preSetFinalName = downloadLink.getFinalFileName();
             preSetFIXNAME = downloadLink.getStringProperty(FIXNAME, null);
+            final Authentication auth = getSessionValue(downloadLink, SESSION_AUTHORIZATION, Authentication.class, null);
+            if (auth != null) {
+                logger.info("Auto set session authorization:" + auth.getUsername() + "@" + auth.getRealm() + "@" + auth.getHost());
+                br.addAuthentication(auth);
+            }
         }
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
@@ -808,10 +840,10 @@ public class DirectHTTP extends antiDDoSForHost {
         this.br.setFollowRedirects(true);
         URLConnectionAdapter urlConnection = null;
         try {
-            String basicauth = null;
             for (final AuthenticationFactory authenticationFactory : authenticationFactories) {
                 br.setCustomAuthenticationFactory(authenticationFactory);
                 urlConnection = this.prepareConnection(this.br, downloadLink, optionSet);
+                urlConnection = handleRateLimit(downloadLink, optionSet, this.br, urlConnection);
                 logger.info("looksLikeDownloadableContent result(" + retry + ",1):" + looksLikeDownloadableContent(urlConnection));
                 if (isCustomOffline(urlConnection)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -835,6 +867,7 @@ public class DirectHTTP extends antiDDoSForHost {
                         }
                         br.setRequest(null);
                         urlConnection = this.prepareConnection(this.br, downloadLink, optionSet);
+                        urlConnection = handleRateLimit(downloadLink, optionSet, this.br, urlConnection);
                         logger.info("looksLikeDownloadableContent result(" + retry + ",2):" + looksLikeDownloadableContent(urlConnection));
                         if (isCustomOffline(urlConnection)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -858,7 +891,6 @@ public class DirectHTTP extends antiDDoSForHost {
                 followURLConnection(br, urlConnection);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("auth", basicauth);
             final String contentType = urlConnection.getContentType();
             if (contentType != null) {
                 if (StringUtils.startsWithCaseInsensitive(contentType, "application/pls") && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), ".mp3")) {
@@ -1045,6 +1077,10 @@ public class DirectHTTP extends antiDDoSForHost {
                 downloadLink.setDownloadSize(-1);
                 downloadLink.setVerifiedFileSize(-1);
             }
+            final Authentication auth = br.getRequest().getAuthentication();
+            if (auth != null) {
+                putSessionValue(downloadLink, SESSION_AUTHORIZATION, auth);
+            }
             final String referer = urlConnection.getRequestProperty(HTTPConstants.HEADER_REQUEST_REFERER);
             downloadLink.setProperty("lastRefURL", referer);
             final RequestMethod requestMethod = urlConnection.getRequestMethod();
@@ -1052,7 +1088,7 @@ public class DirectHTTP extends antiDDoSForHost {
             downloadLink.removeProperty(IOEXCEPTIONS);
             AvailableStatus status = AvailableStatus.TRUE;
             if (RequestMethod.HEAD.equals(requestMethod)) {
-                if (isTrustHeadRequest(downloadLink, false)) {
+                if (Boolean.TRUE.equals(getSessionValue(downloadLink, SESSION_TRUST_HEAD, Boolean.class, false))) {
                     logger.info("Trust head request(history)!");
                 } else if (downloadLink.getStringProperty(PROPERTY_REQUEST_TYPE, null) != null) {
                     logger.info("Trust head request(stored)!");
@@ -1092,9 +1128,9 @@ public class DirectHTTP extends antiDDoSForHost {
                             if (preSetFIXNAME == null) {
                                 downloadLink.setProperty(FIXNAME, headFIXNAME);
                             }
-                            setTrustHeadRequest(downloadLink, true);
+                            putSessionValue(downloadLink, SESSION_TRUST_HEAD, Boolean.TRUE);
                         } else {
-                            setTrustHeadRequest(downloadLink, false);
+                            putSessionValue(downloadLink, SESSION_TRUST_HEAD, Boolean.FALSE);
                         }
                     }
                 }
@@ -1150,26 +1186,32 @@ public class DirectHTTP extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    protected static HashMap<String, Boolean> TRUST_HEADREQUEST_MAP = new HashMap<String, Boolean>();
+    protected static HashMap<String, Map<String, Object>> SESSION_MAP = new HashMap<String, Map<String, Object>>();
 
-    protected boolean isTrustHeadRequest(DownloadLink downloadLink, boolean defaultTrustFlag) throws IOException {
-        synchronized (TRUST_HEADREQUEST_MAP) {
-            final String host = Browser.getHost(getDownloadURL(downloadLink), true);
-            final Boolean ret = TRUST_HEADREQUEST_MAP.get(host);
-            if (ret != null) {
-                return ret.booleanValue();
+    protected <T> T getSessionValue(DownloadLink downloadLink, final String key, Class<T> clazz, T defaultValue) {
+        synchronized (SESSION_MAP) {
+            final String host = getHost(downloadLink, null, true);
+            final Map<String, Object> map = SESSION_MAP.get(host);
+            if (map == null || !map.containsKey(key)) {
+                return defaultValue;
+            } else {
+                return (T) map.get(key);
             }
         }
-        return defaultTrustFlag;
     }
 
-    protected void setTrustHeadRequest(DownloadLink downloadLink, Boolean trustFlag) throws IOException {
-        synchronized (TRUST_HEADREQUEST_MAP) {
-            final String host = Browser.getHost(getDownloadURL(downloadLink), true);
-            if (trustFlag != null) {
-                TRUST_HEADREQUEST_MAP.put(host, trustFlag);
+    protected void putSessionValue(DownloadLink downloadLink, final String key, Object value) {
+        synchronized (SESSION_MAP) {
+            final String host = getHost(downloadLink, null, true);
+            if (key == null) {
+                SESSION_MAP.remove(host);
             } else {
-                TRUST_HEADREQUEST_MAP.remove(host);
+                Map<String, Object> map = SESSION_MAP.get(host);
+                if (map == null) {
+                    map = new HashMap<String, Object>();
+                    SESSION_MAP.put(host, map);
+                }
+                map.put(key, value);
             }
         }
     }
@@ -1194,10 +1236,7 @@ public class DirectHTTP extends antiDDoSForHost {
         link.removeProperty(PROPERTY_OPTION_SET);
         link.removeProperty(FORCE_NOVERIFIEDFILESIZE);
         link.removeProperty(BYPASS_CLOUDFLARE_BGJ);
-        try {
-            setTrustHeadRequest(link, null);
-        } catch (IOException ignore) {
-        }
+        putSessionValue(link, null, null);
         /* E.g. filename set in crawler --> We don't want to lose that. */
         final String fixName = link.getStringProperty(FIXNAME, null);
         if (StringUtils.isNotEmpty(fixName)) {
