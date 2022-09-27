@@ -37,6 +37,24 @@ public class DecrypterRetryException extends Exception {
         return customName;
     }
 
+    public String getComment() {
+        if (customComment != null) {
+            return customComment;
+        }
+        /* Return default comment for some states. */
+        if (this.reason == RetryReason.EMPTY_FOLDER) {
+            return _JDT.T.decrypter_empty_folder_comment();
+        } else if (this.reason == RetryReason.GEO) {
+            return _JDT.T.decrypter_unavailable_geo_comment();
+        } else if (this.reason == RetryReason.PLUGIN_SETTINGS) {
+            return _JDT.T.decrypter_pluginsettings_comment();
+        } else if (this.reason == RetryReason.IP) {
+            return _JDT.T.decrypter_unavailable_ip_comment();
+        } else {
+            return null;
+        }
+    }
+
     public String getCustomComment() {
         return customComment;
     }

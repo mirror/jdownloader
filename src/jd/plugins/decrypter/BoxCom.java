@@ -21,6 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -31,17 +37,13 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.com" }, urls = { "https?://(?:\\w+\\.)*box\\.(?:net|com)/s(?:hared)?/([a-z0-9]{32}|[a-z0-9]{20})(?:/(?:folder|file)/(\\d+))?" })
 public class BoxCom extends antiDDoSForDecrypt {
@@ -206,10 +208,8 @@ public class BoxCom extends antiDDoSForDecrypt {
             logger.info("Crawling page " + pageNumber + " of " + pageCount);
             Map<String, Object> entries;
             final List<Object> ressourcelist = (List<Object>) rootMap.get("items");
-            if (ressourcelist.size() == 0) {
-                logger.info("Empty folder");
-                decryptedLinks.add(this.createOfflinelink(cryptedlink.toString(), "Folder_empty_" + offlinename, "Empty folder"));
-                return decryptedLinks;
+            if (ressourcelist.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, offlinename);
             }
             for (final Object itemO : ressourcelist) {
                 entries = (Map<String, Object>) itemO;

@@ -29,6 +29,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -112,8 +114,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("\"noFiles\"")) {
-            logger.info("Empty folder");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         } else if (br.containsHTML("id=\"startdownload\"")) {
             /* Special case: Single file, direct download */
             final DownloadLink dl = new DownloadLink(hostPlg, this.getHost(), this.getHost(), br.getURL(), true);
