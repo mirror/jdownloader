@@ -51,7 +51,6 @@ public class FilesFmFolder extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This link does not contain any files|These files are deleted by the owner<|The expiry date of these files is over<|class=\"deleted_wrapper\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("id=\"ist_no_files_message\"")) {
-            /* 2017-01-30: Empty folder */
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
         } else if (br.containsHTML("list_private_upload_msg")) {
             /* 2020-06-25: Private file which only the owner can access */

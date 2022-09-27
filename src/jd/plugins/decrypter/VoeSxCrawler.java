@@ -19,6 +19,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -30,10 +34,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VoeSxCrawler extends PluginForDecrypt {
     public VoeSxCrawler(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class VoeSxCrawler extends PluginForDecrypt {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "voe.sx", "voe-unblock.com", "voe-unblock.net", "voeunblock.com", "voeunblk.com", "voeunblck.com", "voe-un-block.com", "un-block-voe.net", "voeunbl0ck.com", "voeunblock1.com", "voeunblock2.com", "voeunblock3.com", "voeunblock4.com", "voeunblock5.com", "voeunblock6.com", "voeun-block.net", "v-o-e-unblock.com", "audaciousdefaulthouse.com", "launchreliantcleaverriver.com", "reputationsheriffkennethsand.com", "fittingcentermondaysunday.com", "housecardsummerbutton.com", "fraudclatterflyingcar.com", "bigclatterhomesguideservice.com", "uptodatefinishconferenceroom.com", "realfinanceblogcenter.com" });
+        ret.add(new String[] { "voe.sx", "voe-unblock.com", "voe-unblock.net", "voeunblock.com", "voeunblk.com", "voeunblck.com", "voe-un-block.com", "un-block-voe.net", "voeunbl0ck.com", "voeunblock1.com", "voeunblock2.com", "voeunblock3.com", "voeunblock4.com", "voeunblock5.com", "voeunblock6.com", "voeun-block.net", "v-o-e-unblock.com", "audaciousdefaulthouse.com", "launchreliantcleaverriver.com", "reputationsheriffkennethsand.com", "fittingcentermondaysunday.com", "housecardsummerbutton.com", "fraudclatterflyingcar.com", "bigclatterhomesguideservice.com", "uptodatefinishconferenceroom.com", "realfinanceblogcenter.com", "tinycat-voe-fashion.com" });
         return ret;
     }
 

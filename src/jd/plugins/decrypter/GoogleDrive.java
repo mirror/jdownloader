@@ -304,13 +304,11 @@ public class GoogleDrive extends PluginForDecrypt {
             this.parseFolderJsonAPI(decryptedLinks, dupes, entries, this.getAdoptedCloudFolderStructure(), nameOfCurrentFolder);
             if (page == 0 && decryptedLinks.size() == 0) {
                 /* Empty folder - 2nd check which usually won't be required as we're checking for this at the beginning of this function. */
-                final String offlineFolderTitle;
                 if (!StringUtils.isEmpty(subfolderPath)) {
-                    offlineFolderTitle = subfolderPath + " " + folderID;
+                    throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY, folderID + "_" + subfolderPath);
                 } else {
-                    offlineFolderTitle = folderID;
+                    throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY, folderID);
                 }
-                throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY, offlineFolderTitle);
             }
             final String nextPageToken = (String) entries.get("nextPageToken");
             if (StringUtils.isEmpty(nextPageToken)) {
