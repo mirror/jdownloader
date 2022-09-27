@@ -113,7 +113,7 @@ public class DropboxCom extends PluginForHost {
     public static final String                   API_BASE                              = "https://api.dropboxapi.com/2";
     private static final String                  API_BASE_CONTENT                      = "https://content.dropboxapi.com/2";
     /** 2019-09-25: Website login is broken - enforce API usage for all users! */
-    private final boolean                        HARDCODED_ENFORCE_API                 = true;
+    private final boolean                        HARDCODED_ENFORCE_API                 = false;
     public static final String                   PROPERTY_MAINPAGE                     = "mainlink";
     public static final String                   PROPERTY_INTERNAL_PATH                = "serverside_path_to_file_relative";
     public static final String                   PROPERTY_PASSWORD_COOKIE              = "password_cookie";
@@ -944,7 +944,7 @@ public class DropboxCom extends PluginForHost {
     // return account.getStringProperty("account_id", null);
     // }
     public static String getAPIToken(final Account account) {
-        return account.getStringProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, null);
+        return account.getStringProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN);
     }
 
     /**

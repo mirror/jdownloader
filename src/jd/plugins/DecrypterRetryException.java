@@ -43,13 +43,13 @@ public class DecrypterRetryException extends Exception {
         }
         /* Return default comment for some states. */
         if (this.reason == RetryReason.EMPTY_FOLDER) {
-            return _JDT.T.decrypter_empty_folder_comment();
+            return _JDT.T.decrypter_empty_folder_description();
         } else if (this.reason == RetryReason.GEO) {
-            return _JDT.T.decrypter_unavailable_geo_comment();
+            return _JDT.T.decrypter_unavailable_geo_description();
         } else if (this.reason == RetryReason.PLUGIN_SETTINGS) {
-            return _JDT.T.decrypter_pluginsettings_comment();
+            return _JDT.T.decrypter_pluginsettings_description();
         } else if (this.reason == RetryReason.IP) {
-            return _JDT.T.decrypter_unavailable_ip_comment();
+            return _JDT.T.decrypter_unavailable_ip_description();
         } else {
             return null;
         }
