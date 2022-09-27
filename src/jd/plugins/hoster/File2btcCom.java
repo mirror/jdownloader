@@ -101,7 +101,7 @@ public class File2btcCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,7 +136,7 @@ public class File2btcCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (account != null) {
-            this.login(account, false);
+            this.login(account, true);
         }
         String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
@@ -158,14 +158,23 @@ public class File2btcCom extends PluginForHost {
         }
         requestFileInformation(link);
         if (account != null) {
-            /* API. Does pretty much the same as website. Docs: http://file2btc.com/api.php */
-            br.getPage("/commands/api.php?hash=" + this.getFID(link));
+            dllink = br.getRegex("<a href=\"(https?://[^\"]+)\" download>").getMatch(0);
+            if (dllink != null) {
+                /* Wait one second otherwise that URL won't work yet. */
+                this.sleep(1000, link);
+            } else {
+                /* API. Does pretty much the same as website. Docs: http://file2btc.com/api.php */
+                /* 2022-09-27: Seems like when using the API we only get free user speeds? */
+                br.getPage("/commands/api.php?hash=" + this.getFID(link));
+                this.sleep(1000, link);
+                dllink = "/download.php?secure=" + br.getRequest().getHtmlCode();
+            }
         } else {
             /* 2022-09-26: Pre-download waittime can be skipped. */
             br.postPage("/commands/download.php", "hash=" + this.getFID(link));
+            this.sleep(1000, link);
+            dllink = "/download.php?secure=" + br.getRequest().getHtmlCode();
         }
-        this.sleep(1000, link);
-        dllink = "/download.php?secure=" + br.getRequest().getHtmlCode();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
