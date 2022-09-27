@@ -78,7 +78,6 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(CloudMailRu.API_BASE + "/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
-            /* Offline|Empty folder */
             if (br.containsHTML("\"status\":400")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"count\":\\{\"folders\":0,\"files\":0\\}")) {

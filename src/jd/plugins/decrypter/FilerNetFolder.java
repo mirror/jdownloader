@@ -30,6 +30,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -71,14 +73,19 @@ public class FilerNetFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", "JDownloader");
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (folderID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(FilerNet.API_BASE + "/folder/" + folderID + ".json");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         int code = ((Integer) ReflectionUtils.cast(entries.get("code"), Integer.class)).intValue();
         if (code == 506) {
+            /* Offline folder */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (code == 201) {
@@ -101,8 +108,7 @@ public class FilerNetFolder extends PluginForDecrypt {
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         final int count = ((Integer) ReflectionUtils.cast(data.get("count"), Integer.class)).intValue();
         if (count == 0) {
-            logger.info("Empty folder");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
         }
         String fpName = (String) data.get("name");
         if (fpName == null) {
@@ -115,12 +121,12 @@ public class FilerNetFolder extends PluginForDecrypt {
             link.setFinalFileName(file.get("name").toString());
             link.setVerifiedFileSize(((Long) ReflectionUtils.cast(file.get("size"), Long.class)).longValue());
             link.setAvailable(true);
-            decryptedLinks.add(link);
+            ret.add(link);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     private String getJson(final String parameter, final String source) {

@@ -24,6 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,6 +38,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -39,13 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DiskYandexNet;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -309,7 +311,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlFilesFoldersAPI(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String relativeDownloadPath = this.getAdoptedCloudFolderStructure();
         if (relativeDownloadPath == null) {
             relativeDownloadPath = "";
@@ -356,7 +358,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         short offset = 0;
         final short entries_per_request = 200;
-        long totalNumberofEntries = 0;
+        int totalNumberofEntries = 0;
         final FilePackage fp = FilePackage.getInstance();
         do {
             getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
@@ -366,8 +368,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
              * {"message":"Не удалось найти запрошенный ресурс.","description":"Resource not found.","error":"DiskNotFoundError"}
              */
             if (entries.containsKey("error")) {
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String type_main = (String) entries.get("type");
             if (!type_main.equals(JSON_TYPE_DIR)) {
@@ -377,28 +378,31 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     dl.setRelativeDownloadFolderPath(relativeDownloadPath);
                 }
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
+                ret.add(dl);
+                return ret;
             }
             final String walk_string = "_embedded/items";
             final List<Object> resource_data_list = (List) JavaScriptEngineFactory.walkJson(entries, walk_string);
             if (offset == 0) {
                 /* Set total number of entries on first loop. */
                 final Map<String, Object> itemInfo = (Map<String, Object>) entries.get("_embedded");
-                totalNumberofEntries = JavaScriptEngineFactory.toLong(itemInfo.get("total"), 0);
-                if (totalNumberofEntries == 0) {
-                    logger.info("Empty folder");
-                    return decryptedLinks;
-                }
                 String baseFolderName = (String) entries.get("name");
                 if (StringUtils.isEmpty(baseFolderName)) {
                     /* Fallback */
                     baseFolderName = hashWithPath;
                 }
+                totalNumberofEntries = ((Number) itemInfo.get("total")).intValue();
                 fp.setName(baseFolderName);
                 if (StringUtils.isEmpty(relativeDownloadPath)) {
                     /* First time crawl of a possible folder structure -> Define root dir name */
                     relativeDownloadPath = baseFolderName;
+                }
+                if (totalNumberofEntries == 0) {
+                    if (!StringUtils.isEmpty(relativeDownloadPath)) {
+                        throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, hashWithoutPath + "_" + relativeDownloadPath);
+                    } else {
+                        throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, hashWithoutPath);
+                    }
                 }
             }
             for (final Object list_object : resource_data_list) {
@@ -415,14 +419,14 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     final String folderlink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hash + ":" + path);
                     final DownloadLink dl = createDownloadlink(folderlink);
                     dl.setRelativeDownloadFolderPath(relativeDownloadPath + "/" + name);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 } else {
                     final DownloadLink dl = parseSingleFileAPI(entries);
                     if (StringUtils.isNotEmpty(relativeDownloadPath)) {
                         dl.setRelativeDownloadFolderPath(relativeDownloadPath);
                     }
                     dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
                 offset++;
@@ -436,12 +440,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 break;
             }
         } while (!this.isAbort());
-        if (decryptedLinks.size() == 0) {
-            /* Should never happen! */
-            logger.info("Probably empty folder");
-            return decryptedLinks;
-        }
-        return decryptedLinks;
+        return ret;
     }
 
     private DownloadLink parseSingleFileAPI(final Map<String, Object> entries) throws Exception {

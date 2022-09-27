@@ -20,6 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
@@ -31,16 +36,13 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4shared.com" }, urls = { "https?://(?:www\\.)?4shared(?:\\-china)?\\.com/(?:dir|folder|minifolder)/[A-Za-z0-9\\-_]+/(?:\\d+/)?[A-Za-z0-9\\-_]+" })
 public class FourSharedComFolder extends PluginForDecrypt {
@@ -85,22 +87,12 @@ public class FourSharedComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The file link that you requested is not valid") || br.containsHTML("This folder was deleted") || br.containsHTML("This folder is no longer available because of a claim")) {
             logger.info("Link offline: " + parameter);
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">You need owner\\'s permission to access this folder")) {
             logger.info("Link offline (no permissions): " + parameter);
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"emptyFolderPlaceholder\"")) {
-            logger.info("Link offline (empty): " + parameter);
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         /* Important: Make sure this check is language independent! */
         if (folderNeedsPassword()) {
@@ -242,12 +234,12 @@ public class FourSharedComFolder extends PluginForDecrypt {
                 }
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (decryptedLinks.isEmpty()) {
             logger.warning("Possible empty folder, or plugin out of date for link: " + parameter);
             return null;
         }
         FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.setName(Encoding.htmlDecode(fpName).trim());
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

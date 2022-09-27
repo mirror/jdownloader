@@ -28,8 +28,12 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?fshare\\.vn/folder/([A-Z0-9]+)" })
@@ -38,10 +42,13 @@ public class FShareVnFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String folderid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String folderid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (folderid == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         jd.plugins.hoster.FShareVn.prepBrowserWebsite(br);
         /* Important or we'll get XML ;) */
@@ -51,13 +58,9 @@ public class FShareVnFolder extends PluginForDecrypt {
             final Map<String, Object> map = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final List<Object> ressourcelist = (List<Object>) map.get("items");
             if (br.getHttpConnection().getResponseCode() == 404) {
-                logger.info("Link offline: " + parameter);
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (ressourcelist.isEmpty()) {
-                logger.info("Empty folder");
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderid);
             }
             final Map<String, Object> entries = (Map<String, Object>) map.get("current");
             String fpName = (String) entries.get("name");
@@ -104,7 +107,7 @@ public class FShareVnFolder extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(currentFolderPath)) {
                         dl.setRelativeDownloadFolderPath(currentFolderPath);
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
             }
@@ -118,7 +121,7 @@ public class FShareVnFolder extends PluginForDecrypt {
             }
             break;
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

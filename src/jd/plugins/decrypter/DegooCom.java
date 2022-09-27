@@ -30,6 +30,8 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -43,10 +45,13 @@ public class DegooCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String folderID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String fileID = UrlQuery.parse(parameter).get("ID");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String fileID = UrlQuery.parse(param.getCryptedUrl()).get("ID");
+        if (folderID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setAllowedResponseCodes(new int[] { 400 });
         String path = this.getAdoptedCloudFolderStructure();
         if (path == null) {
@@ -72,23 +77,17 @@ public class DegooCom extends PluginForDecrypt {
             }
             br.postPageRaw("https://rest-api.degoo.com/shared", JSonStorage.serializeToJson(params));
             if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-                /* Empty folder e.g.: {"Error": "Got empty result!"} */
+                /* Offline folder e.g.: {"Error": "Got empty result!"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             nextPageToken = (String) entries.get("NextToken");
             final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("Items");
-            if (ressourcelist.size() == 0) {
-                if (decryptedLinks.size() == 0) {
-                    logger.info("Empty folder");
-                    final DownloadLink offline = this.createOfflinelink(parameter);
-                    if (!StringUtils.isEmpty(path)) {
-                        offline.setFinalFileName("EMPTY_FOLDER_" + path);
-                    }
-                    decryptedLinks.add(offline);
-                    return decryptedLinks;
+            if (ressourcelist.isEmpty()) {
+                if (ret.isEmpty()) {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID + "_" + path);
                 } else {
-                    /* Maybe pagination failed -> Account for this */
+                    /* Maybe pagination failed -> Allow this to happen */
                     logger.info("Stopping because current page does not contain any items at all");
                     break;
                 }
@@ -126,7 +125,7 @@ public class DegooCom extends PluginForDecrypt {
                     if (fp != null) {
                         dl._setFilePackage(fp);
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 } else {
                     /* Folder --> Goes back into crawler */
@@ -139,7 +138,7 @@ public class DegooCom extends PluginForDecrypt {
                             dl.setRelativeDownloadFolderPath(path + "/" + title);
                         }
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
             }
@@ -153,6 +152,6 @@ public class DegooCom extends PluginForDecrypt {
                 dupeList.add(nextPageToken);
             }
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 }
