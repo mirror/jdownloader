@@ -208,6 +208,7 @@ public class OrfAt extends PluginForDecrypt {
             final String dateFormatted = new Regex(episodeDateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             final String filename = dateFormatted + "_" + author + " - " + episode.get("title").toString() + ".mp3";
             link.setFinalFileName(filename);
+            link.setDownloadSize(calculateFilesize(((Number) episode.get("duration")).longValue()));
             link.setProperty(DirectHTTP.FIXNAME, filename);
             final String contentURL = (String) JavaScriptEngineFactory.walkJson(episode, "link/url");
             if (!StringUtils.isEmpty(contentURL)) {
@@ -350,6 +351,7 @@ public class OrfAt extends PluginForDecrypt {
         final String baseURL = collectionPatternRegex.getMatch(0);
         final String collectionID = collectionPatternRegex.getMatch(1);
         final String collectionTargetItemID = collectionPatternRegex.getMatch(3);
+        final String collectionURL = baseURL + "/" + collectionID;
         br.getPage("https://collector.orf.at/api/frontend/collections/" + collectionID + "?_o=sound.orf.at");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -398,7 +400,7 @@ public class OrfAt extends PluginForDecrypt {
             }
             final String collectionItemTitle = collectionItemContent.get("title").toString();
             final String collectionItemStation = collectionItemContent.get("station").toString();
-            final String collectionItemContentURL = baseURL + "/" + collectionID + "/" + collectionItemID + "/" + toSlug(collectionItemTitle);
+            final String collectionItemContentURL = collectionURL + "/" + collectionItemID + "/" + toSlug(collectionItemTitle);
             final String targetType = target.get("type").toString();
             final Map<String, Object> params = (Map<String, Object>) target.get("params");
             final ArrayList<DownloadLink> thisresults = new ArrayList<DownloadLink>();
@@ -415,8 +417,8 @@ public class OrfAt extends PluginForDecrypt {
             } else if (targetType.equalsIgnoreCase("broadcast")) {
                 thisresults.addAll(this.crawlBroadcast(params.get("station").toString(), params.get("id").toString()));
             } else if (targetType.equalsIgnoreCase("upload")) {
-                // TODO
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final DownloadLink upload = this.crawlUpload(params.get("id").toString());
+                thisresults.add(upload);
             } else {
                 logger.warning("Unsupported targetType " + targetType + " for collection item: " + collectionItemContentURL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -427,6 +429,7 @@ public class OrfAt extends PluginForDecrypt {
              */
             for (final DownloadLink thisresult : thisresults) {
                 thisresult.setContentUrl(collectionItemContentURL);
+                thisresult.setContainerUrl(collectionURL);
                 thisresult.setAvailable(true);
                 thisresult._setFilePackage(fp);
                 distribute(thisresult);
@@ -558,10 +561,63 @@ public class OrfAt extends PluginForDecrypt {
         return ret;
     }
 
+    private DownloadLink crawlUpload(final String uploadID) throws IOException, PluginException {
+        br.getPage(API_BASE + "/radiothek/api/2.0/upload/" + uploadID + "?_o=sound.orf.at");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> payload = (Map<String, Object>) resp.get("payload");
+        if ((Boolean) payload.get("isOnline") == Boolean.FALSE) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String moderator = (String) payload.get("moderator");
+        final String uploadTitle = payload.get("title").toString();
+        String directurl = null;
+        final List<Map<String, Object>> enclosures = (List<Map<String, Object>>) payload.get("enclosures");
+        for (final Map<String, Object> enclosure : enclosures) {
+            if (enclosure.get("type").toString().equals("audio/mpeg")) {
+                directurl = enclosure.get("url").toString();
+                break;
+            }
+        }
+        if (StringUtils.isEmpty(directurl)) {
+            /* Most likely unsupported streaming type */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final DownloadLink link = createPodcastDownloadlink(directurl);
+        link.setProperty(PROPERTY_SLUG, payload.get("slug"));
+        final String dateStr = payload.get("postDate").toString();
+        final String dateFormatted = new Regex(dateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        String filename = dateFormatted + "_" + payload.get("station");
+        if (!StringUtils.isEmpty(moderator)) {
+            filename += "_ " + moderator;
+        }
+        filename += " - " + uploadTitle + " - " + payload.get("title").toString() + ".mp3";
+        link.setFinalFileName(filename);
+        link.setProperty(DirectHTTP.FIXNAME, filename);
+        final String description = (String) payload.get("description");
+        if (!StringUtils.isEmpty(description)) {
+            link.setComment(description);
+        }
+        link.setDownloadSize(calculateFilesize(((Number) payload.get("duration")).longValue()));
+        link.setAvailable(true);
+        return link;
+    }
+
     private String toSlug(final String str) {
-        /* TODO: Remove "-" from beginning- and end */
         final String preparedSlug = str.toLowerCase(Locale.ENGLISH).replace("ü", "u").replace("ä", "a").replace("ö", "o");
-        final String slug = preparedSlug.replaceAll("[^a-z0-9]", "-");
+        String slug = preparedSlug.replaceAll("[^a-z0-9]", "-");
+        /* Remove double-minus */
+        slug = slug.replace("--", "-");
+        /* Do not begin with minus */
+        if (slug.startsWith("-")) {
+            slug = slug.substring(1);
+        }
+        /* Do not end with minus */
+        if (slug.endsWith("-")) {
+            slug = slug.substring(0, slug.length() - 1);
+        }
         return slug;
     }
 
