@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -32,6 +28,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.decrypter.NhentaiNet.class })
@@ -70,7 +70,7 @@ public class NhentaiNet extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : jd.plugins.decrypter.NhentaiNet.getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/g/(\\d+)/(\\d+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/g/(\\d+)/(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -99,6 +99,8 @@ public class NhentaiNet extends antiDDoSForHost {
         }
     }
 
+    private final String CACHED_URL = "CACHED_URL";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
@@ -106,28 +108,45 @@ public class NhentaiNet extends antiDDoSForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        String dllink = getDirecturl(link, br);
+        if (dllink != null) {
+            if (checkDownloadableRequest(link, br, br.createHeadRequest(dllink), 10, true) != null) {
+                return AvailableStatus.TRUE;
+            } else {
+                link.removeProperty(CACHED_URL);
+            }
+        }
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            dllink = getDirecturl(link, br);
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String urlExtension = getFileNameExtensionFromURL(dllink);
+            final String fileExtension = getFileNameExtensionFromString(link.getName());
+            if (urlExtension != null && !StringUtils.equalsIgnoreCase(urlExtension, fileExtension)) {
+                final String fixExtension = link.getName().replaceFirst(fileExtension + "$", urlExtension);
+                link.setFinalFileName(fixExtension);
+            }
+            if (checkDownloadableRequest(link, br, br.createHeadRequest(dllink), 10, true) != null) {
+                link.setProperty(CACHED_URL, dllink);
+                return AvailableStatus.TRUE;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
-        final String dllink = getDirecturl(br);
-        if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String urlExtension = getFileNameExtensionFromURL(dllink);
-        final String fileExtension = getFileNameExtensionFromString(link.getName());
-        if (urlExtension != null && !StringUtils.equalsIgnoreCase(urlExtension, fileExtension)) {
-            final String fixExtension = link.getName().replaceFirst(fileExtension + "$", urlExtension);
-            link.setFinalFileName(fixExtension);
-        }
-        return AvailableStatus.TRUE;
     }
 
-    private String getDirecturl(final Browser br) {
-        String dllink = br.getRegex("(https?://[^/]+/galleries/\\d+/\\d+\\.(?:jpe?g|png))").getMatch(0);
+    private String getDirecturl(final DownloadLink link, final Browser br) {
+        String dllink = link.getStringProperty(CACHED_URL, null);
         if (dllink == null) {
-            /* 2022-08-11 */
-            dllink = br.getRegex("href=\"/g/\\d+/\\d+/?\">\\s*<img src=\"(https?://[^\"]+)\"").getMatch(0);
+            dllink = br.getRegex("(https?://[^/]+/galleries/\\d+/\\d+\\.(?:jpe?g|png))").getMatch(0);
+            if (dllink == null) {
+                /* 2022-08-11 */
+                dllink = br.getRegex("href=\"/g/\\d+/\\d+/?\">\\s*<img src=\"(https?://[^\"]+)\"").getMatch(0);
+            }
         }
         return dllink;
     }
@@ -135,12 +154,13 @@ public class NhentaiNet extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final String dllink = getDirecturl(br);
+        final String dllink = getDirecturl(link, br);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            link.removeProperty(CACHED_URL);
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -172,5 +192,8 @@ public class NhentaiNet extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(CACHED_URL);
+        }
     }
 }
