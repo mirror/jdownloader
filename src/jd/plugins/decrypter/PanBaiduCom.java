@@ -36,6 +36,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -103,10 +105,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             br.getPage(this.parameter);
         }
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().matches(TYPE_FOLDER_USER_HOME)) {
             crawlHome();
@@ -138,8 +137,9 @@ public class PanBaiduCom extends PluginForDecrypt {
             List<Object> filelist = (List<Object>) entries.get("records");
             if (records == null) {
                 /* E.g. {"errno":2,"request_id":123456789123456789} */
-                if (decryptedLinks.size() == 0) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
+                if (decryptedLinks.isEmpty()) {
+                    /* Invalid/offline folder */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 break;
             }
@@ -239,10 +239,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             shorturl_id = "1" + shorturl_id;
             br.getPage("/s/" + shorturl_id);
             if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"") || this.br.getHttpConnection().getResponseCode() == 404) {
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                dl.setFinalFileName(new Regex(parameter, "pan\\.baidu\\.com/(.+)").getMatch(0));
-                decryptedLinks.add(dl);
-                return;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (uk == null) {
                 uk = br.getRegex("yunData.SHARE_UK = \"(\\d+)\";").getMatch(0);
@@ -259,6 +256,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             /* Probably user added invalid url */
             return;
         }
+        final String bothFolderIDs = shareid + "_" + uk;
         String dir = null;
         String dirName = null;
         boolean is_subfolder = false;
@@ -267,6 +265,12 @@ public class PanBaiduCom extends PluginForDecrypt {
             dirName = new Regex(param.toString(), "(?:(?:dir|list)/path=|&dir=)%2F([^&\\?]+)").getMatch(0);
             dir = "%2F" + dirName;
             is_subfolder = true;
+        }
+        final String filenameForEmptyFolder;
+        if (dirName != null) {
+            filenameForEmptyFolder = bothFolderIDs + "_" + Encoding.htmlDecode(dirName);
+        } else {
+            filenameForEmptyFolder = bothFolderIDs;
         }
         br.getHeaders().put("Accept", "Accept");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -288,11 +292,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 errno = JavaScriptEngineFactory.toLong(entries.get("errno"), -1);
                 if (errno == 2) {
-                    /* Empty folder */
-                    final DownloadLink dl = this.createOfflinelink(parameter);
-                    dl.setFinalFileName(Encoding.htmlDecode(dirName));
-                    decryptedLinks.add(dl);
-                    return;
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, filenameForEmptyFolder);
                 }
                 ressourcelist = (List) entries.get("list");
             } else {
@@ -315,10 +315,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             if (ressourcelist.size() == 0 && errno == 0) {
                 /* Empty folder */
                 logger.info("Looks like an empty folder");
-                final DownloadLink dl = this.createOfflinelink(parameter);
-                dl.setFinalFileName(Encoding.htmlDecode(dirName));
-                decryptedLinks.add(dl);
-                return;
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, filenameForEmptyFolder);
             }
             for (final Object fileo : ressourcelist) {
                 crawlFolderObject(fileo, shorturl_id, shareid);

@@ -50,8 +50,8 @@ public class OdriveCom extends PluginForDecrypt {
         String folderID = new Regex(param.getCryptedUrl(), "/(?:s|folder)/(.+)").getMatch(0);
         jd.plugins.hoster.OdriveCom.prepBR(this.br);
         // br.getPage("https://www.odrive.com/rest/weblink/get_metadata?weblinkUri=%2F" + this.getLinkID(link));
-        int maxtries = 2;
-        int tries = 0;
+        int maxPasswordTries = 2;
+        int usedPasswordTries = 0;
         String passCode = "";
         final UrlQuery query = new UrlQuery().parse(param.getCryptedUrl());
         if (query.get("password") != null) {
@@ -71,14 +71,14 @@ public class OdriveCom extends PluginForDecrypt {
             if (errorCode != null && errorCode.equals("404")) {
                 passwordFailure = true;
                 /* Try "stored" password on first attempt if available --> Ask used if no PW available or first try failed. */
-                if (passCode == null || tries > 0) {
+                if (passCode == null || usedPasswordTries > 0) {
                     passCode = getUserInput("Password?", param);
                 }
             } else {
                 passwordFailure = false;
             }
-            tries++;
-        } while (tries <= maxtries && passwordFailure);
+            usedPasswordTries++;
+        } while (usedPasswordTries <= maxPasswordTries && passwordFailure);
         if (passwordFailure) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
@@ -86,12 +86,16 @@ public class OdriveCom extends PluginForDecrypt {
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         // final String nextPageToken = (String) entries.get("nextPageToken");
         final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) data.get("items");
-        if (ressourcelist.isEmpty()) {
-            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
+        String subFolderPath = this.getAdoptedCloudFolderStructure();
+        if (subFolderPath == null) {
+            subFolderPath = "";
         }
-        String subFolder = this.getAdoptedCloudFolderStructure();
-        if (subFolder == null) {
-            subFolder = "";
+        if (ressourcelist.isEmpty()) {
+            if (!StringUtils.isEmpty(subFolderPath)) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID + "_" + subFolderPath);
+            } else {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
+            }
         }
         final UrlQuery querypw = new UrlQuery();
         querypw.add("password", passCode);
@@ -106,7 +110,7 @@ public class OdriveCom extends PluginForDecrypt {
                     linkUri += "?" + querypw.toString();
                 }
                 final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/folder" + linkUri);
-                dl.setRelativeDownloadFolderPath(subFolder + "/" + title);
+                dl.setRelativeDownloadFolderPath(subFolderPath + "/" + title);
                 ret.add(dl);
             } else {
                 /* Single file */
@@ -125,8 +129,8 @@ public class OdriveCom extends PluginForDecrypt {
                 /* Properties required to find this item later in order to find our final downloadlink */
                 dl.setProperty("folderid", folderID);
                 dl.setProperty("directfilename", title);
-                if (StringUtils.isNotEmpty(subFolder)) {
-                    dl.setRelativeDownloadFolderPath(subFolder);
+                if (StringUtils.isNotEmpty(subFolderPath)) {
+                    dl.setRelativeDownloadFolderPath(subFolderPath);
                 }
                 if (!StringUtils.isEmpty(passCode)) {
                     dl.setDownloadPassword(passCode);

@@ -415,7 +415,7 @@ public class OrfAt extends PluginForDecrypt {
                 final DownloadLink podcast = this.crawlBroadcastItem(collectionItemStation, params.get("id").toString());
                 thisresults.add(podcast);
             } else if (targetType.equalsIgnoreCase("broadcast")) {
-                thisresults.addAll(this.crawlBroadcast(params.get("station").toString(), params.get("id").toString()));
+                thisresults.addAll(this.crawlBroadcast(collectionItemStation, params.get("id").toString()));
             } else if (targetType.equalsIgnoreCase("upload")) {
                 final DownloadLink upload = this.crawlUpload(params.get("id").toString());
                 thisresults.add(upload);
