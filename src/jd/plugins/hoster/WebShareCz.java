@@ -19,12 +19,15 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +35,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -39,11 +43,39 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(?:[a-z0-9]+\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class WebShareCz extends PluginForHost {
     public WebShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://webshare.cz/#/vip-benefits");
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "webshare.cz" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[a-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -53,11 +85,26 @@ public class WebShareCz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        /* 2022-09-28 */
+        return 5;
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://webshare.cz/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "/");
+        link.setUrlDownload("https://" + this.getHost() + "/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "/");
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)/?$").getMatch(0);
     }
 
     @Override
@@ -66,7 +113,7 @@ public class WebShareCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("https://webshare.cz/api/file_info/", "wst=&ident=" + getFID(link));
+        br.postPage("https://" + this.getHost() + "/api/file_info/", "wst=&ident=" + getFID(link));
         if (br.containsHTML("<status>FATAL</status>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -84,13 +131,14 @@ public class WebShareCz extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        br.postPage("https://webshare.cz/api/file_link/", "wst=&ident=" + getFID(link));
+        br.postPage("https://" + this.getHost() + "/api/file_link/", "wst=&ident=" + getFID(link));
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getHeaders().put("Referer", null);
         br.getHeaders().put("X-Requested-With", null);
         final String dllink = getXMLtagValue("link");
         if (dllink == null) {
+            checkErrorsAPI(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
@@ -100,6 +148,7 @@ public class WebShareCz extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
+            checkErrorsAPI(br);
             if (br.containsHTML("(>Požadovaný soubor nebyl nalezen|>Requested file not found)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getURL().contains("error=")) {
@@ -111,12 +160,30 @@ public class WebShareCz extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getXMLtagValue(final String tagname) {
-        return br.getRegex("<" + tagname + ">([^<>\"]*?)</" + tagname + ">").getMatch(0);
+    private void checkErrorsAPI(final Browser br) throws PluginException {
+        final String status = getXMLtagValue(br, "status");
+        final String code = getXMLtagValue(br, "code");
+        final String message = getXMLtagValue(br, "message");
+        if (StringUtils.equalsIgnoreCase(status, "FATAL") && !StringUtils.isEmpty(code) && !StringUtils.isEmpty(message)) {
+            if (code.equalsIgnoreCase("FILE_LINK_FATAL_4")) {
+                /*
+                 * <response><status>FATAL</status><code>FILE_LINK_FATAL_4</code><message>File temporarily
+                 * unavailable.</message><app_version>29</app_version></response>
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
+            } else if (code.equalsIgnoreCase("FILE_LINK_FATAL_5")) {
+                /* Should be <message>Too many running downloads on too many devices.</message> */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 3 * 60 * 1000l);
+            }
+        }
     }
 
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "file/([A-Za-z0-9]+)/").getMatch(0);
+    private String getXMLtagValue(final String tagname) {
+        return getXMLtagValue(this.br, tagname);
+    }
+
+    private String getXMLtagValue(final Browser br, final String tagname) {
+        return br.getRegex("<" + tagname + ">([^<>\"]*?)</" + tagname + ">").getMatch(0);
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -186,7 +253,12 @@ public class WebShareCz extends PluginForHost {
         }
         final String status = getXMLtagValue("status");
         if (!StringUtils.equalsIgnoreCase(status, "OK")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Status:" + status, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            final String message = getXMLtagValue("message");
+            if (!StringUtils.isEmpty(message)) {
+                throw new AccountInvalidException(message);
+            } else {
+                throw new AccountInvalidException();
+            }
         }
         final String days = getXMLtagValue("vip_days");
         if (days == null || "0".equals(days)) {
@@ -199,7 +271,7 @@ public class WebShareCz extends PluginForHost {
                 ai.setStatus("User with credits");
             } else {
                 account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(1);
+                account.setMaxSimultanDownloads(getMaxSimultanFreeDownloadNum());
                 account.setConcurrentUsePossible(false);
             }
         } else {
@@ -220,10 +292,11 @@ public class WebShareCz extends PluginForHost {
         final boolean isPremium = AccountType.PREMIUM.equals(account.getType());
         br.postPage("https://" + this.getHost() + "/api/file_link/", "ident=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0) + "&wst=" + getToken(account));
         final String dllink = getXMLtagValue("link");
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+        if (StringUtils.isEmpty(dllink)) {
+            checkErrorsAPI(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Only premium users can resume stopped downloads. */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isPremium, isPremium ? 0 : 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
@@ -232,6 +305,7 @@ public class WebShareCz extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
+            checkErrorsAPI(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
