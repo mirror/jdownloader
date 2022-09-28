@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,7 +20,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -80,6 +80,7 @@ public class OrfAt extends PluginForDecrypt {
     private final String                                      PATTERN_PODCAST       = "https?://[^/]+/podcasts?/([a-z0-9]+)/([A-Za-z0-9\\-]+)(/([a-z0-9\\-]+))?";
     private final String                                      PATTERN_COLLECTION    = "^(https?://.*(?:/collection|podcast/highlights))/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
     private final String                                      API_BASE              = "https://audioapi.orf.at";
+    private final String                                      PROPERTY_SLUG         = "slug";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE         = new LinkedHashMap<String, Map<String, Object>>() {
                                                                                         protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
@@ -166,7 +167,6 @@ public class OrfAt extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String hostFromURL = Browser.getHost(param.getCryptedUrl(), true);
         /* Old API call: (2022-09-27: Still working) */
         // br.getPage(API_BASE + "/radiothek/podcast/" + channelSlug + "/" + podcastSeriesSlug + ".json?_o=" + hostFromURL);
         br.getPage(API_BASE + "/radiothek/api/2.0/podcast/" + channelSlug + "/" + podcastSeriesSlug + "?episodes&_o=sound.orf.at");
@@ -356,15 +356,15 @@ public class OrfAt extends PluginForDecrypt {
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         final Map<String, Object> payload = (Map<String, Object>) entries.get("payload");
-        final Map<String, Object> content = (Map<String, Object>) payload.get("content");
-        final String collectionTitle = content.get("title").toString();
-        final String collectionDescription = (String) content.get("description");
+        final Map<String, Object> collectionContent = (Map<String, Object>) payload.get("content");
+        final String collectionTitle = collectionContent.get("title").toString();
+        final String collectionDescription = (String) collectionContent.get("description");
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(collectionTitle);
         if (!StringUtils.isEmpty(collectionDescription)) {
             fp.setComment(collectionDescription);
         }
-        final List<Map<String, Object>> items = (List<Map<String, Object>>) content.get("items");
+        final List<Map<String, Object>> items = (List<Map<String, Object>>) collectionContent.get("items");
         final ArrayList<Map<String, Object>> itemsToCrawl = new ArrayList<Map<String, Object>>();
         /*
          * 2022-09-23: Disabled because collection URLs will always contain the id to a single item. By default browser will redirect to the
@@ -389,13 +389,16 @@ public class OrfAt extends PluginForDecrypt {
             progress++;
             final String collectionItemID = item.get("id").toString();
             logger.info("Crawling collection item " + progress + "/" + items.size() + " ID: " + collectionItemID);
+            final Map<String, Object> collectionItemContent = (Map<String, Object>) item.get("content");
             final Map<String, Object> target = (Map<String, Object>) item.get("target");
             if ((Boolean) target.get("isGone")) {
                 /* This should never happen?! */
                 numberofOfflineItems++;
                 continue;
             }
-            final String collectionItemContentURL = baseURL + "/" + collectionID + "/" + collectionItemID;
+            final String collectionItemTitle = collectionItemContent.get("title").toString();
+            final String collectionItemStation = collectionItemContent.get("station").toString();
+            final String collectionItemContentURL = baseURL + "/" + collectionID + "/" + collectionItemID + "/" + toSlug(collectionItemTitle);
             final String targetType = target.get("type").toString();
             final Map<String, Object> params = (Map<String, Object>) target.get("params");
             final ArrayList<DownloadLink> thisresults = new ArrayList<DownloadLink>();
@@ -407,10 +410,13 @@ public class OrfAt extends PluginForDecrypt {
                 final DownloadLink broadcast = crawlPodcastEpisodeByGUID(params.get("guid").toString());
                 thisresults.add(broadcast);
             } else if (targetType.equalsIgnoreCase("broadcastitem")) {
-                final DownloadLink podcast = this.crawlBroadcastItem(params.get("station").toString(), params.get("id").toString());
+                final DownloadLink podcast = this.crawlBroadcastItem(collectionItemStation, params.get("id").toString());
                 thisresults.add(podcast);
             } else if (targetType.equalsIgnoreCase("broadcast")) {
                 thisresults.addAll(this.crawlBroadcast(params.get("station").toString(), params.get("id").toString()));
+            } else if (targetType.equalsIgnoreCase("upload")) {
+                // TODO
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 logger.warning("Unsupported targetType " + targetType + " for collection item: " + collectionItemContentURL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -459,8 +465,12 @@ public class OrfAt extends PluginForDecrypt {
             /* Most likely unsupported streaming type */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // final String slug = episode.get("slug").toString();
+        final String contentURL = (String) JavaScriptEngineFactory.walkJson(payload, "link/url");
         final DownloadLink link = createPodcastDownloadlink(directurl);
+        if (!StringUtils.isEmpty(contentURL)) {
+            link.setContentUrl(contentURL);
+        }
+        link.setProperty(PROPERTY_SLUG, podcast.get("slug"));
         final String dateStr = payload.get("published").toString();
         final String dateFormatted = new Regex(dateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         final String filename = dateFormatted + "_" + author + " - " + podcastEpisodeTitle + " - " + payload.get("title").toString() + ".mp3";
@@ -546,6 +556,13 @@ public class OrfAt extends PluginForDecrypt {
             position++;
         }
         return ret;
+    }
+
+    private String toSlug(final String str) {
+        /* TODO: Remove "-" from beginning- and end */
+        final String preparedSlug = str.toLowerCase(Locale.ENGLISH).replace("ü", "u").replace("ä", "a").replace("ö", "o");
+        final String slug = preparedSlug.replaceAll("[^a-z0-9]", "-");
+        return slug;
     }
 
     /** Calculates filesizes on the assumption that audio is delivered with quality 192kb/s. */
