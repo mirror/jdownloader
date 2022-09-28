@@ -77,11 +77,6 @@ public class LiveDriveComFolder extends PluginForDecrypt {
             /* Folder offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /**
-         * TODO: </br>
-         * - add support for subfolders </br>
-         * - add errorhandling for empty folders
-         */
         final Regex urlinfo = new Regex(br.getURL(), "https?://[^/]+/portal/public-shares/([^/]+)(/\\*_([a-zA-Z0-9_/\\+\\=\\-%]+))?");
         final String user = new Regex(br.getURL(), "https?://[^/]+/portal/public-shares/([^/]+)").getMatch(0);
         final String directoryIDCrypted = urlinfo.getMatch(2);
@@ -146,7 +141,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
                 }
             }
             final int pageCount = ((Number) entries.get("pageCount")).intValue();
-            logger.info("Crawled page " + page + "/" + entries.get("pageCount") + " | Found items so far: " + ret.size());
+            logger.info("Crawled page " + page + "/" + pageCount + " | Found items so far: " + ret.size());
             if (this.isAbort()) {
                 /* Aborted by user */
                 break;
