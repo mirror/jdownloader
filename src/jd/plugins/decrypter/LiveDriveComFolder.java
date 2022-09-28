@@ -28,6 +28,8 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -72,6 +74,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
+            /* Folder offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /**
@@ -120,8 +123,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
             }
             final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) entries.get("resourceList");
             if (resourcelist.isEmpty() && page == 1) {
-                ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + titleForOfflineContent, "This folder is empty."));
-                return ret;
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, titleForOfflineContent);
             }
             for (final Map<String, Object> resource : resourcelist) {
                 final String resourceID = resource.get("fileId").toString();
