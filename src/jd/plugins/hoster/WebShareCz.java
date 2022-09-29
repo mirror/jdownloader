@@ -25,6 +25,8 @@ import java.util.List;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.WebshareCzConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -85,8 +87,7 @@ public class WebShareCz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* 2022-09-28 */
-        return 5;
+        return PluginJsonConfig.get(this.getConfigInterface()).getMaxSimultaneousFreeOrFreeAccountDownloads();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -114,16 +115,30 @@ public class WebShareCz extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("https://" + this.getHost() + "/api/file_info/", "wst=&ident=" + getFID(link));
-        if (br.containsHTML("<status>FATAL</status>")) {
+        if (br.containsHTML("(?i)<status>FATAL</status>")) {
+            /*
+             * E.g. <response><status>FATAL</status><code>FILE_INFO_FATAL_1</code><message>File not
+             * found.</message><app_version>29</app_version></response>
+             */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String description = getXMLtagValue("description");
         final String filename = getXMLtagValue("name");
         final String filesize = getXMLtagValue("size");
-        if (filename != null) {
-            link.setName(filename.trim());
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename.trim());
         }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!StringUtils.isEmpty(filesize)) {
+            link.setVerifiedFileSize(SizeFormatter.getSize(filesize));
+        }
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
+        }
+        final String passwordProtected = getXMLtagValue("password");
+        if (StringUtils.equals(passwordProtected, "1")) {
+            link.setPasswordProtected(true);
+        } else {
+            link.setPasswordProtected(false);
         }
         return AvailableStatus.TRUE;
     }
@@ -131,11 +146,8 @@ public class WebShareCz extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        br.postPage("https://" + this.getHost() + "/api/file_link/", "wst=&ident=" + getFID(link));
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        br.getHeaders().put("Referer", null);
-        br.getHeaders().put("X-Requested-With", null);
+        pwProtectedErrorhandling(link);
+        br.postPage("/api/file_link/", "wst=&ident=" + getFID(link));
         final String dllink = getXMLtagValue("link");
         if (dllink == null) {
             checkErrorsAPI(br);
@@ -149,7 +161,7 @@ public class WebShareCz extends PluginForHost {
                 logger.log(e);
             }
             checkErrorsAPI(br);
-            if (br.containsHTML("(>Požadovaný soubor nebyl nalezen|>Requested file not found)")) {
+            if (br.containsHTML("(?i)(>\\s*Požadovaný soubor nebyl nalezen|>\\s*Requested file not found)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getURL().contains("error=")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
@@ -158,6 +170,12 @@ public class WebShareCz extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private void pwProtectedErrorhandling(final DownloadLink link) throws PluginException {
+        if (link.isPasswordProtected()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected URLs are not yet supported please contact JDownloader support");
+        }
     }
 
     private void checkErrorsAPI(final Browser br) throws PluginException {
@@ -288,6 +306,7 @@ public class WebShareCz extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        pwProtectedErrorhandling(link);
         login(account, false);
         final boolean isPremium = AccountType.PREMIUM.equals(account.getType());
         br.postPage("https://" + this.getHost() + "/api/file_link/", "ident=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0) + "&wst=" + getToken(account));
@@ -471,6 +490,11 @@ public class WebShareCz extends PluginForHost {
 
     private static int byteToUnsigned(byte aByte) {
         return aByte & 0xFF;
+    }
+
+    @Override
+    public Class<? extends WebshareCzConfig> getConfigInterface() {
+        return WebshareCzConfig.class;
     }
 
     @Override

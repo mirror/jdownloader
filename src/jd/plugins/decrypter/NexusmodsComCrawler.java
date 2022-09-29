@@ -43,19 +43,19 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com/(?!contents)([^/]+)/mods/(\\d+)/?" })
-public class NexusmodsCom extends PluginForDecrypt {
-    public NexusmodsCom(PluginWrapper wrapper) {
+public class NexusmodsComCrawler extends PluginForDecrypt {
+    public NexusmodsComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceFirst("^http://", "https://");
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String url = param.toString().replaceFirst("^http://", "https://");
         final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
         ((jd.plugins.hoster.NexusmodsCom) plugin).setLogger(getLogger());
         ((jd.plugins.hoster.NexusmodsCom) plugin).setBrowser(br);
-        final String game_domain_name = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String mod_id = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        final String game_domain_name = new Regex(url, this.getSupportedLinks()).getMatch(0);
+        final String mod_id = new Regex(url, this.getSupportedLinks()).getMatch(1);
         if (game_domain_name == null || mod_id == null) {
             /* This should never happen */
             logger.warning("game_domain_name or mod_id missing");
@@ -65,23 +65,23 @@ public class NexusmodsCom extends PluginForDecrypt {
         final String apikey = jd.plugins.hoster.NexusmodsCom.getApikey(account);
         if (apikey != null) {
             try {
-                decryptedLinks = crawlAPI(param, account, game_domain_name, mod_id);
+                ret = crawlAPI(param, account, game_domain_name, mod_id);
             } catch (final PluginException e) {
                 /* Offline errorhandling as crawler + hosterplugins share the code for errorhandling. */
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    ret.add(this.createOfflinelink(url));
+                    return ret;
                 }
                 throw e;
             }
         } else {
-            decryptedLinks = crawlWebsite(param, account, game_domain_name, mod_id);
+            ret = crawlWebsite(param, account, game_domain_name, mod_id);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlAPI(final CryptedLink param, final Account account, final String game_domain_name, final String mod_id) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         jd.plugins.hoster.NexusmodsCom.prepBrAPI(br, account);
         /* First check for offline, get game_id and name of the mod */
         br.getPage(jd.plugins.hoster.NexusmodsCom.API_BASE + String.format("/games/%s/mods/%s.json", game_domain_name, mod_id));
@@ -138,9 +138,9 @@ public class NexusmodsCom extends PluginForDecrypt {
             if (!StringUtils.isEmpty(description)) {
                 link.setComment(description);
             }
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlWebsite(final CryptedLink param, final Account account, final String game_domain_name, final String mod_id) throws Exception {
@@ -229,11 +229,11 @@ public class NexusmodsCom extends PluginForDecrypt {
     }
 
     private String generateContentURL(final String game_domain_name, final String mod_id, final String file_id) {
-        return String.format("https://www.nexusmods.com/%s/mods/%s?tab=files&file_id=%s", game_domain_name, mod_id, file_id);
+        return String.format("https://www." + this.getHost() + "/%s/mods/%s?tab=files&file_id=%s", game_domain_name, mod_id, file_id);
     }
 
     private String generatePluginPatternMatcher(final String file_id, final String game_id) {
-        return String.format("https://www.nexusmods.com/Core/Libs/Common/Widgets/DownloadPopUp?id=%s&nmm=0&game_id=%s&source=FileExpander", file_id, game_id);
+        return String.format("https://www." + this.getHost() + "/Core/Libs/Common/Widgets/DownloadPopUp?id=%s&nmm=0&game_id=%s&source=FileExpander", file_id, game_id);
     }
 
     /*

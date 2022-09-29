@@ -34,7 +34,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -73,21 +72,17 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean      FREE_RESUME                  = true;
+    private final int          FREE_MAXCHUNKS               = 0;
+    private final int          FREE_MAXDOWNLOADS            = -1;
+    private final boolean      ACCOUNT_FREE_RESUME          = true;
+    private final int          ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int   ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     /* API documentation: https://app.swaggerhub.com/apis-docs/NexusMods/nexus-mods_public_api_params_in_form_data/1.0 */
-    public static final String   API_BASE                     = "https://api.nexusmods.com/v1";
-    public static final String   PROPERTY_game_domain_name    = "game_domain_name";
-    public static final String   PROPERTY_mod_id              = "mod_id";
-    private String               dllink;
-    private boolean              loginRequired;
+    public static final String API_BASE                     = "https://api.nexusmods.com/v1";
+    public static final String PROPERTY_game_domain_name    = "game_domain_name";
+    public static final String PROPERTY_mod_id              = "mod_id";
+    private String             dllink;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -161,10 +156,10 @@ public class NexusmodsCom extends antiDDoSForHost {
         if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<h2>Adult-only content</h2>")) {
             // adult only content.
             return true;
-        } else if (br.containsHTML("You need to be a member and logged in to download files larger")) {
+        } else if (br.containsHTML("(?i)You need to be a member and logged in to download files larger")) {
             // large files
             return true;
-        } else if (br.containsHTML(">Please login or signup to download this file<")) {
+        } else if (br.containsHTML("(?i)>\\s*Please login or signup to download this file\\s*<")) {
             return true;
         } else {
             return false;
@@ -182,8 +177,17 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
     }
 
+    private Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        prepBR(br);
+        if (!link.isNameSet()) {
+            link.setName(this.getFileID(link) + ".zip");
+        }
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         final String apikey = getApikey(acc);
         if (acc != null && apikey != null && linkIsAPICompatible(link)) {
@@ -195,7 +199,6 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
         if (isSpecialNexusModmanagerDownloadURL(link)) {
             /* Cannot check here but let's assume the status by expire param */
             final long expireTimstamp = Long.parseLong(UrlQuery.parse(link.getPluginPatternMatcher()).get("expires")) * 1000;
@@ -203,7 +206,7 @@ public class NexusmodsCom extends antiDDoSForHost {
                 return AvailableStatus.UNCHECKABLE;
             } else {
                 final long validFor = expireTimstamp - System.currentTimeMillis();
-                logger.info("NXM:// URL shall be valid for another: " + TimeFormatter.formatMilliSeconds(validFor, 1));
+                logger.info("nxm:// URL shall be valid for another: " + TimeFormatter.formatMilliSeconds(validFor, 1));
                 return AvailableStatus.TRUE;
             }
         } else {
@@ -221,7 +224,6 @@ public class NexusmodsCom extends antiDDoSForHost {
                     }
                 }
             }
-            loginRequired = isLoginRequired(br);
             dllink = br.getRegex("window\\.location\\.href\\s*=\\s*\"(http[^<>\"]+)\";").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://filedelivery\\.nexusmods\\.com/[^<>\"]+)\"").getMatch(0);
@@ -248,16 +250,12 @@ public class NexusmodsCom extends antiDDoSForHost {
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename).trim();
                 link.setName(filename);
-            } else if (!link.isNameSet()) {
-                /* Fallback */
-                link.setName(this.getFileID(link));
             }
             return AvailableStatus.TRUE;
         }
     }
 
     private AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
         final String game_domain_name = link.getStringProperty(PROPERTY_game_domain_name);
         final String mod_id = link.getStringProperty(PROPERTY_mod_id);
         final String file_id = this.getFileID(link);
@@ -272,7 +270,6 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     public static AvailableStatus setFileInformationAPI(final DownloadLink link, final Map<String, Object> entries, final String game_domain_name, final String mod_id, final String file_id) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.ArchiveExtensions.ZIP);
         String filename = (String) entries.get("file_name");
         final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         if (!StringUtils.isEmpty(filename)) {
@@ -310,7 +307,7 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     private void doFree(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         if (StringUtils.isEmpty(dllink)) {
-            if (loginRequired) {
+            if (this.isLoginRequired(br)) {
                 if (account == null) {
                     throw new AccountRequiredException();
                 } else {
@@ -338,7 +335,7 @@ public class NexusmodsCom extends antiDDoSForHost {
             }
         }
         if (link.getFinalFileName() == null) {
-            /* Workaround for rare case if e.g. account was not available when a (NXM) URL has been added initially. */
+            /* Workaround for rare case if e.g. account was not available when a (nxm://) URL has been added initially. */
             if (dl.getConnection().isContentDisposition()) {
                 dl.setFilenameFix(true);
             } else {
@@ -360,8 +357,8 @@ public class NexusmodsCom extends antiDDoSForHost {
         synchronized (account) {
             try {
                 if (isAPIOnlyMode()) {
-                    logger.info("Only API accounts are supported");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    /* This should never happen */
+                    throw new AccountInvalidException("Only API accounts are supported");
                 }
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
@@ -509,7 +506,7 @@ public class NexusmodsCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             if (isAPIOnlyMode()) {
-                ai.setStatus("Free user [Only NXM URLs can be downloaded]");
+                ai.setStatus("Free user [Only pre generated nxm:// URLs can be downloaded]");
                 ai.setUnlimitedTraffic();
             } else {
                 ai.setStatus("Free user");
@@ -525,10 +522,10 @@ public class NexusmodsCom extends antiDDoSForHost {
              * 2020-01-15: Attempted free account download fails:
              * {"code":400,"message":"Provided key and expire time isn't correct for this user/file."}
              */
-            throw new AccountRequiredException("NXM URL expired");
+            throw new AccountRequiredException("nxm URL expired");
         } else if (br.getHttpConnection().getResponseCode() == 401) {
             /* {"message":"Please provide a valid API Key"} */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("Invalid or expired API Key");
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             /*
              * According to API documentation, this may happen if we try to download a file via API with a free account (downloads are only
@@ -646,7 +643,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     private static boolean isAPIKey(final String str) {
         if (str == null) {
             return false;
-        } else if (str.matches("[A-Za-z0-9\\-]{100,}")) {
+        } else if (str.matches("[A-Za-z0-9\\-=/\\+_]{100,}")) {
             return true;
         } else {
             return false;
@@ -698,7 +695,7 @@ public class NexusmodsCom extends antiDDoSForHost {
             super("ins 0, wrap 2", "[][grow,fill]", "");
             add(new JLabel("Click here to find your API Key:"));
             add(new JLink("https://www.nexusmods.com/users/myaccount?tab=api%20access"));
-            add(apikeyLabel = new JLabel("API Key [premium accounts only]:"));
+            add(apikeyLabel = new JLabel("<html><u><b>Personal</b></u> API Key [premium accounts only]:</html>"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
