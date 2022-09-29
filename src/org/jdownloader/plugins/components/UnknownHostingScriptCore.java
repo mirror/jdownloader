@@ -554,10 +554,6 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return null;
     }
 
-    /**
-     * In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>'. Example host which
-     * has URLs that contain filenames: freefile.me, letsupload.co
-     */
     public String getFilenameFromURL(final DownloadLink dl) {
         final String result;
         if (dl.getContentUrl() != null) {

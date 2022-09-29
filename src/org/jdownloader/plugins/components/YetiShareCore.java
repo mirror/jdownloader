@@ -145,7 +145,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      * captchatype: null, solvemedia, reCaptchaV2, hcaptcha<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
      * support: https://fhscript.com/api Examples for websites which have the API enabled (but not necessarily unlocked for all users,
-     * usually only special-uploaders): freefile.me, fastdrive.io <br />
+     * usually only special-uploaders): secufiles.com <br />
      * 2020-03-30: I failed to make ANY successful API tests. 100% of all websites which support this API are running a broken version!
      */
     @Override
@@ -2013,11 +2013,16 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     }
                 }
                 if (generateAPIKeyForm != null) {
-                    if (!this.isAPICredential(key1) || !this.isAPICredential(key2)) {
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    logger.info("Found generateAPIKeyForm -> Looks like " + this.getHost() + " has enabled API usage in general");
+                    final boolean devForceNewApikeyCreation = false;
+                    if (this.isAPICredential(key1) && this.isAPICredential(key2) && !devForceNewApikeyCreation) {
+                        logger.info("Found pre-generated API credentials on website");
+                    } else {
+                        final boolean tryToGenerateAPIKey = false;
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && tryToGenerateAPIKey) {
                             logger.info("Found apikey Form but without keys --> Generating API keys");
                             /* 2021-06-16: TODO: This doesn't work yet! Fix it! */
-                            logger.info("Initially setting up API keys fror user...");
+                            logger.info("Initially setting up API keys for user...");
                             key1 = this.websiteGenerateRandomAPIKey();
                             key2 = this.websiteGenerateRandomAPIKey();
                             generateAPIKeyForm.put("key1", key1);
@@ -2030,11 +2035,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             // }
                             // }
                             generateAPIKeyForm.put("title", "");
-                            generateAPIKeyForm.remove("avatar");
-                            generateAPIKeyForm.remove("watermark");
+                            /* avatar and watermark are usually files / Content-Type: application/octet-stream */
                             // generateAPIKeyForm.put("avatar", "");
                             // generateAPIKeyForm.put("watermark", "");
-                            generateAPIKeyForm.put("languageId", "1");
+                            // generateAPIKeyForm.put("languageId", "1");
                             generateAPIKeyForm.put("isPublic", "1");
                             generateAPIKeyForm.put("privateFileStatistics", "0");
                             generateAPIKeyForm.put("watermarkPosition", "top left");
@@ -2042,37 +2046,36 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             // TODO: remove and remove setNullFieldValuesToEmptyFields
                             generateAPIKeyForm.setNullFieldValuesToEmptyFields();
                             this.submitForm(brc, generateAPIKeyForm);
+                            /* TODO: Check if those API keys are now active so we know that this handling worked fine. */
                             /* Assume that this was successful */
                         } else {
                             logger.info("Failed to find API Keys");
                         }
-                    } else {
-                        logger.info("Found pre-generated API credentials on website");
                     }
-                    if (this.isAPICredential(key1) && this.isAPICredential(key2)) {
-                        logger.info("Checking possibly valid API login credentials, trying API accountcheck...");
-                        try {
-                            final AccountInfo apiAccInfo = this.fetchAccountInfoAPI(brc, account, key1, key2);
-                            logger.info("Successfully performed accountcheck via API");
-                            /* Save API keys for future usage! */
-                            account.setProperty(PROPERTY_API_KEY1, key1);
-                            account.setProperty(PROPERTY_API_KEY2, key2);
-                            return apiAccInfo;
-                        } catch (final Throwable e) {
-                            logger.log(e);
-                            /*
-                             * Most likely due to missing API permissions e.g. user can create API keys but it's not an "uploader account"
-                             * thus he cannot do anything with the API.
-                             */
-                            logger.info("API handling inside website handling failed!");
-                        }
+                    logger.info("Checking possibly valid API login credentials, trying API accountcheck...");
+                    try {
+                        final AccountInfo apiAccInfo = this.fetchAccountInfoAPI(brc, account, key1, key2);
+                        logger.info("Successfully performed accountcheck via API");
+                        /* Save API keys for future usage! */
+                        account.setProperty(PROPERTY_API_KEY1, key1);
+                        account.setProperty(PROPERTY_API_KEY2, key2);
+                        return apiAccInfo;
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        /**
+                         * Failure: Happens most likely due to missing API permissions e.g. user can create API keys but it's not an
+                         * "uploader account" thus he cannot do anything with the API. </br>
+                         * Example: {"response":"Your account level does not have access to the file upload API. Please contact site support
+                         * for more information.","_status":"error","_datetime":"2022-09-29 22:30:17"}
+                         */
+                        logger.info("API handling inside website handling failed!");
                     }
                 }
             }
-        } catch (final Throwable e) {
-            logger.log(e);
+        } catch (final Exception ignore) {
+            logger.log(ignore);
         }
-        /* Remove previously saved credentials if existant */
+        /** API is not available or does not work (anymore) --> Remove previously saved credentials if existant */
         account.removeProperty(PROPERTY_API_KEY1);
         account.removeProperty(PROPERTY_API_KEY2);
         return null;
