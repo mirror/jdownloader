@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.SolidFilesComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -28,6 +29,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -69,7 +72,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.openGetConnection(param.getCryptedUrl());
         if (this.looksLikeDownloadableContent(br.getHttpConnection())) {
@@ -77,16 +80,14 @@ public class SolidFilesComFolder extends PluginForDecrypt {
             // direct downloadable
             final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
             dl.setProperty(SolidFilesCom.PROPERTY_DIRECT_DOWNLOAD, true);
-            final String fileName = getFileNameFromDispositionHeader(br.getHttpConnection());
+            final String fileName = getFileNameFromHeader(br.getHttpConnection());
             if (fileName != null) {
                 dl.setFinalFileName(fileName);
-            } else {
-                dl.setName(getFileNameFromHeader(br.getHttpConnection()));
             }
             dl.setVerifiedFileSize(br.getHttpConnection().getContentLength());
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         br.followConnection();
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*Not found\\s*<|>\\s*We couldn't find the file you requested|>\\s*This folder is empty\\.<|This file/folder has been disabled")) {
@@ -112,11 +113,15 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         if (finfos == null || finfos.length == 0) {
             if (br.containsHTML("id=\"file-list\"")) {
                 logger.info("Empty folder: " + param.getCryptedUrl());
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (!StringUtils.isEmpty(subfolderPath)) {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, subfolderPath);
+                } else {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+                }
             } else {
-                // single file-let hoster plugin take over
-                decryptedLinks.add(this.createDownloadlink(param.getCryptedUrl()));
-                return decryptedLinks;
+                // single file-let hoster plugin handle this
+                ret.add(this.createDownloadlink(param.getCryptedUrl()));
+                return ret;
             }
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -135,20 +140,20 @@ public class SolidFilesComFolder extends PluginForDecrypt {
                 if (PluginJsonConfig.get(SolidFilesComConfig.class).isFolderCrawlerCrawlSubfolders()) {
                     final DownloadLink folder = createDownloadlink(url);
                     folder.setRelativeDownloadFolderPath(subfolderPath);
-                    decryptedLinks.add(folder);
+                    ret.add(folder);
                 }
             } else {
                 final DownloadLink file = createDownloadlink(url);
-                title = Encoding.htmlDecode(title);
+                title = Encoding.htmlDecode(title).trim();
                 file.setName(title.replace(" ", "_"));
                 // dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 file.setAvailable(true);
                 file.setRelativeDownloadFolderPath(subfolderPath);
                 file._setFilePackage(fp);
-                decryptedLinks.add(file);
+                ret.add(file);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
