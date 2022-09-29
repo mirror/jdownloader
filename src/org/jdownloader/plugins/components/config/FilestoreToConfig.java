@@ -14,40 +14,44 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "filestore.to", type = Type.HOSTER)
 public interface FilestoreToConfig extends PluginConfigInterface {
-    final String              TEXT_USER_AGENT                = "Enter User-Agent which will be used for all website http requests:";
-    final String              TEXT_MODIFY_FINAL_DOWNLOADURLS = "Modify final downloadurls in free mode: Replace '/free' with '/premium'?";
-    public static TRANSLATION TRANSLATION                    = new TRANSLATION();
+    final String              TEXT_GlobalNoFreeSlotsBlockModeEnabled    = "Block all links of this host on error 'No free slots available'?";
+    final String              TEXT_WaittimeOnNoFreeSlotsMinutes         = "Wait minutes on error 'no free slots available'";
+    final String              TEXT_StartFreeDownloadsSequentially       = "Start free downloads sequentially and not at the same time?";
+    final String              TEXT_WaittimeBetweenDownloadStartsSeconds = "Wait seconds between download-starts";
+    final String              TEXT_UserAgent                            = "Enter User-Agent which will be used for all website http requests:";
+    final String              TEXT_ModifyFinalDownloadurls              = "Modify final downloadurls in free mode: Replace '/free' with '/premium'?";
+    public static TRANSLATION TRANSLATION                               = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getGlobalNoFreeSlotsBlockModeEnabled_label() {
-            return "Block all links of this host on error 'No free slots available'?";
+            return TEXT_GlobalNoFreeSlotsBlockModeEnabled;
         }
 
         public String getWaittimeOnNoFreeSlotsMinutes_label() {
-            return "Wait minutes on error 'no free slots available'";
+            return TEXT_WaittimeOnNoFreeSlotsMinutes;
         }
 
         public String getStartFreeDownloadsSequentially_label() {
-            return "Start free downloads sequentially?";
+            return TEXT_StartFreeDownloadsSequentially;
         }
 
         public String getWaittimeBetweenDownloadStartsSeconds_label() {
-            return "Wait seconds between download-starts";
+            return TEXT_WaittimeBetweenDownloadStartsSeconds;
         }
 
         public String getUserAgent_label() {
-            return TEXT_USER_AGENT;
+            return TEXT_UserAgent;
         }
 
         public String getModifyFinalDownloadurls_label() {
-            return TEXT_MODIFY_FINAL_DOWNLOADURLS;
+            return TEXT_ModifyFinalDownloadurls;
         }
     }
 
     @AboutConfig
     @DefaultBooleanValue(true)
     @Order(5)
-    @DescriptionForConfigEntry("Block all links of this host on error 'No free slots available'?")
+    @DescriptionForConfigEntry(TEXT_GlobalNoFreeSlotsBlockModeEnabled)
     public boolean isGlobalNoFreeSlotsBlockModeEnabled();
 
     public void setGlobalNoFreeSlotsBlockModeEnabled(boolean b);
@@ -57,7 +61,7 @@ public interface FilestoreToConfig extends PluginConfigInterface {
     @TakeValueFromSubconfig("WAIT_MINUTES_ON_NO_FREE_SLOTS")
     @SpinnerValidator(min = 1, max = 600, step = 1)
     @Order(10)
-    @DescriptionForConfigEntry("Wait minutes on error 'no free slots available'")
+    @DescriptionForConfigEntry(TEXT_WaittimeOnNoFreeSlotsMinutes)
     int getWaittimeOnNoFreeSlotsMinutes();
 
     void setWaittimeOnNoFreeSlotsMinutes(int wait);
@@ -65,7 +69,7 @@ public interface FilestoreToConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @Order(15)
-    @DescriptionForConfigEntry("Start free downloads sequentially?")
+    @DescriptionForConfigEntry(TEXT_StartFreeDownloadsSequentially)
     public boolean isStartFreeDownloadsSequentially();
 
     public void setStartFreeDownloadsSequentially(boolean b);
@@ -74,14 +78,14 @@ public interface FilestoreToConfig extends PluginConfigInterface {
     @DefaultIntValue(10)
     @SpinnerValidator(min = 0, max = 30, step = 1)
     @Order(20)
-    @DescriptionForConfigEntry("Wait seconds between download-starts")
+    @DescriptionForConfigEntry(TEXT_WaittimeBetweenDownloadStartsSeconds)
     int getWaittimeBetweenDownloadStartsSeconds();
 
     void setWaittimeBetweenDownloadStartsSeconds(int wait);
 
     @AboutConfig
     @DefaultStringValue("JDDEFAULT")
-    @DescriptionForConfigEntry(TEXT_USER_AGENT)
+    @DescriptionForConfigEntry(TEXT_UserAgent)
     @Order(30)
     String getUserAgent();
 
@@ -90,7 +94,7 @@ public interface FilestoreToConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @Order(35)
-    @DescriptionForConfigEntry(TEXT_MODIFY_FINAL_DOWNLOADURLS)
+    @DescriptionForConfigEntry(TEXT_ModifyFinalDownloadurls)
     public boolean isModifyFinalDownloadurls();
 
     public void setModifyFinalDownloadurls(boolean b);
