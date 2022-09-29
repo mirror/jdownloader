@@ -21,12 +21,12 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploader.jp" }, urls = { "https?://u[a-z0-9]\\.getuploader\\.com/.+" })
 public class UploaderJpFolder extends antiDDoSForDecrypt {
@@ -34,39 +34,29 @@ public class UploaderJpFolder extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        if (parameter.matches("https?://[^/]+/[^/]+/download/\\d+.*")) {
-            decryptedLinks.add(createDownloadlink(parameter));
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (param.getCryptedUrl().matches("https?://[^/]+/[^/]+/download/\\d+.*")) {
+            /* Single file -> Handle via host plugin */
+            ret.add(createDownloadlink(param.getCryptedUrl()));
         } else {
             br.setFollowRedirects(true);
-            getPage(parameter);
+            getPage(param.getCryptedUrl());
             final Form form = br.getFormByInputFieldKeyValue("q", "age_confirmation");
             if (form != null) {
                 submitForm(form);
             }
             if (jd.plugins.hoster.UploaderJp.isOffline(this.br)) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String fpName = null;
             final String[] links = br.getRegex("\"(https?://[^/]+/[^/]+/download/\\d+)\"").getColumn(0);
             if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                logger.info("Empty folder?");
-                decryptedLinks.add(this.createOfflinelink(parameter, "Empty folder", "Empty folder"));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String singleLink : links) {
-                decryptedLinks.add(createDownloadlink(singleLink));
-            }
-            if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
+                ret.add(createDownloadlink(singleLink));
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }
