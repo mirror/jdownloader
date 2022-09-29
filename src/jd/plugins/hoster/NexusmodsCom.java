@@ -123,6 +123,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     public static Browser prepBrAPI(final Browser br, final Account account) throws PluginException {
+        prepBRGeneral(br);
         br.getHeaders().put("User-Agent", "JDownloader");
         final String apikey = getApikey(account);
         if (apikey == null) {
@@ -177,28 +178,27 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
     }
 
-    private Browser prepBR(final Browser br) {
+    private static Browser prepBRGeneral(final Browser br) {
         br.setFollowRedirects(true);
         return br;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        prepBR(br);
         if (!link.isNameSet()) {
             link.setName(this.getFileID(link) + ".zip");
         }
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         final String apikey = getApikey(acc);
         if (acc != null && apikey != null && linkIsAPICompatible(link)) {
-            prepBrAPI(br, acc);
-            return requestFileInformationAPI(link);
+            return requestFileInformationAPI(link, acc);
         } else {
             return requestFileInformationWebsite(link);
         }
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
+        prepBRGeneral(br);
         if (isSpecialNexusModmanagerDownloadURL(link)) {
             /* Cannot check here but let's assume the status by expire param */
             final long expireTimstamp = Long.parseLong(UrlQuery.parse(link.getPluginPatternMatcher()).get("expires")) * 1000;
@@ -255,7 +255,8 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
     }
 
-    private AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
+    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
+        prepBrAPI(br, account);
         final String game_domain_name = link.getStringProperty(PROPERTY_game_domain_name);
         final String mod_id = link.getStringProperty(PROPERTY_mod_id);
         final String file_id = this.getFileID(link);
@@ -271,7 +272,7 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     public static AvailableStatus setFileInformationAPI(final DownloadLink link, final Map<String, Object> entries, final String game_domain_name, final String mod_id, final String file_id) throws Exception {
         String filename = (String) entries.get("file_name");
-        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        final Number size_in_bytes = (Number) entries.get("size_in_bytes");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         } else {
@@ -279,8 +280,8 @@ public class NexusmodsCom extends antiDDoSForHost {
             filename = game_domain_name + "_" + mod_id + "_" + file_id;
             link.setName(filename);
         }
-        if (filesize > 0) {
-            link.setDownloadSize(filesize * 1024);
+        if (size_in_bytes != null) {
+            link.setVerifiedFileSize(size_in_bytes.longValue());
         }
         final String description = (String) entries.get("description");
         if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
@@ -291,7 +292,7 @@ public class NexusmodsCom extends antiDDoSForHost {
         /* For some files we can find a sha256 hash through this sketchy hash. Example: TODO: Add example */
         final String external_virus_scan_url = (String) entries.get("external_virus_scan_url");
         if (external_virus_scan_url != null) {
-            final String sha256_hash = new Regex(external_virus_scan_url, "virustotal.com/file/([a-f0-9]+)/.*").getMatch(0);
+            final String sha256_hash = new Regex(external_virus_scan_url, "(?i)virustotal\\.com/(?:gui/)?file/([a-f0-9]+)/.*").getMatch(0);
             if (sha256_hash != null) {
                 link.setSha256Hash(sha256_hash);
             }
@@ -360,7 +361,7 @@ public class NexusmodsCom extends antiDDoSForHost {
                     /* This should never happen */
                     throw new AccountInvalidException("Only API accounts are supported");
                 }
-                br.setFollowRedirects(true);
+                prepBRGeneral(br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 boolean loggedIN = false;
