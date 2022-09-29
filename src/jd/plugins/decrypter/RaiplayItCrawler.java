@@ -33,7 +33,10 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.RaiplayItConfig;
+import org.jdownloader.plugins.components.config.RaiplayItConfig.QualitySelectionMode;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -51,11 +54,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.RaiTv;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class RaiItDecrypter extends PluginForDecrypt {
-    public RaiItDecrypter(PluginWrapper wrapper) {
+public class RaiplayItCrawler extends PluginForDecrypt {
+    public RaiplayItCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -70,7 +72,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rai.it", "raiplay.it", "rai.tv", "rainews.it", "raiplaysound.it" });
+        ret.add(new String[] { "raiplay.it", "raiplay.tv", "rai.it", "rai.tv", "rainews.it", "raiplaysound.it" });
         return ret;
     }
 
@@ -103,7 +105,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_RAIPLAY_PROGRAMMI)) {
             return crawlProgrammi(param);
         } else if (param.getCryptedUrl().matches("(?i)https?://[^/]+/relinker/relinkerServlet\\.htm\\?cont=.+")) {
-            return this.crawlRelinker(param, param.getCryptedUrl(), null, null, null);
+            return this.crawlRelinker(param.getCryptedUrl(), null, null, null);
         } else if (param.getCryptedUrl().matches("(?i).+\\.json$")) {
             return this.crawlSingleVideoNew(param.getCryptedUrl(), param);
         } else {
@@ -313,7 +315,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        return crawlRelinker(param, relinker_url, filename, fp, description);
+        return crawlRelinker(relinker_url, filename, fp, description);
     }
 
     /** Handles single videos, playlists any anything else you throw at it. */
@@ -478,7 +480,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 extension = "mp4";
             }
         }
-        date_formatted = RaiTv.formatDate(date);
+        date_formatted = formatDate(date);
         title = Encoding.htmlDecode(title);
         if (date_formatted != null) {
             title = date_formatted + "_raitv_" + title;
@@ -499,7 +501,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         title = encodeUnicode(title);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        return crawlRelinker(param, dllink, title, fp, description);
+        return crawlRelinker(dllink, title, fp, description);
     }
 
     /* http://stackoverflow.com/questions/767759/occurrences-of-substring-in-a-string */
@@ -513,7 +515,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         return count;
     }
 
-    private ArrayList<DownloadLink> crawlRelinker(final CryptedLink param, final String relinker_url, String title, final FilePackage fp, final String description) throws Exception {
+    private ArrayList<DownloadLink> crawlRelinker(final String relinker_url, String title, final FilePackage fp, final String description) throws Exception {
         final String cont = UrlQuery.parse(relinker_url).get("cont");
         if (cont == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -527,7 +529,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Drop previous Headers & Cookies */
-        final Browser brc = RaiTv.prepVideoBrowser(new Browser());
+        final Browser brc = prepVideoBrowser(new Browser());
         /**
          * # output=20 url in body<br />
          * # output=23 HTTP 302 redirect<br />
@@ -551,12 +553,6 @@ public class RaiItDecrypter extends PluginForDecrypt {
             /* Offline/Geo-Blocked */
             /* XML response with e.g. this (and some more): <url>http://download.rai.it/video_no_available.mp4</url> */
             throw new DecrypterRetryException(RetryReason.GEO);
-        } else if (brc.getRequest().getHtmlCode().length() <= 100) {
-            /*
-             * E.g. old/DRM protected/Microsoft Silverlight/WMV files:
-             * https://www.rai.it/dl/RaiTV/programmi/media/ContentItem-70996227-7fec-4be9-bc49-ba0a8104305a.html
-             */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final String ext = brc.getRegex("<ct>([A-Za-z0-9]+)</ct>").getMatch(0);
         String dllink = brc.getRegex("<url type=\"content\"><!\\[CDATA\\[([a-zA-Z:\\/0-9\\-\\._,\\?\\&\\=~\\*]+)\\]\\]>").getMatch(0);
@@ -565,7 +561,15 @@ public class RaiItDecrypter extends PluginForDecrypt {
             dllink = dllink.replace("mms://", "http://");
         }
         if (dllink == null || !dllink.startsWith("http")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (brc.getRequest().getHtmlCode().length() <= 200) {
+                /*
+                 * E.g. old/DRM protected/Microsoft Silverlight/WMV files:
+                 * https://www.rai.it/dl/RaiTV/programmi/media/ContentItem-70996227-7fec-4be9-bc49-ba0a8104305a.html
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final Regex hdsconvert = new Regex(dllink, "(https?://[^/]+/z/podcastcdn/.+\\.csmil)/manifest\\.f4m");
         if (hdsconvert.matches()) {
@@ -574,6 +578,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         }
         final String middleBitrate = brc.getRegex("<bitrate>(\\d+)</bitrate>").getMatch(0);
         final String[] staticBitrateList = new String[] { "10000", "5000", "3600", "3200", "2400", "1800", "1200", "700", "400", "250" };
+        final QualitySelectionMode mode = PluginJsonConfig.get(this.getConfigInterface()).getQualitySelectionMode();
         if (dllink.contains(".m3u8")) {
             // https?:\/\/[^\/]+\/i\/VOD\/(teche_root\/YT_ITALIA_TECHE_HD\/[0-9]*_)([0-9,]+)\.mp4(?:.csmil)?\/index_[0-9]+_av.m3u8\?null=[0-9]+&id=[A-Za-z0-9]+%3d%3d&hdntl=exp=[0-9]+~acl=%2f\*~data=hdntl~hmac=[A-Za-z0-9]+
             final String httpBitratesCommaSeparated = new Regex(dllink, ",(\\d{3,}[0-9,]*)").getMatch(0);
@@ -581,21 +586,32 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 /*
                  * Prefer HTTP URLs over HLS URLs as HLS will be split audio/video which we do not yet support.
                  */
-                final ArrayList<String> supportedHTTPBitrates = new ArrayList<String>();
+                final ArrayList<String> availableHTTPBitrates = new ArrayList<String>();
                 if (httpBitratesCommaSeparated != null) {
                     final String[] bitrateList = httpBitratesCommaSeparated.split(",");
-                    supportedHTTPBitrates.addAll(Arrays.asList(bitrateList));
+                    availableHTTPBitrates.addAll(Arrays.asList(bitrateList));
                 } else {
-                    supportedHTTPBitrates.add(middleBitrate);
+                    /* Only a single bitrate/quality is available */
+                    availableHTTPBitrates.add(middleBitrate);
+                }
+                // supportedHTTPBitrates.add("1");
+                final ArrayList<String> httpBitratesToAdd = new ArrayList<String>();
+                if (mode == QualitySelectionMode.BEST) {
+                    /* Add best quality only */
+                    availableHTTPBitrates.sort(null);
+                    httpBitratesToAdd.add(availableHTTPBitrates.get(availableHTTPBitrates.size() - 1));
+                } else {
+                    /* Add all available qualities */
+                    httpBitratesToAdd.addAll(availableHTTPBitrates);
                 }
                 logger.info("Converting HLS -> HTTP URLs");
-                for (final String availableBitrate : supportedHTTPBitrates) {
+                for (final String desiredBitrate : httpBitratesToAdd) {
                     // final String directlink_http = String.format("http://creativemedia3.rai.it/%s%s.mp4", http_url_part, bitrate);
                     /* 2021-03-11 */
-                    final String directlink_http = relinkerURLWithoutParams + "?cont=" + cont + "&overrideUserAgentRule=mp4-" + availableBitrate;
+                    final String directlink_http = relinkerURLWithoutParams + "?cont=" + cont + "&overrideUserAgentRule=mp4-" + desiredBitrate;
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink_http);
                     dl.setAvailable(true);
-                    dl.setFinalFileName(title + "_" + availableBitrate + ".mp4");
+                    dl.setFinalFileName(title + "_" + desiredBitrate + ".mp4");
                     dl._setFilePackage(fp);
                     if (description != null) {
                         dl.setComment(description);
@@ -604,16 +620,25 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 }
             } else {
                 /* https://svn.jdownloader.org/issues/84276 */
-                logger.warning("Crawling HLS: Split audio/video could cause JD to only download video without audio");
+                logger.warning("Crawling HLS: Split audio/video could cause JD to only download video or audio");
                 final Browser hls = br.cloneBrowser();
                 hls.setFollowRedirects(true);
                 hls.getPage(dllink);
                 if (hls.getRegex("Access Denied").matches()) {
                     logger.severe("Access denied! The hmac is corrupt, maybe. Try to set a coherent User-Agent.");
                 }
-                final List<HlsContainer> allqualities = HlsContainer.getHlsQualities(hls);
-                for (final HlsContainer singleHlsQuality : allqualities) {
-                    logger.info("found quality: " + singleHlsQuality.getStreamURL());
+                final List<HlsContainer> availableQualities = HlsContainer.getHlsQualities(hls);
+                final ArrayList<HlsContainer> qualitiesToAdd = new ArrayList<HlsContainer>();
+                if (mode == QualitySelectionMode.BEST) {
+                    /* Add best quality only */
+                    final HlsContainer best = HlsContainer.findBestVideoByBandwidth(availableQualities);
+                    qualitiesToAdd.add(best);
+                } else {
+                    /* Add all available qualities */
+                    qualitiesToAdd.addAll(availableQualities);
+                }
+                for (final HlsContainer singleHlsQuality : availableQualities) {
+                    logger.info("Adding quality: " + singleHlsQuality.getStreamURL());
                     final DownloadLink dl = this.createDownloadlink(singleHlsQuality.getStreamURL());
                     final String filename = title + "_" + singleHlsQuality.getStandardFilename();
                     dl.setFinalFileName(filename);
@@ -656,6 +681,18 @@ public class RaiItDecrypter extends PluginForDecrypt {
         return ret;
     }
 
+    public static Browser prepVideoBrowser(final Browser br) {
+        /*
+         * 2016-08-24: Do NOT use the Apache User-Agent anymore - because of it we often got .ism MS Silverlight streams instead of http
+         * urls.
+         */
+        /* Rai.tv android app User-Agent - not necessarily needed! */
+        // br.getHeaders().put("User-Agent", "Apache-HttpClient/UNAVAILABLE (java 1.4)");
+        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:67.0) Gecko/20100101 Firefox/67.0");
+        // User-Agent MUST NOT never change across the requests
+        return br;
+    }
+
     private String convertInputDateToJsonDateFormat(final String input) {
         if (input == null) {
             return null;
@@ -677,5 +714,39 @@ public class RaiItDecrypter extends PluginForDecrypt {
             formattedDate = input;
         }
         return formattedDate;
+    }
+
+    public static String formatDate(final String input) {
+        if (input == null) {
+            return null;
+        }
+        final long date;
+        if (input.matches("\\d{2}/\\d{2}/\\d{4}")) {
+            date = TimeFormatter.getMilliSeconds(input, "dd/MM/yyyy", Locale.ENGLISH);
+        } else if (input.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        } else if (input.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd", Locale.ENGLISH);
+        } else if (input.matches("\\d{2}\\-\\d{2}\\-\\d{4}")) {
+            date = TimeFormatter.getMilliSeconds(input, "dd-MM-yyyy", Locale.ENGLISH);
+        } else {
+            date = TimeFormatter.getMilliSeconds(input, "dd-MM-yyyy HH:mm", Locale.ENGLISH);
+        }
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
+    }
+
+    @Override
+    public Class<? extends RaiplayItConfig> getConfigInterface() {
+        return RaiplayItConfig.class;
     }
 }

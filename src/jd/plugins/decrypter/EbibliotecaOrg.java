@@ -75,7 +75,12 @@ public class EbibliotecaOrg extends PluginForDecrypt {
         String fpName = br.getRegex("<h3[^>]*><strong>([^<]+)</strong></h3>").getMatch(0);
         final String[] htmls = br.getRegex("openUnload\\(([0-9, ]+)\\)").getColumn(0);
         if (htmls == null || htmls.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("(?i)>\\s*Este enlace externo fue eliminado a pedido del autor o de la editorial")) {
+                /* Looks like all external URLs have been deleted -> Nothing we can do about that. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         int progr = 1;
         for (final String html : htmls) {
