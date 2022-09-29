@@ -104,8 +104,13 @@ public class Gogoplay4Com extends PluginForDecrypt {
         }
     }
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+    private Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
+        return br;
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        prepBR(br);
         if (param.getCryptedUrl().matches(TYPE_STREAM_SELFEMBED)) {
             return this.crawlStream(param);
         } else {
