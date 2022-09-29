@@ -37,7 +37,7 @@ public class AsianembedIo extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "asianembed.io", "k-vid.net" });
+        ret.add(new String[] { "12asianembed.io", "12k-vid.net" });
         return ret;
     }
 
@@ -70,7 +70,7 @@ public class AsianembedIo extends antiDDoSForDecrypt {
         final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(Gogoplay4Com.getPluginDomains().get(0)[0]);
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String url : urls) {
-            if (plg.canHandle(url)) {
+            if (plg.canHandle(url) || Gogoplay4Com.looksLikeSupportedPattern(url)) {
                 decryptedLinks.add(this.createDownloadlink(url));
             }
         }

@@ -47,7 +47,8 @@ public class Gogoplay4Com extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net" });
+        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "asianplay.net", "gogohd.net" });
+        ret.add(new String[] { "asianload.net", "asianembed.io", "k-vid.net" });
         return ret;
     }
 
@@ -67,22 +68,28 @@ public class Gogoplay4Com extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(download\\?id=[^/]+|streaming\\.php\\?id=[^/]+|videos/[\\w\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(download\\?id=[^/]+|embedplus\\?id=[^/]+|streaming\\.php\\?id=[^/]+|videos/[\\w\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_DOWNLOAD         = "(?:https?://[^/]+)?/download\\?id=[^/]+";
-    private static final String TYPE_STREAMING        = "(?:https?://[^/]+)?/streaming\\.php\\?id=[^/]+";
+    private static final String TYPE_DOWNLOAD         = "(?:https?://[^/]+)?/download\\?id=[\\w\\-]+.*";
+    private static final String TYPE_EMBEDPLUS        = "(?:https?://[^/]+)?/embedplus\\?id=[\\w\\-]+.*";
+    private static final String TYPE_STREAMING        = "(?:https?://[^/]+)?/streaming\\.php\\?id=[\\w\\-]+.*";
     private static final String TYPE_STREAM_SELFEMBED = "https?://[^/]+/videos/[\\w\\-]+";
 
-    /** Domain independent handling. */
+    /**
+     * Domain independent handling: Checks if URL looks like it can be handled by this plugin without taking care about whether or not we
+     * know the domain.
+     */
     public static final boolean looksLikeSupportedPattern(final String url) {
         if (url == null) {
             return false;
         } else if (looksLikeSupportedPatternStreaming(url)) {
             return true;
         } else if (url.matches(TYPE_DOWNLOAD)) {
+            return true;
+        } else if (url.matches(TYPE_EMBEDPLUS)) {
             return true;
         } else {
             return false;
@@ -98,6 +105,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
         if (param.getCryptedUrl().matches(TYPE_STREAM_SELFEMBED)) {
             return this.crawlStream(param);
         } else {
@@ -106,7 +114,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlStream(final CryptedLink param) throws IOException, PluginException, InterruptedException, DecrypterException {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -114,10 +122,10 @@ public class Gogoplay4Com extends PluginForDecrypt {
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String url : urls) {
             if (url.matches(TYPE_STREAMING)) {
-                decryptedLinks.add(this.createDownloadlink(url));
+                ret.add(this.createDownloadlink(url));
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlDownloadlinks(final CryptedLink param) throws IOException, PluginException, InterruptedException, DecrypterException {

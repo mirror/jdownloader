@@ -43,22 +43,22 @@ public class MySpassDe extends PluginForDecrypt {
     private static final String type_hoster = "^https?://(?:www\\.)?myspass\\.de/(?:(?:myspass/)?shows/(?:tv|web)shows/([a-z0-9\\-_]+/[^/]+/|.+video\\.php\\?id=)\\d+/?|channels/[^/]+/\\d+/\\d+/?)$";
 
     /** Handling for old website in revision: 39533 */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final boolean fastlinkcheck = JDUtilities.getPluginForHost(this.getHost()).getPluginConfig().getBooleanProperty("FAST_LINKCHECK", true);
         if (parameter.matches(type_hoster)) {
             /* Single item */
             final DownloadLink dl = createDownloadlink(parameter.replace("myspass.de", "myspassdecrypted.de/"));
             dl.setContentUrl(parameter);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 - SEITE NICHT GEFUNDEN")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter));
+            return ret;
         }
         String show = br.getRegex("itemprop='name'>([^<>\"]*?) - (im kostenlosen|Ganze Folgen|Der gratis) [^<>]+</title>").getMatch(0);
         if (show == null) {
@@ -123,7 +123,7 @@ public class MySpassDe extends PluginForDecrypt {
                 }
                 dl._setFilePackage(fp);
                 distribute(dl);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             /* Series */
@@ -132,14 +132,14 @@ public class MySpassDe extends PluginForDecrypt {
             if (html_list_season == null || html_list_season.length == 0 && videoid != null) {
                 if (!parameter.contains(videoid) || parameter.matches("https?://[^/]+/channels/[^/]+/\\d+/?$")) {
                     /* No downloadable content (e.g. overview of channel (Displays trailer in browser)) */
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    ret.add(this.createOfflinelink(parameter));
+                    return ret;
                 }
                 /* Single video */
                 final DownloadLink dl = createDownloadlink(parameter.replace("myspass.de", "myspassdecrypted.de/") + videoid + "/");
                 dl.setContentUrl(parameter);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
+                ret.add(dl);
+                return ret;
             }
             if (html_list_season == null || html_list_season.length == 0) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -247,14 +247,14 @@ public class MySpassDe extends PluginForDecrypt {
                     }
                     dl._setFilePackage(fp);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user");
-                    return decryptedLinks;
+                    return ret;
                 }
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }
