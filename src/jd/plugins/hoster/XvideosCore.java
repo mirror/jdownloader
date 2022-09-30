@@ -810,7 +810,6 @@ public abstract class XvideosCore extends PluginForHost {
                     }
                     logger.info("Submitting 2FA mail code");
                     unknownBrowserForm.put(Encoding.urlEncode("unknown-browser-form[code]"), twoFACode);
-                    unknownBrowserForm.setNullFieldValuesToEmptyFields();
                     br.submitForm(unknownBrowserForm);
                     if (useAjaxLogin) {
                         ajaxLoginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -830,7 +829,6 @@ public abstract class XvideosCore extends PluginForHost {
                     /* Do not ask again for TOTP code for 30 days. */
                     totpAuthForm.put(Encoding.urlEncode("totp-auth[remember_me]"), "on");
                     // totpAuthForm.put(Encoding.urlEncode("totp-auth[post_referer]"), Encoding.urlEncode("https://de.xvideos.com/"));
-                    totpAuthForm.setNullFieldValuesToEmptyFields();
                     br.submitForm(totpAuthForm);
                     if (useAjaxLogin) {
                         ajaxLoginResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
