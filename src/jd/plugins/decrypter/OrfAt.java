@@ -245,24 +245,30 @@ public class OrfAt extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlProgramm(final CryptedLink param) throws Exception {
         final String broadCastID;
-        final String broadCastKey;
+        final String broadcastDay;
         final String domainID;
         if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD)) {
             broadCastID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(2);
-            broadCastKey = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(1);
+            broadcastDay = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(1);
             domainID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(0);
         } else {
             broadCastID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(2);
-            broadCastKey = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(1);
+            broadcastDay = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(1);
             domainID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(0);
         }
-        if (broadCastID == null || broadCastKey == null || domainID == null) {
+        return crawlProgramm(domainID, broadCastID, broadcastDay);
+    }
+
+    private ArrayList<DownloadLink> crawlProgramm(final String domainID, final String broadcastID, final String broadcastDay) throws Exception {
+        if (broadcastID == null || broadcastDay == null || domainID == null || domainID.length() < 3) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* E.g. change "wien" to "wie": https://wien.orf.at/player/20220925/WTIT */
+        final String domainIDCorrected = domainID.toLowerCase(Locale.ENGLISH).substring(0, 3);
         synchronized (CHANNEL_CACHE) {
             /* 2021-03-31 */
-            if (!CHANNEL_CACHE.containsKey(domainID)) {
+            if (!CHANNEL_CACHE.containsKey(domainIDCorrected)) {
                 br.getPage("https://assets.orf.at/vue-storyserver/radiothek-item-player/js/app.js");
                 final String channelInfoJs = br.getRegex("stations:(\\{.*?\\}\\}\\})\\},").getMatch(0);
                 final Map<String, Map<String, Object>> channelInfo = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(channelInfoJs);
@@ -273,17 +279,17 @@ public class OrfAt extends PluginForDecrypt {
                 // for (final String[] channelInfo : shortnameToChannelNames) {
                 // CHANNEL_CACHE.put(channelInfo[0], channelInfo[1]);
                 // }
-                if (!CHANNEL_CACHE.containsKey(domainID)) {
+                if (!CHANNEL_CACHE.containsKey(domainIDCorrected)) {
                     /* Most likely invalid domainID. */
-                    logger.info("Failed to find channel for: " + domainID);
+                    logger.info("Failed to find channel for: " + domainIDCorrected);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
         }
-        final Map<String, Object> channelInfo = CHANNEL_CACHE.get(domainID);
+        final Map<String, Object> channelInfo = CHANNEL_CACHE.get(domainIDCorrected);
         final Map<String, Object> loopstream = (Map<String, Object>) channelInfo.get("loopstream");
         br.setAllowedResponseCodes(410);
-        br.getPage(API_BASE + "/" + domainID + "/api/json/current/broadcast/" + broadCastID + "/" + broadCastKey + "?_s=" + System.currentTimeMillis());
+        br.getPage(API_BASE + "/" + domainIDCorrected + "/api/json/current/broadcast/" + broadcastID + "/" + broadcastDay + "?_s=" + System.currentTimeMillis());
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         if (br.getHttpConnection().getResponseCode() == 410 || "Broadcast is no longer available".equals(response.get("message"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -324,7 +330,7 @@ public class OrfAt extends PluginForDecrypt {
             final long startOffset = ((Number) stream.get("startOffset")).longValue();
             final long endOffset = ((Number) stream.get("endOffset")).longValue();
             final long offset = startOffset - endOffset;
-            final DownloadLink link = createDownloadlink("directhttp://https://" + loopstream.get("host") + "/?channel=" + loopstream.get("channel") + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + offset + "&offsetende=" + runtimeMilliseconds);
+            final DownloadLink link = createDownloadlink("directhttp://https://" + loopstream.get("host") + "/?channel=" + loopstream.get("channel") + "&shoutcast=0&player=" + domainIDCorrected + "_v1&referer=" + domainIDCorrected + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + offset + "&offsetende=" + runtimeMilliseconds);
             if (streams.size() > 1) {
                 link.setFinalFileName(dateFormatted + "_" + titleBase + "_" + StringUtils.formatByPadLength(padLength, position) + ".mp3");
             } else {
@@ -332,7 +338,7 @@ public class OrfAt extends PluginForDecrypt {
             }
             link.setDownloadSize(this.calculateFilesize(runtimeMilliseconds));
             link.setAvailable(true);
-            link.setLinkID(domainID + ".orf.at://" + broadCastID + "/" + broadCastKey + "/" + position);
+            link.setLinkID(domainIDCorrected + ".orf.at://" + broadcastID + "/" + broadcastDay + "/" + position);
             ret.add(link);
             fp.add(link);
             position++;
