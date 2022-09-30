@@ -21,9 +21,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,6 +35,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)(/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)?/?$" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
@@ -105,7 +105,7 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                     /* Invalid profile */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 // nextPage = (String) entries.get("more");
                 final Map<String, List<String>> years = (Map<String, List<String>>) entries.get("items");
                 final Set<Entry<String, List<String>>> yearsEntrySet = years.entrySet();
@@ -113,9 +113,9 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
                     // final String yearStr = entry.getKey();
                     final List<String> items = entry.getValue();
                     for (final String html : items) {
-                        String title = new Regex(html, "title=\"([^<>\"]+)\"").getMatch(0);
+                        String title = new Regex(html, "title\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
                         if (title == null) {
-                            title = new Regex(html, "alt=\"([^<>\"]+)\"").getMatch(0);
+                            title = new Regex(html, "alt\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
                         }
                         String url = new Regex(html, "((?:https?:)?//(?:\\w+\\.)?newgrounds\\.com/(?:(?:art|portal)/view|audio/listen)/[^<>\"\\']+)").getMatch(0);
                         if (StringUtils.isEmpty(url)) {
