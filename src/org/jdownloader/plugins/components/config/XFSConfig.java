@@ -7,8 +7,8 @@ import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
 public interface XFSConfig extends PluginConfigInterface {
-    final String                    text_PreferHTTP = "Prefer http instead of https (not recommended)?";
-    final String                    text_Apikey     = "Enter your API key which will be used for linkchecking in case there is no apikey available via any added accounts of this host";
+    final String                    text_PreferHTTP = "Prefer http instead of https (not recommended, use only as workaround)?";
+    final String                    text_Apikey     = "Enter your API key which will be used for linkchecking in case there is no apikey available in any account of this host";
     public static final TRANSLATION TRANSLATION     = new TRANSLATION();
 
     public static class TRANSLATION {
