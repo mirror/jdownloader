@@ -84,6 +84,10 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
+    private static String[] getDeadDomains() {
+        return new String[] { "megaupload.is" };
+    }
+
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         /* 2019-05-07: So far I was not able to find any website using this script which required a captcha. */
         return false;
@@ -92,17 +96,13 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     private static Map<String, String> agent = new HashMap<String, String>();
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /* link cleanup, but respect users protocol choosing or forced protocol */
-        final String fid = getFID(link);
-        final String protocol;
-        if (supports_https()) {
-            protocol = "https";
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
         } else {
-            protocol = "http";
+            return super.getLinkID(link);
         }
-        link.setPluginPatternMatcher(String.format("%s://%s/%s", protocol, this.getHost(), fid));
-        link.setLinkID(this.getHost() + "://" + fid);
     }
 
     private String getFID(final DownloadLink link) {
@@ -233,6 +233,19 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return url.matches(".+/(abuse|faq|feedback|docs|terms|subscription).*?");
     }
 
+    private String getContentURL(final DownloadLink link) {
+        final String url = link.getPluginPatternMatcher();
+        final String initialDomain = Browser.getHost(link.getPluginPatternMatcher());
+        for (final String deadDomain : getDeadDomains()) {
+            if (StringUtils.equalsIgnoreCase(initialDomain, deadDomain)) {
+                /* Chance domain in URL as we know the one we have is a dead domain. */
+                return url.replaceFirst(Pattern.quote(initialDomain), this.getHost());
+            }
+        }
+        /* Use/keep URL like it was added. */
+        return url;
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setWeakFilename(link);
         if (isNotADownloadURL(link.getPluginPatternMatcher())) {
@@ -246,7 +259,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         try {
             if (supports_availablecheck_via_api()) {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                getPage(String.format("https://api.%s/v2/file/%s/info", this.getHost(), this.getFID(link)));
+                getPage("https://api." + this.getHost() + "/v2/file/" + this.getFID(link) + "/info");
                 /*
                  * E.g.
                  * {"status":false,"error":{"message":"The file you are looking for does not exist.","type":"ERROR_FILE_NOT_FOUND","code":
@@ -264,8 +277,8 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                 scanInfoAPI(fileInfo);
                 fileInfo[0] = correctFilename(fileInfo[0]);
             } else {
-                getPage(link.getPluginPatternMatcher());
-                if (isOfflineWebsite()) {
+                getPage(getContentURL(link));
+                if (isOfflineWebsite(br)) {
                     checkErrors(link, null);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -297,7 +310,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    public boolean isOfflineWebsite() {
+    public boolean isOfflineWebsite(final Browser br) {
         final boolean isOffline = br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you are looking for does not exist|>The file you were looking for could not be found");
         /* Some normal website URLs look exactly like downloadurls and will definitely get picked up by our hostpattern. */
         final boolean isNoDownloadableContent = !br.containsHTML("id=\"download\\-wrapper\"");
@@ -408,9 +421,9 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         if (this.dl == null) {
             if (supports_availablecheck_via_api()) {
                 /* Did we use the API before? Then we'll have to access the website now. */
-                this.getPage(link.getPluginPatternMatcher());
+                getPage(getContentURL(link));
                 /* Check again here just in case the API is wrong. */
-                if (isOfflineWebsite()) {
+                if (isOfflineWebsite(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
@@ -805,14 +818,14 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        getPage(link.getPluginPatternMatcher());
+        getPage(getContentURL(link));
         handleDownload(link, account);
     }
 
     @Override
-    protected void getPage(String page) throws Exception {
-        page = correctProtocol(page);
-        getPage(br, page);
+    protected void getPage(String url) throws Exception {
+        url = correctProtocol(url);
+        getPage(br, url);
     }
 
     @Override
@@ -822,9 +835,9 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     }
 
     @Override
-    protected void postPage(String page, final String postdata) throws Exception {
-        page = correctProtocol(page);
-        postPage(br, page, postdata);
+    protected void postPage(String url, final String postdata) throws Exception {
+        url = correctProtocol(url);
+        postPage(br, url, postdata);
     }
 
     @Override
