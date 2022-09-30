@@ -65,7 +65,7 @@ public class ImagetwistCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getCorrectHost(DownloadLink link, URL url) {
+    protected String getPreferredHost(DownloadLink link, URL url) {
         // plugin also supports thumbs and correctURL rewrites to normal URLs on main domain
         String host = url.getHost();
         if (host.matches("(?i)^(\\w+)?phun\\.imagetwist\\.com$")) {

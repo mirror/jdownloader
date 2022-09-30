@@ -101,7 +101,7 @@ public class PixRouteCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getCorrectHost(DownloadLink link, URL url) {
+    protected String getPreferredHost(DownloadLink link, URL url) {
         return getHost();
     }
 
