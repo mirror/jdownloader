@@ -281,7 +281,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static int getUrlCrawlLanguageHandlingMode() {
-        return SubConfiguration.getConfig("pornhub.com").getIntegerProperty(PornHubCom.SETTING_URL_CRAWL_LANGUAGE_HANDLING, 0);
+        return SubConfiguration.getConfig("pornhub.com").getIntegerProperty(PornHubCom.SETTING_URL_CRAWL_LANGUAGE_HANDLING, default_SETTING_URL_CRAWL_LANGUAGE_HANDLING);
     }
 
     public static String getPreferredSubdomain(final String url) {
@@ -1673,6 +1673,7 @@ public class PornHubCom extends PluginForHost {
     public static final String   SELECTED_DOMAIN                             = "selected_domain2";
     public static final String[] DOMAINS                                     = new String[] { "pornhub.com & pornhubpremium.com", "pornhub.org & pornhubpremium.com" };
     public static final String   SETTING_URL_CRAWL_LANGUAGE_HANDLING         = "url_crawl_language_handling";
+    public static final int      default_SETTING_URL_CRAWL_LANGUAGE_HANDLING = 0;
     public static final String[] SETTING_URL_CRAWL_LANGUAGE_HANDLING_OPTIONS = new String[] { "Replace subdomain in url with 'www.' -> Title language English", "Do not touch subdomain -> Title language can vary depending on URL" };
 
     /** Returns user configured domain based on domain given in URL we want to access. */
@@ -1775,7 +1776,7 @@ public class PornHubCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_ORIGINAL_SERVER_FILENAME, "Use original server filename?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GIFS_WEBM, "Prefer webm over old gif format?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_DOMAIN, DOMAINS, "Select preferred domain").setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_DOMAIN, DOMAINS, "Select preferred domain").setDefaultValue(default_SETTING_URL_CRAWL_LANGUAGE_HANDLING));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_URL_CRAWL_LANGUAGE_HANDLING, SETTING_URL_CRAWL_LANGUAGE_HANDLING_OPTIONS, "URL crawl handling").setDefaultValue(0));
     }
 
