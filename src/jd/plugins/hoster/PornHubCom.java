@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -179,14 +180,6 @@ public class PornHubCom extends PluginForHost {
         return false;
     }
 
-    public static String getSubdomain(final String url) {
-        return new Regex(url, "^https?://(\\w+\\.)[^/]*\\.[^/]*").getMatch(0);
-    }
-
-    private String getSubdomain(final DownloadLink link) {
-        return getSubdomain(link.getPluginPatternMatcher());
-    }
-
     @SuppressWarnings("deprecation")
     public PornHubCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -235,7 +228,7 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) throws MalformedURLException {
         try {
             String url = link.getPluginPatternMatcher();
             url = correctAddedURL(this.getHost(), url);
@@ -284,8 +277,8 @@ public class PornHubCom extends PluginForHost {
         return SubConfiguration.getConfig("pornhub.com").getIntegerProperty(PornHubCom.SETTING_URL_CRAWL_LANGUAGE_HANDLING, default_SETTING_URL_CRAWL_LANGUAGE_HANDLING);
     }
 
-    public static String getPreferredSubdomain(final String url) {
-        final String originalSubdomain = getSubdomain(url);
+    public static String getPreferredSubdomain(final String url) throws MalformedURLException {
+        final String originalSubdomain = Browser.getSubdomain(url, false);
         if (getUrlCrawlLanguageHandlingMode() == 1 && originalSubdomain != null) {
             return originalSubdomain;
         } else {
@@ -293,8 +286,12 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    /** Corrects single video/gif URL based on given/not and user preference. */
-    public static String correctAddedURL(final String pluginDomain, final String url) throws PluginException {
+    /**
+     * Corrects single video/gif URL based on given/not and user preference.
+     *
+     * @throws MalformedURLException
+     */
+    public static String correctAddedURL(final String pluginDomain, final String url) throws PluginException, MalformedURLException {
         final String viewKey = getViewkeyFromURL(url);
         final String urlDomain = Browser.getHost(url);
         if ("pornhubdecrypted".equals(urlDomain)) {
