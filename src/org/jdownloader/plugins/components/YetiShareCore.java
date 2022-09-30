@@ -133,7 +133,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      * Override this and add dead domains so upper handling can auto update added URLs and change domain if it contains a dead domain. This
      * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
      */
-    protected ArrayList<String> getDeadDomains() {
+    protected List<String> getDeadDomains() {
         return null;
     }
 
@@ -197,7 +197,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         try {
             final URL url = new URL(link.getPluginPatternMatcher());
             final String urlHost = getCorrectHost(link, url);
-            final ArrayList<String> deadDomains = this.getDeadDomains();
+            final List<String> deadDomains = this.getDeadDomains();
             if (deadDomains == null || !deadDomains.contains(urlHost)) {
                 /* Only correct domains if we know they're dead. */
                 return;

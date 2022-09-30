@@ -15,10 +15,19 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
+import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,13 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig;
-import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
-import org.jdownloader.plugins.config.PluginJsonConfig;
+import jd.plugins.hoster.KemonoParty;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -193,55 +196,80 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             /* E.g. redirect to main page of user because single post does not exist */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (PluginJsonConfig.get(getConfigInterface()).isCrawlHttpLinks()) {
-            final String postContent = br.getRegex("<div\\s*class\\s*=\\s*\"post__content\"[^>]*>(.+)</div>\\s*<footer").getMatch(0);
-            if (postContent != null) {
-                final String[] urls = HTMLParser.getHttpLinks(postContent, br.getURL());
+        String postTitle = br.getRegex("class=\"post__title\">\\s*<span>([^<]+)</span>").getMatch(0);
+        if (postTitle != null) {
+            postTitle = Encoding.htmlDecode(postTitle).trim();
+        }
+        String publishedDateStr = br.getRegex("\"post__published\"[^>]*>\\s*<time[^>]*class\\s*=\\s*\"timestamp[^>]*datetime\\s*=\\s*\"\\s*([0-9\\-: ]+)").getMatch(0);
+        if (publishedDateStr == null) {
+            publishedDateStr = br.getRegex("<meta name\\s*=\\s*\"published\"\\s*content\\s*=\\s*\"\\s*([0-9\\-: ]+)").getMatch(0);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        if (postTitle != null) {
+            fp.setName(portal + " - " + userID + " - " + postID + " - " + postTitle);
+        } else {
+            /* Fallback */
+            fp.setName(portal + " - " + userID + " - " + postID);
+        }
+        final ArrayList<DownloadLink> kemonoResults = new ArrayList<DownloadLink>();
+        final String[] directURLs = br.getRegex("\"[^\"]*(/data/[^\"]+)").getColumn(0);
+        if (directURLs != null && directURLs.length > 0) {
+            /* Remove duplicates from results so our index will be correct down below. */
+            final HashSet<String> dups = new HashSet<String>();
+            int index = 0;
+            for (String directURL : directURLs) {
+                final URL url = br.getURL(directURL);
+                if (dups.add(url.getPath())) {
+                    directURL = url.toString();
+                    final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
+                    media.setProperty(KemonoParty.PROPERTY_POST_CONTENT_INDEX, index);
+                    final UrlQuery query = UrlQuery.parse(directURL);
+                    final String betterFilename = Encoding.htmlDecode(query.get("f"));
+                    if (!StringUtils.isEmpty(betterFilename)) {
+                        media.setFinalFileName(betterFilename);
+                        media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+                    }
+                    kemonoResults.add(media);
+                    index++;
+                }
+            }
+        }
+        final String postTextContent = br.getRegex("<div\\s*class\\s*=\\s*\"post__content\"[^>]*>(.+)</div>\\s*<footer").getMatch(0);
+        if (!StringUtils.isEmpty(postTextContent)) {
+            final KemonoPartyConfig cfg = PluginJsonConfig.get(getConfigInterface());
+            final TextCrawlMode mode = cfg.getTextCrawlMode();
+            if (cfg.isCrawlHttpLinksFromPostContent()) {
+                final String[] urls = HTMLParser.getHttpLinks(postTextContent, br.getURL());
                 if (urls != null && urls.length > 0) {
                     for (final String url : urls) {
                         ret.add(this.createDownloadlink(url));
                     }
                 }
             }
-        }
-        final String postTitle = br.getRegex("class=\"post__title\">\\s*<span>([^<]+)</span>").getMatch(0);
-        String published = br.getRegex("\"post__published\"[^>]*>\\s*<time[^>]*class\\s*=\\s*\"timestamp[^>]*datetime\\s*=\\s*\"\\s*([0-9\\-: ]+)").getMatch(0);
-        if (published == null) {
-            published = br.getRegex("<meta name\\s*=\\s*\"published\"\\s*content\\s*=\\s*\"\\s*([0-9\\-: ]+)").getMatch(0);
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        if (postTitle != null) {
-            fp.setName(portal + " - " + userID + " - " + postID + " - " + Encoding.htmlDecode(postTitle));
-        } else {
-            /* Fallback */
-            fp.setName(portal + " - " + userID + " - " + postID);
-        }
-        final String[] directURLs = br.getRegex("\"[^\"]*(/data/[^\"]+)").getColumn(0);
-        /* Remove duplicates from results so our index will be correct down below. */
-        final HashSet<String> dups = new HashSet<String>();
-        int index = 0;
-        for (String directURL : directURLs) {
-            final URL url = br.getURL(directURL);
-            if (dups.add(url.getPath())) {
-                directURL = url.toString();
-                final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
-                media.setProperty("portal", portal);
-                media.setProperty("userid", userID);
-                media.setProperty("postid", postID);
-                media.setProperty("postContentIndex", index);
-                final UrlQuery query = UrlQuery.parse(directURL);
-                final String betterFilename = Encoding.htmlDecode(query.get("f"));
-                if (!StringUtils.isEmpty(betterFilename)) {
-                    media.setFinalFileName(betterFilename);
-                    media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+            if (mode == TextCrawlMode.ALWAYS || (mode == TextCrawlMode.ONLY_IF_NO_MEDIA_ITEMS_ARE_FOUND && kemonoResults.isEmpty())) {
+                final DownloadLink textfile = this.createDownloadlink(param.getCryptedUrl());
+                textfile.setProperty(KemonoParty.PROPERTY_TEXT, postTextContent);
+                textfile.setFinalFileName(fp.getName() + ".txt");
+                try {
+                    textfile.setDownloadSize(postTextContent.getBytes("UTF-8").length);
+                } catch (final UnsupportedEncodingException ignore) {
+                    ignore.printStackTrace();
                 }
-                if (published != null) {
-                    media.setProperty("date", published);
-                }
-                media.setAvailable(true);
-                ret.add(media);
-                index++;
+                kemonoResults.add(textfile);
             }
+        }
+        for (final DownloadLink kemonoResult : kemonoResults) {
+            if (postTitle != null) {
+                kemonoResult.setProperty(KemonoParty.PROPERTY_TITLE, postTitle);
+            }
+            if (publishedDateStr != null) {
+                kemonoResult.setProperty(KemonoParty.PROPERTY_DATE, publishedDateStr);
+            }
+            kemonoResult.setProperty(KemonoParty.PROPERTY_PORTAL, portal);
+            kemonoResult.setProperty(KemonoParty.PROPERTY_USERID, userID);
+            kemonoResult.setProperty(KemonoParty.PROPERTY_POSTID, postID);
+            kemonoResult.setAvailable(true);
+            ret.add(kemonoResult);
         }
         fp.addLinks(ret);
         return ret;
