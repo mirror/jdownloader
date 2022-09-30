@@ -48,8 +48,9 @@ public class ImgflareCom_ImgBabesCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "imgflare.com" });
-        ret.add(new String[] { "imgbabes.com" });
+        ret.add(new String[] { "imgflare.com" }); // down 2022-09-30 waiting another 30+ days until deletion
+        /* down 2022-09-30 */
+        // ret.add(new String[] { "imgbabes.com" });
         return ret;
     }
 
