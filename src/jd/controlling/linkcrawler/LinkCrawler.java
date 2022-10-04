@@ -36,6 +36,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -797,7 +798,7 @@ public class LinkCrawler {
                         throw new RuntimeException("Abort");
                     } else {
                         final boolean ret = super.add(e);
-                        if (ret && (!e.contains("...") && ((getBaseURL() != null && !e.equals(getBaseURL())) || isSkipBaseURL() == false))) {
+                        if (ret && (!e.contains("...") && ((getBaseURL() != null && !e.equals(getBaseURL())) || Boolean.TRUE.equals(isSkipBaseURL())))) {
                             fastResults.add(e);
                             final CrawledLink crawledLink;
                             if (true || e.getRetainedLength() > 10) {
@@ -3911,6 +3912,10 @@ public class LinkCrawler {
                     }
                 }
                 if (looksLikeDownloadableContent(urlConnection)) {
+                    if (rule != null && RULE.DEEPDECRYPT.equals(rule.getRule()) && isTextContent(urlConnection)) {
+                        br.followConnection();
+                        return null;
+                    }
                     urlConnection.disconnect();
                     final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
                     final CrawledLink direct = createDirectHTTPCrawledLink(link, null, urlConnection);

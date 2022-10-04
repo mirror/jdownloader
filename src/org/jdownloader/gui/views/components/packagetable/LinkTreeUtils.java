@@ -198,6 +198,10 @@ public class LinkTreeUtils {
     }
 
     public static Set<String> getURLs(SelectionInfo<? extends AbstractPackageNode, ? extends AbstractPackageChildrenNode> selectionInfo, final boolean openInBrowser) {
+        return getURLs(selectionInfo, openInBrowser, JsonConfig.create(GeneralSettings.class).isCopySingleRealURL());
+    }
+
+    public static Set<String> getURLs(SelectionInfo<? extends AbstractPackageNode, ? extends AbstractPackageChildrenNode> selectionInfo, final boolean openInBrowser, final boolean copySingleRealURL) {
         final LinkedHashSet<String> urls = new LinkedHashSet<String>();
         if (selectionInfo == null || selectionInfo.isEmpty()) {
             return urls;
@@ -227,10 +231,10 @@ public class LinkTreeUtils {
         if (openInBrowser) {
             // should always open browserURL, otherwise you get users going to final links returned from decrypters into directhttp or
             // dedicated hoster plugins.
-        } else if (children.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+        } else if (children.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && copySingleRealURL) {
             // for 'copy urls' and 'open in browser', when youtube type of prefixes are pointless within this context! Only open rawURL when
             // URL are actually traditional browser URL structure.
-        } else if (children.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+        } else if (children.size() == 1 && rawURL != null && copySingleRealURL) {
             urls.clear();
             urls.add(rawURL);
         }

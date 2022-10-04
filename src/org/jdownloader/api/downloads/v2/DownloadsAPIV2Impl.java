@@ -35,7 +35,6 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInt
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.settings.UrlDisplayType;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
@@ -527,15 +526,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public Map<String, List<Long>> getDownloadUrls(final long[] linkIds, final long[] packageIds, UrlDisplayTypeStorable[] urlDisplayTypes) throws BadParameterException {
-        final List<UrlDisplayType> types = new ArrayList<UrlDisplayType>();
-        for (final UrlDisplayTypeStorable urlDisplayType : urlDisplayTypes) {
-            try {
-                types.add(UrlDisplayType.valueOf(urlDisplayType.name()));
-            } catch (Exception e) {
-                throw new BadParameterException(e.getMessage());
-            }
-        }
-        return SelectionInfoUtils.getURLs(packageControllerUtils.getSelectionInfo(linkIds, packageIds), types);
+        return SelectionInfoUtils.getURLs(packageControllerUtils.getSelectionInfo(linkIds, packageIds), SelectionInfoUtils.parse(urlDisplayTypes));
     }
 
     @Override

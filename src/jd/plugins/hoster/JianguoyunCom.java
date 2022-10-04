@@ -73,7 +73,9 @@ public class JianguoyunCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"owner\"><")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            scanFileinfoFromWebsite(br, link);
+            if (!scanFileinfoFromWebsite(br, link)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final boolean download_need_signin = link.getBooleanProperty("download_need_signin", false);
             if (download_need_signin) {
                 /* Only available for signed-in users but if its a photo we might be able to download it anways! */
@@ -111,12 +113,15 @@ public class JianguoyunCom extends PluginForHost {
         this.dllink = (String) entries.get("url");
     }
 
-    public static void scanFileinfoFromWebsite(final Browser br, final DownloadLink dl) {
+    public static boolean scanFileinfoFromWebsite(final Browser br, final DownloadLink dl) {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"owner\"><")) {
             dl.setAvailable(false); // Suitable for decrypter plugin only, hoster plugin needs PluginException
-            return;
+            return false;
         }
         final String pageJson = getWebsiteJson(br);
+        final String isdeleted = new Regex(pageJson, "isdeleted[\t\n\r ]*?:[\t\n\r ]*?(true|false)").getMatch(0);
+        final String isrevoked = new Regex(pageJson, "isrevoked[\t\n\r ]*?:[\t\n\r ]*?(true|false)").getMatch(0);
+        final String canNotAccess = new Regex(pageJson, "canNotAccess[\t\n\r ]*?:[\t\n\r ]*?(true|false)").getMatch(0);
         final String filename = new Regex(pageJson, "name[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']+)\\'").getMatch(0);
         final String filesize = new Regex(pageJson, "size[\t\n\r ]*?:[\t\n\r ]*?\\'(\\d+)\\'").getMatch(0);
         final String download_need_signin = new Regex(pageJson, "download_need_signin[\t\n\r ]*?:[\t\n\r ]*?(true|false)").getMatch(0);
@@ -129,7 +134,13 @@ public class JianguoyunCom extends PluginForHost {
         if (filesize != null) {
             dl.setDownloadSize(Long.parseLong(filesize));
         }
-        dl.setAvailable(true);
+        if ("true".equalsIgnoreCase(isdeleted)) {
+            dl.setAvailable(false);
+            return false;
+        } else {
+            dl.setAvailable(true);
+            return true;
+        }
     }
 
     public static String getWebsiteJson(final Browser br) {

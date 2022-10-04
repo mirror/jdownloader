@@ -216,20 +216,20 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
         public ProtocolVersion[] getProtocolVersions() {
             final ProtocolVersion[] ret = super.getProtocolVersions();
             final boolean tls13Enabled = options != null && options.getCustomFactorySettings().contains(TLS13_ENABLED);
-            final boolean tls10_11Disabled = options != null && options.getCustomFactorySettings().contains(TLS10_11_DISABLED);
-            if (tls13Enabled || tls10_11Disabled) {
-                final List<ProtocolVersion> protocolVersions = new ArrayList<ProtocolVersion>(Arrays.asList(ret));
-                if (tls13Enabled && !protocolVersions.contains(ProtocolVersion.TLSv13)) {
+            final List<ProtocolVersion> protocolVersions = new ArrayList<ProtocolVersion>(Arrays.asList(ret));
+            if (tls13Enabled) {
+                if (!protocolVersions.contains(ProtocolVersion.TLSv13)) {
                     protocolVersions.add(0, ProtocolVersion.TLSv13);
                 }
-                if (tls10_11Disabled) {
-                    protocolVersions.remove(ProtocolVersion.TLSv10);
-                    protocolVersions.remove(ProtocolVersion.TLSv11);
-                }
-                return protocolVersions.toArray(new ProtocolVersion[0]);
             } else {
-                return ret;
+                protocolVersions.remove(ProtocolVersion.TLSv13);
             }
+            final boolean tls10_11Disabled = options != null && options.getCustomFactorySettings().contains(TLS10_11_DISABLED);
+            if (tls10_11Disabled) {
+                protocolVersions.remove(ProtocolVersion.TLSv10);
+                protocolVersions.remove(ProtocolVersion.TLSv11);
+            }
+            return protocolVersions.toArray(new ProtocolVersion[0]);
         }
 
         @Override

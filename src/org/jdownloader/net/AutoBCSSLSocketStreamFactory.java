@@ -8,6 +8,7 @@ import java.net.Socket;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
+import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory.TLS;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamInterface;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
@@ -17,10 +18,12 @@ public class AutoBCSSLSocketStreamFactory implements SSLSocketStreamFactory {
     private final static String              BC_FACTORY = "BC_Factory";
     private final BCSSLSocketStreamFactory   bc;
     private final JavaSSLSocketStreamFactory jsse;
+    private final boolean                    jsseTLS13Supported;
 
     public AutoBCSSLSocketStreamFactory() {
         bc = new BCSSLSocketStreamFactory();
         jsse = new JavaSSLSocketStreamFactory();
+        jsseTLS13Supported = jsse.isTLSSupported(TLS.TLS_1_3, null, null);
     }
 
     public interface AutoSwitchSSLSocketStreamInterface extends SSLSocketStreamInterface {
@@ -29,10 +32,14 @@ public class AutoBCSSLSocketStreamFactory implements SSLSocketStreamFactory {
         public SSLSocketStreamFactory getInternalSSLSocketStreamFactory();
     }
 
+    protected boolean preferBC(final SSLSocketStreamOptions options) {
+        return options.getCustomFactorySettings().contains(BC_FACTORY) || (options.getCustomFactorySettings().contains("JSSE_TLS1.3_ENABLED") && !jsseTLS13Supported);
+    }
+
     @Override
     public SSLSocketStreamInterface create(final SocketStreamInterface socketStream, final String host, final int port, final boolean autoclose, final SSLSocketStreamOptions options) throws IOException {
         final SSLSocketStreamInterface ret;
-        if (options.getCustomFactorySettings().contains(BC_FACTORY)) {
+        if (preferBC(options)) {
             ret = bc.create(socketStream, host, port, autoclose, options);
         } else {
             ret = jsse.create(socketStream, host, port, autoclose, options);
@@ -112,7 +119,7 @@ public class AutoBCSSLSocketStreamFactory implements SSLSocketStreamFactory {
 
     @Override
     public SSLSocketFactory getSSLSocketFactory(SSLSocketStreamOptions options, String sniHostName) throws IOException {
-        if (options.getCustomFactorySettings().contains(BC_FACTORY)) {
+        if (preferBC(options)) {
             return bc.getSSLSocketFactory(options, sniHostName);
         } else {
             return jsse.getSSLSocketFactory(options, sniHostName);

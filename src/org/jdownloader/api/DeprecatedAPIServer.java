@@ -67,6 +67,7 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.NameType;
+import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -434,6 +435,12 @@ public class DeprecatedAPIServer extends HttpServer {
                     @Override
                     protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException {
                         return new BcDefaultTlsCredentialedDecryptor((BcTlsCrypto) getCrypto(), cert, keyParam);
+                    }
+
+                    @Override
+                    protected ProtocolVersion[] getSupportedVersions() {
+                        // TODO: add TLSv13 support
+                        return ProtocolVersion.TLSv12.only();
                     }
 
                     @Override

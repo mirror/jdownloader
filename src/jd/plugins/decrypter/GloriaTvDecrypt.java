@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gloria.tv" }, urls = { "https?://(www\\.)?gloria\\.tv/(?:media|video|post)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gloria.tv" }, urls = { "https?://(www\\.)?gloria\\.tv/(?:media|video|post|share)/[A-Za-z0-9]+" })
 public class GloriaTvDecrypt extends PluginForDecrypt {
     public GloriaTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
