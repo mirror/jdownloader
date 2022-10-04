@@ -167,19 +167,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
         // check if we have this archive already in queue.
         for (final ExtractionController ec : extractionQueue.getJobs()) {
-            final Archive eca = ec.getArchive();
-            if (eca == archive || StringUtils.equals(eca.getArchiveID(), archive.getArchiveID())) {
+            if (ec.isSameArchive(archive)) {
                 return ec;
             }
         }
         final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
-        if (currentController != null) {
-            final Archive ca = currentController.getArchive();
-            if (ca == archive || StringUtils.equals(ca.getArchiveID(), archive.getArchiveID())) {
-                return currentController;
-            }
-        }
-        if (archive.getArchiveFiles().size() == 0) {
+        if (currentController != null && currentController.isSameArchive(archive)) {
+            return currentController;
+        } else if (archive.getArchiveFiles().size() == 0) {
             logger.info("Archive:" + archive.getName() + "|Empty");
             return null;
         }
@@ -253,7 +248,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     public Archive buildArchive(final ArchiveFactory factory) throws ArchiveException {
         if (!Boolean.FALSE.equals(factory.isPartOfAnArchive())) {
-            final Archive existing = getExistingArchive(factory);
+            final ExtractionController ec = getExtractionController(factory);
+            final Archive existing = ec != null ? ec.getArchive() : null;
             if (existing == null) {
                 Throwable throwable = null;
                 final boolean deepInspection = !(factory instanceof CrawledLinkFactory);
@@ -600,18 +596,18 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
     }
 
-    private synchronized Archive getExistingArchive(final Object archiveFactory) {
+    private synchronized ExtractionController getExtractionController(final Object archiveFactory) {
         for (ExtractionController ec : extractionQueue.getJobs()) {
             final Archive archive = ec.getArchive();
             if (archive.contains(archiveFactory)) {
-                return archive;
+                return ec;
             }
         }
         final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
         if (currentController != null) {
             final Archive archive = currentController.getArchive();
             if (archive.contains(archiveFactory)) {
-                return archive;
+                return currentController;
             }
         }
         return null;
@@ -650,7 +646,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             try {
                 if (caller instanceof SingleDownloadController) {
                     final DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
-                    if (getExistingArchive(link) == null) {
+                    if (getExtractionController(link) == null) {
                         final Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
                         if (onNewArchive(caller, archive)) {
                             addToQueue(archive, false);
@@ -660,7 +656,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     if (getSettings().isDeepExtractionEnabled() && matchesDeepExtractionBlacklist(fileList) == false) {
                         final List<File> files = new ArrayList<File>(fileList.length);
                         for (File file : fileList) {
-                            if (getExistingArchive(file) == null) {
+                            if (getExtractionController(file) == null) {
                                 files.add(file);
                             }
                         }
@@ -695,7 +691,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 } else {
                     final List<File> files = new ArrayList<File>(fileList.length);
                     for (File file : fileList) {
-                        if (getExistingArchive(file) == null) {
+                        if (getExtractionController(file) == null) {
                             files.add(file);
                         }
                     }
@@ -929,16 +925,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     public List<DownloadLink> onAskToRemoveChildren(final Object asker, final List<DownloadLink> children) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(children.size());
         for (final DownloadLink dlink : children) {
-            final Archive archive = getExistingArchive(dlink);
-            if (archive != null) {
-                if (asker instanceof ExtractionController) {
-                    final ExtractionController ec = (ExtractionController) asker;
-                    if (ec.getArchive() == archive || StringUtils.equals(ec.getArchive().getArchiveID(), archive.getArchiveID())) {
-                        ret.add(dlink);
-                        continue;
-                    }
+            final ExtractionController ec = getExtractionController(dlink);
+            if (ec != null) {
+                if (asker instanceof ExtractionController && asker == ec) {
+                    ret.add(dlink);
+                    continue;
                 }
-                logger.info("Link (" + dlink.toString() + ") is in active Archive do not remove: " + archive.getArchiveID());
+                logger.info("Link (" + dlink.toString() + ") is in active Archive do not remove: " + ec.getArchive().getArchiveID());
             } else {
                 ret.add(dlink);
             }

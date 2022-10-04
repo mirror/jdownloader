@@ -298,7 +298,7 @@ public class Archive {
     public boolean contains(Object contains) {
         if (contains != null) {
             for (ArchiveFile file : getArchiveFiles()) {
-                if (file.equals(contains)) {
+                if (file.contains(contains)) {
                     return true;
                 }
             }
@@ -332,7 +332,7 @@ public class Archive {
 
     public ArchiveFile getArchiveFileByPath(String filename) {
         if (filename != null) {
-            for (ArchiveFile af : getArchiveFiles()) {
+            for (final ArchiveFile af : getArchiveFiles()) {
                 if (filename.equals(af.getFilePath())) {
                     return af;
                 }

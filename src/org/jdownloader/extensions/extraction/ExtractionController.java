@@ -69,6 +69,24 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
     private final AtomicLong   processedBytes = new AtomicLong(0);
     private volatile IO_MODE   crcHashing     = IO_MODE.NORMAL;
 
+    public boolean isSameArchive(Archive archive) {
+        if (archive == null) {
+            return false;
+        } else if (getArchive() == archive) {
+            return true;
+        } else if (!StringUtils.equals(getArchive().getArchiveID(), archive.getArchiveID())) {
+            return false;
+        } else if (getArchive().getArchiveType() != archive.getArchiveType() || getArchive().getSplitType() != archive.getSplitType()) {
+            return false;
+        } else if (getArchive().getArchiveFiles().size() != archive.getArchiveFiles().size()) {
+            return false;
+        } else {
+            final String thisFirstFilePath = getArchive().getArchiveFiles().get(0).getFilePath();
+            final String otherFirstFilePath = archive.getArchiveFiles().get(0).getFilePath();
+            return StringUtils.equals(thisFirstFilePath, otherFirstFilePath);
+        }
+    }
+
     public long getCompleteBytes() {
         return completeBytes.get();
     }
@@ -164,7 +182,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
         synchronized (extension) {
             final List<ExtractionController> removeList = new ArrayList<ExtractionController>();
             for (ExtractionController ec : getExtractionQueue().getJobs()) {
-                if (ec.getArchive() == archive || StringUtils.equals(ec.getArchive().getArchiveID(), archive.getArchiveID())) {
+                if (ec.isSameArchive(archive)) {
                     removeList.add(ec);
                 }
             }
