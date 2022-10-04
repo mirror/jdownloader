@@ -21,6 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -43,11 +44,9 @@ public class WorkuploadCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME            = false;
-    private static final int     FREE_MAXCHUNKS         = 1;
-    private static final int     FREE_MAXDOWNLOADS      = 20;
-    private static final String  html_passwordprotected = "id=\"passwordprotected_file_password\"";
-    private boolean              passwordprotected      = false;
+    private static final boolean FREE_RESUME       = false;
+    private static final int     FREE_MAXCHUNKS    = 1;
+    private static final int     FREE_MAXDOWNLOADS = 20;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -72,8 +71,11 @@ public class WorkuploadCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        passwordprotected = this.br.containsHTML(html_passwordprotected);
-        if (passwordprotected) {
+        final String sha256 = br.getRegex("(?i)([A-Fa-f0-9]{64})\\s*\\(SHA256\\)").getMatch(0);
+        if (sha256 != null) {
+            link.setSha256Hash(sha256);
+        }
+        if (isPasswordProtected(br)) {
             link.getLinkStatus().setStatusText("This url is password protected");
         } else {
             String filename = br.getRegex("<td>Dateiname:</td><td>([^<>\"]*?)<").getMatch(0);
@@ -110,6 +112,10 @@ public class WorkuploadCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isPasswordProtected(final Browser br) {
+        return br.containsHTML("id=\"passwordprotected_file_password\"");
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
@@ -121,16 +127,17 @@ public class WorkuploadCom extends PluginForHost {
         // String dllink = checkDirectLink(downloadLink, directlinkproperty);
         String dllink = null;
         if (dllink == null) {
-            if (passwordprotected) {
+            if (isPasswordProtected(br)) {
                 String passCode = link.getDownloadPassword();
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);
                 }
                 this.br.postPage(this.br.getURL(), "passwordprotected_file%5Bpassword%5D=" + Encoding.urlEncode(passCode) + "&passwordprotected_file%5Bsubmit%5D=&passwordprotected_file%5Bkey%5D=" + this.getFID(link));
-                if (this.br.containsHTML(html_passwordprotected)) {
+                if (isPasswordProtected(br)) {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else {
+                    /* User entered valid password */
                     link.setDownloadPassword(passCode);
                 }
             }
