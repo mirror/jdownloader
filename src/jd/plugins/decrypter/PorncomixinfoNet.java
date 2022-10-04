@@ -12,6 +12,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -23,14 +25,13 @@ public class PorncomixinfoNet extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String addedurl = param.getCryptedUrl();
         br.getPage(addedurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String urltitle = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         String postTitle = br.getRegex("<title>([^<>\"]+) - Porn Comics</title>").getMatch(0);
@@ -38,6 +39,7 @@ public class PorncomixinfoNet extends PluginForDecrypt {
             /* Fallback */
             postTitle = urltitle;
         }
+        /* Similar to hentairead.com */
         String imagesText = br.getRegex("chapter_preloaded_images = \\[(.*?)\\]").getMatch(0);
         imagesText = PluginJSonUtils.unescape(imagesText);
         imagesText = imagesText.replace("\"", "");
@@ -48,13 +50,13 @@ public class PorncomixinfoNet extends PluginForDecrypt {
             final DownloadLink link = createDownloadlink(imageurl);
             link.setAvailable(true);
             link.setContainerUrl(param.getCryptedUrl());
-            decryptedLinks.add(link);
+            ret.add(link);
         }
         if (postTitle != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(postTitle));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
