@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
@@ -116,9 +117,9 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean loginWebsite(final DownloadLink downloadLink, final Account account, final boolean validateCookies) throws Exception {
+    public boolean loginWebsite(final DownloadLink link, final Account account, final boolean validateCookies) throws Exception {
         try {
-            return super.loginWebsite(downloadLink, account, validateCookies);
+            return super.loginWebsite(link, account, validateCookies);
         } catch (final PluginException e) {
             Form twoFAForm = null;
             final String formKey2FA = "new_ip_token";
@@ -168,9 +169,38 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        final String betterFilename = br.getRegex("data-feather=\"file\"></i>([^<]+)<").getMatch(0);
+        if (betterFilename != null) {
+            fileInfo[0] = betterFilename;
+        }
+        super.scanInfo(html, fileInfo);
+        return fileInfo;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+        if (br.containsHTML("(?i)>\\s*The file you were looking for doesn")) {
+            return true;
+        } else {
+            return super.isOffline(link, br, correctedBR);
+        }
+    }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br.containsHTML("(?i)>\\s*This file is available for")) {
+            /* 2022-10-04 */
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
+        }
+    }
+
+    @Override
     protected boolean supports_availablecheck_alt() {
-        /* 2020-11-06 */
-        return false;
+        /* 2022-10-04 */
+        return true;
     }
 
     @Override

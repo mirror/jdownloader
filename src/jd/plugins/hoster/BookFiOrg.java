@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,16 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BookFiOrg extends antiDDoSForHost {
-    // DEV NOTES
-    // they share the same template
-    // hosted on different IP ranges
     public BookFiOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -64,7 +62,8 @@ public class BookFiOrg extends antiDDoSForHost {
 
     private static final ArrayList<String> getDeadDomains() {
         /**
-         * Collect dead domains so we know when we have to alter the domain of added URLs! </br> KEEP THIS LIST UP2DATE!!
+         * Collect dead domains so we know when we have to alter the domain of added URLs! </br>
+         * KEEP THIS LIST UP2DATE!!
          */
         final ArrayList<String> deadDomains = new ArrayList<String>();
         deadDomains.add("bookfi.org");
@@ -108,32 +107,30 @@ public class BookFiOrg extends antiDDoSForHost {
         }
     }
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() != null) {
-            final ArrayList<String> deadDomains = getDeadDomains();
-            final String domain = Browser.getHost(link.getPluginPatternMatcher(), true);
-            if (deadDomains.contains(domain)) {
-                link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst(org.appwork.utils.Regex.escape(domain), this.getHost()));
-            }
+    private String getContentURL(final DownloadLink link) {
+        final ArrayList<String> deadDomains = getDeadDomains();
+        final String domain = Browser.getHost(link.getPluginPatternMatcher(), true);
+        if (deadDomains.contains(domain)) {
+            return link.getPluginPatternMatcher().replaceFirst(Pattern.quote(domain), this.getHost());
         }
+        /* Return original link */
+        return link.getPluginPatternMatcher();
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        correctDownloadLink(link);
-        final String parameter = link.getPluginPatternMatcher();
+        final String url = getContentURL(link);
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(url);
         if (br.getURL().contains("redirectUrl")) {
             /* Redirect to other domain based on GEO-location/IP */
             logger.info("Redirect to another domain required");
             String redirect = br.getRegex("location\\.href = '//' \\+ domain \\+ '(/book/[^\\']+)'").getMatch(0);
             if (redirect == null) {
-                final String url = br._getURL().toString();
-                redirect = new Regex(url, "(/book/.+)").getMatch(0);
+                final String newurl = br._getURL().toString();
+                redirect = new Regex(newurl, "(/book/.+)").getMatch(0);
             }
             final String allDomainsJs = br.getRegex("const domains = (\\[[^\\]]+\\]);").getMatch(0);
             if (redirect == null) {
@@ -149,11 +146,12 @@ public class BookFiOrg extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"notFound") || br.containsHTML(">\\s*If you did not find the book or it was closed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (parameter.matches(TYPE_MD5)) {
-            link.setMD5Hash(new Regex(parameter, TYPE_MD5).getMatch(0));
+        final Regex md5url = new Regex(url, TYPE_MD5);
+        if (md5url.matches()) {
+            link.setMD5Hash(md5url.getMatch(0));
         }
         /* We expect a redirect here */
-        if (parameter.contains("/md5/") && br.getURL().contains("/md5/")) {
+        if (url.contains("/md5/") && br.getURL().contains("/md5/")) {
             // bookfi
             String bookid = br.getRegex("<a href=\"/?(book/\\d+)\".*?</a>\\s*</?h3").getMatch(0);
             if (bookid == null) {
@@ -175,16 +173,14 @@ public class BookFiOrg extends antiDDoSForHost {
         }
         final String title = PluginJSonUtils.getJson(br, "title");
         if (!StringUtils.isEmpty(title)) {
-            String ext = br.getRegex("<i class=\"zlibicon-download\"[^>]*></i>\\s*[^<]*\\(([a-z0-9]+),\\s*\\d+").getMatch(0);
-            if (ext == null) {
-                ext = "djvu";
+            final String ext = br.getRegex("class=\"book-property__extension\">([^<]+)<").getMatch(0);
+            if (ext != null) {
+                link.setName(title + "." + ext.trim());
+            } else {
+                logger.warning("Failed to find file-extension");
+                link.setName(title);
             }
-            link.setName(title + "." + ext);
         }
-        // if (parameter.contains("/md5/")) {
-        // // now everything is ok, we should correct to a single url/file uid
-        // param.setUrlDownload(br.getURL());
-        // }
         return AvailableStatus.TRUE;
     }
 
@@ -202,9 +198,9 @@ public class BookFiOrg extends antiDDoSForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            /* 2021-10-07: Different domain(and/or IP) = different language --> Try to cover multiple languages here */
-            if (br.containsHTML("(?i)There are more th(?:e|a)n \\d+ downloads from |ACHTUNG: Es gibt mehr als \\d+ Downloads von Ihrer IP")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached");
+            if (br.containsHTML("class=\"download-limits-error")) {
+                /* Typically max 5 files per day for free-users */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 30 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
