@@ -30,10 +30,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newcomic.info" }, urls = { "https?://(\\w+\\.)?newcomic\\.info/(tags/)?([\\w\\-\\.\\%/]+)" })
-public class NewComicsInfo extends antiDDoSForDecrypt {
-    public NewComicsInfo(PluginWrapper wrapper) {
+public class NewComicInfo extends antiDDoSForDecrypt {
+    public NewComicInfo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -44,11 +46,13 @@ public class NewComicsInfo extends antiDDoSForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = br.getRegex("(?:og:)?(?:title|description)\\\"[^>]*content=[\\\"'](?:\\s*Watch\\s*Couchtuner\\s*)?([^\\\"\\']+)\\s+(?:online\\s+for\\s+free|\\|)").getMatch(0);
         ArrayList<String> links = new ArrayList<String>();
         String linkBlock = br.getRegex("<div[^>]+class\\s*=\\s*\"newcomic-m-buttons\"[^>]*>\\s*([^°]+)\\s*<div[^>]+class\\s*=\\s*\"newcomic-section newcomic-related\"").getMatch(0);
@@ -66,7 +70,7 @@ public class NewComicsInfo extends antiDDoSForDecrypt {
             }
             if (StringUtils.isNotEmpty(fpName)) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.setName(Encoding.htmlDecode(fpName).trim());
                 fp.addLinks(decryptedLinks);
             }
         }
