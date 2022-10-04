@@ -22,13 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -44,6 +37,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RecurbateCom extends antiDDoSForHost {
@@ -61,15 +61,15 @@ public class RecurbateCom extends antiDDoSForHost {
     // Tags: Porn plugin
     /* Connection stuff */
     /* Global limits */
-    private final boolean resume                  = true;
-    private final int     free_maxchunks          = -2;
+    private final boolean      resume                  = true;
+    private final int          free_maxchunks          = -2;
     /* Free (+ free account) and premium specific limits */
-    private final int     free_maxdownloads       = 1;
-    private final int     premium_maxdownloads    = 10;
-    private final String  PROPERTY_DATE           = "date";
-    private final String  PROPERTY_DATE_ORIGINAL  = "date_original";
-    private final String  PROPERTY_DATE_TIMESTAMP = "date_timestamp";
-    private final String  PROPERTY_USER           = "username";
+    private final int          free_maxdownloads       = 1;
+    private final int          premium_maxdownloads    = 10;
+    public static final String PROPERTY_DATE           = "date";
+    public static final String PROPERTY_DATE_ORIGINAL  = "date_original";
+    public static final String PROPERTY_DATE_TIMESTAMP = "date_timestamp";
+    public static final String PROPERTY_USER           = "username";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -116,9 +116,10 @@ public class RecurbateCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = getFID(link);
         if (!link.isNameSet()) {
             /* Set fallback filename e.g. for offline items. */
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(fid + ".mp4");
         }
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
@@ -129,6 +130,17 @@ public class RecurbateCom extends antiDDoSForHost {
         if (dateStr == null) {
             dateStr = br.getRegex("(?i)show on (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
         }
+        setDate(link, dateStr);
+        String performer = br.getRegex("/performer/([^/\"<>]+)").getMatch(0);
+        if (performer != null) {
+            performer = Encoding.htmlDecode(performer).trim();
+            link.setProperty(PROPERTY_USER, performer);
+        }
+        setFilename(link, fid);
+        return AvailableStatus.TRUE;
+    }
+
+    public static void setDate(DownloadLink link, final String dateStr) {
         if (dateStr != null) {
             final long dateTimestamp = TimeFormatter.getMilliSeconds(dateStr, "yyyy-MM-dd HH:mm", Locale.ENGLISH);
             final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -140,20 +152,19 @@ public class RecurbateCom extends antiDDoSForHost {
             /* Save date only in format yyyy-MM-dd. */
             link.setProperty(PROPERTY_DATE, formatter.format(theDate));
         }
-        String performer = br.getRegex("/performer/([^/\"<>]+)").getMatch(0);
+    }
+
+    public static void setFilename(DownloadLink link, final String fid) {
+        final String performer = link.getStringProperty(PROPERTY_USER, null);
+        final String dateStr = link.getStringProperty(PROPERTY_DATE, null);
         if (dateStr != null && performer != null) {
-            performer = Encoding.htmlDecode(performer).trim();
-            link.setProperty(PROPERTY_USER, performer);
-            link.setFinalFileName(link.getStringProperty(PROPERTY_DATE) + "_" + performer + "_" + this.getFID(link) + ".mp4");
+            link.setFinalFileName(dateStr + "_" + performer + "_" + fid + ".mp4");
         } else if (performer != null) {
-            performer = Encoding.htmlDecode(performer).trim();
-            link.setProperty(PROPERTY_USER, performer);
-            link.setFinalFileName(performer + "_" + this.getFID(link) + ".mp4");
+            link.setFinalFileName(performer + "_" + fid + ".mp4");
         } else {
             /* Fallback */
-            link.setFinalFileName(this.getFID(link) + ".mp4");
+            link.setFinalFileName(fid + ".mp4");
         }
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -192,8 +203,7 @@ public class RecurbateCom extends antiDDoSForHost {
             if (dllink == null) {
                 if (StringUtils.containsIgnoreCase(brc.toString(), "shall_signin")) {
                     /**
-                     * Free users can watch one video per IP per X time. </br>
-                     * This error should only happen in logged-out state.
+                     * Free users can watch one video per IP per X time. </br> This error should only happen in logged-out state.
                      */
                     errorDailyDownloadlimitReached(account);
                 } else if (StringUtils.containsIgnoreCase(brc.toString(), "shall_subscribe")) {
@@ -269,8 +279,8 @@ public class RecurbateCom extends antiDDoSForHost {
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies == null) {
                     /**
-                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br>
-                     * Login page: https://recurbate.com/signin
+                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br> Login
+                     * page: https://recurbate.com/signin
                      */
                     /* Only display cookie login instructions on first login attempt */
                     if (!account.hasEverBeenValid()) {

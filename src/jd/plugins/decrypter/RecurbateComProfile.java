@@ -20,10 +20,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -31,6 +30,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.RecurbateCom;
+
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RecurbateComProfile extends PluginForDecrypt {
@@ -68,7 +70,8 @@ public class RecurbateComProfile extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String username = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        String username = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        username = Encoding.htmlDecode(username).trim();
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -88,9 +91,15 @@ public class RecurbateComProfile extends PluginForDecrypt {
             boolean foundNewItemsOnCurrentPage = false;
             for (final String videoID : videoIDs) {
                 if (dupes.add(videoID)) {
+                    final String videoDetails = br.getRegex("play\\.php\\?video=" + videoID + ".*?(<div\\s*class\\s*=\\s*\"video-info-sub.*?</div>)").getMatch(0);
                     foundNewItemsOnCurrentPage = true;
                     final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/play.php?video=" + videoID);
-                    dl.setName(username + "_" + videoID + ".mp4");
+                    if (videoDetails != null) {
+                        final String dateStr = new Regex(videoDetails, "(?i)>\\s*•?\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
+                        RecurbateCom.setDate(dl, dateStr);
+                    }
+                    dl.setProperty(RecurbateCom.PROPERTY_USER, username);
+                    RecurbateCom.setFilename(dl, videoID);
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);
