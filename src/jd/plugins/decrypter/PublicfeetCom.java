@@ -36,34 +36,51 @@ public class PublicfeetCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("(?i)>\\s*No such post|This room does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
-            /* E.g. redirect to mainpage --> Content must be offline */
+            /* E.g. redirect to mainpage --> Content looks to be offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String[] images = br.getRegex("\"(https?://[^/]+/public/media/front/post/img/\\d+[^<>\"\\']+)\"").getColumn(0);
         final String[] videos = br.getRegex("\"(https?://[^/]+/storage/app/[^<>\"\\']+\\.mp4)\"").getColumn(0);
         if (images.length == 0 && videos.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String urlSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        String galleryTitle = br.getRegex("class=\"gallery_name\"[^>]*><h1>([^<]+)</h1>").getMatch(0);
+        if (galleryTitle != null) {
+            galleryTitle = Encoding.htmlDecode(galleryTitle).trim();
+        }
+        String uploaderName = br.getRegex("(?i)>\\s*Room Owner\\s*:\\s*</h1>\\s*<p class=\"post_details post_detls_inline\">([^<]+)</p>").getMatch(0);
+        if (uploaderName != null) {
+            uploaderName = Encoding.htmlDecode(uploaderName).trim();
+        }
+        final String galleryID = br.getRegex("id=\"galry_detl_id\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        if (uploaderName != null && galleryTitle != null) {
+            fp.setName(uploaderName + " - " + galleryTitle);
+        } else if (galleryTitle != null) {
+            fp.setName(galleryTitle);
+        } else if (galleryID != null) {
+            fp.setName(galleryID);
+        } else {
+            /* Final fallback */
+            fp.setName(Encoding.htmlDecode(urlSlug).replace("-", " ").trim());
+        }
         for (final String singleLink : images) {
-            final DownloadLink dl = createDownloadlink(singleLink);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(createDownloadlink(singleLink));
         }
         for (final String singleLink : videos) {
-            final DownloadLink dl = createDownloadlink(singleLink);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(createDownloadlink(singleLink));
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(contentID).replace("-", " ").trim());
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        for (final DownloadLink result : ret) {
+            result.setAvailable(true);
+            result._setFilePackage(fp);
+        }
+        return ret;
     }
 }
