@@ -42,6 +42,18 @@ public class BookFiOrg extends antiDDoSForHost {
     }
 
     @Override
+    public void init() {
+        final ArrayList<String> deadDomains = this.getDeadDomains();
+        for (final String[] domainlist : getPluginDomains()) {
+            for (final String domain : domainlist) {
+                if (!deadDomains.contains(domain)) {
+                    Browser.setRequestIntervalLimitGlobal(domain, true, 1000);
+                }
+            }
+        }
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://" + this.getHost() + "/";
     }
@@ -51,12 +63,14 @@ public class BookFiOrg extends antiDDoSForHost {
         return 1;
     }
 
-    private static final String TYPE_MD5 = "https?://[^/]+/md5/([a-f0-9]{32})$";
+    private final String PATTERN_URL_MD5    = "https?://[^/]+/md5/([A-Fa-f0-9]{32})$";
+    private final String PATTERN_URL_NORMAL = "https?://[^/]+/(book|dl)/(\\d+(/[a-z0-9]+)?)$";
+    private final String PROPERTY_ISBN13    = "ISBN13";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "b-ok.cc", "b-ok.org", "art1lib.org", "art1lib.com", "bookfi.net", "bookfi.org", "bookshome.net", "bookshome.org", "booksc.org", "booksc.xyz", "booksc.eu", "booksc.me", "bookzz.org", "de1lib.org", "zlibrary.org", "libsolutions.net", "pt1lib.org", "1lib.eu", "1lib.org", "2lib.org", "b-ok.xyz", "b-ok.global", "3lib.net", "4lib.org", "eu1lib.org", "1lib.limited", "1lib.education", "1lib.to", "1lib.pl", "1lib.vip" });
+        ret.add(new String[] { "b-ok.cc", "b-ok.org", "art1lib.org", "art1lib.com", "bookfi.net", "bookfi.org", "bookshome.net", "bookshome.org", "booksc.org", "booksc.xyz", "booksc.eu", "booksc.me", "bookzz.org", "de1lib.org", "zlibrary.org", "libsolutions.net", "pt1lib.org", "1lib.eu", "1lib.org", "2lib.org", "b-ok.xyz", "b-ok.global", "3lib.net", "4lib.org", "eu1lib.org", "1lib.limited", "1lib.education", "1lib.to", "1lib.pl", "1lib.vip", "1lib.domains" });
         return ret;
     }
 
@@ -118,6 +132,39 @@ public class BookFiOrg extends antiDDoSForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        final String isbn13 = link.getStringProperty(PROPERTY_ISBN13);
+        if (isbn13 != null) {
+            return isbn13;
+        }
+        final Regex md5url = new Regex(link.getPluginPatternMatcher(), PATTERN_URL_MD5);
+        if (md5url.matches()) {
+            return md5url.getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_URL_NORMAL).getMatch(1);
+        }
+    }
+
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        String fid = null;
+        if (link != null && StringUtils.equals(getHost(), link.getHost()) && (fid = getFID(link)) != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String url = getContentURL(link);
         this.setBrowserExclusive();
@@ -127,10 +174,9 @@ public class BookFiOrg extends antiDDoSForHost {
         if (br.getURL().contains("redirectUrl")) {
             /* Redirect to other domain based on GEO-location/IP */
             logger.info("Redirect to another domain required");
-            String redirect = br.getRegex("location\\.href = '//' \\+ domain \\+ '(/book/[^\\']+)'").getMatch(0);
+            String redirect = br.getRegex("redirectWithCounting\\('redirector', '//' \\+ domain \\+ '(/book/\\d+/[a-z0-9]+)'\\)").getMatch(0);
             if (redirect == null) {
-                final String newurl = br._getURL().toString();
-                redirect = new Regex(newurl, "(/book/.+)").getMatch(0);
+                redirect = new Regex(br.getURL(), "(/book/.+)").getMatch(0);
             }
             final String allDomainsJs = br.getRegex("const domains = (\\[[^\\]]+\\]);").getMatch(0);
             if (redirect == null) {
@@ -143,12 +189,23 @@ public class BookFiOrg extends antiDDoSForHost {
             logger.info("Redirect to: " + redirectURL);
             getPage(redirectURL);
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"notFound") || br.containsHTML(">\\s*If you did not find the book or it was closed")) {
+        /* TODO: Add support for more languages */
+        if (br.containsHTML("(?i)Zu viele Anfragen. Bitte versuchen Sie es später noch einmal.")) {
+            /* 2022-10-04: They're returning this errormessage in plaintext */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests", 30 * 60 * 1000l);
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"notFound") || br.containsHTML(">\\s*If you did not find the book or it was closed")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)Diese Buch wurde entfernt")) {
+            /* TODO: Add support for other languages */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex md5url = new Regex(url, TYPE_MD5);
+        final Regex md5url = new Regex(url, PATTERN_URL_MD5);
         if (md5url.matches()) {
             link.setMD5Hash(md5url.getMatch(0));
+        }
+        final String isbn13 = br.getRegex("data-isbn=\"(\\d+)\"").getMatch(0);
+        if (isbn13 != null) {
+            link.setProperty(PROPERTY_ISBN13, isbn13);
         }
         /* We expect a redirect here */
         if (url.contains("/md5/") && br.getURL().contains("/md5/")) {
