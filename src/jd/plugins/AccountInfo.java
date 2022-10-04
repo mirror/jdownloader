@@ -656,4 +656,13 @@ public class AccountInfo extends Property implements AccountTrafficView {
         }
         return null;
     }
+
+    public static long getTimestampInServerContext(final Browser br, final long timestamp) {
+        final long serverTime = br.getCurrentServerTime(-1);
+        if (serverTime > 0) {
+            return timestamp + (System.currentTimeMillis() - serverTime);
+        } else {
+            return timestamp;
+        }
+    }
 }
