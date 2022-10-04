@@ -16,11 +16,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -491,26 +494,50 @@ public class FavIcons {
         return download_FavIconTag(favBr, host, logger);
     }
 
-    public static BufferedImage download_FavIconTag(final Browser favBr, final String host, LogInterface logger) throws IOException {
+    public static BufferedImage download_FavIconTag(Browser favBr, String host, LogInterface logger) throws IOException {
+        final Set<String> favIconURLs = getFavIcons(favBr, host, logger);
+        for (final String favIconURL : favIconURLs) {
+            try {
+                final Browser brc = favBr.cloneBrowser();
+                final BufferedImage ret = download_FavIconTag(brc, favIconURL, host, logger);
+                if (ret != null) {
+                    return ret;
+                }
+            } catch (IOException e) {
+                logger.log(e);
+            }
+        }
+        return null;
+    }
+
+    public static Set<String> getFavIcons(final Browser favBr, final String host, LogInterface logger) throws IOException {
+        final Set<String> ret = new LinkedHashSet<String>();
+        String urls[] = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getColumn(4);
+        if (urls != null) {
+            ret.addAll(Arrays.asList(urls));
+        }
+        urls = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")[^>]*?rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
+        if (urls != null) {
+            ret.addAll(Arrays.asList(urls));
+        }
+        if (ret.size() == 0) {
+            /*
+             * workaround for hoster with not complete url, eg rapidshare.com
+             */
+            String url = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getMatch(3);
+            if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
+                url = "http://" + url;
+            }
+            ret.add(url);
+        }
+        ret.add("/favicon.ico");
+        return ret;
+    }
+
+    public static BufferedImage download_FavIconTag(final Browser favBr, final String url, final String host, LogInterface logger) throws IOException {
         URLConnectionAdapter con = null;
         byte[] bytes = null;
         try {
-            String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getMatch(4);
-            if (StringUtils.isEmpty(url)) {
-                url = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
-            }
-            if (StringUtils.isEmpty(url)) {
-                /*
-                 * workaround for hoster with not complete url, eg rapidshare.com
-                 */
-                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getMatch(3);
-                if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
-                    url = "http://" + url;
-                }
-            }
-            if (StringUtils.isEmpty(url)) {
-                url = "/favicon.ico";
-            }
             if (!StringUtils.isEmpty(url)) {
                 /* favicon tag with ico extension */
                 favBr.setFollowRedirects(true);

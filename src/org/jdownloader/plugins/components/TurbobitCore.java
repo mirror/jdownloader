@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -22,6 +23,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -34,10 +36,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -1026,6 +1030,7 @@ public class TurbobitCore extends antiDDoSForHost {
                     submitForm(loginform);
                 }
                 universalLoginErrorhandling(br);
+                handlePremiumActivation(br, account);
                 if (!isLoggedIN()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\n3. Gehe auf folgende Seite, deaktiviere den Login Captcha Schutz deines Accounts und versuche es erneut: " + account.getHoster() + "/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1046,6 +1051,46 @@ public class TurbobitCore extends antiDDoSForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    protected void handlePremiumActivation(Browser br, Account account) throws Exception {
+        if (!isLoggedIN() && br.containsHTML("<div[^>]*id\\s*=\\s*\"activation-form\"")) {
+            // <h1>Premium activation</h1>
+            // <div id="activation-form">
+            // <input-premium-block
+            // predefined-premium-key="XXXX"
+            // predefined-email="YYYYYYY"
+            // :logged-in="false"
+            // :auto-submit="true"
+            // custom-handler=""
+            // >
+            // </input-premium-block>
+            // <div class="block-title"> Please, enter the premium code below, if you already have it. </div>
+            String predefinedpremiumkey = br.getRegex("predefined-premium-key\\s*=\\s*\"(.*?)\"").getMatch(0);
+            String predefinedemail = br.getRegex("predefined-email\\s*=\\s*\"(.*?)\"").getMatch(0);
+            if (StringUtils.isEmpty(predefinedemail)) {
+                predefinedemail = account.getUser();
+            }
+            if (StringUtils.isEmpty(predefinedpremiumkey)) {
+                // same as account password?
+                predefinedpremiumkey = account.getPass();
+            }
+            postPage(br, "/payments/premium/process", "premium=" + URLEncode.encodeRFC2396(predefinedpremiumkey) + "&email=" + URLEncode.encodeRFC2396(predefinedemail));
+            final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
+            if (Boolean.TRUE.equals(response.get("success"))) {
+                final String redirect = (String) response.get("redirect");
+                if (redirect != null) {
+                    getPage(redirect);
+                }
+                if (isLoggedIN()) {
+                    return;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            final String message = (String) response.get("message");
+            throw new AccountInvalidException(message);
         }
     }
 

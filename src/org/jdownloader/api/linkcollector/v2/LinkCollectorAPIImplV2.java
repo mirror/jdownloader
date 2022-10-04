@@ -64,7 +64,6 @@ import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.UrlDisplayType;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     private LogSource                                                 logger;
@@ -799,15 +798,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public Map<String, List<Long>> getDownloadUrls(final long[] linkIds, final long[] packageIds, UrlDisplayTypeStorable[] urlDisplayTypes) throws BadParameterException {
-        final List<UrlDisplayType> types = new ArrayList<UrlDisplayType>();
-        for (final UrlDisplayTypeStorable urlDisplayType : urlDisplayTypes) {
-            try {
-                types.add(UrlDisplayType.valueOf(urlDisplayType.name()));
-            } catch (Exception e) {
-                throw new BadParameterException(e.getMessage());
-            }
-        }
-        return SelectionInfoUtils.getURLs(packageControllerUtils.getSelectionInfo(linkIds, packageIds), types);
+        return SelectionInfoUtils.getURLs(packageControllerUtils.getSelectionInfo(linkIds, packageIds), SelectionInfoUtils.parse(urlDisplayTypes));
     }
 
     @Override

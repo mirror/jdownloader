@@ -99,8 +99,12 @@ public abstract class LinkCrawlerDeepInspector {
     }
 
     public boolean isOtherTextContent(final URLConnectionAdapter urlConnection) {
-        final String contentType = urlConnection.getContentType();
-        return contentType != null && contentType.matches("(?i)application/[^ ;]*(json|xml).*");
+        if (isHtmlContent(urlConnection)) {
+            return false;
+        } else {
+            final String contentType = urlConnection.getContentType();
+            return contentType != null && (contentType.matches("(?i)application/[^ ;]*(json|xml).*") || contentType.matches("(?i)text/xml.*"));
+        }
     }
 
     public boolean isPlainTextContent(final URLConnectionAdapter urlConnection) {
