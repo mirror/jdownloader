@@ -47,8 +47,12 @@ public class MissingArchiveFile implements ArchiveFile {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean contains(Object obj) {
         if (obj == this) {
+            return true;
+        } else if (obj instanceof String) {
+            return getFilePath().equals(obj);
+        } else if (obj instanceof ArchiveFile && StringUtils.equals(getFilePath(), ((ArchiveFile) obj).getFilePath())) {
             return true;
         } else if (obj instanceof MissingArchiveFile) {
             return StringUtils.equals(getName(), ((MissingArchiveFile) obj).getName());

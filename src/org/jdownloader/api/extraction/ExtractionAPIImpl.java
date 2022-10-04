@@ -103,7 +103,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
                 for (final Archive archive : archives) {
                     final ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archive, getArchiveFileStatusMap(archive));
                     for (final ExtractionController controller : jobs) {
-                        if (StringUtils.equals(controller.getArchive().getArchiveID(), archive.getArchiveID())) {
+                        if (controller.isSameArchive(archive)) {
                             archiveStatus.setControllerId(controller.getUniqueID().getID());
                             if (controller.gotStarted()) {
                                 archiveStatus.setControllerStatus(ControllerStatus.RUNNING);

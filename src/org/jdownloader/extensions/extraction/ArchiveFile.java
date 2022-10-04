@@ -28,6 +28,8 @@ public interface ArchiveFile {
         }
     }
 
+    public boolean contains(Object obj);
+
     public Boolean isComplete();
 
     public String getFilePath();

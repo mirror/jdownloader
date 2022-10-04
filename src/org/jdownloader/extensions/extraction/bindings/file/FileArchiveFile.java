@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.FileStateManager;
 import org.jdownloader.controlling.FileStateManager.FILESTATE;
@@ -46,11 +47,15 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean contains(Object obj) {
         if (obj == this) {
             return true;
         } else if (obj != null) {
-            if (obj instanceof FileArchiveFile) {
+            if (obj instanceof String) {
+                return getFilePath().equals(obj);
+            } else if (obj instanceof ArchiveFile && StringUtils.equals(getFilePath(), ((ArchiveFile) obj).getFilePath())) {
+                return true;
+            } else if (obj instanceof FileArchiveFile) {
                 return getFile().equals(((FileArchiveFile) obj).getFile());
             } else if (obj instanceof File) {
                 return getFile().equals((obj));

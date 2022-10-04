@@ -74,11 +74,15 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean contains(Object obj) {
         if (obj == this) {
             return true;
         } else if (obj != null) {
-            if (obj instanceof DownloadLinkArchiveFile) {
+            if (obj instanceof String) {
+                return getFilePath().equals(obj);
+            } else if (obj instanceof ArchiveFile && StringUtils.equals(getFilePath(), ((ArchiveFile) obj).getFilePath())) {
+                return true;
+            } else if (obj instanceof DownloadLinkArchiveFile) {
                 for (final DownloadLink dl : ((DownloadLinkArchiveFile) obj).getDownloadLinks()) {
                     if (getDownloadLinks().contains(dl)) {
                         return true;
