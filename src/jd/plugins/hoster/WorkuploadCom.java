@@ -46,7 +46,7 @@ public class WorkuploadCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXDOWNLOADS = -1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
