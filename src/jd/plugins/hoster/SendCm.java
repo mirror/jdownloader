@@ -27,6 +27,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -117,6 +118,16 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
+        final String sha256hash = br.getRegex("(?i)SHA-256\\s*:\\s*</b>\\s*([a-f0-9]{64})\\s*</span>").getMatch(0);
+        if (sha256hash != null) {
+            link.setSha256Hash(sha256hash);
+        }
+        return status;
+    }
+
+    @Override
     public boolean loginWebsite(final DownloadLink link, final Account account, final boolean validateCookies) throws Exception {
         try {
             return super.loginWebsite(link, account, validateCookies);
@@ -170,11 +181,14 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String html, final String[] fileInfo) {
-        final String betterFilename = br.getRegex("data-feather=\"file\"></i>([^<]+)<").getMatch(0);
+        super.scanInfo(html, fileInfo);
+        String betterFilename = br.getRegex("(?i)\\&text=([^\"]+)\" target=\"_blank\">\\s*Share on Telegram").getMatch(0);
+        if (betterFilename == null) {
+            betterFilename = br.getRegex("data-feather=\"file\"></i>([^<]+)<").getMatch(0);
+        }
         if (betterFilename != null) {
             fileInfo[0] = betterFilename;
         }
-        super.scanInfo(html, fileInfo);
         return fileInfo;
     }
 
@@ -206,6 +220,12 @@ public class SendCm extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
         /* 2021-09-29 */
+        return false;
+    }
+
+    @Override
+    protected boolean allowToGenerateAPIKey() {
+        /* 2022-10-05: Their API handling is broken serverside and will never return and API key sending the request to generate one. */
         return false;
     }
 }

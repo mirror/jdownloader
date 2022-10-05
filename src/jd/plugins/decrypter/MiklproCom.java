@@ -24,6 +24,8 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "miklpro.com" }, urls = { "https?://(?:www\\.)?miklpro\\.com/([A-Za-z0-9]+)" })
@@ -47,6 +49,10 @@ public class MiklproCom extends MightyScriptAdLinkFly {
         timestamp = Encoding.Base64Decode(timestamp);
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl() + "/?d=" + timestamp);
+        if (br.containsHTML("(?i)>\\s*Please close VPN or proxy")) {
+            /* 2022-10-05 */
+            throw new DecrypterRetryException(RetryReason.GEO);
+        }
         if (this.regexAppVars(this.br) == null) {
             logger.warning("Possible crawler failure...");
         }
