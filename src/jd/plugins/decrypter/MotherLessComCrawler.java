@@ -70,10 +70,10 @@ public class MotherLessComCrawler extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/";
-            regex += "(g/[a-z0-9\\-_]+/[A-F0-9]+";
-            regex += "|g/[a-z0-9\\-_]+";
+            regex += "(g/[\\w\\-%]+/[A-Fa-f0-9]+";
+            regex += "|g/[\\w\\-%]+";
             regex += "|g(i|v)/[a-z0-9\\-_]+";
-            regex += "|G[A-F0-9]+/[A-F0-9]+";
+            regex += "|G[A-F0-9]+/[A-Fa-f0-9]+";
             regex += "|G[A-F0-9]+";
             regex += "|GI[A-F0-9]+";
             regex += "|GV[A-F0-9]+";
@@ -97,14 +97,14 @@ public class MotherLessComCrawler extends PluginForDecrypt {
     // - Server issues can return many 503's in high load situations.
     // - Server also punishes user who downloads with too many connections. This is a linkchecking issue also, as grabs info from headers.
     private final String TYPE_USER                               = "https?://[^/]+/u/.*";
-    private final String TYPE_GALLERY_IMAGE_AND_VIDEO            = "https?://[^/]+/(G([A-F0-9]+))";
-    private final String TYPE_GALLERY_IMAGE                      = "https?://[^/]+/GI[A-F0-9]+$";
-    private final String TYPE_GALLERY_VIDEO                      = "https?://[^/]+/GV[A-F0-9]+$";
-    private final String TYPE_GROUP_CATEGORIES_OVERVIEW          = "https?://[^/]+/g/([a-z0-9\\-_]+)$";
-    private final String TYPE_GROUP_CATEGORY_IMAGE               = "https?://[^/]+/gi/([a-z0-9\\-_]+)$";
-    private final String TYPE_GROUP_CATEGORY_VIDEO               = "https?://[^/]+/gv/([a-z0-9\\-_]+)$";
-    private final String TYPE_SINGLE_ITEM_IN_CONTEXT_OF_GALLERY1 = "https?://[^/]+/g/([^/]+)/([A-F0-9]+)";
-    private final String TYPE_SINGLE_ITEM_IN_CONTEXT_OF_GALLERY2 = "https?://[^/]+/(G[A-F0-9]+)/([A-F0-9]+)$";
+    private final String TYPE_GALLERY_IMAGE_AND_VIDEO            = "https?://[^/]+/(G([A-Fa-f0-9]+))";
+    private final String TYPE_GALLERY_IMAGE                      = "https?://[^/]+/GI[A-Fa-f0-9]+$";
+    private final String TYPE_GALLERY_VIDEO                      = "https?://[^/]+/GV[A-Fa-f0-9]+$";
+    private final String TYPE_GROUP_CATEGORIES_OVERVIEW          = "https?://[^/]+/g/([\\w\\-%]+)$";
+    private final String TYPE_GROUP_CATEGORY_IMAGE               = "https?://[^/]+/gi/([\\w\\-%]+)$";
+    private final String TYPE_GROUP_CATEGORY_VIDEO               = "https?://[^/]+/gv/([\\w\\-%]+)$";
+    private final String TYPE_SINGLE_ITEM_IN_CONTEXT_OF_GALLERY1 = "https?://[^/]+/g/([^/]+)/([A-Fa-f0-9]+)";
+    private final String TYPE_SINGLE_ITEM_IN_CONTEXT_OF_GALLERY2 = "https?://[^/]+/(G[A-F0-9]+)/([A-Fa-f0-9]+)$";
     private final String TYPE_FAVOURITES_ALL                     = "https?://[^/]+/f/([^/]+)/(images|galleries|videos)";
 
     @SuppressWarnings("deprecation")
