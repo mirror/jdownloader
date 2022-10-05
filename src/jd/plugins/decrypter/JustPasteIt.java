@@ -93,7 +93,7 @@ public class JustPasteIt extends AbstractPastebinCrawler {
     }
 
     @Override
-    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         final PastebinMetadata metadata = super.crawlMetadata(param, br);
         // metadata.setUsername("@anonymous");
         final String json = br.getRegex("window\\.barOptions\\s*=\\s*(\\{.*?\\});").getMatch(0);
@@ -112,6 +112,7 @@ public class JustPasteIt extends AbstractPastebinCrawler {
     }
 
     public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
         br.setLoadLimit(3 * br.getLoadLimit());
         br.setAllowedResponseCodes(451);
         return br;

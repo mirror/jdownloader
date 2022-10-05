@@ -29,8 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class Paste2Org extends AbstractPastebinCrawler {
-    public Paste2Org(PluginWrapper wrapper) {
+public class GhostbinComCrawler extends AbstractPastebinCrawler {
+    public GhostbinComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,7 +42,7 @@ public class Paste2Org extends AbstractPastebinCrawler {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "paste2.org" });
+        ret.add(new String[] { "ghostbin.com", "pst.klgrth.io" });
         return ret;
     }
 
@@ -62,30 +62,26 @@ public class Paste2Org extends AbstractPastebinCrawler {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/paste/([a-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
-    protected String getPastebinText(final Browser br) {
-        return br.getRegex("(?i)<ol class='highlight code'>(.*?)</div></li></ol>").getMatch(0);
-    }
-
-    @Override
-    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
-        final PastebinMetadata metadata = super.crawlMetadata(param, br);
-        final String description = br.getRegex("class=\"desc\"[^>]*>\\s*<p>([^<]+)</p>").getMatch(0);
-        if (description != null) {
-            metadata.setDescription(description);
+    protected String getPastebinText(final Browser br) throws IOException {
+        br.getPage(br.getURL() + "/raw");
+        if (br.getHttpConnection().getContentType().contains("text/plain")) {
+            return br.toString();
+        } else {
+            return null;
         }
-        return metadata;
     }
 
     @Override
     public void preProcess(final CryptedLink param) throws IOException, PluginException {
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }

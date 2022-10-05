@@ -20,12 +20,12 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
-import jd.plugins.decrypter.Paste2OrgCrawler;
+import jd.plugins.decrypter.GhostbinComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-@PluginDependencies(dependencies = { Paste2OrgCrawler.class })
-public class Paste2Org extends AbstractPastebinHoster {
-    public Paste2Org(PluginWrapper wrapper) {
+@PluginDependencies(dependencies = { GhostbinComCrawler.class })
+public class GhostbinCom extends AbstractPastebinHoster {
+    public GhostbinCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -36,19 +36,19 @@ public class Paste2Org extends AbstractPastebinHoster {
 
     @Override
     public String getAGBLink() {
-        return "https://paste2.org/";
+        return "https://pst.klgrth.io/";
     }
 
     public static String[] getAnnotationNames() {
-        return buildAnnotationNames(Paste2OrgCrawler.getPluginDomains());
+        return buildAnnotationNames(GhostbinComCrawler.getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(Paste2OrgCrawler.getPluginDomains());
+        return buildSupportedNames(GhostbinComCrawler.getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
-        return Paste2OrgCrawler.getAnnotationUrls();
+        return GhostbinComCrawler.getAnnotationUrls();
     }
 }

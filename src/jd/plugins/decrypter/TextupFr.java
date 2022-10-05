@@ -74,6 +74,7 @@ public class TextupFr extends AbstractPastebinCrawler {
 
     @Override
     public void preProcess(final CryptedLink param) throws IOException, PluginException {
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -81,7 +82,7 @@ public class TextupFr extends AbstractPastebinCrawler {
     }
 
     @Override
-    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         final PastebinMetadata metadata = super.crawlMetadata(param, br);
         final String author = br.getRegex("Auteur\\s*:\\s*<em>([^<]+)</em>").getMatch(0);
         if (author != null) {
