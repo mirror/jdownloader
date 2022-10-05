@@ -224,7 +224,7 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean allowToGenerateAPIKey() {
+    protected boolean allowToGenerateAPIKeyInWebsiteMode() {
         /* 2022-10-05: Their API handling is broken serverside and will never return and API key sending the request to generate one. */
         return false;
     }
