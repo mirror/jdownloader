@@ -55,18 +55,18 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         /* TODO: Implement logic of pastebin settings once available: https://svn.jdownloader.org/issues/90043 */
         correctCryptedLink(param);
         this.preProcess(param);
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
         if (metadata.getPastebinText() == null) {
             logger.warning("Could not find pastebin textfield");
-            return decryptedLinks;
+            return ret;
         }
         final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
         if (lazyHostPlugin != null) {
             final PluginForHost sisterPlugin = getNewPluginInstance(lazyHostPlugin);
             if (sisterPlugin != null && sisterPlugin.canHandle(param.getCryptedUrl())) {
                 final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
-                decryptedLinks.add(textfile);
+                ret.add(textfile);
             }
         }
         /* TODO: Differentiate between URLs that we support (= have plugin for) and those we don't support. */
@@ -78,9 +78,9 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
             if (pws != null && pws.size() > 0) {
                 dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     public DownloadLink preProcessAndGetPlaintextDownloadLink(final CryptedLink param) throws IOException, PluginException {
@@ -109,7 +109,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
             ignore.printStackTrace();
         }
         /* TODO: Set filename according to user preference */
-        textfile.setFinalFileName(this.getFID(link.getCryptedUrl()) + ".txt");
+        textfile.setFinalFileName(metadata.getFilename());
         textfile.setAvailable(true);
         return textfile;
     }

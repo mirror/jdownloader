@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.jdownloader.controlling.PasswordUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,12 +28,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.controlling.PasswordUtils;
 
 /**
  *
@@ -46,16 +47,15 @@ public class PasteHereXyz extends PluginForDecrypt {
 
     /* DEV NOTES */
     // Tags: pastebin
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String url = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        final String id = new Regex(parameter, "/([a-zA-Z0-9]+)").getMatch(0);
+        br.getPage(url);
+        final String id = new Regex(url, "/([a-zA-Z0-9]+)").getMatch(0);
         /* Error handling */
         if (br.containsHTML("<strong>Alert!</strong>\\s*Paste not found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("Password protected")) {
             while (!isAbort()) {
@@ -64,7 +64,7 @@ public class PasteHereXyz extends PluginForDecrypt {
                     form = br.getFormbyAction("/" + id + "/");
                 }
                 if (form == null) {
-                    throw new DecrypterException("Decrypter broken for link: " + parameter);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final List<String> passwords = getPreSetPasswords();
                 final String passCode;
@@ -76,7 +76,7 @@ public class PasteHereXyz extends PluginForDecrypt {
                 form.put("mypass", Encoding.urlEncode(passCode));
                 br.submitForm(form);
                 if (br.containsHTML("Password is Wrong")) {
-                    br.getPage(parameter);
+                    br.getPage(url);
                 }
                 if (!br.containsHTML("Password protected")) {
                     break;
@@ -85,26 +85,23 @@ public class PasteHereXyz extends PluginForDecrypt {
         }
         String plaintxt = br.getRegex("<div[^>]+id=\"p_data\"[^>]*>(.*?)\\s*</div>\\s*</div>").getMatch(0);
         if (plaintxt == null) {
-            logger.info("Could not find 'plaintxt' : " + parameter + ", using full browser instead.");
+            logger.info("Could not find 'plaintxt' : " + url + ", using full browser instead.");
             plaintxt = br.toString();
             // return decryptedLinks;
         }
         final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
         final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
-            logger.info("Found no links[] from 'plaintxt' : " + parameter);
-            return decryptedLinks;
+            logger.info("Found no links[] from 'plaintxt' : " + url);
+            return ret;
         }
-        /* avoid recursion */
         for (final String link : links) {
-            if (!this.canHandle(link)) {
-                final DownloadLink dl = createDownloadlink(link);
-                if (pws != null && pws.size() > 0) {
-                    dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
-                }
-                decryptedLinks.add(dl);
+            final DownloadLink dl = createDownloadlink(link);
+            if (pws != null && pws.size() > 0) {
+                dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
             }
+            ret.add(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
