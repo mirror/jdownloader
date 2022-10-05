@@ -113,7 +113,6 @@ public class EromeComCrawler extends PluginForDecrypt {
             /* Final fallback */
             fp.setName(albumID);
         }
-        fp.setAllowMerge(false);
         if (bottomAlbumDescription != null) {
             fp.setComment(Encoding.htmlDecode(bottomAlbumDescription).trim());
         }
