@@ -30,22 +30,22 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahome.com" }, urls = { "https?://(?:www\\.)?(mangakoi|mangahome)\\.com/manga/[A-Za-z0-9\\-_]+/c\\d+(?:\\.\\d+)?" })
-public class MangahomeCom extends antiDDoSForDecrypt {
-    public MangahomeCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahome.com" }, urls = { "https?://(?:www\\.)?(mangakoi|mangahome)\\.com/manga/[A-Za-z0-9\\-_]+(?:/v\\d+)?/c\\d+(?:\\.\\d+)?" })
+public class MangahomeComCrawler extends antiDDoSForDecrypt {
+    public MangahomeComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceFirst("mangakoi\\.com", "mangahome.com");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String url = param.toString().replaceFirst("mangakoi\\.com", "mangahome.com");
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex urlinfo = new Regex(parameter, "https?://(?:www\\.)?(mangakoi|mangahome)\\.com/manga/([A-Za-z0-9\\-_]+)/c(\\d+(?:\\.\\d+)?)");
-        final String chapter_str = urlinfo.getMatch(2);
+        final Regex urlinfo = new Regex(url, "https?://[^/]+/manga/([A-Za-z0-9\\-_]+)(?:/v\\d+)?/c(\\d+(?:\\.\\d+)?)");
+        final String chapter_str = urlinfo.getMatch(1);
         final String chapter_str_main;
         String chapter_str_extra = "";
         if (chapter_str.contains(".")) {
@@ -74,25 +74,24 @@ public class MangahomeCom extends antiDDoSForDecrypt {
         }
         if (page_max == 0) {
             logger.info("Failed to find any downloadable content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         for (short page = 1; page <= page_max; page++) {
             final String chapter_formatted = df_chapter.format(chapter_main);
             final String page_formatted = df_page.format(page);
             // final String finallink = "directhttp://" + server_urlpart + chapter_formatted + chapter_str_extra + "-" + page_formatted +
-            final String singleImageURL = this.br.getBaseURL() + "c" + chapter_str + "/" + page + ".html";
-            final DownloadLink dl = this.createDownloadlink(singleImageURL);
+            final String singleImageContentURL = this.br.getBaseURL() + "c" + chapter_str + "/" + page + ".html";
+            final DownloadLink dl = this.createDownloadlink(singleImageContentURL);
             final String filename = url_name + "_" + chapter_formatted + chapter_str_extra + "_" + page_formatted + ext;
             dl.setName(filename);
             dl.setProperty("filename", filename);
             dl.setLinkID(filename);
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(url_fpname);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }
