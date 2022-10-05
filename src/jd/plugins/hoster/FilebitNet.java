@@ -105,6 +105,11 @@ public class FilebitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final String error = (String) entries.get("error");
+        if (error != null) {
+            /* E.g. {"error":"invalid file"} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Map<String, Object> hash = (Map<String, Object>) entries.get("hash");
         if (hash != null) {
             final String hashType = hash.get("type").toString();
