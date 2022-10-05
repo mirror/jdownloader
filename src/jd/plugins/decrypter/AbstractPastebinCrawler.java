@@ -83,7 +83,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    public DownloadLink preProcessAndGetPlaintextDownloadLink(final CryptedLink param) throws IOException, PluginException {
+    public DownloadLink preProcessAndGetPlaintextDownloadLink(final CryptedLink param) throws Exception {
         correctCryptedLink(param);
         this.preProcess(param);
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
@@ -91,7 +91,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         return textfile;
     }
 
-    public PastebinMetadata preProcessAndGetMetadata(final CryptedLink param) throws IOException, PluginException {
+    public PastebinMetadata preProcessAndGetMetadata(final CryptedLink param) throws Exception {
         correctCryptedLink(param);
         this.preProcess(param);
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
@@ -117,14 +117,18 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
     /** Accesses URL, checks if content looks like it's available and handles password/captcha until plaintext is available in HTML. */
     public abstract void preProcess(final CryptedLink param) throws IOException, PluginException;
 
-    /** Collects metadata which will be used later. */
-    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) {
+    /**
+     * Collects metadata which will be used later.
+     *
+     * @throws Exception
+     */
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         final PastebinMetadata metadata = new PastebinMetadata(this.getFID(param.getCryptedUrl()));
         metadata.setPastebinText(getPastebinText(br));
         return metadata;
     }
 
-    protected abstract String getPastebinText(final Browser br);
+    protected abstract String getPastebinText(final Browser br) throws Exception;
 
     public class PastebinMetadata {
         private String contentID     = null;
