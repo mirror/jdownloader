@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ghostbin.com" }, urls = { "https?://(?:www\\.)?ghostbin\\.com/paste/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ghostbin.com" }, urls = { "https?://(?:www\\.)?(?:ghostbin\\.com|pst\\.klgrth\\.io)/paste/([a-z0-9]+)" })
 public class GhostbinCom extends PluginForDecrypt {
     public GhostbinCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +45,7 @@ public class GhostbinCom extends PluginForDecrypt {
     // Tags: pastebin
     // Notes: 2022-05-05: Doesn't work in most of all cases due to Cloudflare
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -59,13 +59,13 @@ public class GhostbinCom extends PluginForDecrypt {
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
             logger.info("Found no links in link: " + param.getCryptedUrl());
-            return decryptedLinks;
+            return ret;
         }
         for (final String dl : links) {
             if (!new Regex(dl, getSupportedLinks()).matches()) {
-                decryptedLinks.add(createDownloadlink(dl));
+                ret.add(createDownloadlink(dl));
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }
