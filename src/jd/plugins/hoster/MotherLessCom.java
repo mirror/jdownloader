@@ -18,12 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.MotherlessComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -90,7 +92,7 @@ public class MotherLessCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-F0-9]+)$");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Fa-f0-9]+)$");
         }
         return ret.toArray(new String[0]);
     }
@@ -222,13 +224,19 @@ public class MotherLessCom extends PluginForHost {
 
     public static void setFilename(final DownloadLink link) {
         final String fid = getFID(link.getPluginPatternMatcher());
-        final String title = link.getStringProperty(PROPERTY_TITLE);
+        String title = link.getStringProperty(PROPERTY_TITLE);
         String ext = Plugin.getFileNameExtensionFromString(link.getStringProperty(PROPERTY_DIRECTURL));
         if (ext == null) {
             ext = getAssumedFileExtension(link);
         }
         if (title != null && !title.equalsIgnoreCase(fid)) {
-            link.setFinalFileName(Encoding.htmlDecode(title).trim() + "_ " + fid + ext);
+            title = Encoding.htmlDecode(title).trim();
+            /* Special handling for uploads with full/original filenames, already ending with '.mp4' */
+            if (title.toLowerCase(Locale.ENGLISH).endsWith(ext) && PluginJsonConfig.get(MotherlessComConfig.class).isUseTitleAsFilenameIfExtensionFits()) {
+                link.setFinalFileName(title);
+            } else {
+                link.setFinalFileName(title + "_ " + fid + ext);
+            }
         } else {
             link.setFinalFileName(fid + ext);
         }
