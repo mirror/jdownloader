@@ -40,17 +40,17 @@ public class PasteBinCom extends PluginForDecrypt {
     private final String type_invalid = "https?://[^/]+/(messages|report|dl|scraping|languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(type_invalid)) {
-            return decryptedLinks;
+            return ret;
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling for invalid links */
         if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || !this.canHandle(this.br.getURL()) || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter));
+            return ret;
         }
         Form pwprotected = getPwProtectedForm();
         if (pwprotected != null) {
@@ -67,26 +67,26 @@ public class PasteBinCom extends PluginForDecrypt {
         }
         if (plaintxt == null) {
             if (!br.containsHTML("</textarea>")) {
-                return decryptedLinks;
+                return ret;
             }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         // Find all those links
-        String[] links = HTMLParser.getHttpLinks(plaintxt, "");
+        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
             logger.info("Found no URLs in link: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter));
+            return ret;
         }
         logger.info("Found " + links.length + " links in total.");
         for (String dl : links) {
             if (!dl.contains(parameter) && !new Regex(dl, "https?://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+").matches()) {
                 final DownloadLink link = createDownloadlink(dl);
-                decryptedLinks.add(link);
+                ret.add(link);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private Form getPwProtectedForm() {
