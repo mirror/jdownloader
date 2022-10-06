@@ -15,7 +15,7 @@ public interface PastebinCrawlerSettings extends ConfigInterface {
         }
     }
 
-    public static enum PastebinPlaintextCrawlMode implements LabelInterface {
+    public static enum PastebinCrawlMode implements LabelInterface {
         ALWAYS {
             @Override
             public String getLabel() {
@@ -36,8 +36,57 @@ public interface PastebinCrawlerSettings extends ConfigInterface {
         };
     }
 
+    public static enum PastebinPlaintextCrawlMode implements LabelInterface {
+        GLOBAL {
+            @Override
+            public String getLabel() {
+                return "Use global mode";
+            }
+
+            @Override
+            public PastebinCrawlMode getCrawlMode() {
+                // lookup to global PastebinCrawlMode mode
+                return PastebinCrawlMode.ALWAYS;
+            }
+        },
+        ALWAYS {
+            @Override
+            public String getLabel() {
+                return "Always";
+            }
+
+            @Override
+            public PastebinCrawlMode getCrawlMode() {
+                return PastebinCrawlMode.ALWAYS;
+            }
+        },
+        ONLY_IF_NO_HTTP_URLS_WERE_FOUND {
+            @Override
+            public String getLabel() {
+                return "Only if no http URLs were found";
+            }
+
+            @Override
+            public PastebinCrawlMode getCrawlMode() {
+                return PastebinCrawlMode.ONLY_IF_NO_HTTP_URLS_WERE_FOUND;
+            }
+        },
+        NEVER {
+            @Override
+            public String getLabel() {
+                return "Never";
+            }
+
+            @Override
+            public PastebinCrawlMode getCrawlMode() {
+                return PastebinCrawlMode.NEVER;
+            }
+        };
+        public abstract PastebinCrawlMode getCrawlMode();
+    }
+
     @AboutConfig
-    @DefaultEnumValue("ALWAYS")
+    @DefaultEnumValue("GLOBAL")
     @DescriptionForConfigEntry(text_PastebinPlaintextCrawlMode)
     PastebinPlaintextCrawlMode getPastebinPlaintextCrawlMode();
 
