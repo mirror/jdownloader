@@ -15,10 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.Map;
-
-import org.appwork.utils.DebugMode;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -111,46 +108,27 @@ public class VidsMySpaceCom extends PluginForHost {
         requestFileInformation(link);
         String dlurl = null;
         if (link.getDownloadURL().matches(SONGURL)) {
-            dlurl = br.getRegex("data\\-stream\\-url=\"(rtmp[^<>\"]*?)\"").getMatch(0);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            if (br.containsHTML("class=\"lock_16\"")) {
+            dlurl = br.getRegex("\"mp4StreamUrl\"\\s*:\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
+            if (dlurl == null) {
+                // dlurl = br.getRegex("\"hlsStreamUrl\"\\s*:\\s\"(https?[^<>\"]*?)\"").getMatch(0);
+            }
+            if (dlurl == null && (br.containsHTML("class=\"lock_16\"") || br.containsHTML("\"isExplicit\"\\s*:\\s*false"))) {
                 /* +18 Videos are only downloadable for registered users */
                 throw new AccountRequiredException();
-            }
-            dlurl = br.getRegex("\"(rtmp[^<>\"]+)\"").getMatch(0);
-            if (dlurl == null) {
-                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.getHeaders().put("Accept", "*/*");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("Origin", "https://myspace.com");
-                br.getHeaders().put("Client", "TODO");
-                br.getHeaders().put("Hash", "TODO");
-                final String videoID = new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0);
-                if (videoID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.clearCookies(br.getHost());
-                // br.postPage("https://myspace.com/ajax/streamurl", "mediaType=video&mediaId=" + videoID);
-                br.postPage("https://" + this.getHost() + "/ajax/videos/rightRail/render", "entityKey=video_" + videoID + "&mediaId=" + videoID);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
-                }
-                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                final String html = (String) entries.get("html");
-                dlurl = new Regex(html, "\"(rtmp[^<>\"]+)\"").getMatch(0);
             }
         }
         if (dlurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dlurl.startsWith("rtmp")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                dl.getConnection().disconnect();
+                try {
+                    br.followConnection(true);
+                } catch (IOException ignore) {
+                    logger.log(ignore);
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dl.startDownload();

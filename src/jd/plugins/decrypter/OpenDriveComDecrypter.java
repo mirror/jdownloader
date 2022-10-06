@@ -30,8 +30,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -61,7 +61,8 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
         br.getHeaders().put("Origin", "https://od.lk");
         br.getHeaders().put("X-Ajax-CSRF-Token", csrftoken);
         br.postPage("https://od.lk/ajax", "action=files.load-folder-content&folder_id=" + folderid + "&with_breadcrumbs=1&last_request_time=0&public=1&offset=0&order_by=name&order_type=asc");
-        final String error = PluginJSonUtils.getJson(br, "error");
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        Number error = (Number) JavaScriptEngineFactory.walkJson(entries, "error/code");
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || error != null) {
             logger.info("Error:" + error);
             final DownloadLink offline = createOfflinelink(parameter);
@@ -69,7 +70,6 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final List<Object> folders = (List<Object>) entries.get("Folders");
         final List<Object> files = (List<Object>) entries.get("Files");
         String fpName = (String) entries.get("Name");
