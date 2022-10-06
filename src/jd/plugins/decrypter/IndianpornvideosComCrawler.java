@@ -12,8 +12,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class IndianpornvideosCom extends PornEmbedParser {
-    public IndianpornvideosCom(PluginWrapper wrapper) {
+public class IndianpornvideosComCrawler extends PornEmbedParser {
+    public IndianpornvideosComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 

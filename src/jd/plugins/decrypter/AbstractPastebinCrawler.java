@@ -7,11 +7,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.PastebinCrawlerSettings;
+import org.jdownloader.settings.PastebinCrawlerSettings.PastebinPlaintextCrawlMode;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -59,18 +62,14 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
         if (metadata.getPastebinText() == null) {
+            /* This should never happen. Either crawler plugin is broken or paste is offline. */
             logger.warning("Could not find pastebin textfield");
             return ret;
         }
-        final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
-        if (lazyHostPlugin != null) {
-            final PluginForHost sisterPlugin = getNewPluginInstance(lazyHostPlugin);
-            if (sisterPlugin != null && sisterPlugin.canHandle(param.getCryptedUrl())) {
-                final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
-                ret.add(textfile);
-            }
-        }
-        /* TODO: Differentiate between URLs that we support (= have plugin for) and those we don't support. */
+        /**
+         * TODO: Maybe differentiate between URLs that we support (= have plugin for) and those we don't support. </br>
+         * This way we could e.g. only download plaintext as .txt file if no plugin-SUPPORTED items are found.
+         */
         final Set<String> pws = PasswordUtils.getPasswords(metadata.getPastebinText());
         final String[] links = HTMLParser.getHttpLinks(metadata.getPastebinText(), "");
         logger.info("Found " + links.length + " URLs in plaintext");
@@ -80,6 +79,17 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
                 dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
             }
             ret.add(dl);
+        }
+        /* Handling for pastebin text download */
+        final PastebinPlaintextCrawlMode mode = JsonConfig.create(PastebinCrawlerSettings.class).getPastebinPlaintextCrawlMode();
+        final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
+        final boolean isAllowedByMode = mode == PastebinPlaintextCrawlMode.ALWAYS || (mode == PastebinPlaintextCrawlMode.ONLY_IF_NO_HTTP_URLS_WERE_FOUND && links.length == 0);
+        if (lazyHostPlugin != null || isAllowedByMode) {
+            final PluginForHost sisterPlugin = getNewPluginInstance(lazyHostPlugin);
+            if (sisterPlugin != null && sisterPlugin.canHandle(param.getCryptedUrl())) {
+                final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
+                ret.add(textfile);
+            }
         }
         return ret;
     }

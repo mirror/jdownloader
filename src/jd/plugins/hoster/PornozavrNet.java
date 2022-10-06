@@ -31,12 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.IndianpornvideosComCrawler;
+import jd.plugins.decrypter.PornozavrNetCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-@PluginDependencies(dependencies = { IndianpornvideosComCrawler.class })
-public class IndianPornVideosCom extends PluginForHost {
-    public IndianPornVideosCom(PluginWrapper wrapper) {
+@PluginDependencies(dependencies = { PornozavrNetCrawler.class })
+public class PornozavrNet extends PluginForHost {
+    public PornozavrNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -46,7 +46,7 @@ public class IndianPornVideosCom extends PluginForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        return IndianpornvideosComCrawler.getPluginDomains();
+        return PornozavrNetCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -63,45 +63,27 @@ public class IndianPornVideosCom extends PluginForHost {
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        return IndianpornvideosComCrawler.buildAnnotationUrls(pluginDomains);
+        return PornozavrNetCrawler.buildAnnotationUrls(pluginDomains);
     }
 
     private String dllink = null;
 
     @Override
     public String getAGBLink() {
-        return "https://www.indianpornvideos.com/privacy/";
-    }
-
-    @Override
-    public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
-        if (fid != null) {
-            return this.getHost() + "://" + fid;
-        } else {
-            return super.getLinkID(link);
-        }
-    }
-
-    private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return "https://www.pornozavr.net/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        String titleFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (titleFromURL != null) {
-            titleFromURL = titleFromURL.replaceAll("(-|_)", " ").trim();
-            link.setFinalFileName(titleFromURL + ".mp4");
-        }
+        final String titleFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        link.setFinalFileName(titleFromURL.replace("-", " ").trim() + ".mp4");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = findStreamURL(br);
-        // dllink = Encoding.htmlDecode(dllink);
+        dllink = findDirecturl(br);
         if (dllink != null) {
             final Browser br2 = br.cloneBrowser();
             URLConnectionAdapter con = null;
@@ -125,24 +107,15 @@ public class IndianPornVideosCom extends PluginForHost {
     }
 
     public static boolean isOffline(final Browser br) {
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)This video (does not exist|Was Deleted)|video id not found")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public static String findStreamURL(final Browser br) {
-        String dllink = br.getRegex("\"(https?://stream\\.indianpornvideos\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
-        }
-        return dllink;
+        return PornozavrNetCrawler.isOfflineStatic(br);
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -153,6 +126,10 @@ public class IndianPornVideosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public static String findDirecturl(final Browser br) {
+        return br.getRegex("property=\"og:video:url\" content=\"(https?://[^\"]+)\"").getMatch(0);
     }
 
     @Override
