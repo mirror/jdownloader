@@ -41,14 +41,14 @@ public class PornozavrNet extends PornEmbedParser {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptedLinks.addAll(findEmbedUrls());
-        if (decryptedLinks.size() == 0) {
+        ret.addAll(findEmbedUrls());
+        if (ret.size() == 0) {
             String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
             if (title == null) {
                 /* Fallback */
@@ -58,12 +58,12 @@ public class PornozavrNet extends PornEmbedParser {
             if (dllink != null) {
                 final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
                 dl.setForcedFileName(title + ".mp4");
-                decryptedLinks.add(dl);
+                ret.add(dl);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override

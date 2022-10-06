@@ -18,6 +18,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
@@ -87,6 +88,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         correctCryptedLink(param);
         this.preProcess(param);
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
+        metadata.setPassword(param.getDecrypterPassword());
         final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
         return textfile;
     }
@@ -111,11 +113,18 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         /* TODO: Set filename according to user preference */
         textfile.setFinalFileName(metadata.getFilename());
         textfile.setAvailable(true);
+        if (metadata.getPassword() != null) {
+            textfile.setDownloadPassword(metadata.getPassword());
+        }
         return textfile;
     }
 
-    /** Accesses URL, checks if content looks like it's available and handles password/captcha until plaintext is available in HTML. */
-    public abstract void preProcess(final CryptedLink param) throws IOException, PluginException;
+    /**
+     * Accesses URL, checks if content looks like it's available and handles password/captcha until plaintext is available in HTML.
+     *
+     * @throws DecrypterException
+     */
+    public abstract void preProcess(final CryptedLink param) throws IOException, PluginException, DecrypterException;
 
     /**
      * Collects metadata which will be used later.
