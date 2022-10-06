@@ -382,6 +382,7 @@ plugins_errors_disconnect=Diskonektuj?
 plugins_errors_error=Greška:
 plugins_errors_hosteroffline=Domaćin je offline?
 plugins_errors_hosterproblem=Problem Domaćina?
+plugins_errors_hosterproblem_rate_limit=Dosegnut je problematični limit domaćina
 plugins_errors_nointernetconn=Problemi sa konekcijom.
 plugins_errors_proxy_auth=Nije uspjela autentifikacija na proxy
 plugins_errors_proxy_connection=Proxy konekcija nije uspjela
