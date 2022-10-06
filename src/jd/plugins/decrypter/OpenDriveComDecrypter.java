@@ -19,21 +19,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(?:www\\.)?opendrive\\.com/folders\\?[A-Za-z0-9]+|https?://od\\.lk/(?:fl|s)/[A-Za-z0-9]+(?:\\?folderpath=[a-zA-Z0-9_/\\+\\=\\-%]+)?" })
 public class OpenDriveComDecrypter extends PluginForDecrypt {
@@ -41,17 +43,13 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://", "https://");
-        final String folderid = new Regex(parameter, "([A-Za-z0-9\\-_]+)(\\?folderpath=.+)?$").getMatch(0);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String folderurl = param.getCryptedUrl().replace("http://", "https://");
+        final String folderid = new Regex(folderurl, "([A-Za-z0-9\\-_]+)(\\?folderpath=.+)?$").getMatch(0);
         this.br.setFollowRedirects(true);
         br.getPage("https://od.lk/fl/" + folderid);
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName("folder_offline_" + folderid);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String csrftoken = br.getRegex("data\\-csrftoken=\"([^<>\"]+)\"").getMatch(0);
         if (csrftoken == null) {
@@ -60,64 +58,58 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
         jd.plugins.hoster.OpenDriveCom.prepBRAjax(this.br);
         br.getHeaders().put("Origin", "https://od.lk");
         br.getHeaders().put("X-Ajax-CSRF-Token", csrftoken);
-        br.postPage("https://od.lk/ajax", "action=files.load-folder-content&folder_id=" + folderid + "&with_breadcrumbs=1&last_request_time=0&public=1&offset=0&order_by=name&order_type=asc");
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-        Number error = (Number) JavaScriptEngineFactory.walkJson(entries, "error/code");
-        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || error != null) {
-            logger.info("Error:" + error);
-            final DownloadLink offline = createOfflinelink(parameter);
-            offline.setFinalFileName("folder_offline_" + folderid);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+        br.postPage("/ajax", "action=files.load-folder-content&folder_id=" + folderid + "&with_breadcrumbs=1&last_request_time=0&public=1&offset=0&order_by=name&order_type=asc");
+        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+        final Number errorcode = (Number) JavaScriptEngineFactory.walkJson(root, "error/code");
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || errorcode != null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final List<Object> folders = (List<Object>) entries.get("Folders");
-        final List<Object> files = (List<Object>) entries.get("Files");
-        String fpName = (String) entries.get("Name");
+        final List<Map<String, Object>> subfolders = (List<Map<String, Object>>) root.get("Folders");
+        final List<Map<String, Object>> files = (List<Map<String, Object>>) root.get("Files");
+        if (subfolders.isEmpty() && files.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+        }
+        String fpName = (String) root.get("Name");
         // final String name_of_previous_folder = (String) JavaScriptEngineFactory.walkJson(entries, "Breadcrumbs/{0}/Name");
         if (fpName == null) {
             fpName = folderid;
         }
-        String path = new Regex(parameter, "folderpath=(.+)").getMatch(0);
+        String path = new Regex(folderurl, "folderpath=(.+)").getMatch(0);
         if (path != null) {
             path = Encoding.Base64Decode(path);
             path += "/" + fpName;
         } else {
             path = fpName;
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        for (final Object fileo : files) {
-            entries = (Map<String, Object>) fileo;
+        for (final Map<String, Object> file : files) {
             /* Do not use this as linkid as id inside our url is the one we prefer (also unique). */
             // final String fileid = (String)entries.get("FileId");
-            final String url = (String) entries.get("Link");
-            final String directurl = (String) entries.get("DownloadLink");
-            final String filename = (String) entries.get("Name");
-            final long filesize = JavaScriptEngineFactory.toLong(entries.get("Size"), -1);
-            if (StringUtils.isEmpty(url) || StringUtils.isEmpty(filename) || filesize == -1) {
-                continue;
-            }
+            final String url = file.get("Link").toString();
+            final String directurl = file.get("DownloadLink").toString();
+            final String filename = file.get("Name").toString();
+            final Number filesize = (Number) file.get("Size");
             final DownloadLink dl = this.createDownloadlink(url);
             dl.setRelativeDownloadFolderPath(path);
             dl.setName(filename);
-            dl.setDownloadSize(filesize);
+            if (filesize != null) {
+                dl.setVerifiedFileSize(filesize.longValue());
+            }
             if (!StringUtils.isEmpty(directurl)) {
                 dl.setProperty("directurl", directurl);
             }
             dl.setAvailable(true);
             dl._setFilePackage(fp);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        for (final Object foldero : folders) {
-            entries = (Map<String, Object>) foldero;
-            String url = (String) entries.get("Link");
-            if (StringUtils.isEmpty(url)) {
-                continue;
-            }
+        for (final Map<String, Object> folder : subfolders) {
+            String url = folder.get("Link").toString();
             url += "?folderpath=" + Encoding.Base64Encode(path);
             final DownloadLink dl = this.createDownloadlink(url);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
