@@ -358,6 +358,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                 if (Encoding.isHtmlEntityCoded(maybeExternalURL)) {
                     maybeExternalURL = Encoding.htmlDecode(maybeExternalURL);
                 }
+                /* The following if statement is not needed is is only here because that field rarely contains a relative URL. */
                 if (maybeExternalURL.startsWith("/")) {
                     maybeExternalURL = br.getURL(maybeExternalURL).toString();
                 }

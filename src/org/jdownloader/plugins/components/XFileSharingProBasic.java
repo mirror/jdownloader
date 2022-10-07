@@ -4236,9 +4236,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                     if (StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN))) {
                         if (getCorrectBR(br).contains("op=resend_activation")) {
                             /* User entered correct logindata but has not activated his account ... */
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            throw new AccountInvalidException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!");
+                        } else {
+                            throw new AccountInvalidException();
                         }
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 // /* Returns ballance, space, days(?premium days remaining?) - this call is not supported by all XFS sites - in this case
@@ -4777,7 +4778,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 final String apikey = this.getAPIKeyFromAccount(account);
                 if (!this.isAPIKey(apikey)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid apikey format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Invalid apikey format!");
                 }
                 getPage(br, this.getAPIBase() + "/account/info?key=" + apikey);
                 final String msg = PluginJSonUtils.getJson(br, "msg");
@@ -4786,7 +4787,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 final boolean jsonOK = msg != null && msg.equalsIgnoreCase("ok") && status != null && status.equals("200");
                 if (!jsonOK) {
                     /* E.g. {"msg":"Wrong auth","server_time":"2019-05-29 19:29:03","status":403} */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
             } finally {
                 br.setFollowRedirects(followRedirects);
@@ -5010,7 +5011,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             /*
              * This should never happen!
              */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid apikey!\r\nEntered apikey does not match expected format.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("Invalid apikey!\r\nEntered apikey does not match expected format.");
         case 403:
             if (errorMsg.equalsIgnoreCase("This function not allowed in API")) {
                 /* {"msg":"This function not allowed in API","server_time":"2019-10-31 17:02:31","status":403} */
@@ -5019,13 +5020,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                     /*
                      * Login via API either not supported at all (wtf why is there an apikey available) or only for special/unlocked users!
                      */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI login impossible!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("API login impossible!");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported API function - plugin might need update", 2 * 60 * 60 * 1000l);
                 }
             } else {
                 /* {"msg":"Wrong auth","server_time":"2019-10-31 16:54:05","status":403} */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid or expired apikey!\r\nWhen changing your apikey via website, make sure to update it in JD too!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("Invalid or expired apikey!\r\nWhen changing your apikey via website, make sure to update it in JD too!");
             }
         case 404:
             /* {"msg":"No file","server_time":"2019-10-31 17:23:17","status":404} */

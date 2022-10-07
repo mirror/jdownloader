@@ -353,8 +353,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             req.getHeaders().put("Referer", userProfileURL);
             req.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             getPageAutoLogin(account, loggedIN, req.getUrl(), param, br, req, null, null);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
-            List<Map<String, Object>> users = (List<Map<String, Object>>) entries.get("users");
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            if (Boolean.TRUE.equals(entries.get("require_login"))) {
+                /*
+                 * 2022-10-07 E.g.
+                 * {"message":"Bitte warte einige Minuten und versuche es dann noch einmal.","require_login":true,"status":"fail"}
+                 */
+                logger.info("Logging in because: " + entries.get("message"));
+                this.loginOrFail(account, loggedIN);
+                getPageAutoLogin(account, loggedIN, req.getUrl(), param, br, req, null, null);
+            }
+            final List<Map<String, Object>> users = (List<Map<String, Object>>) entries.get("users");
             for (Map<String, Object> entry : users) {
                 final Map<String, Object> user = (Map<String, Object>) entry.get("user");
                 if (StringUtils.equalsIgnoreCase(username, StringUtils.valueOfOrNull(user.get("username")))) {
@@ -454,6 +463,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      *            Ensures that we are on this URL after request has been performed.
      */
     private void getPageAutoLogin(final Account account, final AtomicBoolean loginState, final String urlCheck, final CryptedLink param, final Browser br, final Request request, final String rhxGis, final String variables) throws Exception {
+        if (PluginJsonConfig.get(InstagramConfig.class).isEnforceLoginIfAccountIsAvailable() && account != null && !loginState.get()) {
+            logger.info("Performing forced login according to user plugin setting");
+            this.loginOrFail(account, loginState);
+        }
         getPage(param, br, request, null, null);
         AccountRequiredException accountRequired = null;
         try {
