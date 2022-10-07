@@ -2008,14 +2008,14 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     logger.info("Failed to find API credentials on website");
                     foundValidLookingAPICredentialsOnWebsite = false;
                 }
-                final boolean devForceNewApikeyCreation = true;
+                final boolean devForceNewApikeyCreation = false;
                 if (generateAPIKeyForm != null) {
                     logger.info("Found generateAPIKeyForm -> Looks like " + this.getHost() + " has enabled API usage in general");
                     if (!this.allowToAttemptAPIUsageInWebsiteModeDuringAccountCheck()) {
                         logger.info("Not attempting to generate API keys although it looks possible because that is disabled!");
                         return null;
                     }
-                    if ((!foundValidLookingAPICredentialsOnWebsite && this.allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck()) || (devForceNewApikeyCreation && DebugMode.TRUE_IN_IDE_ELSE_FALSE)) {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && ((!foundValidLookingAPICredentialsOnWebsite && this.allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck()) || devForceNewApikeyCreation)) {
                         /* Tested with: letsupload.io */
                         logger.info("Generating API keys");
                         key1 = this.websiteGenerateRandomAPIKey();
