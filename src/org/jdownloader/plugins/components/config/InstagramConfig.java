@@ -17,7 +17,9 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "instagram.com", type = Type.HOSTER)
 public interface InstagramConfig extends PluginConfigInterface {
-    public static final InstagramConfig.TRANSLATION TRANSLATION = new TRANSLATION();
+    final String                                    text_EnforceLoginIfAccountIsAvailable       = "Only for debugging purposes: Enforce login if account is available?";
+    final String                                    text_GlobalRequestIntervalLimitMilliseconds = "Define global request limit for domain 'instagram.com' in milliseconds (0 = no limit)";
+    public static final InstagramConfig.TRANSLATION TRANSLATION                                 = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getPostCrawlerAddPostDescriptionAsTextfile_label() {
@@ -101,7 +103,11 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getGlobalRequestIntervalLimitMilliseconds_label() {
-            return "Define global request limit for domain 'instagram.com' in milliseconds (0 = no limit)";
+            return text_GlobalRequestIntervalLimitMilliseconds;
+        }
+
+        public String getEnforceLoginIfAccountIsAvailable_label() {
+            return text_EnforceLoginIfAccountIsAvailable;
         }
     }
 
@@ -370,29 +376,17 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @SpinnerValidator(min = 0, max = 60000, step = 100)
     @DefaultIntValue(400)
-    @DescriptionForConfigEntry("Define global request limit for domain 'instagram.com' in milliseconds (0 = no limit)")
+    @DescriptionForConfigEntry(text_GlobalRequestIntervalLimitMilliseconds)
     @Order(510)
     int getGlobalRequestIntervalLimitMilliseconds();
 
     void setGlobalRequestIntervalLimitMilliseconds(int milliseconds);
-    // public static enum APIPreference implements LabelInterface {
-    // API_WEBSITE {
-    // @Override
-    // public String getLabel() {
-    // return "Prefer API over website";
-    // }
-    // },
-    // API_ONLY {
-    // @Override
-    // public String getLabel() {
-    // return "API only";
-    // }
-    // },
-    // WEBSITE_ONLY {
-    // @Override
-    // public String getLabel() {
-    // return "Website only";
-    // }
-    // };
-    // }
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_EnforceLoginIfAccountIsAvailable)
+    @Order(600)
+    boolean isEnforceLoginIfAccountIsAvailable();
+
+    void setEnforceLoginIfAccountIsAvailable(boolean b);
 }
