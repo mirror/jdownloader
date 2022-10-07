@@ -2008,53 +2008,44 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     logger.info("Failed to find API credentials on website");
                     foundValidLookingAPICredentialsOnWebsite = false;
                 }
-                final boolean devForceNewApikeyCreation = false;
-                if (generateAPIKeyForm != null || devForceNewApikeyCreation) {
+                final boolean devForceNewApikeyCreation = true;
+                if (generateAPIKeyForm != null) {
                     logger.info("Found generateAPIKeyForm -> Looks like " + this.getHost() + " has enabled API usage in general");
                     if (!this.allowToAttemptAPIUsageInWebsiteModeDuringAccountCheck()) {
                         logger.info("Not attempting to generate API keys although it looks possible because that is disabled!");
                         return null;
                     }
-                    if ((!foundValidLookingAPICredentialsOnWebsite && this.allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck()) || devForceNewApikeyCreation) {
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            /* Tested with: letsupload.io */
-                            logger.info("Found apikey Form --> Generating API keys");
-                            key1 = this.websiteGenerateRandomAPIKey();
-                            key2 = this.websiteGenerateRandomAPIKey();
-                            generateAPIKeyForm.put("key1", key1);
-                            generateAPIKeyForm.put("key2", key2);
-                            final InputField emailAddr = generateAPIKeyForm.getInputField("emailAddress");
-                            if (emailAddr != null) {
-                                final String value = emailAddr.getValue();
-                                if (value != null && Encoding.isUrlCoded(value)) {
-                                    emailAddr.setValue(URLEncode.decodeURIComponent(value));
-                                }
+                    if ((!foundValidLookingAPICredentialsOnWebsite && this.allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck()) || (devForceNewApikeyCreation && DebugMode.TRUE_IN_IDE_ELSE_FALSE)) {
+                        /* Tested with: letsupload.io */
+                        logger.info("Generating API keys");
+                        key1 = this.websiteGenerateRandomAPIKey();
+                        key2 = this.websiteGenerateRandomAPIKey();
+                        generateAPIKeyForm.put("key1", key1);
+                        generateAPIKeyForm.put("key2", key2);
+                        final InputField emailAddr = generateAPIKeyForm.getInputField("emailAddress");
+                        if (emailAddr != null) {
+                            final String value = emailAddr.getValue();
+                            if (value != null && Encoding.isUrlCoded(value)) {
+                                emailAddr.setValue(URLEncode.decodeURIComponent(value));
                             }
-                            /**
-                             * Required minimum fields are: firstame,lastname, emailAddress,key1,key2,submitme. </br>
-                             * We'll remove all other fields as we do not want to mistakenly change any of the users' account settings!
-                             */
-                            generateAPIKeyForm.remove("marketingEmails");
-                            generateAPIKeyForm.remove("privateFileStatistics");
-                            generateAPIKeyForm.remove("isPublic");
-                            generateAPIKeyForm.remove("title");
-                            generateAPIKeyForm.remove("password");
-                            generateAPIKeyForm.remove("passwordConfirm");
-                            generateAPIKeyForm.remove("fileReferrerWhitelist");
-                            generateAPIKeyForm.remove("watermarkPosition");
-                            generateAPIKeyForm.remove("watermarkPadding");
-                            this.submitForm(brc, generateAPIKeyForm);
-                            if (brc.containsHTML(key1) && brc.containsHTML(key2)) {
-                                logger.info("Looks like API key creation was successful");
-                            } else {
-                                logger.warning("Looks like API key creation has failed");
-                            }
-                            /* Assume that this was successful */
-                        } else {
-                            // logger.info("Developer has disabled API key creation");
-                            return null;
                         }
+                        /**
+                         * Required minimum fields are: firstame,lastname, emailAddress,key1,key2,submitme. </br>
+                         * We'll remove all other fields as we do not want to mistakenly change any of the users' account settings!
+                         */
+                        final String[] fieldKeysToRemove = new String[] { "marketingEmails", "privateFileStatistics", "isPublic", "title", "password", "passwordConfirm", "fileReferrerWhitelist", "watermarkPosition", "watermarkPadding" };
+                        for (final String fieldKeyToRemove : fieldKeysToRemove) {
+                            generateAPIKeyForm.remove(fieldKeyToRemove);
+                        }
+                        this.submitForm(brc, generateAPIKeyForm);
+                        if (brc.containsHTML(key1) && brc.containsHTML(key2)) {
+                            logger.info("Looks like API key creation was successful");
+                        } else {
+                            logger.warning("Looks like API key creation has failed");
+                        }
+                        /* Generated credentials will be checked down below */
                     } else {
+                        /* API key creation not necessary or not allowed */
                     }
                 }
                 if (!this.allowToAttemptAPIUsageInWebsiteModeDuringAccountCheck()) {
@@ -2077,7 +2068,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                      * Failure: Happens most likely due to missing API permissions e.g. user can create API keys but it's not an "uploader
                      * account" thus he cannot do anything with the API. </br>
                      * Example: {"response":"Your account level does not have access to the file upload API. Please contact site support for
-                     * more information.","_status":"error","_datetime":"2022-09-29 22:30:17"}
+                     * more information.","_status":"error","_datetime":"2022-09-29 22:30:17"} </br>
+                     * {"status":"error","response":"Could not authenticate user. The key pair may be invalid or your account may be locked
+                     * from too many failed logins.","_datetime":"2022-10-07 16:32:48"}
                      */
                     logger.info("API handling inside website handling failed! In most of all cases this means that the website owner only enabled API usage for specific users and only for uploading files.");
                     logger.info("@@Developer: Consider disabling API usage in website mode completely via TODO");
@@ -2286,7 +2279,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     /**
      * If enabled this plugin will attempt to generate an API key if no API key was found and it looks like the website supports that. </br>
-     * Example website with broken API: megaup.net
+     * Example website(s) with broken API: megaup.net, ultimbox.org, secufiles.com
      */
     protected boolean allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck() {
         return true;
