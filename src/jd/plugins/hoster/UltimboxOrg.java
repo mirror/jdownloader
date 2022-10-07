@@ -107,4 +107,16 @@ public class UltimboxOrg extends YetiShareCore {
         /* 2020-03-05: Special */
         return false;
     }
+
+    @Override
+    protected boolean allowToAttemptAPIUsageInWebsiteModeDuringAccountCheck() {
+        /* 2022-10-07: API cannot be used */
+        return false;
+    }
+
+    @Override
+    protected boolean allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck() {
+        /* 2022-10-07: API cannot be used */
+        return false;
+    }
 }
