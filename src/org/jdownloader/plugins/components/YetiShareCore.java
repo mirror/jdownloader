@@ -2397,6 +2397,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             checkErrorsAPI(br, null, account);
         }
         final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String server_timeStr = (String) jsonRoot.get("_datetime");
         final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
         // final String username = (String) entries.get("username");
         // final String status = (String) entries.get("status"); --> Mostly "active" (also free accounts)
@@ -2404,7 +2405,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         final String premiumExpireDateStr = (String) data.get("paidExpiryDate");
         long premiumExpireMilliseconds = 0;
         final long currentTime;
-        final String server_timeStr = (String) jsonRoot.get("_datetime");
         if (server_timeStr != null && server_timeStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         } else {
@@ -2519,7 +2519,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
          */
         final Map<String, Object> authorizationResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> authorizationData = (Map<String, Object>) authorizationResponse.get("data");
-        final String accessToken = (String) authorizationData.get("access_token");
+        final String accessToken = authorizationData.get("access_token").toString();
         final String accountIDStr = authorizationData.get("account_id").toString();
         /*
          * 2020-08-27: API can basically return anything except expected json --> Do not check for errors here - just check for the expected
