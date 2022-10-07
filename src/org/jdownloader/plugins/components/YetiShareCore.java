@@ -704,7 +704,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             }
                             final String fileID = this.getStoredInternalFileID(link);
                             this.postPage("/account/ajax/file_details", "u=" + fileID);
-                            final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                            final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                             final String html = (String) root.get("html");
                             /* Small workaround to have this html code available in our current browser instance. */
                             br.getRequest().setHtmlCode(html);
@@ -2396,7 +2396,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             /* We don't expect any errors to happen at this stage but we can never know... */
             checkErrorsAPI(br, null, account);
         }
-        final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
         // final String username = (String) entries.get("username");
         // final String status = (String) entries.get("status"); --> Mostly "active" (also free accounts)
@@ -2416,7 +2416,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             premiumExpireMilliseconds = TimeFormatter.getMilliSeconds(premiumExpireDateStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
         this.getPage(br, this.getAPIBase() + "/account/package?access_token=" + getStoredAPIAccessToken(account, key1, key2) + "&account_id=" + getAPIAccountID(account, key1, key2));
-        final Map<String, Object> packageInfoRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> packageInfoRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> packageInfoData = (Map<String, Object>) packageInfoRoot.get("data");
         final String accountType = (String) packageInfoData.get("label");
         final String level_type = (String) packageInfoData.get("level_type");
@@ -2481,7 +2481,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             this.getPage(br, this.getAPIBase() + "/account/info?access_token=" + storedAccessToken + "&account_id=" + storedAccountID);
             try {
                 checkErrorsAPI(br, null, account);
-                final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
                 final Object currentAccountID = data != null ? data.get("id").toString() : null;
                 if (currentAccountID != null) {
@@ -2517,7 +2517,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
          * 2021-04-22: Token should be valid for at least 60 minutes but in my tests it lasted more like... 60 seconds! As long as it is
          * only used for account checking that is fine though.
          */
-        final Map<String, Object> authorizationResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> authorizationResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> authorizationData = (Map<String, Object>) authorizationResponse.get("data");
         final String accessToken = (String) authorizationData.get("access_token");
         final String accountIDStr = authorizationData.get("account_id").toString();
@@ -2546,7 +2546,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
         this.getPage(br, this.getAPIBase() + "/file/info?" + query.toString());
         this.checkErrorsAPI(br, link, account);
-        final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
         final String filename = (String) data.get("filename");
         final Number filesize = (Number) data.get("fileSize");
@@ -2638,7 +2638,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             // this.requestFileInformationAPI(link, account);
             this.getPage(this.getAPIBase() + "/file/download?" + query.toString());
             this.checkErrorsAPI(this.br, link, account);
-            final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
             final String dllink = (String) data.get("download_url");
             if (StringUtils.isEmpty(dllink)) {
@@ -2688,7 +2688,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         Map<String, Object> entries = null;
         try {
-            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         } catch (final Exception e) {
             /* API response is not json */
             throw new AccountUnavailableException("Invalid API response (no json)", 1 * 60 * 1000l);
