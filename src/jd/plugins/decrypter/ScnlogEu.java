@@ -16,23 +16,30 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 /**
  * So I had this written some time back, just never committed. Here is my original with proper error handling etc. -raz
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scnlog.me" }, urls = { "https?://(?:www\\.)?scnlog\\.(#?:eu|me|life)/(?:[a-z0-9_\\-]+/){2,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ScnlogEu extends antiDDoSForDecrypt {
     public ScnlogEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,58 +50,89 @@ public class ScnlogEu extends antiDDoSForDecrypt {
         return true;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        getPage(parameter);
-        if (br.containsHTML("<title>404 Page Not Found</title>|>Sorry, but you are looking for something that isn't here\\.<") || this.br.toString().length() < 200 || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter, "invalidurl", "invalidurl"));
-            return decryptedLinks;
-        } else if (this.br.getURL().contains("/feed/") || this.br.getURL().contains("/feedback/")) {
-            decryptedLinks.add(createOfflinelink(parameter, "invalidurl", "invalidurl"));
-            return decryptedLinks;
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "scnlog.me", "scnlog.eu", "scnlog.life" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z0-9_\\-]+/){2,}");
         }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String[] deadDomains = new String[] { "scnlog.eu", "scnlog.life" };
+        String contenturl = param.toString();
+        /* Change domain in url if it is a domain known to be dead. */
+        final String addedHost = Browser.getHost(contenturl);
+        for (final String deadDomain : deadDomains) {
+            if (StringUtils.equalsIgnoreCase(addedHost, deadDomain)) {
+                contenturl = contenturl.replaceFirst(Pattern.quote(deadDomain), this.getHost());
+                break;
+            }
+        }
+        getPage(contenturl);
+        if (br.containsHTML("<title>404 Page Not Found</title>|>Sorry, but you are looking for something that isn't here\\.<") || this.br.toString().length() < 200 || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getURL().contains("/feed/") || this.br.getURL().contains("/feedback/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String fpName = br.getRegex("<strong>Release:</strong>\\s*(.*?)<(?:/|\\w*\\s*/)").getMatch(0);
         String download = br.getRegex("<div class=\"download\">.*?</div>").getMatch(-1);
         if (download == null) {
             /* Probably not a single track but a "Seearch result" site */
-            logger.warning("Can not find 'download table', Please report this to JDownloader Development Team : " + parameter);
+            logger.warning("Can not find 'download table', Please report this to JDownloader Development Team : " + contenturl);
             final String[] urls = br.getRegex("src=\"/wp-content/uploads/music\\.png\"[^>]+/><a href=\"(https?://[^/]+/music/[^\"]+)\"").getColumn(0);
             if (urls == null || urls.length == 0) {
                 return null;
             }
             for (final String url : urls) {
-                decryptedLinks.add(createDownloadlink(url));
+                ret.add(createDownloadlink(url));
             }
         } else {
-            String[] results = HTMLParser.getHttpLinks(download, "");
+            final String[] results = HTMLParser.getHttpLinks(download, "");
             for (String result : results) {
                 // prevent site links from been added.
-                if (result.matches("https?://[^/]*scnlog.(?:eu|me|life)/.+")) {
+                if (this.canHandle(result)) {
                     continue;
+                } else {
+                    ret.add(createDownloadlink(result));
                 }
-                decryptedLinks.add(createDownloadlink(result));
             }
         }
-        if (decryptedLinks.isEmpty()) {
-            if (br.containsHTML(">Links have been removed due to DMCA request<")) {
-                try {
-                    decryptedLinks.add(createOfflinelink(parameter, fpName, null));
-                } catch (final Throwable t) {
-                    logger.info("Offline Content: " + parameter);
-                }
-                return decryptedLinks;
+        if (ret.isEmpty()) {
+            if (br.containsHTML("(?i)>\\s*Links have been removed due to DMCA request")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("'decrptedLinks' isEmpty!, Please report this to JDownloader Development Team : " + parameter);
-            return null;
         }
         if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setAllowMerge(true);
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /* NO OVERRIDE!! */
