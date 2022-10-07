@@ -360,7 +360,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                  * {"message":"Bitte warte einige Minuten und versuche es dann noch einmal.","require_login":true,"status":"fail"}
                  */
                 logger.info("Logging in because: " + entries.get("message"));
-                this.loginOrFail(account, loggedIN);
+                if (loggedIN.get()) {
+                    /* This should never happen */
+                    logger.warning("Login required but we're already logged in -> Possible problem with account/session");
+                    throw new AccountRequiredException();
+                }
+                /* We're logged in now -> Perform request again. */
                 getPageAutoLogin(account, loggedIN, req.getUrl(), param, br, req, null, null);
             }
             final List<Map<String, Object>> users = (List<Map<String, Object>>) entries.get("users");
