@@ -44,6 +44,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -88,17 +89,18 @@ public class BandCampCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
-    public static final String FASTLINKCHECK        = "FASTLINKCHECK_2020_06_02";
-    public static final String CUSTOM_DATE          = "CUSTOM_DATE";
-    public static final String CUSTOM_FILENAME      = "CUSTOM_FILENAME";
-    public static final String GRABTHUMB            = "GRABTHUMB";
-    public static final String CUSTOM_PACKAGENAME   = "CUSTOM_PACKAGENAME";
-    public static final String FILENAMELOWERCASE    = "FILENAMELOWERCASE";
-    public static final String PACKAGENAMELOWERCASE = "PACKAGENAMELOWERCASE";
-    public static final String FILENAMESPACE        = "FILENAMESPACE";
-    public static final String PACKAGENAMESPACE     = "PACKAGENAMESPACE";
-    public static final String CLEANPACKAGENAME     = "CLEANPACKAGENAME";
-    private String             dllink               = null;
+    public static final String FASTLINKCHECK         = "FASTLINKCHECK_2020_06_02";
+    public static final String CUSTOM_DATE           = "CUSTOM_DATE";
+    public static final String CUSTOM_FILENAME       = "CUSTOM_FILENAME";
+    public static final String CUSTOM_VIDEO_FILENAME = "CUSTOM_VIDEO_FILENAME";
+    public static final String GRABTHUMB             = "GRABTHUMB";
+    public static final String CUSTOM_PACKAGENAME    = "CUSTOM_PACKAGENAME";
+    public static final String FILENAMELOWERCASE     = "FILENAMELOWERCASE";
+    public static final String PACKAGENAMELOWERCASE  = "PACKAGENAMELOWERCASE";
+    public static final String FILENAMESPACE         = "FILENAMESPACE";
+    public static final String PACKAGENAMESPACE      = "PACKAGENAMESPACE";
+    public static final String CLEANPACKAGENAME      = "CLEANPACKAGENAME";
+    private String             dllink                = null;
 
     @Override
     public String getAGBLink() {
@@ -255,17 +257,35 @@ public class BandCampCom extends PluginForHost {
         final String artist = link.getStringProperty("directartist", null);
         final String album = link.getStringProperty("directalbum", null);
         final String dateString = link.getStringProperty("directdate", null);
+        final String video_width = link.getStringProperty("video_width", null);
+        final String video_height = link.getStringProperty("video_height", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("bandcamp.com");
-        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) {
-            formattedFilename = defaultCustomFilename;
-        }
-        if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) {
-            formattedFilename = defaultCustomFilename;
+        String formattedFilename;
+        final boolean video;
+        if (video_height != null || video_width != null) {
+            video = true;
+            formattedFilename = cfg.getStringProperty(CUSTOM_VIDEO_FILENAME, defaultCustomVideoFilename);
+            if (formattedFilename == null || formattedFilename.equals("")) {
+                formattedFilename = defaultCustomVideoFilename;
+            }
+            if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) {
+                formattedFilename = defaultCustomVideoFilename;
+            }
+        } else {
+            video = false;
+            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+            if (formattedFilename == null || formattedFilename.equals("")) {
+                formattedFilename = defaultCustomFilename;
+            }
+            if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) {
+                formattedFilename = defaultCustomFilename;
+            }
         }
         String ext = link.getStringProperty("type", null);
         if (ext != null) {
             ext = "." + ext;
+        } else if (video) {
+            ext = ".mp4";
         } else {
             ext = ".mp3";
         }
@@ -295,28 +315,14 @@ public class BandCampCom extends PluginForHost {
                         }
                     }
                 }
-                if (formattedDate != null) {
-                    formattedFilename = formattedFilename.replace("*date*", formattedDate);
-                } else {
-                    formattedFilename = formattedFilename.replace("*date*", "");
-                }
+                formattedFilename = formattedFilename.replace("*date*", StringUtils.valueOrEmpty(formattedDate));
             }
         }
-        if (formattedFilename.contains("*tracknumber*") && tracknumber != null) {
-            formattedFilename = formattedFilename.replace("*tracknumber*", tracknumber);
-        } else {
-            formattedFilename = formattedFilename.replace("*tracknumber*", "");
-        }
-        if (formattedFilename.contains("*artist*") && artist != null) {
-            formattedFilename = formattedFilename.replace("*artist*", artist);
-        } else {
-            formattedFilename = formattedFilename.replace("*artist*", "");
-        }
-        if (formattedFilename.contains("*album*") && album != null) {
-            formattedFilename = formattedFilename.replace("*album*", album);
-        } else {
-            formattedFilename = formattedFilename.replace("*album*", "");
-        }
+        formattedFilename = formattedFilename.replace("*tracknumber*", StringUtils.valueOrEmpty(tracknumber));
+        formattedFilename = formattedFilename.replace("*artist*", StringUtils.valueOrEmpty(artist));
+        formattedFilename = formattedFilename.replace("*album*", StringUtils.valueOrEmpty(album));
+        formattedFilename = formattedFilename.replace("*video_width*", StringUtils.valueOrEmpty(video_width));
+        formattedFilename = formattedFilename.replace("*video_height*", StringUtils.valueOrEmpty(video_height));
         formattedFilename = formattedFilename.replace("*ext*", ext);
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
@@ -338,6 +344,7 @@ public class BandCampCom extends PluginForHost {
     public static final boolean defaultGRABTHUMB            = false;
     public static final String  defaultCUSTOM_DATE          = "dd.MM.yyyy_HH-mm-ss";
     private static final String defaultCustomFilename       = "*tracknumber*.*artist* - *songtitle**ext*";
+    private static final String defaultCustomVideoFilename  = "*tracknumber*.*artist* - *songtitle*-*video_height*p*ext*";
     public static final boolean defaultFILENAMELOWERCASE    = false;
     public static final boolean defaultFILENAMESPACE        = false;
     public static final String  defaultCustomPackagename    = "*artist* - *album*";
@@ -357,6 +364,7 @@ public class BandCampCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*artist*_*date*_*songtitle**ext*'"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, "Define how the filenames should look:").setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_VIDEO_FILENAME, "Define how the video filenames should look:").setDefaultValue(defaultCustomVideoFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*artist* = artist of the album\r\n");
