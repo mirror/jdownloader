@@ -26,13 +26,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -49,6 +42,14 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BandCampCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { BandCampCom.class })
@@ -199,7 +200,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dl.setProperty("directname", title);
             dl.setProperty("type", "mp3");
             dl.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, trackPosition));
-            final String formattedFilename = BandCampCom.getFormattedFilename(this, dl);
+            String formattedFilename = BandCampCom.getFormattedFilename(this, dl);
             dl.setName(formattedFilename);
             if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
                 dl.setAvailable(true);
@@ -229,16 +230,38 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                                 final String visualplatformconcat_0 = brc.getRegex("visualplatformconcat_0\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*$").getMatch(0);
                                 final Map<String, Object> visualplatformconcat = restoreFromString(visualplatformconcat_0, TypeRef.MAP);
                                 final Map<String, Object> photo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(visualplatformconcat, "photolist_2/photo");
-                                for (final String format : new String[] { "1080p", "hd"/* 720 */, "medium", "mobile_high" }) {
+                                for (final String format : new String[] { "4k", "1080p", "hd"/* 720 */, "medium", "mobile_high", "webm_360p", "webm_720p" }) {
                                     final String videoURL = StringUtils.valueOfOrNull(photo.get("video_" + format + "_download"));
                                     if (StringUtils.isNotEmpty(videoURL)) {
                                         final DownloadLink videoEntry = createDownloadlink(brc.getURL(videoURL).toString());
+                                        videoEntry.setProperty("video_format", format);
+                                        final Object video_width = photo.get("video_" + format + "_width");
+                                        if (video_width != null) {
+                                            videoEntry.setProperty("video_width", video_width.toString());
+                                        }
+                                        final Object video_height = photo.get("video_" + format + "_height");
+                                        if (video_height != null) {
+                                            videoEntry.setProperty("video_height", video_height.toString());
+                                        }
                                         final long fileSize = JavaScriptEngineFactory.toLong(photo.get("video_" + format + "_size"), -1l);
                                         if (fileSize > 0) {
-                                            dl.setDownloadSize(fileSize);
+                                            videoEntry.setDownloadSize(fileSize);
                                         }
+                                        videoEntry.setProperty("fromdecrypter", true);
+                                        videoEntry.setProperty("directdate", date);
+                                        videoEntry.setProperty("directartist", artist);
+                                        videoEntry.setProperty("directalbum", album);
+                                        videoEntry.setProperty("directname", title);
+                                        String extension = Files.getExtension(videoURL);
+                                        if (extension == null) {
+                                            extension = "mp4";
+                                        }
+                                        videoEntry.setProperty("type", extension);
+                                        videoEntry.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, trackPosition));
+                                        formattedFilename = BandCampCom.getFormattedFilename(this, videoEntry);
+                                        videoEntry.setFinalFileName(formattedFilename);
                                         if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
-                                            dl.setAvailable(true);
+                                            videoEntry.setAvailable(true);
                                             ret.add(videoEntry);
                                         } else {
                                             final Browser br2 = brc.cloneBrowser();
@@ -247,8 +270,8 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                                             try {
                                                 con = br2.openHeadConnection(videoEntry.getPluginPatternMatcher());
                                                 if (looksLikeDownloadableContent(con)) {
-                                                    dl.setAvailable(true);
-                                                    dl.setVerifiedFileSize(con.getCompleteContentLength());
+                                                    videoEntry.setAvailable(true);
+                                                    videoEntry.setVerifiedFileSize(con.getCompleteContentLength());
                                                     ret.add(videoEntry);
                                                 }
                                             } catch (IOException e) {

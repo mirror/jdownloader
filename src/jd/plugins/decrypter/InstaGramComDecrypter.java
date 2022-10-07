@@ -30,25 +30,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.FilenameType;
-import org.jdownloader.plugins.components.config.InstagramConfig.SinglePostPackagenameSchemeType;
-import org.jdownloader.plugins.components.config.InstagramConfig.StoriesHighlightsPackagenameSchemeType;
-import org.jdownloader.plugins.components.config.InstagramConfig.StoryPackagenameSchemeType;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -72,6 +53,25 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.FilenameType;
+import org.jdownloader.plugins.components.config.InstagramConfig.SinglePostPackagenameSchemeType;
+import org.jdownloader.plugins.components.config.InstagramConfig.StoriesHighlightsPackagenameSchemeType;
+import org.jdownloader.plugins.components.config.InstagramConfig.StoryPackagenameSchemeType;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -140,10 +140,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * For links matching pattern {@link #TYPE_HASHTAG} --> This will be set on created DownloadLink objects as a (packagizer-) property.
      */
     private static LinkedHashMap<String, String> ID_TO_USERNAME        = new LinkedHashMap<String, String>() {
-                                                                           protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                                                                               return size() > 100;
-                                                                           };
-                                                                       };
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 100;
+        };
+    };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -273,7 +273,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         brc.setRequest(null);
         InstaGramCom.prepBRAltAPI(brc);
         InstaGramCom.getPageAltAPI(null, brc, InstaGramCom.ALT_API_BASE + "/users/" + userID + "/info/");
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
         final Map<String, Object> user = (Map<String, Object>) entries.get("user");
         if (user == null) {
             return null;
@@ -327,9 +327,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Returns userID for given username. </br>
-     * Uses website to find userID. </br>
-     * Throws Exception if it is unable to find userID in HTML code --> Profile is most likely offline then!
+     * Returns userID for given username. </br> Uses website to find userID. </br> Throws Exception if it is unable to find userID in HTML
+     * code --> Profile is most likely offline then!
      */
     private String findUserID(final CryptedLink param, final Account account, final AtomicBoolean loggedIN, final String username) throws Exception {
         if (username == null) {
@@ -348,17 +347,18 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final String userProfileURL = this.generateURLProfile(username);
         if (useSearchToFindUserID) {
             /* 2022-05-11: New method: Faster and json only */
-            final Request req = br.createGetRequest("https://www." + this.getHost() + "/web/search/topsearch/?context=blended&query=" + username + "&include_reel=true");
+            Request req = br.createGetRequest("https://www." + this.getHost() + "/web/search/topsearch/?context=blended&query=" + username + "&include_reel=true");
             /* None of these headers are mandatory atm. */
             req.getHeaders().put("Referer", userProfileURL);
             req.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             getPageAutoLogin(account, loggedIN, req.getUrl(), param, br, req, null, null);
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             if (Boolean.TRUE.equals(entries.get("require_login"))) {
                 /*
                  * 2022-10-07 E.g.
                  * {"message":"Bitte warte einige Minuten und versuche es dann noch einmal.","require_login":true,"status":"fail"}
                  */
+                sleep(2000, param);
                 logger.info("Logging in because: " + entries.get("message"));
                 if (loggedIN.get()) {
                     /* This should never happen */
@@ -366,7 +366,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     throw new AccountRequiredException();
                 }
                 /* We're logged in now -> Perform request again. */
+                req = req.cloneRequest();
                 getPageAutoLogin(account, loggedIN, req.getUrl(), param, br, req, null, null);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            }
+            if ("fail".equals(entries.get("status"))) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final List<Map<String, Object>> users = (List<Map<String, Object>>) entries.get("users");
             for (Map<String, Object> entry : users) {
@@ -383,7 +388,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else {
             getPageAutoLogin(account, loggedIN, userProfileURL, param, br, userProfileURL, null, null);
             final String json = websiteGetJson();
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             userID = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
             if (StringUtils.isEmpty(userID)) {
                 userID = br.getRegex("\"owner\":\\s*\\{\"id\":\\s*\"(\\d+)\"\\}").getMatch(0);
@@ -516,8 +521,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Gallery == post. Can contain single or multiple media items (image/video). </br>
-     * If multiple media is present, insividual pictures cannot be linked individually.
+     * Gallery == post. Can contain single or multiple media items (image/video). </br> If multiple media is present, insividual pictures
+     * cannot be linked individually.
      */
     private ArrayList<DownloadLink> crawlGallery(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws Exception {
         final String galleryID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
@@ -527,7 +532,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
          */
         getPageAutoLogin(account, loggedIN, galleryID, param, br, param.getCryptedUrl(), null, null);
         final String json = websiteGetJson();
-        Map<String, Object> entries = restoreFromString(json, TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
         final List<Map<String, Object>> resource_data_list;
         if (loggedIN.get()) {
             final String graphql = br.getRegex(">\\s*window\\.__additionalDataLoaded\\('/(?:(?:[^/]+/)?p|tv|reel)/[^/]+/'\\s*?,\\s*?(\\{.*?)\\);\\s*</script>").getMatch(0);
@@ -618,7 +623,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/media/" + internalMediaID + "/info/");
         InstaGramCom.checkErrorsAltAPI(account, br);
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final List<Map<String, Object>> items = (List<Map<String, Object>>) entries.get("items");
         final Map<String, Object> firstItem = items.get(0);
         final Map<String, Object> user = (Map<String, Object>) firstItem.get("user");
@@ -743,8 +748,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawl all posts of a user. </br>
-     * Sometimes Instagram requires user to be logged in to see any or more than X items. <br>
+     * Crawl all posts of a user. </br> Sometimes Instagram requires user to be logged in to see any or more than X items. <br>
      * Only use this when you're not logged in!
      */
     @Deprecated
@@ -787,7 +791,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            entries = restoreFromString(json, TypeRef.HASHMAP);
+            entries = restoreFromString(json, TypeRef.MAP);
             user = (Map<String, Object>) get(entries, "entry_data/ProfilePage/{0}/user", "entry_data/ProfilePage/{0}/graphql/user");
             resource_data_list = (List) get(user, "edge_owner_to_timeline_media/edges", "media/nodes");
             numberofPosts = JavaScriptEngineFactory.toLong(get(entries, "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/count", "entry_data/ProfilePage/{0}/user/media/count"), -1);
@@ -939,7 +943,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 // br.getPage(hashtagBaseURL + "?after=" + nextid);
                 InstaGramCom.getPageAltAPI(account, this.br, profilePostsFeedBaseURL + "?max_id=" + nextid);
             }
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             if (crawlProfilePicture && !hasCrawledProfilePicture) {
                 final Map<String, Object> user = (Map<String, Object>) entries.get("user");
                 final String profilePictureURL = user.get("profile_pic_url").toString();
@@ -1006,8 +1010,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all saved media items of the currently logged in user. </br>
-     * Obviously this will only work when logged in.
+     * Crawls all saved media items of the currently logged in user. </br> Obviously this will only work when logged in.
      */
     private ArrayList<DownloadLink> crawlUserSavedObjectsWebsite(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
         /* Login is mandatory! */
@@ -1015,7 +1018,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         getPageAutoLogin(account, loggedIN, null, param, br, param.getCryptedUrl(), null, null);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String json = websiteGetJson();
-        Map<String, Object> entries = restoreFromString(json, TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
         final String rhxGis = getVarRhxGis(this.br);
         final String usernameURL = new Regex(param.getCryptedUrl(), TYPE_SAVED_OBJECTS).getMatch(0);
         if (usernameURL == null) {
@@ -1103,9 +1106,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all items found when looking for a specified items. </br>
-     * Max. number of items which this returns can be limited by user setting. </br>
-     * Doesn't require the user to be logged in!
+     * Crawls all items found when looking for a specified items. </br> Max. number of items which this returns can be limited by user
+     * setting. </br> Doesn't require the user to be logged in!
      */
     private ArrayList<DownloadLink> crawlHashtagWebsite(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
         final String hashtag = new Regex(param.getCryptedUrl(), TYPE_HASHTAG).getMatch(0);
@@ -1118,7 +1120,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         getPageAutoLogin(account, loggedIN, null, param, br, param.getCryptedUrl(), null, null);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Qdb qdb = getQueryHash(br, Qdb.QUERY.USER);
-        final Map<String, Object> entries = restoreFromString(websiteGetJson(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(websiteGetJson(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/TagPage/{0}/data");
         List<Object> resource_data_list = (List<Object>) JavaScriptEngineFactory.walkJson(data, "recent/sections");
         final InstagramMetadata metadata = new InstagramMetadata();
@@ -1890,8 +1892,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * Methods using alternative API below. All of these require the user to be logged in!
      ***************************************************/
     /**
-     * Crawls all saved items of currently logged-in account: https://www.instagram.com/username/saved/ </br>
-     * Users can save any post: Their own ones or even posts of other users.
+     * Crawls all saved items of currently logged-in account: https://www.instagram.com/username/saved/ </br> Users can save any post: Their
+     * own ones or even posts of other users.
      */
     private ArrayList<DownloadLink> crawlUserSavedObjectsFeedAltAPI(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {
         final String usernameOwnerOfSavedItems = new Regex(param.getCryptedUrl(), TYPE_SAVED_OBJECTS).getMatch(0);
@@ -1921,7 +1923,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 // br.getPage(hashtagBaseURL + "?after=" + nextid);
                 InstaGramCom.getPageAltAPI(account, this.br, savedItemsFeedBaseURL + "?max_id=" + nextid);
             }
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.MAP);
             final int numberofitemsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
             if (numberofitemsOnThisPage == 0) {
                 if (page == 1) {
@@ -1989,7 +1991,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/tags/" + hashtag + "/info/");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final long totalNumberofPosts = JavaScriptEngineFactory.toLong(entries.get("media_count"), 0);
         if (totalNumberofPosts == 0) {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "No items available for this tag: " + hashtag, "No items available for this tag: " + hashtag));
@@ -2012,7 +2014,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } else {
                 InstaGramCom.getPageAltAPI(account, this.br, baseURL + "?max_id=" + nextid);
             }
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             final int numberofPostsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
             if (numberofPostsOnThisPage == 0) {
                 /* Rare case */
@@ -2076,7 +2078,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 query.addAndReplace("max_id", Encoding.urlEncode(nextid));
             }
             InstaGramCom.getPageAltAPI(account, this.br, baseURL + "?" + query.toString());
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final List<Map<String, Object>> resource_data_list = (List<Map<String, Object>>) entries.get("items");
             final int numberofitemsOnThisPage = resource_data_list.size();
             if (page == 1) {
@@ -2132,7 +2134,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         this.loginOrFail(account, loggedIN);
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/feed/reels_media/?reel_ids=highlight%3A" + reelID);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final InstagramMetadata metadata = new InstagramMetadata();
         final Map<String, Object> reel = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "reels/highlight:" + reelID);
         return this.crawlPostAltAPI(param, metadata, reel);
@@ -2151,8 +2153,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * Crawls story of given username. </br>
      *
      * @param handleErrors
-     *            true = throw exception on error e.g. if no account is given and add dummy item if user has no story. </br>
-     *            false = return empty array on error
+     *            true = throw exception on error e.g. if no account is given and add dummy item if user has no story. </br> false = return
+     *            empty array on error
      */
     private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final String username, final Account account, final AtomicBoolean loggedIN, final boolean handleErrors) throws UnsupportedEncodingException, Exception {
         if (username == null) {
@@ -2174,7 +2176,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         InstaGramCom.prepBRAltAPI(this.br);
         /* Alternative endpoint (website): https://i.instagram.com/api/v1/feed/user/<userID>/story/ */
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
-        final Map<String, Object> reel_media = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> reel_media = restoreFromString(br.toString(), TypeRef.MAP);
         final Number media_count = (Number) reel_media.get("media_count"); // Can be null when profile is private
         if (media_count == null || media_count.intValue() == 0) {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -2198,8 +2200,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * Crawls all highlight stories of given username. </br>
      *
      * @param handleErrors
-     *            true = throw exception on error e.g. if no account is given and add dummy item if user has no story. </br>
-     *            false = return empty array on error
+     *            true = throw exception on error e.g. if no account is given and add dummy item if user has no story. </br> false = return
+     *            empty array on error
      */
     private ArrayList<DownloadLink> crawlAllHighlightStories(final String username, final Account account, final AtomicBoolean loggedIN, final boolean handleErrors) throws UnsupportedEncodingException, Exception {
         if (username == null) {
@@ -2218,7 +2220,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/highlights/" + userID + "/highlights_tray/");
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final List<Map<String, Object>> stories = (List<Map<String, Object>>) entries.get("tray");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final Map<String, Object> story : stories) {
