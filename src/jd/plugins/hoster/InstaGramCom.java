@@ -22,6 +22,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -51,22 +68,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 @PluginDependencies(dependencies = { InstaGramComDecrypter.class })
@@ -157,6 +158,7 @@ public class InstaGramCom extends PluginForHost {
     // instagram.com/p/<main_content_id>/
     public static final String  PROPERTY_forced_packagename              = "forced_packagename";
     public static final String  PROPERTY_is_private                      = "is_private";
+    private final String        ACCOUNT_USERNAME                         = "username";
 
     public static void setRequestLimit() {
         Browser.setRequestIntervalLimitGlobal("instagram.com", true, 8000);
@@ -340,8 +342,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
-     * grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br>
+     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
      *
      * @throws Exception
      */
@@ -974,6 +976,32 @@ public class InstaGramCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
+        final Cookies userCookies = account.loadUserCookies();
+        final boolean isLoggedInViaCookieLogin = userCookies != null && !userCookies.isEmpty();
+        final String loggedInUserID = br.getCookie(br.getHost(), "ds_user_id", Cookies.NOTDELETEDPATTERN);
+        if (isLoggedInViaCookieLogin && loggedInUserID != null && loggedInUserID.matches("\\d+") && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            final boolean devOnly = true;
+            logger.info("Trying to find real username of currently logged in profile with userID: " + loggedInUserID);
+            try {
+                final Browser brc = br.cloneBrowser();
+                InstaGramCom.prepBRAltAPI(brc);
+                /* Alternative endpoint (website): https://i.instagram.com/api/v1/feed/user/<userID>/story/ */
+                InstaGramCom.getPageAltAPI(account, brc, InstaGramCom.ALT_API_BASE + "/feed/user/" + loggedInUserID + "/reel_media/");
+                final Map<String, Object> reel_media = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> user = (Map<String, Object>) reel_media.get("user");
+                final String realUsername = user.get("username").toString();
+                if (!StringUtils.equalsIgnoreCase(account.getUser(), realUsername)) {
+                    logger.info("Found username is different from account username: Old: " + account.getUser() + " | New: " + realUsername);
+                    account.setUser(realUsername);
+                }
+                account.setProperty(ACCOUNT_USERNAME, realUsername);
+            } catch (final Exception ex) {
+                logger.warning("Failed to obtain real username of currently loggedin user via APIv1");
+                if (devOnly) {
+                    throw ex;
+                }
+            }
+        }
         return ai;
     }
 
