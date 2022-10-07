@@ -2041,7 +2041,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String userID = this.findUserID(param, account, loggedIN, username);
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         InstaGramCom.prepBRAltAPI(this.br);
         int totalNumberofPosts = -1;
         final InstagramMetadata metadata = new InstagramMetadata();
@@ -2065,14 +2065,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 totalNumberofPosts = ((Number) entries.get("total_count")).intValue();
                 /* Do not(!) Check against 'total_count' here as this can be 12 on first page even though 0 items are available! */
                 if (numberofitemsOnThisPage == 0) {
-                    decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "USER_IS_NOT_TAGGED_ANYWHERE_" + username, "The following user is not tagged anywhere: " + username));
-                    return decryptedLinks;
+                    ret.add(this.createOfflinelink(param.getCryptedUrl(), "USER_IS_NOT_TAGGED_ANYWHERE_" + username, "The following user is not tagged anywhere: " + username));
+                    return ret;
                 }
             }
             if (numberofitemsOnThisPage == 0) {
                 /* Rare case */
                 logger.info("Stopping because: 0 items available ...");
-                return decryptedLinks;
+                return ret;
             }
             nextid = entries.get("next_max_id").toString();
             final boolean more_available = ((Boolean) entries.get("more_available"));
@@ -2081,7 +2081,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.info("Stopping because: Found no new links on page " + page + " --> Stopping decryption");
                 break;
             }
-            decryptedLinks.addAll(this.crawlPostListAltAPI(param, resource_data_list, metadata));
+            ret.addAll(this.crawlPostListAltAPI(param, resource_data_list, metadata));
             numberofCrawledPostsTotal += numberofitemsOnThisPage;
             logger.info("Crawled page: " + page + " | Crawled posts so far: " + numberofCrawledPostsTotal + "/" + totalNumberofPosts);
             if (!more_available) {
@@ -2100,7 +2100,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 page++;
             }
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 
     /** Crawls: https://www.instagram.com/stories/highlights/<numbers>/ */
@@ -2149,9 +2149,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final String userID = findUserID(param, account, loggedIN, username);
         if (StringUtils.isEmpty(userID)) {
             /* Most likely that profile doesn't exist */
-            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            decryptedLinks.add(getDummyDownloadlinkProfileOffline(username));
-            return decryptedLinks;
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            ret.add(getDummyDownloadlinkProfileOffline(username));
+            return ret;
         }
         InstaGramCom.prepBRAltAPI(this.br);
         /* Alternative endpoint (website): https://i.instagram.com/api/v1/feed/user/<userID>/story/ */

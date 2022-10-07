@@ -25,6 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,19 +56,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.RedditCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.RedditConfig;
-import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
 public class RedditComCrawler extends PluginForDecrypt {
@@ -354,24 +354,27 @@ public class RedditComCrawler extends PluginForDecrypt {
                 final String filenameBaseForSingleItems = filenameBaseForMultiItems.replace("*index*", "");
                 /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
                 boolean addedRedditSelfhostedVideo = false;
-                String externalURL = (String) data.get("url");
+                String maybeExternalURL = (String) data.get("url");
+                if (Encoding.isHtmlEntityCoded(maybeExternalURL)) {
+                    maybeExternalURL = Encoding.htmlDecode(maybeExternalURL);
+                }
+                if (maybeExternalURL.startsWith("/")) {
+                    maybeExternalURL = br.getURL(maybeExternalURL).toString();
+                }
                 DownloadLink lastAddedMediaItem = null;
-                if (!StringUtils.isEmpty(externalURL) && !this.canHandle(externalURL)) {
-                    if (Encoding.isHtmlEntityCoded(externalURL)) {
-                        externalURL = Encoding.htmlDecode(externalURL);
-                    }
-                    logger.info("Found external URL: " + externalURL);
-                    final String serverFilename = Plugin.getFileNameFromURL(new URL(externalURL));
+                if (!StringUtils.isEmpty(maybeExternalURL) && !this.canHandle(maybeExternalURL)) {
+                    logger.info("Found external URL: " + maybeExternalURL);
+                    final String serverFilename = Plugin.getFileNameFromURL(new URL(maybeExternalURL));
                     final String serverFilenameWithoutExt;
                     String ext = null;
                     if (serverFilename.contains(".")) {
-                        ext = Plugin.getFileNameExtensionFromURL(externalURL);
+                        ext = Plugin.getFileNameExtensionFromURL(maybeExternalURL);
                         serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
                     } else {
                         serverFilenameWithoutExt = serverFilename;
                     }
-                    final DownloadLink dl = this.createDownloadlink(externalURL);
-                    if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
+                    final DownloadLink dl = this.createDownloadlink(maybeExternalURL);
+                    if (maybeExternalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
                         if (ext == null) {
                             /* Fallback */
                             ext = ".mp4";
@@ -381,7 +384,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
                         lastAddedMediaItem = dl;
-                    } else if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
+                    } else if (maybeExternalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
                         if (ext == null) {
                             /* Fallback */
                             ext = ".jpg";
@@ -589,7 +592,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                         thisCrawledLink.setProperty(RedditCom.PROPERTY_POST_TEXT, postText);
                     }
                     /* Not (yet) required */
-                    // this.distribute(thisCrawledLink);
+                    this.distribute(thisCrawledLink);
                     crawledItems.add(thisCrawledLink);
                 }
             }
