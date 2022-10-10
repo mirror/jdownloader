@@ -20,6 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -31,12 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JpgChurch extends PluginForHost {
@@ -50,11 +50,12 @@ public class JpgChurch extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private final String         PROPERTY_USER     = "user";
+    private static final boolean free_resume                  = true;
+    private static final int     free_maxchunks               = 0;
+    private static final int     free_maxdownloads            = -1;
+    private String               dllink                       = null;
+    private final String         PROPERTY_USER                = "user";
+    private final String         defaultExpectedFileExtension = ".jpg";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -102,7 +103,7 @@ public class JpgChurch extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
-            link.setName(this.correctOrApplyFileNameExtension(this.getFID(link).replaceAll("-+", " "), null));
+            link.setName(this.correctOrApplyFileNameExtension(this.getFID(link).replaceAll("-+", " "), defaultExpectedFileExtension));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -147,11 +148,11 @@ public class JpgChurch extends PluginForHost {
                 link.setProperty(PROPERTY_USER, author);
             }
         }
-        if (!StringUtils.isEmpty(title)) {
+        if (!StringUtils.isEmpty(title) && StringUtils.isEmpty(dllink)) {
             final String ext = getFileNameExtensionFromURL(dllink);
             title = Encoding.htmlDecode(title).trim();
             if (ext == null) {
-                link.setName(this.correctOrApplyFileNameExtension(title, null));
+                link.setName(title);
             } else {
                 link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
             }
@@ -160,6 +161,12 @@ public class JpgChurch extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             if (checkDownloadableRequest(link, brc, brc.createHeadRequest(dllink), 0, true) == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            } else {
+                /* Only now can we be sure to have the correct file-extension. */
+                final String extByMimetype = getExtensionFromMimeType(brc.getHttpConnection().getContentType());
+                if (extByMimetype != null && title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + extByMimetype));
+                }
             }
         }
         return AvailableStatus.TRUE;
