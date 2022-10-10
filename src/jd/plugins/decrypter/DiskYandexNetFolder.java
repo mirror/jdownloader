@@ -24,16 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -48,6 +42,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DiskYandexNet;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -160,7 +161,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
         final String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
         final String json = br.getRegex("<script type=\"application/json\"[^>]*id=\"store-prefetch\"[^>]*>(.*?)</script>").getMatch(0);
-        Map<String, Object> map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        Map<String, Object> map = restoreFromString(json, TypeRef.MAP);
         final String rootResourceId = (String) map.get("rootResourceId");
         final String currentResourceId = (String) map.get("currentResourceId");
         Map<String, Object> entries = (Map<String, Object>) map.get("resources");
@@ -299,12 +300,21 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             // paginationMap.put("withSizes", true);
             // paginationMap.put("sk", sk);
             // paginationMap.put("options", paginationOptions);
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("Content-Type", "text/plain");
-            br.getHeaders().put("Origin", "https://disk.yandex.com");
-            br.postPageRaw("/public/api/fetch-list", "%7B%22hash%22%3A%22" + Encoding.urlEncode(hashMain) + "%3A%22%2C%22offset%22%3A" + offset + "%2C%22withSizes%22%3Atrue%2C%22sk%22%3A%22" + sk + "%22%2C%22options%22%3A%7B%22hasExperimentVideoWithoutPreview%22%3Atrue%7D%7D");
-            entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
+            PostRequest request = br.createPostRequest("/public/api/fetch-list", (UrlQuery) null, null);
+            request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            // request.getHeaders().put("X-Retpath-Y", param.getCryptedUrl());
+            request.getHeaders().put("Accept", "*/*");
+            request.getHeaders().put("Origin", "https://" + br._getURL().getHost());
+            request.setContentType("text/plain");
+            request.setPostDataString("%7B%22hash%22%3A%22" + Encoding.urlEncode(hashMain) + "%3A%22%2C%22offset%22%3A" + offset + "%2C%22withSizes%22%3Atrue%2C%22sk%22%3A%22" + sk + "%22%2C%22options%22%3A%7B%22hasExperimentVideoWithoutPreview%22%3Atrue%7D%7D");
+            br.getPage(request);
+            entries = restoreFromString(this.br.toString(), TypeRef.MAP);
             ressources = (List<Object>) entries.get("resources");
+            if (ressources == null) {
+                /* This should never happen */
+                logger.warning("Pagination failure: ressources missing");
+                break;
+            }
             page += 1;
         } while (!this.isAbort());
         return decryptedLinks;
