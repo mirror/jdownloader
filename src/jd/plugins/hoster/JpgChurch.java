@@ -20,14 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -37,6 +32,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JpgChurch extends PluginForHost {
@@ -147,8 +148,8 @@ public class JpgChurch extends PluginForHost {
                 link.setProperty(PROPERTY_USER, author);
             }
         }
-        if (!StringUtils.isEmpty(title) && StringUtils.isEmpty(dllink)) {
-            final String ext = getFileNameExtensionFromURL(dllink);
+        if (!StringUtils.isEmpty(title)) {
+            final String ext = dllink != null ? getFileNameExtensionFromURL(dllink) : null;
             title = Encoding.htmlDecode(title).trim();
             if (ext == null) {
                 link.setName(title);
@@ -158,12 +159,13 @@ public class JpgChurch extends PluginForHost {
         }
         if (!StringUtils.isEmpty(dllink)) {
             final Browser brc = br.cloneBrowser();
-            if (checkDownloadableRequest(link, brc, brc.createHeadRequest(dllink), 0, true) == null) {
+            final URLConnectionAdapter con;
+            if ((con = checkDownloadableRequest(link, brc, brc.createHeadRequest(dllink), 0, true)) == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             } else {
                 /* Only now can we be sure to have the correct file-extension. */
-                final String extByMimetype = getExtensionFromMimeType(brc.getHttpConnection().getContentType());
-                if (extByMimetype != null && title != null) {
+                final String extByMimetype = getExtensionFromMimeType(con.getContentType());
+                if (extByMimetype != null && !StringUtils.isEmpty(title)) {
                     link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + extByMimetype));
                 }
             }
