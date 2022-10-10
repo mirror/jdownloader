@@ -20,13 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,6 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JpgChurch extends PluginForHost {
@@ -53,7 +54,6 @@ public class JpgChurch extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private final String         ext               = ".jpg";
     private final String         PROPERTY_USER     = "user";
 
     public static List<String[]> getPluginDomains() {
@@ -102,7 +102,7 @@ public class JpgChurch extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
-            link.setName(this.correctOrApplyFileNameExtension(this.getFID(link).replace("-", " "), ext));
+            link.setName(this.correctOrApplyFileNameExtension(this.getFID(link).replaceAll("-+", " "), null));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -110,27 +110,37 @@ public class JpgChurch extends PluginForHost {
         String title = null;
         if (useOembed) {
             final UrlQuery query = new UrlQuery();
-            query.add("url", Encoding.urlEncode(link.getPluginPatternMatcher()));
+            query.add("url", URLEncode.encodeURIComponent(link.getPluginPatternMatcher()));
             query.add("format", "json");
             br.getPage("https://" + this.getHost() + "/oembed/?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
-            title = entries.get("title").toString();
-            final String thumbnailURL = entries.get("url").toString();
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (entries == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            title = (String) entries.get("title");
+            final String thumbnailURL = (String) entries.get("url");
+            if (thumbnailURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             /* Remove part of this URL to get the full image. */
-            this.dllink = thumbnailURL.replaceFirst("\\.md\\.jpg$", ".jpg");
-            link.setProperty(PROPERTY_USER, entries.get("author"));
+            this.dllink = thumbnailURL.replaceFirst("\\.md\\.(jpe?g|webp|gif)$", ".$1");
+            final String author = (String) entries.get("author");
+            if (author != null) {
+                link.setProperty(PROPERTY_USER, author);
+            }
+            br.setCurrentURL(link.getPluginPatternMatcher());
         } else {
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            title = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
-            dllink = br.getRegex("property=\"og:image\" content=\"(https?://[^\"]+)\"").getMatch(0);
+            title = br.getRegex("property\\s*=\\s*\"og:title\" content\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+            dllink = br.getRegex("property\\s*=\\s*\"og:image\" content\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<link rel=\"image_src\" href=\"(https?://[^\"]+)\">").getMatch(0);
+                dllink = br.getRegex("<link rel\\s*=\\s*\"image_src\" href\\s*=\\s*\"(https?://[^\"]+)\">").getMatch(0);
             }
             final String author = br.getRegex("username\\s*:\\s*\"([^\"]+)\"").getMatch(0);
             if (author != null) {
@@ -138,25 +148,18 @@ public class JpgChurch extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(title)) {
-            title = Encoding.htmlDecode(title);
-            title = title.trim();
-            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
+            final String ext = getFileNameExtensionFromURL(dllink);
+            title = Encoding.htmlDecode(title).trim();
+            if (ext == null) {
+                link.setName(this.correctOrApplyFileNameExtension(title, null));
+            } else {
+                link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
+            }
         }
         if (!StringUtils.isEmpty(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-                }
-                link.setVerifiedFileSize(con.getCompleteContentLength());
-                if (con.getCompleteContentLength() > 0) {
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+            final Browser brc = br.cloneBrowser();
+            if (checkDownloadableRequest(link, brc, brc.createHeadRequest(dllink), 0, true) == null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
         return AvailableStatus.TRUE;
@@ -170,17 +173,18 @@ public class JpgChurch extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
