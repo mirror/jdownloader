@@ -176,7 +176,8 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
         }
         final List<Map<String, Object>> audios = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        final int padLength = StringUtils.getPadLength(audios.size());
+        // keep old two digits for less than 10 items compatibility
+        final int padLength = Math.min(2, StringUtils.getPadLength(audios.size()));
         artist = Encoding.htmlDecode(artist).trim();
         album = Encoding.htmlDecode(album).trim();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
