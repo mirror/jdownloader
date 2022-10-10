@@ -50,12 +50,11 @@ public class JpgChurch extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean free_resume                  = true;
-    private static final int     free_maxchunks               = 0;
-    private static final int     free_maxdownloads            = -1;
-    private String               dllink                       = null;
-    private final String         PROPERTY_USER                = "user";
-    private final String         defaultExpectedFileExtension = ".jpg";
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
+    private String               dllink            = null;
+    private final String         PROPERTY_USER     = "user";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -103,7 +102,7 @@ public class JpgChurch extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
-            link.setName(this.correctOrApplyFileNameExtension(this.getFID(link).replaceAll("-+", " "), defaultExpectedFileExtension));
+            link.setName(this.correctOrApplyFileNameExtension(this.getFID(link).replaceAll("-+", " "), ".jpg"));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
