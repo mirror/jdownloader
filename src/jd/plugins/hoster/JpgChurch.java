@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,12 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JpgChurch extends PluginForHost {
@@ -107,9 +108,10 @@ public class JpgChurch extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final boolean useOembed = true;
+        final boolean useOembedAPI = true;
         String title = null;
-        if (useOembed) {
+        String filesizeStr = null;
+        if (useOembedAPI) {
             final UrlQuery query = new UrlQuery();
             query.add("url", URLEncode.encodeURIComponent(link.getPluginPatternMatcher()));
             query.add("format", "json");
@@ -139,7 +141,13 @@ public class JpgChurch extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             title = br.getRegex("property\\s*=\\s*\"og:title\" content\\s*=\\s*\"([^\"]+)\"").getMatch(0);
-            dllink = br.getRegex("property\\s*=\\s*\"og:image\" content\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
+            /* Filesize in html code is available when file has an official download button. */
+            filesizeStr = br.getRegex("btn-download default\"[^>]*rel=\"tooltip\"[^>]*title=\"\\d+ x \\d+ - [A-Za-z0-9]+ (\\d+[^\"]+)\"").getMatch(0);
+            /* Prefer official download */
+            dllink = br.getRegex("href\\s*=\\s*\"(https?://[^\"]+)\"[^>]*download=\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("property\\s*=\\s*\"og:image\" content\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
+            }
             if (dllink == null) {
                 dllink = br.getRegex("<link rel\\s*=\\s*\"image_src\" href\\s*=\\s*\"(https?://[^\"]+)\">").getMatch(0);
             }
@@ -157,11 +165,14 @@ public class JpgChurch extends PluginForHost {
                 link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
             }
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(filesizeStr)) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+        }
+        if (!StringUtils.isEmpty(dllink) && StringUtils.isEmpty(filesizeStr)) {
             final Browser brc = br.cloneBrowser();
             final URLConnectionAdapter con;
             if ((con = checkDownloadableRequest(link, brc, brc.createHeadRequest(dllink), 0, true)) == null) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media broken?");
             } else {
                 /* Only now can we be sure to have the correct file-extension. */
                 final String extByMimetype = getExtensionFromMimeType(con.getContentType());
