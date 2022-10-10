@@ -32,6 +32,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -110,6 +111,7 @@ public class JpgChurch extends PluginForHost {
         br.setFollowRedirects(true);
         final boolean useOembedAPI = true;
         String title = null;
+        String filesizeBytesStr = null;
         String filesizeStr = null;
         if (useOembedAPI) {
             final UrlQuery query = new UrlQuery();
@@ -140,7 +142,8 @@ public class JpgChurch extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            title = br.getRegex("property\\s*=\\s*\"og:title\" content\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+            title = HTMLSearch.searchMetaTag("og:title", br.getRequest().getHtmlCode());
+            filesizeBytesStr = br.getRegex("data-size=\"(\\d+)\"").getMatch(0);
             /* Filesize in html code is available when file has an official download button. */
             filesizeStr = br.getRegex("btn-download default\"[^>]*rel=\"tooltip\"[^>]*title=\"\\d+ x \\d+ - [A-Za-z0-9]+ (\\d+[^\"]+)\"").getMatch(0);
             /* Prefer official download */
@@ -165,10 +168,12 @@ public class JpgChurch extends PluginForHost {
                 link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
             }
         }
-        if (!StringUtils.isEmpty(filesizeStr)) {
+        if (!StringUtils.isEmpty(filesizeBytesStr)) {
+            link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
+        } else if (!StringUtils.isEmpty(filesizeStr)) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
-        if (!StringUtils.isEmpty(dllink) && StringUtils.isEmpty(filesizeStr)) {
+        if (!StringUtils.isEmpty(dllink) && (StringUtils.isEmpty(filesizeStr) && StringUtils.isEmpty(filesizeBytesStr))) {
             final Browser brc = br.cloneBrowser();
             final URLConnectionAdapter con;
             if ((con = checkDownloadableRequest(link, brc, brc.createHeadRequest(dllink), 0, true)) == null) {
