@@ -17,9 +17,9 @@ public interface TiktokConfig extends PluginConfigInterface {
     public static final TiktokConfig.TRANSLATION TRANSLATION                                                = new TRANSLATION();
     final String                                 text_EnableFastLinkcheck                                   = "Enable fast linkcheck? If enabled, filenames may contain less information in website mode and filesize might be missing until download is started.";
     final String                                 text_MaxSimultaneousDownloads                              = "Set max. simultaneous downloads. The higher the value the higher is the chance that your IP gets blocked by tiktok!";
-    final String                                 text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination = "Profile crawler website mode: Add dummy URL when user profile is crawled in website mode and crawler fails to find all items due to missing pagination?";
-    final String                                 text_DownloadMode                                          = "Select download mode";
-    final String                                 text_CrawlMode                                             = "Select profile crawl mode";
+    final String                                 text_DownloadMode                                          = "Download mode";
+    final String                                 text_CrawlMode                                             = "Profile crawl mode";
+    final String                                 text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination = "Profile crawler website mode: Add dummy URL when user profile is crawled and crawler fails to find all items due to missing pagination support?";
     final String                                 text_ProfileCrawlerMaxItemsLimit                           = "Profile crawler: Define max number of items to be fetched: 0 = disable profile crawler, -1 = fetch all items";
     final String                                 text_TagCrawlerMaxItemsLimit                               = "Tag crawler: Define max number of items to be fetched: 0 = disable tag crawler, -1 = fetch all items";
     final String                                 text_VideoCrawlerCrawlAudioSeparately                      = "[Not yet possible] Video crawler: Crawl audio separately?";
@@ -35,16 +35,16 @@ public interface TiktokConfig extends PluginConfigInterface {
             return text_MaxSimultaneousDownloads;
         }
 
-        public String getAddDummyURLProfileCrawlerWebsiteModeMissingPagination_label() {
-            return text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination;
-        }
-
         public String getDownloadMode_label() {
             return text_DownloadMode;
         }
 
         public String getCrawlMode_label() {
             return text_CrawlMode;
+        }
+
+        public String getAddDummyURLProfileCrawlerWebsiteModeMissingPagination_label() {
+            return text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination;
         }
 
         public String getProfileCrawlerMaxItemsLimit_label() {
@@ -84,14 +84,6 @@ public interface TiktokConfig extends PluginConfigInterface {
     int getMaxSimultaneousDownloads();
 
     void setMaxSimultaneousDownloads(int i);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination)
-    @Order(30)
-    boolean isAddDummyURLProfileCrawlerWebsiteModeMissingPagination();
-
-    void setAddDummyURLProfileCrawlerWebsiteModeMissingPagination(boolean b);
 
     public static enum DownloadMode implements LabelInterface {
         WEBSITE {
@@ -144,6 +136,14 @@ public interface TiktokConfig extends PluginConfigInterface {
     CrawlMode getCrawlMode();
 
     void setCrawlMode(final CrawlMode mode);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination)
+    @Order(55)
+    boolean isAddDummyURLProfileCrawlerWebsiteModeMissingPagination();
+
+    void setAddDummyURLProfileCrawlerWebsiteModeMissingPagination(boolean b);
 
     @AboutConfig
     @SpinnerValidator(min = -1, max = 10000, step = 25)
