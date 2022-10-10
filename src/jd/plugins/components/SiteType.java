@@ -14,6 +14,12 @@ public class SiteType {
          */
         ArlesImageWebPageCreator,
         /**
+         * Chevereto image hosting software </br>
+         * Sold on: <a href="https://chevereto.com/pricing">chevereto.com</a><br />
+         * examples <a href="https:/jpg.church/">jpg.church</a>
+         */
+        CheveretoImageHosting,
+        /**
          * File host script first used for: <a href="http://www.chomikuj.pl/">chomikuj.pl</a><br />
          * examples <a href="http:/chomikuj.pl/">chomikuj.pl</a>
          */

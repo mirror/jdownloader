@@ -330,38 +330,39 @@ public class SrfChCrawler extends PluginForDecrypt {
                 int bestHeight = 0;
                 DownloadLink best = null;
                 if (crawlHLS) {
-                    /* Sign HLS master URL */
                     String acl = new Regex(bestHLSMasterURL, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
-                    if (acl == null) {
-                        logger.warning("Failed to find acl");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (acl != null) {
+                        /* Sign HLS master URL if needed */
+                        acl += "/*";
+                        br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
+                        final Map<String, Object> signInfoRoot = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                        final Map<String, Object> authMap = (Map<String, Object>) signInfoRoot.get("token");
+                        String authparams = (String) authMap.get("authparams");
+                        if (StringUtils.isEmpty(authparams)) {
+                            logger.warning("Failed to find authparams");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
+                        authparams = URLEncode.encodeURIComponent(authparams);
+                        authparams = authparams.replace("*", "%2A");
+                        String bestHLSMasterURLFixed = bestHLSMasterURL;
+                        // bestHLSMasterURL += "&hdnts=" + authparams;
+                        final String param_caption = new Regex(bestHLSMasterURL, "caption=([^\\&]+)").getMatch(0);
+                        if (param_caption != null) {
+                            String param_caption_new = param_caption;
+                            param_caption_new = Encoding.htmlDecode(param_caption_new);
+                            param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
+                            param_caption_new = param_caption_new.replace("%3D", "=");
+                            bestHLSMasterURLFixed = bestHLSMasterURLFixed.replace(param_caption, param_caption_new);
+                        }
+                        final UrlQuery hlsMasterQuery = UrlQuery.parse(bestHLSMasterURLFixed);
+                        hlsMasterQuery.add("hdnts", authparams);
+                        String bestHLSMasterURLFixedWithoutParams = URLHelper.getUrlWithoutParams(bestHLSMasterURLFixed);
+                        br.getPage(bestHLSMasterURLFixedWithoutParams + "?" + hlsMasterQuery.toString());
+                    } else {
+                        /* No signing of the URL needed -> Probably we will get split audio/video streams. */
+                        br.getPage(bestHLSMasterURL);
                     }
-                    acl += "/*";
-                    br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
-                    final Map<String, Object> signInfoRoot = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    final Map<String, Object> authMap = (Map<String, Object>) signInfoRoot.get("token");
-                    String authparams = (String) authMap.get("authparams");
-                    if (StringUtils.isEmpty(authparams)) {
-                        logger.warning("Failed to find authparams");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
-                    authparams = URLEncode.encodeURIComponent(authparams);
-                    authparams = authparams.replace("*", "%2A");
-                    String bestHLSMasterURLFixed = bestHLSMasterURL;
-                    // bestHLSMasterURL += "&hdnts=" + authparams;
-                    final String param_caption = new Regex(bestHLSMasterURL, "caption=([^\\&]+)").getMatch(0);
-                    if (param_caption != null) {
-                        String param_caption_new = param_caption;
-                        param_caption_new = Encoding.htmlDecode(param_caption_new);
-                        param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
-                        param_caption_new = param_caption_new.replace("%3D", "=");
-                        bestHLSMasterURLFixed = bestHLSMasterURLFixed.replace(param_caption, param_caption_new);
-                    }
-                    final UrlQuery hlsMasterQuery = UrlQuery.parse(bestHLSMasterURLFixed);
-                    hlsMasterQuery.add("hdnts", authparams);
-                    String bestHLSMasterURLFixedWithoutParams = URLHelper.getUrlWithoutParams(bestHLSMasterURLFixed);
-                    br.getPage(bestHLSMasterURLFixedWithoutParams + "?" + hlsMasterQuery.toString());
                     final List<HlsContainer> containers = HlsContainer.getHlsQualities(br);
                     for (final HlsContainer container : containers) {
                         if (foundQualities.containsKey(container.getHeight())) {
