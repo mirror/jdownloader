@@ -2015,13 +2015,14 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         logger.info("Not attempting to generate API keys although it looks possible because that is disabled!");
                         return null;
                     }
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && ((!foundValidLookingAPICredentialsOnWebsite && this.allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck()) || devForceNewApikeyCreation)) {
+                    if ((!foundValidLookingAPICredentialsOnWebsite && this.allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck()) || (devForceNewApikeyCreation && DebugMode.TRUE_IN_IDE_ELSE_FALSE)) {
                         /* Tested with: letsupload.io */
                         logger.info("Generating API keys");
                         key1 = this.websiteGenerateRandomAPIKey();
                         key2 = this.websiteGenerateRandomAPIKey();
                         generateAPIKeyForm.put("key1", key1);
                         generateAPIKeyForm.put("key2", key2);
+                        /* Small workaround for encoded values in multipart forms where data should not be URL-encoded. */
                         final InputField emailAddr = generateAPIKeyForm.getInputField("emailAddress");
                         if (emailAddr != null) {
                             final String value = emailAddr.getValue();
@@ -2033,8 +2034,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                          * Required minimum fields are: firstame,lastname, emailAddress,key1,key2,submitme. </br>
                          * We'll remove all other fields as we do not want to mistakenly change any of the users' account settings!
                          */
-                        final String[] fieldKeysToRemove = new String[] { "marketingEmails", "privateFileStatistics", "isPublic", "title", "password", "passwordConfirm", "fileReferrerWhitelist", "watermarkPosition", "watermarkPadding" };
-                        for (final String fieldKeyToRemove : fieldKeysToRemove) {
+                        final String[] keysToRemove = new String[] { "marketingEmails", "privateFileStatistics", "isPublic", "title", "password", "passwordConfirm", "fileReferrerWhitelist", "watermarkPosition", "watermarkPadding" };
+                        for (final String fieldKeyToRemove : keysToRemove) {
                             generateAPIKeyForm.remove(fieldKeyToRemove);
                         }
                         this.submitForm(brc, generateAPIKeyForm);
@@ -2082,7 +2083,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         } catch (final Exception ignore) {
             logger.log(ignore);
         }
-        /** API is not available or does not work (anymore) --> Remove previously saved credentials if existant */
+        /** API is not available or does not work (anymore) --> Remove previously saved credentials if existent */
         account.removeProperty(PROPERTY_API_KEY1);
         account.removeProperty(PROPERTY_API_KEY2);
         return null;
