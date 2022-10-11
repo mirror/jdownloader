@@ -141,6 +141,10 @@ public class MountFileNet extends antiDDoSForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        doFree(null, link);
+    }
+
+    public void doFree(final Account account, final DownloadLink link) throws Exception, PluginException {
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         currentIP.set(this.getIP());
         final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(this.EXPERIMENTALHANDLING, false);
@@ -309,7 +313,7 @@ public class MountFileNet extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.FREE) {
             login(account, false);
-            handleFree(link);
+            doFree(account, link);
         } else {
             requestFileInformation(link);
             login(account, false);
