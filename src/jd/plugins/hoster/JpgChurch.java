@@ -54,7 +54,7 @@ public class JpgChurch extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
     private final String         PROPERTY_USER     = "user";
@@ -111,7 +111,6 @@ public class JpgChurch extends PluginForHost {
         br.setFollowRedirects(true);
         final boolean useOembedAPI = true;
         String title = null;
-        String filesizeBytesStr = null;
         String filesizeStr = null;
         if (useOembedAPI) {
             final UrlQuery query = new UrlQuery();
@@ -131,7 +130,7 @@ public class JpgChurch extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Remove part of this URL to get the full image. */
-            this.dllink = thumbnailURL.replaceFirst("\\.md\\.(jpe?g|webp|gif)$", ".$1");
+            this.dllink = thumbnailURL.replaceFirst("(?i)\\.md\\.(jpe?g|webp|gif)$", ".$1");
             final String author = (String) entries.get("author");
             if (author != null) {
                 link.setProperty(PROPERTY_USER, author);
@@ -143,7 +142,6 @@ public class JpgChurch extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             title = HTMLSearch.searchMetaTag("og:title", br.getRequest().getHtmlCode());
-            filesizeBytesStr = br.getRegex("data-size=\"(\\d+)\"").getMatch(0);
             /* Filesize in html code is available when file has an official download button. */
             filesizeStr = br.getRegex("btn-download default\"[^>]*rel=\"tooltip\"[^>]*title=\"\\d+ x \\d+ - [A-Za-z0-9]+ (\\d+[^\"]+)\"").getMatch(0);
             /* Prefer official download */
@@ -168,12 +166,10 @@ public class JpgChurch extends PluginForHost {
                 link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
             }
         }
-        if (!StringUtils.isEmpty(filesizeBytesStr)) {
-            link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
-        } else if (!StringUtils.isEmpty(filesizeStr)) {
+        if (!StringUtils.isEmpty(filesizeStr)) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
-        if (!StringUtils.isEmpty(dllink) && (StringUtils.isEmpty(filesizeStr) && StringUtils.isEmpty(filesizeBytesStr))) {
+        if (!StringUtils.isEmpty(dllink) && (StringUtils.isEmpty(filesizeStr))) {
             final Browser brc = br.cloneBrowser();
             final URLConnectionAdapter con;
             if ((con = checkDownloadableRequest(link, brc, brc.createHeadRequest(dllink), 0, true)) == null) {
