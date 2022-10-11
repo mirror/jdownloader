@@ -22,23 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -68,6 +51,23 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 @PluginDependencies(dependencies = { InstaGramComDecrypter.class })
@@ -342,8 +342,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br>
-     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
+     * grab best quality but keep effects/filters.
      *
      * @throws Exception
      */
@@ -622,29 +622,34 @@ public class InstaGramCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 prepBRWebsite(br);
-                final Cookies cookies = account.loadCookies("");
+                Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
-                if (userCookies != null) {
-                    br.setCookies(MAINPAGE, userCookies);
-                    if (!force) {
-                        /* Don't verify cookies */
-                        return;
-                    }
-                    if (verifyCookies(account, userCookies)) {
-                        return;
-                    } else {
-                        errorSessionExpired(account);
-                    }
-                }
                 if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
                     if (!force) {
                         /* Don't verify cookies */
+                        logger.info(userCookies != null ? "Trust user cookies!" : "Trust plugin cookies!");
                         return;
                     }
                     if (verifyCookies(account, cookies)) {
+                        logger.info(userCookies != null ? "Verified user cookies!" : "Verified plugin cookies!");
                         account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
+                    }
+                }
+                if (userCookies != null) {
+                    br.setCookies(MAINPAGE, userCookies);
+                    if (!force) {
+                        logger.info("Trust user cookies!");
+                        /* Don't verify cookies */
+                        return;
+                    }
+                    if (verifyCookies(account, userCookies)) {
+                        logger.info("Verified user cookies!");
+                        account.saveCookies(br.getCookies(MAINPAGE), "");
+                        return;
+                    } else {
+                        errorSessionExpired(account);
                     }
                 }
                 logger.info("Full login required");
@@ -776,8 +781,14 @@ public class InstaGramCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                } else {
+                    cookies = br.getCookies(MAINPAGE);
+                    if (verifyCookies(account, userCookies)) {
+                        account.saveCookies(cookies, "");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
-                account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");

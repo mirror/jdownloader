@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,6 +63,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -280,17 +283,26 @@ public class RapidGatorNet extends antiDDoSForHost {
             link.setName(getFallbackFilename(link));
         }
         br.setFollowRedirects(false);
-        final String custom_referer = PluginJsonConfig.get(RapidGatorConfig.class).getReferer();
+        String custom_referer = PluginJsonConfig.get(RapidGatorConfig.class).getReferer();
         if (!StringUtils.isEmpty(custom_referer)) {
-            /*
-             * 2019-12-14: According to users, some special Referer will remove the captcha in free mode (I was unable to confirm) and lower
-             * the waittime between downloads from 120 to 60 minutes.
-             */
-            br.getHeaders().put("Referer", custom_referer);
+            try {
+                URLHelper.verifyURL(new URL(custom_referer));
+                /*
+                 * 2019-12-14: According to users, some special Referer will remove the captcha in free mode (I was unable to confirm) and
+                 * lower the waittime between downloads from 120 to 60 minutes.
+                 */
+                br.setCurrentURL(custom_referer);
+            } catch (MalformedURLException ignore) {
+                custom_referer = null;
+                logger.log(ignore);
+            }
         }
         getPage(link.getPluginPatternMatcher());
         String redirect = br.getRedirectLocation();
         if (redirect != null && canHandle(redirect)) {
+            if (!StringUtils.isEmpty(custom_referer)) {
+                br.setCurrentURL(custom_referer);
+            }
             getPage(redirect);
             redirect = br.getRedirectLocation();
         }

@@ -20,10 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +34,10 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.JpgChurch;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { JpgChurch.class })
@@ -78,7 +78,7 @@ public class JpgChurchCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String ogURL = HTMLSearch.searchMetaTag("og:url", br.getRequest().getHtmlCode());
+        final String ogURL = HTMLSearch.searchMetaTag(br, "og:url");
         String seek = null;
         if (ogURL != null) {
             seek = UrlQuery.parse(Encoding.htmlDecode(ogURL)).get("seek");
@@ -120,7 +120,7 @@ public class JpgChurchCrawler extends PluginForDecrypt {
         if (token != null) {
             query.add("auth_token", token);
         }
-        final String siteTitle = HTMLSearch.searchMetaTag(new String[] { "og:title", "twitter:title" }, br.getRequest().getHtmlCode());
+        final String siteTitle = HTMLSearch.searchMetaTag(br, "og:title", "twitter:title");
         FilePackage fp = null;
         if (siteTitle != null) {
             fp = FilePackage.getInstance();
