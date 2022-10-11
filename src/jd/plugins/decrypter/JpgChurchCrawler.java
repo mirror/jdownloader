@@ -20,6 +20,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,14 +35,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.JpgChurch;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { JpgChurch.class })
@@ -74,17 +76,22 @@ public class JpgChurchCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        /* Modify URL so we will always start crawling from first page */
+        final UrlQuery firstQuery = UrlQuery.parse(param.getCryptedUrl());
+        final String pageParamInAddedURL = firstQuery.get("page");
+        if (pageParamInAddedURL != null) {
+            logger.info("Changed page param inside URL from " + pageParamInAddedURL + " to 1");
+            firstQuery.addAndReplace("page", "1");
+        }
+        firstQuery.remove("peek");
+        firstQuery.remove("seek");
+        br.getPage(URLHelper.getUrlWithoutParams(param.getCryptedUrl()) + "?" + firstQuery.toString());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String ogURL = HTMLSearch.searchMetaTag(br, "og:url");
-        String seek = null;
-        if (ogURL != null) {
-            seek = UrlQuery.parse(Encoding.htmlDecode(ogURL)).get("seek");
-            if (seek != null) {
-                seek = Encoding.htmlDecode(seek);
-            }
+        String seek = br.getRegex("data-action=\"load-more\" data-seek=\"([^\"]+)\"").getMatch(0);
+        if (seek != null) {
+            seek = Encoding.htmlDecode(seek);
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -133,6 +140,7 @@ public class JpgChurchCrawler extends PluginForDecrypt {
             int numberofNewItems = 0;
             for (final String html : htmls) {
                 final String url = new Regex(html, "<a href=\"(https?://[^\"]+)\" class=\"image-container --media\">").getMatch(0);
+                final String urlThumbnail = new Regex(html, "<img src=\"(https:?//[^\"]+)\"\\s*alt=\"").getMatch(0);
                 final String title = new Regex(html, "data-title=\"([^\"]+)\"").getMatch(0);
                 final String filesizeBytesStr = new Regex(html, "data-size=\"(\\d+)\"").getMatch(0);
                 if (url == null || title == null || filesizeBytesStr == null) {
@@ -143,7 +151,15 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                 }
                 numberofNewItems++;
                 final DownloadLink link = this.createDownloadlink(url);
-                link.setName(this.correctOrApplyFileNameExtension(Encoding.htmlDecode(title).trim(), ".jpg"));
+                String ext = null;
+                if (urlThumbnail != null) {
+                    ext = Plugin.getFileNameExtensionFromURL(urlThumbnail);
+                }
+                if (ext == null) {
+                    /* Fallback */
+                    ext = ".jpg";
+                }
+                link.setName(this.correctOrApplyFileNameExtension(Encoding.htmlDecode(title).trim(), ext));
                 link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
                 link.setAvailable(true);
                 if (fp != null) {
@@ -167,7 +183,6 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Current page contains only " + numberofNewItems + " new of max " + maxItemsPerPage + " items");
                 break;
             } else {
-                /* TODO: Fix pagination */
                 page++;
                 query.addAndReplace("page", Integer.toString(page));
                 query.addAndReplace("seek", URLEncode.encodeURIComponent(seek));
