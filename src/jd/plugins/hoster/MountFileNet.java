@@ -27,12 +27,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,6 +45,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
@@ -114,6 +114,30 @@ public class MountFileNet extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void errorHandling(final Browser br, final Account account, final DownloadLink link) throws PluginException {
+        if (br.containsHTML("(?i)you have reached a download limit for today")) {
+            /* 2015-09-15: daily downloadlimit = 20 GB */
+            logger.info("Daily downloadlimit reached");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else if (br.containsHTML("(?i)File was deleted by owner or due to a violation of service rules")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)Unfortunately, it can be downloaded only with premium")) {
+            // <span class="error">File size is larger than 1 GB. Unfortunately, it can be downloaded only with premium</span>
+            throw new AccountRequiredException();
+        } else if (br.containsHTML("(?i)>\\s*Sorry, you have reached a download limit for today \\([\\w \\.]+\\)\\. Please wait for tomorrow")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached the download limit!", 60 * 60 * 1000l);
+        } else if (br.containsHTML("(?i)>\\s*All slots for the slow download are in use now, please try again later\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All slots for the slow download are in use now, please try again later", 30 * 60 * 1000l);
+        }
+        String reconnectWait = br.getRegex("(?i)You should wait (\\d+) minutes before downloading next file").getMatch(0);
+        if (reconnectWait == null) {
+            reconnectWait = br.getRegex("(?i)Please wait (\\d+) minutes before downloading next file or").getMatch(0);
+        }
+        if (reconnectWait != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
+        }
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
@@ -142,39 +166,21 @@ public class MountFileNet extends antiDDoSForHost {
             }
         }
         requestFileInformation(link);
-        if (br.containsHTML("(?i)Unfortunately, it can be downloaded only with premium")) {
-            // <span class="error">File size is larger than 1 GB. Unfortunately, it can be downloaded only with premium</span>
-            throw new AccountRequiredException();
-        }
+        errorHandling(br, null, link);
         postPage(br.getURL(), "free=Slow+download&hash=" + fid);
+        errorHandling(br, null, link);
         final long timeBefore = System.currentTimeMillis();
-        final boolean captchaRequired;
         if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
-            captchaRequired = true;
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             waitTime(timeBefore, link);
             postPage(br.getURL(), "free=Get+download+link&hash=" + fid + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
         } else if (containsHCaptcha(this.br)) {
             /* 2021-06-28 */
-            captchaRequired = true;
             final String hcaptchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
             waitTime(timeBefore, link);
             postPage(br.getURL(), "free=Get+download+link&hash=" + fid + "&g-recaptcha-response=" + Encoding.urlEncode(hcaptchaResponse) + "&h-captcha-response=" + Encoding.urlEncode(hcaptchaResponse));
-        } else {
-            captchaRequired = false;
         }
-        if (captchaRequired) {
-            String reconnectWait = br.getRegex("You should wait (\\d+) minutes before downloading next file").getMatch(0);
-            if (reconnectWait == null) {
-                reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file or").getMatch(0);
-            }
-            if (reconnectWait != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
-            }
-            if (br.containsHTML(">Sorry, you have reached a download limit for today \\([\\w \\.]+\\)\\. Please wait for tomorrow")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached the download limit!", 60 * 60 * 1000l);
-            }
-        }
+        errorHandling(br, null, link);
         String dllink = br.getRegex("\"(https?://d\\d+\\.mountfile.net/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
@@ -189,6 +195,7 @@ public class MountFileNet extends antiDDoSForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
+            errorHandling(br, null, link);
             if (br.containsHTML("not found")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             } else {
@@ -306,16 +313,17 @@ public class MountFileNet extends antiDDoSForHost {
         } else {
             requestFileInformation(link);
             login(account, false);
+            errorHandling(br, account, link);
             /* First check if user has direct download enabled. */
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getDownloadURL(), true, 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 /* No direct download? Manually get directurl ... */
                 br.followConnection(true);
-                errorhandlingPremium();
+                errorHandling(br, account, link);
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 postPage("/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-                errorhandlingPremium();
+                errorHandling(br, account, link);
                 String dllink = PluginJSonUtils.getJsonValue(this.br, "ok");
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -327,21 +335,11 @@ public class MountFileNet extends antiDDoSForHost {
                     } catch (IOException e) {
                         logger.log(e);
                     }
+                    errorHandling(br, account, link);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             dl.startDownload();
-        }
-    }
-
-    private void errorhandlingPremium() throws PluginException {
-        if (this.br.containsHTML("you have reached a download limit for today")) {
-            /* 2015-09-15: daily downloadlimit = 20 GB */
-            logger.info("Daily downloadlimit reached");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
-        if (br.containsHTML("File was deleted by owner or due to a violation of service rules")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
