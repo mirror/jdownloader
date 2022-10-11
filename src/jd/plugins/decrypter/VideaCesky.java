@@ -34,17 +34,14 @@ public class VideaCesky extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.containsHTML("Toto video je dočasně nedostupné")) {
-            decryptedLinks.add(this.createOfflinelink(parameter, null, "Toto video je dočasně nedostupné"));
-            return decryptedLinks;
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)Toto video je dočasně nedostupné")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String link = this.br.getRegex("file:\\s*'(http[^<>\"]*?)'").getMatch(0);
         final String title = this.br.getRegex("title:\\s*'(.*?)'").getMatch(0);
@@ -57,16 +54,15 @@ public class VideaCesky extends PluginForDecrypt {
         fp.setAllowInheritance(true);
         fp.setName(title);
         // Add link to youtube video
-        decryptedLinks.add(createDownloadlink(link));
+        ret.add(createDownloadlink(link));
         // Add link to srt file for player
-        final String srt_link = br.getURL(srtfile).toString();
-        DownloadLink subtitle = createDownloadlink(srt_link);
-        subtitle.setContentUrl(srt_link);
-        final String srt_file = title + "." + srtlabel + ".srt";
-        subtitle.setProperty(DirectHTTP.FIXNAME, srt_file);
-        subtitle.setFinalFileName(srt_file);
-        decryptedLinks.add(subtitle);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        final DownloadLink subtitle = createDownloadlink(br.getURL(srtfile).toString());
+        final String subtitleFilename = title + "." + srtlabel + ".srt";
+        subtitle.setProperty(DirectHTTP.FIXNAME, subtitleFilename);
+        subtitle.setFinalFileName(subtitleFilename);
+        subtitle.setAvailable(true);
+        ret.add(subtitle);
+        fp.addLinks(ret);
+        return ret;
     }
 }

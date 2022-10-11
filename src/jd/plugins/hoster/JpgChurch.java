@@ -98,6 +98,16 @@ public class JpgChurch extends PluginForHost {
         }
     }
 
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        String fid = null;
+        if (link != null && StringUtils.equals(getHost(), link.getHost()) && (fid = getFID(link)) != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
