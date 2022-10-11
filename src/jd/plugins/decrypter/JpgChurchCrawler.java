@@ -82,6 +82,9 @@ public class JpgChurchCrawler extends PluginForDecrypt {
         String seek = null;
         if (ogURL != null) {
             seek = UrlQuery.parse(Encoding.htmlDecode(ogURL)).get("seek");
+            if (seek != null) {
+                seek = Encoding.htmlDecode(seek);
+            }
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -98,22 +101,22 @@ public class JpgChurchCrawler extends PluginForDecrypt {
         // query.add("albumid", ""); // contained in dataparamshidden
         // query.add("from", "user"); // contained in dataparamshidden
         final String list = query.get("list");
+        final String from = query.get("from");
+        final String albumid = query.get("albumid");
+        final String userid = query.get("userid");
         if (list != null) {
             query.add("params_hidden%5Blist%5D", list);
         }
-        final String from = query.get("from");
-        query.add("params_hidden%5Buserid%5D", "");
+        if (userid != null) {
+            query.add("params_hidden%5Buserid%5D", userid);
+        }
         if (from != null) {
             query.add("params_hidden%5Bfrom%5D", from);
         }
-        final String albumid = query.get("albumid");
         if (albumid != null) {
             query.add("params_hidden%5Balbumid%5D", albumid);
         }
         query.add("params_hidden%5Bparams_hidden%5D", "");
-        if (seek != null) {
-            query.add("seek", URLEncode.encodeURIComponent(seek));
-        }
         if (token != null) {
             query.add("auth_token", token);
         }
@@ -153,23 +156,25 @@ public class JpgChurchCrawler extends PluginForDecrypt {
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
-            } else if (apiurl == null || token == null) {
+            } else if (apiurl == null || token == null || seek == null) {
                 /* This should never happen */
-                logger.info("Stopping because: Mandatory token/page params is/are missing");
+                logger.info("Stopping because: At least one mandatory pagination param is missing");
                 break;
-            } else if (apiurl == null || token == null) {
-                logger.info("Stopping because: Mandatory token/page params is/are missing");
+            } else if (numberofNewItems == 0) {
+                logger.info("Stopping because: Current page contains no new items");
                 break;
             } else if (numberofNewItems < maxItemsPerPage) {
-                logger.info("Stopping because: Current page contains less items than: " + maxItemsPerPage);
+                logger.info("Stopping because: Current page contains only " + numberofNewItems + " new of max " + maxItemsPerPage + " items");
                 break;
             } else {
                 /* TODO: Fix pagination */
                 page++;
                 query.addAndReplace("page", Integer.toString(page));
+                query.addAndReplace("seek", URLEncode.encodeURIComponent(seek));
                 br.postPage(apiurl, query);
                 final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                 br.getRequest().setHtmlCode(entries.get("html").toString());
+                seek = entries.get("seekEnd").toString();
             }
         } while (true);
         return ret;
