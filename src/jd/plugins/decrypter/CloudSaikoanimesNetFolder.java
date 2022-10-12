@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -35,6 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
@@ -87,9 +87,10 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
         String nextPageURL = "/api/sharing/folders/" + folderhash + "/" + folderID + "?sort=created_at&direction=DESC&page=1";
         int page = 1;
         FilePackage fp = null;
+        long itemsFound = 0;
         do {
             br.getPage(nextPageURL);
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             if (fp == null) {
                 final Map<String, Object> rootFolder = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "meta/root/data/attributes");
                 if (rootFolder != null) {
@@ -97,26 +98,42 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
                     fp.setName(rootFolder.get("name").toString());
                 }
             }
+            final long itemsFoundBefore = itemsFound;
             final List<Map<String, Object>> items = (List<Map<String, Object>>) entries.get("data");
+            itemsFound += items.size();
             for (final Map<String, Object> item : items) {
                 final Map<String, Object> itemdata = (Map<String, Object>) item.get("data");
+                final String id = itemdata.get("id").toString();
+                final String type = itemdata.get("type").toString();
                 final Map<String, Object> attributes = (Map<String, Object>) itemdata.get("attributes");
-                final String filename = attributes.get("name").toString();
-                final DownloadLink file = this.createDownloadlink("directhttp://" + attributes.get("file_url"));
-                file.setFinalFileName(filename);
-                file.setProperty(DirectHTTP.FIXNAME, filename);
-                file.setDownloadSize(SizeFormatter.getSize(attributes.get("filesize").toString()));
-                file.setAvailable(true);
-                if (fp != null) {
-                    file._setFilePackage(fp);
+                final String name = attributes.get("name").toString();
+                final DownloadLink downloadLink;
+                if ("folder".equalsIgnoreCase(type)) {
+                    final Number numberOfItems = (Number) attributes.get("items");
+                    if (numberOfItems == null || numberOfItems.longValue() == 0) {
+                        logger.info("Skip empty folder:" + name + "|" + id);
+                    }
+                    downloadLink = this.createDownloadlink(br.getURL("/share/" + folderID + "/files/" + id).toString());
+                } else {
+                    downloadLink = this.createDownloadlink("directhttp://" + attributes.get("file_url").toString());
+                    downloadLink.setFinalFileName(name);
+                    downloadLink.setProperty(DirectHTTP.FIXNAME, name);
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(attributes.get("filesize").toString()));
+                    downloadLink.setAvailable(true);
                 }
-                distribute(file);
-                ret.add(file);
+                if (fp != null) {
+                    downloadLink._setFilePackage(fp);
+                }
+                distribute(downloadLink);
+                ret.add(downloadLink);
             }
             final Map<String, Object> links = (Map<String, Object>) entries.get("links");
             nextPageURL = (String) links.get("next");
             logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
-            if (this.isAbort()) {
+            if (itemsFound == itemsFoundBefore) {
+                logger.info("Stopping because: no new items found");
+                break;
+            } else if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
             } else if (StringUtils.isEmpty(nextPageURL)) {
@@ -128,6 +145,15 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
                 continue;
             }
         } while (true);
-        return ret;
+        if (ret.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            return ret;
+        }
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 }
