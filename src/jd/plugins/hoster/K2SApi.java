@@ -21,6 +21,18 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Browser;
@@ -47,18 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -470,8 +470,8 @@ public abstract class K2SApi extends PluginForHost {
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
-                                 * fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
+                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -504,10 +504,14 @@ public abstract class K2SApi extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         /* required to get overrides to work */
         prepAPI(br);
-        final String auth_token = getAuthToken(account, null);
-        final HashMap<String, Object> postdata = new HashMap<String, Object>();
-        postdata.put("auth_token", auth_token);
-        final Map<String, Object> entries = postPageRaw(br, "/accountinfo", postdata, account, null);
+        final String auth_token = getAuthToken(account, null, true);
+        final Map<String, Object> entries;
+        if (!br.getURL().endsWith("/accountinfo")) {
+            entries = getAccountInfoViaAPI(account, br, auth_token);
+        } else {
+            /* Request has already been done before. */
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        }
         final Number available_traffic = (Number) entries.get("available_traffic");
         /*
          * 2019-11-26: Expired premium accounts will have their old expire-date given thus we'll have to check for that before setting
@@ -546,6 +550,13 @@ public abstract class K2SApi extends PluginForHost {
         }
         setAccountLimits(account);
         return ai;
+    }
+
+    /** See https://keep2share.github.io/api/#resources:/accountInfo:post */
+    private Map<String, Object> getAccountInfoViaAPI(final Account account, final Browser br, final String auth_token) throws Exception {
+        final HashMap<String, Object> postdata = new HashMap<String, Object>();
+        postdata.put("auth_token", auth_token);
+        return postPageRaw(br, "/accountinfo", postdata, account, null);
     }
 
     protected void setAccountLimits(Account account) {
@@ -697,7 +708,7 @@ public abstract class K2SApi extends PluginForHost {
             }
             if (account != null) {
                 /* Premium + free Account */
-                getURL.put("auth_token", getAuthToken(account, link));
+                getURL.put("auth_token", getAuthToken(account, link, false));
             }
             Map<String, Object> geturlResponse = postPageRaw(this.br, "/geturl", getURL, account, link);
             final String free_download_key = (String) geturlResponse.get("free_download_key");
@@ -1088,28 +1099,40 @@ public abstract class K2SApi extends PluginForHost {
         REQUESTRECAPTCHA
     }
 
-    protected String getAuthToken(final Account account, final DownloadLink link) throws Exception {
+    protected String getAuthToken(final Account account, final DownloadLink link, final boolean validate) throws Exception {
         synchronized (account) {
-            String currentAuthToken = account.getStringProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
-            if (StringUtils.isEmpty(currentAuthToken)) {
-                logger.info("fetch new token");
-                // we don't want to pollute this.br
-                final Browser auth = prepBrowser(new Browser());
-                final HashMap<String, Object> loginJson = new HashMap<String, Object>();
-                loginJson.put("username", account.getUser());
-                loginJson.put("password", account.getPass());
-                final Map<String, Object> loginResponse = postPageRaw(auth, "/login", loginJson, account, link);
-                currentAuthToken = (String) loginResponse.get("auth_token");
-                if (StringUtils.isEmpty(currentAuthToken)) {
-                    /* This should never happen */
-                    account.removeProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
-                    throw new AccountInvalidException("Fatal: Token missing");
-                } else {
-                    logger.info("new auth_token: " + currentAuthToken);
-                    account.setProperty(PROPERTY_ACCOUNT_AUTHTOKEN, currentAuthToken);
+            final String storedAuthToken = account.getStringProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
+            if (storedAuthToken != null) {
+                if (!validate) {
+                    /* Return token without checking */
+                    return storedAuthToken;
+                }
+                try {
+                    getAccountInfoViaAPI(account, br, storedAuthToken);
+                    logger.info("Validated existing auth_token");
+                    return storedAuthToken;
+                } catch (final Exception ignore) {
+                    this.dumpAuthToken(account);
+                    logger.info("Failed to validate existing auth_token -> Full login required");
                 }
             }
-            return currentAuthToken;
+            logger.info("Performing full login");
+            // we don't want to pollute this.br
+            final Browser auth = prepBrowser(new Browser());
+            final HashMap<String, Object> loginJson = new HashMap<String, Object>();
+            loginJson.put("username", account.getUser());
+            loginJson.put("password", account.getPass());
+            final Map<String, Object> loginResponse = postPageRaw(auth, "/login", loginJson, account, link);
+            final String freshAuthToken = (String) loginResponse.get("auth_token");
+            if (StringUtils.isEmpty(freshAuthToken)) {
+                /* This should never happen */
+                account.removeProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
+                throw new AccountInvalidException("Fatal: Token missing");
+            } else {
+                logger.info("new auth_token: " + freshAuthToken);
+                account.setProperty(PROPERTY_ACCOUNT_AUTHTOKEN, freshAuthToken);
+            }
+            return freshAuthToken;
         }
     }
 
@@ -1215,7 +1238,9 @@ public abstract class K2SApi extends PluginForHost {
                     privateDownloadRestriction(msgForUser);
                 case 10:
                     // Bad/invalid token? {"message":"You are not authorized for this action","status":"error","code":403,"errorCode":10}
-                    throw new AccountInvalidException(msgForUser);
+                    dumpAuthToken(account);
+                    /* Token is expired -> Do not permanently disable account as login credentials can still be valid. */
+                    throw new AccountUnavailableException(msgForUser, 1 * 60 * 1000l);
                 case 11:
                 case 42:
                     /* 2020-11-26: E.g. "File is available for premium users only" AFTER captcha in free mode. */

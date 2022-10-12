@@ -846,7 +846,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Last item age is older than user defined max age" + this.maxTweetDateStr);
                 break tweetTimeline;
             } else if (tweetMap.isEmpty()) {
-                logger.info("Current page didn't contain any results --> Probably it contained only explicit content and we're lacking permissions to view that!");
+                logger.info("Current page (" + page + ") didn't contain any results --> Probably it contained only explicit content and we're lacking permissions to view that!");
                 numberofPagesInARowWithoutResult++;
             } else {
                 numberofPagesInARowWithoutResult = 0;
