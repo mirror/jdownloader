@@ -159,6 +159,7 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_forced_packagename              = "forced_packagename";
     public static final String  PROPERTY_is_private                      = "is_private";
     private final String        ACCOUNT_USERNAME                         = "username";
+    private final String        ACCOUNT_DISPLAED_COOKIE_LOGIN_HINT       = "displayed_cookie_login_hint";
 
     public static void setRequestLimit() {
         Browser.setRequestIntervalLimitGlobal("instagram.com", true, 8000);
@@ -653,135 +654,155 @@ public class InstaGramCom extends PluginForHost {
                     }
                 }
                 logger.info("Full login required");
-                final boolean requestWithNoCookies = br.getCookies(getHost()).isEmpty();
-                br.getPage(MAINPAGE + "/");
-                if (br.getHttpConnection().getResponseCode() == 500) {
-                    if (requestWithNoCookies) {
-                        // maybe with set cookies the request will work now?
-                        br.getPage(MAINPAGE + "/");
-                    }
+                boolean accountIsForSureInvalid = false;
+                try {
+                    final boolean requestWithNoCookies = br.getCookies(getHost()).isEmpty();
+                    br.getPage(MAINPAGE + "/");
                     if (br.getHttpConnection().getResponseCode() == 500) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-                if (csrftoken == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.setCookie(MAINPAGE, "csrftoken", csrftoken);
-                final String rollout_hash = br.getRegex("\"rollout_hash\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-                if (rollout_hash == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final RequestHeader ajaxHeaders = new RequestHeader();
-                ajaxHeaders.put("Accept", "*/*");
-                ajaxHeaders.put("X-Instagram-AJAX", rollout_hash);
-                ajaxHeaders.put("X-CSRFToken", csrftoken);
-                ajaxHeaders.put("X-Requested-With", "XMLHttpRequest");
-                final PostRequest post = new PostRequest("https://www.instagram.com/accounts/login/ajax/");
-                post.setHeaders(ajaxHeaders);
-                post.setContentType("application/x-www-form-urlencoded");
-                /* 2020-05-19: https://github.com/instaloader/instaloader/pull/623 */
-                final String enc_password = "#PWD_INSTAGRAM_BROWSER:0:" + System.currentTimeMillis() + ":" + account.getPass();
-                post.setPostDataString("username=" + Encoding.urlEncode(account.getUser()) + "&enc_password=" + Encoding.urlEncode(enc_password) + "&queryParams=%7B%7D");
-                br.getPage(post);
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-                if (entries.get("status").toString().equals("fail")) {
-                    /* 2021-07-13: 2FA login required --> Not implemented so far */
-                    final Boolean two_factor_required = (Boolean) entries.get("two_factor_required");
-                    if (two_factor_required == null || !two_factor_required) {
-                        /* Invalid login credentials */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        /*
-                         * 2021-07-13: 2FA login not (yet) finished --> Throw error if it is required within login process of a user using
-                         * JD outside of IDE.
-                         */
-                        showCookieLogin2FAWorkaroundInformation();
-                        throw new AccountUnavailableException("2-factor-authentication required: Try cookie login method", 30 * 60 * 1000l);
-                    }
-                    final Map<String, Object> two_factor_info = (Map<String, Object>) entries.get("two_factor_info");
-                    if (!(Boolean) two_factor_info.get("sms_two_factor_on")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unsupported 2FA login method (only 2FA SMS is supported)", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    final DownloadLink dl_dummy;
-                    if (this.getDownloadLink() != null) {
-                        dl_dummy = this.getDownloadLink();
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                    }
-                    String twoFACode = getUserInput("Enter 2-Factor Authentication code for phone number " + two_factor_info.get("obfuscated_phone_number"), dl_dummy);
-                    if (twoFACode != null) {
-                        twoFACode = twoFACode.trim();
-                    }
-                    if (twoFACode == null || !twoFACode.matches("\\d+")) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (requestWithNoCookies) {
+                            // maybe with set cookies the request will work now?
+                            br.getPage(MAINPAGE + "/");
+                        }
+                        if (br.getHttpConnection().getResponseCode() == 500) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     }
-                    final Form login2 = new Form();
-                    login2.setMethod(MethodType.POST);
-                    login2.setAction("/accounts/login/ajax/two_factor/");
-                    login2.put("identifier", Encoding.urlEncode(two_factor_info.get("two_factor_identifier").toString()));
-                    login2.put("trust_signal", "false");
-                    login2.put("username", two_factor_info.get("username").toString());
-                    login2.put("verificationCode", twoFACode);
-                    login2.put("verification_method", "1");
-                    // login2.put("queryParams", Encoding.urlEncode("TODO"));
-                    br.submitForm(login2);
-                    final Map<String, Object> login2Response = restoreFromString(br.toString(), TypeRef.MAP);
-                    if (!login2Response.get("status").equals("success")) {
-                        throw new AccountInvalidException("2-factor-authentication failed");
+                    final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    if (csrftoken == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    /*
-                     * Old login challenge handling (also unfinished). This is similar to 2FA but more a security measure which Instagram
-                     * can trigger at any time. 2FA will only be required if enabled by the user.
-                     */
-                    // final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
-                    // br.getPage(page);
-                    // handleLoginChallenge(this.br);
-                    // final boolean tryOldChallengeHandling = false;
-                    // if (tryOldChallengeHandling) {
-                    // // verify by email.
-                    // Form f = br.getFormBySubmitvalue("Verify+by+Email");
-                    // if (f == null) {
-                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    // }
-                    // br.submitForm(f);
-                    // f = br.getFormBySubmitvalue("Verify+Account");
-                    // if (f == null) {
-                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    // }
-                    // // dialog here to ask for 2factor verification 6 digit code.
-                    // final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
-                    // final String code = getUserInput("2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram
-                    // linked email account", dummyLink);
-                    // if (code == null) {
-                    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response",
-                    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    // }
-                    // f.put("response_code", Encoding.urlEncode(code));
-                    // // correct or incorrect?
-                    // if (br.containsHTML(">Please check the code we sent you and try again\\.<")) {
-                    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response",
-                    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    // }
-                    // // now 2factor most likely wont have the authenticated json if statement below....
-                    // // TODO: confirm what's next.
-                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unfinished code, please report issue with logs to
-                    // Development Team.");
-                    // }
-                }
-                if (!br.containsHTML("\"authenticated\"\\s*:\\s*true\\s*")) {
-                    if (br.containsHTML("\"user\"\\s*:\\s*true\\s*")) {
-                        /* {"user":true,"authenticated":false,"status":"ok"} */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Sorry, your password was incorrect. Please double-check your password.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    br.setCookie(MAINPAGE, "csrftoken", csrftoken);
+                    final String rollout_hash = br.getRegex("\"rollout_hash\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    if (rollout_hash == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                } else {
+                    final RequestHeader ajaxHeaders = new RequestHeader();
+                    ajaxHeaders.put("Accept", "*/*");
+                    ajaxHeaders.put("X-Instagram-AJAX", rollout_hash);
+                    ajaxHeaders.put("X-CSRFToken", csrftoken);
+                    ajaxHeaders.put("X-Requested-With", "XMLHttpRequest");
+                    final PostRequest post = new PostRequest("https://www.instagram.com/accounts/login/ajax/");
+                    post.setHeaders(ajaxHeaders);
+                    post.setContentType("application/x-www-form-urlencoded");
+                    /* 2020-05-19: https://github.com/instaloader/instaloader/pull/623 */
+                    final String enc_password = "#PWD_INSTAGRAM_BROWSER:0:" + System.currentTimeMillis() + ":" + account.getPass();
+                    post.setPostDataString("username=" + Encoding.urlEncode(account.getUser()) + "&enc_password=" + Encoding.urlEncode(enc_password) + "&optIntoOneTap=false&queryParams=%7B%7D");
+                    br.getPage(post);
+                    final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                    if (entries.get("status").toString().equals("fail")) {
+                        /* 2021-07-13: 2FA login required --> Not implemented so far */
+                        final Boolean two_factor_required = (Boolean) entries.get("two_factor_required");
+                        if (two_factor_required == null || !two_factor_required) {
+                            /* Invalid login credentials */
+                            throw new AccountInvalidException();
+                        }
+                        final boolean twoFactorLoginBroken = true;
+                        if (twoFactorLoginBroken) {
+                            /*
+                             * 2021-07-13: 2FA login not (yet) finished --> Throw error if it is required within login process of a user
+                             * using JD outside of IDE.
+                             */
+                            showCookieLoginInformationWebsiteLoginFailed(account);
+                            throw new AccountUnavailableException("2-factor-authentication required: Try again later or try cookie login method", 30 * 60 * 1000l);
+                        }
+                        final Map<String, Object> two_factor_info = (Map<String, Object>) entries.get("two_factor_info");
+                        if (!(Boolean) two_factor_info.get("sms_two_factor_on")) {
+                            throw new AccountInvalidException("Unsupported 2FA login method (only 2FA SMS is supported)");
+                        }
+                        final DownloadLink dl_dummy;
+                        if (this.getDownloadLink() != null) {
+                            dl_dummy = this.getDownloadLink();
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        }
+                        String twoFACode = getUserInput("Enter 2-Factor Authentication code for phone number " + two_factor_info.get("obfuscated_phone_number"), dl_dummy);
+                        if (twoFACode != null) {
+                            twoFACode = twoFACode.trim();
+                        }
+                        if (twoFACode == null || !twoFACode.matches("\\d+")) {
+                            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                                throw new AccountInvalidException("Ungültiges Format der 2-faktor-Authentifizierung!");
+                            } else {
+                                throw new AccountInvalidException("Invalid 2-factor-authentication code format!");
+                            }
+                        }
+                        final Form login2 = new Form();
+                        login2.setMethod(MethodType.POST);
+                        login2.setAction("/accounts/login/ajax/two_factor/");
+                        login2.put("identifier", Encoding.urlEncode(two_factor_info.get("two_factor_identifier").toString()));
+                        login2.put("trust_signal", "false");
+                        login2.put("username", two_factor_info.get("username").toString());
+                        login2.put("verificationCode", twoFACode);
+                        login2.put("verification_method", "1");
+                        // login2.put("queryParams", Encoding.urlEncode("TODO"));
+                        br.submitForm(login2);
+                        final Map<String, Object> login2Response = restoreFromString(br.toString(), TypeRef.MAP);
+                        if (!login2Response.get("status").equals("success")) {
+                            throw new AccountInvalidException("2-factor-authentication failed");
+                        }
+                        /*
+                         * Old login challenge handling (also unfinished). This is similar to 2FA but more a security measure which
+                         * Instagram can trigger at any time. 2FA will only be required if enabled by the user.
+                         */
+                        // final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
+                        // br.getPage(page);
+                        // handleLoginChallenge(this.br);
+                        // final boolean tryOldChallengeHandling = false;
+                        // if (tryOldChallengeHandling) {
+                        // // verify by email.
+                        // Form f = br.getFormBySubmitvalue("Verify+by+Email");
+                        // if (f == null) {
+                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        // }
+                        // br.submitForm(f);
+                        // f = br.getFormBySubmitvalue("Verify+Account");
+                        // if (f == null) {
+                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        // }
+                        // // dialog here to ask for 2factor verification 6 digit code.
+                        // final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
+                        // final String code = getUserInput("2 Factor Authenication\r\nPlease enter in the 6 digit code within your
+                        // Instagram
+                        // linked email account", dummyLink);
+                        // if (code == null) {
+                        // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response",
+                        // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        // }
+                        // f.put("response_code", Encoding.urlEncode(code));
+                        // // correct or incorrect?
+                        // if (br.containsHTML(">Please check the code we sent you and try again\\.<")) {
+                        // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response",
+                        // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        // }
+                        // // now 2factor most likely wont have the authenticated json if statement below....
+                        // // TODO: confirm what's next.
+                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unfinished code, please report issue with logs to
+                        // Development Team.");
+                        // }
+                    }
+                    if (!br.containsHTML("\"authenticated\"\\s*:\\s*true\\s*")) {
+                        accountIsForSureInvalid = true;
+                        if (br.containsHTML("\"user\"\\s*:\\s*true\\s*")) {
+                            /* {"user":true,"authenticated":false,"status":"ok"} */
+                            throw new AccountInvalidException("Sorry, your password was incorrect. Please double-check your password.");
+                        } else {
+                            throw new AccountInvalidException();
+                        }
+                    }
+                    if (Boolean.TRUE.equals(entries.get("oneTapPrompt"))) {
+                        /*
+                         * 2022-10-12: Login successful but we might not yet have those login cookies -> One additional request may be
+                         * needed
+                         */
+                        logger.info("Account is valid but one or multiple additional steps are required");
+                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            throw new AccountInvalidException("Cannot handle 'one tap prompt login step' yet! Use cookie login instead.");
+                        }
+                        /* 2022-10-12: Unfinished code */
+                        br.getPage("/accounts/onetap/?next=%2F");
+                        br.postPage(ALT_API_BASE + "/web/accounts/request_one_tap_login_nonce/", "");
+                        logger.warning("oneTapPrompt handling is unfinished. Login will probably fail!");
+                    }
                     cookies = br.getCookies(MAINPAGE);
                     if (verifyCookies(account, cookies)) {
                         account.saveCookies(cookies, "");
@@ -789,6 +810,12 @@ public class InstaGramCom extends PluginForHost {
                         logger.warning("Looks like we're not logged in although full login looked successful");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                } catch (final PluginException e) {
+                    /* Tell user to use cookie login instead */
+                    if (!accountIsForSureInvalid) {
+                        showCookieLoginInformationWebsiteLoginFailed(account);
+                    }
+                    throw e;
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -927,41 +954,48 @@ public class InstaGramCom extends PluginForHost {
         }
     }
 
-    private Thread showCookieLogin2FAWorkaroundInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Instagram - Login";
-                        message += "Hallo liebe(r) Instagram NutzerIn\r\n";
-                        message += "Instagram verlangt eine 2-Faktor-Authentifizierung für diesen Account. JDownloader unterstützt diesen Login-Typ nicht.\r\n";
-                        message += "Versuche bitte folgende alternative login Methode:\r\n";
-                        message += help_article_url;
-                    } else {
-                        title = "Instagram - Login";
-                        message += "Hello dear Instagram user\r\n";
-                        message += "Instagram is asking for a 2-factor-authentication for your account. JDownloader does not support this login method.\r\n";
-                        message += "Try the following alternative login method as a workaround:\r\n";
-                        message += help_article_url;
+    private Thread showCookieLoginInformationWebsiteLoginFailed(final Account account) {
+        synchronized (account) {
+            if (account.hasProperty(ACCOUNT_DISPLAED_COOKIE_LOGIN_HINT)) {
+                /* This hint has already been displayed to the user for this account -> Don't display it again. */
+                return null;
+            }
+            final Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                        String message = "";
+                        final String title;
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            title = "Instagram - Login";
+                            message += "Hallo liebe(r) Instagram NutzerIn\r\n";
+                            message += "Instagram verlangt zusätzliche Schritte beim Login in deinen Account. JDownloader unterstützt diese (noch) nicht.\r\n";
+                            message += "Versuche bitte folgende alternative login Methode:\r\n";
+                            message += help_article_url;
+                        } else {
+                            title = "Instagram - Login";
+                            message += "Hello dear Instagram user\r\n";
+                            message += "Instagram is demanding additional login steps to login in your account. JDownloader does not (yet) support those.\r\n";
+                            message += "Try the following alternative login method as a workaround:\r\n";
+                            message += help_article_url;
+                        }
+                        final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                        dialog.setTimeout(3 * 60 * 1000);
+                        if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                            CrossSystem.openURL(help_article_url);
+                        }
+                        final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                        ret.throwCloseExceptions();
+                    } catch (final Throwable e) {
+                        getLogger().log(e);
                     }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(3 * 60 * 1000);
-                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(help_article_url);
-                    }
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
+                };
             };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
+            thread.setDaemon(true);
+            thread.start();
+            account.setProperty(ACCOUNT_DISPLAED_COOKIE_LOGIN_HINT, true);
+            return thread;
+        }
     }
 
     /** Checks loggedin state based on html code (NOT cookies!) */
@@ -989,10 +1023,10 @@ public class InstaGramCom extends PluginForHost {
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
         final Cookies userCookies = account.loadUserCookies();
-        final boolean isLoggedInViaCookieLogin = userCookies != null && !userCookies.isEmpty();
+        final boolean isLoggedInViaUserCookieLogin = userCookies != null && !userCookies.isEmpty();
         final String loggedInUserID = br.getCookie(br.getHost(), "ds_user_id", Cookies.NOTDELETEDPATTERN);
-        if (isLoggedInViaCookieLogin && loggedInUserID != null && loggedInUserID.matches("\\d+") && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            final boolean devOnly = true;
+        final boolean findUsernameInDevModeOnly = true;
+        if (isLoggedInViaUserCookieLogin && loggedInUserID != null && loggedInUserID.matches("\\d+") && (findUsernameInDevModeOnly == false || DebugMode.TRUE_IN_IDE_ELSE_FALSE)) {
             logger.info("Trying to find real username of currently logged in profile with userID: " + loggedInUserID);
             try {
                 final Browser brc = br.cloneBrowser();
@@ -1009,7 +1043,7 @@ public class InstaGramCom extends PluginForHost {
                 account.setProperty(ACCOUNT_USERNAME, realUsername);
             } catch (final Exception ex) {
                 logger.warning("Failed to obtain real username of currently loggedin user via APIv1");
-                if (devOnly) {
+                if (findUsernameInDevModeOnly == false || DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     throw ex;
                 }
             }
