@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
@@ -27,11 +25,6 @@ import jd.plugins.decrypter.Paste2OrgCrawler;
 public class Paste2Org extends AbstractPastebinHoster {
     public Paste2Org(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.PASTEBIN };
     }
 
     @Override

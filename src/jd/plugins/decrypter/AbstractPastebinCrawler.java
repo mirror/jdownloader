@@ -84,7 +84,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         final PastebinPlaintextCrawlMode mode = JsonConfig.create(PastebinCrawlerSettings.class).getPastebinPlaintextCrawlMode();
         final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
         final boolean isAllowedByMode = mode == PastebinPlaintextCrawlMode.ALWAYS || (mode == PastebinPlaintextCrawlMode.ONLY_IF_NO_HTTP_URLS_WERE_FOUND && links.length == 0);
-        if (lazyHostPlugin != null || isAllowedByMode) {
+        if (lazyHostPlugin != null && isAllowedByMode) {
             final PluginForHost sisterPlugin = getNewPluginInstance(lazyHostPlugin);
             if (sisterPlugin != null && sisterPlugin.canHandle(param.getCryptedUrl())) {
                 final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
@@ -98,7 +98,6 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         correctCryptedLink(param);
         this.preProcess(param);
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
-        metadata.setPassword(param.getDecrypterPassword());
         final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
         return textfile;
     }
@@ -143,6 +142,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
      */
     public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         final PastebinMetadata metadata = new PastebinMetadata(this.getFID(param.getCryptedUrl()));
+        metadata.setPassword(param.getDecrypterPassword());
         metadata.setPastebinText(getPastebinText(br));
         return metadata;
     }
@@ -236,7 +236,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
                 return null;
             }
             if (this.date != null && this.username != null && this.title != null) {
-                return this.getDateFormatted() + "_" + this.title + "_" + this.username + "_" + this.contentID + this.getFileExtension();
+                return this.getDateFormatted() + "_" + this.username + "_" + this.title + "_" + this.contentID + this.getFileExtension();
             } else if (this.date != null && this.username != null) {
                 return this.getDateFormatted() + "_" + this.username + "_" + this.contentID + this.getFileExtension();
             } else if (this.date != null) {
