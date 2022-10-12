@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.Regex;
@@ -35,21 +36,52 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wcostream.com" }, urls = { "https?://(?:www[0-9]*\\.)?wcostream\\.com/(?:anime/)?.+$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class WCOStream extends antiDDoSForDecrypt {
     public WCOStream(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "wcostream.net", "wcostream.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www[0-9]*\\.)?" + buildHostsPatternPart(domains) + "/(?:anime/)?.+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex("<title>\\s*([^<]+)\\s+\\|\\s+Watch").getMatch(0);
-        ArrayList<String> links = new ArrayList<String>();
+        String title = br.getRegex("<title>\\s*([^<]+)\\s+\\|\\s+Watch").getMatch(0);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+        }
+        final ArrayList<String> links = new ArrayList<String>();
         // Handle list page
         Collections.addAll(links, br.getRegex("<li><a[^>]+href\\s*=\\s*\"\\s*([^\"]+)\\s*\"[^>]+class\\s*=\\s*\"[^\"]*sonra[^\"]*\"").getColumn(0));
         // Handle video page
@@ -92,34 +124,24 @@ public class WCOStream extends antiDDoSForDecrypt {
                     br2.getPage(embedServiceLink);
                     String embedServiceResponse = br2.toString();
                     final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(embedServiceResponse);
-                    if (entries != null) {
-                        final Browser br3 = br2.cloneBrowser();
-                        br3.setFollowRedirects(false);
-                        final String server = (String) entries.get("server");
-                        final String enc = (String) entries.get("enc");
-                        final String hd = (String) entries.get("hd");
-                        if (StringUtils.isNotEmpty(server)) {
-                            if (StringUtils.isNotEmpty(enc)) {
-                                final String url = server + "/getvid?evid=" + enc;
-                                br3.getPage(url);
-                                final String finallink = br3.getRedirectLocation();
-                                if (finallink == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                links.add(finallink);
-                                links.add("directhttp://" + finallink);
-                            }
-                            if (StringUtils.isNotEmpty(hd)) {
-                                final String url = server + "/getvid?evid=" + hd;
-                                br3.getPage(url);
-                                final String finallink = br3.getRedirectLocation();
-                                if (finallink == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                links.add(server + url);
-                                links.add("directhttp://" + finallink);
-                            }
-                        }
+                    if (entries == null) {
+                        continue;
+                    }
+                    final String server = (String) entries.get("cdn");
+                    final String enc = (String) entries.get("enc");
+                    final String hd = (String) entries.get("hd");
+                    if (StringUtils.isEmpty(server)) {
+                        continue;
+                    }
+                    if (StringUtils.isNotEmpty(enc)) {
+                        final String finallink = server + "/getvid?evid=" + enc;
+                        links.add(finallink);
+                        links.add("directhttp://" + finallink);
+                    }
+                    if (StringUtils.isNotEmpty(hd)) {
+                        final String finallink = server + "/getvid?evid=" + enc;
+                        links.add(finallink);
+                        links.add("directhttp://" + finallink);
                     }
                 }
                 if (this.isAbort()) {
@@ -127,23 +149,24 @@ public class WCOStream extends antiDDoSForDecrypt {
                 }
             }
         }
-        for (String link : links) {
-            if (StringUtils.isNotEmpty(link)) {
-                link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
-                DownloadLink dl = createDownloadlink(link);
-                if (StringUtils.isNotEmpty(fpName) && StringUtils.startsWithCaseInsensitive(link, "directhttp://")) {
-                    dl.setFinalFileName(fpName.trim() + ".mp4");
+        for (String url : links) {
+            if (StringUtils.isNotEmpty(url)) {
+                url = Encoding.htmlDecode(url).replaceAll("^//", "https://");
+                final DownloadLink dl = createDownloadlink(url);
+                if (StringUtils.startsWithCaseInsensitive(url, "directhttp://")) {
+                    dl.setFinalFileName(title + ".mp4");
                 }
-                decryptedLinks.add(dl);
+                dl.setAvailable(true);
+                ret.add(dl);
             }
         }
-        if (StringUtils.isNotEmpty(fpName)) {
+        if (StringUtils.isNotEmpty(title)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.setName(title);
             fp.setAllowMerge(true);
             fp.setAllowInheritance(true);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

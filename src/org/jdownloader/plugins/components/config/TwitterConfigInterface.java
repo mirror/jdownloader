@@ -17,7 +17,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     final String                    text_MarkTweetRepliesViaFilename                         = "Append '_reply' to filenames of tweets that are replies to other tweets?";
     final String                    text_AddTweetTextAsTextfile                              = "Add tweet text as textfile?";
     final String                    text_CrawlURLsInsideTweetText                            = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
-    final String                    text_CrawlRetweetsV2                                     = "[Unfinished, only crawls first page] Crawl retweets?";
+    final String                    text_CrawlRetweetsV2                                     = "[!Incomplete feature!] Crawl retweets?";
     final String                    text_PreferHLSVideoDownload                              = "Videos: Prefer HLS over http download?";
     final String                    text_GlobalRequestIntervalLimitApiTwitterComMilliseconds = "Define global request limit for api.twitter.com in milliseconds (0 = no limit)";
     final String                    text_GlobalRequestIntervalLimitTwimgComMilliseconds      = "Define global request limit for twimg.com in milliseconds (0 = no limit)";
