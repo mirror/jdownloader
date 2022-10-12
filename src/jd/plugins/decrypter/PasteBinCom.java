@@ -27,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "https?://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=|raw/|dl/)?[0-9A-Za-z]{2,}" })
@@ -62,15 +64,20 @@ public class PasteBinCom extends PluginForDecrypt {
             }
         }
         String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
+        if (plaintxt == null) {
+            plaintxt = br.getRegex("<div class\\s*=\\s*\"source.*?\"[^>]*>\\s*<ol[^>]*>\\s*(.*?)\\s*</ol>\\s*</div>").getMatch(0);
+            if (plaintxt != null) {
+                plaintxt = plaintxt.replaceAll("<li[^>]*>", "");
+                plaintxt = plaintxt.replaceAll("<div[^>]*>", "");
+                plaintxt = plaintxt.replaceAll("</li>", "");
+                plaintxt = plaintxt.replaceAll("</div>", "");
+            }
+        }
         if (plaintxt == null && (parameter.contains("raw.php") || parameter.contains("/raw/"))) {
             plaintxt = br.toString();
         }
         if (plaintxt == null) {
-            if (!br.containsHTML("</textarea>")) {
-                return ret;
-            }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Find all those links
         final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
