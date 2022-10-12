@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -103,6 +102,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     public static final String             PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY = "video_direct_urls_are_available_via_api_extended_entity";
     public static final String             PROPERTY_TYPE                                                    = "type";
     public static final String             PROPERTY_REPLY                                                   = "reply";
+    public static final String             PROPERTY_RETWEET                                                 = "retweet";
 
     protected DownloadLink createDownloadlink(final String link, final String tweetid) {
         final DownloadLink ret = super.createDownloadlink(link);
@@ -378,8 +378,18 @@ public class TwitterComCrawler extends PluginForDecrypt {
      *
      * @throws MalformedURLException
      */
-    private ArrayList<DownloadLink> crawlTweetMap(final Map<String, Object> tweet, Map<String, Object> user, FilePackage fp) throws MalformedURLException {
+    private ArrayList<DownloadLink> crawlTweetMap(Map<String, Object> tweet, Map<String, Object> user, FilePackage fp) throws MalformedURLException {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
+        final Map<String, Object> retweeted_status = (Map<String, Object>) tweet.get("retweeted_status");
+        boolean isRetweet = false;
+        if (retweeted_status != null && !retweeted_status.isEmpty()) {
+            /*
+             * Content of tweet is in this if whole tweet is a retweet. Also fields of "root map" of tweet can be truncated then e.g. text
+             * of tweet in "full_text" is not the full text then.
+             */
+            tweet = retweeted_status;
+            isRetweet = true;
+        }
         final String tweetID = tweet.get("id_str").toString();
         final Object userInContextOfTweet = tweet.get("user");
         if (userInContextOfTweet != null) {
@@ -394,17 +404,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final long timestamp = getTimestampTwitterDate(created_at);
         final String formattedDate = formatTwitterDateFromTimestamp(timestamp);
         final String tweetText = (String) tweet.get("full_text");
-        final Object in_reply_to_status_id_strO = tweet.get("in_reply_to_status_id_str");
-        final boolean isReplyToOtherTweet;
+        final boolean isReplyToOtherTweet = tweet.get("in_reply_to_status_id_str") != null;
         String replyTextForFilename = "";
-        if (in_reply_to_status_id_strO != null) {
-            isReplyToOtherTweet = true;
+        if (isReplyToOtherTweet) {
             /* Mark filenames of tweet-replies if wished by user. */
             if (cfg.isMarkTweetRepliesViaFilename()) {
                 replyTextForFilename += "_reply";
             }
-        } else {
-            isReplyToOtherTweet = false;
         }
         if (fp != null) {
             /* Assume that we're crawling a complete profile. */
@@ -571,6 +577,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             if (isReplyToOtherTweet) {
                 dl.setProperty(PROPERTY_REPLY, true);
+            }
+            if (isRetweet) {
+                dl.setProperty(PROPERTY_RETWEET, true);
             }
             if (dl.getFinalFileName() != null) {
                 dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, dl.getFinalFileName());
@@ -914,6 +923,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final String userID = this.getUserID(br, account, username);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
+        final HashSet<String> cursorDupes = new HashSet<String>();
         String nextCursor = null;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int totalCrawledTweetsCount = 0;
@@ -963,21 +973,39 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                     } else {
                         final Map<String, Object> result = (Map<String, Object>) JavaScriptEngineFactory.walkJson(content, "itemContent/tweet_results/result");
-                        if (!result.get("__typename").toString().equalsIgnoreCase("Tweet")) {
+                        if (result == null) {
                             continue;
                         }
-                        final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(result, "core/user_results/result/legacy");
-                        final Map<String, Object> tweet = (Map<String, Object>) result.get("legacy");
-                        if (tweet == null) {
+                        final String typename = (String) result.get("__typename");
+                        if (typename.equalsIgnoreCase("Tweet")) {
+                            final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(result, "core/user_results/result/legacy");
+                            final Map<String, Object> tweet = (Map<String, Object>) result.get("legacy");
+                            if (tweet == null) {
+                                continue;
+                            }
+                            ret.addAll(crawlTweetMap(tweet, usr, fp));
+                            crawledTweetsThisPage++;
+                        } else if (typename.equalsIgnoreCase("TweetTombstone")) {
+                            /* TODO: Check if this handling is working */
+                            /* 18+ content. We can find the ID of that tweet but we can't know the name of the user who posted it. */
+                            final String entryId = timelineEntry.get("entryId").toString();
+                            final String tweetID = new Regex(entryId, "tweet-(\\d+)").getMatch(0);
+                            if (tweetID == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/unknowntwitteruser/status/" + tweetID);
+                            link._setFilePackage(fp);
+                            ret.add(link);
+                            crawledTweetsThisPage++;
+                        } else {
+                            logger.info("Skipping unsupported __typename: " + typename);
                             continue;
                         }
-                        ret.addAll(crawlTweetMap(tweet, usr, fp));
-                        totalCrawledTweetsCount++;
-                        crawledTweetsThisPage++;
                     }
                 }
             }
-            logger.info("Crawled page " + page + " | Found tweets on this page: " + crawledTweetsThisPage + " | Total tweets: " + totalCrawledTweetsCount);
+            totalCrawledTweetsCount += crawledTweetsThisPage;
+            logger.info("Crawled page " + page + " | Found tweets on this page: " + crawledTweetsThisPage + " | Total tweets: " + totalCrawledTweetsCount + " | nextCursor = " + nextCursor);
             Long lastCrawledTweetTimestamp = null;
             if (!ret.isEmpty()) {
                 lastCrawledTweetTimestamp = ret.get(ret.size() - 1).getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
@@ -989,7 +1017,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Failed to find nextCursor");
                 break;
             } else if (crawledTweetsThisPage == 0) {
-                logger.info("Stopping because: Failed to find any new items on current page");
+                logger.info("Stopping because: Failed to find any items on current page " + page);
+                break;
+            } else if (!cursorDupes.add(nextCursor)) {
+                logger.info("Stopping because: nextCursor value for next page has already been crawled -> Reached end?");
                 break;
             } else if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount >= this.maxTweetsToCrawl.intValue()) {
                 logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl + " | Actually crawled: " + totalCrawledTweetsCount);
@@ -997,14 +1028,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
             } else if (this.crawlUntilTimestamp != null && lastCrawledTweetTimestamp != null && lastCrawledTweetTimestamp > crawlUntilTimestamp) {
                 logger.info("Stopping because: Last item age is older than user defined max age" + this.maxTweetDateStr);
                 break;
-            } else if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                logger.info("Stopping because: Re-tweet crawler pagination is currently only availble for developers (unfinished feature)");
-                break;
             } else {
                 page++;
                 continue;
             }
         } while (true);
+        logger.info("Last nextCursor: " + nextCursor);
         return ret;
     }
 

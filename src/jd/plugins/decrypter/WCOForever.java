@@ -74,7 +74,7 @@ public class WCOForever extends antiDDoSForDecrypt {
         }
         final ArrayList<String> links = new ArrayList<String>();
         Collections.addAll(links, br.getRegex("<div[^>]*class\\s*=\\s*\"[^\"]*cat-eps[^\"]*\"[^>]*>\\s*<a[^>]*href\\s*=\\s*\"([^\"]+)\"").getColumn(0));
-        Collections.addAll(links, br.getRegex("Is the video too slow[^<]+<a[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0));
+        Collections.addAll(links, br.getRegex("(?i)Is the video too slow[^<]+<a[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0));
         for (String link : links) {
             if (StringUtils.isNotEmpty(link)) {
                 link = Encoding.htmlDecode(link).replaceAll("^//", "https://");

@@ -21,9 +21,12 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -45,42 +48,60 @@ public class AbloadDeGallery extends PluginForDecrypt {
     private static final String DIRECTLINKREGEX  = "um die Originalgröße anzuzeigen\\.</div><img src=\"(/img/[^\"]+)\"";
     private static final String DIRECTLINKREGEX2 = "(/img/[^\"]+)\"";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String addedurl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(addedurl);
         if (br.containsHTML("Ein Bild mit diesem Dateinamen existiert nicht\\.") || br.containsHTML(">Dieses Bild wurde gelöscht")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Galerie nicht gefunden\\.") || br.containsHTML("Gallery not found\\.")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (!parameter.contains("browseGallery.php?gal=") && !parameter.contains("image.php")) {
-            final String galID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-            // Needed for galleries with ajax-picture-reloac function
-            String[] links = br.getRegex("\"filename\":\"([^<>\"]+)\"").getColumn(0);
-            // For "normal" galleries
-            if (links == null || links.length == 0) {
-                links = br.getRegex("\"/browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&amp;img=([^<>\"/]*?)\"").getColumn(0);
+        if (!addedurl.contains("browseGallery.php?gal=") && !addedurl.contains("image.php")) {
+            final String galID = new Regex(addedurl, "([A-Za-z0-9]+)$").getMatch(0);
+            String passCode = null;
+            if (getPasswordProtectedForm(br) != null) {
+                int counter = 0;
+                Form pwform = getPasswordProtectedForm(br);
+                do {
+                    passCode = getUserInput("Password?", param);
+                    pwform.put("pwd", Encoding.urlEncode(passCode));
+                    br.submitForm(pwform);
+                    pwform = getPasswordProtectedForm(br);
+                    if (pwform == null) {
+                        logger.info("User entered valid password: " + passCode);
+                        break;
+                    } else {
+                        logger.info("User entered invalid password: " + passCode);
+                        counter++;
+                        continue;
+                    }
+                } while (!this.isAbort() && counter <= 2);
+                if (pwform != null) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
             }
-            if (links == null || links.length == 0 || galID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+            // Needed for galleries with ajax-picture-reload function
+            String[] urls = br.getRegex("\"filename\":\"([^<>\"]+)\"").getColumn(0);
+            // For "normal" galleries
+            if (urls == null || urls.length == 0) {
+                urls = br.getRegex("\"/browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&amp;img=([^<>\"/]*?)\"").getColumn(0);
+            }
+            if (urls == null || urls.length == 0 || galID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String fpName = br.getRegex("<title>Galerie:([^<>\"]*?)\\- abload\\.de</title>").getMatch(0);
+            String fpName = br.getRegex("(?i)<title>\\s*Galerie\\s*:([^<>\"]*?)\\- abload\\.de\\s*</title>").getMatch(0);
             if (fpName == null) {
                 /* Fallback */
                 fpName = galID;
             }
-            fpName = Encoding.htmlDecode(fpName.trim());
+            fpName = Encoding.htmlDecode(fpName).trim();
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
-            for (String singlePictureLink : links) {
+            for (final String url : urls) {
                 // singlePictureLink = "https://www.abload.de/browseGallery.php?gal=" + galID + "&img=" +
                 // Encoding.htmlDecode(singlePictureLink);
                 // br.getPage(singlePictureLink);
@@ -91,12 +112,16 @@ public class AbloadDeGallery extends PluginForDecrypt {
                 // if (finallink == null) {
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 // }
-                final String finallink = "https://abload.de/img/" + singlePictureLink;
+                final String finallink = "https://" + this.getHost() + "/img/" + url;
                 final DownloadLink dl = this.createDownloadlink(finallink);
-                dl.setFinalFileName(singlePictureLink);
+                dl.setFinalFileName(url);
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                if (passCode != null) {
+                    dl.setPasswordProtected(true);
+                    dl.setDownloadPassword(passCode);
+                }
+                ret.add(dl);
             }
         } else {
             String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
@@ -106,12 +131,16 @@ public class AbloadDeGallery extends PluginForDecrypt {
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            decryptedLinks.add(createDownloadlink("directhttp://" + br.getURL(finallink)));
+            ret.add(createDownloadlink("directhttp://" + br.getURL(finallink)));
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    private Form getPasswordProtectedForm(final Browser br) {
+        return br.getFormbyKey("pwd");
+    }
+
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
