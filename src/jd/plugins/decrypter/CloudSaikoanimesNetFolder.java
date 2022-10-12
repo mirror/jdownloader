@@ -137,9 +137,7 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
                     downloadLink.setDownloadSize(SizeFormatter.getSize(attributes.get("filesize").toString()));
                     downloadLink.setAvailable(true);
                 }
-                if (fp != null) {
-                    downloadLink._setFilePackage(fp);
-                }
+                downloadLink._setFilePackage(fp);
                 downloadLink.setRelativeDownloadFolderPath(subfolderPath);
                 distribute(downloadLink);
                 ret.add(downloadLink);
