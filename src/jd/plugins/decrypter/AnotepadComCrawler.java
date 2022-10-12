@@ -29,8 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class AnotepadCom extends AbstractPastebinCrawler {
-    public AnotepadCom(PluginWrapper wrapper) {
+public class AnotepadComCrawler extends AbstractPastebinCrawler {
+    public AnotepadComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 

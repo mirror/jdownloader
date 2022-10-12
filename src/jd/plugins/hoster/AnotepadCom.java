@@ -18,30 +18,30 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
-import jd.plugins.decrypter.GhostbinComCrawler;
+import jd.plugins.decrypter.AnotepadComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-@PluginDependencies(dependencies = { GhostbinComCrawler.class })
-public class GhostbinCom extends AbstractPastebinHoster {
-    public GhostbinCom(PluginWrapper wrapper) {
+@PluginDependencies(dependencies = { AnotepadComCrawler.class })
+public class AnotepadCom extends AbstractPastebinHoster {
+    public AnotepadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://pst.klgrth.io/";
+        return "https://anotepad.com/privacy";
     }
 
     public static String[] getAnnotationNames() {
-        return buildAnnotationNames(GhostbinComCrawler.getPluginDomains());
+        return buildAnnotationNames(AnotepadComCrawler.getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(GhostbinComCrawler.getPluginDomains());
+        return buildSupportedNames(AnotepadComCrawler.getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
-        return GhostbinComCrawler.getAnnotationUrls();
+        return AnotepadComCrawler.getAnnotationUrls();
     }
 }

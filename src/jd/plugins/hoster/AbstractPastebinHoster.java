@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import org.appwork.utils.IO;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -38,6 +39,11 @@ import jd.plugins.decrypter.AbstractPastebinCrawler.PastebinMetadata;
 public abstract class AbstractPastebinHoster extends PluginForHost {
     public AbstractPastebinHoster(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.PASTEBIN };
     }
 
     @Override

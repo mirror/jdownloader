@@ -18,30 +18,30 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
-import jd.plugins.decrypter.GhostbinComCrawler;
+import jd.plugins.decrypter.PastebinComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-@PluginDependencies(dependencies = { GhostbinComCrawler.class })
-public class GhostbinCom extends AbstractPastebinHoster {
-    public GhostbinCom(PluginWrapper wrapper) {
+@PluginDependencies(dependencies = { PastebinComCrawler.class })
+public class PastebinCom extends AbstractPastebinHoster {
+    public PastebinCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://pst.klgrth.io/";
+        return "https://pastebin.com/doc_terms_of_service";
     }
 
     public static String[] getAnnotationNames() {
-        return buildAnnotationNames(GhostbinComCrawler.getPluginDomains());
+        return buildAnnotationNames(PastebinComCrawler.getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(GhostbinComCrawler.getPluginDomains());
+        return buildSupportedNames(PastebinComCrawler.getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
-        return GhostbinComCrawler.getAnnotationUrls();
+        return PastebinComCrawler.getAnnotationUrls();
     }
 }
