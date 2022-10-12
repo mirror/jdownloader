@@ -7,15 +7,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.PasswordUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.settings.PastebinCrawlerSettings;
-import org.jdownloader.settings.PastebinCrawlerSettings.PastebinPlaintextCrawlMode;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,6 +18,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.PasswordUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.PastebinCrawlerSettings;
+import org.jdownloader.settings.PastebinCrawlerSettings.PastebinPlaintextCrawlMode;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
@@ -44,8 +44,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use this to control which URLs should be returned and which should get skipped. </br>
-     * Default = Allow all results
+     * Use this to control which URLs should be returned and which should get skipped. </br> Default = Allow all results
      */
     protected boolean allowResult(final String url) {
         return true;
@@ -67,16 +66,21 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
             return ret;
         }
         /**
-         * TODO: Maybe differentiate between URLs that we support (= have plugin for) and those we don't support. </br>
-         * This way we could e.g. only download plaintext as .txt file if no plugin-SUPPORTED items are found.
+         * TODO: Maybe differentiate between URLs that we support (= have plugin for) and those we don't support. </br> This way we could
+         * e.g. only download plaintext as .txt file if no plugin-SUPPORTED items are found.
          */
         final Set<String> pws = PasswordUtils.getPasswords(metadata.getPastebinText());
+        ArrayList<String> pwsList = null;
         final String[] links = HTMLParser.getHttpLinks(metadata.getPastebinText(), "");
         logger.info("Found " + links.length + " URLs in plaintext");
         for (final String link : links) {
             final DownloadLink dl = createDownloadlink(link);
             if (pws != null && pws.size() > 0) {
-                dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
+                if (pwsList == null) {
+                    // share same instance
+                    pwsList = new ArrayList<String>(pws);
+                }
+                dl.setSourcePluginPasswordList(pwsList);
             }
             ret.add(dl);
         }
