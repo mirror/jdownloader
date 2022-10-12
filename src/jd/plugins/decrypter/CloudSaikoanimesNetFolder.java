@@ -19,22 +19,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
@@ -88,15 +90,29 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
         int page = 1;
         FilePackage fp = null;
         long itemsFound = 0;
+        String thisFolderName = null;
+        String subfolderPath = this.getAdoptedCloudFolderStructure("");
         do {
             br.getPage(nextPageURL);
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             if (fp == null) {
-                final Map<String, Object> rootFolder = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "meta/root/data/attributes");
-                if (rootFolder != null) {
-                    fp = FilePackage.getInstance();
-                    fp.setName(rootFolder.get("name").toString());
+                final Map<String, Object> thisFolder = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "meta/root/data/attributes");
+                if (thisFolder != null) {
+                    thisFolderName = thisFolder.get("name").toString();
                 }
+                fp = FilePackage.getInstance();
+                fp.setCleanupPackageName(false);
+                if (!StringUtils.isEmpty(thisFolderName)) {
+                    if (StringUtils.isEmpty(subfolderPath)) {
+                        subfolderPath = thisFolderName;
+                    } else {
+                        subfolderPath += "/" + thisFolderName;
+                    }
+                } else {
+                    /* Fallback */
+                    subfolderPath = folderID;
+                }
+                fp.setName(subfolderPath);
             }
             final long itemsFoundBefore = itemsFound;
             final List<Map<String, Object>> items = (List<Map<String, Object>>) entries.get("data");
@@ -124,6 +140,7 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
                 if (fp != null) {
                     downloadLink._setFilePackage(fp);
                 }
+                downloadLink.setRelativeDownloadFolderPath(subfolderPath);
                 distribute(downloadLink);
                 ret.add(downloadLink);
             }
@@ -145,8 +162,8 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
                 continue;
             }
         } while (true);
-        if (ret.size() == 0) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (ret.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, subfolderPath);
         } else {
             return ret;
         }
