@@ -107,7 +107,6 @@ public class PastebinComCrawler extends AbstractPastebinCrawler {
         }
         final Regex dateregex = br.getRegex("class=\"date\"[^>]*>\\s*<span title=\"[A-Za-z]+ (\\d+)([a-z]{2})? of ([^\"]+)\"");
         if (dateregex.matches()) {
-            // TODO
             final String dayNumber = dateregex.getMatch(0);
             final String restOfDate = dateregex.getMatch(2);
             final String newDateString = dayNumber + " " + restOfDate;
