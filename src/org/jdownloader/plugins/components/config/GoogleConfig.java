@@ -13,23 +13,32 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "drive.google.com", type = Type.HOSTER)
 public interface GoogleConfig extends PluginConfigInterface {
-    public static final TRANSLATION TRANSLATION = new TRANSLATION();
+    final String                    text_UserAgent                                        = "Enter User-Agent which will be used for all Google website http requests";
+    final String                    text_PreferredVideoQuality                            = "Select preferred video quality.\r\nIf you prefer stream download and the preferred stream quality is not found, best stream quality will be downloaded instead.";
+    final String                    text_AllowStreamDownloadAsFallbackOnQuotaLimitReached = "Allow stream download if original file can't be downloaded due to a quota limit?";
+    final String                    text_GoogleDriveAPIKey                                = "Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.";
+    final String                    text_APIDownloadMode                                  = "Set API download mode (only relevant if API Key is provided.)";
+    public static final TRANSLATION TRANSLATION                                           = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getUserAgent_label() {
-            return "Enter User-Agent which will be used for all Google website http requests";
+            return text_UserAgent;
         }
 
-        public String getPreferredQuality_label() {
-            return "Select preferred stream-quality.\r\nIf your preferred stream quality is not found, best stream quality will be downloaded instead.";
+        public String getPreferredVideoQuality_label() {
+            return text_PreferredVideoQuality;
+        }
+
+        public String getAllowStreamDownloadAsFallbackOnQuotaLimitReached_label() {
+            return text_AllowStreamDownloadAsFallbackOnQuotaLimitReached;
         }
 
         public String getGoogleDriveAPIKey_label() {
-            return "Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.";
+            return text_GoogleDriveAPIKey;
         }
 
         public String getAPIDownloadMode_label() {
-            return "Set API download mode (only relevant if API Key is provided.)";
+            return text_APIDownloadMode;
         }
 
         public String getPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible_label() {
@@ -43,13 +52,13 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultStringValue("JDDEFAULT")
-    @DescriptionForConfigEntry("Enter User-Agent which will be used for all Google website http requests")
+    @DescriptionForConfigEntry(text_UserAgent)
     @Order(10)
     String getUserAgent();
 
     public void setUserAgent(final String userAgent);
 
-    public static enum PreferredQuality implements LabelInterface {
+    public static enum PreferredVideoQuality implements LabelInterface {
         ORIGINAL {
             @Override
             public String getLabel() {
@@ -90,15 +99,23 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("ORIGINAL")
-    @DescriptionForConfigEntry("Select preferred stream-quality.\r\nIf your preferred stream quality is not found, best stream quality will be downloaded instead.")
+    @DescriptionForConfigEntry(text_PreferredVideoQuality)
     @Order(15)
-    PreferredQuality getPreferredQuality();
+    PreferredVideoQuality getPreferredVideoQuality();
 
-    void setPreferredQuality(final PreferredQuality quality);
+    void setPreferredVideoQuality(final PreferredVideoQuality quality);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_AllowStreamDownloadAsFallbackOnQuotaLimitReached)
+    @Order(16)
+    boolean isAllowStreamDownloadAsFallbackOnQuotaLimitReached();
+
+    void setAllowStreamDownloadAsFallbackOnQuotaLimitReached(boolean b);
 
     @AboutConfig
     @DefaultStringValue("")
-    @DescriptionForConfigEntry("Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.")
+    @DescriptionForConfigEntry(text_GoogleDriveAPIKey)
     @Order(20)
     String getGoogleDriveAPIKey();
 
@@ -127,7 +144,7 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("WEBSITE_IF_ACCOUNT_AVAILABLE_AND_FILE_IS_QUOTA_LIMITED")
-    @DescriptionForConfigEntry("Set API download mode (only relevant if API Key is provided.)")
+    @DescriptionForConfigEntry(text_APIDownloadMode)
     @Order(25)
     APIDownloadMode getAPIDownloadMode();
 

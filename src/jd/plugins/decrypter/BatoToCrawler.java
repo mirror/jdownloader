@@ -51,8 +51,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class BatoTo extends PluginForDecrypt {
-    public BatoTo(PluginWrapper wrapper) {
+public class BatoToCrawler extends PluginForDecrypt {
+    public BatoToCrawler(PluginWrapper wrapper) {
         super(wrapper);
         /* Prevent server response 503! */
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000);
