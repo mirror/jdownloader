@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,12 +18,14 @@ import java.util.regex.Pattern;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.PluralsightComConfig;
+import org.jdownloader.plugins.components.config.PluralsightComConfig.WaitMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -60,7 +63,7 @@ import jd.plugins.decrypter.PluralsightComDecrypter;
 public class PluralsightCom extends antiDDoSForHost {
     private static WeakHashMap<Account, List<Long>> map100PerHour                        = new WeakHashMap<Account, List<Long>>();
     private static WeakHashMap<Account, List<Long>> map200Per4Hours                      = new WeakHashMap<Account, List<Long>>();
-    public static final String                      PROPERTY_DURATION                    = "duration";
+    public static final String                      PROPERTY_DURATION_SECONDS            = "duration";
     public static final String                      PROPERTY_CLIP_ID                     = "clipID";
     public static final String                      PROPERTY_CLIP_VERSION                = "version";
     public static final String                      PROPERTY_MODULE_ORDER_ID             = "module";
@@ -77,6 +80,7 @@ public class PluralsightCom extends antiDDoSForHost {
     public static final String                      PROPERTY_MODULE_CLIP_TITLE           = "module_clip_title";
     public static final String                      WEBSITE_BASE_APP                     = "https://app.pluralsight.com";
     private static final AtomicLong                 timestampLastDownloadStarted         = new AtomicLong(0);
+    private static final AtomicInteger              durationSecondsOfLastDownloadedClip  = new AtomicInteger(0);
 
     public PluralsightCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -287,18 +291,18 @@ public class PluralsightCom extends antiDDoSForHost {
         }
     }
 
-    public static String getStreamURL(final Browser br, final Plugin plugin, final DownloadLink link, QUALITY quality) throws Exception {
+    private String getStreamURL(final Browser br, final DownloadLink link, QUALITY quality) throws Exception {
         /* 2020-04-21: Try and error. Browser does the same lol */
         final String[] resolutions = new String[] { "1280x720", "1024x768" };
         List<Map<String, Object>> urls = null;
         /* Re-use previously working resolution in case there is one. */
-        String existant_resolution = link.getStringProperty(PROPERTY_FORCED_RESOLUTION);
+        String existent_resolution = link.getStringProperty(PROPERTY_FORCED_RESOLUTION);
         for (String resolution : resolutions) {
-            if (existant_resolution != null) {
-                plugin.getLogger().info("Override quality-check of " + resolution + " with " + existant_resolution);
-                resolution = existant_resolution;
+            if (existent_resolution != null) {
+                logger.info("Override quality-check of " + resolution + " with " + existent_resolution);
+                resolution = existent_resolution;
             } else {
-                plugin.getLogger().info("Checking resolution: " + resolution);
+                logger.info("Checking resolution: " + resolution);
             }
             final String clipID = link.getStringProperty(PROPERTY_CLIP_ID);
             final String version = link.getStringProperty(PROPERTY_CLIP_VERSION);
@@ -323,11 +327,12 @@ public class PluralsightCom extends antiDDoSForHost {
                 } else {
                     params.put("versionId", "");
                 }
-                request = br.createPostRequest(WEBSITE_BASE_APP + "/video/clips/v3/viewclip", JSonStorage.toString(params));
+                request = br.createJSonPostRequest(WEBSITE_BASE_APP + "/video/clips/v3/viewclip", params);
                 request.setContentType("application/json");
                 request.getHeaders().put("x-team", "video-services");
                 request.getHeaders().put("Origin", WEBSITE_BASE_APP);
-                getRequest(br, plugin, request);
+                request.getHeaders().put("Referer", link.getPluginPatternMatcher());
+                getRequest(br, this, request);
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     throw new AccountRequiredException();
                 }
@@ -341,12 +346,12 @@ public class PluralsightCom extends antiDDoSForHost {
                 } else {
                     final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     urls = (List<Map<String, Object>>) response.get("urls");
-                    existant_resolution = resolution;
-                    plugin.getLogger().info("Found working resolution: " + resolution);
+                    existent_resolution = resolution;
+                    logger.info("Found working resolution: " + resolution);
                 }
             } else {
                 /* Old handling */
-                UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
+                final UrlQuery urlParams = UrlQuery.parse(link.getPluginPatternMatcher());
                 final String author = urlParams.get("author");
                 final String course = urlParams.get("course");
                 final String clip = urlParams.get("clip");
@@ -355,28 +360,28 @@ public class PluralsightCom extends antiDDoSForHost {
                 }
                 params.put("query", "query viewClip { viewClip(input: { author: \"" + author + "\", clipIndex: " + clip + ", courseName: \"" + course + "\", includeCaptions: false, locale: \"en\", mediaType: \"mp4\", moduleName: \"" + urlParams.get("name") + "\" , quality: \"" + quality + "\"}) { urls { url cdn rank source }, status } }");
                 params.put("variables", "{}");
-                request = br.createPostRequest("https://app.pluralsight.com/player/api/graphql", JSonStorage.toString(params));
+                request = br.createJSonPostRequest("https://app.pluralsight.com/player/api/graphql", params);
                 request.setContentType("application/json;charset=UTF-8");
                 request.getHeaders().put("Origin", "https://app.pluralsight.com");
-                getRequest(br, plugin, request);
+                getRequest(br, this, request);
                 final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 urls = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "data/viewClip/urls");
-                existant_resolution = resolution;
+                existent_resolution = resolution;
                 break;
             }
             if (!resolutionExists) {
-                plugin.getLogger().info("Resolution does not exist: " + resolution);
-                if (existant_resolution != null) {
-                    plugin.getLogger().info("Forced resolution is given, stopping anyways at: " + resolution);
+                logger.info("Resolution does not exist: " + resolution);
+                if (existent_resolution != null) {
+                    logger.info("Forced resolution is given, stopping anyways at: " + resolution);
                     break;
                 }
                 continue;
             }
-            plugin.getLogger().info("Found working resolution: " + resolution);
+            logger.info("Found working resolution: " + resolution);
             break;
         }
-        if (existant_resolution != null) {
-            link.setProperty(PROPERTY_FORCED_RESOLUTION, existant_resolution);
+        if (existent_resolution != null) {
+            link.setProperty(PROPERTY_FORCED_RESOLUTION, existent_resolution);
             if (urls != null) {
                 for (final Map<String, Object> url : urls) {
                     final String streamURL = (String) url.get("url");
@@ -466,7 +471,7 @@ public class PluralsightCom extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         } else if (link.getKnownDownloadSize() == -1) {
             /* Only check for filesize if none has been set yet. */
-            final String streamURL = getStreamURL(br, this, link, null);
+            final String streamURL = getStreamURL(br, link, null);
             if (!StringUtils.isEmpty(streamURL)) {
                 final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
                 final URLConnectionAdapter con = checkStream.getHttpConnection();
@@ -529,11 +534,22 @@ public class PluralsightCom extends antiDDoSForHost {
 
     private void downloadStream(final DownloadLink link, final Account account) throws Exception {
         /** 2020-02-17: Wait between download-starts according to: https://board.jdownloader.org/showthread.php?t=82533 */
-        final long waitMillisBetweenDownloads = PluginJsonConfig.get(PluralsightComConfig.class).getWaittimeBetweenDownloadsSeconds() * 1000;
-        final long passedMillisSinceLastDownload = System.currentTimeMillis() - timestampLastDownloadStarted.get();
-        if (passedMillisSinceLastDownload < waitMillisBetweenDownloads) {
-            final long wait = Math.min(waitMillisBetweenDownloads - passedMillisSinceLastDownload, waitMillisBetweenDownloads);
-            this.sleep(wait, link);
+        final PluralsightComConfig cfg = PluginJsonConfig.get(PluralsightComConfig.class);
+        final WaitMode mode = cfg.getWaitMode();
+        long waitMillisBetweenDownloads;
+        if (mode == WaitMode.CUSTOM_WAIT) {
+            waitMillisBetweenDownloads = cfg.getWaittimeBetweenDownloadsSeconds() * 1000;
+        } else if (mode == WaitMode.LENGTH_OF_PREVIOUSLY_DOWNLOADED_VIDEO) {
+            waitMillisBetweenDownloads = durationSecondsOfLastDownloadedClip.get() * 1000;
+        } else {
+            waitMillisBetweenDownloads = durationSecondsOfLastDownloadedClip.get() * 1000 + cfg.getWaittimeBetweenDownloadsSeconds() * 1000;
+        }
+        if (cfg.isAddRandomDelaySecondsBetweenDownloads()) {
+            waitMillisBetweenDownloads = new Random().nextInt(cfg.getAdditionalWaittimeBetweenDownloadsMaxSeconds()) * 1000;
+        }
+        final long passedTimeMillisSinceLastDownload = Time.systemIndependentCurrentJVMTimeMillis() - timestampLastDownloadStarted.get();
+        if (passedTimeMillisSinceLastDownload < waitMillisBetweenDownloads) {
+            this.sleep(waitMillisBetweenDownloads - passedTimeMillisSinceLastDownload, link);
         }
         final boolean resume = true;
         /*
@@ -549,7 +565,7 @@ public class PluralsightCom extends antiDDoSForHost {
             fetchFileInformation(link, account, true);
             String streamURL = null;
             if (StringUtils.isEmpty(streamURL)) {
-                streamURL = getStreamURL(br, this, link, null);
+                streamURL = getStreamURL(br, link, null);
                 if (StringUtils.isEmpty(streamURL)) {
                     handleErrors(account);
                     if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
@@ -583,7 +599,10 @@ public class PluralsightCom extends antiDDoSForHost {
          * java.nio.file.Files.write(Paths.get(fullPath), subtitles.getBytes()); } }
          */
         synchronized (timestampLastDownloadStarted) {
-            timestampLastDownloadStarted.set(System.currentTimeMillis());
+            timestampLastDownloadStarted.set(Time.systemIndependentCurrentJVMTimeMillis());
+        }
+        synchronized (durationSecondsOfLastDownloadedClip) {
+            durationSecondsOfLastDownloadedClip.set(link.getIntegerProperty(PROPERTY_DURATION_SECONDS, 0));
         }
         dl.startDownload();
     }
@@ -602,12 +621,13 @@ public class PluralsightCom extends antiDDoSForHost {
                 brc.followConnection(true);
                 throw new IOException();
             }
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
             } catch (Throwable ignore) {
             }
+            dl = null;
             /* Do not retry with same invalid directURL. */
             link.removeProperty(PROPERTY_DIRECTURL);
             return false;
@@ -707,7 +727,7 @@ public class PluralsightCom extends antiDDoSForHost {
 
     @Override
     public String getDescription() {
-        return "Download videos course from Pluralsight.com";
+        return "Download course videos from Pluralsight.com";
     }
 
     @Override

@@ -85,7 +85,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final UrlQuery query = new UrlQuery().parse(param.getCryptedUrl());
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         if (!query.containsKey("clipId") && !query.containsKey("courseId")) {
             final Set<String> coursePlayerURL = new HashSet<String>(Arrays.asList(br.getRegex("(/course-player\\?courseId=[a-f0-9\\-]+)\"").getColumn(0)));
             final Set<String> clipPlayerURL = new HashSet<String>(Arrays.asList(br.getRegex("(/course-player\\?clipId=[a-f0-9\\-]+)\"").getColumn(0)));
@@ -138,9 +138,9 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 } else if (StringUtils.equalsIgnoreCase(type, "clip")) {
                     link = new DownloadLink(null, null, this.getHost(), createContentURL(id), true);
                     extension = ".mp4";
-                    final Object duration = clip.get("duration");
-                    if (duration != null) {
-                        link.setProperty(PluralsightCom.PROPERTY_DURATION, duration);
+                    final Number durationSeconds = (Number) clip.get("duration");
+                    if (durationSeconds != null) {
+                        link.setProperty(PluralsightCom.PROPERTY_DURATION_SECONDS, durationSeconds);
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown item type:" + type);
@@ -176,7 +176,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
     @Deprecated
     private ArrayList<DownloadLink> oldHandling(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final UrlQuery query = new UrlQuery().parse(param.getCryptedUrl());
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         String courseSlug = query.get("course");
         if (StringUtils.isEmpty(courseSlug)) {
             /* Slug or ID (course-hash) is allowed. */
@@ -237,7 +237,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                     // final String url = br.getURL(playerUrl).toString();
                     final String clipId = (String) clip.get("clipId");
                     final DownloadLink link = new DownloadLink(null, null, this.getHost(), createContentURL(clipId), true);
-                    link.setProperty(PluralsightCom.PROPERTY_DURATION, clip.get("duration").toString());
+                    link.setProperty(PluralsightCom.PROPERTY_DURATION_SECONDS, clip.get("duration"));
                     link.setProperty(PluralsightCom.PROPERTY_CLIP_ID, clipId);
                     link.setLinkID(this.getHost() + "://" + clipId);
                     final String title = (String) clip.get("title");
@@ -269,47 +269,6 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         fp.setName(PluralsightCom.correctFileName(courseTitle));
         fp.addLinks(ret);
         ret.addAll(ret);
-        /** 2021-07-21: Removed this plugin setting - we want to save HTTP requests anyways */
-        // if (!PluginJsonConfig.get(PluralsightComConfig.class).isFastLinkCheckEnabled()) {
-        // final Browser brc = br.cloneBrowser();
-        // String forced_resolution = null;
-        // for (final DownloadLink clip : ret) {
-        // /*
-        // * Set found resolution for first clip on all videos so we can save API requests. Assume that all videos of one course are
-        // * available in the same quality.
-        // */
-        // if (forced_resolution != null) {
-        // clip.setProperty(PluralsightCom.PROPERTY_FORCED_RESOLUTION, forced_resolution);
-        // }
-        // if (clip.getKnownDownloadSize() < 0) {
-        // final String streamURL = PluralsightCom.getStreamURL(br, this, clip, null);
-        // if (streamURL != null) {
-        // final Request checkStream = PluralsightCom.getRequest(brc, this, brc.createHeadRequest(streamURL));
-        // final URLConnectionAdapter con = checkStream.getHttpConnection();
-        // try {
-        // if (con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "text") &&
-        // con.getCompleteContentLength() > 0) {
-        // clip.setVerifiedFileSize(con.getCompleteContentLength());
-        // clip.setAvailable(true);
-        // } else {
-        // clip.setAvailableStatus(AvailableStatus.UNCHECKED);
-        // }
-        // } finally {
-        // con.disconnect();
-        // }
-        // } else {
-        // clip.setAvailableStatus(AvailableStatus.UNCHECKED);
-        // }
-        // if (forced_resolution == null) {
-        // forced_resolution = clip.getStringProperty(PluralsightCom.PROPERTY_FORCED_RESOLUTION);
-        // }
-        // }
-        // distribute(clip);
-        // if (this.isAbort()) {
-        // break;
-        // }
-        // }
-        // }
         // TODO: add subtitles here, for each video add additional DownloadLink that represents subtitle, eg
         // link.setProperty("type", "srt");
         return ret;
