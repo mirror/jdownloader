@@ -13,12 +13,14 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "drive.google.com", type = Type.HOSTER)
 public interface GoogleConfig extends PluginConfigInterface {
-    final String                    text_UserAgent                                        = "Enter User-Agent which will be used for all Google website http requests";
-    final String                    text_PreferredVideoQuality                            = "Select preferred video quality.\r\nIf you prefer stream download and the preferred stream quality is not found, best stream quality will be downloaded instead.";
-    final String                    text_AllowStreamDownloadAsFallbackOnQuotaLimitReached = "Allow stream download if original file can't be downloaded due to a quota limit?";
-    final String                    text_GoogleDriveAPIKey                                = "Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.";
-    final String                    text_APIDownloadMode                                  = "Set API download mode (only relevant if API Key is provided.)";
-    public static final TRANSLATION TRANSLATION                                           = new TRANSLATION();
+    final String                    text_UserAgent                                               = "Enter User-Agent which will be used for all Google website http requests";
+    final String                    text_PreferredVideoQuality                                   = "Select preferred video quality.\r\nIf you prefer stream download and the preferred stream quality is not found, best stream quality will be downloaded instead.";
+    final String                    text_AllowStreamDownloadAsFallbackOnQuotaLimitReached        = "Allow stream download if original file can't be downloaded due to a quota limit?";
+    final String                    text_GoogleDriveAPIKey                                       = "Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.";
+    final String                    text_APIDownloadMode                                         = "Set API download mode (only relevant if API Key is provided.)";
+    final String                    text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible = "If API key is available: Prefer website for downloading if stream download is preferred and possible?";
+    final String                    text_AddStreamQualityIdentifierToFilename                    = "Add quality identifier to filename if video stream (= non-original file) is downloaded?";
+    public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getUserAgent_label() {
@@ -42,11 +44,11 @@ public interface GoogleConfig extends PluginConfigInterface {
         }
 
         public String getPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible_label() {
-            return "If API Key is given: Prefer website for downloading if stream download is preferred and possible?";
+            return text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible;
         }
 
         public String getAddStreamQualityIdentifierToFilename_label() {
-            return "Add quality identifier to filename if non-original video stream is downloaded?";
+            return text_AddStreamQualityIdentifierToFilename;
         }
     }
 
@@ -152,7 +154,7 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("If API Key is given: Prefer website for downloading if stream download is preferred and possible?")
+    @DescriptionForConfigEntry(text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible)
     @Order(40)
     boolean isPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible();
 
@@ -160,7 +162,7 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Adds quality identifier to filename if video stream (= non-original file) is downloaded.")
+    @DescriptionForConfigEntry(text_AddStreamQualityIdentifierToFilename)
     @Order(50)
     boolean isAddStreamQualityIdentifierToFilename();
 

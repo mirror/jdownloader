@@ -926,7 +926,6 @@ public class GoogleDrive extends PluginForHost {
                 errorCannotDownload(link);
             }
         }
-        final GoogleConfig cfg = PluginJsonConfig.get(GoogleConfig.class);
         boolean usedAccount = false;
         if (useAPIForDownloading(link, account)) {
             /* API download */
@@ -945,7 +944,7 @@ public class GoogleDrive extends PluginForHost {
                 }
             } else {
                 /* Check if user prefers stream download which is only possible via website. */
-                if (this.isStreamDownloadPreferredAndAllowed(link) && cfg.isPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible()) {
+                if (this.isStreamDownloadPreferredAndAllowed(link) && PluginJsonConfig.get(GoogleConfig.class).isPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible()) {
                     if (account != null) {
                         usedAccount = true;
                         this.login(br, account, usedAccount);
@@ -980,15 +979,14 @@ public class GoogleDrive extends PluginForHost {
             if (this.quotaReachedForceStreamDownloadAsWorkaround) {
                 logger.info("Attempting forced stream download in an attempt to get around quota limit");
                 try {
-                    final PreferredVideoQuality preferredVideoQuality = cfg.getPreferredVideoQuality();
-                    if (preferredVideoQuality == PreferredVideoQuality.ORIGINAL) {
+                    if (this.userPrefersStreamDownload()) {
+                        this.dllink = this.handleStreamQualitySelection(link, account);
+                    } else {
                         /*
-                         * User prefers original quality file but stream download handling will download a stream quality -> Prefer BEST
-                         * stream quality instead.
+                         * User probably prefers original quality file but stream download handling expects a preferred stream quality ->
+                         * Prefer BEST stream quality.
                          */
                         this.dllink = this.handleStreamQualitySelection(link, account, PreferredVideoQuality.STREAM_BEST);
-                    } else {
-                        this.dllink = this.handleStreamQualitySelection(link, account, preferredVideoQuality);
                     }
                 } catch (final PluginException ignore) {
                     logger.exception("Stream download fallback failed", ignore);
