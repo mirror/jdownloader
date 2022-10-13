@@ -53,16 +53,16 @@ public class OneFichierComFolder extends PluginForDecrypt {
 
     @Override
     public void init() {
-        jd.plugins.hoster.OneFichierCom.setRequestIntervalLimits();
+        OneFichierCom.setRequestIntervalLimits();
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return buildSupportedNames(jd.plugins.hoster.OneFichierCom.getPluginDomains());
+        return buildSupportedNames(OneFichierCom.getPluginDomains());
     }
 
     public static String[] getAnnotationNames() {
-        return jd.plugins.hoster.OneFichierCom.getAnnotationNames();
+        return OneFichierCom.getAnnotationNames();
     }
 
     /**
@@ -70,7 +70,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
      *
      */
     public static String[] getAnnotationUrls() {
-        final String host = "https?://(?:www\\.)?" + buildHostsPatternPart(jd.plugins.hoster.OneFichierCom.getPluginDomains().get(0));
+        final String host = "https?://(?:www\\.)?" + buildHostsPatternPart(OneFichierCom.getPluginDomains().get(0));
         return new String[] { host + "/(?:(?:[a-z]{2})/)?dir/([A-Za-z0-9]+)" };
     }
 
@@ -95,7 +95,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
          * Basically their folder API call is only for internal folders of the current user -> Not useful for us! See also:
          * https://1fichier.com/api.html
          */
-        if (jd.plugins.hoster.OneFichierCom.canUseAPI(account) && false) {
+        if (OneFichierCom.canUseAPI(account) && false) {
             /* Use premium API */
             crawlAPI(param, account);
         } else {
@@ -107,8 +107,8 @@ public class OneFichierComFolder extends PluginForDecrypt {
 
     private void crawlAPI(final CryptedLink param, final Account account) throws Exception {
         // final String folderID = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
-        jd.plugins.hoster.OneFichierCom.setPremiumAPIHeaders(this.br, account);
-        PostRequest downloadReq = br.createJSonPostRequest(jd.plugins.hoster.OneFichierCom.API_BASE + "/file/ls.cgi", null);
+        OneFichierCom.setPremiumAPIHeaders(this.br, account);
+        final PostRequest downloadReq = br.createJSonPostRequest(OneFichierCom.API_BASE + "/file/ls.cgi", "");
         downloadReq.setContentType("application/json");
         br.openRequestConnection(downloadReq);
         br.loadConnection(null);

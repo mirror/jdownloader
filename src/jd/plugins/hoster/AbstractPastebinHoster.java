@@ -67,6 +67,8 @@ public abstract class AbstractPastebinHoster extends PluginForHost {
         final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
         final DownloadLink plaintext = ((AbstractPastebinCrawler) plg).preProcessAndGetPlaintextDownloadLink(new CryptedLink(link.getPluginPatternMatcher(), link));
         link.setFinalFileName(plaintext.getName());
+        /* Do this in case the password has changed. */
+        link.setDownloadPassword(plaintext.getDownloadPassword());
         return AvailableStatus.TRUE;
     }
 
