@@ -13,10 +13,10 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,27 +27,53 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.BaseShareCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[A-Za-z0-9\\-_]+/mixtapes/[A-Za-z0-9\\-_]+/\\d+/" })
-public class BaseShareCom extends PluginForDecrypt {
-
-    public BaseShareCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { BaseShareCom.class })
+public class BaseShareComCrawler extends PluginForDecrypt {
+    public BaseShareComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.setFollowRedirects(true);
-        getPage(parameter);
-        if (br.getURL().equals("http://baseshare.com/")) {
-            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0), null));
-            return decryptedLinks;
+    public static List<String[]> getPluginDomains() {
+        return BaseShareCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+/mixtapes/[\\w\\-]+/\\d+/");
         }
-        final String url_artist = new Regex(parameter, "baseshare\\.com/([A-Za-z0-9\\-_]+)/mixtapes").getMatch(0);
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
+        getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.canHandle(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String url_artist = new Regex(param.getCryptedUrl(), "baseshare\\.com/([A-Za-z0-9\\-_]+)/mixtapes").getMatch(0);
         String artist = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
         String title = br.getRegex("<h2>([^<>]*?)</h2>").getMatch(0);
         String fpName = null;
@@ -59,8 +85,7 @@ public class BaseShareCom extends PluginForDecrypt {
         final String jstext = br.getRegex("<div id=\"content\">.*?<script>(.*?)</script>").getMatch(0);
         final String[] links = jstext.split("function ");
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             final String[][] linkinfo = new Regex(singleLink, "updateSong\\(\\'\\s*(http://baseshare\\.com/uploads[^<>\"]*?\\.mp3)\\'\\s*,\\s*\\'/uploads/waves/[a-z0-9]+\\.png\\'\\s*,\\s*\\'([^<>\"]*?)\\'\\s*,\\s*\\'([^<>\"]*?)\\'\\s*,\\s*(\\d+)\\);").getMatches();
@@ -76,17 +101,15 @@ public class BaseShareCom extends PluginForDecrypt {
                 dl.setProperty("directlink", thisurl);
                 dl.setName(thisartist + " - " + thistitle + ".mp3");
                 dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-
-        return decryptedLinks;
+        return ret;
     }
 
     private PluginForHost plugin = null;
@@ -101,13 +124,9 @@ public class BaseShareCom extends PluginForDecrypt {
         ((jd.plugins.hoster.BaseShareCom) plugin).getPage(parameter);
     }
 
-    public void loadPlugin() {
+    public void loadPlugin() throws PluginException {
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("baseshare.com");
-            if (plugin == null) {
-                throw new IllegalStateException(getHost() + " hoster plugin not found!");
-            }
+            plugin = getNewPluginForHostInstance(this.getHost());
         }
     }
-
 }

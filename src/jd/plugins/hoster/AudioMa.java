@@ -111,14 +111,14 @@ public class AudioMa extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            entries = (Map<String, Object>) entries.get("results");
-            final String status = (String) entries.get("status");
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> results = (Map<String, Object>) entries.get("results");
+            final String status = (String) results.get("status");
             if (status.equalsIgnoreCase("suspended")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String artist = (String) entries.get("artist");
-            final String songTitle = (String) entries.get("title");
+            final String artist = (String) results.get("artist");
+            final String songTitle = (String) results.get("title");
             if (StringUtils.isEmpty(artist) || StringUtils.isEmpty(songTitle)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

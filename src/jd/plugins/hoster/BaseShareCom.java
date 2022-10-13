@@ -13,118 +13,128 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "baseshare.com" }, urls = { "http://(www\\.)?baseshare\\.com/[^<>/\"]+/songs/[^<>/\"]+/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BaseShareCom extends antiDDoSForHost {
-
     public BaseShareCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "baseshare.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([\\w\\-]+)/songs/([\\w\\-]+)/(\\d+)/?");
+        }
+        return ret.toArray(new String[0]);
     }
 
     private String dllink = null;
 
     @Override
     public String getAGBLink() {
-        return "http://baseshare.com/site/page/view/tos";
+        return "https://baseshare.com/site/page/view/tos";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            /* Set fallback-filename */
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+            link.setName(urlinfo.getMatch(0) + " - " + urlinfo.getMatch(1) + ".mp3");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://baseshare.com/") || br.getHttpConnection().getResponseCode() == 404) {
+        getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String artist = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
         String title = br.getRegex("<h2>([^<>]*?)</h2>").getMatch(0);
         String filename = null;
-        dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             dllink = br.getRegex("(/uploads/(songs|zips)/[^<>\"]*?\\.mp3)\"").getMatch(0);
-            if (dllink != null) {
-                dllink = "http://baseshare.com" + dllink;
-            }
         }
         if (artist == null || title == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        artist = encodeUnicode(Encoding.htmlDecode(artist).trim());
-        title = encodeUnicode(Encoding.htmlDecode(title).trim());
-        dllink = Encoding.htmlDecode(dllink);
+        artist = encodeUnicode(Encoding.htmlDecode(artist)).trim();
+        title = encodeUnicode(Encoding.htmlDecode(title)).trim();
         filename = artist + " - " + title;
         filename = encodeUnicode(filename);
         final String ext = getFileNameExtensionFromString(dllink, ".mp3");
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br2.openGetConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
+        link.setFinalFileName(filename);
+        final boolean serverSendsFilesize = false;
+        if (dllink != null && serverSendsFilesize) {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openHeadConnection(dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } finally {
                 try {
                     con.disconnect();
@@ -132,10 +142,25 @@ public class BaseShareCom extends antiDDoSForHost {
                 }
             }
         }
-        return dllink;
+        return AvailableStatus.TRUE;
     }
 
-    // for the decrypter, so we have only one session of antiddos
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    /* for the crawler, so we have only one session of antiddos */
     public void getPage(final String url) throws Exception {
         super.getPage(url);
     }

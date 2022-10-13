@@ -18,11 +18,11 @@ package jd.plugins.decrypter;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestException;
 import java.security.MessageDigest;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -94,7 +94,7 @@ public class BatoTo extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         /* Login if possible */
@@ -105,8 +105,8 @@ public class BatoTo extends PluginForDecrypt {
         }
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.toString()));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(param.toString()));
+            return ret;
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
@@ -118,11 +118,11 @@ public class BatoTo extends PluginForDecrypt {
                     final DownloadLink link = createDownloadlink(url);
                     fp.add(link);
                     distribute(link);
-                    decryptedLinks.add(link);
+                    ret.add(link);
                 }
             }
         } else {
-            final String chapterID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+            // final String chapterID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
             final String batojs = br.getRegex("const batoPass = (.*?);\\s+").getMatch(0);
             final String cipherText = br.getRegex("const batoWord = \"([^\"]+)").getMatch(0);
             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
@@ -144,8 +144,13 @@ public class BatoTo extends PluginForDecrypt {
             final String titleChapter = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
             final String chapterNumber = new Regex(titleChapter, "Chapter\\s*(\\d+)").getMatch(0);
             String imgsText = br.getRegex("const imgHttpLis = \\[(.*?);").getMatch(0);
-            if (chapterNumber != null && titleChapter != null) {
-                fp.setName(titleSeries + " - Chapter " + chapterNumber + ": " + titleChapter);
+            if (titleSeries != null && chapterNumber != null && titleChapter != null) {
+                if (titleChapter.matches("(?i)^" + Pattern.quote(titleSeries) + "\\s*-\\s*Chapter\\s*\\d+")) {
+                    /* Title of series and chapter title are the same */
+                    fp.setName(titleSeries + " - Chapter " + chapterNumber);
+                } else {
+                    fp.setName(titleSeries + " - Chapter " + chapterNumber + ": " + titleChapter);
+                }
             } else if (titleChapter != null) {
                 fp.setName(titleChapter);
             } else {
@@ -154,7 +159,6 @@ public class BatoTo extends PluginForDecrypt {
             imgsText = imgsText.replace("\"", "");
             final String[] imgs = imgsText.split(",");
             int index = 0;
-            final DecimalFormat df = new DecimalFormat("00");
             final int padLength = StringUtils.getPadLength(imgs.length);
             for (String url : imgs) {
                 final String params = imgParams[index];
@@ -171,11 +175,11 @@ public class BatoTo extends PluginForDecrypt {
                     fp.add(link);
                 }
                 distribute(link);
-                decryptedLinks.add(link);
+                ret.add(link);
                 index++;
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /**

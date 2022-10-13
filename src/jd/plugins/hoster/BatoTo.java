@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -63,7 +65,7 @@ public class BatoTo extends antiDDoSForHost {
         dllink = null;
         this.setBrowserExclusive();
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        this.br.getHeaders().put("Referer", "http://bato.to/reader");
+        this.br.getHeaders().put("Referer", "http://" + this.getHost() + "/reader");
         this.br.setAllowedResponseCodes(503);
         final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
@@ -106,10 +108,11 @@ public class BatoTo extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
+            if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             }
         } finally {
             try {
@@ -123,23 +126,27 @@ public class BatoTo extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
