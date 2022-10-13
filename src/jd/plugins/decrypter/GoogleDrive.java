@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.io.Serializable;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -137,7 +136,7 @@ public class GoogleDrive extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (br.getHttpConnection().getResponseCode() == 404) {
                     /* Additional offline check */
-                    throw new GdriveException(GdriveFolderStatus.FOLDER_OFFLINE, new URL(param.getCryptedUrl()).getPath());
+                    throw new GdriveException(GdriveFolderStatus.FOLDER_OFFLINE, new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0));
                 }
             }
             if (jd.plugins.hoster.GoogleDrive.canUseAPI()) {
