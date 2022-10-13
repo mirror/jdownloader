@@ -1176,14 +1176,12 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     deleteFile = false;
                     try {
                         final int keepXOld = Math.max(JsonConfig.create(GeneralSettings.class).getKeepXOldLists(), 0);
-                        if (downloadLists.size() > keepXOld) {
-                            for (int removeIndex = downloadLists.size() - 1; removeIndex >= keepXOld; removeIndex--) {
-                                final File remove = downloadLists.remove(removeIndex);
-                                if (remove != null) {
-                                    final boolean delete = FileCreationManager.getInstance().delete(remove, null);
-                                    if (LogController.getInstance().isDebugMode()) {
-                                        logger.info("Delete outdated DownloadList: " + remove + " " + delete);
-                                    }
+                        while (downloadLists.size() > keepXOld) {
+                            final File remove = downloadLists.remove(downloadLists.size() - 1);
+                            if (remove != null) {
+                                final boolean delete = FileCreationManager.getInstance().delete(remove, null);
+                                if (LogController.getInstance().isDebugMode()) {
+                                    logger.info("Delete outdated DownloadList: " + remove + " " + delete);
                                 }
                             }
                         }

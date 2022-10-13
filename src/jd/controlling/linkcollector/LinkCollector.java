@@ -2480,14 +2480,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         deleteFile = false;
                         try {
                             final int keepXOld = Math.max(JsonConfig.create(GeneralSettings.class).getKeepXOldLists(), 0);
-                            if (linkcollectorLists.size() > keepXOld) {
-                                for (int removeIndex = linkcollectorLists.size() - 1; removeIndex >= keepXOld; removeIndex--) {
-                                    final File remove = linkcollectorLists.remove(removeIndex);
-                                    if (remove != null) {
-                                        final boolean delete = FileCreationManager.getInstance().delete(remove, null);
-                                        if (LogController.getInstance().isDebugMode()) {
-                                            logger.info("Delete outdated CollectorList: " + remove + " " + delete);
-                                        }
+                            while (linkcollectorLists.size() > keepXOld) {
+                                final File remove = linkcollectorLists.remove(linkcollectorLists.size() - 1);
+                                if (remove != null) {
+                                    final boolean delete = FileCreationManager.getInstance().delete(remove, null);
+                                    if (LogController.getInstance().isDebugMode()) {
+                                        logger.info("Delete outdated CollectorList: " + remove + " " + delete);
                                     }
                                 }
                             }
