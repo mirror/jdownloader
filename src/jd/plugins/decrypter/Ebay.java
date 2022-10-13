@@ -17,12 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -30,6 +26,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ebay.com" }, urls = { "https?://(?:www\\.)?ebay[\\.\\w]+/itm/(\\d+).*" })
 public class Ebay extends PluginForDecrypt {
@@ -42,9 +41,12 @@ public class Ebay extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        final String fpName = br.getRegex("<title>([^<]+)\\s+eBay</title>").getMatch(0);
+        final String fpName = br.getRegex("<title>([^<]+?)\\s+\\|\\s*eBay\\s*</title>").getMatch(0);
         final String itemID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         String[] links = br.getRegex("\"maxImageUrl\":\"([^\"]+)\"").getColumn(0);
+        if (links.length == 0) {
+            links = br.getRegex("<div\\s*class\\s*=\\s*\"ux-image-carousel-item[^>]*>\\s*<img[^>]*src\\s*=\\s*(https?[^\" >]+)").getColumn(0);
+        }
         for (String link : links) {
             final DownloadLink dl = createDownloadlink(Encoding.unicodeDecode(link));
             String filename = itemID + "_" + Hash.getMD5(link) + Plugin.getFileNameExtensionFromURL(link);
