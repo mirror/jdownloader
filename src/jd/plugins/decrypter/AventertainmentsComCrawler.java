@@ -38,8 +38,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/.+" })
-public class AventertainmentsCom extends PluginForDecrypt {
-    public AventertainmentsCom(PluginWrapper wrapper) {
+public class AventertainmentsComCrawler extends PluginForDecrypt {
+    public AventertainmentsComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -48,17 +48,18 @@ public class AventertainmentsCom extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         if (plg.canHandle(param.getCryptedUrl())) {
             /* URL needs to be processed by host plugin. */
             final DownloadLink forHostPlugin = this.createDownloadlink(param.getCryptedUrl());
-            decryptedLinks.add(forHostPlugin);
-            return decryptedLinks;
+            ret.add(forHostPlugin);
+            return ret;
         }
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
+            /* Login whenever possible */
             ((jd.plugins.hoster.AventertainmentsCom) plg).login(account, false);
         }
         br.setFollowRedirects(true);
@@ -70,8 +71,8 @@ public class AventertainmentsCom extends PluginForDecrypt {
             } catch (final Throwable ignore) {
             }
             final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(con.getRequest(), con);
-            decryptedLinks.add(direct.getDownloadLink());
-            return decryptedLinks;
+            ret.add(direct.getDownloadLink());
+            return ret;
         } else {
             br.followConnection();
         }
@@ -87,8 +88,8 @@ public class AventertainmentsCom extends PluginForDecrypt {
         } else if (br.getURL().contains("ppv/Streaming.aspx")) {
             logger.info("DRM protected paid content (encrypted HLS)");
             final DownloadLink offline = this.createOfflinelink(param.getCryptedUrl(), "DRM_PROTECTED_" + br._getURL().getFile(), "DRM protected content is not supported");
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            ret.add(offline);
+            return ret;
         }
         String fpName;
         final String title_part1 = this.br.getRegex("class=\"top\\-title\">Item #:([^<>\"]+)</div>").getMatch(0);
@@ -132,10 +133,9 @@ public class AventertainmentsCom extends PluginForDecrypt {
                         }
                         dl.setFinalFileName(filename);
                     }
-                    dl.setProperty("mainlink", param.getCryptedUrl());
                     dl.setProperty("type", "screenshot");
                     dl.setAvailable(true);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
         }
@@ -149,10 +149,9 @@ public class AventertainmentsCom extends PluginForDecrypt {
                         final String filename = "gallery_" + filename_url;
                         dl.setFinalFileName(filename);
                     }
-                    dl.setProperty("mainlink", param.getCryptedUrl());
                     dl.setProperty("type", "gallery");
                     dl.setAvailable(true);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
         }
@@ -166,10 +165,9 @@ public class AventertainmentsCom extends PluginForDecrypt {
                         final String filename = "cover_" + filename_url;
                         dl.setFinalFileName(filename);
                     }
-                    dl.setProperty("mainlink", param.getCryptedUrl());
                     dl.setProperty("type", "cover");
                     dl.setAvailable(true);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
         }
@@ -182,10 +180,9 @@ public class AventertainmentsCom extends PluginForDecrypt {
                 final String filename = "screenshot_" + filename_url;
                 dl.setFinalFileName(filename);
             }
-            dl.setProperty("mainlink", param.getCryptedUrl());
             dl.setProperty("type", "screenshot");
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         /*
          * 2021-07-16: User has to enter a captcha to download those URLs now. This captcha does not even work via browser --> Prefer
@@ -202,28 +199,31 @@ public class AventertainmentsCom extends PluginForDecrypt {
             /* Replace '.m3u8' with '.m3u9' to prevent generic HLS decrypter from picking this up first! */
             final DownloadLink dl = this.createDownloadlink(urlStream.replace(".m3u8", ".m3u9"));
             dl.setContentUrl(urlStream);
-            dl.setProperty("mainlink", param.getCryptedUrl());
             dl.setProperty("type", "video_stream");
             dl.setFinalFileName(fpName + ".mp4");
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         } else if (officialVideoDownloads.length > 0) {
             logger.info("Found " + officialVideoDownloads.length + " official video download(s)");
             for (final String singleLink : officialVideoDownloads) {
                 final DownloadLink dl = createDownloadlink(singleLink);
-                dl.setProperty("mainlink", param.getCryptedUrl());
                 dl.setProperty("type", "video");
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             /* Plugin broken or content offline or maybe no video available at all but only covers/images */
             logger.warning("Failed to find any results");
         }
+        /* Add some plugin properties */
+        for (final DownloadLink result : ret) {
+            result.setProperty("mainlink", param.getCryptedUrl());
+            result.setContentUrl(param.getCryptedUrl());
+        }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

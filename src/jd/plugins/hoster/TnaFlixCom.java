@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,10 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TnaFlixCom extends PluginForHost {
@@ -233,7 +233,6 @@ public class TnaFlixCom extends PluginForHost {
         if (vkey == null) {
             vkey = this.br.getRegex("id=\"vkey\" type=\"hidden\" value=\"([A-Za-z0-9]+)\"").getMatch(0);
         }
-        final String currenthost = br.getHost();
         final String nkey = this.br.getRegex("id=\"nkey\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
         /* This link doesn't have quality choice: https://www.tnaflix.com/view_video.php?viewkey=b5a6fcf68b48e6dd6734 */
         /* This may sometimes return 403 - avoid it if possible! */

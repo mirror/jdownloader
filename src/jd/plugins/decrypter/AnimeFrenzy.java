@@ -15,27 +15,22 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AnimeFrenzy extends antiDDoSForDecrypt {
@@ -66,18 +61,20 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:anime|cartoon|watch|stream)/[^/]+|[\\w\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:anime|cartoon|watch|stream)/[^/]+|(?!player)[\\w\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = br.getRegex("<title>(?:Watch\\s+)?([^<]+)\\s+(?:- Watch Anime Online|English\\s+[SD]ub\\s+)").getMatch(0);
-        ArrayList<String> links = new ArrayList<String>();
+        final ArrayList<String> links = new ArrayList<String>();
         Collections.addAll(links, br.getRegex("<li[^>]*>\\s*<a[^>]+href\\s*=\\s*[\"']([^\"']+/watch/[^\"']+)[\"']").getColumn(0));
         Collections.addAll(links, br.getRegex("<a[^>]+class\\s*=\\s*[\"']noepia[\"'][^>]+href\\s*=\\s*[\"']([^\"']+)[\"']").getColumn(0));
         String[][] hostLinks = br.getRegex("\\\"(?:host|id)\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"[^\\}]+\\\"(?:host|id)\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"[^\\}]+\\\"type\\\"\\s*:\\s*\\\"(?:subbed|cartoon)\\\"").getMatches();
@@ -85,74 +82,34 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             links.add(buildEmbedURL(hostLink[0], hostLink[1]));
             links.add(buildEmbedURL(hostLink[1], hostLink[0]));
         }
-        String showSlug = new Regex(parameter, "(?:watch|anime)/([\\w-]+)").getMatch(0);
-        if (StringUtils.isNotEmpty(showSlug)) {
-            Browser br2 = br.cloneBrowser();
-            getPage(br2, "https://ani.api-web.site/anime/slug/" + showSlug + "?token=Yopgjtcustomer7NX1Oe");
-            Map<String, Object> jsonEntries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
-            if (jsonEntries.get("data") != null) {
-                Map<String, Object> jsonData = (Map<String, Object>) jsonEntries.get("data");
-                if (jsonData.get("episodes") != null) {
-                    List<Map<String, Object>> jsonEpisodes = (List<Map<String, Object>>) jsonData.get("episodes");
-                    if (jsonEpisodes.size() > 0) {
-                        for (Map<String, Object> jsonEpisode : jsonEpisodes) {
-                            if (StringUtils.isNotEmpty((String) jsonEpisode.get("slug"))) {
-                                links.add(br.getURL("/anime/" + (String) jsonEpisode.get("slug")).toString());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        showSlug = new Regex(parameter, "(?:stream|anime)/([\\w-]+)").getMatch(0);
-        if (StringUtils.isNotEmpty(showSlug)) {
-            Browser br2 = br.cloneBrowser();
-            getPage(br2, "https://ani.api-web.site/anime-episode/slug/" + showSlug + "?token=Yopgjtcustomer7NX1Oe");
-            Map<String, Object> jsonEntries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
-            if (jsonEntries.get("data") != null) {
-                Map<String, Object> jsonData = (Map<String, Object>) jsonEntries.get("data");
-                if (jsonData.get("videos") != null) {
-                    List<Map<String, Object>> jsonEpisodes = (List<Map<String, Object>>) jsonData.get("videos");
-                    if (jsonEpisodes.size() > 0) {
-                        for (Map<String, Object> jsonEpisode : jsonEpisodes) {
-                            if (StringUtils.isNotEmpty((String) jsonEpisode.get("host")) && StringUtils.isNotEmpty((String) jsonEpisode.get("video_id"))) {
-                                String host = (String) jsonEpisode.get("host");
-                                String video_id = (String) jsonEpisode.get("video_id");
-                                links.add(buildEmbedURL(host, video_id));
-                            }
-                        }
-                    }
-                }
-            }
-        }
         for (String link : links) {
             if (link != null) {
-                link = processPrefixSlashes(Encoding.htmlDecode(link));
-                decryptedLinks.add(createDownloadlink(link));
+                link = br.getURL(link).toString();
+                ret.add(createDownloadlink(link));
             }
         }
         /* 2022-03-24 */
-        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(Gogoplay4Com.getPluginDomains().get(0)[0]);
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String url : urls) {
-            if (plg.canHandle(url)) {
-                decryptedLinks.add(this.createDownloadlink(url));
+            if (Gogoplay4Com.looksLikeSupportedPattern(url)) {
+                ret.add(this.createDownloadlink(url));
+            }
+        }
+        /* 2022-10-13: Look for selfhosted content */
+        final String embedURL = br.getRegex("(/player/v\\d+[^\"']+)").getMatch(0);
+        if (embedURL != null) {
+            this.getPage(embedURL);
+            final String hlsmaster = br.getRegex("file\\s*:\\s*\"(https?://[^\"]+\\.m3u8)\"").getMatch(0);
+            if (hlsmaster != null) {
+                ret.add(this.createDownloadlink(hlsmaster));
             }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
-    }
-
-    private String processPrefixSlashes(String link) throws IOException {
-        link = link.trim().replaceAll("^//", "https://");
-        if (link.startsWith("/")) {
-            link = this.br.getURL(link).toString();
-        }
-        return link;
+        return ret;
     }
 
     private String buildEmbedURL(String host, String id) {

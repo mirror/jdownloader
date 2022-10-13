@@ -181,7 +181,7 @@ public class AtvAt extends PluginForDecrypt {
         final String playlist2 = br.getRegex("(var contentResource\\s*=\\s*\\[.*?\\]);\\s+").getMatch(0);
         final String hdHLSRegEx = "(https://[^/]+/\\d{4}/\\d{2}/HD/\\d+/index\\.m3u8)";
         String[] hdHLSParts = new Regex(playlist, hdHLSRegEx).getColumn(0);
-        if (hdHLSParts.length == 0 && playlist2 != null) {
+        if ((hdHLSParts == null || hdHLSParts.length == 0) && playlist2 != null) {
             /* 2021-07-05 */
             hdHLSParts = new Regex(playlist2, hdHLSRegEx).getColumn(0);
         }
