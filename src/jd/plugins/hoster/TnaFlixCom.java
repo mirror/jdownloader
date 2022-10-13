@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,6 +35,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TnaFlixCom extends PluginForHost {
@@ -276,13 +276,13 @@ public class TnaFlixCom extends PluginForHost {
                 /* Fallback for videos with only one quality */
                 dllink = this.br.getRegex("<videoLink>(?:<\\!\\[CDATA\\[)?([^<>\"]+)(?:\\]\\]>)?</videoLink>").getMatch(0);
             }
-            if (dllink != null && dllink.startsWith("//")) {
-                dllink = "https:" + dllink;
+            if (StringUtils.isNotEmpty(dllink)) {
+                dllink = br.getURL(dllink).toString();
             }
         } else if (download != null) {
             /* Official download */
-            if (download.startsWith("http") || download.startsWith("//")) {
-                dllink = "http:" + download;
+            if (StringUtils.isNotEmpty(dllink)) {
+                dllink = br.getURL(dllink).toString();
             } else {
                 final String[] qualities = { "720", "480", "360", "240", "144" };
                 for (final String quality : qualities) {
@@ -306,8 +306,8 @@ public class TnaFlixCom extends PluginForHost {
         if (dllink == null && ajax_old_flv_downloadurl != null) {
             logger.info("Fallback to ajax method");
             dllink = ajax_old_flv_downloadurl;
-            if (dllink != null && dllink.startsWith("//")) {
-                dllink = "https:" + dllink;
+            if (StringUtils.isNotEmpty(dllink)) {
+                dllink = br.getURL(dllink).toString();
             }
         }
         if (dllink == null) {
