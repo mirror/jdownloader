@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -116,14 +118,14 @@ public class AudioMa extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String artist = (String) entries.get("artist");
-            final String songname = (String) entries.get("title");
-            if (artist == null || songname == null) {
+            final String songTitle = (String) entries.get("title");
+            if (StringUtils.isEmpty(artist) || StringUtils.isEmpty(songTitle)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            filename = artist + " - " + songname;
+            filename = artist + " - " + songTitle;
         } else if (use_oembed_api) {
-            br.getPage("http://www.audiomack.com/oembed?format=json&url=" + Encoding.urlEncode(link.getDownloadURL()));
-            if (br.containsHTML(">Did not find any music with url")) {
+            br.getPage("http://www." + this.getHost() + "/oembed?format=json&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*Did not find any music with url")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String artist = PluginJSonUtils.getJsonValue(br, "author_name");
@@ -133,14 +135,14 @@ public class AudioMa extends PluginForHost {
             }
             filename = artist + " - " + songname;
         } else if (link.getPluginPatternMatcher().matches(TYPE_API)) {
-            br.getPage(link.getStringProperty("mainlink", null));
+            br.getPage(link.getStringProperty("mainlink"));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = link.getStringProperty("plain_filename", null);
+            filename = link.getStringProperty("plain_filename");
         } else {
             br.getPage(link.getPluginPatternMatcher());
-            if (br.containsHTML(">\\s*Page not found<")) {
+            if (br.containsHTML("(?i)>\\s*Page not found\\s*<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<aside class=\"span2\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
@@ -151,7 +153,7 @@ public class AudioMa extends PluginForHost {
                 }
             }
         }
-        if (filename == null) {
+        if (StringUtils.isEmpty(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename != null && link.getFinalFileName() == null) {
@@ -169,10 +171,15 @@ public class AudioMa extends PluginForHost {
             if (StringUtils.isEmpty(dllink)) {
                 dllink = PluginJSonUtils.getJsonValue(br, "streaming_url");
             }
-            // if (StringUtils.isEmpty(dllink)) {
-            // final String dlurl = getOAuthQueryStringDownload(br);
-            // br.postPage(dlurl, "session=TODO&environment=desktop-web&section=Play%20Song");
-            // }
+            if (StringUtils.isEmpty(dllink)) {
+                /* 2022-10-13 */
+                final boolean pluginBroken = true;
+                if (pluginBroken) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String dlurl = getOAuthQueryStringDownload(br);
+                br.postPage(dlurl, "session=TODO&environment=desktop-web&section=Play%20Song");
+            }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -200,7 +207,11 @@ public class AudioMa extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -236,25 +247,34 @@ public class AudioMa extends PluginForHost {
         } else {
             requestUrl = apiUrl + "/" + apiVersion + "/music/" + musicType + "/" + artistId + "/" + musicSlug;
         }
-        String requestParam = String.format("oauth_consumer_key=%s&oauth_nonce=%s&oauth_signature_method=HMAC-SHA1&oauth_timestamp=%d&oauth_version=1.0", apiConsumerKey, generateNonce(32), (int) (System.currentTimeMillis() / 1000l));
-        String seed = String.format("%s&%s&%s", method, Encoding.urlEncode(requestUrl), Encoding.urlEncode(requestParam));
-        String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
-        return String.format("%s?%s&oauth_signature=%s", requestUrl, requestParam, oauthSignature);
+        final UrlQuery query = new UrlQuery();
+        query.add("oauth_consumer_key", apiConsumerKey);
+        query.add("oauth_nonce", generateNonce(32));
+        query.add("oauth_signature_method", "HMAC-SHA1");
+        query.add("oauth_timestamp", Long.toString(System.currentTimeMillis() / 1000l));
+        query.add("oauth_version", "1.0");
+        final String seed = method + "&" + Encoding.urlEncode(requestUrl) + "&" + Encoding.urlEncode(query.toString());
+        final String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
+        query.add("oauth_signature", oauthSignature);
+        return requestUrl + "?" + query.toString();
     }
-    // public static String getOAuthQueryStringDownload(final Browser br) throws Exception {
-    // final String apiUrl = "https://api.audiomack.com";
-    // final String apiVersion = "v1";
-    // final String apiConsumerKey = "audiomack-js";
-    // final String apiConsumerSecret = "f3ac5b086f3eab260520d8e3049561e6";
-    // String method = "POST";
-    // String requestUrl = "https://api.audiomack.com/v1/music/123456/play";
-    // String requestParam =
-    // String.format("oauth_consumer_key=%s&oauth_nonce=%s&oauth_signature_method=HMAC-SHA1&oauth_timestamp=%d&oauth_version=1.0",
-    // apiConsumerKey, generateNonce(32), (int) (System.currentTimeMillis() / 1000l));
-    // String seed = String.format("%s&%s&%s", method, Encoding.urlEncode(requestUrl), Encoding.urlEncode(requestParam));
-    // String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
-    // return String.format("%s?%s&oauth_signature=%s", requestUrl, requestParam, oauthSignature);
-    // }
+
+    public static String getOAuthQueryStringDownload(final Browser br) throws Exception {
+        final String apiConsumerKey = "audiomack-js";
+        final String apiConsumerSecret = "f3ac5b086f3eab260520d8e3049561e6";
+        String method = "POST";
+        final String requestUrl = "https://api.audiomack.com/v1/music/20472080/play";
+        final UrlQuery query = new UrlQuery();
+        query.add("oauth_consumer_key", apiConsumerKey);
+        query.add("oauth_nonce", generateNonce(32));
+        query.add("oauth_signature_method", "HMAC-SHA1");
+        query.add("oauth_timestamp", Long.toString(System.currentTimeMillis() / 1000l));
+        query.add("oauth_version", "1.0");
+        final String seed = method + "&" + Encoding.urlEncode(requestUrl) + "&" + Encoding.urlEncode(query.toString());
+        String oauthSignature = getOAuthSignature(seed, apiConsumerSecret + "&");
+        query.add("oauth_signature", oauthSignature);
+        return requestUrl + "?" + query.toString();
+    }
 
     private static String generateNonce(final int range) {
         String alphaNum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

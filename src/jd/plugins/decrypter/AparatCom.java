@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,12 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aparat.com" }, urls = { "https?://(?:www\\.)?aparat.com/v/([A-Za-z0-9]+)" })
 public class AparatCom extends PluginForDecrypt {
     public AparatCom(PluginWrapper wrapper) {
@@ -43,17 +43,20 @@ public class AparatCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String itemID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setAllowedResponseCodes(400);
-        br.getPage("https://www.aparat.com/api/fa/v1/video/video/show/videohash/" + itemID + "?pr=1&mf=1&referer=external");
+        br.getPage("https://www." + this.getHost() + "/api/fa/v1/video/video/show/videohash/" + itemID + "?pr=1&mf=1");
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Number status = (Number) JavaScriptEngineFactory.walkJson(entries, "meta/status");
+        if (status != null && (status.intValue() == 404 || status.intValue() == 410)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String type = (String) JavaScriptEngineFactory.walkJson(entries, "data/type");
         if (StringUtils.equalsIgnoreCase(type, "VideoShow")) {
             final Map<String, Object> videoShow = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/attributes");
@@ -77,15 +80,15 @@ public class AparatCom extends PluginForDecrypt {
                 dl.setFinalFileName(fileName + ".mp4");
                 dl.setAvailable(true);
                 dl.setContentUrl(parameter);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
             if (!title.isEmpty()) {
                 final FilePackage filePackage = FilePackage.getInstance();
                 filePackage.setName(Encoding.htmlDecode(title));
                 filePackage.setComment(title);
-                filePackage.addLinks(decryptedLinks);
+                filePackage.addLinks(ret);
             }
-            return decryptedLinks;
+            return ret;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported type:" + type);
         }
