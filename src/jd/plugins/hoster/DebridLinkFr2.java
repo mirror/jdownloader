@@ -43,7 +43,6 @@ import org.jdownloader.plugins.components.realDebridCom.api.json.TokenResponse;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -524,6 +523,8 @@ public class DebridLinkFr2 extends PluginForHost {
             } else if ("disabledServerHost".equals(error)) {
                 /** Happens if downloading from single hosts is not allowed via VPN/proxy. */
                 mhm.putError(account, link, 5 * 60 * 1000l, "Host prohibits VPN/Proxy usage");
+            } else if ("fileNotAvailable".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file seem to be temporarily unavailable on the host side", 30 * 60 * 1000l);
             } else if ("floodDetected".equals(error)) {
                 throw new AccountUnavailableException("API Flood, will retry in 1 hour!", 30 * 60 * 1001l);
             } else if ("accountLocked".equals(error)) {
