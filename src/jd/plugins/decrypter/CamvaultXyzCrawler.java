@@ -86,7 +86,13 @@ public class CamvaultXyzCrawler extends PluginForDecrypt {
     }
 
     public static final boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.containsHTML("(?i)>\\s*The video you have tried to access does no")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -96,8 +102,8 @@ public class CamvaultXyzCrawler extends PluginForDecrypt {
         if (account != null) {
             hosterPlugin.login(account, false);
         }
-        final String url = param.toString();
-        br.getPage(url);
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
         if (isRateLimitReached(br)) {
             throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
         } else if (isOffline(br)) {
