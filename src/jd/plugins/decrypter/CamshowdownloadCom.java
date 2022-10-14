@@ -78,11 +78,13 @@ public class CamshowdownloadCom extends antiDDoSForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    private final String PATTERN_SINGLE = "https?://[^/]+/dl/.+";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String addedurl = param.toString().replaceFirst("http://", "https://");
         String fpName = null;
-        if (addedurl.matches("https?://[^/]+/dl/.+")) {
+        if (addedurl.matches(PATTERN_SINGLE)) {
             /* Add single url to array of urls to decrypt. */
             br.setFollowRedirects(false);
             getPage(addedurl);
@@ -96,7 +98,7 @@ public class CamshowdownloadCom extends antiDDoSForDecrypt {
                 super.submitForm(captchaForm);
             }
             String redirect = this.br.getRedirectLocation();
-            if (redirect != null && redirect.matches("https?://[^/]+/dl/.+")) {
+            if (redirect != null && redirect.matches(PATTERN_SINGLE)) {
                 /* Redirect to url before can happen after captcha (basically one step extra). */
                 this.getPage(redirect);
                 redirect = br.getRedirectLocation();
