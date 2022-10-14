@@ -1588,6 +1588,9 @@ public class LinkCrawler {
         try {
             if (canHandle(pluginForHost, url, link)) {
                 if (isBlacklisted(pluginForHost)) {
+                    if (LogController.getInstance().isDebugMode()) {
+                        LogController.CL().info("blacklisted! " + pluginForHost);
+                    }
                     return DISTRIBUTE.BLACKLISTED;
                 }
                 if (insideCrawlerPlugin()) {
@@ -1663,6 +1666,9 @@ public class LinkCrawler {
         try {
             if (canHandle(pDecrypt, url, link)) {
                 if (isBlacklisted(pDecrypt)) {
+                    if (LogController.getInstance().isDebugMode()) {
+                        LogController.CL().info("blacklisted! " + pDecrypt);
+                    }
                     return DISTRIBUTE.BLACKLISTED;
                 }
                 if (!breakPluginForDecryptLoop(pDecrypt, link)) {
