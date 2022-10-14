@@ -19,13 +19,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,6 +35,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -160,23 +160,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             this.submitForm(beforeCaptcha);
         }
         appVars = regexAppVars(this.br);
-        Form form = getCaptchaForm(br);
-        if (form == null) {
-            if (ret.size() > 0) {
-                return ret;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        // form.remove("_Token%5Bunlocked%5D");
-        // form.put("_Token%5Bunlocked%5D", "adcopy_challenge%7Cadcopy_response%7Ccoinhive-captcha-token%7Cg-recaptcha-response");
-        // final InputField ifield = form.getInputField("_Token%5Bfields%5D");
-        // if (ifield != null) {
-        // final String value = ifield.getValue();
-        // final String valueNew = value.replace("%253Aref", "%3Aref");
-        // form.remove("_Token%5Bfields%5D");
-        // form.put("_Token%5Bfields%5D", valueNew);
-        // }
         String recaptchaV2Response = null;
         /* 2018-07-18: Not all sites require a captcha to be solved */
         CaptchaType captchaType = getCaptchaType();
@@ -186,7 +169,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             boolean requiresCaptchaWhichCanFail = false;
             boolean captchaFailed = false;
             for (int i = 0; i <= 2; i++) {
-                form = getCaptchaForm(br);
+                Form form = getCaptchaForm(br);
                 if (form == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -224,14 +207,11 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         } else {
                             key = getAppVarsResult("invisible_reCAPTCHA_site_key");
                         }
-                        if (StringUtils.isEmpty(key)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find reCaptchaV2 key");
-                        }
                         /**
                          * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                         * </br>
-                         * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
-                         * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
+                         * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another
+                         * website as the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from
+                         * happening.
                          */
                         final String reCaptchaSiteURL;
                         if (this.getSpecialReferer() != null) {
@@ -300,14 +280,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             if (requiresCaptchaWhichCanFail && captchaFailed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-        } else if (form != null) {
-            /* 2019-01-30: E.g. "safelinku.com", "idsly.bid", "idsly.net" */
-            logger.info("No captcha required");
-            /*
-             * 2020-04-01: This would lead to a failure. I was not able to reproduce this with safelinku.com anymore - it would sometimes
-             * submit this form which == f2 --> Failure e.g. za.gl
-             */
-            // this.submitForm(form);
         }
         hookAfterCaptcha(this.br, lastSubmitForm);
         final boolean skipWait = waittimeIsSkippable(sourceHost);
@@ -454,10 +426,10 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         }
         if (firstRedirect != null) {
             /**
-             * Check if this is redirect redirect or if it really is the one we expect. </br>
-             * Some websites redirect e.g. to a fake blog and only redirect back to the usual handling if you re-access the main URL with
-             * that fake blog as referer header e.g.: adshort.co, ez4short.com </br>
-             * In some cases this special referer is pre-given via getSpecialReferer in which we do not have to re-check.
+             * Check if this is redirect redirect or if it really is the one we expect. </br> Some websites redirect e.g. to a fake blog and
+             * only redirect back to the usual handling if you re-access the main URL with that fake blog as referer header e.g.:
+             * adshort.co, ez4short.com </br> In some cases this special referer is pre-given via getSpecialReferer in which we do not have
+             * to re-check.
              */
             if (getSpecialReferer() != null) {
                 /* Assume that redirect redirects to external website and use it as our final result. */
@@ -493,7 +465,31 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return false;
     }
 
+    @Override
+    protected void submitForm(Browser ibr, Form form) throws Exception {
+        super.submitForm(ibr, form);
+        // TODO: add support for special wordpress pages, exe.io
+        // final Form landing = getLandingForm(ibr);
+        // if (landing != null) {
+        // submitForm(landing);
+        // }
+    }
+
+    protected Form getLandingForm(final Browser br) {
+        final Form[] forms = br.getForms();
+        for (Form form : forms) {
+            if (form.containsHTML("id\\s*=\\s*\"landing\"") && MethodType.POST.equals(form.getMethod())) {
+                return form;
+            }
+        }
+        return null;
+    }
+
     protected Form getCaptchaForm(final Browser br) {
+        final Form goLinksForm = getLinksGoForm(param, br);
+        if (goLinksForm != null) {
+            return null;
+        }
         final Form[] forms = br.getForms();
         for (Form form : forms) {
             if (MethodType.POST.equals(form.getMethod())) {
@@ -528,23 +524,18 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /* Most website will contain this boolean-like value telling us whether we need to solve a captcha or not. */
             logger.info("Found captchaIndicator");
             if ("yes".equals(captchaIndicator)) {
-                logger.info("Negative captchaIndicator --> No captcha required(?)");
-                hasCaptcha = true;
+                logger.info("Positive captchaIndicator --> Captcha required(?):type=" + captchatype);
             } else {
-                logger.info("Positive captchaIndicator --> Captcha required(?)");
-                hasCaptcha = false;
+                logger.info("Negative captchaIndicator --> No captcha required(?):type=" + captchatype);
             }
         } else {
             /*
              * In some cases, we have to check for the type of the captcha to find out whether there is a captcha or not (unsafe method,
              * only needed in rare cases, see example websites in header of this class!)
              */
-            if (captchatype != null) {
-                hasCaptcha = true;
-            } else {
-                hasCaptcha = false;
-            }
+            logger.info("No captchaIndicator --> Captcha required(?):type=" + captchatype);
         }
+        hasCaptcha = captchatype != null;
         if (hasCaptcha && this.captchaIsSkippable(source_host)) {
             logger.info("Captcha should be required but current host does not require captcha");
             hasCaptcha = false;
@@ -555,27 +546,38 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     private CaptchaType getCaptchaType() {
         final String captchaTypeStr = getAppVarsResult("captcha_type");
         if (StringUtils.isEmpty(captchaTypeStr)) {
-            /* 2018-12-11: Special case e.g. linkdrop.net */
-            final String reCaptchaV2Key = getAppVarsResult("reCAPTCHA_site_key");
-            if (reCaptchaV2Key != null) {
-                return CaptchaType.reCaptchaV2;
-            }
             /* No captcha or plugin broken */
             return null;
         }
         if (captchaTypeStr.equalsIgnoreCase("hcaptcha_checkbox")) {
-            return CaptchaType.hCaptcha;
+            if (getAppVarsResult("hcaptcha_checkbox_site_key") != null) {
+                return CaptchaType.hCaptcha;
+            } else {
+                return null;
+            }
         } else if (captchaTypeStr.equalsIgnoreCase("recaptcha")) {
             /*
              * 2018-07-18: For 'recaptcha', key is in "reCAPTCHA_site_key"; for 'invisible-recaptcha', key is in
              * "invisible_reCAPTCHA_site_key" --> We can usually use "reCAPTCHA_site_key" as well (tested with urle.co) ... but it is better
              * to use the correct one instead - especially because sometimes only that one is available (e.g. kingurl.net).
              */
-            return CaptchaType.reCaptchaV2;
+            if (getAppVarsResult("reCAPTCHA_site_key") != null) {
+                return CaptchaType.reCaptchaV2;
+            } else {
+                return null;
+            }
         } else if (captchaTypeStr.equalsIgnoreCase("invisible-recaptcha")) {
-            return CaptchaType.reCaptchaV2_invisible;
+            if (getAppVarsResult("invisible_reCAPTCHA_site_key") != null) {
+                return CaptchaType.reCaptchaV2_invisible;
+            } else {
+                return null;
+            }
         } else if (captchaTypeStr.equalsIgnoreCase("solvemedia")) {
-            return CaptchaType.solvemedia;
+            if (getAppVarsResult("solvemedia_challenge_key") != null) {
+                return CaptchaType.solvemedia;
+            } else {
+                return null;
+            }
         } else {
             return CaptchaType.WTF;
         }
@@ -623,7 +625,11 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /* 2018-07-18: json e.g. adbilty.me */
             result = PluginJSonUtils.getJson(this.appVars, input);
         }
-        return result;
+        if (StringUtils.isEmpty(result)) {
+            return null;
+        } else {
+            return result;
+        }
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
