@@ -19,7 +19,7 @@ public interface PluralsightComConfig extends PluginConfigInterface {
     final String              text_WaittimeBetweenDownloadsSeconds              = "Define wait time in seconds between downloads";
     final String              text_WaitMode                                     = "Wait between downloads mode";
     final String              text_AddRandomDelaySecondsBetweenDownloads        = "Add random delay in seconds to wait time between downloads?";
-    final String              text_AdditionalWaittimeBetweenDownloadsMaxSeconds = "Define max additional random waittime seconds between downloads";
+    final String              text_AdditionalWaittimeBetweenDownloadsMaxSeconds = "Define max additional random wait time seconds between downloads";
     /** 2021-07-21: Removed "fastLinkcheck" setting for now and so far we never had subtitles support --> Removed subtitle setting too */
     public static TRANSLATION TRANSLATION                                       = new TRANSLATION();
 
