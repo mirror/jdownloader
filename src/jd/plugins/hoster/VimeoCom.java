@@ -466,27 +466,34 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    private static AtomicReference<String> JWT        = new AtomicReference<String>(null);
-    private static AtomicLong              JWT_EXPIRE = new AtomicLong(0);
+    private static AtomicReference<String[]> VIEWER        = new AtomicReference<String[]>(null);
+    private static AtomicLong                VIEWER_EXPIRE = new AtomicLong(0);
 
-    public static String getJWT(final Plugin plugin, final Browser br) throws Exception {
-        synchronized (JWT) {
+    public static String[] getVIEWER(final Plugin plugin, final Browser br) throws Exception {
+        synchronized (VIEWER_EXPIRE) {
             final long now = Time.systemIndependentCurrentJVMTimeMillis();
-            String jwtToken = JWT.get();
-            if (jwtToken != null && now < JWT_EXPIRE.get()) {
+            String viewer[] = VIEWER.get();
+            if (viewer != null && now < VIEWER_EXPIRE.get()) {
                 // avoid too many usages of same JWT
-                JWT_EXPIRE.addAndGet(-10 * 1000l);
-                return jwtToken;
+                VIEWER_EXPIRE.addAndGet(-10 * 1000l);
+                return viewer;
             }
             final Browser brc = br.cloneBrowser();
             brc.getPage("https://vimeo.com/_rv/viewer");
-            jwtToken = PluginJSonUtils.getJson(brc, "jwt");
+            final String jwtToken = PluginJSonUtils.getJson(brc, "jwt");
+            final String vuid = PluginJSonUtils.getJson(brc, "vuid");
+            final String token = PluginJSonUtils.getJson(brc, "xsrft");
             if (StringUtils.isEmpty(jwtToken)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (StringUtils.isEmpty(vuid)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (StringUtils.isEmpty(token)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
-                JWT.set(jwtToken);
-                JWT_EXPIRE.set(now + (2 * 60 * 1000l));
-                return jwtToken;
+                viewer = new String[] { jwtToken, vuid, token };
+                VIEWER.set(viewer);
+                VIEWER_EXPIRE.set(now + (2 * 60 * 1000l));
+                return viewer;
             }
         }
     }
@@ -503,7 +510,7 @@ public class VimeoCom extends PluginForHost {
             return null;
         }
         if (jwt == null) {
-            jwt = getJWT(plugin, br);
+            jwt = getVIEWER(plugin, br)[0];
         }
         apiRequest.getHeaders().put("Authorization", "jwt " + jwt);
         apiRequest.setCustomCharset("UTF-8");
