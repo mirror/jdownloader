@@ -169,7 +169,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             boolean requiresCaptchaWhichCanFail = false;
             boolean captchaFailed = false;
             for (int i = 0; i <= 2; i++) {
-                Form form = getCaptchaForm(br);
+                final Form form = getCaptchaForm(br, param);
                 if (form == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -485,8 +485,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         return null;
     }
 
-    protected Form getCaptchaForm(final Browser br) {
-        final Form goLinksForm = getLinksGoForm(param, br);
+    protected Form getCaptchaForm(final Browser br, CryptedLink link) {
+        final Form goLinksForm = getLinksGoForm(link, br);
         if (goLinksForm != null) {
             return null;
         }
