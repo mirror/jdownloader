@@ -13,18 +13,29 @@ public class HashInfo {
         SHA224("SHA-224", 56),
         SHA1("SHA1", 40),
         MD5("MD5", 32),
+        CRC32C("CRC32C", 8, false),
         CRC32("CRC32", 8),
         NONE("NONE", 0);
-        private final String digest;
-        private final int    size;
+        private final String  digest;
+        private final int     size;
+        private final boolean autoMode;
+
+        protected boolean isAutoMode() {
+            return autoMode;
+        }
 
         public final String getDigest() {
             return digest;
         }
 
         private TYPE(final String digest, int size) {
+            this(digest, size, true);
+        }
+
+        private TYPE(final String digest, int size, boolean autoMode) {
             this.digest = digest;
             this.size = size;
+            this.autoMode = autoMode;
         }
 
         public final int getSize() {
@@ -85,7 +96,7 @@ public class HashInfo {
     public static HashInfo parse(final String hash, boolean isTrustWorthy, boolean isForced) {
         if (hash != null) {
             for (final TYPE type : TYPE.values()) {
-                if (type.getSize() == hash.length()) {
+                if (type.isAutoMode() && type.getSize() == hash.length()) {
                     return new HashInfo(hash, type, isTrustWorthy, isForced);
                 }
             }

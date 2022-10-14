@@ -76,9 +76,9 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private final AtomicLong                                 backEndChangeID         = new AtomicLong(-1);
     private final AtomicLong                                 contentChangesCounter   = new AtomicLong(-1);
     private final Queue                                      queue                   = new Queue("DownloadControllerEventPublisher") {
-        public void killQueue() {
-        };
-    };
+                                                                                         public void killQueue() {
+                                                                                         };
+                                                                                     };
     static {
         EVENT_ID_LIST = new ArrayList<String>();
         for (BASIC_EVENT t : BASIC_EVENT.values()) {
@@ -418,8 +418,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                         flush = true;
                     }
                     break;
-                case MD5:
-                    break;
                 case NAME:
                     if (hasSubscriptionFor(LINK_UPDATE_name)) {
                         final HashMap<String, Object> dls = new HashMap<String, Object>();
@@ -489,10 +487,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                     }
                     break;
                 case RESUMABLE:
-                    break;
-                case SHA1:
-                    break;
-                case SHA256:
                     break;
                 case SKIPPED:
                     if (hasSubscriptionFor(LINK_UPDATE_skipped)) {
