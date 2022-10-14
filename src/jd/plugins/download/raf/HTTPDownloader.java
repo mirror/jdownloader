@@ -38,6 +38,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -55,6 +56,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -595,6 +598,29 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         }
     }
 
+    public static HashInfo parseXGoogHash(LogInterface logger, URLConnectionAdapter con) {
+        final String googleHash = con.getRequest().getResponseHeader("X-Goog-Hash");
+        if (googleHash != null) {
+            try {
+                // https://cloud.google.com/storage/docs/hashes-etags
+                // Hashes are base64 encoded. Multiple hashes can be given.
+                // https://cloud.google.com/storage/docs/xml-api/reference-headers#xgooghash
+                String crc32c = new Regex(googleHash, "crc32c=([^,]+)").getMatch(0);
+                String md5 = new Regex(googleHash, "md5=([^,]+)").getMatch(0);
+                if (md5 != null) {
+                    md5 = HexFormatter.byteArrayToHex(Base64.decode(md5));
+                    return HashInfo.newInstanceSafe(md5, HashInfo.TYPE.MD5);
+                } else if (crc32c != null) {
+                    crc32c = HexFormatter.byteArrayToHex(Base64.decode(crc32c));
+                    return HashInfo.newInstanceSafe(crc32c, HashInfo.TYPE.CRC32C);
+                }
+            } catch (final Exception ignore) {
+                logger.log(ignore);
+            }
+        }
+        return null;
+    }
+
     /**
      * Startet den Download. Nach dem Aufruf dieser Funktion koennen keine Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
      *
@@ -692,14 +718,9 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                     downloadable.setHashInfo(hashInfo);
                 }
             }
-            // TODO:
-            // https://cloud.google.com/storage/docs/hashes-etags
-            // https://cloud.google.com/storage/docs/reference-headers#xgooghash
-            final List<String> xGoogHashes = connection.getHeaderFields("X-Goog-Hash");
-            if (xGoogHashes != null && xGoogHashes.size() > 0) {
-                // crc32c https://github.com/googlearchive/crc32c-java/blob/master/src/com/google/cloud/Crc32c.java
-                // md5
-                // base64 encoded
+            final HashInfo hashInfo = HTTPDownloader.parseXGoogHash(this.getLogger(), connection);
+            if (hashInfo != null) {
+                downloadable.setHashInfo(hashInfo);
             }
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
             try {

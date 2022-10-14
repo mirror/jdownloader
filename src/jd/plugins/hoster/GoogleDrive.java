@@ -25,28 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.GoogleConfig;
-import org.jdownloader.plugins.components.config.GoogleConfig.APIDownloadMode;
-import org.jdownloader.plugins.components.config.GoogleConfig.PreferredVideoQuality;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -69,6 +47,30 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.raf.HTTPDownloader;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.GoogleConfig;
+import org.jdownloader.plugins.components.config.GoogleConfig.APIDownloadMode;
+import org.jdownloader.plugins.components.config.GoogleConfig.PreferredVideoQuality;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDrive extends PluginForHost {
@@ -373,11 +375,10 @@ public class GoogleDrive extends PluginForHost {
     public static void parseGoogleDocumentProperties(final DownloadLink link, final String filename, final String googleDriveDocumentType, final Map<String, Object> exportFormatDownloadurls) {
         /**
          * Google Drive documents: Either created directly on Google Drive or user added a "real" document-file to GDrive and converted it
-         * into a GDoc later. </br>
-         * In this case, the "filename" is more like a title no matter whether or not it contains a file-extension.</br>
-         * If it contains a file-extension we will try to find download the output format accordingly. </br>
-         * For GDocs usually there is no filesize given because there is no "original" file anymore. The filesize depends on the format we
-         * chose to download the file in.
+         * into a GDoc later. </br> In this case, the "filename" is more like a title no matter whether or not it contains a
+         * file-extension.</br> If it contains a file-extension we will try to find download the output format accordingly. </br> For GDocs
+         * usually there is no filesize given because there is no "original" file anymore. The filesize depends on the format we chose to
+         * download the file in.
          */
         link.setProperty(PROPERTY_GOOGLE_DOCUMENT, true);
         /* Assume that a filename/title has to be given. */
@@ -507,9 +508,8 @@ public class GoogleDrive extends PluginForHost {
         logger.info("Direct download not possible -> Continuing linkcheck");
         br.followConnection();
         /**
-         * 2021-02-02: Interesting behavior of offline content: </br>
-         * Returns 403 when accessed via: https://drive.google.com/file/d/<fuid> </br>
-         * Returns 404 when accessed via: https://docs.google.com/uc?id=<fuid>&export=download
+         * 2021-02-02: Interesting behavior of offline content: </br> Returns 403 when accessed via: https://drive.google.com/file/d/<fuid>
+         * </br> Returns 404 when accessed via: https://docs.google.com/uc?id=<fuid>&export=download
          */
         /* Check for offline */
         if (this.isGoogleDocument(link)) {
@@ -644,8 +644,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /**
-     * @return: true: Allow stream download attempt </br>
-     *          false: Do not allow stream download -> Download original version of file
+     * @return: true: Allow stream download attempt </br> false: Do not allow stream download -> Download original version of file
      */
     private boolean isStreamDownloadPreferredAndAllowed(final DownloadLink link) {
         if (userPrefersStreamDownload() && videoStreamShouldBeAvailable(link)) {
@@ -730,8 +729,8 @@ public class GoogleDrive extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (errorCode == 150) {
                 /**
-                 * Same as in file-download mode: File is definitely not streamable at this moment! </br>
-                 * The original file could still be downloadable via account.
+                 * Same as in file-download mode: File is definitely not streamable at this moment! </br> The original file could still be
+                 * downloadable via account.
                  */
                 /** Similar handling to { @link #errorDownloadQuotaReachedWebsite } */
                 if (account != null) {
@@ -845,8 +844,7 @@ public class GoogleDrive extends PluginForHost {
 
     /**
      * Returns result according to file-extensions listed here:
-     * https://support.google.com/drive/answer/2423694/?co=GENIE.Platform%3DiOS&hl=de </br>
-     * Last updated: 2020-11-29
+     * https://support.google.com/drive/answer/2423694/?co=GENIE.Platform%3DiOS&hl=de </br> Last updated: 2020-11-29
      */
     private static boolean isVideoFile(final String filename) {
         /*
@@ -888,8 +886,7 @@ public class GoogleDrive extends PluginForHost {
         }
         /**
          * E.g. older alternative URL for documents: https://docs.google.com/document/export?format=pdf&id=<fid>&includes_info_params=true
-         * </br>
-         * Last rev. with this handling: 42866
+         * </br> Last rev. with this handling: 42866
          */
         String url = "https://drive.google.com";
         /* Minor difference when user is logged in. They don#t really check that but let's mimic browser behavior. */
@@ -1007,10 +1004,9 @@ public class GoogleDrive extends PluginForHost {
                  * blocked because of "too high traffic", streaming is blocked too!
                  */
                 /**
-                 * 2020-11-29: Do NOT try to move this into availablecheck!</br>
-                 * Availablecheck can get around Google's "sorry" captcha for downloading original files but this does not work for
-                 * streaming! </br>
-                 * If a captcha is required and the user wants to download a stream there is no way around it! The user has to solve it!
+                 * 2020-11-29: Do NOT try to move this into availablecheck!</br> Availablecheck can get around Google's "sorry" captcha for
+                 * downloading original files but this does not work for streaming! </br> If a captcha is required and the user wants to
+                 * download a stream there is no way around it! The user has to solve it!
                  */
                 /** Check if stream download is preferred by the user. */
                 if (this.isStreamDownloadPreferredAndAllowed(link)) {
@@ -1053,20 +1049,10 @@ public class GoogleDrive extends PluginForHost {
         if (link.getFinalFileName() == null && !StringUtils.isEmpty(headerFilename)) {
             link.setFinalFileName(headerFilename);
         }
-        /* 2021-07-23: TODO: Set CRC32 filehash if possible */
-        // final String googleHash = this.br.getRequest().getResponseHeader("X-Goog-Hash");
-        // if (googleHash != null) {
-        // try {
-        // /* Hashes are base64 encoded. Multiple hashes can be given. */
-        // /* https://cloud.google.com/storage/docs/xml-api/reference-headers#xgooghash */
-        // final String crc32 = new Regex(googleHash, "crc32c=([^,]+)").getMatch(0);
-        // final String md5 = new Regex(googleHash, "md5=([^,]+)").getMatch(0);
-        // if (crc32 != null) {
-        // link.setHashInfo(HashInfo.newInstanceSafe(crc32, HashInfo.TYPE.CRC32));
-        // }
-        // } catch (final Throwable ignore) {
-        // }
-        // }
+        final HashInfo hashInfo = HTTPDownloader.parseXGoogHash(getLogger(), dl.getConnection());
+        if (hashInfo != null) {
+            link.setHashInfo(hashInfo);
+        }
         this.dl.startDownload();
     }
 
@@ -1109,9 +1095,9 @@ public class GoogleDrive extends PluginForHost {
             }
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             /**
-             * Most likely quota error or "Missing permissions" error. </br>
-             * 2021-05-19: Important: This can also happen if e.g. this is a private file and permissions are missing! It is hard to detect
-             * the exact reason for error as errormessages differ depending on the user set Google website language!
+             * Most likely quota error or "Missing permissions" error. </br> 2021-05-19: Important: This can also happen if e.g. this is a
+             * private file and permissions are missing! It is hard to detect the exact reason for error as errormessages differ depending
+             * on the user set Google website language!
              */
             if (account != null) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Insufficient permissions (private file) or quota limit reached", 30 * 60 * 1000l);
@@ -1259,8 +1245,7 @@ public class GoogleDrive extends PluginForHost {
 
     /**
      * Use this for response 403 or messages like 'file can not be downloaded at this moment'. Such files will usually be downloadable via
-     * account. </br>
-     * Only use this for failed website download attempts!
+     * account. </br> Only use this for failed website download attempts!
      */
     private void errorDownloadQuotaReachedWebsite(final DownloadLink link, final Account account) throws PluginException {
         if (account != null) {
@@ -1322,8 +1307,8 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /**
-     * Use this for files which are not downloadable at all (rare case). </br>
-     * This mostly gets called if a file is not downloadable according to the Google Drive API.
+     * Use this for files which are not downloadable at all (rare case). </br> This mostly gets called if a file is not downloadable
+     * according to the Google Drive API.
      */
     private void errorCannotDownload(final DownloadLink link) throws PluginException {
         String errorMsg = "Download not allowed!";
@@ -1355,8 +1340,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /**
-     * TODO: Add settings for apiID and apiSecret </br>
-     * 2021-02-02: Unfinished work! ...
+     * TODO: Add settings for apiID and apiSecret </br> 2021-02-02: Unfinished work! ...
      */
     private void loginAPI(final Browser br, final Account account) throws IOException, InterruptedException, PluginException {
         /* https://developers.google.com/identity/protocols/oauth2/limited-input-device */

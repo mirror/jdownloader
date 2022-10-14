@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
+import java.util.zip.Checksum;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
@@ -266,10 +267,22 @@ public class DownloadLinkDownloadable implements Downloadable {
                     }
                     break;
                 case CRC32:
+                case CRC32C:
                     try {
                         fis = new FileInputStream(outputPartFile);
                         crcHashingInProgress = true;
-                        final CheckedInputStream cis = new CheckedInputStream(fis, new CRC32());
+                        final Checksum checksum;
+                        switch (type) {
+                        case CRC32:
+                            checksum = new CRC32();
+                            break;
+                        case CRC32C:
+                            checksum = PureJavaCrc32C.newCRC32CChecksumInstance();
+                            break;
+                        default:
+                            return null;
+                        }
+                        final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
                         while ((read = cis.read(b)) >= 0) {
                             currentPosition += read;
                             hashProgress.setCurrent(currentPosition);
@@ -285,6 +298,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                     }
                     break;
                 case NONE:
+                    return null;
                 default:
                     break;
                 }
