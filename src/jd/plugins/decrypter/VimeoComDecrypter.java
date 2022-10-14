@@ -615,7 +615,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         if (passCode != null) {
                             passwordCookieValue = br.getCookie(br.getHost(), passwordCookieKey);
                         }
-                        final String jwtToken = VimeoCom.getJWT(this, br);
+                        final String jwtToken = VimeoCom.getVIEWER(this, br)[0];
                         String nextPage = "/albums/" + showcaseID + "/videos?fields=link&page=1&per_page=10";
                         while (!this.isAbort() && nextPage != null) {
                             logger.info("Crawling video album page: " + nextPage);
@@ -1238,9 +1238,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 pwform.setAction("/" + videoID + "/password");
                 /* First get "xsrft" token ... */
-                jd.plugins.hoster.VimeoCom.getJWT(this, br);
-                final String vuid = PluginJSonUtils.getJson(br, "vuid");
-                token = PluginJSonUtils.getJson(br, "xsrft");
+                final String viewer[] = jd.plugins.hoster.VimeoCom.getVIEWER(this, br);
+                final String vuid = viewer[1];
+                token = viewer[2];
                 if (StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
