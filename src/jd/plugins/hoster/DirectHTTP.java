@@ -696,6 +696,8 @@ public class DirectHTTP extends antiDDoSForHost {
         case 410:// Gone
         case 470:// special response code, see thread 81171
             return downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null || RequestMethod.HEAD.equals(con.getRequest().getRequestMethod());
+        case 500:
+            return downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null;
         default:
             return false;
         }
@@ -860,15 +862,16 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
                 if (retryConnection(downloadLink, urlConnection) || (StringUtils.contains(urlConnection.getContentType(), "image") && (urlConnection.getLongContentLength() < 1024) || StringUtils.containsIgnoreCase(getFileNameFromHeader(urlConnection), "expired"))) {
                     if (downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null || RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
-                        /* check if we need the URLPARAMS to download the file */
                         followURLConnection(br, urlConnection);
-                        if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
-                            preferHeadRequest = false;
-                        }
                         if (downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null) != null) {
+                            /*
+                             * check if we need the URLPARAMS to download the file
+                             */
                             final String newURL = getDownloadURL(downloadLink) + downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null);
                             downloadLink.removeProperty(DirectHTTP.POSSIBLE_URLPARAM);
                             setDownloadURL(newURL, downloadLink);
+                        } else if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
+                            preferHeadRequest = false;
                         }
                         br.setRequest(null);
                         urlConnection = this.prepareConnection(this.br, downloadLink, optionSet);
