@@ -41,9 +41,10 @@ public class CamVideosOrg extends KernelVideoSharingComV2 {
     @Override
     protected boolean useEmbedWorkaround() {
         /**
-         * 2022-04-12: A lot of videos are not embeddable but have already been embedded by other websites. </br>
+         * 2022-04-12: A lot of videos are not embeddable but have already been embedded by other websites in the past so users keep adding
+         * such URLs. </br>
          * Website shows error "You are not allowed to watch this video.". </br>
-         * This workaround will fix that issue.
+         * This workaround will fix that issue by trying to access the non-embed URL.
          */
         return true;
     }

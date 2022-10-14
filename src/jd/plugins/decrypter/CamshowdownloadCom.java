@@ -16,13 +16,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -33,57 +34,60 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camshowdownload.com" }, urls = { "https?://(?:www\\.)?camshowdownload\\.com/([^/]+/video/.+|dl/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamshowdownloadCom extends antiDDoSForDecrypt {
     public CamshowdownloadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> urlsToDecrypt = new ArrayList<String>();
-        final String parameter = param.toString();
-        br.setFollowRedirects(false);
-        String fpName = null;
-        if (parameter.matches(".+/dl/.+")) {
-            /* Add single url to array of urls to decrypt. */
-            urlsToDecrypt.add(parameter);
-        } else {
-            getPage(parameter);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+    @Override
+    public void init() {
+        /* 2022-10-14: Applying this limit will drastically reduce the amount of captchas (especially for the single "/dl/.+" URLs). */
+        for (final String[] domaingroup : getPluginDomains()) {
+            for (final String domain : domaingroup) {
+                Browser.setRequestIntervalLimitGlobal(domain, true, 5000);
             }
-            // they can anti bot routine here
-            if (br.getHttpConnection().getResponseCode() == 503) {
-                // 6LdM_AYTAAAAADrpgYaW-wHyMowkEizhAS72G6rw
-                final Form captchaForm = br.getForm(0);
-                if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
-                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                    captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    submitForm(captchaForm);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            if (fpName == null) {
-                /* Fallback */
-                fpName = new Regex(parameter, "([^/]+)$").getMatch(0);
-            }
-            final String[] links = br.getRegex("\"(/dl/[^<>\"]+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            /* Add all found urls to Array of urls to decrypt. */
-            urlsToDecrypt.addAll(Arrays.asList(links));
         }
-        for (final String singleLink : urlsToDecrypt) {
-            getPage(singleLink);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "camshowdownload.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([^/]+/video/.+|dl/.+|[\\w\\-]+/[\\w\\-]+/model/[\\w\\-]+/[\\w\\-]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String addedurl = param.toString().replaceFirst("http://", "https://");
+        String fpName = null;
+        if (addedurl.matches("https?://[^/]+/dl/.+")) {
+            /* Add single url to array of urls to decrypt. */
+            br.setFollowRedirects(false);
+            getPage(addedurl);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Form captchaForm = this.br.getFormbyKey("loc");
             if (captchaForm != null) {
@@ -91,18 +95,54 @@ public class CamshowdownloadCom extends antiDDoSForDecrypt {
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 super.submitForm(captchaForm);
             }
-            final String finallink = this.br.getRedirectLocation();
-            if (finallink == null || finallink.contains("camshowdownload.com/")) {
+            String redirect = this.br.getRedirectLocation();
+            if (redirect != null && redirect.matches("https?://[^/]+/dl/.+")) {
+                /* Redirect to url before can happen after captcha (basically one step extra). */
+                this.getPage(redirect);
+                redirect = br.getRedirectLocation();
+            }
+            if (redirect == null || this.canHandle(redirect)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            ret.add(createDownloadlink(redirect));
+        } else {
+            br.setFollowRedirects(true);
+            getPage(addedurl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            // they can anti bot routine here
+            if (br.getHttpConnection().getResponseCode() == 503) {
+                // 6LdM_AYTAAAAADrpgYaW-wHyMowkEizhAS72G6rw
+                final Form captchaForm = br.getForm(0);
+                if (captchaForm == null || !captchaForm.containsHTML("=\"g-recaptcha\"")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                submitForm(captchaForm);
+            }
+            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            if (fpName == null) {
+                /* Fallback */
+                fpName = new Regex(addedurl, "([^/]+)$").getMatch(0);
+            }
+            final String[] links = br.getRegex("\"(/dl/[^<>\"]+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + addedurl);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            /* Those URLs will go back into our crawler and will be crawled one by one (captcha is required for each item). */
+            for (final String url : links) {
+                ret.add(this.createDownloadlink(br.getURL(url).toString()));
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.addLinks(ret);
+            }
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override
