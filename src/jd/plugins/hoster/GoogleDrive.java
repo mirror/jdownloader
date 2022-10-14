@@ -685,13 +685,16 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    /** Returns user defined preferred video stream quality. Returns null if user prefers download of original file. */
     private String handleStreamQualitySelection(final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
         final GoogleConfig cfg = PluginJsonConfig.get(GoogleConfig.class);
         final PreferredVideoQuality qual = cfg.getPreferredVideoQuality();
         return handleStreamQualitySelection(link, account, qual);
     }
 
+    /**
+     * Returns preferred video stream quality direct downloadurl and best as fallback. </br>
+     * Returns null if given preferred quality is set to ORIGINAL.
+     */
     private String handleStreamQualitySelection(final DownloadLink link, final Account account, final PreferredVideoQuality qual) throws PluginException, IOException, InterruptedException {
         int preferredQualityHeight = link.getIntegerProperty(PROPERTY_USED_QUALITY, -1);
         final boolean userHasDownloadedStreamBefore;
@@ -774,15 +777,14 @@ public class GoogleDrive extends PluginForHost {
         /* Usually same as the title we already have but always with .mp4 ending(?) */
         // final String streamFilename = query.get("title");
         // final String fmt_stream_map = query.get("fmt_stream_map");
-        String url_encoded_fmt_stream_map = query.get("url_encoded_fmt_stream_map");
-        url_encoded_fmt_stream_map = Encoding.urlDecode(url_encoded_fmt_stream_map, false);
+        final String url_encoded_fmt_stream_map = query.get("url_encoded_fmt_stream_map");
         if (url_encoded_fmt_stream_map == null) {
             logger.info("Stream download impossible for unknown reasons");
             return null;
         }
         final YoutubeHelper dummy = new YoutubeHelper(this.br, this.getLogger());
         final List<YoutubeStreamData> qualities = new ArrayList<YoutubeStreamData>();
-        final String[] qualityInfos = url_encoded_fmt_stream_map.split(",");
+        final String[] qualityInfos = Encoding.urlDecode(url_encoded_fmt_stream_map, false).split(",");
         for (final String qualityInfo : qualityInfos) {
             final UrlQuery qualityQuery = UrlQuery.parse(qualityInfo);
             final YoutubeStreamData yts = dummy.convert(qualityQuery, this.br.getURL());
@@ -815,7 +817,7 @@ public class GoogleDrive extends PluginForHost {
             usedQuality = bestQualityHeight;
         } else {
             /* This should never happen! */
-            logger.warning("Failed to find any quality");
+            logger.warning("Failed to find any stream quality");
             return null;
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
@@ -1146,26 +1148,23 @@ public class GoogleDrive extends PluginForHost {
         /*
          * {"error":{"errors":[{"domain":"usageLimits","reason":"keyInvalid","message":"Bad Request"}],"code":400,"message":"Bad Request"}}
          */
-        Map<String, Object> errormap = null;
-        List<Object> errorsO = null;
+        List<Map<String, Object>> errors = null;
         try {
-            errormap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            errormap = (Map<String, Object>) errormap.get("error");
-            errorsO = (List<Object>) errormap.get("errors");
-        } catch (final Throwable ignore) {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            errors = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "error/errors");
+        } catch (final Exception ignore) {
             /* Did not get the expected json response */
             logger.warning("Got unexpected API response");
             return;
         }
-        if (errorsO == null || errorsO.size() == 0) {
+        if (errors == null || errors.isEmpty()) {
             return;
         }
         /* Most of all times there will be only one errort */
-        logger.info("Number of detected errors: " + errorsO.size());
+        logger.info("Number of detected errors: " + errors.size());
         int index = 0;
-        for (final Object errorO : errorsO) {
-            final boolean isLastItem = index == errorsO.size() - 1;
-            errormap = (Map<String, Object>) errorO;
+        for (final Map<String, Object> errormap : errors) {
+            final boolean isLastItem = index == errors.size() - 1;
             final String reason = (String) errormap.get("reason");
             final String message = (String) errormap.get("message");
             /* First check for known issues */
@@ -1324,7 +1323,7 @@ public class GoogleDrive extends PluginForHost {
     private void errorCannotDownload(final DownloadLink link) throws PluginException {
         String errorMsg = "Download not allowed!";
         if (this.videoStreamShouldBeAvailable(link)) {
-            errorMsg += " Video stream download should be possible: Remove your API key, reset this file and try again.";
+            errorMsg += " Video stream download might be possible: Remove your API key, reset this file and try again.";
         } else {
             errorMsg += " If video streaming is available for this file, remove your Google Drive API key, reset this file and try again.";
         }
