@@ -132,7 +132,10 @@ public class KwikCx extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* 2021-08-03: Broken because of Cloudflare. */
+                /*
+                 * 2021-08-03: Unfinished because js needs to be decrypted in order to be able to generate a valid token, see:
+                 * https://svn.jdownloader.org/issues/85727
+                 */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);
