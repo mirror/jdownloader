@@ -2,15 +2,14 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -24,47 +23,48 @@ public class EmulatorgamesNet extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String itemStub = new Regex(parameter, "(?:/roms/(?:[^/]+/)?|/download/\\?rom=)([^/&$]+)").getMatch(0);
-        String fpName = null;
-        if (StringUtils.isNotEmpty(itemStub)) {
-            fpName = br.getRegex("([^<>]+)\\s+ROM\\s+-\\s+[^<]+\\s+-\\s+Emulator Games").getMatch(0);
-            String romID = br.getRegex("<span[^>]+class\\s*=\\s*\"eg-view\"[^>]+data-type\\s*=\\s*\"rom\"[^>]+data-id\\s*=\\s*\"([^\"]+)\"").getMatch(0);
-            if (StringUtils.isEmpty(romID)) {
-                getLogger().warning("Could not retrieve ROM ID required for download steps!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            Browser br2 = br.cloneBrowser();
-            final PostRequest downloadPagePost = new PostRequest(br2.getURL("/increment/"));
-            downloadPagePost.addVariable("get_type", "rom");
-            downloadPagePost.addVariable("get_id", romID);
-            downloadPagePost.getHeaders().put("Referer", br.getURL());
-            downloadPagePost.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            downloadPagePost.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
-            String postResult = br2.getPage(downloadPagePost);
-            getPage(br.getURL("/download/?rom=" + itemStub).toString());
-            final PostRequest romTargetPost = new PostRequest(br2.getURL("/prompt/"));
-            romTargetPost.addVariable("get_type", "rom");
-            romTargetPost.addVariable("get_id", romID);
-            downloadPagePost.getHeaders().put("Referer", br2.getURL());
-            romTargetPost.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            romTargetPost.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
-            postResult = br2.getPage(romTargetPost);
-            String romURL = br2.getRegex("\\[\\s*\"([^\"]+)").getMatch(0);
-            if (StringUtils.isNotEmpty(romURL)) {
-                romURL = romURL.replaceAll("\\\\", "");
-                decryptedLinks.add(createDownloadlink(romURL));
-            }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final Form dlform = br.getFormbyActionRegex(".*/download.*");
+        String fpName = null;
+        fpName = br.getRegex("([^<>]+)\\s+ROM\\s+-\\s+[^<]+\\s+-\\s+Emulator Games").getMatch(0);
+        final String romID = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);
+        if (StringUtils.isEmpty(romID)) {
+            getLogger().warning("Could not retrieve ROM ID required for download steps!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        this.submitForm(dlform);
+        // final PostRequest downloadPagePost = new PostRequest(br.getURL("/increment/"));
+        // downloadPagePost.addVariable("get_type", "post");
+        // downloadPagePost.addVariable("get_id", romID);
+        // downloadPagePost.getHeaders().put("Referer", br.getURL());
+        // downloadPagePost.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // downloadPagePost.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
+        final PostRequest romTargetPost = new PostRequest(br.getURL("/prompt/"));
+        romTargetPost.addVariable("get_type", "post");
+        romTargetPost.addVariable("get_id", romID);
+        romTargetPost.getHeaders().put("Referer", br.getURL(dlform.getAction()).toString());
+        romTargetPost.getHeaders().put("Origin", "https://www." + br.getHost());
+        romTargetPost.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        romTargetPost.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
+        br.getPage(romTargetPost);
+        String directurl = br.getRegex("\\[\\s*\"([^\"]+)").getMatch(0);
+        if (directurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        directurl = directurl.replaceAll("\\\\", "");
+        ret.add(createDownloadlink(directurl));
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
