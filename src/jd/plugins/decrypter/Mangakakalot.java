@@ -15,27 +15,34 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangakakalot.com" }, urls = { "https?://(www\\.)?mangakakalot\\.com/(manga|chapter)/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangakakalot.com" }, urls = { "https?://(www\\.)?(manganelo|readmanganato|manganato|mangakakalot|chapmanganato)\\.com/(?:manga-|chapter)[^\\s$]+" })
 public class Mangakakalot extends antiDDoSForDecrypt {
     public Mangakakalot(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private final String TYPE_MANGA         = "^https?://[^/]+/manga-([a-z0-9\\-]+)$";
+    private final String TYPE_MANGA_CHAPTER = "^https?://[^/]+/manga-([a-z0-9\\-]+)/chapter-(\\d+(\\.\\d+)?)$";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -43,74 +50,101 @@ public class Mangakakalot extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> cryptedLinks = new ArrayList<String>();
-        final String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(new int[] { 503 });
-        getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 NOT FOUND")) {
+        getPage(br, param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 503) {
-            logger.info("Too many requests - try again later");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
         }
-        final String chapterBlock = br.getRegex("<div class=\"chapter-list\">(.*)<div class=\"comment-info\">").getMatch(0);
-        final String[] chapters = chapterBlock == null ? null : HTMLParser.getHttpLinks(chapterBlock, null);
-        if (chapters != null && chapters.length > 0) {
-            for (final String chapter : chapters) {
-                if (!cryptedLinks.contains(chapter)) {
-                    decryptedLinks.add(createDownloadlink(chapter));
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final FilePackage fp = FilePackage.getInstance();
+        if (param.getCryptedUrl().matches(TYPE_MANGA)) {
+            String[] chapters = br.getRegex("<a[^>]+class\\s*=\\s*\"chapter-name[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0);
+            if (chapters != null && chapters.length > 0) {
+                for (String chapter : chapters) {
+                    final DownloadLink dd = createDownloadlink(Encoding.htmlDecode(chapter));
+                    decryptedLinks.add(dd);
+                }
+                String fpName = br.getRegex("<title>\\s*([^<]+)\\s+Manga\\s+Online").getMatch(0);
+                if (StringUtils.isNotEmpty(fpName)) {
+                    fp.setAllowInheritance(true);
+                    fp.setName(Encoding.htmlDecode(fpName.trim()));
                 }
             }
-            return decryptedLinks;
+            fp.addLinks(decryptedLinks);
+        } else if (param.getCryptedUrl().matches(TYPE_MANGA_CHAPTER)) {
+            final String chapterNumber = new Regex(param.getCryptedUrl(), TYPE_MANGA_CHAPTER).getMatch(1);
+            //
+            String mangaTitle = null;
+            String breadcrumb = br.getRegex("<div[^>]+class\\s*=\\s*\\\"panel-breadcrumb\\\"[^>]*>\\s*([^§]+)<div[^>]+class\\s*=\\s*\"panel").getMatch(0);
+            breadcrumb = breadcrumb.replaceAll("<div[^>]+class\\s*=\\s*\\\"panel[^§]+", "");
+            //
+            // Extract manga title
+            //
+            if (StringUtils.isNotEmpty(breadcrumb)) {
+                try {
+                    mangaTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\\\"]+)").getMatch(1);
+                } catch (Exception e) {
+                    mangaTitle = mangaTitle;
+                }
+            }
+            if (StringUtils.isEmpty(mangaTitle)) {
+                mangaTitle = br.getRegex("<title>\\s*([^<]+)\\s+(?:Ch\\.|Chapter)[^<]+\\s-\\s+").getMatch(0);
+            }
+            if (StringUtils.isEmpty(mangaTitle)) {
+                mangaTitle = new Regex(param.getCryptedUrl(), TYPE_MANGA_CHAPTER).getMatch(0).replace("-", " ");
+            }
+            if (StringUtils.isNotEmpty(mangaTitle)) {
+                fp.setName(mangaTitle);
+            }
+            //
+            // Extract chapter title
+            //
+            String chapterTitle = null;
+            if (StringUtils.isNotEmpty(breadcrumb)) {
+                try {
+                    chapterTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\\\"]+)").getMatch(2);
+                } catch (Exception e) {
+                    chapterTitle = chapterTitle;
+                }
+            }
+            if (StringUtils.isEmpty(chapterTitle)) {
+                chapterTitle = "Chapter_" + chapterNumber;
+            }
+            //
+            String imgSrc = br.getRegex("<div class=\"container-chapter-reader\">\\s+(.*?)\n").getMatch(0);
+            if (imgSrc == null) {
+                /* Fallback */
+                imgSrc = br.getRequest().getHtmlCode();
+            }
+            final HashSet<String> dups = new HashSet<String>();
+            final String[] urls = new Regex(imgSrc, "img src=\"(https?://[^\"]+)").getColumn(0);
+            final int padLength = StringUtils.getPadLength(urls.length);
+            int pageNumber = 1;
+            for (final String url : urls) {
+                final String realURL;
+                final UrlQuery query = UrlQuery.parse(url);
+                final String urlProxyBase64 = query.get("url_img");
+                if (urlProxyBase64 != null) {
+                    realURL = Encoding.Base64Decode(urlProxyBase64);
+                } else {
+                    realURL = url;
+                }
+                if (!dups.add(realURL)) {
+                    continue;
+                }
+                final DownloadLink link = createDownloadlink(realURL);
+                final String ext = Plugin.getFileNameExtensionFromURL(realURL);
+                if (chapterTitle != null && ext != null) {
+                    link.setFinalFileName(mangaTitle + "_" + chapterTitle + "-Page_" + String.format(Locale.US, "%0" + padLength + "d", pageNumber) + ext);
+                }
+                link.setAvailable(true);
+                link._setFilePackage(fp);
+                decryptedLinks.add(link);
+                distribute(link);
+                pageNumber++;
+            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String fpName = br.getRegex("<title>([^<]+) ?- Mangakakalot.com</title>").getMatch(0);
-        fpName = Encoding.htmlDecode(fpName.trim()).replace("\n", "");
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        // final String pageBlock = br.getRegex("<div class=\"vung-doc\"[^>]*>(.*)<div style=\"text-align:center;\">").getMatch(0);
-        // final String[] pages = pageBlock == null ? null : HTMLParser.getHttpLinks(pageBlock, null);
-        // if (pages == null || pages.length == 0 || fpName == null) {
-        // logger.warning("Decrypter broken for link: " + parameter);
-        // return null;
-        // }
-        // for (final String page : pages) {
-        // if (!cryptedLinks.contains(page)) {
-        // cryptedLinks.add(page);
-        // }
-        // }
-        // final DecimalFormat df = new DecimalFormat(new String(new char[String.valueOf(cryptedLinks.size()).length()]).replace("\0",
-        // "0"));
-        // int pageCounter = 1;
-        // for (final String currentPage : cryptedLinks) {
-        // final String decryptedlink = currentPage;
-        // final DownloadLink dd = createDownloadlink("directhttp://" + decryptedlink);
-        // dd.setAvailable(true);
-        // dd.setFinalFileName(fpName + "_" + df.format(pageCounter) + getFileNameExtensionFromString(decryptedlink, ".jpg"));
-        // fp.add(dd);
-        // distribute(dd);
-        // decryptedLinks.add(dd);
-        // pageCounter++;
-        // if (isAbort()) {
-        // break;
-        // }
-        // }
-        final String[] pics = br.getRegex("<img src=\"(https?://[^\"]+/img/[^\"]+\\.jpg)\"").getColumn(0);
-        final DecimalFormat df = new DecimalFormat("000");
-        int pageCounter = 0;
-        for (final String pic : pics) {
-            pageCounter += 1;
-            final DownloadLink dd = createDownloadlink("directhttp://" + pic);
-            dd.setAvailable(true);
-            dd.setFinalFileName(fpName + "_" + df.format(pageCounter) + getFileNameExtensionFromString(pic, ".jpg"));
-            fp.add(dd);
-            distribute(dd);
-            decryptedLinks.add(dd);
-            pageCounter++;
-        }
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }
